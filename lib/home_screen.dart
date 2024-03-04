@@ -20,6 +20,14 @@ class _HomeScreenState extends State<HomeScreen> {
     GlobalKey<NavigatorState>(), // Profilo Utente
   ];
 
+  // Definire i titoli delle pagine
+  final List<String> pageTitles = [
+    'Allenamenti',
+    'Esercizi',
+    'Massimali',
+    'Profilo Utente',
+  ];
+
   void _onItemTapped(int index) {
     if (index == _selectedIndex) {
       _navigatorKeys[index].currentState?.popUntil((route) => route.isFirst);
@@ -45,17 +53,17 @@ class _HomeScreenState extends State<HomeScreen> {
     var isLargeScreen = MediaQuery.of(context).size.width > 600;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('App Fitness'),
+        title: Text(pageTitles[_selectedIndex]), // Titolo dinamico in base alla pagina selezionata
       ),
       drawer: isLargeScreen ? null : Drawer(
-        child: _buildDrawer(),
+        child: _buildDrawer(isLargeScreen),
       ),
       body: Row(
         children: [
-          if (isLargeScreen) 
+          if (isLargeScreen)
             Container(
               width: 300,
-              child: _buildDrawer(),
+              child: _buildDrawer(isLargeScreen),
             ),
           Expanded(
             child: Stack(
@@ -67,7 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildDrawer() {
+  Widget _buildDrawer(bool isLargeScreen) {
     return Column(
       children: [
         Container(
@@ -76,10 +84,11 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('Menù', style: Theme.of(context).textTheme.titleLarge),
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
+              if (!isLargeScreen)
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
             ],
           ),
         ),
@@ -87,10 +96,10 @@ class _HomeScreenState extends State<HomeScreen> {
           child: ListView(
             padding: EdgeInsets.zero,
             children: <Widget>[
-              ListTile(title: const Text('Esercizi'), onTap: () => _navigateTo(1)),
-              ListTile(title: const Text('Massimali'), onTap: () => _navigateTo(2)),
-              ListTile(title: const Text('Profilo Utente'), onTap: () => _navigateTo(3)),
-              ListTile(title: const Text('Allenamenti'), onTap: () => _navigateTo(0)),
+              ListTile(title: const Text('Esercizi'), onTap: () => _navigateTo(1, isLargeScreen)),
+              ListTile(title: const Text('Massimali'), onTap: () => _navigateTo(2, isLargeScreen)),
+              ListTile(title: const Text('Profilo Utente'), onTap: () => _navigateTo(3, isLargeScreen)),
+              ListTile(title: const Text('Allenamenti'), onTap: () => _navigateTo(0, isLargeScreen)),
             ],
           ),
         ),
@@ -99,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Icon(Icons.person),
           ),
           title: const Text('prova'),
-          onTap: () => _navigateTo(3), // Modificato per navigare alla pagina del profilo utente
+          onTap: () => _navigateTo(3, isLargeScreen),
         ),
         ListTile(
           title: const Text('Logout'),
@@ -111,9 +120,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _navigateTo(int index) {
+  void _navigateTo(int index, bool isLargeScreen) {
     _onItemTapped(index);
-    Navigator.pop(context); // Chiude il drawer
+    if (!isLargeScreen) Navigator.pop(context); // Chiude il drawer solo su schermi piccoli
   }
 }
 
