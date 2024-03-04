@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "179277367624",
+    "project_id": "alphaness-322423",
+    "storage_bucket": "alphaness-322423.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:179277367624:android:f8d54e86b7dac30430cb7d",
+        "android_client_info": {
+          "package_name": "com.example.alphanessone"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "179277367624-jhd0l477rp0ghdlvtb5hvdpro67s5n3e.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyASzxyOrOUus8G3DL2oLE-N5FG56RY-dhk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "179277367624-3bnlhb52h0nlrngfqjn7e65inmfoc43l.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "179277367624-c8rp756q5jgi7t6oso5lng8l6he2591h.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.alphanessone"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
