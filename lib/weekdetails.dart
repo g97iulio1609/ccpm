@@ -4,7 +4,7 @@ import 'workoutdetails.dart'; // Make sure you have this file in your project
 
 class WeekDetails extends StatefulWidget {
   final String weekId;
-  WeekDetails({Key? key, required this.weekId}) : super(key: key);
+  const WeekDetails({super.key, required this.weekId});
 
   @override
   _WeekDetailsState createState() => _WeekDetailsState();
@@ -47,10 +47,7 @@ class _WeekDetailsState extends State<WeekDetails> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Allenamenti", style: Theme.of(context).textTheme.headlineMedium),
-        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-      ),
+     
       body: Container(
         padding: const EdgeInsets.all(16),
         child: loading

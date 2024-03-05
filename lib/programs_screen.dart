@@ -5,7 +5,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'trainingviewer.dart';  // Assicurati di importare il file correttamente
 
 class ProgramsScreen extends HookConsumerWidget {
-  const ProgramsScreen({Key? key}) : super(key: key);
+  const ProgramsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -24,9 +24,7 @@ class ProgramsScreen extends HookConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Programmi Di Allenamento'),
-      ),
+    
       body: Column(
         children: [
           Padding(

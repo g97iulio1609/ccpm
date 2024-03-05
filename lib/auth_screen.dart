@@ -3,7 +3,6 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-// Assicurati che questo sia il percorso corretto
 
 final authProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
 final googleSignInProvider = Provider<GoogleSignIn>((ref) => GoogleSignIn());
@@ -17,168 +16,208 @@ class AuthScreen extends HookConsumerWidget {
     final userPassword = useState('');
     final userName = useState('');
 
-    // Usa ref.watch per accedere al provider
-    final FirebaseAuth auth = ref.watch(authProvider);
-    final GoogleSignIn googleSignIn = ref.watch(googleSignInProvider);
-
-    void showSnackBar(String message, bool isError) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: isError ? Colors.red : Colors.green,
-        ),
-      );
-    }
-
-    Future<void> trySubmit() async {
-      final isValid = formKey.currentState?.validate();
-      FocusScope.of(context).unfocus();
-
-      if (isValid ?? false) {
-        formKey.currentState?.save();
-        try {
-          if (isLogin.value) {
-            await auth.signInWithEmailAndPassword(
-              email: userEmail.value.trim(),
-              password: userPassword.value.trim(),
-            );
-          } else {
-            await auth.createUserWithEmailAndPassword(
-              email: userEmail.value.trim(),
-              password: userPassword.value.trim(),
-            );
-          }
-          // Non è più necessario navigare qui perché lo stato dell'utente cambia verrà rilevato dallo StreamBuilder in MyApp
-          showSnackBar('Authentication successful', false);
-        } on FirebaseAuthException catch (error) {
-          showSnackBar(error.message ?? 'An error occurred, please try again', true);
-        }
-      }
-    }
-
-    Future<void> signInWithGoogle() async {
-      try {
-        final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-        if (googleUser != null) {
-          final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-          final AuthCredential credential = GoogleAuthProvider.credential(
-            accessToken: googleAuth.accessToken,
-            idToken: googleAuth.idToken,
-          );
-          await auth.signInWithCredential(credential);
-          showSnackBar('Google Sign-In successful', false);
-        }
-      } catch (error) {
-        showSnackBar('Failed to sign in with Google: $error', true);
-      }
-    }
+    final auth = ref.watch(authProvider);
+    final googleSignIn = ref.watch(googleSignInProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(isLogin.value ? 'Login' : 'Sign Up'),
-      ),
+      appBar: AppBar(title: Text(isLogin.value ? 'Login' : 'Sign Up')),
       body: Center(
         child: Card(
           margin: const EdgeInsets.all(20),
           child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (!isLogin.value)
-                      TextFormField(
-                        key: const ValueKey('username'),
-                        validator: (value) {
-                          if (value!.isEmpty || value.length < 4) {
-                            return 'Please enter at least 4 characters';
-                          }
-                          return null;
-                        },
-                        decoration: const InputDecoration(
-                          labelText: 'Username',
-                          border: OutlineInputBorder(),
-                        ),
-                        onSaved: (value) {
-                          userName.value = value!;
-                        },
-                      ),
-                    const SizedBox(height: 10),
-                    TextFormField(
-                      key: const ValueKey('email'),
-                      validator: (value) {
-                        if (value!.isEmpty || !value.contains('@')) {
-                          return 'Please enter a valid email address';
-                        }
-                        return null;
-                      },
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(
-                        labelText: 'Email address',
-                        border: OutlineInputBorder(),
-                      ),
-                      onSaved: (value) {
-                        userEmail.value = value!;
-                      },
-                    ),
-                    const SizedBox(height: 10),
-                    TextFormField(
-                      key: const ValueKey('password'),
-                      validator: (value) {
-                        if (value!.isEmpty || value.length < 7) {
-                          return 'Password must be at least 7 characters long';
-                        }
-                        return null;
-                      },
-                      decoration: const InputDecoration(
-                        labelText: 'Password',
-                        border: OutlineInputBorder(),
-                      ),
-                      obscureText: true,
-                      onSaved: (value) {
-                        userPassword.value = value!;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: trySubmit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-                      ),
-                      child: Text(isLogin.value ? 'Login' : 'Sign Up'),
-                    ),
-                    TextButton(
-                      child: Text(isLogin.value ? 'Create new account' : 'I already have an account'),
-                      onPressed: () {
-                        isLogin.value = !isLogin.value;
-                      },
-                    ),
-                    ElevatedButton(
-                      onPressed: signInWithGoogle,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-                      ),
-                      child: const Text('Sign in with Google'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            padding: const EdgeInsets.all(16),
+            child: AuthForm(formKey: formKey, isLogin: isLogin, auth: auth, googleSignIn: googleSignIn, userEmail: userEmail, userPassword: userPassword, userName: userName),
           ),
         ),
       ),
+    );
+  }
+}
+
+class AuthForm extends StatelessWidget {
+  const AuthForm({
+    super.key,
+    required this.formKey,
+    required this.isLogin,
+    required this.auth,
+    required this.googleSignIn,
+    required this.userEmail,
+    required this.userPassword,
+    required this.userName,
+  });
+
+  final GlobalKey<FormState> formKey;
+  final ValueNotifier<bool> isLogin;
+  final FirebaseAuth auth;
+  final GoogleSignIn googleSignIn;
+  final ValueNotifier<String> userEmail;
+  final ValueNotifier<String> userPassword;
+  final ValueNotifier<String> userName;
+
+  @override
+  Widget build(BuildContext context) {
+    return Form(
+      key: formKey,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (!isLogin.value) UsernameField(userName: userName),
+          const SizedBox(height: 10),
+          EmailField(userEmail: userEmail),
+          const SizedBox(height: 10),
+          PasswordField(userPassword: userPassword),
+          const SizedBox(height: 20),
+          SubmitButton(formKey: formKey, isLogin: isLogin, auth: auth, userEmail: userEmail, userPassword: userPassword),
+          ToggleAuthModeButton(isLogin: isLogin),
+          GoogleSignInButton(googleSignIn: googleSignIn),
+        ],
+      ),
+    );
+  }
+}
+
+class UsernameField extends StatelessWidget {
+  const UsernameField({super.key, required this.userName});
+
+  final ValueNotifier<String> userName;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      key: const ValueKey('username'),
+      validator: (value) => (value == null || value.isEmpty || value.length < 4) ? 'Please enter at least 4 characters' : null,
+      decoration: const InputDecoration(labelText: 'Username', border: OutlineInputBorder()),
+      onSaved: (value) => userName.value = value ?? '',
+    );
+  }
+}
+
+class EmailField extends StatelessWidget {
+  const EmailField({super.key, required this.userEmail});
+
+  final ValueNotifier<String> userEmail;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      key: const ValueKey('email'),
+      validator: (value) => (value == null || value.isEmpty || !value.contains('@')) ? 'Please enter a valid email address' : null,
+      keyboardType: TextInputType.emailAddress,
+      decoration: const InputDecoration(labelText: 'Email address', border: OutlineInputBorder()),
+      onSaved: (value) => userEmail.value = value ?? '',
+    );
+  }
+}
+
+class PasswordField extends StatelessWidget {
+  const PasswordField({super.key, required this.userPassword});
+
+  final ValueNotifier<String> userPassword;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      key: const ValueKey('password'),
+      validator: (value) => (value == null || value.isEmpty || value.length < 7) ? 'Password must be at least 7 characters long' : null,
+      decoration: const InputDecoration(labelText: 'Password', border: OutlineInputBorder()),
+      obscureText: true,
+      onSaved: (value) => userPassword.value = value ?? '',
+    );
+  }
+}
+
+class SubmitButton extends StatelessWidget {
+  const SubmitButton({
+    super.key,
+    required this.formKey,
+    required this.isLogin,
+    required this.auth,
+    required this.userEmail,
+    required this.userPassword,
+  });
+
+  final GlobalKey<FormState> formKey;
+  final ValueNotifier<bool> isLogin;
+  final FirebaseAuth auth;
+  final ValueNotifier<String> userEmail;
+  final ValueNotifier<String> userPassword;
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: () => submit(context),
+      style: ElevatedButton.styleFrom(
+        foregroundColor: Theme.of(context).colorScheme.onPrimary, backgroundColor: Theme.of(context).colorScheme.primary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+      ),
+      child: Text(isLogin.value ? 'Login' : 'Sign Up'),
+    );
+  }
+
+  Future<void> submit(BuildContext context) async {
+    if (formKey.currentState?.validate() ?? false) {
+      formKey.currentState?.save();
+      final email = userEmail.value.trim();
+      final password = userPassword.value.trim();
+      try {
+        if (isLogin.value) {
+          await auth.signInWithEmailAndPassword(email: email, password: password);
+        } else {
+          await auth.createUserWithEmailAndPassword(email: email, password: password);
+        }
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Authentication successful'), backgroundColor: Colors.green));
+      } on FirebaseAuthException catch (error) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message ?? 'An error occurred, please try again'), backgroundColor: Colors.red));
+      }
+    }
+  }
+}
+
+class ToggleAuthModeButton extends StatelessWidget {
+  const ToggleAuthModeButton({super.key, required this.isLogin});
+
+  final ValueNotifier<bool> isLogin;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      child: Text(isLogin.value ? 'Create new account' : 'I already have an account'),
+      onPressed: () => isLogin.value = !isLogin.value,
+    );
+  }
+}
+
+class GoogleSignInButton extends StatelessWidget {
+  const GoogleSignInButton({super.key, required this.googleSignIn});
+
+  final GoogleSignIn googleSignIn;
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: () async {
+        try {
+          final user = await googleSignIn.signIn();
+          if (user != null) {
+            final googleAuth = await user.authentication;
+            final credential = GoogleAuthProvider.credential(
+              accessToken: googleAuth.accessToken,
+              idToken: googleAuth.idToken,
+            );
+            await FirebaseAuth.instance.signInWithCredential(credential);
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Google Sign-In successful'), backgroundColor: Colors.green));
+          }
+        } catch (error) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to sign in with Google: $error'), backgroundColor: Colors.red));
+        }
+      },
+      style: ElevatedButton.styleFrom(
+        foregroundColor: Colors.black, backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+      ),
+      child: const Text('Sign in with Google'),
     );
   }
 }

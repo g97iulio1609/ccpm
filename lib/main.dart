@@ -14,10 +14,12 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(ProviderScope(child: MyApp())); // Avvolgi MyApp con ProviderScope
+  runApp(const ProviderScope(child: MyApp())); // Avvolgi MyApp con ProviderScope
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     final ThemeData lightTheme = ThemeData(
@@ -58,7 +60,7 @@ class MyApp extends StatelessWidget {
         '/auth': (context) => AuthScreen(),
         '/home': (context) => const HomeScreen(),
         '/exercises_list': (context) => ExercisesList(), // Aggiungi la route per ExercisesList
-                '/maxrmdashboard': (context) => MaxRMDashboard(), // Aggiungi la route per ExercisesList
+                '/maxrmdashboard': (context) => const MaxRMDashboard(), // Aggiungi la route per ExercisesList
 
       },
     );

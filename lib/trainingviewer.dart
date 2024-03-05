@@ -4,7 +4,7 @@ import 'weekdetails.dart'; // Assicurati di importare WeekDetails
 
 class TrainingViewer extends StatefulWidget {
   final String programId; // ID del programma di allenamento
-  TrainingViewer({Key? key, required this.programId}) : super(key: key);
+  const TrainingViewer({super.key, required this.programId});
 
   @override
   _TrainingViewerState createState() => _TrainingViewerState();
@@ -43,10 +43,7 @@ class _TrainingViewerState extends State<TrainingViewer> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Settimane", style: Theme.of(context).textTheme.headlineMedium),
-        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-      ),
+     
       body: Container(
         padding: const EdgeInsets.all(16),
         child: loading

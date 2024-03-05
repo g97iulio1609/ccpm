@@ -61,7 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Row(
         children: [
           if (isLargeScreen)
-            Container(
+            SizedBox(
               width: 300,
               child: _buildDrawer(isLargeScreen),
             ),
@@ -143,10 +143,10 @@ class TabNavigator extends StatelessWidget {
         child = ExercisesList(); // Esercizi
         break;
       case 2:
-        child = MaxRMDashboard(); // Massimali
+        child = const MaxRMDashboard(); // Massimali
         break;
       case 3:
-        child = UserProfile(); // Profilo Utente
+        child = const UserProfile(); // Profilo Utente
         break;
       default:
         child = const ProgramsScreen(); // Default a Allenamenti se non corrisponde

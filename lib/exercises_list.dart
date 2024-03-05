@@ -82,10 +82,7 @@ class ExercisesList extends HookConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Exercises List'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-      ),
+     
       body: SingleChildScrollView(
         child: Column(
           children: [

@@ -55,6 +55,8 @@ class ExerciseRecord {
 }
 
 class MaxRMDashboard extends HookConsumerWidget {
+  const MaxRMDashboard({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final FirebaseAuth auth = ref.watch(authProvider);
@@ -82,9 +84,7 @@ class MaxRMDashboard extends HookConsumerWidget {
       });
     }
    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard Massimali'),
-      ),
+ 
       body: Column(
         children: [
           // Dropdown per selezionare l'esercizio direttamente nel form
@@ -176,7 +176,7 @@ Widget _buildAllExercisesMaxRMs(WidgetRef ref) {
             }
             var allRecords = snapshot.data!.expand((x) => x).toList();
             var width = MediaQuery.of(context).size.width;
-            int crossAxisCount = width > 1200 ? 4 : width > 800 ? 3 : 2;
+            int crossAxisCount = width > 1200 ? 4 : width > 800 ? 3 : width > 600 ? 2 : 1;
 
             return GridView.builder(
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(

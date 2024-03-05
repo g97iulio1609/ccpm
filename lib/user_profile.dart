@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class UserProfile extends StatefulWidget {
+  const UserProfile({super.key});
+
   @override
   _UserProfileState createState() => _UserProfileState();
 }
@@ -46,10 +48,7 @@ class _UserProfileState extends State<UserProfile> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profilo Utente'),
-        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-      ),
+
       body: userProfileData == null
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -61,7 +60,7 @@ class _UserProfileState extends State<UserProfile> {
                     radius: 50,
                   ),
                   const SizedBox(height: 20),
-                  ...userProfileData!.keys.map((field) => buildEditableField(field, _controllers[field]!)).toList(),
+                  ...userProfileData!.keys.map((field) => buildEditableField(field, _controllers[field]!)),
                 ],
               ),
             ),

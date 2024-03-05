@@ -7,7 +7,7 @@ import 'package:flutter/services.dart'; // Import for text input formatters
 class WorkoutDetails extends StatefulWidget {
   final String workoutId;
 
-  const WorkoutDetails({Key? key, required this.workoutId}) : super(key: key);
+  const WorkoutDetails({super.key, required this.workoutId});
 
   @override
   State<WorkoutDetails> createState() => _WorkoutDetailsState();
@@ -93,11 +93,7 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Dettagli dell'allenamento", style: GoogleFonts.roboto()),
-        centerTitle: true,
-        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-      ),
+  
       body: Container(
         padding: const EdgeInsets.all(16),
         child: loading
@@ -198,7 +194,7 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                                           labelText: 'Peso usato',
                                           border: OutlineInputBorder(),
                                         ),
-                                        keyboardType: TextInputType.numberWithOptions(decimal: true),
+                                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                         onChanged: (value) { // Update on change
                                           updateSeriesData(series['id'], series['done'] ?? false, int.tryParse(repsController.text), double.tryParse(value));
                                         },
