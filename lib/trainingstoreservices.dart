@@ -129,82 +129,121 @@ class FirestoreService {
    return snapshot.docs.map((doc) => Series.fromFirestore(doc)).toList();
  }
 
- Future<void> addOrUpdateTrainingProgram(TrainingProgram program) async {
-   if (program.id == null) {
-     // If the ID is null, then it's a new document and needs to be added
-     var ref = await _db.collection('programs').add({
-       'name': program.name,
-       'description': program.description,
-       'athleteId': program.athleteId,
-       'mesocycleNumber': program.mesocycleNumber,
-       'createdAt': FieldValue.serverTimestamp(), // Add a server timestamp
-     });
-     program.id = ref.id; // Update the program's ID with the new document ID
-   } else {
-     // If the ID is not null, then the document exists and needs to be updated
-     await _db.collection('programs').doc(program.id).update({
-       'name': program.name,
-       'description': program.description,
-       'athleteId': program.athleteId,
-       'mesocycleNumber': program.mesocycleNumber,
-       // Note: createdAt is not updated in an update operation
-     });
-   }
+Future<void> addOrUpdateTrainingProgram(TrainingProgram program) async {
+  FirebaseFirestore _db = FirebaseFirestore.instance;
 
-   // Handle the weeks data
-   if (program.weeks != null) {
-     for (var week in program.weeks!) {
-       if (week.id == null) {
-         // If the week ID is null, it's a new week and needs to be added
-         var weekRef = await addWeekToProgram(program.id!, week.toMap());
-         week.id = weekRef;
-       } else {
-         // If the week ID is not null, the week exists and needs to be updated
-         await updateWeek(week.id!, week.toMap());
-       }
+  // Create or update the program document
+  DocumentReference programRef;
+  if (program.id == null) {
+    // New program
+    programRef = await _db.collection('programs').add({
+      'name': program.name,
+      'description': program.description,
+      'athleteId': program.athleteId,
+      'mesocycleNumber': program.mesocycleNumber,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+    program.id = programRef.id;
+  } else {
+    // Existing program
+    programRef = _db.collection('programs').doc(program.id);
+    await programRef.update({
+      'name': program.name,
+      'description': program.description,
+      'athleteId': program.athleteId,
+      'mesocycleNumber': program.mesocycleNumber,
+    });
+  }
 
-       // Handle the workouts data
-       if (week.workouts != null) {
-         for (var workout in week.workouts!) {
-           if (workout.id == null) {
-             // If the workout ID is null, it's a new workout and needs to be added
-             var workoutRef = await addWorkoutToWeek(week.id!, workout.toMap());
-             workout.id = workoutRef;
-           } else {
-             // If the workout ID is not null, the workout exists and needs to be updated
-             await updateWorkout(workout.id!, workout.toMap());
-           }
+  // Iterate through each week and add or update them independently
+  for (var week in program.weeks) {
+    DocumentReference weekRef;
+    if (week.id == null) {
+      // New week
+      weekRef = await _db.collection('weeks').add({
+        'number': week.number,
+        'programId': program.id,
+        'createdAt': Timestamp.now(),
+      });
+      week.id = weekRef.id;
+    } else {
+      // Existing week
+      weekRef = _db.collection('weeks').doc(week.id);
+      await weekRef.update({
+        'number': week.number,
+        'programId': program.id,
+      });
+    }
 
-           // Handle the exercises data
-           if (workout.exercises != null) {
-             for (var exercise in workout.exercises!) {
-               if (exercise.id == null) {
-                 // If the exercise ID is null, it's a new exercise and needs to be added
-                 var exerciseRef = await addExerciseToWorkout(workout.id!, exercise.toMap());
-                 exercise.id = exerciseRef;
-               } else {
-                 // If the exercise ID is not null, the exercise exists and needs to be updated
-                 await updateExercise(exercise.id!, exercise.toMap());
-               }
+    // Iterate through each workout and add or update them independently
+    for (var workout in week.workouts) {
+      DocumentReference workoutRef;
+      if (workout.id == null) {
+        // New workout
+        workoutRef = await _db.collection('workouts').add({
+          'order': workout.order,
+          'weekId': week.id,
+          'createdAt': Timestamp.now(),
+        });
+        workout.id = workoutRef.id;
+      } else {
+        // Existing workout
+        workoutRef = _db.collection('workouts').doc(workout.id);
+        await workoutRef.update({
+          'order': workout.order,
+          'weekId': week.id,
+        });
+      }
 
-               // Handle the series data
-               if (exercise.series != null) {
-                 for (var series in exercise.series!) {
-                   if (series.id == null) {
-                     // If the series ID is null, it's a new series and needs to be added
-                     var seriesRef = await addSeriesToExercise(exercise.id!, series.toMap());
-                     series.id = seriesRef;
-                   } else {
-                     // If the series ID is not null, the series exists and needs to be updated
-                     await updateSeries(series.id!, series.toMap());
-                   }
-                 }
-               }
-             }
-           }
-         }
-       }
-     }
-   }
- }
+      // Iterate through each exercise and add or update them independently
+      for (var exercise in workout.exercises) {
+        DocumentReference exerciseRef;
+        if (exercise.id == null) {
+          // New exercise
+          exerciseRef = await _db.collection('exercisesWorkout').add({
+            'order': exercise.order,
+            'variant': exercise.variant,
+            'workoutId': workout.id,
+            'createdAt': Timestamp.now(),
+          });
+          exercise.id = exerciseRef.id;
+        } else {
+          // Existing exercise
+          exerciseRef = _db.collection('exercisesWorkout').doc(exercise.id);
+          await exerciseRef.update({
+            'order': exercise.order,
+            'variant': exercise.variant,
+            'workoutId': workout.id,
+          });
+        }
+
+        // Iterate through each series and add or update them independently
+        for (var series in exercise.series) {
+          if (series.id == null) {
+            // New series
+            await _db.collection('series').add({
+              'reps': series.reps,
+              'sets': series.sets,
+              'intensity': series.intensity,
+              'rpe': series.rpe,
+              'weight': series.weight,
+              'exerciseId': exercise.id,
+              'createdAt': Timestamp.now(),
+            });
+          } else {
+            // Existing series
+            await _db.collection('series').doc(series.id).update({
+              'reps': series.reps,
+              'sets': series.sets,
+              'intensity': series.intensity,
+              'rpe': series.rpe,
+              'weight': series.weight,
+              'exerciseId': exercise.id,
+            });
+          }
+        }
+      }
+    }
+  }
+}
 }

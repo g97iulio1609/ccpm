@@ -162,10 +162,10 @@ class Series {
   String intensity;
   String rpe;
   double weight;
-  bool done;
-  int reps_done;
-  double weight_done;
-  int order;
+ // bool done;
+  //int reps_done;
+  //double weight_done;
+  //int order;
 
   Series({
     this.id,
@@ -174,10 +174,10 @@ class Series {
     required this.intensity,
     required this.rpe,
     required this.weight,
-    required this.done,
-    required this.reps_done,
-    required this.weight_done,
-    required this.order,
+   // required this.done,
+   // required this.reps_done,
+    //required this.weight_done,
+    //required this.order,
   });
 
   factory Series.fromMap(Map<String, dynamic> map) {
@@ -188,10 +188,10 @@ class Series {
       intensity: map['intensity'],
       rpe: map['rpe'],
       weight: map['weight'].toDouble(),
-      done: map['done'],
-      reps_done: map['reps_done'],
-      weight_done: map['weight_done'].toDouble(),
-      order: map['order'],
+    //  done: map['done'],
+     // reps_done: map['reps_done'],
+     // weight_done: map['weight_done'].toDouble(),
+     // order: map['order'],
     );
   }
 
@@ -204,10 +204,10 @@ class Series {
       intensity: data['intensity'],
       rpe: data['rpe'],
       weight: data.containsKey('weight') ? (data['weight'] ?? 0).toDouble() : 0.0, // Check for null and convert to double
-      done: data['done'],
-      reps_done: data['reps_done'],
-      weight_done: data.containsKey('weight_done') ? (data['weight_done'] ?? 0).toDouble() : 0.0, // Check for null and convert
-      order: data['order'],
+    //  done: data['done'],
+      //reps_done: data['reps_done'],
+      //weight_done: data.containsKey('weight_done') ? (data['weight_done'] ?? 0).toDouble() : 0.0, // Check for null and convert
+      //order: data['order'],
     );
   }
 
@@ -219,10 +219,10 @@ class Series {
       'intensity': intensity,
       'rpe': rpe,
       'weight': weight,
-      'done': done,
-      'reps_done': reps_done,
-      'weight_done': weight_done,
-      'order': order,
+     // 'done': done,
+      //'reps_done': reps_done,
+      //'weight_done': weight_done,
+      //'order': order,
     };
   }
 }

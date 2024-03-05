@@ -1,4 +1,3 @@
-// trainingprogram.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -27,27 +26,25 @@ class TrainingProgramPage extends ConsumerWidget {
     final firestoreService = ref.read(firestoreServiceProvider);
     final weekList = ref.watch(weekListProvider);
 
+    void addWeek() {
+      final newWeek = {
+        'number': weekList.length + 1,
+        'createdAt': Timestamp.now(),
+        'workouts': [],
+      };
+      ref.read(weekListProvider.notifier).state = [...weekList, newWeek];
+    }
 
-void addWeek() {
-  final newWeek = {
-    'number': weekList.length + 1,
-    'createdAt': Timestamp.now(),
-    'workouts': [],
-  };
-  ref.read(weekListProvider.notifier).state = [...weekList, newWeek];
-}
-
-void addWorkout(int weekIndex) {
-  final newWorkout = {
-    'order': weekList[weekIndex]['workouts'].length + 1,
-    'createdAt': Timestamp.now(),
-    'exercises': [],
-  };
-  List<Map<String, dynamic>> updatedWeekList = [...weekList];
-  updatedWeekList[weekIndex]['workouts'].add(newWorkout);
-  ref.read(weekListProvider.notifier).state = updatedWeekList;
-}
-
+    void addWorkout(int weekIndex) {
+      final newWorkout = {
+        'order': weekList[weekIndex]['workouts'].length + 1,
+        'createdAt': Timestamp.now(),
+        'exercises': [],
+      };
+      List<Map<String, dynamic>> updatedWeekList = [...weekList];
+      updatedWeekList[weekIndex]['workouts'].add(newWorkout);
+      ref.read(weekListProvider.notifier).state = updatedWeekList;
+    }
 
     void addExercise(int weekIndex, int workoutIndex, BuildContext context) {
       showDialog(
@@ -101,7 +98,7 @@ void addWorkout(int weekIndex) {
       );
     }
 
-        void addSeries(int weekIndex, int workoutIndex, int exerciseIndex, BuildContext context) {
+    void addSeries(int weekIndex, int workoutIndex, int exerciseIndex, BuildContext context) {
       showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -172,7 +169,6 @@ void addWorkout(int weekIndex) {
       );
     }
 
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Add/Edit Training Program'),
@@ -182,6 +178,7 @@ void addWorkout(int weekIndex) {
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               TextFormField(
                 controller: nameController,
@@ -204,30 +201,28 @@ void addWorkout(int weekIndex) {
                 keyboardType: TextInputType.number,
                 validator: (value) => value?.isEmpty ?? true ? 'Please enter a mesocycle number' : null,
               ),
+              ElevatedButton(
+                onPressed: addWeek,
+                child: Text('Add New Week'),
+              ),
               ...weekList.map((week) => ExpansionTile(
                 title: Text('Week ${week['number']}'),
-                subtitle: Text('Added on ${week['createdAt'] is Timestamp ? (week['createdAt'] as Timestamp).toDate().toString() : 'Pending'}'),
                 children: [
-                  ...week['workouts'].asMap().entries.map((workoutEntry) {
+                  ...(week['workouts'] as List).asMap().entries.map((workoutEntry) {
                     int workoutIndex = workoutEntry.key;
                     Map<String, dynamic> workout = workoutEntry.value;
-
                     return ExpansionTile(
                       title: Text('Workout ${workout['order']}'),
-                      subtitle: Text('Added on ${workout['createdAt'] is Timestamp ? (workout['createdAt'] as Timestamp).toDate().toString() : 'Pending'}'),
                       children: [
-                        ...workout['exercises'].asMap().entries.map((exerciseEntry) {
+                        ...(workout['exercises'] as List).asMap().entries.map((exerciseEntry) {
                           int exerciseIndex = exerciseEntry.key;
                           Map<String, dynamic> exercise = exerciseEntry.value;
-
                           return ExpansionTile(
-                            title: Text('${exercise['exercise']} ${exercise['variant']}'),
-                            subtitle: Text('Added on ${exercise['createdAt'] is Timestamp ? (exercise['createdAt'] as Timestamp).toDate().toString() : 'Pending'}'),
+                            title: Text('Exercise ${exercise['order']}: ${exercise['exercise']}'),
                             children: [
-                              ...exercise['series'].map((series) {
+                              ...(exercise['series'] as List).map((series) {
                                 return ListTile(
-                                  title: Text('Series: Sets ${series['sets']}, Reps ${series['reps']}, Weight ${series['weight']}'),
-                                  subtitle: Text('Intensity: ${series['intensity']}, RPE: ${series['rpe']}'),
+                                  title: Text('Series: Sets ${series['sets']}, Reps ${series['reps']}'),
                                 );
                               }).toList(),
                               ElevatedButton(
@@ -245,9 +240,7 @@ void addWorkout(int weekIndex) {
                     );
                   }).toList(),
                   ElevatedButton(
-                    onPressed: () {
-                      addWorkout(weekList.indexOf(week));
-                    },
+                    onPressed: () => addWorkout(weekList.indexOf(week)),
                     child: const Text('Add New Workout'),
                   ),
                 ],
