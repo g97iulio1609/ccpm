@@ -83,69 +83,84 @@ class MaxRMDashboard extends HookConsumerWidget {
         'userId': userId,
       });
     }
-   return Scaffold(
- 
-      body: Column(
-        children: [
-          // Dropdown per selezionare l'esercizio direttamente nel form
-          exercisesAsyncValue.when(
-            data: (exercises) {
-              return DropdownButtonFormField<Exercise>(
-                value: selectedExerciseController.value,
-                decoration: const InputDecoration(labelText: 'Seleziona esercizio'),
-                onChanged: (Exercise? newValue) {
-                  selectedExerciseController.value = newValue;
-                },
-                items: exercises.map<DropdownMenuItem<Exercise>>((Exercise exercise) {
-                  return DropdownMenuItem<Exercise>(
-                    value: exercise,
-                    child: Text(exercise.name),
+
+    return Scaffold(
+      body: Padding(
+        padding: const EdgeInsets.all(16.0), // Aggiungi il padding qui
+        child: Column(
+          children: [
+            Padding( // Aggiungi il padding per ogni elemento dell'UI
+              padding: const EdgeInsets.only(bottom: 16.0), // Aggiungi spazio sotto il dropdown
+              child: exercisesAsyncValue.when(
+                data: (exercises) {
+                  return DropdownButtonFormField<Exercise>(
+                    value: selectedExerciseController.value,
+                    decoration: const InputDecoration(labelText: 'Seleziona esercizio'),
+                    onChanged: (Exercise? newValue) {
+                      selectedExerciseController.value = newValue;
+                    },
+                    items: exercises.map<DropdownMenuItem<Exercise>>((Exercise exercise) {
+                      return DropdownMenuItem<Exercise>(
+                        value: exercise,
+                        child: Text(exercise.name),
+                      );
+                    }).toList(),
                   );
-                }).toList(),
-              );
-            },
-            loading: () => const CircularProgressIndicator(),
-            error: (error, stack) => const Text("Errore nel caricamento degli esercizi"),
-          ),
-          TextField(
-            controller: maxWeightController,
-            decoration: const InputDecoration(labelText: 'Inserisci il massimo peso sollevato'),
-            keyboardType: TextInputType.number,
-          ),
-          TextField(
-            controller: repetitionsController,
-            decoration: const InputDecoration(labelText: 'Inserisci il numero di ripetizioni'),
-            keyboardType: TextInputType.number,
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final int repetitions = int.tryParse(repetitionsController.text) ?? 0;
-              int maxWeight = int.tryParse(maxWeightController.text) ?? 0;
-              if (repetitions > 1) {
-                // Calcola il massimale indiretto basato sul numero di ripetizioni e sul peso
-                maxWeight = (maxWeight / (1.0278 - (0.0278 * repetitions))).round();
-              }
-              final Exercise? selectedExercise = selectedExerciseController.value;
-              if (user != null && selectedExercise != null && maxWeight > 0) {
-                addRecord(
-                  userId: user.uid,
-                  exerciseId: selectedExercise.id,
-                  exerciseName: selectedExercise.name,
-                  maxWeight: maxWeight,
-                  repetitions: 1, // Setta le ripetizioni a 1 dopo il calcolo
-                );
-                maxWeightController.clear();
-                repetitionsController.clear();
-                selectedExerciseController.value = null; // Pulisci la selezione
-              }
-            },
-            child: const Text('Aggiungi Record'),
-          ),
-          _buildAllExercisesMaxRMs(ref),
-        ],
+                },
+                loading: () => const CircularProgressIndicator(),
+                error: (error, stack) => const Text("Errore nel caricamento degli esercizi"),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0), // Aggiungi spazio sotto il campo di testo
+              child: TextField(
+                controller: maxWeightController,
+                decoration: const InputDecoration(labelText: 'Inserisci il massimo peso sollevato'),
+                keyboardType: TextInputType.number,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0), // Aggiungi spazio sotto il campo di testo
+              child: TextField(
+                controller: repetitionsController,
+                decoration: const InputDecoration(labelText: 'Inserisci il numero di ripetizioni'),
+                keyboardType: TextInputType.number,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0), // Aggiungi spazio sotto il pulsante
+              child: ElevatedButton(
+                onPressed: () {
+                  final int repetitions = int.tryParse(repetitionsController.text) ?? 0;
+                  int maxWeight = int.tryParse(maxWeightController.text) ?? 0;
+                  if (repetitions > 1) {
+                    // Calcola il massimale indiretto basato sul numero di ripetizioni e sul peso
+                    maxWeight = (maxWeight / (1.0278 - (0.0278 * repetitions))).round();
+                  }
+                  final Exercise? selectedExercise = selectedExerciseController.value;
+                  if (user != null && selectedExercise != null && maxWeight > 0) {
+                    addRecord(
+                      userId: user.uid,
+                      exerciseId: selectedExercise.id,
+                      exerciseName: selectedExercise.name,
+                      maxWeight: maxWeight,
+                      repetitions: 1, // Setta le ripetizioni a 1 dopo il calcolo
+                    );
+                    maxWeightController.clear();
+                    repetitionsController.clear();
+                    selectedExerciseController.value = null; // Pulisci la selezione
+                  }
+                },
+                child: const Text('Aggiungi Record'),
+              ),
+            ),
+            _buildAllExercisesMaxRMs(ref),
+          ],
+        ),
       ),
     );
   }
+
 Widget _buildAllExercisesMaxRMs(WidgetRef ref) {
   final FirebaseAuth auth = ref.watch(authProvider);
   final User? user = auth.currentUser;

@@ -3,6 +3,8 @@ import 'programs_screen.dart'; // Allenamenti
 import 'user_profile.dart'; // Profilo Utente
 import 'exercises_list.dart'; // Esercizi
 import 'maxrmdashboard.dart'; // Massimali
+import 'trainingprogram.dart'; // Massimali
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,6 +20,8 @@ class _HomeScreenState extends State<HomeScreen> {
     GlobalKey<NavigatorState>(), // Esercizi
     GlobalKey<NavigatorState>(), // Massimali
     GlobalKey<NavigatorState>(), // Profilo Utente
+        GlobalKey<NavigatorState>(), // TrainingProgram
+
   ];
 
   // Definire i titoli delle pagine
@@ -26,6 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
     'Esercizi',
     'Massimali',
     'Profilo Utente',
+    'TrainigProgram'
   ];
 
   void _onItemTapped(int index) {
@@ -99,6 +104,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ListTile(title: const Text('Esercizi'), onTap: () => _navigateTo(1, isLargeScreen)),
               ListTile(title: const Text('Massimali'), onTap: () => _navigateTo(2, isLargeScreen)),
               ListTile(title: const Text('Profilo Utente'), onTap: () => _navigateTo(3, isLargeScreen)),
+                            ListTile(title: const Text('TrainingProgram'), onTap: () => _navigateTo(4, isLargeScreen)),
+
               ListTile(title: const Text('Allenamenti'), onTap: () => _navigateTo(0, isLargeScreen)),
             ],
           ),
@@ -147,6 +154,9 @@ class TabNavigator extends StatelessWidget {
         break;
       case 3:
         child = const UserProfile(); // Profilo Utente
+        break;
+        case 4:
+        child = TrainingProgramPage(); // Profilo Utente
         break;
       default:
         child = const ProgramsScreen(); // Default a Allenamenti se non corrisponde
