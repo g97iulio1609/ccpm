@@ -1,3 +1,4 @@
+// ignore: file_names
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class TrainingProgram {
@@ -120,14 +121,16 @@ class Workout {
 
 class Exercise {
   String? id;
+  String name;
   String variant;
   int order;
   List<Series> series;
 
-  Exercise({this.id, required this.variant, required this.order, required this.series});
+  Exercise({this.id, required this.name, required this.variant, required this.order, required this.series});
 
   factory Exercise.fromMap(Map<String, dynamic> map) {
     return Exercise(
+      name:map['name'],
       id: map['id'],
       variant: map['variant'],
       order: map['order'],
@@ -139,6 +142,7 @@ class Exercise {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return Exercise(
       id: doc.id,
+      name:data['name'],
       variant: data['variant'],
       order: data['order'],
       series: (data['series'] as List<dynamic>? ?? []).map((doc) => Series.fromFirestore(doc)).toList(),
@@ -148,6 +152,7 @@ class Exercise {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+      'name':name,
       'variant': variant,
       'order': order,
       'series': series.map((x) => x.toMap()).toList(),

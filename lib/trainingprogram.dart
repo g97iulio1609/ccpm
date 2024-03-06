@@ -82,7 +82,7 @@ class TrainingProgramPage extends ConsumerWidget {
                   final newExercise = {
                     'order': weekList[weekIndex]['workouts'][workoutIndex]['exercises'].length + 1,
                     'createdAt': Timestamp.now(),
-                    'exercise': exerciseController.text,
+                    'name': exerciseController.text,
                     'variant': variantController.text,
                     'series': [],
                   };
@@ -203,7 +203,7 @@ class TrainingProgramPage extends ConsumerWidget {
               ),
               ElevatedButton(
                 onPressed: addWeek,
-                child: Text('Add New Week'),
+                child: const Text('Add New Week'),
               ),
               ...weekList.map((week) => ExpansionTile(
                 title: Text('Week ${week['number']}'),
@@ -218,11 +218,11 @@ class TrainingProgramPage extends ConsumerWidget {
                           int exerciseIndex = exerciseEntry.key;
                           Map<String, dynamic> exercise = exerciseEntry.value;
                           return ExpansionTile(
-                            title: Text('Exercise ${exercise['order']}: ${exercise['exercise']}'),
+                            title: Text('Exercise ${exercise['order']}: ${exercise['name']} ${exercise['variant']}'),
                             children: [
                               ...(exercise['series'] as List).map((series) {
                                 return ListTile(
-                                  title: Text('Series: Sets ${series['sets']}, Reps ${series['reps']}'),
+                                  title: Text('Series: Sets ${series['sets']} x Reps ${series['reps']} x ${series['weight']} Kg'),
                                 );
                               }).toList(),
                               ElevatedButton(

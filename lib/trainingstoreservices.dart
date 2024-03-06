@@ -201,6 +201,7 @@ Future<void> addOrUpdateTrainingProgram(TrainingProgram program) async {
         if (exercise.id == null) {
           // New exercise
           exerciseRef = await _db.collection('exercisesWorkout').add({
+            'name':exercise.name,
             'order': exercise.order,
             'variant': exercise.variant,
             'workoutId': workout.id,
@@ -211,6 +212,7 @@ Future<void> addOrUpdateTrainingProgram(TrainingProgram program) async {
           // Existing exercise
           exerciseRef = _db.collection('exercisesWorkout').doc(exercise.id);
           await exerciseRef.update({
+            'name':exercise.name,
             'order': exercise.order,
             'variant': exercise.variant,
             'workoutId': workout.id,
@@ -239,6 +241,7 @@ Future<void> addOrUpdateTrainingProgram(TrainingProgram program) async {
               'rpe': series.rpe,
               'weight': series.weight,
               'exerciseId': exercise.id,
+              
             });
           }
         }

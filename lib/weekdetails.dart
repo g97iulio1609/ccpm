@@ -35,7 +35,7 @@ class _WeekDetailsState extends State<WeekDetails> {
         .map((doc) => {
           'id': doc.id,
           ...doc.data() as Map<String, dynamic>,
-          'order': doc['order'] + 1, // Incrementing week index by 1
+          'order': doc['order'] , // Incrementing week index by 1
         })
         .toList();
 
