@@ -231,6 +231,7 @@ Future<void> addOrUpdateTrainingProgram(TrainingProgram program) async {
               'weight': series.weight,
               'exerciseId': exercise.id,
               'createdAt': Timestamp.now(),
+              'order':series.order
             });
           } else {
             // Existing series
@@ -241,6 +242,8 @@ Future<void> addOrUpdateTrainingProgram(TrainingProgram program) async {
               'rpe': series.rpe,
               'weight': series.weight,
               'exerciseId': exercise.id,
+              'order':series.order
+
               
             });
           }

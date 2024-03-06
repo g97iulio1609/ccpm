@@ -170,7 +170,7 @@ class Series {
  // bool done;
   //int reps_done;
   //double weight_done;
-  //int order;
+  int order;
 
   Series({
     this.id,
@@ -182,7 +182,7 @@ class Series {
    // required this.done,
    // required this.reps_done,
     //required this.weight_done,
-    //required this.order,
+    required this.order,
   });
 
   factory Series.fromMap(Map<String, dynamic> map) {
@@ -196,7 +196,7 @@ class Series {
     //  done: map['done'],
      // reps_done: map['reps_done'],
      // weight_done: map['weight_done'].toDouble(),
-     // order: map['order'],
+      order: map['order'],
     );
   }
 
@@ -212,7 +212,7 @@ class Series {
     //  done: data['done'],
       //reps_done: data['reps_done'],
       //weight_done: data.containsKey('weight_done') ? (data['weight_done'] ?? 0).toDouble() : 0.0, // Check for null and convert
-      //order: data['order'],
+      order: data['order'],
     );
   }
 
@@ -227,7 +227,7 @@ class Series {
      // 'done': done,
       //'reps_done': reps_done,
       //'weight_done': weight_done,
-      //'order': order,
+      'order': order,
     };
   }
 }

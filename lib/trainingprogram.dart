@@ -98,76 +98,77 @@ class TrainingProgramPage extends ConsumerWidget {
       );
     }
 
-    void addSeries(int weekIndex, int workoutIndex, int exerciseIndex, BuildContext context) {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          final repsController = TextEditingController();
-          final setsController = TextEditingController();
-          final intensityController = TextEditingController();
-          final rpeController = TextEditingController();
-          final weightController = TextEditingController();
+void addSeries(int weekIndex, int workoutIndex, int exerciseIndex, BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      final repsController = TextEditingController();
+      final setsController = TextEditingController();
+      final intensityController = TextEditingController();
+      final rpeController = TextEditingController();
+      final weightController = TextEditingController();
 
-          return AlertDialog(
-            title: const Text('Add New Series'),
-            content: SingleChildScrollView(
-              child: ListBody(
-                children: <Widget>[
-                  TextFormField(
-                    controller: repsController,
-                    decoration: const InputDecoration(labelText: 'Reps'),
-                    keyboardType: TextInputType.number,
-                  ),
-                  TextFormField(
-                    controller: setsController,
-                    decoration: const InputDecoration(labelText: 'Sets'),
-                    keyboardType: TextInputType.number,
-                  ),
-                  TextFormField(
-                    controller: intensityController,
-                    decoration: const InputDecoration(labelText: 'Intensity'),
-                  ),
-                  TextFormField(
-                    controller: rpeController,
-                    decoration: const InputDecoration(labelText: 'RPE'),
-                  ),
-                  TextFormField(
-                    controller: weightController,
-                    decoration: const InputDecoration(labelText: 'Weight (kg)'),
-                    keyboardType: TextInputType.number,
-                  ),
-                ],
+      return AlertDialog(
+        title: const Text('Add New Series'),
+        content: SingleChildScrollView(
+          child: ListBody(
+            children: <Widget>[
+              TextFormField(
+                controller: repsController,
+                decoration: const InputDecoration(labelText: 'Reps'),
+                keyboardType: TextInputType.number,
               ),
-            ),
-            actions: <Widget>[
-              TextButton(
-                child: const Text('Cancel'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
+              TextFormField(
+                controller: setsController,
+                decoration: const InputDecoration(labelText: 'Sets'),
+                keyboardType: TextInputType.number,
               ),
-              TextButton(
-                child: const Text('Add'),
-                onPressed: () {
-                  final newSeries = {
-                    'reps': int.parse(repsController.text),
-                    'sets': int.parse(setsController.text),
-                    'intensity': intensityController.text,
-                    'rpe': rpeController.text,
-                    'weight': double.parse(weightController.text),
-                    'createdAt': Timestamp.now(),
-                  };
-                  List<Map<String, dynamic>> updatedWeekList = [...weekList];
-                  updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'].add(newSeries);
-                  ref.read(weekListProvider.notifier).state = updatedWeekList;
-                  Navigator.of(context).pop();
-                },
+              TextFormField(
+                controller: intensityController,
+                decoration: const InputDecoration(labelText: 'Intensity'),
+              ),
+              TextFormField(
+                controller: rpeController,
+                decoration: const InputDecoration(labelText: 'RPE'),
+              ),
+              TextFormField(
+                controller: weightController,
+                decoration: const InputDecoration(labelText: 'Weight (kg)'),
+                keyboardType: TextInputType.number,
               ),
             ],
-          );
-        },
+          ),
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('Cancel'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+          TextButton(
+            child: const Text('Add'),
+            onPressed: () {
+              final newSeries = {
+                'reps': int.parse(repsController.text),
+                'sets': int.parse(setsController.text),
+                'intensity': intensityController.text,
+                'rpe': rpeController.text,
+                'weight': double.parse(weightController.text),
+                'createdAt': Timestamp.now(),
+                'order': weekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'].length + 1, // Modificato per aggiungere l'ordine
+              };
+              List<Map<String, dynamic>> updatedWeekList = [...weekList];
+              updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'].add(newSeries);
+              ref.read(weekListProvider.notifier).state = updatedWeekList;
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
       );
-    }
+    },
+  );
+}
 
     return Scaffold(
       appBar: AppBar(
