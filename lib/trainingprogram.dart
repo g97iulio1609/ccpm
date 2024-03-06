@@ -1,12 +1,22 @@
+import 'package:alphanessone/exercise_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'trainingprogrammodel.dart';
 import 'trainingstoreservices.dart';
+import 'exercisesServices.dart'; // Aggiungi il percorso corretto se il file si trova in una sottocartella
+
 
 final firestoreServiceProvider = Provider<FirestoreService>((ref) {
   return FirestoreService();
 });
+
+final exercisesStreamProvider = StreamProvider<List<ExerciseModel>>((ref) {
+  final exercisesService = ref.watch(exercisesServiceProvider);
+  return exercisesService.getExercises();
+});
+
+
 
 final weekListProvider = StateProvider<List<Map<String, dynamic>>>((ref) {
   return [];
@@ -46,57 +56,94 @@ class TrainingProgramPage extends ConsumerWidget {
       ref.read(weekListProvider.notifier).state = updatedWeekList;
     }
 
-    void addExercise(int weekIndex, int workoutIndex, BuildContext context) {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          final exerciseController = TextEditingController();
-          final variantController = TextEditingController();
+void addExercise(int weekIndex, int workoutIndex, BuildContext context, WidgetRef ref) {
+  final exerciseController = TextEditingController();
+  final variantController = TextEditingController();
 
-          return AlertDialog(
-            title: const Text('Add New Exercise'),
-            content: SingleChildScrollView(
-              child: ListBody(
-                children: <Widget>[
-                  TextFormField(
-                    controller: exerciseController,
-                    decoration: const InputDecoration(labelText: 'Exercise'),
-                  ),
-                  TextFormField(
-                    controller: variantController,
-                    decoration: const InputDecoration(labelText: 'Variant'),
-                  ),
-                ],
-              ),
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Add New Exercise'),
+        content: SingleChildScrollView(
+          child: ListBody(
+            children: <Widget>[
+            // Usa Consumer per gestire la sottoscrizione allo StreamProvider
+            Consumer(
+              builder: (context, ref, child) {  // Nota: qui ho cambiato 'watch' in 'ref'
+                final exercisesAsyncValue = ref.watch(exercisesStreamProvider);
+                return exercisesAsyncValue.when(
+                  data: (exercises) {
+                    return Autocomplete<ExerciseModel>( // Usa la classe ExerciseModel rinominata
+                      optionsBuilder: (TextEditingValue textEditingValue) {
+                        if (textEditingValue.text == '') {
+                          return const Iterable<ExerciseModel>.empty();
+                        }
+                        return exercises.where((ExerciseModel exercise) {
+                          return exercise.name.toLowerCase().startsWith(textEditingValue.text.toLowerCase());
+                        });
+                      },
+                      displayStringForOption: (ExerciseModel exercise) => exercise.name,
+                      fieldViewBuilder: (
+                        BuildContext context,
+                        TextEditingController fieldTextEditingController,
+                        FocusNode fieldFocusNode,
+                        VoidCallback onFieldSubmitted,
+                      ) {
+                        return TextFormField(
+                          controller: fieldTextEditingController,
+                          focusNode: fieldFocusNode,
+                          decoration: const InputDecoration(
+                            labelText: 'Exercise',
+                            border: OutlineInputBorder(),
+                          ),
+                        );
+                      },
+                      onSelected: (ExerciseModel selection) {
+                        exerciseController.text = selection.name;
+                      },
+                    );
+                  },
+                  loading: () => const CircularProgressIndicator(),
+                  error: (e, st) => Text('Failed to load exercises: $e'),
+                );
+              },
             ),
-            actions: <Widget>[
-              TextButton(
-                child: const Text('Cancel'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-              TextButton(
-                child: const Text('Add'),
-                onPressed: () {
-                  final newExercise = {
-                    'order': weekList[weekIndex]['workouts'][workoutIndex]['exercises'].length + 1,
-                    'createdAt': Timestamp.now(),
-                    'name': exerciseController.text,
-                    'variant': variantController.text,
-                    'series': [],
-                  };
-                  List<Map<String, dynamic>> updatedWeekList = [...weekList];
-                  updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'].add(newExercise);
-                  ref.read(weekListProvider.notifier).state = updatedWeekList;
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          );
-        },
-      );
-    }
+            TextFormField(
+              controller: variantController,
+              decoration: const InputDecoration(labelText: 'Variant'),
+            ),
+          ],
+        ),
+      ),
+      actions: <Widget>[
+        TextButton(
+          child: const Text('Cancel'),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+        ),
+        TextButton(
+          child: const Text('Add'),
+          onPressed: () {
+            final newExercise = {
+              'order': weekList[weekIndex]['workouts'][workoutIndex]['exercises'].length + 1,
+              'createdAt': Timestamp.now(),
+              'name': exerciseController.text,
+              'variant': variantController.text,
+              'series': [],
+            };
+            List<Map<String, dynamic>> updatedWeekList = [...weekList];
+            updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'].add(newExercise);
+            ref.read(weekListProvider.notifier).state = updatedWeekList;
+            Navigator.of(context).pop();
+          },
+        ),
+      ],
+    );
+  },
+);
+}
 
 void addSeries(int weekIndex, int workoutIndex, int exerciseIndex, BuildContext context) {
   showDialog(
@@ -234,7 +281,7 @@ void addSeries(int weekIndex, int workoutIndex, int exerciseIndex, BuildContext 
                           );
                         }).toList(),
                         ElevatedButton(
-                          onPressed: () => addExercise(weekList.indexOf(week), workoutIndex, context),
+onPressed: () => addExercise(weekList.indexOf(week), workoutIndex, context, ref),
                           child: const Text('Add New Exercise'),
                         ),
                       ],
