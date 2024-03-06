@@ -5,42 +5,16 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:rxdart/rxdart.dart';
+import 'exercise_model.dart';  // Aggiorna con il percorso corretto
+import 'exercisesServices.dart';  // Aggiorna con il percorso corretto
 
 // Providers
 final authProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
-final firestoreProvider =
-    Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
-
-final exercisesProvider = StreamProvider((ref) {
-  return ref
-      .read(firestoreProvider)
-      .collection('exercises')
-      .snapshots()
-      .map((snapshot) =>
-          snapshot.docs.map((doc) => Exercise.fromFirestore(doc)).toList());
+// Definisci un nuovo StreamProvider per gli esercizi utilizzando il servizio
+final exercisesStreamProvider = StreamProvider<List<ExerciseModel>>((ref) {
+  final service = ref.watch(exercisesServiceProvider);
+  return service.getExercises();
 });
-
-class Exercise {
-  final String id;
-  final String name;
-  final String muscleGroup;
-  final String type;
-
-  Exercise(
-      {required this.id,
-      required this.name,
-      required this.muscleGroup,
-      required this.type});
-
-  factory Exercise.fromFirestore(DocumentSnapshot doc) {
-    return Exercise(
-      id: doc.id,
-      name: doc.get('name') ?? '',
-      muscleGroup: doc.get('muscleGroup') ?? '',
-      type: doc.get('type') ?? '',
-    );
-  }
-}
 
 class ExerciseRecord {
   final String id;
@@ -67,15 +41,18 @@ class ExerciseRecord {
   }
 }
 
+
 class MaxRMDashboard extends HookConsumerWidget {
   const MaxRMDashboard({super.key});
+
+  
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final FirebaseAuth auth = ref.watch(authProvider);
     final User? user = auth.currentUser;
-    final exercisesAsyncValue = ref.watch(exercisesProvider);
-    final selectedExerciseController = useState<Exercise?>(null);
+    final exercisesAsyncValue = ref.watch(exercisesStreamProvider); // Corretto utilizzo di StreamProvider
+    final selectedExerciseController = useState<ExerciseModel?>(null); // Aggiorna con ExerciseModel
     final maxWeightController = useTextEditingController();
     final repetitionsController = useTextEditingController();
     final dateFormat = DateFormat('yyyy-MM-dd');
@@ -104,9 +81,7 @@ class MaxRMDashboard extends HookConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('MaxRM Dashboard'),
-      ),
+   
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -115,18 +90,16 @@ class MaxRMDashboard extends HookConsumerWidget {
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: exercisesAsyncValue.when(
                 data: (exercises) {
-                 return Autocomplete<Exercise>(
+                  return Autocomplete<ExerciseModel>( // Aggiorna con ExerciseModel
                     optionsBuilder: (TextEditingValue textEditingValue) {
-                      if (textEditingValue.text == '') {
-                        return const Iterable<Exercise>.empty();
+                      if (textEditingValue.text.isEmpty) {
+                        return const Iterable<ExerciseModel>.empty();
                       }
-                      return exercises.where((Exercise exercise) {
-                        return exercise.name
-                            .toLowerCase()
-                            .startsWith(textEditingValue.text.toLowerCase());
+                      return exercises.where((ExerciseModel exercise) {
+                        return exercise.name.toLowerCase().startsWith(textEditingValue.text.toLowerCase());
                       });
                     },
-                    displayStringForOption: (Exercise exercise) => exercise.name,
+                    displayStringForOption: (ExerciseModel exercise) => exercise.name,
                     fieldViewBuilder: (
                       BuildContext context,
                       TextEditingController fieldTextEditingController,
@@ -142,13 +115,13 @@ class MaxRMDashboard extends HookConsumerWidget {
                         ),
                       );
                     },
-                    onSelected: (Exercise selection) {
+                    onSelected: (ExerciseModel selection) {
                       selectedExerciseController.value = selection;
                     },
                   );
                 },
                 loading: () => const CircularProgressIndicator(),
-                error: (error, stack) => const Text("Errore nel caricamento degli esercizi"),
+                error: (error, stack) => Text("Errore nel caricamento degli esercizi: $error"),
               ),
             ),
 
@@ -185,7 +158,7 @@ class MaxRMDashboard extends HookConsumerWidget {
                     maxWeight =
                         (maxWeight / (1.0278 - (0.0278 * repetitions))).round();
                   }
-                  final Exercise? selectedExercise =
+                  final ExerciseModel? selectedExercise =
                       selectedExerciseController.value;
                   if (user != null &&
                       selectedExercise != null &&
@@ -212,105 +185,96 @@ class MaxRMDashboard extends HookConsumerWidget {
     );
   }
 
-  Widget _buildAllExercisesMaxRMs(WidgetRef ref) {
-    final FirebaseAuth auth = ref.watch(authProvider);
-    final User? user = auth.currentUser;
-    final exercisesStream = ref.watch(exercisesProvider);
+ Widget _buildAllExercisesMaxRMs(WidgetRef ref) {
+  final FirebaseAuth auth = ref.watch(authProvider);
+  final User? user = auth.currentUser;
+  final exercisesAsyncValue = ref.watch(exercisesStreamProvider); // Correggi qui per usare StreamProvider
 
-    return Expanded(
-      child: exercisesStream.when(
-        data: (exercises) {
-          List<Stream<List<ExerciseRecord>>> exerciseRecordStreams =
-              exercises.map((exercise) {
-            return FirebaseFirestore.instance
-                .collection('users')
-                .doc(user?.uid)
-                .collection('exercises')
-                .doc(exercise.id)
-                .collection('records')
-                .orderBy('date', descending: true)
-                .limit(1)
-                .snapshots()
-                .map((snapshot) => snapshot.docs
-                    .map((doc) => ExerciseRecord.fromFirestore(doc))
-                    .toList());
-          }).toList();
+  return exercisesAsyncValue.when(
+    data: (exercises) {
+      List<Stream<List<ExerciseRecord>>> exerciseRecordStreams = exercises.map((exercise) {
+        return FirebaseFirestore.instance
+            .collection('users')
+            .doc(user?.uid)
+            .collection('exercises')
+            .doc(exercise.id)
+            .collection('records')
+            .orderBy('date', descending: true)
+            .limit(1)
+            .snapshots()
+            .map((snapshot) => snapshot.docs.map((doc) => ExerciseRecord.fromFirestore(doc)).toList());
+      }).toList();
 
-          return StreamBuilder<List<List<ExerciseRecord>>>(
-            stream: CombineLatestStream.list(exerciseRecordStreams),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              var allRecords = snapshot.data!.expand((x) => x).toList();
-              var width = MediaQuery.of(context).size.width;
-              int crossAxisCount =
-                  width > 1200 ? 4 : width > 800 ? 3 : width > 600 ? 2 : 1;
+      return StreamBuilder<List<List<ExerciseRecord>>>(
+        stream: CombineLatestStream.list(exerciseRecordStreams),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          var allRecords = snapshot.data?.expand((x) => x).toList() ?? [];
+          var width = MediaQuery.of(context).size.width;
+          int crossAxisCount = width > 1200 ? 4 : width > 800 ? 3 : width > 600 ? 2 : 1;
 
-              return GridView.builder(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxisCount,
-                  childAspectRatio: 3 / 2,
-                  crossAxisSpacing: 20,
-                  mainAxisSpacing: 20,
-                ),
-                itemCount: allRecords.length,
-                itemBuilder: (context, index) {
-                  var record = allRecords[index];
-                  Exercise exercise = exercises
-                      .firstWhere((ex) => ex.id == record.exerciseId);
+          return Expanded(
+            child: GridView.builder(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                childAspectRatio: 3 / 2,
+                crossAxisSpacing: 20,
+                mainAxisSpacing: 20,
+              ),
+              itemCount: allRecords.length,
+              itemBuilder: (context, index) {
+                var record = allRecords[index];
+                ExerciseModel exercise = exercises.firstWhere((ex) => ex.id == record.exerciseId);
 
-                  return Card(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(exercise.name,
-                            style: const TextStyle(fontWeight: FontWeight.bold)),
-                        ListTile(
-                          title: Text(
-                              '${record.maxWeight} kg x ${record.repetitions} ripetizioni'),
-                          subtitle: Text(record.date),
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                backgroundColor: Colors.green,
-                              ),
-                              child: const Text('Modifica'),
-                              onPressed: () =>
-                                  showEditDialog(context, record, exercise, user),
+                return Card(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(exercise.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      ListTile(
+                        title: Text('${record.maxWeight} kg x ${record.repetitions} ripetizioni'),
+                        subtitle: Text(record.date),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: Colors.green,
                             ),
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                backgroundColor: Colors.red,
-                              ),
-                              child: const Text('Elimina'),
-                              onPressed: () => showDeleteDialog(
-                                  context, record, exercise, user),
+                            child: const Text('Modifica'),
+                            onPressed: () => showEditDialog(context, record, exercise, user),
+                          ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: Colors.red,
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              );
-            },
+                            child: const Text('Elimina'),
+                            onPressed: () => showDeleteDialog(context, record, exercise, user),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) =>
-            const Center(child: Text('Errore nel caricamento dei massimali')),
-      ),
-    );
-  }
+      );
+    },
+    loading: () => const Center(child: CircularProgressIndicator()),
+    error: (error, stack) => Center(child: Text('Errore nel caricamento dei massimali: $error')),
+  );
+}
+
 
   void showEditDialog(
-      BuildContext context, ExerciseRecord record, Exercise exercise, User? user) {
+      BuildContext context, ExerciseRecord record, ExerciseModel exercise, User? user) {
     TextEditingController maxWeightController =
         TextEditingController(text: record.maxWeight.toString());
     TextEditingController repetitionsController =
@@ -371,7 +335,7 @@ class MaxRMDashboard extends HookConsumerWidget {
   }
 
   void showDeleteDialog(
-      BuildContext context, ExerciseRecord record, Exercise exercise, User? user) {
+      BuildContext context, ExerciseRecord record, ExerciseModel exercise, User? user) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
