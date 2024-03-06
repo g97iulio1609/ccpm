@@ -5,10 +5,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'exercisesServices.dart';
 import 'trainingstoreservices.dart';
 import 'trainingprogrammodel.dart';
+import 'usersServices.dart'; // Assicurati che il percorso sia corretto
+
 
 final firestoreServiceProvider = Provider<FirestoreService>((ref) {
   return FirestoreService();
 });
+
+
+final usersStreamProvider = StreamProvider<List<UserModel>>((ref) {
+  final usersService = ref.watch(usersServiceProvider);
+  return usersService.getUsers();
+});
+
 
 final exercisesStreamProvider = StreamProvider<List<ExerciseModel>>((ref) {
   final exercisesService = ref.watch(exercisesServiceProvider);
@@ -24,9 +33,12 @@ class TrainingProgramPage extends ConsumerWidget {
   final nameController = TextEditingController();
   final descriptionController = TextEditingController();
   final athleteIdController = TextEditingController();
+  final athleteNameController = TextEditingController();
   final mesocycleNumberController = TextEditingController();
 
   TrainingProgramPage({super.key});
+
+
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -386,6 +398,57 @@ class TrainingProgramPage extends ConsumerWidget {
       ref.read(weekListProvider.notifier).state = updatedWeekList;
     }
 
+Widget _buildAthleteIdField(BuildContext context, WidgetRef ref) {
+  return Consumer(
+    builder: (context, ref, _) {
+      final usersAsyncValue = ref.watch(usersStreamProvider);
+      return usersAsyncValue.when(
+        data: (users) {
+          return Autocomplete<UserModel>(
+            optionsBuilder: (TextEditingValue textEditingValue) {
+              if (textEditingValue.text.isEmpty) {
+                return const Iterable<UserModel>.empty();
+              }
+              return users.where((UserModel user) {
+                return user.name.toLowerCase().contains(textEditingValue.text.toLowerCase());
+              });
+            },
+            displayStringForOption: (UserModel user) => user.name,
+            fieldViewBuilder: (
+              BuildContext context,
+              TextEditingController fieldTextEditingController,
+              FocusNode fieldFocusNode,
+              VoidCallback onFieldSubmitted,
+            ) {
+              // Make sure to assign the TextEditingController correctly
+              fieldTextEditingController.text = athleteNameController.text;
+              return TextFormField(
+                controller: fieldTextEditingController,
+                focusNode: fieldFocusNode,
+                decoration: const InputDecoration(
+                  labelText: 'Select Athlete',
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (value) {
+                  // This ensures the displayed name is always updated as user types
+                  athleteNameController.text = value;
+                },
+              );
+            },
+            onSelected: (UserModel selection) {
+              // Update both controllers when an athlete is selected
+              athleteIdController.text = selection.id;
+              athleteNameController.text = selection.name;
+            },
+          );
+        },
+        loading: () => const CircularProgressIndicator(),
+        error: (e, _) => Text('Failed to load users: $e'),
+      );
+    },
+  );
+}
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Add/Edit Training Program'),
@@ -407,11 +470,40 @@ class TrainingProgramPage extends ConsumerWidget {
                 decoration: const InputDecoration(labelText: 'Description'),
                 validator: (value) => value?.isEmpty ?? true ? 'Please enter a description' : null,
               ),
-              TextFormField(
-                controller: athleteIdController,
-                decoration: const InputDecoration(labelText: 'Athlete ID'),
-                validator: (value) => value?.isEmpty ?? true ? 'Please enter an athlete ID' : null,
-              ),
+// Sostituisci il vecchio pulsante con questo
+ElevatedButton(
+  onPressed: () {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Select Athlete'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: _buildAthleteIdField(context, ref),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Save'),
+              onPressed: () {
+                // Just pop the dialog, athleteNameController's changes will update UI automatically
+                Navigator.of(dialogContext).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  },
+  child: Text(athleteNameController.text.isEmpty ? 'Select Athlete' : athleteNameController.text),
+),
+
               TextFormField(
                 controller: mesocycleNumberController,
                 decoration: const InputDecoration(labelText: 'Mesocycle Number'),
