@@ -213,51 +213,87 @@ class TrainingProgramPage extends ConsumerWidget {
       );
     }
 
-    void editExercise(int weekIndex, int workoutIndex, int exerciseIndex, BuildContext context) {
-      final exerciseController = TextEditingController(text: weekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['name']);
-      final variantController = TextEditingController(text: weekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['variant']);
+ void editExercise(int weekIndex, int workoutIndex, int exerciseIndex, BuildContext context, WidgetRef ref) {
+  final exerciseNameController = TextEditingController();
+  final variantController = TextEditingController(text: weekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['variant']);
 
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Edit Exercise'),
-            content: SingleChildScrollView(
-              child: ListBody(
-                children: <Widget>[
-                  TextField(
-                    controller: exerciseController,
-                    decoration: const InputDecoration(labelText: 'Exercise Name'),
-                  ),
-                  TextField(
-                    controller: variantController,
-                    decoration: const InputDecoration(labelText: 'Variant'),
-                  ),
-                ],
-              ),
-            ),
-            actions: <Widget>[
-              TextButton(
-                child: const Text('Cancel'),
-                onPressed: () {
-                  Navigator.of(context).pop();
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Edit Exercise'),
+        content: SingleChildScrollView(
+          child: ListBody(
+            children: <Widget>[
+              Consumer(
+                builder: (context, ref, child) {
+                  final exercisesAsyncValue = ref.watch(exercisesStreamProvider);
+                  return exercisesAsyncValue.when(
+                    data: (exercises) {
+                      return Autocomplete<ExerciseModel>(
+                        optionsBuilder: (TextEditingValue textEditingValue) {
+                          if (textEditingValue.text.isEmpty) {
+                            return const Iterable<ExerciseModel>.empty();
+                          }
+                          return exercises.where((ExerciseModel exercise) {
+                            return exercise.name.toLowerCase().startsWith(textEditingValue.text.toLowerCase());
+                          });
+                        },
+                        displayStringForOption: (ExerciseModel exercise) => exercise.name,
+                        fieldViewBuilder: (
+                          BuildContext context,
+                          TextEditingController fieldTextEditingController,
+                          FocusNode fieldFocusNode,
+                          VoidCallback onFieldSubmitted,
+                        ) {
+                          return TextFormField(
+                            controller: fieldTextEditingController,
+                            focusNode: fieldFocusNode,
+                            decoration: const InputDecoration(
+                              labelText: 'Exercise',
+                              border: OutlineInputBorder(),
+                            ),
+                          );
+                        },
+                        onSelected: (ExerciseModel selection) {
+                          exerciseNameController.text = selection.name;
+                        },
+                      );
+                    },
+                    loading: () => const CircularProgressIndicator(),
+                    error: (e, st) => Text('Failed to load exercises: $e'),
+                  );
                 },
               ),
-              TextButton(
-                child: const Text('Update'),
-                onPressed: () {
-                  List<Map<String, dynamic>> updatedWeekList = [...weekList];
-                  updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['name'] = exerciseController.text;
-                  updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['variant'] = variantController.text;
-                  ref.read(weekListProvider.notifier).state = updatedWeekList;
-                  Navigator.of(context).pop();
-                },
+              TextFormField(
+                controller: variantController,
+                decoration: const InputDecoration(labelText: 'Variant'),
               ),
             ],
-          );
-        },
+          ),
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('Cancel'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+          TextButton(
+            child: const Text('Update'),
+            onPressed: () {
+              List<Map<String, dynamic>> updatedWeekList = [...weekList];
+              updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['name'] = exerciseNameController.text;
+              updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['variant'] = variantController.text;
+              ref.read(weekListProvider.notifier).state = updatedWeekList;
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
       );
-    }
+    },
+  );
+}
 
     void editSeries(int weekIndex, int workoutIndex, int exerciseIndex, int seriesIndex, BuildContext context) {
       final repsController = TextEditingController(text: weekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex]['reps'].toString());
@@ -413,7 +449,7 @@ mainAxisSize: MainAxisSize.min,
 children: [
 IconButton(
 icon: const Icon(Icons.edit),
-onPressed: () => editExercise(weekList.indexOf(week), workoutIndex, exerciseIndex, context),
+onPressed: () => editExercise(weekList.indexOf(week), workoutIndex, exerciseIndex, context,ref),
 ),
 IconButton(
 icon: const Icon(Icons.delete),
