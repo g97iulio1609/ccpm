@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// Definizione del modello User per rappresentare i dati degli utenti
 class UserModel {
   final String id;
   final String name;
@@ -15,7 +14,6 @@ class UserModel {
     required this.role,
   });
 
-  // Metodo factory per creare un'istanza di UserModel da un documento Firestore
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return UserModel(
@@ -27,21 +25,59 @@ class UserModel {
   }
 }
 
-// Definizione del provider di servizi per gli utenti
+class ExerciseRecord {
+  final String id;
+  final String exerciseId;
+  final int maxWeight;
+  final int repetitions;
+  final String date;
+
+  ExerciseRecord({
+    required this.id,
+    required this.exerciseId,
+    required this.maxWeight,
+    required this.repetitions,
+    required this.date,
+  });
+
+  factory ExerciseRecord.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return ExerciseRecord(
+      id: doc.id,
+      exerciseId: data['exerciseId'],
+      maxWeight: data['maxWeight'],
+      repetitions: data['repetitions'],
+      date: data['date'],
+    );
+  }
+}
+
 final usersServiceProvider = Provider<UsersService>((ref) {
   return UsersService(FirebaseFirestore.instance);
 });
 
-// Definizione della classe di servizi per gli utenti
 class UsersService {
   final FirebaseFirestore _firestore;
 
   UsersService(this._firestore);
 
-  // Metodo per ottenere lo stream di tutti gli utenti
   Stream<List<UserModel>> getUsers() {
     return _firestore.collection('users').snapshots().map((snapshot) {
       return snapshot.docs.map((doc) => UserModel.fromFirestore(doc)).toList();
     });
+  }
+
+  Stream<List<ExerciseRecord>> getExerciseRecords(String userId, String exerciseId) {
+    return _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('exercises')
+        .doc(exerciseId)
+        .collection('records')
+        .orderBy('date', descending: true)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) => ExerciseRecord.fromFirestore(doc)).toList();
+        });
   }
 }
