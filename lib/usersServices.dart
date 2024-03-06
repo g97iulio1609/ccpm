@@ -67,7 +67,10 @@ class UsersService {
     });
   }
 
-  Stream<List<ExerciseRecord>> getExerciseRecords(String userId, String exerciseId) {
+  Stream<List<ExerciseRecord>> getExerciseRecords({
+    required String userId,
+    required String exerciseId,
+  }) {
     return _firestore
         .collection('users')
         .doc(userId)
@@ -77,7 +80,68 @@ class UsersService {
         .orderBy('date', descending: true)
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs.map((doc) => ExerciseRecord.fromFirestore(doc)).toList();
-        });
+      return snapshot.docs
+          .map((doc) => ExerciseRecord.fromFirestore(doc))
+          .toList();
+    });
+  }
+
+  Future<void> addExerciseRecord({
+    required String userId,
+    required String exerciseId,
+    required String exerciseName,
+    required int maxWeight,
+    required int repetitions,
+    required String date,
+  }) async {
+    await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('exercises')
+        .doc(exerciseId)
+        .collection('records')
+        .add({
+      'date': date,
+      'exerciseId': exerciseId,
+      'exerciseName': exerciseName,
+      'maxWeight': maxWeight,
+      'repetitions': repetitions,
+      'userId': userId,
+    });
+  }
+
+  Future<void> updateExerciseRecord({
+    required String userId,
+    required String exerciseId,
+    required String recordId,
+    required int maxWeight,
+    required int repetitions,
+  }) async {
+    await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('exercises')
+        .doc(exerciseId)
+        .collection('records')
+        .doc(recordId)
+        .update({
+      'maxWeight': maxWeight,
+      'repetitions': repetitions,
+    });
+  }
+
+  Future<void> deleteExerciseRecord({
+    required String userId,
+    required String exerciseId,
+    required String recordId,
+  }) async {
+    await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('exercises')
+        .doc(exerciseId)
+        .collection('records')
+        .doc(recordId)
+        .delete();
   }
 }
