@@ -195,61 +195,63 @@ Future<void> addOrUpdateTrainingProgram(TrainingProgram program) async {
         });
       }
 
-      // Iterate through each exercise and add or update them independently
+      // Iterate through each exercise and add them independently
       for (var exercise in workout.exercises) {
-        DocumentReference exerciseRef;
-        if (exercise.id == null) {
-          // New exercise
-          exerciseRef = await _db.collection('exercisesWorkout').add({
-            'name':exercise.name,
-            'order': exercise.order,
-            'variant': exercise.variant,
-            'workoutId': workout.id,
-            'createdAt': Timestamp.now(),
-          });
-          exercise.id = exerciseRef.id;
-        } else {
-          // Existing exercise
-          exerciseRef = _db.collection('exercisesWorkout').doc(exercise.id);
-          await exerciseRef.update({
-            'name':exercise.name,
-            'order': exercise.order,
-            'variant': exercise.variant,
-            'workoutId': workout.id,
-          });
-        }
+        // New exercise
+        DocumentReference exerciseRef = await _db.collection('exercisesWorkout').add({
+          'name': exercise.name,
+          'order': exercise.order,
+          'variant': exercise.variant,
+          'workoutId': workout.id,
+          'createdAt': Timestamp.now(),
+        });
+        exercise.id = exerciseRef.id;
 
-        // Iterate through each series and add or update them independently
+        // Iterate through each series and add them independently
         for (var series in exercise.series) {
-          if (series.id == null) {
-            // New series
-            await _db.collection('series').add({
-              'reps': series.reps,
-              'sets': series.sets,
-              'intensity': series.intensity,
-              'rpe': series.rpe,
-              'weight': series.weight,
-              'exerciseId': exercise.id,
-              'createdAt': Timestamp.now(),
-              'order':series.order
-            });
-          } else {
-            // Existing series
-            await _db.collection('series').doc(series.id).update({
-              'reps': series.reps,
-              'sets': series.sets,
-              'intensity': series.intensity,
-              'rpe': series.rpe,
-              'weight': series.weight,
-              'exerciseId': exercise.id,
-              'order':series.order
-
-              
-            });
-          }
+          // New series
+          await _db.collection('series').add({
+            'reps': series.reps,
+            'sets': series.sets,
+            'intensity': series.intensity,
+            'rpe': series.rpe,
+            'weight': series.weight,
+            'exerciseId': exercise.id,
+            'createdAt': Timestamp.now(),
+            'order': series.order,
+          });
         }
       }
     }
   }
 }
+
+Future<TrainingProgram> fetchTrainingProgram(String programId) async {
+  DocumentSnapshot programSnapshot = await _db.collection('programs').doc(programId).get();
+  if (!programSnapshot.exists) {
+    throw Exception('Training program not found');
+  }
+
+  TrainingProgram program = TrainingProgram.fromFirestore(programSnapshot);
+
+  List<Week> weeks = await fetchWeeksByProgramId(programId);
+  for (Week week in weeks) {
+    List<Workout> workouts = await fetchWorkoutsByWeekId(week.id!);
+    for (Workout workout in workouts) {
+      List<Exercise> exercises = await fetchExercisesByWorkoutId(workout.id!);
+      for (Exercise exercise in exercises) {
+        List<Series> seriesList = await fetchSeriesByExerciseId(exercise.id!);
+        exercise.series = seriesList;
+      }
+      workout.exercises = exercises;
+    }
+    week.workouts = workouts;
+  }
+
+  program.weeks = weeks;
+
+  return program;
+}
+
+
 }

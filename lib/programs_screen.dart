@@ -2,7 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'trainingviewer.dart';  // Assicurati di importare il file correttamente
+import 'trainingprogram.dart';  // Assicurati che questa importazione sia corretta
+import 'trainingviewer.dart';  // Assicurati che questa importazione sia corretta
 
 class ProgramsScreen extends HookConsumerWidget {
   const ProgramsScreen({super.key});
@@ -24,7 +25,6 @@ class ProgramsScreen extends HookConsumerWidget {
     }
 
     return Scaffold(
-    
       body: Column(
         children: [
           Padding(
@@ -33,9 +33,9 @@ class ProgramsScreen extends HookConsumerWidget {
               controller: controller,
               decoration: const InputDecoration(
                 labelText: 'Crea Programma Di Allenamento',
-                suffixIcon: Icon(Icons.add), // Modifica qui se necessario per la logica
+                suffixIcon: Icon(Icons.add),
               ),
-              onSubmitted: (value) => addProgram(value), // Aggiunge il programma alla pressione del tasto invio
+              onSubmitted: (value) => addProgram(value),
             ),
           ),
           Expanded(
@@ -54,7 +54,7 @@ class ProgramsScreen extends HookConsumerWidget {
 
                 return GridView.builder(
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2, // Puoi modificare in base alla larghezza della schermata
+                    crossAxisCount: 2,
                     childAspectRatio: 3 / 2,
                     crossAxisSpacing: 20,
                     mainAxisSpacing: 20,
@@ -67,7 +67,7 @@ class ProgramsScreen extends HookConsumerWidget {
                       margin: const EdgeInsets.all(10),
                       child: InkWell(
                         onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                          builder: (context) => TrainingViewer(programId: doc.id),
+                          builder: (context) => TrainingViewer(programId: doc.id), // Ora passa a TrainingViewer
                         )),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -78,16 +78,16 @@ class ProgramsScreen extends HookConsumerWidget {
                               children: [
                                 ElevatedButton(
                                   style: ElevatedButton.styleFrom(
-                                    foregroundColor: Colors.white, backgroundColor: Colors.green, // text color
+                                    foregroundColor: Colors.white, backgroundColor: Colors.green,
                                   ),
-                                  onPressed: () {
-                                    // Implementa la logica per modificare il nome del programma
-                                  },
+                                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                                    builder: (context) => TrainingProgramPage(programId: doc.id), // Passa a TrainingProgram per modifica
+                                  )),
                                   child: const Text('Modifica'),
                                 ),
                                 ElevatedButton(
                                   style: ElevatedButton.styleFrom(
-                                    foregroundColor: Colors.white, backgroundColor: Colors.red, // text color
+                                    foregroundColor: Colors.white, backgroundColor: Colors.red,
                                   ),
                                   onPressed: () => deleteProgram(doc.id),
                                   child: const Text('Elimina'),
