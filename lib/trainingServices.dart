@@ -1,6 +1,6 @@
 // trainingstoreservices.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'trainingprogrammodel.dart';
+import 'trainingModel.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;

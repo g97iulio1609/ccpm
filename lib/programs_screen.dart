@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'trainingprogram.dart';  // Assicurati che questa importazione sia corretta
+import 'trainingProgram.dart';  // Assicurati che questa importazione sia corretta
 import 'trainingviewer.dart';  // Assicurati che questa importazione sia corretta
 
 class ProgramsScreen extends HookConsumerWidget {

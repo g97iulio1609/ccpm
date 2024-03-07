@@ -3,7 +3,7 @@ import 'programs_screen.dart'; // Allenamenti
 import 'user_profile.dart'; // Profilo Utente
 import 'exercises_list.dart'; // Esercizi
 import 'maxrmdashboard.dart'; // Massimali
-import 'trainingprogram.dart'; // Massimali
+import 'trainingProgram.dart'; // Massimali
 
 
 class HomeScreen extends StatefulWidget {

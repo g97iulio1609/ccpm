@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'exercisesServices.dart';
-import 'trainingstoreservices.dart';
-import 'trainingprogrammodel.dart';
+import 'trainingServices.dart';
+import 'trainingModel.dart';
 import 'usersServices.dart';
 
 final firestoreServiceProvider = Provider<FirestoreService>((ref) {
