@@ -155,7 +155,7 @@ Future<void> addOrUpdateTrainingProgram(TrainingProgram program) async {
     });
   }
 
-  // Iterate through each week and add or update them independently
+  // Iterate through each week
   for (var week in program.weeks) {
     DocumentReference weekRef;
     if (week.id == null) {
@@ -175,7 +175,7 @@ Future<void> addOrUpdateTrainingProgram(TrainingProgram program) async {
       });
     }
 
-    // Iterate through each workout and add or update them independently
+    // Iterate through each workout
     for (var workout in week.workouts) {
       DocumentReference workoutRef;
       if (workout.id == null) {
@@ -195,29 +195,56 @@ Future<void> addOrUpdateTrainingProgram(TrainingProgram program) async {
         });
       }
 
-      // Iterate through each exercise and add them independently
+      // Iterate through each exercise
       for (var exercise in workout.exercises) {
-        // New exercise
-        DocumentReference exerciseRef = await _db.collection('exercisesWorkout').add({
-          'id':exercise.id,
-          'name': exercise.name,
-          'order': exercise.order,
-          'variant': exercise.variant,
-          'workoutId': workout.id,
-          'createdAt': Timestamp.now(),
-        });
-        exercise.id = exerciseRef.id;
+        DocumentReference exerciseRef;
 
-        // Iterate through each series and add them independently
+        if (exercise.exerciseId != null && exercise.exerciseId!.isNotEmpty) {
+          // Try to find existing exercise
+          exerciseRef = _db.collection('exercisesWorkout').doc(exercise.exerciseId);
+          DocumentSnapshot exerciseSnap = await exerciseRef.get();
+          
+          if (exerciseSnap.exists) {
+            // Existing exercise
+            await exerciseRef.update({
+              'name': exercise.name,
+              'order': exercise.order,
+              'variant': exercise.variant,
+              'workoutId': workout.id,
+            });
+          } else {
+            // New exercise, but with predefined exerciseId
+            await exerciseRef.set({
+              'name': exercise.name,
+              'order': exercise.order,
+              'variant': exercise.variant,
+              'workoutId': workout.id,
+              'createdAt': Timestamp.now(),
+            });
+            // No need to update exercise.id since it's predefined
+          }
+        } else {
+          // New exercise without predefined exerciseId
+          exerciseRef = await _db.collection('exercisesWorkout').add({
+            'name': exercise.name,
+            'order': exercise.order,
+            'variant': exercise.variant,
+            'workoutId': workout.id,
+            'createdAt': Timestamp.now(),
+          });
+          exercise.exerciseId = exerciseRef.id; // Update local model with new Firestore ID
+        }
+
+        // Iterate through each series
         for (var series in exercise.series) {
-          // New series
+          // New series (currently not handling updating series, can add similar logic if needed)
           await _db.collection('series').add({
             'reps': series.reps,
             'sets': series.sets,
             'intensity': series.intensity,
             'rpe': series.rpe,
             'weight': series.weight,
-            'exerciseId': exercise.id,
+            'exerciseId': exercise.exerciseId, // Link to exercise
             'createdAt': Timestamp.now(),
             'order': series.order,
           });

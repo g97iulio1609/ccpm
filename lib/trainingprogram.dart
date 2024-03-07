@@ -381,6 +381,9 @@ class TrainingProgramPage extends HookConsumerWidget {
             TextButton(
               child: const Text('Add'),
               onPressed: () {
+                  final FirebaseFirestore db = FirebaseFirestore.instance;
+                // Creiamo un nuovo ID per l'esercizio
+                String exerciseId = db.collection('exercisesWorkout').doc().id;
                 final newExercise = {
                   'order': ref.read(weekListProvider)[weekIndex]['workouts'][workoutIndex]['exercises'].length + 1,
                   'createdAt': Timestamp.now(),
@@ -388,6 +391,7 @@ class TrainingProgramPage extends HookConsumerWidget {
                   'variant': variantController.text,
                   'series': [],
                   'id': selectedExerciseId,
+                  'exerciseId':exerciseId
                 };
                 List<Map<String, dynamic>> updatedWeekList = [...ref.read(weekListProvider)];
                 updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'].add(newExercise);

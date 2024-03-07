@@ -144,14 +144,17 @@ class Exercise {
   String name;
   String variant;
   int order;
+  String? exerciseId;
   List<Series> series;
 
-  Exercise({this.id, required this.name, required this.variant, required this.order, required this.series});
+  Exercise({this.id, this.exerciseId, required this.name, required this.variant, required this.order, required this.series});
 
   factory Exercise.fromMap(Map<String, dynamic> map) {
     return Exercise(
       name:map['name'],
       id: map['id'],
+            exerciseId: map['exerciseId'],
+
       variant: map['variant'],
       order: map['order'],
       series: List<Series>.from(map['series']?.map((x) => Series.fromMap(x)) ?? []),
@@ -162,7 +165,8 @@ class Exercise {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return Exercise(
       id: doc.id,
-      name:data['name'],
+      exerciseId:data['exerciseId'],
+          name:data['name'],
       variant: data['variant'],
       order: data['order'],
       series: (data['series'] as List<dynamic>? ?? []).map((doc) => Series.fromFirestore(doc)).toList(),
@@ -172,6 +176,8 @@ class Exercise {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+            'exerciseId': id,
+
       'name':name,
       'variant': variant,
       'order': order,
