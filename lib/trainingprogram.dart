@@ -264,9 +264,11 @@ void addSeries(int weekIndex, int workoutIndex, int exerciseIndex, BuildContext 
   );
 }
 
- void editExercise(int weekIndex, int workoutIndex, int exerciseIndex, BuildContext context, WidgetRef ref) {
-  final exerciseNameController = TextEditingController();
+void editExercise(int weekIndex, int workoutIndex, int exerciseIndex, BuildContext context, WidgetRef ref) {
+  final exerciseNameController = TextEditingController(text: weekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['name']);
   final variantController = TextEditingController(text: weekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['variant']);
+  // Aggiunta di una nuova variabile per tenere traccia dell'ID dell'esercizio selezionato
+  String selectedExerciseId = weekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['id'];
 
   showDialog(
     context: context,
@@ -308,6 +310,7 @@ void addSeries(int weekIndex, int workoutIndex, int exerciseIndex, BuildContext 
                         },
                         onSelected: (ExerciseModel selection) {
                           exerciseNameController.text = selection.name;
+                          selectedExerciseId = selection.id; // Aggiorna l'ID dell'esercizio selezionato
                         },
                       );
                     },
@@ -336,6 +339,7 @@ void addSeries(int weekIndex, int workoutIndex, int exerciseIndex, BuildContext 
               List<Map<String, dynamic>> updatedWeekList = [...weekList];
               updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['name'] = exerciseNameController.text;
               updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['variant'] = variantController.text;
+              updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['id'] = selectedExerciseId; // Assicurati di aggiornare l'ID dell'esercizio qui
               ref.read(weekListProvider.notifier).state = updatedWeekList;
               Navigator.of(context).pop();
             },
@@ -346,72 +350,107 @@ void addSeries(int weekIndex, int workoutIndex, int exerciseIndex, BuildContext 
   );
 }
 
-    void editSeries(int weekIndex, int workoutIndex, int exerciseIndex, int seriesIndex, BuildContext context) {
-      final repsController = TextEditingController(text: weekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex]['reps'].toString());
-      final setsController = TextEditingController(text: weekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex]['sets'].toString());
-      final intensityController = TextEditingController(text: weekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex]['intensity']);
-      final rpeController = TextEditingController(text: weekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex]['rpe']);
-      final weightController = TextEditingController(text: weekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex]['weight'].toString());
+void editSeries(int weekIndex, int workoutIndex, int exerciseIndex, int seriesIndex, BuildContext context, WidgetRef ref) {
+  // Controller già esistenti
+  final repsController = TextEditingController(text: weekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex]['reps'].toString());
+  final setsController = TextEditingController(text: weekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex]['sets'].toString());
+  final intensityController = TextEditingController(text: weekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex]['intensity']);
+  final rpeController = TextEditingController(text: weekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex]['rpe']);
+  final weightController = TextEditingController(); // Cambio: il valore iniziale non sarà impostato qui
 
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Edit Series'),
-            content: SingleChildScrollView(
-              child: ListBody(
-                children: <Widget>[
-                  TextField(
-                    controller: repsController,
-                    decoration: const InputDecoration(labelText: 'Reps'),
-                    keyboardType: TextInputType.number,
-                  ),
-                  TextField(
-                    controller: setsController,
-                    decoration: const InputDecoration(labelText: 'Sets'),
-                    keyboardType: TextInputType.number,
-                  ),
-                  TextField(
-                    controller: intensityController,
-                    decoration: const InputDecoration(labelText: 'Intensity'),
-                  ),
-                  TextField(
-                    controller: rpeController,
-                    decoration: const InputDecoration(labelText: 'RPE'),
-                  ),
-                  TextField(
-                    controller: weightController,
-                    decoration: const InputDecoration(labelText: 'Weight (kg)'),
-                    keyboardType: TextInputType.number,
-                  ),
-                ],
+  // Variabile per memorizzare il massimale più recente
+  int latestMaxWeight = 0; // Valorizzato dopo il recupero del record più recente
+  
+  String athleteId = athleteIdController.text;
+  Map<String, dynamic> selectedExercise = weekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex];
+  String exerciseId = selectedExercise['id'];
+
+  final usersService = ref.read(usersServiceProvider);
+  usersService.getExerciseRecords(userId: athleteId, exerciseId: exerciseId).first.then((records) {
+    if (records.isNotEmpty) {
+      ExerciseRecord latestRecord = records.first;
+      latestMaxWeight = latestRecord.maxWeight;
+
+      // Inizializzazione del valore del campo peso basato su intensità e massimale più recente
+      double initialIntensity = double.tryParse(intensityController.text) ?? 0;
+      weightController.text = ((latestMaxWeight * initialIntensity) / 100).toStringAsFixed(2);
+    }
+  }).catchError((error) {
+    print("Error retrieving exercise records: $error");
+  });
+
+  // Aggiunta di un listener al controller di intensità
+  intensityController.addListener(() {
+    double intensity = double.tryParse(intensityController.text) ?? 0;
+    double calculatedWeight = (latestMaxWeight * intensity) / 100;
+    weightController.text = calculatedWeight.toStringAsFixed(2);
+  });
+
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Edit Series'),
+        content: SingleChildScrollView(
+          child: ListBody(
+            children: <Widget>[
+              TextField(
+                controller: repsController,
+                decoration: const InputDecoration(labelText: 'Reps'),
+                keyboardType: TextInputType.number,
               ),
-            ),
-            actions: <Widget>[
-              TextButton(
-                child: const Text('Cancel'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
+              TextField(
+                controller: setsController,
+                decoration: const InputDecoration(labelText: 'Sets'),
+                keyboardType: TextInputType.number,
               ),
-              TextButton(
-                child: const Text('Update'),
-                onPressed: () {
-                  List<Map<String, dynamic>> updatedWeekList = [...weekList];
-                  updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex]['reps'] = int.parse(repsController.text);
-                  updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex]['sets'] = int.parse(setsController.text);
-                  updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex]['intensity'] = intensityController.text;
-                  updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex]['rpe'] = rpeController.text;
-                  updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex]['weight'] = double.parse(weightController.text);
-                  ref.read(weekListProvider.notifier).state = updatedWeekList;
-                  Navigator.of(context).pop();
-                },
+              TextField(
+                controller: intensityController,
+                decoration: const InputDecoration(labelText: 'Intensity (%)'),
+                keyboardType: TextInputType.number,
+              ),
+              TextField(
+                controller: rpeController,
+                decoration: const InputDecoration(labelText: 'RPE'),
+              ),
+              TextField(
+                controller: weightController,
+                decoration: const InputDecoration(labelText: 'Weight (kg)'),
+                keyboardType: TextInputType.number,
+                readOnly: true,  // Il campo diventa di sola lettura, il valore viene calcolato automaticamente
               ),
             ],
-          );
-        },
+          ),
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('Cancel'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+          TextButton(
+            child: const Text('Update'),
+            onPressed: () {
+              List<Map<String, dynamic>> updatedWeekList = [...weekList];
+              updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex] = {
+                'reps': int.parse(repsController.text),
+                'sets': int.parse(setsController.text),
+                'intensity': intensityController.text,
+                'rpe': rpeController.text,
+                'weight': double.parse(weightController.text),
+                'createdAt': weekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex]['createdAt'],
+                'order': weekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex]['order']
+              };
+              ref.read(weekListProvider.notifier).state = updatedWeekList;
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
       );
-    }
+    },
+  );
+}
 
     void removeWeek(int weekIndex) {
       List<Map<String, dynamic>> updatedWeekList = [...weekList];
@@ -598,7 +637,7 @@ mainAxisSize: MainAxisSize.min,
 children: [
 IconButton(
 icon: const Icon(Icons.edit),
-onPressed: () => editSeries(weekList.indexOf(week), workoutIndex, exerciseIndex, seriesIndex, context),
+onPressed: () => editSeries(weekList.indexOf(week), workoutIndex, exerciseIndex, seriesIndex, context,ref),
 ),
 IconButton(
 icon: const Icon(Icons.delete),
