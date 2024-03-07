@@ -1,3 +1,4 @@
+//trainingprogram.dart
 import 'package:alphanessone/exercise_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -23,6 +24,8 @@ final exercisesStreamProvider = StreamProvider<List<ExerciseModel>>((ref) {
   final exercisesService = ref.watch(exercisesServiceProvider);
   return exercisesService.getExercises();
 });
+
+
 
 final weekListProvider = StateProvider<List<Map<String, dynamic>>>((ref) {
   return [];
@@ -65,165 +68,201 @@ class TrainingProgramPage extends ConsumerWidget {
       ref.read(weekListProvider.notifier).state = updatedWeekList;
     }
 
-    void addExercise(int weekIndex, int workoutIndex, BuildContext context, WidgetRef ref) {
-      final exerciseController = TextEditingController();
-      final variantController = TextEditingController();
+void addExercise(int weekIndex, int workoutIndex, BuildContext context, WidgetRef ref) {
+  final exerciseController = TextEditingController();
+  final variantController = TextEditingController();
+  String selectedExerciseId=''; // Aggiunta di una nuova variabile per tenere traccia dell'ID dell'esercizio selezionato
 
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Add New Exercise'),
-            content: SingleChildScrollView(
-              child: ListBody(
-                children: <Widget>[
-                  Consumer(
-                    builder: (context, ref, child) {
-                      final exercisesAsyncValue = ref.watch(exercisesStreamProvider);
-                      return exercisesAsyncValue.when(
-                        data: (exercises) {
-                          return Autocomplete<ExerciseModel>(
-                            optionsBuilder: (TextEditingValue textEditingValue) {
-                              if (textEditingValue.text == '') {
-                                return const Iterable<ExerciseModel>.empty();
-                              }
-                              return exercises.where((ExerciseModel exercise) {
-                                return exercise.name.toLowerCase().startsWith(textEditingValue.text.toLowerCase());
-                              });
-                            },
-                            displayStringForOption: (ExerciseModel exercise) => exercise.name,
-                            fieldViewBuilder: (
-                              BuildContext context,
-                              TextEditingController fieldTextEditingController,
-                              FocusNode fieldFocusNode,
-                              VoidCallback onFieldSubmitted,
-                            ) {
-                              return TextFormField(
-                                controller: fieldTextEditingController,
-                                focusNode: fieldFocusNode,
-                                decoration: const InputDecoration(
-                                  labelText: 'Exercise',
-                                  border: OutlineInputBorder(),
-                                ),
-                              );
-                            },
-                            onSelected: (ExerciseModel selection) {
-                              exerciseController.text = selection.name;
-                            },
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Add New Exercise'),
+        content: SingleChildScrollView(
+          child: ListBody(
+            children: <Widget>[
+              Consumer(
+                builder: (context, ref, child) {
+                  final exercisesAsyncValue = ref.watch(exercisesStreamProvider);
+                  return exercisesAsyncValue.when(
+                    data: (exercises) {
+                      return Autocomplete<ExerciseModel>(
+                        optionsBuilder: (TextEditingValue textEditingValue) {
+                          if (textEditingValue.text == '') {
+                            return const Iterable<ExerciseModel>.empty();
+                          }
+                          return exercises.where((ExerciseModel exercise) {
+                            return exercise.name.toLowerCase().startsWith(textEditingValue.text.toLowerCase());
+                          });
+                        },
+                        displayStringForOption: (ExerciseModel exercise) => exercise.name,
+                        fieldViewBuilder: (
+                          BuildContext context,
+                          TextEditingController fieldTextEditingController,
+                          FocusNode fieldFocusNode,
+                          VoidCallback onFieldSubmitted,
+                        ) {
+                          return TextFormField(
+                            controller: fieldTextEditingController,
+                            focusNode: fieldFocusNode,
+                            decoration: const InputDecoration(
+                              labelText: 'Exercise',
+                              border: OutlineInputBorder(),
+                            ),
                           );
                         },
-                        loading: () => const CircularProgressIndicator(),
-                        error: (e, st) => Text('Failed to load exercises: $e'),
+                        onSelected: (ExerciseModel selection) {
+                          exerciseController.text = selection.name;
+                          selectedExerciseId = selection.id; // Salva l'ID dell'esercizio selezionato
+                        },
                       );
                     },
-                  ),
-                  TextFormField(
-                    controller: variantController,
-                    decoration: const InputDecoration(labelText: 'Variant'),
-                  ),
-                ],
-              ),
-            ),
-            actions: <Widget>[
-              TextButton(
-                child: const Text('Cancel'),
-                onPressed: () {
-                  Navigator.of(context).pop();
+                    loading: () => const CircularProgressIndicator(),
+                    error: (e, st) => Text('Failed to load exercises: $e'),
+                  );
                 },
               ),
-              TextButton(
-                child: const Text('Add'),
-                onPressed: () {
-                  final newExercise = {
-                    'order': weekList[weekIndex]['workouts'][workoutIndex]['exercises'].length + 1,
-                    'createdAt': Timestamp.now(),
-                    'name': exerciseController.text,
-                    'variant': variantController.text,
-                    'series': [],
-                  };
-                  List<Map<String, dynamic>> updatedWeekList = [...weekList];
-                  updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'].add(newExercise);
-                  ref.read(weekListProvider.notifier).state = updatedWeekList;
-                  Navigator.of(context).pop();
-                },
+              TextFormField(
+                controller: variantController,
+                decoration: const InputDecoration(labelText: 'Variant'),
               ),
             ],
-          );
-        },
+          ),
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('Cancel'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+          TextButton(
+            child: const Text('Add'),
+            onPressed: () {
+              final newExercise = {
+                'order': weekList[weekIndex]['workouts'][workoutIndex]['exercises'].length + 1,
+                'createdAt': Timestamp.now(),
+                'name': exerciseController.text,
+                'variant': variantController.text,
+                'series': [],
+                'id': selectedExerciseId, // Assicurati di aggiungere l'ID dell'esercizio qui
+              };
+              List<Map<String, dynamic>> updatedWeekList = [...weekList];
+              updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'].add(newExercise);
+              ref.read(weekListProvider.notifier).state = updatedWeekList;
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
       );
-    }
+    },
+  );
+}
 
-    void addSeries(int weekIndex, int workoutIndex, int exerciseIndex, BuildContext context) {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          final repsController = TextEditingController();
-          final setsController = TextEditingController();
-          final intensityController = TextEditingController();
-          final rpeController = TextEditingController();
-          final weightController = TextEditingController();
+void addSeries(int weekIndex, int workoutIndex, int exerciseIndex, BuildContext context, WidgetRef ref) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      final repsController = TextEditingController();
+      final setsController = TextEditingController();
+      final intensityController = TextEditingController();
+      final rpeController = TextEditingController();
+      final weightController = TextEditingController();
+      
+      // Variabile per memorizzare il massimale più recente
+      int latestMaxWeight = 0; // Valorizzato dopo il recupero del record più recente
 
-          return AlertDialog(
-            title: const Text('Add New Series'),
-            content: SingleChildScrollView(
-              child: ListBody(
-                children: <Widget>[
-                  TextFormField(
-                    controller: repsController,
-                    decoration: const InputDecoration(labelText: 'Reps'),
-                    keyboardType: TextInputType.number,
-                  ),
-                  TextFormField(
-                    controller: setsController,
-                    decoration: const InputDecoration(labelText: 'Sets'),
-                    keyboardType: TextInputType.number,
-                  ),
-                  TextFormField(
-                    controller: intensityController,
-                    decoration: const InputDecoration(labelText: 'Intensity'),
-                  ),
-                  TextFormField(
-                    controller: rpeController,
-                    decoration: const InputDecoration(labelText: 'RPE'),
-                  ),
-                  TextFormField(
-                    controller: weightController,
-                    decoration: const InputDecoration(labelText: 'Weight (kg)'),
-                    keyboardType: TextInputType.number,
-                  ),
-                ],
+      String athleteId = athleteIdController.text;
+      Map<String, dynamic> selectedExercise = weekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex];
+      String exerciseId = selectedExercise['id']; // L'ID dell'esercizio dovrebbe essere presente
+
+      print("Debug - Athlete ID: $athleteId");
+      print("Debug - Exercise ID: $exerciseId");
+      print("Debug - Selected Exercise: $selectedExercise");
+
+      final usersService = ref.read(usersServiceProvider);
+      usersService.getExerciseRecords(userId: athleteId, exerciseId: exerciseId).first.then((records) {
+        if (records.isNotEmpty) {
+          ExerciseRecord latestRecord = records.first;
+          latestMaxWeight = latestRecord.maxWeight; // Aggiornamento del massimale più recente
+          print("Debug - Latest max weight for the exercise: $latestMaxWeight");
+        } else {
+          print("Debug - No records found for this exercise.");
+        }
+      }).catchError((error) {
+        print("Debug - Error retrieving exercise records: $error");
+      });
+
+      // Aggiunta di un listener al controller di intensità
+      intensityController.addListener(() {
+        double intensity = double.tryParse(intensityController.text) ?? 0;
+        double calculatedWeight = (latestMaxWeight * intensity) / 100;
+        weightController.text = calculatedWeight.toStringAsFixed(2); // Aggiornamento del campo peso
+      });
+
+      return AlertDialog(
+        title: const Text('Add New Series'),
+        content: SingleChildScrollView(
+          child: ListBody(
+            children: <Widget>[
+              TextField(
+                controller: repsController,
+                decoration: const InputDecoration(labelText: 'Reps'),
+                keyboardType: TextInputType.number,
               ),
-            ),
-            actions: <Widget>[
-              TextButton(
-                child: const Text('Cancel'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
+              TextField(
+                controller: setsController,
+                decoration: const InputDecoration(labelText: 'Sets'),
+                keyboardType: TextInputType.number,
               ),
-              TextButton(
-                child: const Text('Add'),
-                onPressed: () {
-                  final newSeries = {
-                    'reps': int.parse(repsController.text),
-                    'sets': int.parse(setsController.text),
-                    'intensity': intensityController.text,
-                    'rpe': rpeController.text,
-                    'weight': double.parse(weightController.text),
-                    'createdAt': Timestamp.now(),
-                    'order': weekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'].length + 1,
-                  };
-                  List<Map<String, dynamic>> updatedWeekList = [...weekList];
-                  updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'].add(newSeries);
-                  ref.read(weekListProvider.notifier).state = updatedWeekList;
-                  Navigator.of(context).pop();
-                },
+              TextField(
+                controller: intensityController,
+                decoration: const InputDecoration(labelText: 'Intensity (%)'),
+                keyboardType: TextInputType.number,
+              ),
+              TextField(
+                controller: rpeController,
+                decoration: const InputDecoration(labelText: 'RPE'),
+              ),
+              TextField(
+                controller: weightController,
+                decoration: const InputDecoration(labelText: 'Weight (kg)'),
+                keyboardType: TextInputType.number,
+                readOnly: true,  // Rende il campo di sola lettura, dato che il valore viene calcolato automaticamente
               ),
             ],
-          );
-        },
+          ),
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('Cancel'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+          TextButton(
+            child: const Text('Add'),
+            onPressed: () {
+              final newSeries = {
+                'reps': int.parse(repsController.text),
+                'sets': int.parse(setsController.text),
+                'intensity': intensityController.text,
+                'rpe': rpeController.text,
+                'weight': double.parse(weightController.text),
+                'createdAt': Timestamp.now(),
+                'order': selectedExercise['series'].length + 1,
+              };
+              List<Map<String, dynamic>> updatedWeekList = List.from(weekList);
+              updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'].add(newSeries);
+              ref.read(weekListProvider.notifier).state = updatedWeekList;
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
       );
-    }
+    },
+  );
+}
 
  void editExercise(int weekIndex, int workoutIndex, int exerciseIndex, BuildContext context, WidgetRef ref) {
   final exerciseNameController = TextEditingController();
@@ -570,7 +609,7 @@ onPressed: () => removeSeries(weekList.indexOf(week), workoutIndex, exerciseInde
 );
 }).toList(),
 ElevatedButton(
-onPressed: () => addSeries(weekList.indexOf(week), workoutIndex, exerciseIndex, context),
+  onPressed: () => addSeries(weekList.indexOf(week), workoutIndex, exerciseIndex, context, ref),  // Aggiunto 'ref' alla fine
 child: const Text('Add New Series'),
 ),
 ],
