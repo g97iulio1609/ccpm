@@ -199,6 +199,7 @@ Future<void> addOrUpdateTrainingProgram(TrainingProgram program) async {
       for (var exercise in workout.exercises) {
         // New exercise
         DocumentReference exerciseRef = await _db.collection('exercisesWorkout').add({
+          'id':exercise.id,
           'name': exercise.name,
           'order': exercise.order,
           'variant': exercise.variant,
