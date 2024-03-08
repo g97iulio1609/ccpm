@@ -713,40 +713,60 @@ void _removeWeek(int weekIndex, WidgetRef ref) {
     String weekIdToRemove = ref.read(weekListProvider)[weekIndex]['id'];
     ref.read(trainingProgramProvider.notifier).state.trackToDeleteWeeks.add(weekIdToRemove);
 
-    // Update local state
-    List<Map<String, dynamic>> updatedWeekList = [...ref.read(weekListProvider)];
+    List<Map<String, dynamic>> updatedWeekList = List<Map<String, dynamic>>.from(ref.read(weekListProvider));
     updatedWeekList.removeAt(weekIndex);
+
+    // Aggiorna il numero delle settimane rimanenti
+    for (int i = weekIndex; i < updatedWeekList.length; i++) {
+        updatedWeekList[i]['number'] = i + 1; // Aggiorna il numero della settimana
+    }
+
     ref.read(weekListProvider.notifier).state = updatedWeekList;
 }
 
 void _removeWorkout(int weekIndex, int workoutIndex, WidgetRef ref) {
-    String workoutIdToRemove = ref.read(weekListProvider)[weekIndex]['workouts'][workoutIndex]['id'];
+    List<Map<String, dynamic>> weekList = List<Map<String, dynamic>>.from(ref.read(weekListProvider));
+    String workoutIdToRemove = weekList[weekIndex]['workouts'][workoutIndex]['id'];
     ref.read(trainingProgramProvider.notifier).state.trackToDeleteWorkouts.add(workoutIdToRemove);
 
-    // Update local state
-    List<Map<String, dynamic>> updatedWeekList = [...ref.read(weekListProvider)];
-    updatedWeekList[weekIndex]['workouts'].removeAt(workoutIndex);
-    ref.read(weekListProvider.notifier).state = updatedWeekList;
+    weekList[weekIndex]['workouts'].removeAt(workoutIndex);
+    
+    // Aggiorna l'ordine dei workout rimanenti
+    for (int i = workoutIndex; i < weekList[weekIndex]['workouts'].length; i++) {
+        weekList[weekIndex]['workouts'][i]['order'] = i + 1; // Aggiorna l'ordine del workout
+    }
+
+    ref.read(weekListProvider.notifier).state = weekList;
 }
 
 void _removeExercise(int weekIndex, int workoutIndex, int exerciseIndex, WidgetRef ref) {
-    String exerciseIdToRemove = ref.read(weekListProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['id'];
+    List<Map<String, dynamic>> weekList = List<Map<String, dynamic>>.from(ref.read(weekListProvider));
+    String exerciseIdToRemove = weekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['id'];
     ref.read(trainingProgramProvider.notifier).state.trackToDeleteExercises.add(exerciseIdToRemove);
 
-    // Update local state
-    List<Map<String, dynamic>> updatedWeekList = [...ref.read(weekListProvider)];
-    updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'].removeAt(exerciseIndex);
-    ref.read(weekListProvider.notifier).state = updatedWeekList;
+    weekList[weekIndex]['workouts'][workoutIndex]['exercises'].removeAt(exerciseIndex);
+
+    // Aggiorna l'ordine degli esercizi rimanenti
+    for (int i = exerciseIndex; i < weekList[weekIndex]['workouts'][workoutIndex]['exercises'].length; i++) {
+        weekList[weekIndex]['workouts'][workoutIndex]['exercises'][i]['order'] = i + 1; // Aggiorna l'ordine dell'esercizio
+    }
+
+    ref.read(weekListProvider.notifier).state = weekList;
 }
 
 void _removeSeries(int weekIndex, int workoutIndex, int exerciseIndex, int seriesIndex, WidgetRef ref) {
-    String seriesIdToRemove = ref.read(weekListProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex]['serieId'];
+    List<Map<String, dynamic>> weekList = List<Map<String, dynamic>>.from(ref.read(weekListProvider));
+    String seriesIdToRemove = weekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex]['serieId'];
     ref.read(trainingProgramProvider.notifier).state.trackToDeleteSeries.add(seriesIdToRemove);
 
-    // Update local state
-    List<Map<String, dynamic>> updatedWeekList = [...ref.read(weekListProvider)];
-    updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'].removeAt(seriesIndex);
-    ref.read(weekListProvider.notifier).state = updatedWeekList;
+    weekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'].removeAt(seriesIndex);
+
+    // Aggiorna l'ordine delle serie rimanenti
+    for (int i = seriesIndex; i < weekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'].length; i++) {
+        weekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][i]['order'] = i + 1; // Aggiorna l'ordine della serie
+    }
+
+    ref.read(weekListProvider.notifier).state = weekList;
 }
 
    void _submitProgram(BuildContext context, WidgetRef ref, FirestoreService firestoreService) {
