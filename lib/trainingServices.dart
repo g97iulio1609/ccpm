@@ -230,5 +230,33 @@ Future<TrainingProgram> fetchTrainingProgram(String programId) async {
   return program;
 }
 
+Future<void> removeToDeleteItems(TrainingProgram program) async {
+  WriteBatch batch = _db.batch();
+
+  // Add operations to the batch for weeks marked for deletion
+  for (String weekId in program.trackToDeleteWeeks) {
+    DocumentReference weekRef = _db.collection('weeks').doc(weekId);
+    batch.delete(weekRef);
+  }
+  // Add operations to the batch for workouts marked for deletion
+  for (String workoutId in program.trackToDeleteWorkouts) {
+    DocumentReference workoutRef = _db.collection('workouts').doc(workoutId);
+    batch.delete(workoutRef);
+  }
+  // Add operations to the batch for exercises marked for deletion
+  for (String exerciseId in program.trackToDeleteExercises) {
+    DocumentReference exerciseRef = _db.collection('exercisesWorkout').doc(exerciseId);
+    batch.delete(exerciseRef);
+  }
+  // Add operations to the batch for series marked for deletion
+  for (String seriesId in program.trackToDeleteSeries) {
+    DocumentReference seriesRef = _db.collection('series').doc(seriesId);
+    batch.delete(seriesRef);
+  }
+
+  // Commit the batch
+  await batch.commit();
+}
+
 
 }

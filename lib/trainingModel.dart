@@ -9,6 +9,10 @@ class TrainingProgram {
   String athleteId;
   int mesocycleNumber;
   List<Week> weeks;
+  List<String> trackToDeleteWeeks=[];
+  List<String> trackToDeleteWorkouts=[];
+  List<String> trackToDeleteExercises=[];
+  List<String> trackToDeleteSeries=[];
 
 
 TrainingProgram copyWith({
@@ -29,13 +33,17 @@ TrainingProgram copyWith({
     );
   }
   
-  TrainingProgram({
+TrainingProgram({
     this.id,
-    required this.name,
-    required this.description,
-    required this.athleteId,
-    required this.mesocycleNumber,
-    required this.weeks,
+    this.name = '',
+    this.description = '',
+    this.athleteId = '',
+    this.mesocycleNumber = 0,
+    this.weeks = const [],
+    this.trackToDeleteWeeks = const [],
+    this.trackToDeleteWorkouts = const [],
+    this.trackToDeleteExercises = const [],
+    this.trackToDeleteSeries = const [],
   });
 
   factory TrainingProgram.fromMap(Map<String, dynamic> map) {
@@ -265,8 +273,5 @@ class Series {
     };
   }
 
-  List<String> trackToDeleteWeeks = [];
-List<String> trackToDeleteWorkouts = [];
-List<String> trackToDeleteExercises = [];
-List<String> trackToDeleteSeries = [];
+
 }

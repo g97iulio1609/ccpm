@@ -23,8 +23,19 @@ final exercisesStreamProvider = StreamProvider<List<ExerciseModel>>((ref) {
   return exercisesService.getExercises();
 });
 
-final trainingProvider = StateProvider<List<Map<String, dynamic>>>((ref) {
+final weekListProvider = StateProvider<List<Map<String, dynamic>>>((ref) {
   return [];
+});
+
+final trainingProgramProvider = StateProvider<TrainingProgram>((ref) {
+  // Assicurati che le liste come trackToDeleteWeeks siano inizializzate come liste vuote modificabili.
+  return TrainingProgram(
+    trackToDeleteWeeks: [],
+    trackToDeleteWorkouts: [],
+    trackToDeleteExercises: [],
+    trackToDeleteSeries: [],
+    // Aggiungi qui altre proprietà necessarie per l'inizializzazione di TrainingProgram
+  );
 });
 
 class TrainingProgramPage extends HookConsumerWidget {
@@ -42,7 +53,7 @@ class TrainingProgramPage extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final firestoreService = ref.read(firestoreServiceProvider);
-    final weekList = ref.watch(trainingProvider);
+    final weekList = ref.watch(weekListProvider);
 
         // Utilizzo di useEffect per caricare i dati del programma se in modalità editing
     useEffect(() {
@@ -55,7 +66,7 @@ class TrainingProgramPage extends HookConsumerWidget {
           athleteIdController.text = program.athleteId;
           mesocycleNumberController.text = program.mesocycleNumber.toString();
           // Aggiorna la lista delle settimane
-          ref.read(trainingProvider.notifier).state = program.weeks.map((week) => week.toMap()).toList();
+          ref.read(weekListProvider.notifier).state = program.weeks.map((week) => week.toMap()).toList();
         }).catchError((error) {
           // Gestire l'errore
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading program: $error')));
@@ -193,13 +204,13 @@ class TrainingProgramPage extends HookConsumerWidget {
   }
 
   void _addWeek(WidgetRef ref) {
-    final weekList = ref.read(trainingProvider);
+    final weekList = ref.read(weekListProvider);
     final newWeek = {
       'number': weekList.length + 1,
       'createdAt': Timestamp.now(),
       'workouts': [],
     };
-    ref.read(trainingProvider.notifier).state = [...weekList, newWeek];
+    ref.read(weekListProvider.notifier).state = [...weekList, newWeek];
   }
 
   List<Widget> _buildWeekList(List<Map<String, dynamic>> weekList, BuildContext context, WidgetRef ref) {
@@ -295,7 +306,7 @@ class TrainingProgramPage extends HookConsumerWidget {
   }
 
   void _addWorkout(int weekIndex, WidgetRef ref) {
-    final weekList = ref.read(trainingProvider);
+    final weekList = ref.read(weekListProvider);
     final newWorkout = {
       'order': weekList[weekIndex]['workouts'].length + 1,
       'createdAt': Timestamp.now(),
@@ -303,7 +314,7 @@ class TrainingProgramPage extends HookConsumerWidget {
     };
     List<Map<String, dynamic>> updatedWeekList = [...weekList];
     updatedWeekList[weekIndex]['workouts'].add(newWorkout);
-    ref.read(trainingProvider.notifier).state = updatedWeekList;
+    ref.read(weekListProvider.notifier).state = updatedWeekList;
   }
 
   void _addExercise(int weekIndex, int workoutIndex, BuildContext context, WidgetRef ref) {
@@ -385,7 +396,7 @@ class TrainingProgramPage extends HookConsumerWidget {
                 // Creiamo un nuovo ID per l'esercizio
                 String exerciseId = db.collection('exercisesWorkout').doc().id;
                 final newExercise = {
-                  'order': ref.read(trainingProvider)[weekIndex]['workouts'][workoutIndex]['exercises'].length + 1,
+                  'order': ref.read(weekListProvider)[weekIndex]['workouts'][workoutIndex]['exercises'].length + 1,
                   'createdAt': Timestamp.now(),
                   'name': exerciseController.text,
                   'variant': variantController.text,
@@ -393,9 +404,9 @@ class TrainingProgramPage extends HookConsumerWidget {
                   'id': selectedExerciseId,
                   'exerciseId':exerciseId
                 };
-                List<Map<String, dynamic>> updatedWeekList = [...ref.read(trainingProvider)];
+                List<Map<String, dynamic>> updatedWeekList = [...ref.read(weekListProvider)];
                 updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'].add(newExercise);
-                ref.read(trainingProvider.notifier).state = updatedWeekList;
+                ref.read(weekListProvider.notifier).state = updatedWeekList;
                 Navigator.of(context).pop();
               },
             ),
@@ -419,7 +430,7 @@ void _showSeriesDialog(int weekIndex, int workoutIndex, int exerciseIndex, Build
   int latestMaxWeight = 0;
 
   String athleteId = athleteIdController.text;
-  Map<String, dynamic> selectedExercise = ref.read(trainingProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex];
+  Map<String, dynamic> selectedExercise = ref.read(weekListProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex];
   String exerciseId = selectedExercise['id'];
 
   final usersService = ref.read(usersServiceProvider);
@@ -497,12 +508,12 @@ void _showSeriesDialog(int weekIndex, int workoutIndex, int exerciseIndex, Build
                 intensity: intensityController.text,
                 rpe: rpeController.text,
                 weight: double.parse(weightController.text),
-                order: ref.read(trainingProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'].length + 1,
+                order: ref.read(weekListProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'].length + 1,
               );
 
-              List<Map<String, dynamic>> updatedWeekList = [...ref.read(trainingProvider)];
+              List<Map<String, dynamic>> updatedWeekList = [...ref.read(weekListProvider)];
               updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'].add(newSeries.toMap());
-              ref.read(trainingProvider.notifier).state = updatedWeekList;
+              ref.read(weekListProvider.notifier).state = updatedWeekList;
               Navigator.of(context).pop();
             },
           ),
@@ -512,9 +523,9 @@ void _showSeriesDialog(int weekIndex, int workoutIndex, int exerciseIndex, Build
   );
 }
   void _editExercise(int weekIndex, int workoutIndex, int exerciseIndex, BuildContext context, WidgetRef ref) {
-    final exerciseNameController = TextEditingController(text: ref.read(trainingProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['name']);
-    final variantController = TextEditingController(text: ref.read(trainingProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['variant']);
-    String selectedExerciseId = ref.read(trainingProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['id'];
+    final exerciseNameController = TextEditingController(text: ref.read(weekListProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['name']);
+    final variantController = TextEditingController(text: ref.read(weekListProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['variant']);
+    String selectedExerciseId = ref.read(weekListProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['id'];
 
     showDialog(
       context: context,
@@ -582,11 +593,11 @@ void _showSeriesDialog(int weekIndex, int workoutIndex, int exerciseIndex, Build
             TextButton(
               child: const Text('Update'),
               onPressed: () {
-                List<Map<String, dynamic>> updatedWeekList = [...ref.read(trainingProvider)];
+                List<Map<String, dynamic>> updatedWeekList = [...ref.read(weekListProvider)];
                 updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['name'] = exerciseNameController.text;
                 updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['variant'] = variantController.text;
                 updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['id'] = selectedExerciseId;
-                ref.read(trainingProvider.notifier).state = updatedWeekList;
+                ref.read(weekListProvider.notifier).state = updatedWeekList;
                 Navigator.of(context).pop();
               },
             ),
@@ -597,7 +608,7 @@ void _showSeriesDialog(int weekIndex, int workoutIndex, int exerciseIndex, Build
   }
 
 void _editSeries(int weekIndex, int workoutIndex, int exerciseIndex, int seriesIndex, BuildContext context, WidgetRef ref) {
-    final seriesData = ref.read(trainingProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex];
+    final seriesData = ref.read(weekListProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex];
     final repsController = TextEditingController(text: seriesData['reps'].toString());
     final setsController = TextEditingController(text: seriesData['sets'].toString());
     final intensityController = TextEditingController(text: seriesData['intensity']);
@@ -607,7 +618,7 @@ void _editSeries(int weekIndex, int workoutIndex, int exerciseIndex, int seriesI
     int latestMaxWeight = 0;
 
     String athleteId = athleteIdController.text;
-    Map<String, dynamic> selectedExercise = ref.read(trainingProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex];
+    Map<String, dynamic> selectedExercise = ref.read(weekListProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex];
     String exerciseId = selectedExercise['id'];
 
     final usersService = ref.read(usersServiceProvider);
@@ -677,7 +688,7 @@ void _editSeries(int weekIndex, int workoutIndex, int exerciseIndex, int seriesI
                         onPressed: () {
                             // Assicurati di mantenere il serieId esistente
                             String existingSerieId = seriesData['serieId'];
-                            List<Map<String, dynamic>> updatedWeekList = [...ref.read(trainingProvider)];
+                            List<Map<String, dynamic>> updatedWeekList = [...ref.read(weekListProvider)];
                             updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex] = {
                                 'reps': int.parse(repsController.text),
                                 'sets': int.parse(setsController.text),
@@ -688,7 +699,7 @@ void _editSeries(int weekIndex, int workoutIndex, int exerciseIndex, int seriesI
                                 'order': seriesData['order'],
                                 'serieId': existingSerieId // Mantieni il serieId esistente
                             };
-                            ref.read(trainingProvider.notifier).state = updatedWeekList;
+                            ref.read(weekListProvider.notifier).state = updatedWeekList;
                             Navigator.of(context).pop();
                         },
                     ),
@@ -698,56 +709,82 @@ void _editSeries(int weekIndex, int workoutIndex, int exerciseIndex, int seriesI
     );
 }
 
-  void _removeWeek(int weekIndex, WidgetRef ref) {
-    List<Map<String, dynamic>> updatedWeekList = [...ref.read(trainingProvider)];
+void _removeWeek(int weekIndex, WidgetRef ref) {
+    String weekIdToRemove = ref.read(weekListProvider)[weekIndex]['id'];
+    ref.read(trainingProgramProvider.notifier).state.trackToDeleteWeeks.add(weekIdToRemove);
+
+    // Update local state
+    List<Map<String, dynamic>> updatedWeekList = [...ref.read(weekListProvider)];
     updatedWeekList.removeAt(weekIndex);
-    ref.read(trainingProvider.notifier).state = updatedWeekList;
-  }
+    ref.read(weekListProvider.notifier).state = updatedWeekList;
+}
 
-  void _removeWorkout(int weekIndex, int workoutIndex, WidgetRef ref) {
-    List<Map<String, dynamic>> updatedWeekList = [...ref.read(trainingProvider)];
+void _removeWorkout(int weekIndex, int workoutIndex, WidgetRef ref) {
+    String workoutIdToRemove = ref.read(weekListProvider)[weekIndex]['workouts'][workoutIndex]['id'];
+    ref.read(trainingProgramProvider.notifier).state.trackToDeleteWorkouts.add(workoutIdToRemove);
+
+    // Update local state
+    List<Map<String, dynamic>> updatedWeekList = [...ref.read(weekListProvider)];
     updatedWeekList[weekIndex]['workouts'].removeAt(workoutIndex);
-    ref.read(trainingProvider.notifier).state = updatedWeekList;
-  }
+    ref.read(weekListProvider.notifier).state = updatedWeekList;
+}
 
-  void _removeExercise(int weekIndex, int workoutIndex, int exerciseIndex, WidgetRef ref) {
-    List<Map<String, dynamic>> updatedWeekList = [...ref.read(trainingProvider)];
+void _removeExercise(int weekIndex, int workoutIndex, int exerciseIndex, WidgetRef ref) {
+    String exerciseIdToRemove = ref.read(weekListProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['id'];
+    ref.read(trainingProgramProvider.notifier).state.trackToDeleteExercises.add(exerciseIdToRemove);
+
+    // Update local state
+    List<Map<String, dynamic>> updatedWeekList = [...ref.read(weekListProvider)];
     updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'].removeAt(exerciseIndex);
-    ref.read(trainingProvider.notifier).state = updatedWeekList;
-  }
+    ref.read(weekListProvider.notifier).state = updatedWeekList;
+}
 
-  void _removeSeries(int weekIndex, int workoutIndex, int exerciseIndex, int seriesIndex, WidgetRef ref) {
-    List<Map<String, dynamic>> updatedWeekList = [...ref.read(trainingProvider)];
+void _removeSeries(int weekIndex, int workoutIndex, int exerciseIndex, int seriesIndex, WidgetRef ref) {
+    String seriesIdToRemove = ref.read(weekListProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex]['serieId'];
+    ref.read(trainingProgramProvider.notifier).state.trackToDeleteSeries.add(seriesIdToRemove);
+
+    // Update local state
+    List<Map<String, dynamic>> updatedWeekList = [...ref.read(weekListProvider)];
     updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'].removeAt(seriesIndex);
-    ref.read(trainingProvider.notifier).state = updatedWeekList;
-  }
+    ref.read(weekListProvider.notifier).state = updatedWeekList;
+}
 
    void _submitProgram(BuildContext context, WidgetRef ref, FirestoreService firestoreService) {
-      if (_formKey.currentState!.validate()) {
-        final weeksConverted = ref.read(trainingProvider).map((week) => Week.fromMap(week)).toList();  
-        final newProgram = TrainingProgram(
-          id: programId, // Usa l'ID esistente per l'aggiornamento
-          name: nameController.text,  
-          description: descriptionController.text,  
-          athleteId: athleteIdController.text,  
-          mesocycleNumber: int.tryParse(mesocycleNumberController.text) ?? 0,  
-          weeks: weeksConverted,  
-        );
+    if (_formKey.currentState!.validate()) {
+      final weeksConverted = ref.read(weekListProvider).map((week) => Week.fromMap(week)).toList();
+      final updatedProgram = ref.read(trainingProgramProvider);
+      updatedProgram.id = programId; // Ensure correct program ID
+      updatedProgram.name = nameController.text;
+      updatedProgram.description = descriptionController.text;
+      updatedProgram.athleteId = athleteIdController.text;
+      updatedProgram.mesocycleNumber = int.tryParse(mesocycleNumberController.text) ?? 0;
+      updatedProgram.weeks = weeksConverted;
 
-        firestoreService.addOrUpdateTrainingProgram(newProgram).then((result) {  
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Program added/updated successfully')));  
-          _resetFields(ref);  
-        }).catchError((error) {  
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error adding/updating program: $error')));  
-        });  
-      }  
+      firestoreService.removeToDeleteItems(updatedProgram).then((_) {
+        firestoreService.addOrUpdateTrainingProgram(updatedProgram).then((result) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Program added/updated successfully')));
+          _resetFields(ref);
+        }).catchError((error) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error adding/updating program: $error')));
+        });
+      }).catchError((error) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error removing items: $error')));
+      });
     }
+  }
 
   void _resetFields(WidgetRef ref) {
     nameController.clear();
     descriptionController.clear();
     athleteIdController.clear();
     mesocycleNumberController.clear();
-    ref.read(trainingProvider.notifier).state = [];
+    ref.read(weekListProvider.notifier).state = [];
+    // Reset the tracked IDs in TrainingProgram state as well
+    final resetProgram = ref.read(trainingProgramProvider.notifier).state;
+    resetProgram.trackToDeleteWeeks.clear();
+    resetProgram.trackToDeleteWorkouts.clear();
+    resetProgram.trackToDeleteExercises.clear();
+    resetProgram.trackToDeleteSeries.clear();
+    ref.read(trainingProgramProvider.notifier).state = resetProgram;
   }
 }
