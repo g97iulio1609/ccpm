@@ -68,6 +68,19 @@ class ExercisesList extends HookConsumerWidget {
       await exercisesService.deleteExercise(id);
     }
 
+     // Funzione per determinare il numero di colonne in base alla larghezza dello schermo
+    int getCrossAxisCount(double width) {
+      if (width > 1200) {
+        return 4;
+      } else if (width > 800) {
+        return 3;
+      } else if (width > 600) {
+        return 2;
+      } else {
+        return 1;
+      }
+    }
+
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
@@ -152,81 +165,77 @@ class ExercisesList extends HookConsumerWidget {
                 ),
               ),
             ),
-            StreamBuilder<List<ExerciseModel>>(
-              stream: exercisesService.getExercises(),
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  final exercises = snapshot.data!;
-                  return GridView.builder(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount:
-                          MediaQuery.of(context).size.width > 600 ? 4 : 2,
-                      childAspectRatio: 3 / 2,
-                      crossAxisSpacing: 4,
-                      mainAxisSpacing: 4,
-                    ),
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: exercises.length,
-                    itemBuilder: (context, index) {
-                      final exercise = exercises[index];
-                      if (exercise.name
-                          .toLowerCase()
-                          .contains(searchText.value.toLowerCase())) {
-                        return Card(
-                          child: InkWell(
-                            onTap: () => editExercise(exercise),
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    exercise.name,
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16),
-                                  ),
-                                  Text(
-                                      '${exercise.muscleGroup} - ${exercise.type}'),
-                                  const Spacer(),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          foregroundColor: Colors.white,
-                                          backgroundColor: Colors.green,
-                                        ),
-                                        child: const Text('Modifica'),
-                                        onPressed: () => editExercise(exercise),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          foregroundColor: Colors.white,
-                                          backgroundColor: Colors.red,
-                                        ),
-                                        child: const Text('Elimina'),
-                                        onPressed: () =>
-                                            deleteExercise(exercise.id),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
+         StreamBuilder<List<ExerciseModel>>(
+  stream: exercisesService.getExercises(),
+  builder: (context, snapshot) {
+    if (snapshot.hasData) {
+      final exercises = snapshot.data!;
+      final screenWidth = MediaQuery.of(context).size.width;
+      return GridView.builder(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: getCrossAxisCount(screenWidth),
+          childAspectRatio: 3 / 2,
+          crossAxisSpacing: 4,
+          mainAxisSpacing: 4,
+        ),
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: exercises.length,
+        itemBuilder: (context, index) {
+          final exercise = exercises[index];
+          if (exercise.name.toLowerCase().contains(searchText.value.toLowerCase())) {
+            return Card(
+              child: InkWell(
+                onTap: () => editExercise(exercise),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center, // Centra verticalmente i contenuti nella colonna
+                    children: [
+                      Text(
+                        exercise.name,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16),
+                      ),
+                      Text('${exercise.muscleGroup} - ${exercise.type}'),
+                      const SizedBox(height: 20), // Aggiungi uno spazio verticale per separare il testo dai pulsanti
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround, // Centra orizzontalmente i pulsanti nella riga
+                        children: [
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: Colors.green,
                             ),
+                            child: const Text('Modifica'),
+                            onPressed: () => editExercise(exercise),
                           ),
-                        );
-                      } else {
-                        return Container();
-                      }
-                    },
-                  );
-                } else if (snapshot.hasError) {
-                  return Text('Errore: ${snapshot.error}');
-                } else {
-                  return const CircularProgressIndicator();
+                          const SizedBox(width: 8), // Spazio tra i pulsanti
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: Colors.red,
+                            ),
+                            child: const Text('Elimina'),
+                            onPressed: () => deleteExercise(exercise.id),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          } else {
+            return Container(); // Ritorna un container vuoto se il nome dell'esercizio non corrisponde al testo di ricerca
+          }
+        },
+      );
+    } else if (snapshot.hasError) {
+      return Text('Errore: ${snapshot.error}');
+    } else {
+      return const CircularProgressIndicator();
                 }
               },
             ),

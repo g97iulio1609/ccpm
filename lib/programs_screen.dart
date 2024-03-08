@@ -2,8 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'trainingProgram.dart';  // Assicurati che questa importazione sia corretta
-import 'trainingviewer.dart';  // Assicurati che questa importazione sia corretta
 
 class ProgramsScreen extends HookConsumerWidget {
   const ProgramsScreen({super.key});
@@ -11,6 +9,19 @@ class ProgramsScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final TextEditingController controller = useTextEditingController();
+    
+    // Aggiungi questa funzione per calcolare il numero di colonne in base alla larghezza dello schermo
+    int getCrossAxisCount(double width) {
+      if (width > 1200) {
+        return 4;
+      } else if (width > 800) {
+        return 3;
+      } else if (width > 600) {
+        return 2;
+      } else {
+        return 1;
+      }
+    }
 
     Future<void> addProgram(String name) async {
       if (name.trim().isEmpty) return;
@@ -35,7 +46,7 @@ class ProgramsScreen extends HookConsumerWidget {
                 labelText: 'Crea Programma Di Allenamento',
                 suffixIcon: Icon(Icons.add),
               ),
-              onSubmitted: (value) => addProgram(value),
+              onSubmitted: addProgram,
             ),
           ),
           Expanded(
@@ -45,16 +56,17 @@ class ProgramsScreen extends HookConsumerWidget {
                 if (snapshot.hasError) {
                   return const Text('Si è verificato un errore');
                 }
-
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
                 final documents = snapshot.data!.docs;
+                // Utilizza MediaQuery per ottenere la larghezza dello schermo corrente
+                final screenWidth = MediaQuery.of(context).size.width;
 
                 return GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: getCrossAxisCount(screenWidth), // Adatta il numero di colonne alla larghezza dello schermo
                     childAspectRatio: 3 / 2,
                     crossAxisSpacing: 20,
                     mainAxisSpacing: 20,
@@ -66,13 +78,12 @@ class ProgramsScreen extends HookConsumerWidget {
                       elevation: 5,
                       margin: const EdgeInsets.all(10),
                       child: InkWell(
-                        onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                          builder: (context) => TrainingViewer(programId: doc.id), // Ora passa a TrainingViewer
-                        )),
+                        onTap: () {}, // Rimuovi la navigazione se non è necessaria
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(doc['name'], style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                            SizedBox(height: 8), // Aggiungi spazio per una migliore leggibilità
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
@@ -80,9 +91,7 @@ class ProgramsScreen extends HookConsumerWidget {
                                   style: ElevatedButton.styleFrom(
                                     foregroundColor: Colors.white, backgroundColor: Colors.green,
                                   ),
-                                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                                    builder: (context) => TrainingProgramPage(programId: doc.id), // Passa a TrainingProgram per modifica
-                                  )),
+                                  onPressed: () {}, // Aggiungi funzionalità se necessario
                                   child: const Text('Modifica'),
                                 ),
                                 ElevatedButton(
