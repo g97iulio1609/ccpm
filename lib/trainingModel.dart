@@ -264,4 +264,9 @@ class Series {
       'order': order,
     };
   }
+
+  List<String> trackToDeleteWeeks = [];
+List<String> trackToDeleteWorkouts = [];
+List<String> trackToDeleteExercises = [];
+List<String> trackToDeleteSeries = [];
 }
