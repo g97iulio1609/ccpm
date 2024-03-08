@@ -1,0 +1,188 @@
+[debug] [2024-03-08T12:06:37.133Z] ----------------------------------------------------------------------
+[debug] [2024-03-08T12:06:37.137Z] Command:       /usr/local/bin/node /usr/local/bin/firebase hosting:channel:deploy preview_flutter
+[debug] [2024-03-08T12:06:37.137Z] CLI Version:   13.4.0
+[debug] [2024-03-08T12:06:37.138Z] Platform:      darwin
+[debug] [2024-03-08T12:06:37.138Z] Node Version:  v21.1.0
+[debug] [2024-03-08T12:06:37.138Z] Time:          Fri Mar 08 2024 13:06:37 GMT+0100 (Ora standard dell’Europa centrale)
+[debug] [2024-03-08T12:06:37.138Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2024-03-08T12:06:37.168Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2024-03-08T12:06:37.168Z] > authorizing via signed-in user (giulio97.leone@gmail.com)
+[debug] [2024-03-08T12:06:37.168Z] [iam] checking project alphaness-322423 for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2024-03-08T12:06:37.169Z] > refreshing access token with scopes: []
+[debug] [2024-03-08T12:06:37.169Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2024-03-08T12:06:37.169Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2024-03-08T12:06:37.273Z] *** [apiv2] error from fetch(https://www.googleapis.com/oauth2/v3/token, {"headers":{},"method":"POST","body":{"_overheadLength":545,"_valueLength":212,"_valuesToMeasure":[],"writable":false,"readable":true,"dataSize":0,"maxDataSize":2097152,"pauseStreams":true,"_released":true,"_streams":[],"_currentStream":null,"_insideLoop":false,"_pendingNext":false,"_boundary":"--------------------------504323419729529951429962","_events":{},"_eventsCount":1}}): FetchError: request to https://www.googleapis.com/oauth2/v3/token failed, reason: getaddrinfo ENOTFOUND www.googleapis.com
+[debug] [2024-03-08T12:06:37.273Z] [iam] error while checking permissions, command may fail: FirebaseError: Authentication Error: Your credentials are no longer valid. Please run firebase login --reauth
+
+For CI servers and headless environments, generate a new token with firebase login:ci
+[debug] [2024-03-08T12:06:37.274Z] > refreshing access token with scopes: []
+[debug] [2024-03-08T12:06:37.274Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2024-03-08T12:06:37.274Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2024-03-08T12:06:37.281Z] *** [apiv2] error from fetch(https://www.googleapis.com/oauth2/v3/token, {"headers":{},"method":"POST","body":{"_overheadLength":545,"_valueLength":212,"_valuesToMeasure":[],"writable":false,"readable":true,"dataSize":0,"maxDataSize":2097152,"pauseStreams":true,"_released":true,"_streams":[],"_currentStream":null,"_insideLoop":false,"_pendingNext":false,"_boundary":"--------------------------039367192107909826187867","_events":{},"_eventsCount":1}}): FetchError: request to https://www.googleapis.com/oauth2/v3/token failed, reason: getaddrinfo ENOTFOUND www.googleapis.com
+[debug] [2024-03-08T12:06:37.281Z] Authentication Error: Your credentials are no longer valid. Please run firebase login --reauth
+
+For CI servers and headless environments, generate a new token with firebase login:ci
+[debug] [2024-03-08T12:06:37.287Z] FirebaseError: Authentication Error: Your credentials are no longer valid. Please run firebase login --reauth
+
+For CI servers and headless environments, generate a new token with firebase login:ci
+    at invalidCredentialError (/usr/local/lib/node_modules/firebase-tools/lib/auth.js:142:12)
+    at refreshTokens (/usr/local/lib/node_modules/firebase-tools/lib/auth.js:515:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Client.getAccessToken (/usr/local/lib/node_modules/firebase-tools/lib/apiv2.js:156:22)
+    at async Client.addAuthHeader (/usr/local/lib/node_modules/firebase-tools/lib/apiv2.js:147:21)
+    at async Client.request (/usr/local/lib/node_modules/firebase-tools/lib/apiv2.js:103:34)
+    at async getFirebaseProject (/usr/local/lib/node_modules/firebase-tools/lib/management/projects.js:295:21)
+    at async getDefaultHostingSite (/usr/local/lib/node_modules/firebase-tools/lib/getDefaultHostingSite.js:14:21)
+    at async Object.requireHostingSite [as fn] (/usr/local/lib/node_modules/firebase-tools/lib/requireHostingSite.js:9:18)
+    at async /usr/local/lib/node_modules/firebase-tools/lib/command.js:226:17
+[error] 
+[error] Error: Failed to get Firebase project alphaness-322423. Please make sure the project exists and your account has permission to access it.
+[debug] [2024-03-08T12:06:56.179Z] ----------------------------------------------------------------------
+[debug] [2024-03-08T12:06:56.191Z] Command:       /usr/local/bin/node /usr/local/bin/firebase hosting:channel:deploy preview_flutter
+[debug] [2024-03-08T12:06:56.191Z] CLI Version:   13.4.0
+[debug] [2024-03-08T12:06:56.192Z] Platform:      darwin
+[debug] [2024-03-08T12:06:56.192Z] Node Version:  v21.1.0
+[debug] [2024-03-08T12:06:56.192Z] Time:          Fri Mar 08 2024 13:06:56 GMT+0100 (Ora standard dell’Europa centrale)
+[debug] [2024-03-08T12:06:56.192Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2024-03-08T12:06:56.222Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2024-03-08T12:06:56.222Z] > authorizing via signed-in user (giulio97.leone@gmail.com)
+[debug] [2024-03-08T12:06:56.222Z] [iam] checking project alphaness-322423 for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2024-03-08T12:06:56.223Z] > refreshing access token with scopes: []
+[debug] [2024-03-08T12:06:56.224Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2024-03-08T12:06:56.224Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2024-03-08T12:06:56.371Z] *** [apiv2] error from fetch(https://www.googleapis.com/oauth2/v3/token, {"headers":{},"method":"POST","body":{"_overheadLength":545,"_valueLength":212,"_valuesToMeasure":[],"writable":false,"readable":true,"dataSize":0,"maxDataSize":2097152,"pauseStreams":true,"_released":true,"_streams":[],"_currentStream":null,"_insideLoop":false,"_pendingNext":false,"_boundary":"--------------------------765014817165237688125748","_events":{},"_eventsCount":1}}): FetchError: request to https://www.googleapis.com/oauth2/v3/token failed, reason: getaddrinfo ENOTFOUND www.googleapis.com
+[debug] [2024-03-08T12:06:56.371Z] [iam] error while checking permissions, command may fail: FirebaseError: Authentication Error: Your credentials are no longer valid. Please run firebase login --reauth
+
+For CI servers and headless environments, generate a new token with firebase login:ci
+[debug] [2024-03-08T12:06:56.371Z] > refreshing access token with scopes: []
+[debug] [2024-03-08T12:06:56.372Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2024-03-08T12:06:56.372Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2024-03-08T12:06:56.380Z] *** [apiv2] error from fetch(https://www.googleapis.com/oauth2/v3/token, {"headers":{},"method":"POST","body":{"_overheadLength":545,"_valueLength":212,"_valuesToMeasure":[],"writable":false,"readable":true,"dataSize":0,"maxDataSize":2097152,"pauseStreams":true,"_released":true,"_streams":[],"_currentStream":null,"_insideLoop":false,"_pendingNext":false,"_boundary":"--------------------------658191741980426262833230","_events":{},"_eventsCount":1}}): FetchError: request to https://www.googleapis.com/oauth2/v3/token failed, reason: getaddrinfo ENOTFOUND www.googleapis.com
+[debug] [2024-03-08T12:06:56.381Z] Authentication Error: Your credentials are no longer valid. Please run firebase login --reauth
+
+For CI servers and headless environments, generate a new token with firebase login:ci
+[debug] [2024-03-08T12:06:56.388Z] FirebaseError: Authentication Error: Your credentials are no longer valid. Please run firebase login --reauth
+
+For CI servers and headless environments, generate a new token with firebase login:ci
+    at invalidCredentialError (/usr/local/lib/node_modules/firebase-tools/lib/auth.js:142:12)
+    at refreshTokens (/usr/local/lib/node_modules/firebase-tools/lib/auth.js:515:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Client.getAccessToken (/usr/local/lib/node_modules/firebase-tools/lib/apiv2.js:156:22)
+    at async Client.addAuthHeader (/usr/local/lib/node_modules/firebase-tools/lib/apiv2.js:147:21)
+    at async Client.request (/usr/local/lib/node_modules/firebase-tools/lib/apiv2.js:103:34)
+    at async getFirebaseProject (/usr/local/lib/node_modules/firebase-tools/lib/management/projects.js:295:21)
+    at async getDefaultHostingSite (/usr/local/lib/node_modules/firebase-tools/lib/getDefaultHostingSite.js:14:21)
+    at async Object.requireHostingSite [as fn] (/usr/local/lib/node_modules/firebase-tools/lib/requireHostingSite.js:9:18)
+    at async /usr/local/lib/node_modules/firebase-tools/lib/command.js:226:17
+[error] 
+[error] Error: Failed to get Firebase project alphaness-322423. Please make sure the project exists and your account has permission to access it.
+[debug] [2024-03-08T12:07:13.065Z] ----------------------------------------------------------------------
+[debug] [2024-03-08T12:07:13.083Z] Command:       /usr/local/bin/node /usr/local/bin/firebase init hosting
+[debug] [2024-03-08T12:07:13.083Z] CLI Version:   13.4.0
+[debug] [2024-03-08T12:07:13.083Z] Platform:      darwin
+[debug] [2024-03-08T12:07:13.083Z] Node Version:  v21.1.0
+[debug] [2024-03-08T12:07:13.084Z] Time:          Fri Mar 08 2024 13:07:13 GMT+0100 (Ora standard dell’Europa centrale)
+[debug] [2024-03-08T12:07:13.084Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2024-03-08T12:07:13.114Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2024-03-08T12:07:13.114Z] > authorizing via signed-in user (giulio97.leone@gmail.com)
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  /Users/giulioleone/alphaness-one/alphanessflutter/alphanessone/AlphanessOne
+
+Before we get started, keep in mind:
+
+  * You are initializing within an existing Firebase project directory
+
+[info] 
+=== Project Setup
+[info] 
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] but for now we'll just set up a default project.
+[info] 
+[debug] [2024-03-08T12:07:13.116Z] Using project from CLI flag: alphaness-322423
+[debug] [2024-03-08T12:07:13.116Z] > refreshing access token with scopes: []
+[debug] [2024-03-08T12:07:13.117Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2024-03-08T12:07:13.117Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2024-03-08T12:07:13.152Z] *** [apiv2] error from fetch(https://www.googleapis.com/oauth2/v3/token, {"headers":{},"method":"POST","body":{"_overheadLength":545,"_valueLength":212,"_valuesToMeasure":[],"writable":false,"readable":true,"dataSize":0,"maxDataSize":2097152,"pauseStreams":true,"_released":true,"_streams":[],"_currentStream":null,"_insideLoop":false,"_pendingNext":false,"_boundary":"--------------------------107486715950000529047823","_events":{},"_eventsCount":1}}): FetchError: request to https://www.googleapis.com/oauth2/v3/token failed, reason: getaddrinfo ENOTFOUND www.googleapis.com
+[debug] [2024-03-08T12:07:13.152Z] Authentication Error: Your credentials are no longer valid. Please run firebase login --reauth
+
+For CI servers and headless environments, generate a new token with firebase login:ci
+[debug] [2024-03-08T12:07:13.159Z] FirebaseError: Authentication Error: Your credentials are no longer valid. Please run firebase login --reauth
+
+For CI servers and headless environments, generate a new token with firebase login:ci
+    at invalidCredentialError (/usr/local/lib/node_modules/firebase-tools/lib/auth.js:142:12)
+    at refreshTokens (/usr/local/lib/node_modules/firebase-tools/lib/auth.js:515:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Client.getAccessToken (/usr/local/lib/node_modules/firebase-tools/lib/apiv2.js:156:22)
+    at async Client.addAuthHeader (/usr/local/lib/node_modules/firebase-tools/lib/apiv2.js:147:21)
+    at async Client.request (/usr/local/lib/node_modules/firebase-tools/lib/apiv2.js:103:34)
+    at async getFirebaseProject (/usr/local/lib/node_modules/firebase-tools/lib/management/projects.js:295:21)
+    at async doSetup (/usr/local/lib/node_modules/firebase-tools/lib/init/features/project.js:85:27)
+    at async init (/usr/local/lib/node_modules/firebase-tools/lib/init/index.js:37:9)
+[error] 
+[error] Error: Failed to get Firebase project alphaness-322423. Please make sure the project exists and your account has permission to access it.
+[debug] [2024-03-08T12:07:34.695Z] ----------------------------------------------------------------------
+[debug] [2024-03-08T12:07:34.696Z] Command:       /usr/local/bin/node /usr/local/bin/firebase init
+[debug] [2024-03-08T12:07:34.696Z] CLI Version:   13.4.0
+[debug] [2024-03-08T12:07:34.696Z] Platform:      darwin
+[debug] [2024-03-08T12:07:34.697Z] Node Version:  v21.1.0
+[debug] [2024-03-08T12:07:34.697Z] Time:          Fri Mar 08 2024 13:07:34 GMT+0100 (Ora standard dell’Europa centrale)
+[debug] [2024-03-08T12:07:34.697Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2024-03-08T12:07:34.726Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2024-03-08T12:07:34.726Z] > authorizing via signed-in user (giulio97.leone@gmail.com)
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  /Users/giulioleone/alphaness-one/alphanessflutter/alphanessone/AlphanessOne
+
+Before we get started, keep in mind:
+
+  * You are initializing within an existing Firebase project directory
+
+[info] 
+=== Project Setup
+[info] 
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] but for now we'll just set up a default project.
+[info] 
+[debug] [2024-03-08T12:07:43.426Z] Using project from CLI flag: alphaness-322423
+[debug] [2024-03-08T12:07:43.428Z] > refreshing access token with scopes: []
+[debug] [2024-03-08T12:07:43.430Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2024-03-08T12:07:43.430Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2024-03-08T12:07:43.649Z] *** [apiv2] error from fetch(https://www.googleapis.com/oauth2/v3/token, {"headers":{},"method":"POST","body":{"_overheadLength":545,"_valueLength":212,"_valuesToMeasure":[],"writable":false,"readable":true,"dataSize":0,"maxDataSize":2097152,"pauseStreams":true,"_released":true,"_streams":[],"_currentStream":null,"_insideLoop":false,"_pendingNext":false,"_boundary":"--------------------------033591916820673708107199","_events":{},"_eventsCount":1}}): FetchError: request to https://www.googleapis.com/oauth2/v3/token failed, reason: getaddrinfo ENOTFOUND www.googleapis.com
+[debug] [2024-03-08T12:07:43.650Z] Authentication Error: Your credentials are no longer valid. Please run firebase login --reauth
+
+For CI servers and headless environments, generate a new token with firebase login:ci
+[debug] [2024-03-08T12:07:43.659Z] FirebaseError: Authentication Error: Your credentials are no longer valid. Please run firebase login --reauth
+
+For CI servers and headless environments, generate a new token with firebase login:ci
+    at invalidCredentialError (/usr/local/lib/node_modules/firebase-tools/lib/auth.js:142:12)
+    at refreshTokens (/usr/local/lib/node_modules/firebase-tools/lib/auth.js:515:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Client.getAccessToken (/usr/local/lib/node_modules/firebase-tools/lib/apiv2.js:156:22)
+    at async Client.addAuthHeader (/usr/local/lib/node_modules/firebase-tools/lib/apiv2.js:147:21)
+    at async Client.request (/usr/local/lib/node_modules/firebase-tools/lib/apiv2.js:103:34)
+    at async getFirebaseProject (/usr/local/lib/node_modules/firebase-tools/lib/management/projects.js:295:21)
+    at async doSetup (/usr/local/lib/node_modules/firebase-tools/lib/init/features/project.js:85:27)
+    at async init (/usr/local/lib/node_modules/firebase-tools/lib/init/index.js:37:9)
+[error] 
+[error] Error: Failed to get Firebase project alphaness-322423. Please make sure the project exists and your account has permission to access it.

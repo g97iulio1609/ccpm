@@ -147,7 +147,7 @@ class Exercise {
   String? exerciseId;
   List<Series> series;
 
-  Exercise({this.id, this.exerciseId, required this.name, required this.variant, required this.order, required this.series});
+Exercise({this.id, this.exerciseId, required this.name, required this.variant, required this.order, this.series = const []});
 
   factory Exercise.fromMap(Map<String, dynamic> map) {
     return Exercise(
@@ -188,6 +188,7 @@ class Exercise {
 
 class Series {
   String? id;
+  String serieId; // Cambia da String? a String
   int reps;
   int sets;
   String intensity;
@@ -200,6 +201,7 @@ class Series {
 
   Series({
     this.id,
+    required this.serieId, // Aggiungi required
     required this.reps,
     required this.sets,
     required this.intensity,
@@ -214,6 +216,8 @@ class Series {
   factory Series.fromMap(Map<String, dynamic> map) {
     return Series(
       id: map['id'],
+            serieId: map['serieId'] ?? '', // Aggiungi un valore di default vuoto
+
       reps: map['reps'],
       sets: map['sets'],
       intensity: map['intensity'],
@@ -230,6 +234,8 @@ class Series {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return Series(
       id: doc.id,
+      serieId: data['serieId'] ?? '', // Aggiungi un valore di default vuoto
+
       reps: data['reps'],
       sets: data['sets'],
       intensity: data['intensity'],
@@ -245,6 +251,8 @@ class Series {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+      'serieId': serieId, // Aggiungi il campo serieId
+
       'reps': reps,
       'sets': sets,
       'intensity': intensity,

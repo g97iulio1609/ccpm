@@ -409,105 +409,108 @@ class TrainingProgramPage extends HookConsumerWidget {
     _showSeriesDialog(weekIndex, workoutIndex, exerciseIndex, context, ref);
   }
 
-  void _showSeriesDialog(int weekIndex, int workoutIndex, int exerciseIndex, BuildContext context, WidgetRef ref) {
-    final repsController = TextEditingController();
-    final setsController = TextEditingController();
-    final intensityController = TextEditingController();
-    final rpeController = TextEditingController();
-    final weightController = TextEditingController();
+void _showSeriesDialog(int weekIndex, int workoutIndex, int exerciseIndex, BuildContext context, WidgetRef ref) {
+  final repsController = TextEditingController();
+  final setsController = TextEditingController();
+  final intensityController = TextEditingController();
+  final rpeController = TextEditingController();
+  final weightController = TextEditingController();
 
-    int latestMaxWeight = 0;
+  int latestMaxWeight = 0;
 
-    String athleteId = athleteIdController.text;
-    Map<String, dynamic> selectedExercise = ref.read(weekListProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex];
-    String exerciseId = selectedExercise['id'];
+  String athleteId = athleteIdController.text;
+  Map<String, dynamic> selectedExercise = ref.read(weekListProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex];
+  String exerciseId = selectedExercise['id'];
 
-    final usersService = ref.read(usersServiceProvider);
-    usersService.getExerciseRecords(userId: athleteId, exerciseId: exerciseId).first.then((records) {
-      if (records.isNotEmpty) {
-        ExerciseRecord latestRecord = records.first;
-        latestMaxWeight = latestRecord.maxWeight;
-        print("Debug - Latest max weight for the exercise: $latestMaxWeight");
-      } else {
-        print("Debug - No records found for this exercise.");
-      }
-    }).catchError((error) {
-      print("Debug - Error retrieving exercise records: $error");
-    });
+  final usersService = ref.read(usersServiceProvider);
+  usersService.getExerciseRecords(userId: athleteId, exerciseId: exerciseId).first.then((records) {
+    if (records.isNotEmpty) {
+      ExerciseRecord latestRecord = records.first;
+      latestMaxWeight = latestRecord.maxWeight;
+      print("Debug - Latest max weight for the exercise: $latestMaxWeight");
+    } else {
+      print("Debug - No records found for this exercise.");
+    }
+  }).catchError((error) {
+    print("Debug - Error retrieving exercise records: $error");
+  });
 
-    intensityController.addListener(() {
-      double intensity = double.tryParse(intensityController.text) ?? 0;
-      double calculatedWeight = (latestMaxWeight * intensity) / 100;
-      weightController.text = calculatedWeight.toStringAsFixed(2);
-    });
+  intensityController.addListener(() {
+    double intensity = double.tryParse(intensityController.text) ?? 0;
+    double calculatedWeight = (latestMaxWeight * intensity) / 100;
+    weightController.text = calculatedWeight.toStringAsFixed(2);
+  });
 
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Add New Series'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                TextField(
-                  controller: repsController,
-                  decoration: const InputDecoration(labelText: 'Reps'),
-                  keyboardType: TextInputType.number,
-                ),
-                TextField(
-                  controller: setsController,
-                  decoration: const InputDecoration(labelText: 'Sets'),
-                  keyboardType: TextInputType.number,
-                ),
-                TextField(
-                  controller: intensityController,
-                  decoration: const InputDecoration(labelText: 'Intensity (%)'),
-                  keyboardType: TextInputType.number,
-                ),
-                TextField(
-                  controller: rpeController,
-                  decoration: const InputDecoration(labelText: 'RPE'),
-                ),
-                TextField(
-                  controller: weightController,
-                  decoration: const InputDecoration(labelText: 'Weight (kg)'),
-                  keyboardType: TextInputType.number,
-                  readOnly: true,
-                ),
-              ],
-            ),
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Add New Series'),
+        content: SingleChildScrollView(
+          child: ListBody(
+            children: <Widget>[
+              TextField(
+                controller: repsController,
+                decoration: const InputDecoration(labelText: 'Reps'),
+                keyboardType: TextInputType.number,
+              ),
+              TextField(
+                controller: setsController,
+                decoration: const InputDecoration(labelText: 'Sets'),
+                keyboardType: TextInputType.number,
+              ),
+              TextField(
+                controller: intensityController,
+                decoration: const InputDecoration(labelText: 'Intensity (%)'),
+                keyboardType: TextInputType.number,
+              ),
+              TextField(
+                controller: rpeController,
+                decoration: const InputDecoration(labelText: 'RPE'),
+              ),
+              TextField(
+                controller: weightController,
+                decoration: const InputDecoration(labelText: 'Weight (kg)'),
+                keyboardType: TextInputType.number,
+                readOnly: true,
+              ),
+            ],
           ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: const Text('Add'),
-              onPressed: () {
-                final newSeries = {
-                  'reps': int.parse(repsController.text),
-                  'sets': int.parse(setsController.text),
-                  'intensity': intensityController.text,
-                  'rpe': rpeController.text,
-                  'weight': double.parse(weightController.text),
-                  'createdAt': Timestamp.now(),
-                  'order': ref.read(weekListProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'].length + 1,
-                };
-                List<Map<String, dynamic>> updatedWeekList = [...ref.read(weekListProvider)];
-                updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'].add(newSeries);
-                ref.read(weekListProvider.notifier).state = updatedWeekList;
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('Cancel'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+          TextButton(
+            child: const Text('Add'),
+            onPressed: () {
+              final FirebaseFirestore db = FirebaseFirestore.instance;
+              String serieId = db.collection('series').doc().id; // Genera un nuovo ID per la serie
 
+              final newSeries = Series(
+                serieId: serieId, // Imposta il campo serieId con il nuovo ID
+                reps: int.parse(repsController.text),
+                sets: int.parse(setsController.text),
+                intensity: intensityController.text,
+                rpe: rpeController.text,
+                weight: double.parse(weightController.text),
+                order: ref.read(weekListProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'].length + 1,
+              );
+
+              List<Map<String, dynamic>> updatedWeekList = [...ref.read(weekListProvider)];
+              updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'].add(newSeries.toMap());
+              ref.read(weekListProvider.notifier).state = updatedWeekList;
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
   void _editExercise(int weekIndex, int workoutIndex, int exerciseIndex, BuildContext context, WidgetRef ref) {
     final exerciseNameController = TextEditingController(text: ref.read(weekListProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['name']);
     final variantController = TextEditingController(text: ref.read(weekListProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['variant']);
@@ -593,11 +596,12 @@ class TrainingProgramPage extends HookConsumerWidget {
     );
   }
 
-  void _editSeries(int weekIndex, int workoutIndex, int exerciseIndex, int seriesIndex, BuildContext context, WidgetRef ref) {
-    final repsController = TextEditingController(text: ref.read(weekListProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex]['reps'].toString());
-    final setsController = TextEditingController(text: ref.read(weekListProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex]['sets'].toString());
-    final intensityController = TextEditingController(text: ref.read(weekListProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex]['intensity']);
-    final rpeController = TextEditingController(text: ref.read(weekListProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex]['rpe']);
+void _editSeries(int weekIndex, int workoutIndex, int exerciseIndex, int seriesIndex, BuildContext context, WidgetRef ref) {
+    final seriesData = ref.read(weekListProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex];
+    final repsController = TextEditingController(text: seriesData['reps'].toString());
+    final setsController = TextEditingController(text: seriesData['sets'].toString());
+    final intensityController = TextEditingController(text: seriesData['intensity']);
+    final rpeController = TextEditingController(text: seriesData['rpe']);
     final weightController = TextEditingController();
 
     int latestMaxWeight = 0;
@@ -608,88 +612,91 @@ class TrainingProgramPage extends HookConsumerWidget {
 
     final usersService = ref.read(usersServiceProvider);
     usersService.getExerciseRecords(userId: athleteId, exerciseId: exerciseId).first.then((records) {
-      if (records.isNotEmpty) {
-        ExerciseRecord latestRecord = records.first;
-        latestMaxWeight = latestRecord.maxWeight;
+        if (records.isNotEmpty) {
+            ExerciseRecord latestRecord = records.first;
+            latestMaxWeight = latestRecord.maxWeight;
 
-        double initialIntensity = double.tryParse(intensityController.text) ?? 0;
-        weightController.text = ((latestMaxWeight * initialIntensity) / 100).toStringAsFixed(2);
-      }
+            double initialIntensity = double.tryParse(intensityController.text) ?? 0;
+            weightController.text = ((latestMaxWeight * initialIntensity) / 100).toStringAsFixed(2);
+        }
     }).catchError((error) {
-      print("Error retrieving exercise records: $error");
+        print("Error retrieving exercise records: $error");
     });
 
     intensityController.addListener(() {
-      double intensity = double.tryParse(intensityController.text) ?? 0;
-      double calculatedWeight = (latestMaxWeight * intensity) / 100;
-      weightController.text = calculatedWeight.toStringAsFixed(2);
+        double intensity = double.tryParse(intensityController.text) ?? 0;
+        double calculatedWeight = (latestMaxWeight * intensity) / 100;
+        weightController.text = calculatedWeight.toStringAsFixed(2);
     });
 
     showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Edit Series'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                TextField(
-                  controller: repsController,
-                  decoration: const InputDecoration(labelText: 'Reps'),
-                  keyboardType: TextInputType.number,
+        context: context,
+        builder: (BuildContext context) {
+            return AlertDialog(
+                title: const Text('Edit Series'),
+                content: SingleChildScrollView(
+                    child: ListBody(
+                        children: <Widget>[
+                            TextField(
+                                controller: repsController,
+                                decoration: const InputDecoration(labelText: 'Reps'),
+                                keyboardType: TextInputType.number,
+                            ),
+                            TextField(
+                                controller: setsController,
+                                decoration: const InputDecoration(labelText: 'Sets'),
+                                keyboardType: TextInputType.number,
+                            ),
+                            TextField(
+                                controller: intensityController,
+                                decoration: const InputDecoration(labelText: 'Intensity (%)'),
+                                keyboardType: TextInputType.number,
+                            ),
+                            TextField(
+                                controller: rpeController,
+                                decoration: const InputDecoration(labelText: 'RPE'),
+                            ),
+                            TextField(
+                                controller: weightController,
+                                decoration: const InputDecoration(labelText: 'Weight (kg)'),
+                                keyboardType: TextInputType.number,
+                                readOnly: true,
+                            ),
+                        ],
+                    ),
                 ),
-                TextField(
-                  controller: setsController,
-                  decoration: const InputDecoration(labelText: 'Sets'),
-                  keyboardType: TextInputType.number,
-                ),
-                TextField(
-                  controller: intensityController,
-                  decoration: const InputDecoration(labelText: 'Intensity (%)'),
-                  keyboardType: TextInputType.number,
-                ),
-                TextField(
-                  controller: rpeController,
-                  decoration: const InputDecoration(labelText: 'RPE'),
-                ),
-                TextField(
-                  controller: weightController,
-                  decoration: const InputDecoration(labelText: 'Weight (kg)'),
-                  keyboardType: TextInputType.number,
-                  readOnly: true,
-                ),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: const Text('Update'),
-              onPressed: () {
-                List<Map<String, dynamic>> updatedWeekList = [...ref.read(weekListProvider)];
-                updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex] = {
-                  'reps': int.parse(repsController.text),
-                  'sets': int.parse(setsController.text),
-                  'intensity': intensityController.text,
-                  'rpe': rpeController.text,
-                  'weight': double.parse(weightController.text),
-                  'createdAt': ref.read(weekListProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex]['createdAt'],
-                  'order': ref.read(weekListProvider)[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex]['order']
-                };
-                ref.read(weekListProvider.notifier).state = updatedWeekList;
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
+                actions: <Widget>[
+                    TextButton(
+                        child: const Text('Cancel'),
+                        onPressed: () {
+                            Navigator.of(context).pop();
+                        },
+                    ),
+                    TextButton(
+                        child: const Text('Update'),
+                        onPressed: () {
+                            // Assicurati di mantenere il serieId esistente
+                            String existingSerieId = seriesData['serieId'];
+                            List<Map<String, dynamic>> updatedWeekList = [...ref.read(weekListProvider)];
+                            updatedWeekList[weekIndex]['workouts'][workoutIndex]['exercises'][exerciseIndex]['series'][seriesIndex] = {
+                                'reps': int.parse(repsController.text),
+                                'sets': int.parse(setsController.text),
+                                'intensity': intensityController.text,
+                                'rpe': rpeController.text,
+                                'weight': double.parse(weightController.text),
+                                'createdAt': seriesData['createdAt'],
+                                'order': seriesData['order'],
+                                'serieId': existingSerieId // Mantieni il serieId esistente
+                            };
+                            ref.read(weekListProvider.notifier).state = updatedWeekList;
+                            Navigator.of(context).pop();
+                        },
+                    ),
+                ],
+            );
+        },
     );
-  }
+}
 
   void _removeWeek(int weekIndex, WidgetRef ref) {
     List<Map<String, dynamic>> updatedWeekList = [...ref.read(weekListProvider)];

@@ -130,128 +130,77 @@ class FirestoreService {
  }
 
 Future<void> addOrUpdateTrainingProgram(TrainingProgram program) async {
-  FirebaseFirestore _db = FirebaseFirestore.instance;
+  FirebaseFirestore db = FirebaseFirestore.instance;
+  WriteBatch batch = db.batch();
 
-  // Create or update the program document
-  DocumentReference programRef;
-  if (program.id == null) {
-    // New program
-    programRef = await _db.collection('programs').add({
-      'name': program.name,
-      'description': program.description,
-      'athleteId': program.athleteId,
-      'mesocycleNumber': program.mesocycleNumber,
-      'createdAt': FieldValue.serverTimestamp(),
-    });
-    program.id = programRef.id;
-  } else {
-    // Existing program
-    programRef = _db.collection('programs').doc(program.id);
-    await programRef.update({
-      'name': program.name,
-      'description': program.description,
-      'athleteId': program.athleteId,
-      'mesocycleNumber': program.mesocycleNumber,
-    });
-  }
+  // Assicurati che il programma abbia un ID univoco
+  String programId = program.id?.trim().isEmpty ?? true ? db.collection('programs').doc().id : program.id!;
+  program.id = programId; // Aggiorna l'ID nel tuo oggetto programma
+  DocumentReference programRef = db.collection('programs').doc(programId);
+  batch.set(programRef, {
+    'name': program.name,
+    'description': program.description,
+    'athleteId': program.athleteId,
+    'mesocycleNumber': program.mesocycleNumber,
+  }, SetOptions(merge: true));
 
-  // Iterate through each week
   for (var week in program.weeks) {
-    DocumentReference weekRef;
-    if (week.id == null) {
-      // New week
-      weekRef = await _db.collection('weeks').add({
-        'number': week.number,
-        'programId': program.id,
-        'createdAt': Timestamp.now(),
-      });
-      week.id = weekRef.id;
-    } else {
-      // Existing week
-      weekRef = _db.collection('weeks').doc(week.id);
-      await weekRef.update({
-        'number': week.number,
-        'programId': program.id,
-      });
-    }
+    String weekId = week.id?.trim().isEmpty ?? true ? db.collection('weeks').doc().id : week.id!;
+    week.id = weekId;
+    DocumentReference weekRef = db.collection('weeks').doc(weekId);
+    batch.set(weekRef, {
+      'number': week.number,
+      'programId': programId,
+    }, SetOptions(merge: true));
 
-    // Iterate through each workout
     for (var workout in week.workouts) {
-      DocumentReference workoutRef;
-      if (workout.id == null) {
-        // New workout
-        workoutRef = await _db.collection('workouts').add({
-          'order': workout.order,
-          'weekId': week.id,
-          'createdAt': Timestamp.now(),
-        });
-        workout.id = workoutRef.id;
-      } else {
-        // Existing workout
-        workoutRef = _db.collection('workouts').doc(workout.id);
-        await workoutRef.update({
-          'order': workout.order,
-          'weekId': week.id,
-        });
-      }
+      String workoutId = workout.id?.trim().isEmpty ?? true ? db.collection('workouts').doc().id : workout.id!;
+      workout.id = workoutId;
+      DocumentReference workoutRef = db.collection('workouts').doc(workoutId);
+      batch.set(workoutRef, {
+        'order': workout.order,
+        'weekId': weekId,
+      }, SetOptions(merge: true));
 
-      // Iterate through each exercise
       for (var exercise in workout.exercises) {
-        DocumentReference exerciseRef;
+        String exerciseId = exercise.id?.trim().isEmpty ?? true ? db.collection('exercisesWorkout').doc().id : exercise.id!;
+        exercise.id = exerciseId;
+        DocumentReference exerciseRef = db.collection('exercisesWorkout').doc(exerciseId);
+        batch.set(exerciseRef, {
+          'name': exercise.name,
+          'order': exercise.order,
+          'variant': exercise.variant,
+          'workoutId': workoutId,
+        }, SetOptions(merge: true));
 
-        if (exercise.exerciseId != null && exercise.exerciseId!.isNotEmpty) {
-          // Try to find existing exercise
-          exerciseRef = _db.collection('exercisesWorkout').doc(exercise.exerciseId);
-          DocumentSnapshot exerciseSnap = await exerciseRef.get();
-          
-          if (exerciseSnap.exists) {
-            // Existing exercise
-            await exerciseRef.update({
-              'name': exercise.name,
-              'order': exercise.order,
-              'variant': exercise.variant,
-              'workoutId': workout.id,
-            });
-          } else {
-            // New exercise, but with predefined exerciseId
-            await exerciseRef.set({
-              'name': exercise.name,
-              'order': exercise.order,
-              'variant': exercise.variant,
-              'workoutId': workout.id,
-              'createdAt': Timestamp.now(),
-            });
-            // No need to update exercise.id since it's predefined
-          }
-        } else {
-          // New exercise without predefined exerciseId
-          exerciseRef = await _db.collection('exercisesWorkout').add({
-            'name': exercise.name,
-            'order': exercise.order,
-            'variant': exercise.variant,
-            'workoutId': workout.id,
-            'createdAt': Timestamp.now(),
-          });
-          exercise.exerciseId = exerciseRef.id; // Update local model with new Firestore ID
-        }
-
-        // Iterate through each series
         for (var series in exercise.series) {
-          // New series (currently not handling updating series, can add similar logic if needed)
-          await _db.collection('series').add({
-            'reps': series.reps,
-            'sets': series.sets,
-            'intensity': series.intensity,
-            'rpe': series.rpe,
-            'weight': series.weight,
-            'exerciseId': exercise.exerciseId, // Link to exercise
-            'createdAt': Timestamp.now(),
-            'order': series.order,
-          });
-        }
+      // Usa l'ID esistente se valido, altrimenti genera un nuovo ID
+      String seriesId;
+      if (series.serieId != null && series.serieId!.trim().isNotEmpty) {
+        seriesId = series.serieId!;
+      } else {
+        // Genera un nuovo ID solo se necessario
+        seriesId = db.collection('series').doc().id;
+        series.serieId = seriesId; // Aggiorna l'ID della serie con il nuovo ID
       }
+
+      DocumentReference seriesRef = db.collection('series').doc(seriesId);
+      batch.set(seriesRef, {
+        'reps': series.reps,
+        'sets': series.sets,
+        'intensity': series.intensity,
+        'rpe': series.rpe,
+        'weight': series.weight,
+        'exerciseId': exercise.id,
+        'serieId': seriesId,
+        'order': series.order,
+      }, SetOptions(merge: true));
     }
   }
+    }
+  }
+
+  await batch.commit();
 }
 
 Future<TrainingProgram> fetchTrainingProgram(String programId) async {
