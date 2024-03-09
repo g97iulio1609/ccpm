@@ -132,10 +132,11 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
 
                               return ListTile(
                                 leading: CircleAvatar(
+                                  radius: 14, // Smaller CircleAvatar
                                   backgroundColor: Theme.of(context).colorScheme.primary,
                                   child: Text(
                                     '${seriesIndex + 1}',
-                                    style: GoogleFonts.roboto(fontWeight: FontWeight.bold, color: Colors.white),
+                                    style: GoogleFonts.roboto(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 14), // Smaller font size
                                   ),
                                 ),
                                 title: Row(
@@ -143,19 +144,19 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                                   children: [
                                     Expanded(
                                       flex: 2,
-                                      child: Text("${series['reps']} reps", style: const TextStyle(fontSize: 16)),
+                                      child: Text("${series['reps']} R", style: const TextStyle(fontSize: 16)),
                                     ),
                                     Expanded(
                                       flex: 2,
-                                      child: Text("${series['weight']} kg", style: const TextStyle(fontSize: 16)),
+                                      child: Text("${series['weight']} KG", style: const TextStyle(fontSize: 16)),
                                     ),
                                     const SizedBox(width: 10), // Added for spacing
                                     Expanded(
                                       flex: 1,
                                       child: Transform.scale(
-                                        scale: 1.5,
+                                        scale: 1.0, // Smaller checkbox
                                         child: Checkbox(
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                           activeColor: Theme.of(context).colorScheme.primary,
                                           checkColor: Colors.white,
                                           value: series['done'] ?? false,
@@ -174,7 +175,8 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                                       child: TextFormField(
                                         controller: repsController,
                                         decoration: const InputDecoration(
-                                          labelText: 'Reps fatte',
+                                          labelText: 'R',
+                                          contentPadding: EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0), // Reduced padding
                                           border: OutlineInputBorder(),
                                         ),
                                         keyboardType: TextInputType.number,
@@ -190,7 +192,8 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                                       child: TextFormField(
                                         controller: weightController,
                                         decoration: const InputDecoration(
-                                          labelText: 'Peso usato',
+                                          labelText: 'KG',
+                                          contentPadding: EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0), // Reduced padding
                                           border: OutlineInputBorder(),
                                         ),
                                         keyboardType: const TextInputType.numberWithOptions(decimal: true),

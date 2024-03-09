@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'programsScreen.dart';
 import 'userProfile.dart';
 import 'exerciseList.dart';
 import 'maxRMDashboard.dart';
 import 'trainingProgram.dart';
+import 'usersServices.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -51,12 +53,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Aggiungi il metodo per ottenere il nome dell'utente corrente
-  String get currentUserName {
-    final user = FirebaseAuth.instance.currentUser;
-    return user != null ? user.displayName ?? 'Nessun nome' : 'Ospite';
-  }
-
   @override
   Widget build(BuildContext context) {
     var isLargeScreen = MediaQuery.of(context).size.width > 600;
@@ -65,14 +61,14 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Text(pageTitles[_selectedIndex]),
       ),
       drawer: isLargeScreen ? null : Drawer(
-        child: _buildDrawer(isLargeScreen),
+        child: _buildDrawer(isLargeScreen, context),
       ),
       body: Row(
         children: [
           if (isLargeScreen)
             SizedBox(
               width: 300,
-              child: _buildDrawer(isLargeScreen),
+              child: _buildDrawer(isLargeScreen, context),
             ),
           Expanded(
             child: Stack(
@@ -84,7 +80,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildDrawer(bool isLargeScreen) {
+  Widget _buildDrawer(bool isLargeScreen, BuildContext context) {
+    print('Building drawer...');
+
     return Column(
       children: [
         Container(
@@ -113,12 +111,20 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-        ListTile(
-          leading: const CircleAvatar(
-            child: Icon(Icons.person),
-          ),
-          title: Text(currentUserName),  // Modificato per mostrare il nome dell'utente
-          onTap: () => _navigateTo(3, isLargeScreen),
+        Consumer(
+          builder: (context, ref, child) {
+            final userName = ref.watch(userNameProvider);
+            final user = FirebaseAuth.instance.currentUser;
+            final displayName = user?.displayName ?? userName;
+
+            return ListTile(
+              leading: const CircleAvatar(
+                child: Icon(Icons.person),
+              ),
+              title: Text(displayName),
+              onTap: () => _navigateTo(3, isLargeScreen),
+            );
+          },
         ),
         ListTile(
           title: const Text('Logout'),

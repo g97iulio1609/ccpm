@@ -1,6 +1,8 @@
-//usersServices.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+final userNameProvider = StateProvider<String>((ref) => '');
 
 class UserModel {
   final String id;
@@ -54,13 +56,26 @@ class ExerciseRecord {
 }
 
 final usersServiceProvider = Provider<UsersService>((ref) {
-  return UsersService(FirebaseFirestore.instance);
+  return UsersService(ref, FirebaseFirestore.instance, FirebaseAuth.instance);
 });
 
 class UsersService {
+  final ProviderRef ref;
   final FirebaseFirestore _firestore;
+  final FirebaseAuth _auth;
 
-  UsersService(this._firestore);
+  UsersService(this.ref, this._firestore, this._auth) {
+    _auth.userChanges().listen((user) {
+      if (user != null) {
+        _updateUserName(user.displayName);
+      }
+    });
+  }
+
+  void _updateUserName(String? displayName) {
+    final userName = displayName ?? '';
+    ref.read(userNameProvider.notifier).state = userName;
+  }
 
   Stream<List<UserModel>> getUsers() {
     return _firestore.collection('users').snapshots().map((snapshot) {

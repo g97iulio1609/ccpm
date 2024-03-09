@@ -3,6 +3,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'usersServices.dart'; // Assicurati di avere il percorso corretto per questo import
 
 final authProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
 final googleSignInProvider = Provider<GoogleSignIn>((ref) => GoogleSignIn());
@@ -34,7 +35,8 @@ class AuthScreen extends HookConsumerWidget {
   }
 }
 
-class AuthForm extends StatelessWidget {
+
+class AuthForm extends HookConsumerWidget { // Modificato in HookConsumerWidget
   const AuthForm({
     super.key,
     required this.formKey,
@@ -55,7 +57,7 @@ class AuthForm extends StatelessWidget {
   final ValueNotifier<String> userName;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) { // Aggiunto WidgetRef
     return Form(
       key: formKey,
       child: Column(
@@ -67,7 +69,7 @@ class AuthForm extends StatelessWidget {
           const SizedBox(height: 10),
           PasswordField(userPassword: userPassword),
           const SizedBox(height: 20),
-          SubmitButton(formKey: formKey, isLogin: isLogin, auth: auth, userEmail: userEmail, userPassword: userPassword),
+          SubmitButton(formKey: formKey, isLogin: isLogin, auth: auth, userEmail: userEmail, userPassword: userPassword, userName: userName, ref: ref), // Passa ref
           ToggleAuthModeButton(isLogin: isLogin),
           GoogleSignInButton(googleSignIn: googleSignIn),
         ],
@@ -75,6 +77,7 @@ class AuthForm extends StatelessWidget {
     );
   }
 }
+
 
 class UsernameField extends StatelessWidget {
   const UsernameField({super.key, required this.userName});
@@ -134,6 +137,8 @@ class SubmitButton extends StatelessWidget {
     required this.auth,
     required this.userEmail,
     required this.userPassword,
+    required this.userName,
+    required this.ref, // Aggiunto
   });
 
   final GlobalKey<FormState> formKey;
@@ -141,6 +146,8 @@ class SubmitButton extends StatelessWidget {
   final FirebaseAuth auth;
   final ValueNotifier<String> userEmail;
   final ValueNotifier<String> userPassword;
+  final ValueNotifier<String> userName;
+  final WidgetRef ref; // Aggiunto
 
   @override
   Widget build(BuildContext context) {
@@ -155,23 +162,30 @@ class SubmitButton extends StatelessWidget {
     );
   }
 
-  Future<void> submit(BuildContext context) async {
-    if (formKey.currentState?.validate() ?? false) {
-      formKey.currentState?.save();
-      final email = userEmail.value.trim();
-      final password = userPassword.value.trim();
-      try {
-        if (isLogin.value) {
-          await auth.signInWithEmailAndPassword(email: email, password: password);
-        } else {
-          await auth.createUserWithEmailAndPassword(email: email, password: password);
-        }
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Authentication successful'), backgroundColor: Colors.green));
-      } on FirebaseAuthException catch (error) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message ?? 'An error occurred, please try again'), backgroundColor: Colors.red));
+ Future<void> submit(BuildContext context) async {
+  if (formKey.currentState?.validate() ?? false) {
+    formKey.currentState?.save();
+    final email = userEmail.value.trim();
+    final password = userPassword.value.trim();
+    try {
+      UserCredential userCredential;
+      if (isLogin.value) {
+        userCredential = await auth.signInWithEmailAndPassword(email: email, password: password);
+      } else {
+        userCredential = await auth.createUserWithEmailAndPassword(email: email, password: password);
+        await userCredential.user!.updateDisplayName(userName.value); // Aggiorna il nome utente dopo la registrazione
+        ref.read(userNameProvider.notifier).state = userName.value; // Aggiorna lo userName nel provider subito dopo l'aggiornamento dell'utente
       }
+      final updatedUser = auth.currentUser; // Ricarica l'utente aggiornato
+      if (updatedUser != null) {
+        ref.read(userNameProvider.notifier).state = updatedUser.displayName ?? userName.value; // Aggiorna lo userName nel provider con il displayName dell'utente o il nome utente inserito
+      }
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Authentication successful'), backgroundColor: Colors.green));
+    } on FirebaseAuthException catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message ?? 'An error occurred, please try again'), backgroundColor: Colors.red));
     }
   }
+}
 }
 
 class ToggleAuthModeButton extends StatelessWidget {

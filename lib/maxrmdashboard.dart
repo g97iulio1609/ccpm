@@ -16,8 +16,9 @@ final exercisesStreamProvider = StreamProvider<List<ExerciseModel>>((ref) {
   return service.getExercises();
 });
 final usersServiceProvider = Provider<UsersService>((ref) {
-  return UsersService(FirebaseFirestore.instance);
+  return UsersService(ref, FirebaseFirestore.instance, FirebaseAuth.instance);
 });
+
 
 class MaxRMDashboard extends HookConsumerWidget {
   const MaxRMDashboard({super.key});
