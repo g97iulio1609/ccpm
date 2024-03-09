@@ -7,10 +7,10 @@ import 'package:flutter/services.dart'; // Import for text input formatters
 class WorkoutDetails extends StatefulWidget {
   final String workoutId;
 
-  const WorkoutDetails({super.key, required this.workoutId});
+  const WorkoutDetails({Key? key, required this.workoutId}) : super(key: key);
 
   @override
-  State<WorkoutDetails> createState() => _WorkoutDetailsState();
+  _WorkoutDetailsState createState() => _WorkoutDetailsState();
 }
 
 class _WorkoutDetailsState extends State<WorkoutDetails> {
@@ -93,7 +93,6 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-  
       body: Container(
         padding: const EdgeInsets.all(16),
         child: loading

@@ -1,0 +1,587 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		138EE21A2B9B713C009A1882 /* AlphanessOneApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 138EE2192B9B713C009A1882 /* AlphanessOneApp.swift */; };
+		138EE21C2B9B713C009A1882 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 138EE21B2B9B713C009A1882 /* ContentView.swift */; };
+		138EE21E2B9B713E009A1882 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 138EE21D2B9B713E009A1882 /* Assets.xcassets */; };
+		138EE2212B9B713E009A1882 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 138EE2202B9B713E009A1882 /* Preview Assets.xcassets */; };
+		138EE22B2B9B713E009A1882 /* AlphanessOneTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 138EE22A2B9B713E009A1882 /* AlphanessOneTests.swift */; };
+		138EE2352B9B713E009A1882 /* AlphanessOneUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 138EE2342B9B713E009A1882 /* AlphanessOneUITests.swift */; };
+		138EE2372B9B713E009A1882 /* AlphanessOneUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 138EE2362B9B713E009A1882 /* AlphanessOneUITestsLaunchTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		138EE2272B9B713E009A1882 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 138EE20E2B9B713C009A1882 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 138EE2152B9B713C009A1882;
+			remoteInfo = AlphanessOne;
+		};
+		138EE2312B9B713E009A1882 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 138EE20E2B9B713C009A1882 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 138EE2152B9B713C009A1882;
+			remoteInfo = AlphanessOne;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		138EE2162B9B713C009A1882 /* AlphanessOne.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AlphanessOne.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		138EE2192B9B713C009A1882 /* AlphanessOneApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlphanessOneApp.swift; sourceTree = "<group>"; };
+		138EE21B2B9B713C009A1882 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		138EE21D2B9B713E009A1882 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		138EE2202B9B713E009A1882 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		138EE2262B9B713E009A1882 /* AlphanessOneTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AlphanessOneTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		138EE22A2B9B713E009A1882 /* AlphanessOneTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlphanessOneTests.swift; sourceTree = "<group>"; };
+		138EE2302B9B713E009A1882 /* AlphanessOneUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AlphanessOneUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		138EE2342B9B713E009A1882 /* AlphanessOneUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlphanessOneUITests.swift; sourceTree = "<group>"; };
+		138EE2362B9B713E009A1882 /* AlphanessOneUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlphanessOneUITestsLaunchTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		138EE2132B9B713C009A1882 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		138EE2232B9B713E009A1882 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		138EE22D2B9B713E009A1882 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		138EE20D2B9B713C009A1882 = {
+			isa = PBXGroup;
+			children = (
+				138EE2182B9B713C009A1882 /* AlphanessOne */,
+				138EE2292B9B713E009A1882 /* AlphanessOneTests */,
+				138EE2332B9B713E009A1882 /* AlphanessOneUITests */,
+				138EE2172B9B713C009A1882 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		138EE2172B9B713C009A1882 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				138EE2162B9B713C009A1882 /* AlphanessOne.app */,
+				138EE2262B9B713E009A1882 /* AlphanessOneTests.xctest */,
+				138EE2302B9B713E009A1882 /* AlphanessOneUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		138EE2182B9B713C009A1882 /* AlphanessOne */ = {
+			isa = PBXGroup;
+			children = (
+				138EE2192B9B713C009A1882 /* AlphanessOneApp.swift */,
+				138EE21B2B9B713C009A1882 /* ContentView.swift */,
+				138EE21D2B9B713E009A1882 /* Assets.xcassets */,
+				138EE21F2B9B713E009A1882 /* Preview Content */,
+			);
+			path = AlphanessOne;
+			sourceTree = "<group>";
+		};
+		138EE21F2B9B713E009A1882 /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				138EE2202B9B713E009A1882 /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		138EE2292B9B713E009A1882 /* AlphanessOneTests */ = {
+			isa = PBXGroup;
+			children = (
+				138EE22A2B9B713E009A1882 /* AlphanessOneTests.swift */,
+			);
+			path = AlphanessOneTests;
+			sourceTree = "<group>";
+		};
+		138EE2332B9B713E009A1882 /* AlphanessOneUITests */ = {
+			isa = PBXGroup;
+			children = (
+				138EE2342B9B713E009A1882 /* AlphanessOneUITests.swift */,
+				138EE2362B9B713E009A1882 /* AlphanessOneUITestsLaunchTests.swift */,
+			);
+			path = AlphanessOneUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		138EE2152B9B713C009A1882 /* AlphanessOne */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 138EE23A2B9B713E009A1882 /* Build configuration list for PBXNativeTarget "AlphanessOne" */;
+			buildPhases = (
+				138EE2122B9B713C009A1882 /* Sources */,
+				138EE2132B9B713C009A1882 /* Frameworks */,
+				138EE2142B9B713C009A1882 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AlphanessOne;
+			productName = AlphanessOne;
+			productReference = 138EE2162B9B713C009A1882 /* AlphanessOne.app */;
+			productType = "com.apple.product-type.application";
+		};
+		138EE2252B9B713E009A1882 /* AlphanessOneTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 138EE23D2B9B713E009A1882 /* Build configuration list for PBXNativeTarget "AlphanessOneTests" */;
+			buildPhases = (
+				138EE2222B9B713E009A1882 /* Sources */,
+				138EE2232B9B713E009A1882 /* Frameworks */,
+				138EE2242B9B713E009A1882 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				138EE2282B9B713E009A1882 /* PBXTargetDependency */,
+			);
+			name = AlphanessOneTests;
+			productName = AlphanessOneTests;
+			productReference = 138EE2262B9B713E009A1882 /* AlphanessOneTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		138EE22F2B9B713E009A1882 /* AlphanessOneUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 138EE2402B9B713E009A1882 /* Build configuration list for PBXNativeTarget "AlphanessOneUITests" */;
+			buildPhases = (
+				138EE22C2B9B713E009A1882 /* Sources */,
+				138EE22D2B9B713E009A1882 /* Frameworks */,
+				138EE22E2B9B713E009A1882 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				138EE2322B9B713E009A1882 /* PBXTargetDependency */,
+			);
+			name = AlphanessOneUITests;
+			productName = AlphanessOneUITests;
+			productReference = 138EE2302B9B713E009A1882 /* AlphanessOneUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		138EE20E2B9B713C009A1882 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1530;
+				LastUpgradeCheck = 1530;
+				TargetAttributes = {
+					138EE2152B9B713C009A1882 = {
+						CreatedOnToolsVersion = 15.3;
+					};
+					138EE2252B9B713E009A1882 = {
+						CreatedOnToolsVersion = 15.3;
+						TestTargetID = 138EE2152B9B713C009A1882;
+					};
+					138EE22F2B9B713E009A1882 = {
+						CreatedOnToolsVersion = 15.3;
+						TestTargetID = 138EE2152B9B713C009A1882;
+					};
+				};
+			};
+			buildConfigurationList = 138EE2112B9B713C009A1882 /* Build configuration list for PBXProject "AlphanessOne" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 138EE20D2B9B713C009A1882;
+			productRefGroup = 138EE2172B9B713C009A1882 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				138EE2152B9B713C009A1882 /* AlphanessOne */,
+				138EE2252B9B713E009A1882 /* AlphanessOneTests */,
+				138EE22F2B9B713E009A1882 /* AlphanessOneUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		138EE2142B9B713C009A1882 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				138EE2212B9B713E009A1882 /* Preview Assets.xcassets in Resources */,
+				138EE21E2B9B713E009A1882 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		138EE2242B9B713E009A1882 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		138EE22E2B9B713E009A1882 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		138EE2122B9B713C009A1882 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				138EE21C2B9B713C009A1882 /* ContentView.swift in Sources */,
+				138EE21A2B9B713C009A1882 /* AlphanessOneApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		138EE2222B9B713E009A1882 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				138EE22B2B9B713E009A1882 /* AlphanessOneTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		138EE22C2B9B713E009A1882 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				138EE2352B9B713E009A1882 /* AlphanessOneUITests.swift in Sources */,
+				138EE2372B9B713E009A1882 /* AlphanessOneUITestsLaunchTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		138EE2282B9B713E009A1882 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 138EE2152B9B713C009A1882 /* AlphanessOne */;
+			targetProxy = 138EE2272B9B713E009A1882 /* PBXContainerItemProxy */;
+		};
+		138EE2322B9B713E009A1882 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 138EE2152B9B713C009A1882 /* AlphanessOne */;
+			targetProxy = 138EE2312B9B713E009A1882 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		138EE2382B9B713E009A1882 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.4;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		138EE2392B9B713E009A1882 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.4;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		138EE23B2B9B713E009A1882 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"AlphanessOne/Preview Content\"";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alphaness.AlphanessOne;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		138EE23C2B9B713E009A1882 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"AlphanessOne/Preview Content\"";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alphaness.AlphanessOne;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		138EE23E2B9B713E009A1882 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alphaness.AlphanessOneTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AlphanessOne.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/AlphanessOne";
+			};
+			name = Debug;
+		};
+		138EE23F2B9B713E009A1882 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alphaness.AlphanessOneTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AlphanessOne.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/AlphanessOne";
+			};
+			name = Release;
+		};
+		138EE2412B9B713E009A1882 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alphaness.AlphanessOneUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = AlphanessOne;
+			};
+			name = Debug;
+		};
+		138EE2422B9B713E009A1882 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alphaness.AlphanessOneUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = AlphanessOne;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		138EE2112B9B713C009A1882 /* Build configuration list for PBXProject "AlphanessOne" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				138EE2382B9B713E009A1882 /* Debug */,
+				138EE2392B9B713E009A1882 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		138EE23A2B9B713E009A1882 /* Build configuration list for PBXNativeTarget "AlphanessOne" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				138EE23B2B9B713E009A1882 /* Debug */,
+				138EE23C2B9B713E009A1882 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		138EE23D2B9B713E009A1882 /* Build configuration list for PBXNativeTarget "AlphanessOneTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				138EE23E2B9B713E009A1882 /* Debug */,
+				138EE23F2B9B713E009A1882 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		138EE2402B9B713E009A1882 /* Build configuration list for PBXNativeTarget "AlphanessOneUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				138EE2412B9B713E009A1882 /* Debug */,
+				138EE2422B9B713E009A1882 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 138EE20E2B9B713C009A1882 /* Project object */;
+}

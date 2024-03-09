@@ -23,7 +23,6 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData lightTheme = ThemeData(
-      useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: ColorScheme.fromSeed(
         seedColor: const Color(0xFF005AC8),
@@ -33,7 +32,6 @@ class MyApp extends StatelessWidget {
     );
 
     final ThemeData darkTheme = ThemeData(
-      useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: ColorScheme.fromSeed(
         seedColor: const Color(0xFF005AC8),
@@ -43,7 +41,7 @@ class MyApp extends StatelessWidget {
     );
 
     return MaterialApp(
-      title: 'FlutterFire Auth Demo',
+      title: 'AlphanessOne',
       theme: lightTheme,
       darkTheme: darkTheme,
       themeMode: ThemeMode.system,
