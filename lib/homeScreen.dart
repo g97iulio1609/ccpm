@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'programs_screen.dart'; // Allenamenti
-import 'userProfile.dart'; // Profilo Utente
-import 'exercises_list.dart'; // Esercizi
-import 'maxrmdashboard.dart'; // Massimali
-import 'trainingProgram.dart'; // Massimali
-
+import 'package:firebase_auth/firebase_auth.dart';
+import 'programsScreen.dart';
+import 'userProfile.dart';
+import 'exerciseList.dart';
+import 'maxRMDashboard.dart';
+import 'trainingProgram.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,21 +16,19 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   final List<GlobalKey<NavigatorState>> _navigatorKeys = [
-    GlobalKey<NavigatorState>(), // Allenamenti
-    GlobalKey<NavigatorState>(), // Esercizi
-    GlobalKey<NavigatorState>(), // Massimali
-    GlobalKey<NavigatorState>(), // Profilo Utente
-        GlobalKey<NavigatorState>(), // TrainingProgram
-
+    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(),
   ];
 
-  // Definire i titoli delle pagine
   final List<String> pageTitles = [
     'Allenamenti',
     'Esercizi',
     'Massimali',
     'Profilo Utente',
-    'TrainigProgram'
+    'TrainingProgram'
   ];
 
   void _onItemTapped(int index) {
@@ -53,12 +51,18 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // Aggiungi il metodo per ottenere il nome dell'utente corrente
+  String get currentUserName {
+    final user = FirebaseAuth.instance.currentUser;
+    return user != null ? user.displayName ?? 'Nessun nome' : 'Ospite';
+  }
+
   @override
   Widget build(BuildContext context) {
     var isLargeScreen = MediaQuery.of(context).size.width > 600;
     return Scaffold(
       appBar: AppBar(
-        title: Text(pageTitles[_selectedIndex]), // Titolo dinamico in base alla pagina selezionata
+        title: Text(pageTitles[_selectedIndex]),
       ),
       drawer: isLargeScreen ? null : Drawer(
         child: _buildDrawer(isLargeScreen),
@@ -104,8 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ListTile(title: const Text('Esercizi'), onTap: () => _navigateTo(1, isLargeScreen)),
               ListTile(title: const Text('Massimali'), onTap: () => _navigateTo(2, isLargeScreen)),
               ListTile(title: const Text('Profilo Utente'), onTap: () => _navigateTo(3, isLargeScreen)),
-                            ListTile(title: const Text('TrainingProgram'), onTap: () => _navigateTo(4, isLargeScreen)),
-
+              ListTile(title: const Text('TrainingProgram'), onTap: () => _navigateTo(4, isLargeScreen)),
               ListTile(title: const Text('Allenamenti'), onTap: () => _navigateTo(0, isLargeScreen)),
             ],
           ),
@@ -114,7 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
           leading: const CircleAvatar(
             child: Icon(Icons.person),
           ),
-          title: const Text('prova'),
+          title: Text(currentUserName),  // Modificato per mostrare il nome dell'utente
           onTap: () => _navigateTo(3, isLargeScreen),
         ),
         ListTile(
@@ -144,22 +147,22 @@ class TabNavigator extends StatelessWidget {
     Widget child;
     switch (tabItem) {
       case 0:
-        child = const ProgramsScreen(); // Allenamenti
+        child = const ProgramsScreen();
         break;
       case 1:
-        child = ExercisesList(); // Esercizi
+        child = ExercisesList();
         break;
       case 2:
-        child = const MaxRMDashboard(); // Massimali
+        child = const MaxRMDashboard();
         break;
       case 3:
-        child = const UserProfile(); // Profilo Utente
+        child = const UserProfile();
         break;
-        case 4:
-        child = TrainingProgramPage(); // Profilo Utente
+      case 4:
+        child = TrainingProgramPage();
         break;
       default:
-        child = const ProgramsScreen(); // Default a Allenamenti se non corrisponde
+        child = const ProgramsScreen();
     }
 
     return Navigator(

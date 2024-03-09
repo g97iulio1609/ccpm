@@ -1,20 +1,21 @@
-// main.dart
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'auth_screen.dart';
-import 'home_screen.dart';
-import 'exercises_list.dart'; // Assicurati di includere il tuo ExercisesList.dart qui
-import 'maxrmdashboard.dart'; 
+import 'authScreen.dart';
+import 'homeScreen.dart';
+import 'exerciseList.dart';
+import 'maxRMDashboard.dart';
+import 'trainingProgram.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart'; // Importa hooks_riverpod per il ProviderScope
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const ProviderScope(child: MyApp())); // Avvolgi MyApp con ProviderScope
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -22,22 +23,46 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData lightTheme = ThemeData(
+    // Definisci lo schema colori per il tema chiaro
+    final ColorScheme lightColorScheme = ColorScheme.fromSeed(
+      seedColor: const Color(0xFF2196F3), // Blu come colore base
+      primary: const Color(0xFF2196F3), // Blu
+      secondary: const Color(0xFFFF9800), // Arancione
+      error: const Color(0xFFF44336), // Rosso
+      background: const Color(0xFFE0E0E0), // Grigio chiaro
+      onPrimary: Colors.white, // Bianco su Blu
+      onSecondary: Colors.white, // Bianco su Arancione
+      onError: Colors.white, // Bianco su Rosso
+      onBackground: Colors.black, // Nero su Grigio chiaro
       brightness: Brightness.light,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF005AC8),
-        brightness: Brightness.light,
-      ),
-      shadowColor: Colors.grey.withOpacity(0.5),
+    );
+
+    // Definisci lo schema colori per il tema scuro
+    final ColorScheme darkColorScheme = ColorScheme.fromSeed(
+      seedColor: const Color(0xFF2196F3), // Blu come colore base
+      primary: const Color(0xFF42A5F5), // Blu chiaro
+      secondary: const Color(0xFFFFA726), // Arancione chiaro
+      error: const Color(0xFFEF9A9A), // Rosso chiaro
+      background: const Color(0xFF121212), // Quasi Nero
+      onPrimary: Colors.white, // Bianco su Blu chiaro
+      onSecondary: Colors.white, // Bianco su Arancione chiaro
+      onError: Colors.white, // Bianco su Rosso chiaro
+      onBackground: Colors.white, // Bianco su Quasi Nero
+      brightness: Brightness.dark,
+    );
+
+    final ThemeData lightTheme = ThemeData(
+      useMaterial3: true,
+      colorScheme: lightColorScheme,
+      textTheme: GoogleFonts.robotoTextTheme(),
+      visualDensity: VisualDensity.adaptivePlatformDensity,
     );
 
     final ThemeData darkTheme = ThemeData(
-      brightness: Brightness.dark,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF005AC8),
-        brightness: Brightness.dark,
-      ),
-      shadowColor: Colors.black.withOpacity(0.5),
+      useMaterial3: true,
+      colorScheme: darkColorScheme,
+      textTheme: GoogleFonts.robotoTextTheme().apply(bodyColor: Colors.white, displayColor: Colors.white),
+      visualDensity: VisualDensity.adaptivePlatformDensity,
     );
 
     return MaterialApp(
@@ -57,9 +82,9 @@ class MyApp extends StatelessWidget {
       routes: {
         '/auth': (context) => AuthScreen(),
         '/home': (context) => const HomeScreen(),
-        '/exercises_list': (context) => ExercisesList(), // Aggiungi la route per ExercisesList
-                '/maxrmdashboard': (context) => const MaxRMDashboard(), // Aggiungi la route per ExercisesList
-
+        '/exercises_list': (context) => ExercisesList(),
+        '/maxrmdashboard': (context) => const MaxRMDashboard(),
+        'trainingprogram':(context) => TrainingProgramPage()
       },
     );
   }

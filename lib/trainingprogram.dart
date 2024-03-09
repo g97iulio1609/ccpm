@@ -1,5 +1,5 @@
 // trainingprogram.dart
-import 'package:alphanessone/exercise_model.dart';
+import 'package:alphanessone/exerciseModel.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'exercise_model.dart';
+import 'exerciseModel.dart';
 import 'exercisesServices.dart';
 
 final muscleGroupsProvider = StreamProvider((ref) {

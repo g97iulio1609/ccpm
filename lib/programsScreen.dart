@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'trainingProgram.dart';  // Assicurati che questa importazione sia corretta
-import 'trainingviewer.dart';  // Assicurati che questa importazione sia corretta
+import 'trainingViewer.dart';  // Assicurati che questa importazione sia corretta
 
 class ProgramsScreen extends HookConsumerWidget {
   const ProgramsScreen({super.key});
