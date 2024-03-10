@@ -2,7 +2,10 @@
     <application
         android:label="alphanessone"
         android:name="${applicationName}"
+        android:roundIcon="@mipmap/round_launcher"
         android:icon="@mipmap/ic_launcher">
+
+        
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -128,74 +128,89 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                                 Expanded(flex: 1, child: Text("Svolto", style: theme.textTheme.titleMedium, textAlign: TextAlign.center)),
                               ],
                             ),
-                            ...exercise['series'].asMap().entries.map((entry) {
-                              int seriesIndex = entry.key;
-                              Map<String, dynamic> series = entry.value;
-                              TextEditingController repsController = _repsControllers[series['id']]!;
-                              TextEditingController weightController = _weightControllers[series['id']]!;
+                       ...exercise['series'].asMap().entries.map((entry) {
+  int seriesIndex = entry.key;
+  Map<String, dynamic> series = entry.value;
+  TextEditingController repsController = _repsControllers[series['id']]!;
+  TextEditingController weightController = _weightControllers[series['id']]!;
 
-                              return Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(flex: 1, child: Text("${seriesIndex + 1}", style: theme.textTheme.bodyLarge, textAlign: TextAlign.center)),
-                                  Expanded(
-                                    flex: 2,
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text("${series['reps']}", style: theme.textTheme.bodyLarge, textAlign: TextAlign.right),
-                                        SizedBox(
-                                          width: 50, // Adjust width as needed
-                                          child: TextField(
-                                            controller: repsController,
-                                            textAlign: TextAlign.center,
-                                            style: theme.textTheme.bodyLarge,
-                                            decoration: const InputDecoration(
-                                              hintText: '_',
-                                              border: InputBorder.none,
-                                            ),
-                                            keyboardType: TextInputType.number,
-                                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Expanded(
-                                    flex: 2,
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text("${series['weight']} Kg", style: theme.textTheme.bodyLarge, textAlign: TextAlign.right),
-                                        SizedBox(
-                                          width: 50, // Adjust width as needed
-                                          child: TextField(
-                                            controller: weightController,
-                                            textAlign: TextAlign.center,
-                                            style: theme.textTheme.bodyLarge,
-                                            decoration: const InputDecoration(
-                                              hintText: '_',
-                                              border: InputBorder.none,
-                                            ),
-                                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Expanded(
-                                    flex: 1,
-                                    child: Checkbox(
-                                      value: series['done'] ?? false,
-                                      onChanged: (bool? newValue) {
-                                        setState(() => series['done'] = newValue);
-                                        updateSeriesData(series['id'], newValue ?? false, repsController.text.isNotEmpty ? int.tryParse(repsController.text) : null, weightController.text.isNotEmpty ? double.tryParse(weightController.text) : null);
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              );
-                            }),
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Expanded(
+        flex: 1,
+        child: Center(child: Text("${seriesIndex + 1}", style: theme.textTheme.bodyLarge)),
+      ),
+      Expanded(
+        flex: 2,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text("${series['reps']}", style: theme.textTheme.bodyLarge, textAlign: TextAlign.center),
+            SizedBox(width: 8),
+            Container(
+              width: 40,
+              child: Align(
+                alignment: Alignment.center,
+                child: TextField(
+                  controller: repsController,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyLarge,
+                  decoration: InputDecoration(
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                    border: InputBorder.none,
+                    hintText: '_',
+                  ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      Expanded(
+        flex: 2,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text("${series['weight']} Kg", style: theme.textTheme.bodyLarge, textAlign: TextAlign.center),
+            SizedBox(width: 8),
+            Container(
+              width: 60,
+              child: Align(
+                alignment: Alignment.center,
+                child: TextField(
+                  controller: weightController,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyLarge,
+                  decoration: InputDecoration(
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                    border: InputBorder.none,
+                    hintText: '_',
+                  ),
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      Expanded(
+        flex: 1,
+        child: Checkbox(
+          value: series['done'] ?? false,
+          onChanged: (bool? newValue) {
+            setState(() => series['done'] = newValue);
+            updateSeriesData(series['id'], newValue ?? false, int.tryParse(repsController.text), double.tryParse(weightController.text));
+          },
+        ),
+      ),
+    ],
+  );
+}).toList(),
                           ],
                         ),
                       ),
@@ -215,3 +230,4 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
     _subscriptions.forEach((subscription) => subscription.cancel());
   }
 }
+ 
