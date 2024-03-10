@@ -87,7 +87,7 @@ class ProgramsScreen extends HookConsumerWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(doc['name'], style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                            SizedBox(height: 8), // Aggiungi spazio per una migliore leggibilità
+                            const SizedBox(height: 8), // Aggiungi spazio per una migliore leggibilità
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
