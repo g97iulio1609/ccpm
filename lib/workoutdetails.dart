@@ -230,4 +230,3 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
     _subscriptions.forEach((subscription) => subscription.cancel());
   }
 }
- 
