@@ -25,15 +25,18 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
   int currentSeriesIndex = 0;
   final Map<String, TextEditingController> _repsControllers = {};
   final Map<String, TextEditingController> _weightControllers = {};
-  final TextEditingController _restTimeController = TextEditingController(text: "00:10"); // Controller per il tempo di riposo nel formato mm:ss
+  final TextEditingController _restTimeController = TextEditingController(text: "00:10");
 
   @override
   void initState() {
     super.initState();
-    widget.seriesList.forEach((series) {
-      _repsControllers[series['id']] = TextEditingController(text: series['reps_done']?.toString() ?? '');
-      _weightControllers[series['id']] = TextEditingController(text: series['weight_done']?.toString() ?? '');
-    });
+    // Find the first incomplete set
+    for (int i = 0; i < widget.seriesList.length; i++) {
+      if (!widget.seriesList[i]['done']) {
+        currentSeriesIndex = i;
+        break;
+      }
+    }
   }
 
   Future<void> updateSeriesData(String seriesId, int? repsDone, double? weightDone) async {
@@ -79,8 +82,6 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
   Widget build(BuildContext context) {
     ThemeData theme = Theme.of(context);
     Map<String, dynamic> currentSeries = widget.seriesList[currentSeriesIndex];
-    TextEditingController repsController = _repsControllers[currentSeries['id']]!;
-    TextEditingController weightController = _weightControllers[currentSeries['id']]!;
 
     return Scaffold(
       appBar: AppBar(
@@ -92,16 +93,16 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text('Set ${currentSeriesIndex + 1} / ${widget.seriesList.length}', style: theme.textTheme.titleLarge),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text('WEIGHT', style: theme.textTheme.titleMedium),
-                SizedBox(width: 16),
+                const SizedBox(width: 16),
                 Container(
                   width: 100,
                   child: TextField(
-                    controller: weightController,
+                    controller: _weightControllers[currentSeries['id']] = TextEditingController(text: currentSeries['weight'].toString()),
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyLarge,
                     decoration: InputDecoration(
@@ -113,20 +114,20 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
                     inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*'))],
                   ),
                 ),
-                SizedBox(width: 16),
+                const SizedBox(width: 16),
                 Text('kg', style: theme.textTheme.titleMedium),
               ],
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text('REPS', style: theme.textTheme.titleMedium),
-                SizedBox(width: 16),
+                const SizedBox(width: 16),
                 Container(
                   width: 100,
                   child: TextField(
-                    controller: repsController,
+                    controller: _repsControllers[currentSeries['id']] = TextEditingController(text: currentSeries['reps'].toString()),
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyLarge,
                     decoration: InputDecoration(
@@ -140,7 +141,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
                 ),
               ],
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             TextField(
               controller: _restTimeController,
               decoration: InputDecoration(
@@ -150,17 +151,17 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d{0,2}:\d{0,2}$'))],
             ),
-            SizedBox(height: 32),
+            const SizedBox(height: 32),
             ElevatedButton(
               onPressed: () async {
                 await updateSeriesData(
                   currentSeries['id'],
-                  int.tryParse(repsController.text),
-                  double.tryParse(weightController.text),
+                  int.tryParse(_repsControllers[currentSeries['id']]!.text),
+                  double.tryParse(_weightControllers[currentSeries['id']]!.text),
                 );
                 _handleNextSeries();
               },
-              child: currentSeriesIndex == widget.seriesList.length - 1 ? Text('FINISH') : Text('NEXT SET'),
+              child: currentSeriesIndex == widget.seriesList.length - 1 ? const Text('FINISH') : const Text('NEXT SET'),
             ),
           ],
         ),
