@@ -42,7 +42,7 @@ class _TimerPageState extends State<TimerPage> {
 
   void _handleNextSeries() {
     _timer.cancel();
-    Navigator.pop(context, true); // true indica che si desidera passare alla prossima serie
+    Navigator.pop(context, true);
   }
 
   @override
@@ -53,6 +53,9 @@ class _TimerPageState extends State<TimerPage> {
 
   @override
   Widget build(BuildContext context) {
+    ThemeData themeData = Theme.of(context);
+    double percent = _remainingSeconds / widget.restTime;
+
     return Scaffold(
       body: Center(
         child: Column(
@@ -60,17 +63,40 @@ class _TimerPageState extends State<TimerPage> {
           children: [
             Text(
               'REST TIME',
-              style: Theme.of(context).textTheme.headlineSmall,
+              style: themeData.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 16),
-            Text(
-              Duration(seconds: _remainingSeconds).toString().split('.').first.padLeft(8, '0'),
-              style: Theme.of(context).textTheme.displaySmall,
+            SizedBox(height: 32),
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 240,
+                  height: 240,
+                  child: CircularProgressIndicator(
+                    value: percent,
+                    strokeWidth: 12,
+                    backgroundColor: themeData.colorScheme.surfaceVariant,
+                    valueColor: AlwaysStoppedAnimation<Color>(themeData.colorScheme.primary),
+                  ),
+                ),
+                Text(
+                  '${(_remainingSeconds ~/ 60).toString().padLeft(2, '0')}:${(_remainingSeconds % 60).toString().padLeft(2, '0')}',
+                  style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: themeData.colorScheme.onSurface),
+                ),
+              ],
             ),
-            const SizedBox(height: 32),
+            SizedBox(height: 48),
             ElevatedButton(
               onPressed: _handleNextSeries,
-              child: const Text('SKIP'),
+              child: Text('SKIP'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: themeData.colorScheme.primary,
+                foregroundColor: themeData.colorScheme.onPrimary, // Assicura che il testo sia visibile
+                minimumSize: Size(200, 60),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+              ),
             ),
           ],
         ),
