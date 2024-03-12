@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Assicurati che questa linea sia aggiunta
+import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'timer.dart';
 
@@ -25,15 +25,15 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
   int currentSeriesIndex = 0;
   final Map<String, TextEditingController> _repsControllers = {};
   final Map<String, TextEditingController> _weightControllers = {};
-  final TextEditingController _restTimeController = TextEditingController(text: "10"); // Controller per il tempo di riposo
+  final TextEditingController _restTimeController = TextEditingController(text: "00:10"); // Controller per il tempo di riposo nel formato mm:ss
 
   @override
   void initState() {
     super.initState();
-    for (var series in widget.seriesList) {
+    widget.seriesList.forEach((series) {
       _repsControllers[series['id']] = TextEditingController(text: series['reps_done']?.toString() ?? '');
       _weightControllers[series['id']] = TextEditingController(text: series['weight_done']?.toString() ?? '');
-    }
+    });
   }
 
   Future<void> updateSeriesData(String seriesId, int? repsDone, double? weightDone) async {
@@ -44,8 +44,16 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
     });
   }
 
+  int _convertTimeToSeconds(String time) {
+    var parts = time.split(':');
+    if (parts.length != 2) return 0;
+    int minutes = int.tryParse(parts[0]) ?? 0;
+    int seconds = int.tryParse(parts[1]) ?? 0;
+    return (minutes * 60) + seconds;
+  }
+
   void _handleNextSeries() async {
-    final restTime = int.tryParse(_restTimeController.text) ?? 10; // Usa il valore inserito o il default se non valido
+    final restTimeInSeconds = _convertTimeToSeconds(_restTimeController.text);
     if (currentSeriesIndex < widget.seriesList.length - 1) {
       final shouldProceed = await Navigator.push(
         context,
@@ -53,7 +61,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
           builder: (context) => TimerPage(
             currentSeriesIndex: currentSeriesIndex,
             totalSeries: widget.seriesList.length,
-            restTime: restTime, // Passa il tempo di riposo personalizzato
+            restTime: restTimeInSeconds,
           ),
         ),
       );
@@ -83,26 +91,20 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              'Set ${currentSeriesIndex + 1} / ${widget.seriesList.length}',
-              style: theme.textTheme.titleLarge,
-            ),
-            const SizedBox(height: 16),
+            Text('Set ${currentSeriesIndex + 1} / ${widget.seriesList.length}', style: theme.textTheme.titleLarge),
+            SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  'WEIGHT',
-                  style: theme.textTheme.titleMedium,
-                ),
-                const SizedBox(width: 16),
+                Text('WEIGHT', style: theme.textTheme.titleMedium),
+                SizedBox(width: 16),
                 Container(
                   width: 100,
                   child: TextField(
                     controller: weightController,
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyLarge,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       isDense: true,
                       contentPadding: EdgeInsets.zero,
                       border: OutlineInputBorder(),
@@ -111,29 +113,23 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
                     inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*'))],
                   ),
                 ),
-                const SizedBox(width: 16),
-                Text(
-                  'kg',
-                  style: theme.textTheme.titleMedium,
-                ),
+                SizedBox(width: 16),
+                Text('kg', style: theme.textTheme.titleMedium),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  'REPS',
-                  style: theme.textTheme.titleMedium,
-                ),
-                const SizedBox(width: 16),
+                Text('REPS', style: theme.textTheme.titleMedium),
+                SizedBox(width: 16),
                 Container(
                   width: 100,
                   child: TextField(
                     controller: repsController,
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyLarge,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       isDense: true,
                       contentPadding: EdgeInsets.zero,
                       border: OutlineInputBorder(),
@@ -144,17 +140,17 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            TextField( // Campo per inserire il tempo di riposo
+            SizedBox(height: 16),
+            TextField(
               controller: _restTimeController,
               decoration: InputDecoration(
-                labelText: "Tempo di riposo (secondi)",
+                labelText: "Tempo di riposo (mm:ss)",
                 border: OutlineInputBorder(),
               ),
               keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly], // Solo numeri
+              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d{0,2}:\d{0,2}$'))],
             ),
-            const SizedBox(height: 32),
+            SizedBox(height: 32),
             ElevatedButton(
               onPressed: () async {
                 await updateSeriesData(
@@ -164,9 +160,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
                 );
                 _handleNextSeries();
               },
-              child: currentSeriesIndex == widget.seriesList.length - 1
-                  ? const Text('FINISH')
-                  : const Text('NEXT SET'),
+              child: currentSeriesIndex == widget.seriesList.length - 1 ? Text('FINISH') : Text('NEXT SET'),
             ),
           ],
         ),
@@ -178,7 +172,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
   void dispose() {
     _repsControllers.forEach((key, controller) => controller.dispose());
     _weightControllers.forEach((key, controller) => controller.dispose());
-    _restTimeController.dispose(); // Aggiunto dispose per il nuovo controller
+    _restTimeController.dispose();
     super.dispose();
   }
 }
