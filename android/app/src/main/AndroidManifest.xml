@@ -3,7 +3,9 @@
         android:label="alphanessone"
         android:name="${applicationName}"
         android:roundIcon="@mipmap/round_launcher"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:enableOnBackInvokedCallback="true">
+
 
         
         <activity

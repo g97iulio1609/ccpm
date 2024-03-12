@@ -1,7 +1,8 @@
-import 'dart:async';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Import for text input formatters
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'exercise_details.dart';
+import 'dart:async';
+
 
 class WorkoutDetails extends StatefulWidget {
   final String workoutId;
@@ -16,8 +17,6 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
   bool loading = true;
   List<Map<String, dynamic>> exercises = [];
   final List<StreamSubscription> _subscriptions = [];
-  final Map<String, TextEditingController> _repsControllers = {};
-  final Map<String, TextEditingController> _weightControllers = {};
 
   @override
   void initState() {
@@ -51,14 +50,6 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
           List<Map<String, dynamic>> tempSeries = seriesSnapshot.docs.map((seriesDoc) {
             var seriesData = seriesDoc.data() as Map<String, dynamic>? ?? {};
             seriesData['id'] = seriesDoc.id;
-
-            if (!_repsControllers.containsKey(seriesDoc.id)) {
-                _repsControllers[seriesDoc.id] = TextEditingController(text: seriesData['reps_done']?.toString() ?? '');
-            }
-            if (!_weightControllers.containsKey(seriesDoc.id)) {
-                _weightControllers[seriesDoc.id] = TextEditingController(text: seriesData['weight_done']?.toString() ?? '');
-            }
-
             return seriesData;
           }).toList();
 
@@ -81,14 +72,6 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
     });
 
     _subscriptions.add(exercisesSubscription);
-  }
-
-  Future<void> updateSeriesData(String seriesId, bool done, int? repsDone, double? weightDone) async {
-    await FirebaseFirestore.instance.collection('series').doc(seriesId).update({
-      'done': done,
-      'reps_done': repsDone ?? 0,
-      'weight_done': weightDone ?? 0.0,
-    });
   }
 
   @override
@@ -128,89 +111,67 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                                 Expanded(flex: 1, child: Text("Svolto", style: theme.textTheme.titleMedium, textAlign: TextAlign.center)),
                               ],
                             ),
-                       ...exercise['series'].asMap().entries.map((entry) {
-  int seriesIndex = entry.key;
-  Map<String, dynamic> series = entry.value;
-  TextEditingController repsController = _repsControllers[series['id']]!;
-  TextEditingController weightController = _weightControllers[series['id']]!;
-
-  return Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-      Expanded(
-        flex: 1,
-        child: Center(child: Text("${seriesIndex + 1}", style: theme.textTheme.bodyLarge)),
-      ),
-      Expanded(
-        flex: 2,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text("${series['reps']}", style: theme.textTheme.bodyLarge, textAlign: TextAlign.center),
-            SizedBox(width: 8),
-            Container(
-              width: 40,
-              child: Align(
-                alignment: Alignment.center,
-                child: TextField(
-                  controller: repsController,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyLarge,
-                  decoration: InputDecoration(
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
-                    border: InputBorder.none,
-                    hintText: '_',
-                  ),
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-      Expanded(
-        flex: 2,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text("${series['weight']} Kg", style: theme.textTheme.bodyLarge, textAlign: TextAlign.center),
-            SizedBox(width: 8),
-            Container(
-              width: 60,
-              child: Align(
-                alignment: Alignment.center,
-                child: TextField(
-                  controller: weightController,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyLarge,
-                  decoration: InputDecoration(
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
-                    border: InputBorder.none,
-                    hintText: '_',
-                  ),
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-      Expanded(
-        flex: 1,
-        child: Checkbox(
-          value: series['done'] ?? false,
-          onChanged: (bool? newValue) {
-            setState(() => series['done'] = newValue);
-            updateSeriesData(series['id'], newValue ?? false, int.tryParse(repsController.text), double.tryParse(weightController.text));
-          },
-        ),
-      ),
-    ],
-  );
-}).toList(),
+                            ...exercise['series'].asMap().entries.map((entry) {
+                              int seriesIndex = entry.key;
+                              Map<String, dynamic> series = entry.value;
+                              return Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    flex: 1,
+                                    child: Center(child: Text("${seriesIndex + 1}", style: theme.textTheme.bodyLarge)),
+                                  ),
+                                  Expanded(
+                                    flex: 2,
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text("${series['reps']}", style: theme.textTheme.bodyLarge, textAlign: TextAlign.center),
+                                        const SizedBox(width: 8),
+                                        Text("${series['reps_done'] ?? '-'}", style: theme.textTheme.bodyLarge, textAlign: TextAlign.center),
+                                      ],
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 2,
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text("${series['weight']} Kg", style: theme.textTheme.bodyLarge, textAlign: TextAlign.center),
+                                        const SizedBox(width: 8),
+                                        Text("${series['weight_done'] ?? '-'} Kg", style: theme.textTheme.bodyLarge, textAlign: TextAlign.center),
+                                      ],
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 1,
+                                    child: Checkbox(
+                                      value: series['done'] ?? false,
+                                      onChanged: null,
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }).toList(),
+                            const SizedBox(height: 16),
+                            Center(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ExerciseDetails(
+                                        exerciseId: exercise['id'],
+                                        exerciseName: exercise['name'],
+                                        exerciseVariant: exercise['variant'],
+                                        seriesList: exercise['series'].cast<Map<String, dynamic>>(),
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: const Text('START'),
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -225,8 +186,6 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
   @override
   void dispose() {
     super.dispose();
-    _repsControllers.forEach((key, controller) => controller.dispose());
-    _weightControllers.forEach((key, controller) => controller.dispose());
     _subscriptions.forEach((subscription) => subscription.cancel());
   }
 }
