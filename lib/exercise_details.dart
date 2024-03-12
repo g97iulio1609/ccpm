@@ -25,6 +25,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
   int currentSeriesIndex = 0;
   final Map<String, TextEditingController> _repsControllers = {};
   final Map<String, TextEditingController> _weightControllers = {};
+  final TextEditingController _restTimeController = TextEditingController(text: "10"); // Controller per il tempo di riposo
 
   @override
   void initState() {
@@ -44,28 +45,27 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
   }
 
   void _handleNextSeries() async {
-  if (currentSeriesIndex < widget.seriesList.length - 1) {
-    final shouldProceed = await Navigator.push(
-      context,
-      MaterialPageRoute<bool>(
-        builder: (context) => TimerPage(
-          currentSeriesIndex: currentSeriesIndex,
-          totalSeries: widget.seriesList.length,
-          restTime: 10, // Set your desired rest time in seconds
+    final restTime = int.tryParse(_restTimeController.text) ?? 10; // Usa il valore inserito o il default se non valido
+    if (currentSeriesIndex < widget.seriesList.length - 1) {
+      final shouldProceed = await Navigator.push(
+        context,
+        MaterialPageRoute<bool>(
+          builder: (context) => TimerPage(
+            currentSeriesIndex: currentSeriesIndex,
+            totalSeries: widget.seriesList.length,
+            restTime: restTime, // Passa il tempo di riposo personalizzato
+          ),
         ),
-      ),
-    );
-    // Controlla se TimerPage ha risposto con true per procedere alla serie successiva
-    if (shouldProceed == true) {
-      setState(() {
-        currentSeriesIndex++;
-      });
+      );
+      if (shouldProceed == true) {
+        setState(() {
+          currentSeriesIndex++;
+        });
+      }
+    } else {
+      Navigator.pop(context);
     }
-  } else {
-    Navigator.pop(context); // Nessuna serie rimanente, ritorna alla pagina precedente
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -144,6 +144,16 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
                 ),
               ],
             ),
+            const SizedBox(height: 16),
+            TextField( // Campo per inserire il tempo di riposo
+              controller: _restTimeController,
+              decoration: InputDecoration(
+                labelText: "Tempo di riposo (secondi)",
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly], // Solo numeri
+            ),
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: () async {
@@ -168,6 +178,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
   void dispose() {
     _repsControllers.forEach((key, controller) => controller.dispose());
     _weightControllers.forEach((key, controller) => controller.dispose());
+    _restTimeController.dispose(); // Aggiunto dispose per il nuovo controller
     super.dispose();
   }
 }
