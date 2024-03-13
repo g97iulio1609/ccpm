@@ -7,7 +7,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'usersServices.dart';
 
-
 final authProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
 final googleSignInProvider = Provider<GoogleSignIn>((ref) => GoogleSignIn());
 final firestoreProvider = Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
@@ -30,7 +29,7 @@ class AuthScreen extends HookConsumerWidget {
     final usersService = ref.read(usersServiceProvider);
 
     return Scaffold(
-      key: scaffoldMessengerKey, // Usa 'key' invece di 'scaffoldMessengerKey'
+      key: scaffoldMessengerKey,
       appBar: AppBar(title: Text(isLogin.value ? 'Login' : 'Sign Up')),
       body: Center(
         child: Card(
@@ -118,6 +117,7 @@ class AuthForm extends HookConsumerWidget {
             googleSignIn: googleSignIn,
             firestore: firestore,
             usersService: usersService,
+            scaffoldMessengerKey: scaffoldMessengerKey, // Passa la chiave del messaggero di Scaffold
           ),
         ],
       ),
@@ -237,17 +237,20 @@ class SubmitButton extends StatelessWidget {
     }
   }
 }
+
 class GoogleSignInButton extends StatelessWidget {
   const GoogleSignInButton({
     super.key,
     required this.googleSignIn,
     required this.firestore,
     required this.usersService,
+    required this.scaffoldMessengerKey, // Aggiungi il parametro scaffoldMessengerKey
   });
 
   final GoogleSignIn googleSignIn;
   final FirebaseFirestore firestore;
   final UsersService usersService;
+  final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey; // Variabile per il messaggero di Scaffold
 
   @override
   Widget build(BuildContext context) {
@@ -281,7 +284,8 @@ class GoogleSignInButton extends StatelessWidget {
             // Aggiorna il ruolo dell'utente dopo il login con Google
             await usersService.setUserRole(userCredential.user!.uid);
 
-            ScaffoldMessenger.of(context).showSnackBar(
+            // Mostra lo SnackBar utilizzando il messaggero di Scaffold
+            scaffoldMessengerKey.currentState?.showSnackBar(
               const SnackBar(
                 content: Text('Google Sign-In successful'),
                 backgroundColor: Colors.green,
@@ -289,7 +293,8 @@ class GoogleSignInButton extends StatelessWidget {
             );
           }
         } catch (error) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          // Mostra lo SnackBar utilizzando il messaggero di Scaffold
+          scaffoldMessengerKey.currentState?.showSnackBar(
             SnackBar(
               content: Text('Failed to sign in with Google: $error'),
               backgroundColor: Colors.red,

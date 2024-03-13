@@ -7,17 +7,17 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:179277367624:android:f8d54e86b7dac30430cb7d",
+        "mobilesdk_app_id": "1:179277367624:android:f5a93a0bdc0157c730cb7d",
         "android_client_info": {
-          "package_name": "com.example.alphanessone"
+          "package_name": "com.alphaness.alphanessone"
         }
       },
       "oauth_client": [
         {
-          "client_id": "179277367624-394c1q9b0bft0l05u627s2r39j2tvnrh.apps.googleusercontent.com",
+          "client_id": "179277367624-316al8froivg0s8cdm7gaangn9qi23c4.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.example.alphanessone",
+            "package_name": "com.alphaness.alphanessone",
             "certificate_hash": "75ca0f816fd9e4093fd4860e9320aeaff848afef"
           }
         },

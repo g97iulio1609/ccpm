@@ -55,7 +55,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyASzxyOrOUus8G3DL2oLE-N5FG56RY-dhk',
-    appId: '1:179277367624:android:f8d54e86b7dac30430cb7d',
+    appId: '1:179277367624:android:f5a93a0bdc0157c730cb7d',
     messagingSenderId: '179277367624',
     projectId: 'alphaness-322423',
     storageBucket: 'alphaness-322423.appspot.com',
@@ -67,6 +67,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '179277367624',
     projectId: 'alphaness-322423',
     storageBucket: 'alphaness-322423.appspot.com',
+    androidClientId: '179277367624-394c1q9b0bft0l05u627s2r39j2tvnrh.apps.googleusercontent.com',
     iosClientId: '179277367624-c8rp756q5jgi7t6oso5lng8l6he2591h.apps.googleusercontent.com',
     iosBundleId: 'com.example.alphanessone',
   );
@@ -77,6 +78,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '179277367624',
     projectId: 'alphaness-322423',
     storageBucket: 'alphaness-322423.appspot.com',
+    androidClientId: '179277367624-394c1q9b0bft0l05u627s2r39j2tvnrh.apps.googleusercontent.com',
     iosClientId: '179277367624-puf2tc4m6atim9395vna4pb4cngq0tgv.apps.googleusercontent.com',
     iosBundleId: 'com.example.alphanessone.RunnerTests',
   );

@@ -54,7 +54,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       // Esegui il logout dell'utente
       await FirebaseAuth.instance.signOut();
       // Naviga alla schermata di autenticazione o esegui altre azioni necessarie
-    Navigator.pushNamed(context, '/authScreen');
+    Navigator.pushNamed(context, '/auth');
     } catch (e) {
       // Gestisci eventuali errori durante il logout
       print('Errore durante il logout: $e');
