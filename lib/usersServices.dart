@@ -1,8 +1,10 @@
+// usersServices.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 final userNameProvider = StateProvider<String>((ref) => '');
+final userRoleProvider = StateProvider<String>((ref) => '');
 
 class UserModel {
   final String id;
@@ -65,9 +67,10 @@ class UsersService {
   final FirebaseAuth _auth;
 
   UsersService(this.ref, this._firestore, this._auth) {
-    _auth.userChanges().listen((user) {
+    _auth.userChanges().listen((user) async {
       if (user != null) {
         _updateUserName(user.displayName);
+        await _updateUserRole(user.uid);
       }
     });
   }
@@ -76,6 +79,32 @@ class UsersService {
     final userName = displayName ?? '';
     ref.read(userNameProvider.notifier).state = userName;
   }
+
+  Future<void> _updateUserRole(String userId) async {
+    final DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
+    final String userRole = userDoc['role'] ?? '';
+    ref.read(userRoleProvider.notifier).state = userRole;
+  }
+
+  Future<void> fetchUserRole() async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      ref.read(userNameProvider.notifier).state = user.displayName ?? '';
+      await _updateUserRole(user.uid);
+    }
+  }
+
+  String getCurrentUserRole() {
+    return ref.read(userRoleProvider);
+  }
+
+  
+  void setUserRole(String userId) async {
+  final DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
+  final String userRole = userDoc['role'] ?? '';
+  ref.read(userRoleProvider.notifier).state = userRole;
+}
+
 
   Stream<List<UserModel>> getUsers() {
     return _firestore.collection('users').snapshots().map((snapshot) {
@@ -96,9 +125,7 @@ class UsersService {
         .orderBy('date', descending: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => ExerciseRecord.fromFirestore(doc))
-          .toList();
+      return snapshot.docs.map((doc) => ExerciseRecord.fromFirestore(doc)).toList();
     });
   }
 

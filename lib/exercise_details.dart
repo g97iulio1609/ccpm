@@ -25,12 +25,16 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
   int currentSeriesIndex = 0;
   final Map<String, TextEditingController> _repsControllers = {};
   final Map<String, TextEditingController> _weightControllers = {};
-  final TextEditingController _restTimeController = TextEditingController(text: "00:10");
+  final TextEditingController _minutesController = TextEditingController(text: "00");
+  final TextEditingController _secondsController = TextEditingController(text: "10");
 
   @override
   void initState() {
     super.initState();
-    // Find the first incomplete set
+    widget.seriesList.forEach((series) {
+      _repsControllers[series['id']] = TextEditingController(text: series['reps'].toString());
+      _weightControllers[series['id']] = TextEditingController(text: series['weight'].toString());
+    });
     for (int i = 0; i < widget.seriesList.length; i++) {
       if (!widget.seriesList[i]['done']) {
         currentSeriesIndex = i;
@@ -47,16 +51,14 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
     });
   }
 
-  int _convertTimeToSeconds(String time) {
-    var parts = time.split(':');
-    if (parts.length != 2) return 0;
-    int minutes = int.tryParse(parts[0]) ?? 0;
-    int seconds = int.tryParse(parts[1]) ?? 0;
+  int _convertTimeToSeconds() {
+    int minutes = int.tryParse(_minutesController.text) ?? 0;
+    int seconds = int.tryParse(_secondsController.text) ?? 0;
     return (minutes * 60) + seconds;
   }
 
   void _handleNextSeries() async {
-    final restTimeInSeconds = _convertTimeToSeconds(_restTimeController.text);
+    final restTimeInSeconds = _convertTimeToSeconds();
     if (currentSeriesIndex < widget.seriesList.length - 1) {
       final shouldProceed = await Navigator.push(
         context,
@@ -102,7 +104,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
                 Container(
                   width: 100,
                   child: TextField(
-                    controller: _weightControllers[currentSeries['id']] = TextEditingController(text: currentSeries['weight'].toString()),
+                    controller: _weightControllers[currentSeries['id']],
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyLarge,
                     decoration: InputDecoration(
@@ -127,7 +129,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
                 Container(
                   width: 100,
                   child: TextField(
-                    controller: _repsControllers[currentSeries['id']] = TextEditingController(text: currentSeries['reps'].toString()),
+                    controller: _repsControllers[currentSeries['id']],
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyLarge,
                     decoration: InputDecoration(
@@ -142,14 +144,39 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
               ],
             ),
             const SizedBox(height: 16),
-            TextField(
-              controller: _restTimeController,
-              decoration: InputDecoration(
-                labelText: "Tempo di riposo (mm:ss)",
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d{0,2}:\d{0,2}$'))],
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Flexible(
+                  child: TextField(
+                    controller: _minutesController,
+                    decoration: InputDecoration(
+                      labelText: "Minuti",
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(2),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: TextField(
+                    controller: _secondsController,
+                    decoration: InputDecoration(
+                      labelText: "Secondi",
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(2),
+                    ],
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 32),
             ElevatedButton(
@@ -173,7 +200,8 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
   void dispose() {
     _repsControllers.forEach((key, controller) => controller.dispose());
     _weightControllers.forEach((key, controller) => controller.dispose());
-    _restTimeController.dispose();
+    _minutesController.dispose();
+    _secondsController.dispose();
     super.dispose();
   }
 }

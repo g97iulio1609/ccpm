@@ -15,7 +15,7 @@ final exercisesStreamProvider = StreamProvider<List<ExerciseModel>>((ref) {
   final service = ref.watch(exercisesServiceProvider);
   return service.getExercises();
 });
-final usersServiceProvider = Provider<UsersService>((ref) {
+final userServiceProvider = Provider<UsersService>((ref) {
   return UsersService(ref, FirebaseFirestore.instance, FirebaseAuth.instance);
 });
 
@@ -28,7 +28,7 @@ class MaxRMDashboard extends HookConsumerWidget {
     final FirebaseAuth auth = ref.watch(authProvider);
     final User? user = auth.currentUser;
     final exercisesAsyncValue = ref.watch(exercisesStreamProvider);
-    final usersService = ref.watch(usersServiceProvider);
+    final usersService = ref.watch(userServiceProvider);
     final selectedExerciseController = useState<ExerciseModel?>(null);
     final maxWeightController = useTextEditingController();
     final repetitionsController = useTextEditingController();
@@ -160,7 +160,7 @@ class MaxRMDashboard extends HookConsumerWidget {
 
    Widget _buildAllExercisesMaxRMs(WidgetRef ref, User? user) {
     final exercisesAsyncValue = ref.watch(exercisesStreamProvider);
-    final usersService = ref.watch(usersServiceProvider);
+    final usersService = ref.watch(userServiceProvider);
 
     return exercisesAsyncValue.when(
       data: (exercises) {

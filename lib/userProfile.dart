@@ -12,6 +12,7 @@ class UserProfile extends StatefulWidget {
 class UserProfileState extends State<UserProfile> {
   final User? user = FirebaseAuth.instance.currentUser;
   final Map<String, TextEditingController> _controllers = {};
+  final List<String> _excludedFields = ['currentProgram', 'role', 'socialLinks', 'id'];
 
   @override
   void initState() {
@@ -26,7 +27,9 @@ class UserProfileState extends State<UserProfile> {
         setState(() {
           final userProfileData = userData.data() as Map<String, dynamic>?;
           userProfileData?.forEach((key, value) {
-            _controllers[key] = TextEditingController(text: value.toString());
+            if (!_excludedFields.contains(key)) {
+              _controllers[key] = TextEditingController(text: value.toString());
+            }
           });
         });
       }
@@ -46,6 +49,10 @@ class UserProfileState extends State<UserProfile> {
 
   @override
   Widget build(BuildContext context) {
+    // Determine whether a user photo URL is available
+    String? userPhotoURL = _controllers['photoURL']?.text;
+    bool hasValidPhotoURL = userPhotoURL != null && userPhotoURL.isNotEmpty && Uri.parse(userPhotoURL).isAbsolute;
+
     return Scaffold(
       body: _controllers.isEmpty
           ? Center(child: CircularProgressIndicator())
@@ -54,13 +61,14 @@ class UserProfileState extends State<UserProfile> {
               child: Column(
                 children: <Widget>[
                   CircleAvatar(
-                    backgroundImage: NetworkImage(_controllers['photoURL']?.text ?? 'https://via.placeholder.com/150'),
+                    backgroundImage: hasValidPhotoURL ? NetworkImage(userPhotoURL!) : null,
                     radius: 50,
                     backgroundColor: Colors.grey[200],
                     foregroundColor: Colors.grey[800],
+                    child: !hasValidPhotoURL ? Icon(Icons.person, size: 50) : null,
                   ),
                   SizedBox(height: 20),
-                  ..._controllers.keys.map((field) => buildEditableField(field, _controllers[field]!)).toList(),
+                  ..._controllers.keys.where((field) => field != 'photoURL').map((field) => buildEditableField(field, _controllers[field]!)).toList(),
                 ],
               ),
             ),

@@ -1,3 +1,4 @@
+// homeScreen.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,14 +9,14 @@ import 'maxRMDashboard.dart';
 import 'trainingProgram.dart';
 import 'usersServices.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedIndex = 0;
   final List<GlobalKey<NavigatorState>> _navigatorKeys = [
     GlobalKey<NavigatorState>(),
@@ -25,20 +26,16 @@ class _HomeScreenState extends State<HomeScreen> {
     GlobalKey<NavigatorState>(),
   ];
 
-  final List<String> pageTitles = [
-    'Allenamenti',
-    'Esercizi',
-    'Massimali',
-    'Profilo Utente',
-    'TrainingProgram'
-  ];
-
   void _onItemTapped(int index) {
-    if (index == _selectedIndex) {
-      _navigatorKeys[index].currentState?.popUntil((route) => route.isFirst);
+    final userRole = ref.watch(userRoleProvider);
+    final int maxIndex = userRole == 'admin' ? 4 : 2;
+    final int newIndex = index > maxIndex ? maxIndex : index;
+
+    if (newIndex == _selectedIndex) {
+      _navigatorKeys[newIndex].currentState?.popUntil((route) => route.isFirst);
     } else {
       setState(() {
-        _selectedIndex = index;
+        _selectedIndex = newIndex;
       });
     }
   }
@@ -56,19 +53,32 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     var isLargeScreen = MediaQuery.of(context).size.width > 600;
+    final userRole = ref.watch(userRoleProvider);
+    final List<String> pageTitles = [
+      'Allenamenti',
+      if (userRole == 'admin') 'Esercizi',
+      'Massimali',
+      'Profilo Utente',
+      if (userRole == 'admin') 'TrainingProgram'
+    ];
+
+    if (_selectedIndex >= pageTitles.length) {
+      _selectedIndex = pageTitles.length - 1;
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(pageTitles[_selectedIndex]),
       ),
       drawer: isLargeScreen ? null : Drawer(
-        child: _buildDrawer(isLargeScreen, context),
+        child: _buildDrawer(isLargeScreen, context, userRole),
       ),
       body: Row(
         children: [
           if (isLargeScreen)
             SizedBox(
               width: 300,
-              child: _buildDrawer(isLargeScreen, context),
+              child: _buildDrawer(isLargeScreen, context, userRole),
             ),
           Expanded(
             child: Stack(
@@ -80,9 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildDrawer(bool isLargeScreen, BuildContext context) {
-    print('Building drawer...');
-
+  Widget _buildDrawer(bool isLargeScreen, BuildContext context, String userRole) {
     return Column(
       children: [
         Container(
@@ -103,10 +111,10 @@ class _HomeScreenState extends State<HomeScreen> {
           child: ListView(
             padding: EdgeInsets.zero,
             children: <Widget>[
-              ListTile(title: const Text('Esercizi'), onTap: () => _navigateTo(1, isLargeScreen)),
+              if (userRole == 'admin') ListTile(title: const Text('Esercizi'), onTap: () => _navigateTo(1, isLargeScreen)),
               ListTile(title: const Text('Massimali'), onTap: () => _navigateTo(2, isLargeScreen)),
               ListTile(title: const Text('Profilo Utente'), onTap: () => _navigateTo(3, isLargeScreen)),
-              ListTile(title: const Text('TrainingProgram'), onTap: () => _navigateTo(4, isLargeScreen)),
+              if (userRole == 'admin') ListTile(title: const Text('TrainingProgram'), onTap: () => _navigateTo(4, isLargeScreen)),
               ListTile(title: const Text('Allenamenti'), onTap: () => _navigateTo(0, isLargeScreen)),
             ],
           ),
@@ -138,7 +146,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _navigateTo(int index, bool isLargeScreen) {
     _onItemTapped(index);
-    if (!isLargeScreen) Navigator.pop(context); // Chiude il drawer solo su schermi piccoli
+    if (!isLargeScreen) Navigator.pop(context);
   }
 }
 
