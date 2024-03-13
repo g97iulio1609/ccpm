@@ -79,6 +79,11 @@ class UsersService {
     final userName = displayName ?? '';
     ref.read(userNameProvider.notifier).state = userName;
   }
+  
+  void updateUserName(String? displayName) {
+    final userName = displayName ?? '';
+    ref.read(userNameProvider.notifier).state = userName;
+  }
 
   Future<void> _updateUserRole(String userId) async {
     final DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
@@ -98,13 +103,11 @@ class UsersService {
     return ref.read(userRoleProvider);
   }
 
-  
-  void setUserRole(String userId) async {
-  final DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
-  final String userRole = userDoc['role'] ?? '';
-  ref.read(userRoleProvider.notifier).state = userRole;
-}
-
+  Future<void> setUserRole(String userId) async {
+    final DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
+    final String userRole = userDoc['role'] ?? '';
+    ref.read(userRoleProvider.notifier).state = userRole;
+  }
 
   Stream<List<UserModel>> getUsers() {
     return _firestore.collection('users').snapshots().map((snapshot) {
@@ -144,47 +147,46 @@ class UsersService {
         .doc(exerciseId)
         .collection('records')
         .add({
-      'date': date,
-      'exerciseId': exerciseId,
-      'exerciseName': exerciseName,
-      'maxWeight': maxWeight,
-      'repetitions': repetitions,
-      'userId': userId,
-    });
-  }
+      'date': date,'exerciseId': exerciseId,
+'exerciseName': exerciseName,
+'maxWeight': maxWeight,
+'repetitions': repetitions,
+'userId': userId,
+});
+}
 
-  Future<void> updateExerciseRecord({
-    required String userId,
-    required String exerciseId,
-    required String recordId,
-    required int maxWeight,
-    required int repetitions,
-  }) async {
-    await _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('exercises')
-        .doc(exerciseId)
-        .collection('records')
-        .doc(recordId)
-        .update({
-      'maxWeight': maxWeight,
-      'repetitions': repetitions,
-    });
-  }
+Future<void> updateExerciseRecord({
+required String userId,
+required String exerciseId,
+required String recordId,
+required int maxWeight,
+required int repetitions,
+}) async {
+await _firestore
+   .collection('users')
+   .doc(userId)
+   .collection('exercises')
+   .doc(exerciseId)
+   .collection('records')
+   .doc(recordId)
+   .update({
+ 'maxWeight': maxWeight,
+ 'repetitions': repetitions,
+});
+}
 
-  Future<void> deleteExerciseRecord({
-    required String userId,
-    required String exerciseId,
-    required String recordId,
-  }) async {
-    await _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('exercises')
-        .doc(exerciseId)
-        .collection('records')
-        .doc(recordId)
-        .delete();
-  }
+Future<void> deleteExerciseRecord({
+required String userId,
+required String exerciseId,
+required String recordId,
+}) async {
+await _firestore
+   .collection('users')
+   .doc(userId)
+   .collection('exercises')
+   .doc(exerciseId)
+   .collection('records')
+   .doc(recordId)
+   .delete();
+}
 }

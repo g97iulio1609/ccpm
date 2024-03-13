@@ -1,4 +1,3 @@
-// homeScreen.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,57 +17,58 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedIndex = 0;
-  final List<GlobalKey<NavigatorState>> _navigatorKeys = [
-    GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
-  ];
+  final List<Widget> _pages = [];
+  late Map<String, int> menuItemToPageIndex;
 
-  void _onItemTapped(int index) {
-    final userRole = ref.watch(userRoleProvider);
-    final int maxIndex = userRole == 'admin' ? 4 : 2;
-    final int newIndex = index > maxIndex ? maxIndex : index;
-
-    if (newIndex == _selectedIndex) {
-      _navigatorKeys[newIndex].currentState?.popUntil((route) => route.isFirst);
-    } else {
-      setState(() {
-        _selectedIndex = newIndex;
-      });
+  @override
+  void initState() {
+    super.initState();
+    final userRole = ref.read(userRoleProvider);
+    _pages.add(const ProgramsScreen());
+    if (userRole == 'admin') {
+      _pages.add(ExercisesList());
     }
+    _pages.add(const MaxRMDashboard());
+    _pages.add(const UserProfile());
+    if (userRole == 'admin') {
+      _pages.add(TrainingProgramPage());
+    }
+
+    menuItemToPageIndex = {
+      'Allenamenti': 0,
+      'Esercizi': userRole == 'admin' ? 1 : -1,
+      'Massimali': userRole == 'admin' ? 2 : 1,
+      'Profilo Utente': userRole == 'admin' ? 3 : 2,
+      'TrainingProgram': userRole == 'admin' ? 4 : -1,
+    };
   }
 
-  Widget _buildOffstageNavigator(int index) {
-    return Offstage(
-      offstage: _selectedIndex != index,
-      child: TabNavigator(
-        navigatorKey: _navigatorKeys[index],
-        tabItem: index,
-      ),
-    );
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  void _logout() async {
+    try {
+      // Esegui il logout dell'utente
+      await FirebaseAuth.instance.signOut();
+      // Naviga alla schermata di autenticazione o esegui altre azioni necessarie
+    Navigator.pushNamed(context, '/authScreen');
+    } catch (e) {
+      // Gestisci eventuali errori durante il logout
+      print('Errore durante il logout: $e');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     var isLargeScreen = MediaQuery.of(context).size.width > 600;
     final userRole = ref.watch(userRoleProvider);
-    final List<String> pageTitles = [
-      'Allenamenti',
-      if (userRole == 'admin') 'Esercizi',
-      'Massimali',
-      'Profilo Utente',
-      if (userRole == 'admin') 'TrainingProgram'
-    ];
-
-    if (_selectedIndex >= pageTitles.length) {
-      _selectedIndex = pageTitles.length - 1;
-    }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(pageTitles[_selectedIndex]),
+        title: Text(_getTitleForIndex(_selectedIndex, userRole)),
       ),
       drawer: isLargeScreen ? null : Drawer(
         child: _buildDrawer(isLargeScreen, context, userRole),
@@ -81,16 +81,52 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: _buildDrawer(isLargeScreen, context, userRole),
             ),
           Expanded(
-            child: Stack(
-              children: List<Widget>.generate(_navigatorKeys.length, _buildOffstageNavigator),
-            ),
+            child: _pages[_selectedIndex],
           ),
         ],
       ),
     );
   }
 
+  String _getTitleForIndex(int index, String userRole) {
+    if (userRole == 'admin') {
+      switch (index) {
+        case 0:
+          return 'Allenamenti';
+        case 1:
+          return 'Esercizi';
+        case 2:
+          return 'Massimali';
+        case 3:
+          return 'Profilo Utente';
+        case 4:
+          return 'TrainingProgram';
+        default:
+          return 'Allenamenti';
+      }
+    } else {
+      switch (index) {
+        case 0:
+          return 'Allenamenti';
+        case 1:
+          return 'Massimali';
+        case 2:
+          return 'Profilo Utente';
+        default:
+          return 'Allenamenti';
+      }
+    }
+  }
+
   Widget _buildDrawer(bool isLargeScreen, BuildContext context, String userRole) {
+    final List<String> menuItems = [
+      'Allenamenti',
+      if (userRole == 'admin') 'Esercizi',
+      'Massimali',
+      'Profilo Utente',
+      if (userRole == 'admin') 'TrainingProgram',
+    ];
+
     return Column(
       children: [
         Container(
@@ -108,15 +144,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
         Expanded(
-          child: ListView(
+          child: ListView.builder(
             padding: EdgeInsets.zero,
-            children: <Widget>[
-              if (userRole == 'admin') ListTile(title: const Text('Esercizi'), onTap: () => _navigateTo(1, isLargeScreen)),
-              ListTile(title: const Text('Massimali'), onTap: () => _navigateTo(2, isLargeScreen)),
-              ListTile(title: const Text('Profilo Utente'), onTap: () => _navigateTo(3, isLargeScreen)),
-              if (userRole == 'admin') ListTile(title: const Text('TrainingProgram'), onTap: () => _navigateTo(4, isLargeScreen)),
-              ListTile(title: const Text('Allenamenti'), onTap: () => _navigateTo(0, isLargeScreen)),
-            ],
+            itemCount: menuItems.length,
+            itemBuilder: (context, index) {
+              return ListTile(
+                title: Text(menuItems[index]),
+                onTap: () => _navigateTo(menuItems[index], isLargeScreen),
+              );
+            },
           ),
         ),
         Consumer(
@@ -130,58 +166,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Icon(Icons.person),
               ),
               title: Text(displayName),
-              onTap: () => _navigateTo(3, isLargeScreen),
+              onTap: () => _navigateTo('Profilo Utente', isLargeScreen),
             );
           },
         ),
         ListTile(
           title: const Text('Logout'),
-          onTap: () {
-            // Implementa la logica di logout qui
-          },
+          onTap: _logout,
         ),
       ],
     );
   }
 
-  void _navigateTo(int index, bool isLargeScreen) {
-    _onItemTapped(index);
-    if (!isLargeScreen) Navigator.pop(context);
-  }
-}
-
-class TabNavigator extends StatelessWidget {
-  final GlobalKey<NavigatorState> navigatorKey;
-  final int tabItem;
-
-  const TabNavigator({super.key, required this.navigatorKey, required this.tabItem});
-
-  @override
-  Widget build(BuildContext context) {
-    Widget child;
-    switch (tabItem) {
-      case 0:
-        child = const ProgramsScreen();
-        break;
-      case 1:
-        child = ExercisesList();
-        break;
-      case 2:
-        child = const MaxRMDashboard();
-        break;
-      case 3:
-        child = const UserProfile();
-        break;
-      case 4:
-        child = TrainingProgramPage();
-        break;
-      default:
-        child = const ProgramsScreen();
+  void _navigateTo(String menuItem, bool isLargeScreen) {
+    final int? pageIndex = menuItemToPageIndex[menuItem];
+    if (pageIndex != null && pageIndex >= 0) {
+      _onItemTapped(pageIndex);
+      if (!isLargeScreen) {
+        Navigator.pop(context);
+      }
     }
-
-    return Navigator(
-      key: navigatorKey,
-      onGenerateRoute: (settings) => MaterialPageRoute(builder: (context) => child),
-    );
   }
 }
