@@ -17,27 +17,28 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedIndex = 0;
-  final List<Widget> _pages = [];
-  late Map<String, int> menuItemToPageIndex;
+  late final List<Widget> _pages;
+  late final Map<String, int> menuItemToPageIndex;
 
   @override
   void initState() {
     super.initState();
     final userRole = ref.read(userRoleProvider);
-    _pages.add(const ProgramsScreen());
-    if (userRole == 'admin') {
-      _pages.add(ExercisesList());
-    }
-    _pages.add(const MaxRMDashboard());
-    _pages.add(const UserProfile());
-    if (userRole == 'admin') {
-      _pages.add(TrainingProgramPage());
-    }
+    
+    // Qui modifichiamo la costruzione delle pagine in base al ruolo
+    _pages = [
+      const ProgramsScreen(),
+      if (userRole == 'admin') ExercisesList(),
+      const MaxRMDashboard(),
+      const UserProfile(),
+      if (userRole == 'admin') TrainingProgramPage(),
+    ];
 
+    // Aggiornamento degli indici delle pagine
     menuItemToPageIndex = {
       'Allenamenti': 0,
       'Esercizi': userRole == 'admin' ? 1 : -1,
-      'Massimali': userRole == 'admin' ? 2 : 1,
+      'Massimali': userRole == 'admin' ? 2 : 1, // Massimali è sempre visibile
       'Profilo Utente': userRole == 'admin' ? 3 : 2,
       'TrainingProgram': userRole == 'admin' ? 4 : -1,
     };
@@ -51,12 +52,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _logout() async {
     try {
-      // Esegui il logout dell'utente
       await FirebaseAuth.instance.signOut();
-      // Naviga alla schermata di autenticazione o esegui altre azioni necessarie
-    Navigator.pushNamed(context, '/auth');
+      Navigator.pushNamed(context, '/#');
     } catch (e) {
-      // Gestisci eventuali errori durante il logout
       print('Errore durante il logout: $e');
     }
   }
@@ -89,32 +87,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   String _getTitleForIndex(int index, String userRole) {
-    if (userRole == 'admin') {
-      switch (index) {
-        case 0:
-          return 'Allenamenti';
-        case 1:
-          return 'Esercizi';
-        case 2:
-          return 'Massimali';
-        case 3:
-          return 'Profilo Utente';
-        case 4:
-          return 'TrainingProgram';
-        default:
-          return 'Allenamenti';
-      }
-    } else {
-      switch (index) {
-        case 0:
-          return 'Allenamenti';
-        case 1:
-          return 'Massimali';
-        case 2:
-          return 'Profilo Utente';
-        default:
-          return 'Allenamenti';
-      }
+    switch (index) {
+      case 0:
+        return 'Allenamenti';
+      case 1:
+        return userRole == 'admin' ? 'Esercizi' : 'Massimali';
+      case 2:
+        return userRole == 'admin' ? 'Massimali' : 'Profilo Utente';
+      case 3:
+        return 'Profilo Utente';
+      case 4:
+        return 'TrainingProgram';
+      default:
+        return 'Allenamenti';
     }
   }
 
@@ -122,7 +107,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final List<String> menuItems = [
       'Allenamenti',
       if (userRole == 'admin') 'Esercizi',
-      'Massimali',
+      'Massimali', // Rimosso la condizione di admin
       'Profilo Utente',
       if (userRole == 'admin') 'TrainingProgram',
     ];
@@ -160,7 +145,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             final userName = ref.watch(userNameProvider);
             final user = FirebaseAuth.instance.currentUser;
             final displayName = user?.displayName ?? userName;
-
             return ListTile(
               leading: const CircleAvatar(
                 child: Icon(Icons.person),
