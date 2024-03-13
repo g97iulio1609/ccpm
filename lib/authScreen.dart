@@ -244,13 +244,13 @@ class GoogleSignInButton extends StatelessWidget {
     required this.googleSignIn,
     required this.firestore,
     required this.usersService,
-    required this.scaffoldMessengerKey, // Aggiungi il parametro scaffoldMessengerKey
+    required this.scaffoldMessengerKey,
   });
 
   final GoogleSignIn googleSignIn;
   final FirebaseFirestore firestore;
   final UsersService usersService;
-  final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey; // Variabile per il messaggero di Scaffold
+  final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey;
 
   @override
   Widget build(BuildContext context) {
@@ -265,35 +265,44 @@ class GoogleSignInButton extends StatelessWidget {
               idToken: googleAuth.idToken,
             );
             final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+            final userDocRef = firestore.collection('users').doc(userCredential.user!.uid);
+            final userDocSnapshot = await userDocRef.get();
 
-            // Crea un documento nella collezione "users" di Firestore
-            await firestore.collection('users').doc(userCredential.user!.uid).set({
-              'address': '',
-              'currentProgram': '',
-              'displayName': userCredential.user!.displayName,
-              'email': userCredential.user!.email,
-              'gender': '',
-              'id': userCredential.user!.uid,
-              'name': userCredential.user!.displayName,
-              'phoneNumber': null,
-              'photoURL': userCredential.user!.photoURL ?? '',
-              'role': 'client', // Imposta il ruolo di default a "client"
-              'socialLinks': {'facebook': '', 'twitter': ''},
-            });
-
-            // Aggiorna il ruolo dell'utente dopo il login con Google
-            await usersService.setUserRole(userCredential.user!.uid);
-
-            // Mostra lo SnackBar utilizzando il messaggero di Scaffold
-            scaffoldMessengerKey.currentState?.showSnackBar(
-              const SnackBar(
-                content: Text('Google Sign-In successful'),
-                backgroundColor: Colors.green,
-              ),
-            );
+            // Verifica se l'utente esiste già in Firestore
+            if (userDocSnapshot.exists) {
+              // Se l'utente esiste già, non modificare i dati o il ruolo
+              await usersService.setUserRole(userCredential.user!.uid);
+              scaffoldMessengerKey.currentState?.showSnackBar(
+                const SnackBar(
+                  content: Text('Google Sign-In successful'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            } else {
+              // Se l'utente non esiste, crealo in Firestore
+              await userDocRef.set({
+                'address': '',
+                'currentProgram': '',
+                'displayName': userCredential.user!.displayName,
+                'email': userCredential.user!.email,
+                'gender': '',
+                'id': userCredential.user!.uid,
+                'name': userCredential.user!.displayName,
+                'phoneNumber': null,
+                'photoURL': userCredential.user!.photoURL ?? '',
+                'role': 'client',
+                'socialLinks': {'facebook': '', 'twitter': ''},
+              });
+              await usersService.setUserRole(userCredential.user!.uid);
+              scaffoldMessengerKey.currentState?.showSnackBar(
+                const SnackBar(
+                  content: Text('Google Sign-In successful'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
           }
         } catch (error) {
-          // Mostra lo SnackBar utilizzando il messaggero di Scaffold
           scaffoldMessengerKey.currentState?.showSnackBar(
             SnackBar(
               content: Text('Failed to sign in with Google: $error'),
