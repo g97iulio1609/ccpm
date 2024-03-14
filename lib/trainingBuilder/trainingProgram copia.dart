@@ -1,13 +1,15 @@
 // trainingprogram.dart
-import 'package:alphanessone/exerciseModel.dart';
+import '../exerciseManager/exerciseModel.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'exercisesServices.dart';
+import '../exerciseManager/exercisesServices.dart';
 import 'trainingServices.dart';
 import 'trainingModel.dart';
-import 'usersServices.dart';
+import '../usersServices.dart';
+
+
 
 final firestoreServiceProvider = Provider<FirestoreService>((ref) {
   return FirestoreService();

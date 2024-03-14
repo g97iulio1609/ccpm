@@ -14,6 +14,8 @@ final firestoreProvider = Provider<FirebaseFirestore>((ref) => FirebaseFirestore
 class AuthScreen extends HookConsumerWidget {
   final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
+  AuthScreen({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final formKey = useMemoized(() => GlobalKey<FormState>());

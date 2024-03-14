@@ -1,12 +1,13 @@
+// main.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'authScreen.dart';
 import 'homeScreen.dart';
-import 'exerciseList.dart';
+import '../exerciseManager/exerciseList.dart';
 import 'maxRMDashboard.dart';
-import 'trainingProgram.dart';
+import 'trainingBuilder/trainingProgram.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'usersServices.dart';
@@ -16,7 +17,6 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
   runApp(const ProviderScope(child: MyApp()));
 }
 
@@ -73,33 +73,38 @@ class MyApp extends ConsumerWidget {
       theme: lightTheme,
       darkTheme: darkTheme,
       themeMode: ThemeMode.system,
-      home: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.active) {
-            if (snapshot.hasData) {
-              // Remove the old way of updating user role in build method.
-              // Instead, handle user role updating asynchronously after user has logged in.
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                ref.read(usersServiceProvider).setUserRole(snapshot.data!.uid);
-              });
-              // Return the home screen if the user is logged in.
-              return const HomeScreen();
-            } else {
-              // Return the authentication screen if there is no user logged in.
-              return AuthScreen();
-            }
-          }
-          // Return a loading screen while Firebase is initializing.
-          return const Center(child: CircularProgressIndicator());
-        },
-      ),
+      home: const AuthWrapper(), // Just use AuthWrapper without passing ref
       routes: {
         '/auth': (context) => AuthScreen(),
         '/home': (context) => const HomeScreen(),
         '/exercises_list': (context) => ExercisesList(),
         '/maxrmdashboard': (context) => const MaxRMDashboard(),
-        '/trainingprogram': (context) => TrainingProgramPage(),
+        '/trainingprogram': (context) => const TrainingProgramPage(),
+      },
+    );
+  }
+}
+
+class AuthWrapper extends ConsumerWidget {
+  const AuthWrapper({super.key}); // Constructor remains unchanged
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.active) {
+          final User? user = snapshot.data;
+          if (user == null) {
+            return AuthScreen();
+          } else {
+            // Asynchronously set user role and then navigate
+            Future.microtask(() => ref.read(usersServiceProvider).setUserRole(user.uid));
+            return const HomeScreen();
+          }
+        }
+        // Return a loading indicator while Firebase initializes
+        return const Center(child: CircularProgressIndicator());
       },
     );
   }

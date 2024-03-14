@@ -79,7 +79,7 @@ class UsersService {
     final userName = displayName ?? '';
     ref.read(userNameProvider.notifier).state = userName;
   }
-  
+
   void updateUserName(String? displayName) {
     final userName = displayName ?? '';
     ref.read(userNameProvider.notifier).state = userName;
@@ -189,4 +189,11 @@ await _firestore
    .doc(recordId)
    .delete();
 }
+
+void clearUserData() {
+  ref.read(userNameProvider.notifier).state = '';
+  ref.read(userRoleProvider.notifier).state = '';
 }
+
+}
+

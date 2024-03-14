@@ -1,4 +1,3 @@
-// trainingstoreservices.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'trainingModel.dart';
 

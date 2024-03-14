@@ -1,11 +1,13 @@
+// homeScreen.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'authScreen.dart';
 import 'programsScreen.dart';
 import 'userProfile.dart';
-import 'exerciseList.dart';
+import '../exerciseManager/exerciseList.dart';
 import 'maxRMDashboard.dart';
-import 'trainingProgram.dart';
+import 'trainingBuilder/trainingProgram.dart';
 import 'usersServices.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -24,14 +26,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     final userRole = ref.read(userRoleProvider);
-    
+
     // Qui modifichiamo la costruzione delle pagine in base al ruolo
     _pages = [
       const ProgramsScreen(),
       if (userRole == 'admin') ExercisesList(),
       const MaxRMDashboard(),
       const UserProfile(),
-      if (userRole == 'admin') TrainingProgramPage(),
+      if (userRole == 'admin') const TrainingProgramPage(),
     ];
 
     // Aggiornamento degli indici delle pagine
@@ -50,14 +52,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
-  void _logout() async {
-    try {
-      await FirebaseAuth.instance.signOut();
-      Navigator.pushNamed(context, '/#');
-    } catch (e) {
-      print('Errore durante il logout: $e');
-    }
+void _logout() async {
+  try {
+    await FirebaseAuth.instance.signOut();
+    ref.read(usersServiceProvider).clearUserData();
+    // Pulisci lo stack di navigazione e ritorna alla schermata di autenticazione
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => AuthScreen()),
+      (Route<dynamic> route) => false,
+    );
+  } catch (e) {
+    print('Errore durante il logout: $e');
   }
+}
 
   @override
   Widget build(BuildContext context) {
