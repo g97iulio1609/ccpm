@@ -22,7 +22,6 @@ class ExerciseDialog extends ConsumerWidget {
     final nameController = TextEditingController(text: exercise?.name ?? '');
     final variantController = TextEditingController(text: exercise?.variant ?? '');
     String selectedExerciseId = exercise?.exerciseId ?? '';
-
     final exercisesService = ref.watch(exercisesServiceProvider);
 
     return AlertDialog(
@@ -85,6 +84,7 @@ class ExerciseDialog extends ConsumerWidget {
               name: nameController.text,
               variant: variantController.text,
               order: exercise?.order ?? 1,
+              series: exercise?.series ?? [], // Mantieni le serie esistenti
             );
             Navigator.pop(context, newExercise);
           },
