@@ -29,6 +29,7 @@ class SeriesDialog extends ConsumerWidget {
     int latestMaxWeight = 0;
     final intensityFocusNode = FocusNode();
     final weightFocusNode = FocusNode();
+    final rpeFocusNode = FocusNode();
 
     print('Debug: Using exerciseId: $exerciseId');
     usersService.getExerciseRecords(userId: athleteId, exerciseId: exerciseId).first.then((records) {
@@ -57,6 +58,68 @@ class SeriesDialog extends ConsumerWidget {
       print('Debug: Calculated intensity: $calculatedIntensity for exerciseId: $exerciseId');
     }
 
+    void updateWeightFromRPE() {
+      final rpe = double.tryParse(rpeController.text) ?? 0;
+      final reps = int.tryParse(repsController.text) ?? 0;
+
+      // Tabella powerlifting di Mike Tuchscherer estesa fino a 10 reps
+      final rpeTable = {
+        10.0: {1: 1.0, 2: 0.955, 3: 0.922, 4: 0.892, 5: 0.863, 6: 0.837, 7: 0.811, 8: 0.786, 9: 0.762, 10: 0.739},
+        9.5: {1: 0.978, 2: 0.939, 3: 0.907, 4: 0.878, 5: 0.850, 6: 0.824, 7: 0.799, 8: 0.774, 9: 0.751, 10: 0.728},
+        9.0: {1: 0.955, 2: 0.922, 3: 0.892, 4: 0.863, 5: 0.837, 6: 0.811, 7: 0.786, 8: 0.762, 9: 0.739, 10: 0.717},
+        8.5: {1: 0.939, 2: 0.907, 3: 0.878, 4: 0.850, 5: 0.824, 6: 0.799, 7: 0.774, 8: 0.751, 9: 0.728, 10: 0.706},
+        8.0: {1: 0.922, 2: 0.892, 3: 0.863, 4: 0.837, 5: 0.811, 6: 0.786, 7: 0.762, 8: 0.739, 9: 0.717, 10: 0.696},
+        7.5: {1: 0.907, 2: 0.878, 3: 0.850, 4: 0.824, 5: 0.799, 6: 0.774, 7: 0.751, 8: 0.728, 9: 0.706, 10: 0.685},
+        7.0: {1: 0.892, 2: 0.863, 3: 0.837, 4: 0.811, 5: 0.786, 6: 0.762, 7: 0.739, 8: 0.717, 9: 0.696, 10: 0.675},
+        6.5: {1: 0.878, 2: 0.850, 3: 0.824, 4: 0.799, 5: 0.774, 6: 0.751, 7: 0.728, 8: 0.706, 9: 0.685, 10: 0.665},
+        6.0: {1: 0.863, 2: 0.837, 3: 0.811, 4: 0.786, 5: 0.762, 6: 0.739, 7: 0.717, 8: 0.696, 9: 0.675, 10: 0.655},
+      };
+
+      final percentage = rpeTable[rpe]?[reps] ?? 1.0;
+      final calculatedWeight = latestMaxWeight * percentage;
+
+      weightController.text = calculatedWeight.toStringAsFixed(2);
+      intensityController.text = (percentage * 100).toStringAsFixed(2);
+
+      print('Debug: Calculated weight from RPE: $calculatedWeight for exerciseId: $exerciseId');
+    }
+
+    void updateRPE() {
+      final weight = double.tryParse(weightController.text) ?? 0;
+      final reps = int.tryParse(repsController.text) ?? 0;
+      final intensity = weight / latestMaxWeight;
+
+      // Tabella powerlifting di Mike Tuchscherer estesa fino a 10 reps
+      final rpeTable = {
+        10.0: {1: 1.0, 2: 0.955, 3: 0.922, 4: 0.892, 5: 0.863, 6: 0.837, 7: 0.811, 8: 0.786, 9: 0.762, 10: 0.739},
+        9.5: {1: 0.978, 2: 0.939, 3: 0.907, 4: 0.878, 5: 0.850, 6: 0.824, 7: 0.799, 8: 0.774, 9: 0.751, 10: 0.728},
+        9.0: {1: 0.955, 2: 0.922, 3: 0.892, 4: 0.863, 5: 0.837, 6: 0.811, 7: 0.786, 8: 0.762, 9: 0.739, 10: 0.717},
+        8.5: {1: 0.939, 2: 0.907, 3: 0.878, 4: 0.850, 5: 0.824, 6: 0.799, 7: 0.774, 8: 0.751, 9: 0.728, 10: 0.706},
+        8.0: {1: 0.922, 2: 0.892, 3: 0.863, 4: 0.837, 5: 0.811, 6: 0.786, 7: 0.762, 8: 0.739, 9: 0.717, 10: 0.696},
+        7.5: {1: 0.907, 2: 0.878, 3: 0.850, 4: 0.824, 5: 0.799, 6: 0.774, 7: 0.751, 8: 0.728, 9: 0.706, 10: 0.685},
+        7.0: {1: 0.892, 2: 0.863, 3: 0.837, 4: 0.811, 5: 0.786, 6: 0.762, 7: 0.739, 8: 0.717, 9: 0.696, 10: 0.675},
+        6.5: {1: 0.878, 2: 0.850, 3: 0.824, 4: 0.799, 5: 0.774, 6: 0.751, 7: 0.728, 8: 0.706, 9: 0.685, 10: 0.665},
+        6.0: {1: 0.863, 2: 0.837, 3: 0.811, 4: 0.786, 5: 0.762, 6: 0.739, 7: 0.717, 8: 0.696, 9: 0.675, 10: 0.655},
+      };
+
+      double? calculatedRPE;
+      rpeTable.forEach((rpe, repPercentages) {
+        repPercentages.forEach((rep, percentage) {
+          if ((intensity - percentage).abs() < 0.01 && rep == reps) {
+            calculatedRPE = rpe;
+          }
+        });
+      });
+
+      if (calculatedRPE != null) {
+        rpeController.text = calculatedRPE!.toStringAsFixed(1);
+      } else {
+        rpeController.text = '';
+      }
+
+      print('Debug: Calculated RPE: ${calculatedRPE ?? 'N/A'} for exerciseId: $exerciseId');
+    }
+
     intensityController.addListener(() {
       if (intensityFocusNode.hasFocus) {
         updateWeight();
@@ -66,6 +129,21 @@ class SeriesDialog extends ConsumerWidget {
     weightController.addListener(() {
       if (weightFocusNode.hasFocus) {
         updateIntensity();
+        updateRPE();
+      }
+    });
+
+    rpeController.addListener(() {
+      if (rpeFocusNode.hasFocus) {
+        updateWeightFromRPE();
+      }
+    });
+
+    repsController.addListener(() {
+      if (rpeFocusNode.hasFocus) {
+        updateWeightFromRPE();
+      } else {
+        updateRPE();
       }
     });
 
@@ -92,7 +170,9 @@ class SeriesDialog extends ConsumerWidget {
             ),
             TextField(
               controller: rpeController,
+              focusNode: rpeFocusNode,
               decoration: const InputDecoration(labelText: 'RPE'),
+              keyboardType: TextInputType.number,
             ),
             TextField(
               controller: weightController,
