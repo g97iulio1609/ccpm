@@ -155,38 +155,39 @@ class TrainingProgramController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addSeries(int weekIndex, int workoutIndex, int exerciseIndex, BuildContext context) async {
-    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
-    final series = await showDialog<Series>(
-      context: context,
-      builder: (context) => SeriesDialog(
-        usersService: _usersService,
-        athleteId: athleteIdController.text,
-        exerciseId: exercise.exerciseId ?? '',
-      ),
-    );
-    if (series != null) {
-      exercise.series.add(series);
-      notifyListeners();
-    }
-  }
-
- Future<void> editSeries(int weekIndex, int workoutIndex, int exerciseIndex, int seriesIndex, BuildContext context) async {
-  final series = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex].series[seriesIndex];
+Future<void> addSeries(int weekIndex, int workoutIndex, int exerciseIndex, BuildContext context) async {
   final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
-    print('Debug: exerciseId passed from editSeries: ${exercise.exerciseId}');
-
-  final updatedSeries = await showDialog<Series>(
+  final seriesList = await showDialog<List<Series>>(
     context: context,
     builder: (context) => SeriesDialog(
       usersService: _usersService,
       athleteId: athleteIdController.text,
-      exerciseId: exercise.exerciseId ?? '', // Usa una stringa vuota se exerciseId è nullo
+      exerciseId: exercise.exerciseId ?? '',
+    ),
+  );
+  if (seriesList != null) {
+    print('Debug: Series received from SeriesDialog: ${seriesList.length}');
+    exercise.series.addAll(seriesList);
+    notifyListeners();
+  }
+}
+
+Future<void> editSeries(int weekIndex, int workoutIndex, int exerciseIndex, int seriesIndex, BuildContext context) async {
+  final series = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex].series[seriesIndex];
+  final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+  print('Debug: exerciseId passed from editSeries: ${exercise.exerciseId}');
+
+  final updatedSeriesList = await showDialog<List<Series>>(
+    context: context,
+    builder: (context) => SeriesDialog(
+      usersService: _usersService,
+      athleteId: athleteIdController.text,
+      exerciseId: exercise.exerciseId ?? '',
       series: series,
     ),
   );
-  if (updatedSeries != null) {
-    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex].series[seriesIndex] = updatedSeries;
+  if (updatedSeriesList != null) {
+    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex].series.replaceRange(seriesIndex, seriesIndex + 1, updatedSeriesList);
     notifyListeners();
   }
 }
@@ -211,7 +212,7 @@ class TrainingProgramController extends ChangeNotifier {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Program added/updated successfully')),
       );
-      resetFields();
+     // resetFields();
     }).catchError((error) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error adding/updating program: $error')),

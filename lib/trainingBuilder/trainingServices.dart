@@ -176,16 +176,17 @@ Future<void> addOrUpdateTrainingProgram(TrainingProgram program) async {
           'exerciseId': exercise.exerciseId, // Aggiungi questa riga per salvare exerciseId
         }, SetOptions(merge: true));
 
-        for (var series in exercise.series) {
-      // Usa l'ID esistente se valido, altrimenti genera un nuovo ID
+ for (int i = 0; i < exercise.series.length; i++) {
+      var series = exercise.series[i];
+
       String seriesId;
       if (series.serieId != null && series.serieId!.trim().isNotEmpty) {
         seriesId = series.serieId!;
       } else {
-        // Genera un nuovo ID solo se necessario
         seriesId = db.collection('series').doc().id;
-        series.serieId = seriesId; // Aggiorna l'ID della serie con il nuovo ID
+        series.serieId = seriesId;
       }
+      print('Debug: Saving series ${i + 1} with serieId: $seriesId');
 
       DocumentReference seriesRef = db.collection('series').doc(seriesId);
       batch.set(seriesRef, {
@@ -194,15 +195,15 @@ Future<void> addOrUpdateTrainingProgram(TrainingProgram program) async {
         'intensity': series.intensity,
         'rpe': series.rpe,
         'weight': series.weight,
-        'exerciseId': exercise.id,
+        'exerciseId': exerciseId,
         'serieId': seriesId,
-        'order': series.order,
-        'done':series.done,
-        'reps_done':series.reps_done,
-        'weight_done':series.weight_done
+        'order': i + 1, // Usa l'indice della serie come valore per 'order'
+        'done': series.done,
+        'reps_done': series.reps_done,
+        'weight_done': series.weight_done
       }, SetOptions(merge: true));
-    }
-  }
+        }
+      }
     }
   }
 

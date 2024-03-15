@@ -185,33 +185,56 @@ class SeriesDialog extends ConsumerWidget {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        TextButton(
-          onPressed: () {
-            final newSeries = Series(
-              id: series?.id,
-              serieId: series?.serieId ?? '',
-              reps: int.parse(repsController.text),
-              sets: int.parse(setsController.text),
-              intensity: intensityController.text,
-              rpe: rpeController.text,
-              weight: double.parse(weightController.text),
-              order: series?.order ?? 1,
-              done: series?.done ?? false,
-              reps_done: series?.reps_done ?? 0,
-              weight_done: series?.weight_done ?? 0.0,
-            );
-            
-            // Verifica che serieId abbia un valore valido
-            if (newSeries.serieId.isEmpty) {
-              newSeries.serieId = DateTime.now().millisecondsSinceEpoch.toString();
-            }
-            
-            Navigator.pop(context, newSeries);
-          },
-          child: Text(series == null ? 'Add' : 'Update'),
+onPressed: () {
+  final newSeries = Series(
+    id: series?.id,
+    serieId: series?.serieId ?? '',
+    reps: int.parse(repsController.text),
+    sets: 1,
+    intensity: intensityController.text,
+    rpe: rpeController.text,
+    weight: double.parse(weightController.text),
+    order: series?.order ?? 1,
+    done: series?.done ?? false,
+    reps_done: series?.reps_done ?? 0,
+    weight_done: series?.weight_done ?? 0.0,
+  );
+
+  if (newSeries.serieId.isEmpty) {
+    newSeries.serieId = '${DateTime.now().millisecondsSinceEpoch}_0';
+  }
+
+  final seriesList = [newSeries];
+  final sets = int.parse(setsController.text);
+
+  print('Debug: Number of sets: $sets');
+
+  if (sets > 1) {
+    for (int i = 1; i < sets; i++) {
+      final baseId = DateTime.now().millisecondsSinceEpoch;
+      final automatedSeriesId = '${baseId}_$i';
+      final automatedSeries = Series(
+        serieId: automatedSeriesId,
+        reps: newSeries.reps,
+        sets: 1,
+        intensity: newSeries.intensity,
+        rpe: newSeries.rpe,
+        weight: newSeries.weight,
+        order: i + 1,
+        done: false,
+        reps_done: 0,
+        weight_done: 0.0,
+      );
+      seriesList.add(automatedSeries);
+      print('Debug: Generated series ${i + 1} with serieId: $automatedSeriesId');
+    }
+  }
+
+  print('Debug: Total series generated: ${seriesList.length}');
+
+  Navigator.pop(context, seriesList);
+},
+  child: Text(series == null ? 'Add' : 'Update'),
         ),
       ],
     );
