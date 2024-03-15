@@ -17,23 +17,27 @@ class TrainingProgramWorkoutList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final week = controller.program.weeks[weekIndex];
 
+    // Ordina i workouts in base al campo 'order'
+    final sortedWorkouts = week.workouts.toList()
+      ..sort((a, b) => a.order.compareTo(b.order));
+
     return Column(
       children: [
-        for (int i = 0; i < week.workouts.length; i++)
+        for (int i = 0; i < sortedWorkouts.length; i++)
           ExpansionTile(
-            title: Text('Workout ${week.workouts[i].order}'),
+            title: Text('Workout ${sortedWorkouts[i].order}'),
             trailing: IconButton(
               icon: const Icon(Icons.delete),
-              onPressed: () => controller.removeWorkout(weekIndex, i),
+              onPressed: () => controller.removeWorkout(weekIndex, sortedWorkouts[i].order - 1),
             ),
             children: [
               TrainingProgramExerciseList(
                 controller: controller,
                 weekIndex: weekIndex,
-                workoutIndex: i,
+                workoutIndex: sortedWorkouts[i].order - 1,
               ),
               ElevatedButton(
-                onPressed: () => controller.addExercise(weekIndex, i, context),
+                onPressed: () => controller.addExercise(weekIndex, sortedWorkouts[i].order - 1, context),
                 child: const Text('Add New Exercise'),
               ),
             ],

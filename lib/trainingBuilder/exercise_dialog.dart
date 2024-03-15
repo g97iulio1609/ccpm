@@ -57,7 +57,7 @@ class ExerciseDialog extends ConsumerWidget {
                     onSelected: (selection) {
                       nameController.text = selection.name;
                       selectedExerciseId = selection.id;
-                      print('Debug: Selected exercise ID: $selectedExerciseId');
+                   //   print('Debug: Selected exercise ID: $selectedExerciseId');
                     },
                   );
                 } else if (snapshot.hasError) {
@@ -86,10 +86,10 @@ class ExerciseDialog extends ConsumerWidget {
     exerciseId: selectedExerciseId.isNotEmpty ? selectedExerciseId : exercise?.exerciseId,
               name: nameController.text,
               variant: variantController.text,
-              order: exercise?.order ?? 1,
+  order: exercise?.order ?? 0, // Rimuovi l'assegnazione dell'ordine qui
               series: exercise?.series ?? [],
             );
-  print('Debug: Passing exercise ID to SeriesDialog: ${newExercise.exerciseId}');
+ // print('Debug: Passing exercise ID to SeriesDialog: ${newExercise.exerciseId}');
             Navigator.pop(context, newExercise);
           },
           child: Text(exercise == null ? 'Add' : 'Update'),

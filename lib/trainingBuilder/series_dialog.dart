@@ -19,7 +19,7 @@ class SeriesDialog extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    print('Debug: exerciseId passed to SeriesDialog: $exerciseId');
+    //print('Debug: exerciseId passed to SeriesDialog: $exerciseId');
 
     final repsController = TextEditingController(text: series?.reps.toString() ?? '');
     final setsController = TextEditingController(text: series?.sets.toString() ?? '');
@@ -31,31 +31,31 @@ class SeriesDialog extends ConsumerWidget {
     final weightFocusNode = FocusNode();
     final rpeFocusNode = FocusNode();
 
-    print('Debug: Using exerciseId: $exerciseId');
+    //print('Debug: Using exerciseId: $exerciseId');
     usersService.getExerciseRecords(userId: athleteId, exerciseId: exerciseId).first.then((records) {
       if (records.isNotEmpty && exerciseId.isNotEmpty) {
         final latestRecord = records.first;
         latestMaxWeight = latestRecord.maxWeight;
-        print('Debug: Latest max weight received: $latestMaxWeight for exerciseId: $exerciseId');
+        //print('Debug: Latest max weight received: $latestMaxWeight for exerciseId: $exerciseId');
       } else {
-        print('Debug: No exercise records found or invalid exerciseId: $exerciseId');
+        //print('Debug: No exercise records found or invalid exerciseId: $exerciseId');
       }
     }).catchError((error) {
-      print('Error retrieving exercise records for exerciseId: $exerciseId - $error');
+      //print('Error retrieving exercise records for exerciseId: $exerciseId - $error');
     });
 
     void updateWeight() {
       final intensity = double.tryParse(intensityController.text) ?? 0;
       final calculatedWeight = (latestMaxWeight * intensity) / 100;
       weightController.text = calculatedWeight.toStringAsFixed(2);
-      print('Debug: Calculated weight: $calculatedWeight for exerciseId: $exerciseId');
+      //print('Debug: Calculated weight: $calculatedWeight for exerciseId: $exerciseId');
     }
 
     void updateIntensity() {
       final weight = double.tryParse(weightController.text) ?? 0;
       final calculatedIntensity = (weight / latestMaxWeight) * 100;
       intensityController.text = calculatedIntensity.toStringAsFixed(2);
-      print('Debug: Calculated intensity: $calculatedIntensity for exerciseId: $exerciseId');
+      //print('Debug: Calculated intensity: $calculatedIntensity for exerciseId: $exerciseId');
     }
 
     void updateWeightFromRPE() {
@@ -81,7 +81,7 @@ class SeriesDialog extends ConsumerWidget {
       weightController.text = calculatedWeight.toStringAsFixed(2);
       intensityController.text = (percentage * 100).toStringAsFixed(2);
 
-      print('Debug: Calculated weight from RPE: $calculatedWeight for exerciseId: $exerciseId');
+      //print('Debug: Calculated weight from RPE: $calculatedWeight for exerciseId: $exerciseId');
     }
 
     void updateRPE() {
@@ -117,7 +117,7 @@ class SeriesDialog extends ConsumerWidget {
         rpeController.text = '';
       }
 
-      print('Debug: Calculated RPE: ${calculatedRPE ?? 'N/A'} for exerciseId: $exerciseId');
+      //print('Debug: Calculated RPE: ${calculatedRPE ?? 'N/A'} for exerciseId: $exerciseId');
     }
 
     intensityController.addListener(() {
@@ -207,7 +207,7 @@ onPressed: () {
   final seriesList = [newSeries];
   final sets = int.parse(setsController.text);
 
-  print('Debug: Number of sets: $sets');
+  //print('Debug: Number of sets: $sets');
 
   if (sets > 1) {
     for (int i = 1; i < sets; i++) {
@@ -226,11 +226,11 @@ onPressed: () {
         weight_done: 0.0,
       );
       seriesList.add(automatedSeries);
-      print('Debug: Generated series ${i + 1} with serieId: $automatedSeriesId');
+      //print('Debug: Generated series ${i + 1} with serieId: $automatedSeriesId');
     }
   }
 
-  print('Debug: Total series generated: ${seriesList.length}');
+  //print('Debug: Total series generated: ${seriesList.length}');
 
   Navigator.pop(context, seriesList);
 },

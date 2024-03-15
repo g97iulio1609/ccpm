@@ -186,7 +186,7 @@ Future<void> addOrUpdateTrainingProgram(TrainingProgram program) async {
         seriesId = db.collection('series').doc().id;
         series.serieId = seriesId;
       }
-      print('Debug: Saving series ${i + 1} with serieId: $seriesId');
+      //print('Debug: Saving series ${i + 1} with serieId: $seriesId');
 
       DocumentReference seriesRef = db.collection('series').doc(seriesId);
       batch.set(seriesRef, {

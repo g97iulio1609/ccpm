@@ -106,37 +106,41 @@ class TrainingProgramController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addExercise(int weekIndex, int workoutIndex, BuildContext context) async {
-    final exercise = await showDialog<Exercise>(
-      context: context,
-      builder: (context) => ExerciseDialog(
-        usersService: _usersService,
-        athleteId: athleteIdController.text,
-      ),
-    );
-    if (exercise != null) {
-      // Genera un ID temporaneo per l'esercizio
-      exercise.id = UniqueKey().toString();
-      program.weeks[weekIndex].workouts[workoutIndex].exercises.add(exercise);
-      notifyListeners();
-    }
+Future<void> addExercise(int weekIndex, int workoutIndex, BuildContext context) async {
+  final exercise = await showDialog<Exercise>(
+    context: context,
+    builder: (context) => ExerciseDialog(
+      usersService: _usersService,
+      athleteId: athleteIdController.text,
+    ),
+  );
+  if (exercise != null) {
+    // Genera un ID temporaneo per l'esercizio
+    exercise.id = UniqueKey().toString();
+    // Assegna l'ordine corretto all'esercizio
+    exercise.order = program.weeks[weekIndex].workouts[workoutIndex].exercises.length + 1;
+    program.weeks[weekIndex].workouts[workoutIndex].exercises.add(exercise);
+    notifyListeners();
   }
+}
 
   Future<void> editExercise(int weekIndex, int workoutIndex, int exerciseIndex, BuildContext context) async {
-    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
-    final updatedExercise = await showDialog<Exercise>(
-      context: context,
-      builder: (context) => ExerciseDialog(
-        usersService: _usersService,
-        athleteId: athleteIdController.text,
-        exercise: exercise,
-      ),
-    );
-    if (updatedExercise != null) {
-      program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] = updatedExercise;
-      notifyListeners();
-    }
+  final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+  final updatedExercise = await showDialog<Exercise>(
+    context: context,
+    builder: (context) => ExerciseDialog(
+      usersService: _usersService,
+      athleteId: athleteIdController.text,
+      exercise: exercise,
+    ),
+  );
+  if (updatedExercise != null) {
+    // Mantieni l'ordine esistente dell'esercizio
+    updatedExercise.order = exercise.order;
+    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] = updatedExercise;
+    notifyListeners();
   }
+}
 
   void removeExercise(int weekIndex, int workoutIndex, int exerciseIndex) {
     Exercise exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
@@ -166,7 +170,7 @@ Future<void> addSeries(int weekIndex, int workoutIndex, int exerciseIndex, Build
     ),
   );
   if (seriesList != null) {
-    print('Debug: Series received from SeriesDialog: ${seriesList.length}');
+    //print('Debug: Series received from SeriesDialog: ${seriesList.length}');
     exercise.series.addAll(seriesList);
     notifyListeners();
   }
@@ -175,7 +179,7 @@ Future<void> addSeries(int weekIndex, int workoutIndex, int exerciseIndex, Build
 Future<void> editSeries(int weekIndex, int workoutIndex, int exerciseIndex, int seriesIndex, BuildContext context) async {
   final series = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex].series[seriesIndex];
   final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
-  print('Debug: exerciseId passed from editSeries: ${exercise.exerciseId}');
+  //print('Debug: exerciseId passed from editSeries: ${exercise.exerciseId}');
 
   final updatedSeriesList = await showDialog<List<Series>>(
     context: context,
