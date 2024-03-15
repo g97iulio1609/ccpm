@@ -264,17 +264,20 @@ weight_done: map['weight_done'].toDouble(),
 }
 
 factory Series.fromFirestore(DocumentSnapshot doc) {
-Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-return Series(
-id: doc.id,
-serieId: data['serieId'] ?? '',
-reps: data['reps'],
-sets: data['sets'],
-intensity: data['intensity'],
-rpe: data['rpe'],
-weight: data.containsKey('weight') ? (data['weight'] ?? 0).toDouble() : 0.0,
-order: data['order'],
-);
+  Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+  return Series(
+    id: doc.id,
+    serieId: data['serieId'] ?? '',
+    reps: data['reps'],
+    sets: data['sets'],
+    intensity: data['intensity'],
+    rpe: data['rpe'],
+    weight: data.containsKey('weight') ? (data['weight'] ?? 0).toDouble() : 0.0,
+    order: data['order'],
+    done: data['done'] ?? false,
+    reps_done: data['reps_done'] ?? 0,
+    weight_done: data['weight_done']?.toDouble() ?? 0.0,
+  );
 }
 
 Map<String, dynamic> toMap() {
@@ -287,6 +290,9 @@ return {
 'rpe': rpe,
 'weight': weight,
 'order': order,
+'done':done,
+"reps_done":reps_done,
+"weight_done":weight_done
 };
 }
 }
