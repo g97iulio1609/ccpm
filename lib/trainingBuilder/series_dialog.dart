@@ -24,22 +24,26 @@ class SeriesDialog extends ConsumerWidget {
     final intensityController = TextEditingController(text: series?.intensity ?? '');
     final rpeController = TextEditingController(text: series?.rpe ?? '');
     final weightController = TextEditingController(text: series?.weight.toStringAsFixed(2) ?? '');
-
     int latestMaxWeight = 0;
 
+    print('Debug: Using exerciseId: $exerciseId');
     usersService.getExerciseRecords(userId: athleteId, exerciseId: exerciseId).first.then((records) {
       if (records.isNotEmpty) {
         final latestRecord = records.first;
         latestMaxWeight = latestRecord.maxWeight;
+        print('Debug: Latest max weight received: $latestMaxWeight for exerciseId: $exerciseId');
+      } else {
+        print('Debug: No exercise records found for exerciseId: $exerciseId');
       }
     }).catchError((error) {
-      print('Error retrieving exercise records: $error');
+      print('Error retrieving exercise records for exerciseId: $exerciseId - $error');
     });
 
     intensityController.addListener(() {
       final intensity = double.tryParse(intensityController.text) ?? 0;
       final calculatedWeight = (latestMaxWeight * intensity) / 100;
       weightController.text = calculatedWeight.toStringAsFixed(2);
+      print('Debug: Calculated weight: $calculatedWeight for exerciseId: $exerciseId');
     });
 
     return AlertDialog(

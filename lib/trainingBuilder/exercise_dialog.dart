@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../exerciseManager/exercisesServices.dart';
 import 'trainingModel.dart';
+import 'series_dialog.dart';
 
 class ExerciseDialog extends ConsumerWidget {
   final UsersService usersService;
@@ -14,8 +15,8 @@ class ExerciseDialog extends ConsumerWidget {
     required this.usersService,
     required this.athleteId,
     this.exercise,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -39,7 +40,8 @@ class ExerciseDialog extends ConsumerWidget {
                       if (textEditingValue.text.isEmpty) {
                         return const Iterable<ExerciseModel>.empty();
                       }
-                      return exercises.where((exercise) => exercise.name.toLowerCase().startsWith(textEditingValue.text.toLowerCase()));
+                      return exercises.where((exercise) =>
+                          exercise.name.toLowerCase().startsWith(textEditingValue.text.toLowerCase()));
                     },
                     displayStringForOption: (exercise) => exercise.name,
                     fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
@@ -55,6 +57,7 @@ class ExerciseDialog extends ConsumerWidget {
                     onSelected: (selection) {
                       nameController.text = selection.name;
                       selectedExerciseId = selection.id;
+                      print('Debug: Selected exercise ID: $selectedExerciseId');
                     },
                   );
                 } else if (snapshot.hasError) {
@@ -84,8 +87,9 @@ class ExerciseDialog extends ConsumerWidget {
               name: nameController.text,
               variant: variantController.text,
               order: exercise?.order ?? 1,
-              series: exercise?.series ?? [], // Mantieni le serie esistenti
+              series: exercise?.series ?? [],
             );
+            print('Debug: Passing exercise ID to SeriesDialog: $selectedExerciseId');
             Navigator.pop(context, newExercise);
           },
           child: Text(exercise == null ? 'Add' : 'Update'),
