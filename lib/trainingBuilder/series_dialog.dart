@@ -19,7 +19,7 @@ class SeriesDialog extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-      print('Debug: exerciseId passed to SeriesDialog: $exerciseId');
+    print('Debug: exerciseId passed to SeriesDialog: $exerciseId');
 
     final repsController = TextEditingController(text: series?.reps.toString() ?? '');
     final setsController = TextEditingController(text: series?.sets.toString() ?? '');
@@ -27,25 +27,46 @@ class SeriesDialog extends ConsumerWidget {
     final rpeController = TextEditingController(text: series?.rpe ?? '');
     final weightController = TextEditingController(text: series?.weight.toStringAsFixed(2) ?? '');
     int latestMaxWeight = 0;
+    final intensityFocusNode = FocusNode();
+    final weightFocusNode = FocusNode();
 
     print('Debug: Using exerciseId: $exerciseId');
- usersService.getExerciseRecords(userId: athleteId, exerciseId: exerciseId).first.then((records) {
-  if (records.isNotEmpty && exerciseId.isNotEmpty) {
-    final latestRecord = records.first;
-    latestMaxWeight = latestRecord.maxWeight;
-    print('Debug: Latest max weight received: $latestMaxWeight for exerciseId: $exerciseId');
-  } else {
-    print('Debug: No exercise records found or invalid exerciseId: $exerciseId');
-  }
-}).catchError((error) {
-  print('Error retrieving exercise records for exerciseId: $exerciseId - $error');
-});
+    usersService.getExerciseRecords(userId: athleteId, exerciseId: exerciseId).first.then((records) {
+      if (records.isNotEmpty && exerciseId.isNotEmpty) {
+        final latestRecord = records.first;
+        latestMaxWeight = latestRecord.maxWeight;
+        print('Debug: Latest max weight received: $latestMaxWeight for exerciseId: $exerciseId');
+      } else {
+        print('Debug: No exercise records found or invalid exerciseId: $exerciseId');
+      }
+    }).catchError((error) {
+      print('Error retrieving exercise records for exerciseId: $exerciseId - $error');
+    });
 
-    intensityController.addListener(() {
+    void updateWeight() {
       final intensity = double.tryParse(intensityController.text) ?? 0;
       final calculatedWeight = (latestMaxWeight * intensity) / 100;
       weightController.text = calculatedWeight.toStringAsFixed(2);
       print('Debug: Calculated weight: $calculatedWeight for exerciseId: $exerciseId');
+    }
+
+    void updateIntensity() {
+      final weight = double.tryParse(weightController.text) ?? 0;
+      final calculatedIntensity = (weight / latestMaxWeight) * 100;
+      intensityController.text = calculatedIntensity.toStringAsFixed(2);
+      print('Debug: Calculated intensity: $calculatedIntensity for exerciseId: $exerciseId');
+    }
+
+    intensityController.addListener(() {
+      if (intensityFocusNode.hasFocus) {
+        updateWeight();
+      }
+    });
+
+    weightController.addListener(() {
+      if (weightFocusNode.hasFocus) {
+        updateIntensity();
+      }
     });
 
     return AlertDialog(
@@ -65,6 +86,7 @@ class SeriesDialog extends ConsumerWidget {
             ),
             TextField(
               controller: intensityController,
+              focusNode: intensityFocusNode,
               decoration: const InputDecoration(labelText: 'Intensity (%)'),
               keyboardType: TextInputType.number,
             ),
@@ -74,9 +96,9 @@ class SeriesDialog extends ConsumerWidget {
             ),
             TextField(
               controller: weightController,
+              focusNode: weightFocusNode,
               decoration: const InputDecoration(labelText: 'Weight (kg)'),
               keyboardType: TextInputType.number,
-              readOnly: true,
             ),
           ],
         ),
