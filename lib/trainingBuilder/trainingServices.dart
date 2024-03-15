@@ -118,10 +118,13 @@ class FirestoreService {
    return snapshot.docs.map((doc) => Workout.fromFirestore(doc)).toList();
  }
 
- Future<List<Exercise>> fetchExercisesByWorkoutId(String workoutId) async {
-   var snapshot = await _db.collection('exercisesWorkout').where('workoutId', isEqualTo: workoutId).get();
-   return snapshot.docs.map((doc) => Exercise.fromFirestore(doc)).toList();
- }
+Future<List<Exercise>> fetchExercisesByWorkoutId(String workoutId) async {
+  var snapshot = await _db.collection('exercisesWorkout').where('workoutId', isEqualTo: workoutId).get();
+  return snapshot.docs.map((doc) {
+    final data = doc.data();
+    return Exercise.fromFirestore(doc).copyWith(exerciseId: data['exerciseId']);
+  }).toList();
+}
 
  Future<List<Series>> fetchSeriesByExerciseId(String exerciseId) async {
    var snapshot = await _db.collection('series').where('exerciseId', isEqualTo: exerciseId).get();
@@ -170,6 +173,7 @@ Future<void> addOrUpdateTrainingProgram(TrainingProgram program) async {
           'order': exercise.order,
           'variant': exercise.variant,
           'workoutId': workoutId,
+          'exerciseId': exercise.exerciseId, // Aggiungi questa riga per salvare exerciseId
         }, SetOptions(merge: true));
 
         for (var series in exercise.series) {
@@ -193,6 +197,9 @@ Future<void> addOrUpdateTrainingProgram(TrainingProgram program) async {
         'exerciseId': exercise.id,
         'serieId': seriesId,
         'order': series.order,
+        'done':series.done,
+        'reps_done':series.reps_done,
+        'weight_done':series.weight_done
       }, SetOptions(merge: true));
     }
   }

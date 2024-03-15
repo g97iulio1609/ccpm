@@ -11,7 +11,6 @@ final firestoreServiceProvider = Provider<FirestoreService>((ref) {
   return FirestoreService();
 });
 
-
 final trainingProgramControllerProvider = ChangeNotifierProvider((ref) {
   final service = ref.watch(firestoreServiceProvider);
   final usersService = ref.watch(usersServiceProvider);
@@ -107,37 +106,37 @@ class TrainingProgramController extends ChangeNotifier {
     notifyListeners();
   }
 
-Future<void> addExercise(int weekIndex, int workoutIndex, BuildContext context) async {
-  final exercise = await showDialog<Exercise>(
-    context: context,
-    builder: (context) => ExerciseDialog(
-      usersService: _usersService,
-      athleteId: athleteIdController.text,
-    ),
-  );
-  if (exercise != null) {
-    // Genera un ID temporaneo per l'esercizio
-    exercise.id = UniqueKey().toString();
-    program.weeks[weekIndex].workouts[workoutIndex].exercises.add(exercise);
-    notifyListeners();
+  Future<void> addExercise(int weekIndex, int workoutIndex, BuildContext context) async {
+    final exercise = await showDialog<Exercise>(
+      context: context,
+      builder: (context) => ExerciseDialog(
+        usersService: _usersService,
+        athleteId: athleteIdController.text,
+      ),
+    );
+    if (exercise != null) {
+      // Genera un ID temporaneo per l'esercizio
+      exercise.id = UniqueKey().toString();
+      program.weeks[weekIndex].workouts[workoutIndex].exercises.add(exercise);
+      notifyListeners();
+    }
   }
-}
 
- Future<void> editExercise(int weekIndex, int workoutIndex, int exerciseIndex, BuildContext context) async {
-  final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
-  final updatedExercise = await showDialog<Exercise>(
-    context: context,
-    builder: (context) => ExerciseDialog(
-      usersService: _usersService,
-      athleteId: athleteIdController.text,
-      exercise: exercise,
-    ),
-  );
-  if (updatedExercise != null) {
-    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] = updatedExercise;
-    notifyListeners();
+  Future<void> editExercise(int weekIndex, int workoutIndex, int exerciseIndex, BuildContext context) async {
+    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+    final updatedExercise = await showDialog<Exercise>(
+      context: context,
+      builder: (context) => ExerciseDialog(
+        usersService: _usersService,
+        athleteId: athleteIdController.text,
+        exercise: exercise,
+      ),
+    );
+    if (updatedExercise != null) {
+      program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] = updatedExercise;
+      notifyListeners();
+    }
   }
-}
 
   void removeExercise(int weekIndex, int workoutIndex, int exerciseIndex) {
     Exercise exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
@@ -156,30 +155,33 @@ Future<void> addExercise(int weekIndex, int workoutIndex, BuildContext context) 
     notifyListeners();
   }
 
-Future<void> addSeries(int weekIndex, int workoutIndex, int exerciseIndex, BuildContext context) async {
-  final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
-  final series = await showDialog<Series>(
-    context: context,
-    builder: (context) => SeriesDialog(
-      usersService: _usersService,
-      athleteId: athleteIdController.text,
-      exerciseId: exercise.exerciseId ?? '',
-    ),
-  );
-  if (series != null) {
-    exercise.series.add(series);
-    notifyListeners();
+  Future<void> addSeries(int weekIndex, int workoutIndex, int exerciseIndex, BuildContext context) async {
+    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+    final series = await showDialog<Series>(
+      context: context,
+      builder: (context) => SeriesDialog(
+        usersService: _usersService,
+        athleteId: athleteIdController.text,
+        exerciseId: exercise.exerciseId ?? '',
+      ),
+    );
+    if (series != null) {
+      exercise.series.add(series);
+      notifyListeners();
+    }
   }
-}
 
-Future<void> editSeries(int weekIndex, int workoutIndex, int exerciseIndex, int seriesIndex, BuildContext context) async {
+ Future<void> editSeries(int weekIndex, int workoutIndex, int exerciseIndex, int seriesIndex, BuildContext context) async {
   final series = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex].series[seriesIndex];
+  final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+    print('Debug: exerciseId passed from editSeries: ${exercise.exerciseId}');
+
   final updatedSeries = await showDialog<Series>(
     context: context,
     builder: (context) => SeriesDialog(
       usersService: _usersService,
       athleteId: athleteIdController.text,
-      exerciseId: program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex].exerciseId ?? '',
+      exerciseId: exercise.exerciseId ?? '', // Usa una stringa vuota se exerciseId è nullo
       series: series,
     ),
   );

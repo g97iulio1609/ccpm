@@ -83,13 +83,13 @@ class ExerciseDialog extends ConsumerWidget {
           onPressed: () {
             final newExercise = Exercise(
               id: exercise?.id,
-              exerciseId: selectedExerciseId,
+    exerciseId: selectedExerciseId.isNotEmpty ? selectedExerciseId : exercise?.exerciseId,
               name: nameController.text,
               variant: variantController.text,
               order: exercise?.order ?? 1,
               series: exercise?.series ?? [],
             );
-            print('Debug: Passing exercise ID to SeriesDialog: $selectedExerciseId');
+  print('Debug: Passing exercise ID to SeriesDialog: ${newExercise.exerciseId}');
             Navigator.pop(context, newExercise);
           },
           child: Text(exercise == null ? 'Add' : 'Update'),

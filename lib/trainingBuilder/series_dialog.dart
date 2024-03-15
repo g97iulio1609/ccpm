@@ -19,6 +19,8 @@ class SeriesDialog extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+      print('Debug: exerciseId passed to SeriesDialog: $exerciseId');
+
     final repsController = TextEditingController(text: series?.reps.toString() ?? '');
     final setsController = TextEditingController(text: series?.sets.toString() ?? '');
     final intensityController = TextEditingController(text: series?.intensity ?? '');
@@ -27,17 +29,17 @@ class SeriesDialog extends ConsumerWidget {
     int latestMaxWeight = 0;
 
     print('Debug: Using exerciseId: $exerciseId');
-    usersService.getExerciseRecords(userId: athleteId, exerciseId: exerciseId).first.then((records) {
-      if (records.isNotEmpty) {
-        final latestRecord = records.first;
-        latestMaxWeight = latestRecord.maxWeight;
-        print('Debug: Latest max weight received: $latestMaxWeight for exerciseId: $exerciseId');
-      } else {
-        print('Debug: No exercise records found for exerciseId: $exerciseId');
-      }
-    }).catchError((error) {
-      print('Error retrieving exercise records for exerciseId: $exerciseId - $error');
-    });
+ usersService.getExerciseRecords(userId: athleteId, exerciseId: exerciseId).first.then((records) {
+  if (records.isNotEmpty && exerciseId.isNotEmpty) {
+    final latestRecord = records.first;
+    latestMaxWeight = latestRecord.maxWeight;
+    print('Debug: Latest max weight received: $latestMaxWeight for exerciseId: $exerciseId');
+  } else {
+    print('Debug: No exercise records found or invalid exerciseId: $exerciseId');
+  }
+}).catchError((error) {
+  print('Error retrieving exercise records for exerciseId: $exerciseId - $error');
+});
 
     intensityController.addListener(() {
       final intensity = double.tryParse(intensityController.text) ?? 0;
@@ -95,7 +97,16 @@ class SeriesDialog extends ConsumerWidget {
               rpe: rpeController.text,
               weight: double.parse(weightController.text),
               order: series?.order ?? 1,
+              done: series?.done ?? false,
+              reps_done: series?.reps_done ?? 0,
+              weight_done: series?.weight_done ?? 0.0,
             );
+            
+            // Verifica che serieId abbia un valore valido
+            if (newSeries.serieId.isEmpty) {
+              newSeries.serieId = DateTime.now().millisecondsSinceEpoch.toString();
+            }
+            
             Navigator.pop(context, newSeries);
           },
           child: Text(series == null ? 'Add' : 'Update'),
