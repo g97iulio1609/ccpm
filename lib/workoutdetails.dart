@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'exercise_details.dart';
 import 'dart:async';
 
-
 class WorkoutDetails extends StatefulWidget {
   final String workoutId;
 
@@ -33,7 +32,8 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
         .orderBy('order')
         .snapshots()
         .listen((exerciseSnapshot) {
-      List<Map<String, dynamic>> tempExercises = exerciseSnapshot.docs.map((doc) {
+      List<Map<String, dynamic>> tempExercises =
+          exerciseSnapshot.docs.map((doc) {
         var exerciseData = doc.data() as Map<String, dynamic>? ?? {};
         exerciseData['id'] = doc.id;
         exerciseData['series'] = [];
@@ -47,7 +47,8 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
             .orderBy('order')
             .snapshots()
             .listen((seriesSnapshot) {
-          List<Map<String, dynamic>> tempSeries = seriesSnapshot.docs.map((seriesDoc) {
+          List<Map<String, dynamic>> tempSeries =
+              seriesSnapshot.docs.map((seriesDoc) {
             var seriesData = seriesDoc.data() as Map<String, dynamic>? ?? {};
             seriesData['id'] = seriesDoc.id;
             return seriesData;
@@ -78,6 +79,9 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
   Widget build(BuildContext context) {
     ThemeData theme = Theme.of(context);
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Dettagli allenamento'),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -90,7 +94,8 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                     return Card(
                       elevation: 8,
                       margin: const EdgeInsets.only(bottom: 20),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
@@ -98,48 +103,79 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                           children: [
                             Text(
                               "Esercizio ${index + 1}: ${exercise['name']} ${exercise['variant'] ?? ''}",
-                              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold),
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 10),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Expanded(flex: 1, child: Text("Serie", style: theme.textTheme.titleMedium, textAlign: TextAlign.center)),
-                                Expanded(flex: 2, child: Text("Reps", style: theme.textTheme.titleMedium, textAlign: TextAlign.center)),
-                                Expanded(flex: 2, child: Text("Peso(kg)", style: theme.textTheme.titleMedium, textAlign: TextAlign.center)),
-                                Expanded(flex: 1, child: Text("Svolto", style: theme.textTheme.titleMedium, textAlign: TextAlign.center)),
+                                Expanded(
+                                    flex: 1,
+                                    child: Text("Serie",
+                                        style: theme.textTheme.titleMedium,
+                                        textAlign: TextAlign.center)),
+                                Expanded(
+                                    flex: 2,
+                                    child: Text("Reps",
+                                        style: theme.textTheme.titleMedium,
+                                        textAlign: TextAlign.center)),
+                                Expanded(
+                                    flex: 2,
+                                    child: Text("Peso(kg)",
+                                        style: theme.textTheme.titleMedium,
+                                        textAlign: TextAlign.center)),
+                                Expanded(
+                                    flex: 1,
+                                    child: Text("Svolto",
+                                        style: theme.textTheme.titleMedium,
+                                        textAlign: TextAlign.center)),
                               ],
                             ),
                             ...exercise['series'].asMap().entries.map((entry) {
                               int seriesIndex = entry.key;
                               Map<String, dynamic> series = entry.value;
                               return Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Expanded(
                                     flex: 1,
-                                    child: Center(child: Text("${seriesIndex + 1}", style: theme.textTheme.bodyLarge)),
+                                    child: Center(
+                                        child: Text("${seriesIndex + 1}",
+                                            style: theme.textTheme.bodyLarge)),
                                   ),
                                   Expanded(
                                     flex: 2,
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
-                                        Text("${series['reps']}", style: theme.textTheme.bodyLarge, textAlign: TextAlign.center),
+                                        Text("${series['reps']}",
+                                            style: theme.textTheme.bodyLarge,
+                                            textAlign: TextAlign.center),
                                         const SizedBox(width: 8),
-                                        Text("${series['reps_done'] ?? '-'}", style: theme.textTheme.bodyLarge, textAlign: TextAlign.center),
+                                        Text("${series['reps_done'] ?? '-'}",
+                                            style: theme.textTheme.bodyLarge,
+                                            textAlign: TextAlign.center),
                                       ],
                                     ),
                                   ),
                                   Expanded(
                                     flex: 2,
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
-                                        Text("${series['weight']} Kg", style: theme.textTheme.bodyLarge, textAlign: TextAlign.center),
+                                        Text("${series['weight']} Kg",
+                                            style: theme.textTheme.bodyLarge,
+                                            textAlign: TextAlign.center),
                                         const SizedBox(width: 8),
-                                        Text("${series['weight_done'] ?? '-'} Kg", style: theme.textTheme.bodyLarge, textAlign: TextAlign.center),
+                                        Text(
+                                            "${series['weight_done'] ?? '-'} Kg",
+                                            style: theme.textTheme.bodyLarge,
+                                            textAlign: TextAlign.center),
                                       ],
                                     ),
                                   ),
@@ -164,7 +200,8 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                                         exerciseId: exercise['id'],
                                         exerciseName: exercise['name'],
                                         exerciseVariant: exercise['variant'],
-                                        seriesList: exercise['series'].cast<Map<String, dynamic>>(),
+                                        seriesList: exercise['series']
+                                            .cast<Map<String, dynamic>>(),
                                       ),
                                     ),
                                   );

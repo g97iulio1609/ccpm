@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'workoutdetails.dart'; // Make sure you have this file in your project
+import 'workoutdetails.dart';
 
 class WeekDetails extends StatefulWidget {
   final String weekId;
@@ -33,10 +33,10 @@ class _WeekDetailsState extends State<WeekDetails> {
 
     workouts = querySnapshot.docs
         .map((doc) => {
-          'id': doc.id,
-          ...doc.data() as Map<String, dynamic>,
-          'order': doc['order'] , // Incrementing week index by 1
-        })
+              'id': doc.id,
+              ...doc.data() as Map<String, dynamic>,
+              'order': doc['order'],
+            })
         .toList();
 
     setState(() {
@@ -47,7 +47,9 @@ class _WeekDetailsState extends State<WeekDetails> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-     
+      appBar: AppBar(
+        title: const Text('Dettagli settimana'),
+      ),
       body: Container(
         padding: const EdgeInsets.all(16),
         child: loading
@@ -58,14 +60,17 @@ class _WeekDetailsState extends State<WeekDetails> {
                   var workout = workouts[index];
                   return Card(
                     color: Theme.of(context).colorScheme.surfaceVariant,
-                    margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                    margin:
+                        const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
                     elevation: 5,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // Updated for Material 3 design
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     child: InkWell(
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (context) => WorkoutDetails(workoutId: workout['id']),
+                            builder: (context) =>
+                                WorkoutDetails(workoutId: workout['id']),
                           ),
                         );
                       },
@@ -76,9 +81,14 @@ class _WeekDetailsState extends State<WeekDetails> {
                           children: [
                             Text(
                               "Allenamento ${workout['order']}",
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Theme.of(context).colorScheme.primary),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary),
                             ),
-                            // Removed "Creato il" section
                           ],
                         ),
                       ),
