@@ -29,25 +29,33 @@ class MyApp extends ConsumerWidget {
       seedColor: const Color(0xFF2196F3),
       primary: const Color(0xFF2196F3),
       secondary: const Color(0xFFFF9800),
+      tertiary: const Color(0xFF4CAF50),
       error: const Color(0xFFF44336),
-      background: const Color(0xFFE0E0E0),
+      background: const Color(0xFFF5F5F5),
+      surface: const Color(0xFFFFFFFF),
       onPrimary: Colors.white,
       onSecondary: Colors.white,
+      onTertiary: Colors.white,
       onError: Colors.white,
       onBackground: Colors.black,
+      onSurface: Colors.black,
       brightness: Brightness.light,
     );
 
     final ColorScheme darkColorScheme = ColorScheme.fromSeed(
       seedColor: const Color(0xFF2196F3),
-      primary: const Color(0xFF42A5F5),
-      secondary: const Color(0xFFFFA726),
+      primary: const Color(0xFF90CAF9),
+      secondary: const Color(0xFFFFCC80),
+      tertiary: const Color(0xFF81C784),
       error: const Color(0xFFEF9A9A),
       background: const Color(0xFF121212),
-      onPrimary: Colors.white,
-      onSecondary: Colors.white,
-      onError: Colors.white,
+      surface: const Color(0xFF1F1F1F),
+      onPrimary: Colors.black,
+      onSecondary: Colors.black,
+      onTertiary: Colors.black,
+      onError: Colors.black,
       onBackground: Colors.white,
+      onSurface: Colors.white,
       brightness: Brightness.dark,
     );
 
@@ -73,7 +81,7 @@ class MyApp extends ConsumerWidget {
       theme: lightTheme,
       darkTheme: darkTheme,
       themeMode: ThemeMode.system,
-      home: const AuthWrapper(), // Just use AuthWrapper without passing ref
+      home: const AuthWrapper(),
       routes: {
         '/auth': (context) => AuthScreen(),
         '/home': (context) => const HomeScreen(),
@@ -86,7 +94,7 @@ class MyApp extends ConsumerWidget {
 }
 
 class AuthWrapper extends ConsumerWidget {
-  const AuthWrapper({super.key}); // Constructor remains unchanged
+  const AuthWrapper({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -98,12 +106,10 @@ class AuthWrapper extends ConsumerWidget {
           if (user == null) {
             return AuthScreen();
           } else {
-            // Asynchronously set user role and then navigate
             Future.microtask(() => ref.read(usersServiceProvider).setUserRole(user.uid));
             return const HomeScreen();
           }
         }
-        // Return a loading indicator while Firebase initializes
         return const Center(child: CircularProgressIndicator());
       },
     );

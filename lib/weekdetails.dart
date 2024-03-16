@@ -49,22 +49,23 @@ class _WeekDetailsState extends State<WeekDetails> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dettagli settimana'),
+        elevation: 0,
+        centerTitle: true,
       ),
-      body: Container(
-        padding: const EdgeInsets.all(16),
-        child: loading
-            ? const Center(child: CircularProgressIndicator())
-            : ListView.builder(
-                itemCount: workouts.length,
-                itemBuilder: (context, index) {
-                  var workout = workouts[index];
-                  return Card(
-                    color: Theme.of(context).colorScheme.surfaceVariant,
-                    margin:
-                        const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-                    elevation: 5,
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView.builder(
+              itemCount: workouts.length,
+              itemBuilder: (context, index) {
+                var workout = workouts[index];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 8.0),
+                  child: Card(
+                    elevation: 4,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                      borderRadius: BorderRadius.circular(16.0),
+                    ),
                     child: InkWell(
                       onTap: () {
                         Navigator.of(context).push(
@@ -75,28 +76,36 @@ class _WeekDetailsState extends State<WeekDetails> {
                         );
                       },
                       child: Padding(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(16.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.fitness_center,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                                const SizedBox(width: 8.0),
+                                Text(
+                                  "Allenamento ${workout['order']}",
+                                  style: Theme.of(context).textTheme.titleLarge,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8.0),
                             Text(
-                              "Allenamento ${workout['order']}",
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleLarge
-                                  ?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .primary),
+                              workout['description'] ?? '',
+                              style: Theme.of(context).textTheme.bodyMedium,
                             ),
                           ],
                         ),
                       ),
                     ),
-                  );
-                },
-              ),
-      ),
+                  ),
+                );
+              },
+            ),
     );
   }
 }

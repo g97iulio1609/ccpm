@@ -42,20 +42,23 @@ class _TrainingViewerState extends State<TrainingViewer> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Visualizzatore di allenamento'),
+        elevation: 0,
+        centerTitle: true,
       ),
-      body: Container(
-        padding: const EdgeInsets.all(16),
-        child: loading
-            ? const Center(child: CircularProgressIndicator())
-            : ListView.builder(
-                itemCount: weeks.length,
-                itemBuilder: (context, index) {
-                  var week = weeks[index];
-                  return Card(
-                    color: Theme.of(context).colorScheme.surfaceVariant,
-                    margin:
-                        const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-                    elevation: 5,
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView.builder(
+              itemCount: weeks.length,
+              itemBuilder: (context, index) {
+                var week = weeks[index];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 8.0),
+                  child: Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16.0),
+                    ),
                     child: InkWell(
                       onTap: () {
                         Navigator.of(context).push(
@@ -65,40 +68,36 @@ class _TrainingViewerState extends State<TrainingViewer> {
                         );
                       },
                       child: Padding(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(16.0),
                         child: Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              "Settimana ${week['number']}",
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleLarge
-                                  ?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .primary),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.calendar_today,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                                const SizedBox(width: 8.0),
+                                Text(
+                                  "Settimana ${week['number']}",
+                                  style: Theme.of(context).textTheme.titleLarge,
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 8.0),
                             Text(
                               week['description'] ?? '',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant),
+                              style: Theme.of(context).textTheme.bodyMedium,
                             ),
                           ],
                         ),
                       ),
                     ),
-                  );
-                },
-              ),
-      ),
+                  ),
+                );
+              },
+            ),
     );
   }
 }
