@@ -39,15 +39,15 @@ class ExerciseDialog extends ConsumerWidget {
                 if (snapshot.hasData) {
                   final exercises = snapshot.data!;
                   return Autocomplete<ExerciseModel>(
+                    initialValue: TextEditingValue(text: nameController.text), // Imposta il valore iniziale basato sul controller
                     optionsBuilder: (textEditingValue) {
-                      if (textEditingValue.text.isEmpty) {
-                        return const Iterable<ExerciseModel>.empty();
-                      }
                       return exercises.where((exercise) =>
                           exercise.name.toLowerCase().startsWith(textEditingValue.text.toLowerCase()));
                     },
                     displayStringForOption: (exercise) => exercise.name,
                     fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
+                      // Collega il textEditingController del Autocomplete con il nameController
+                      textEditingController.text = nameController.text;
                       return TextFormField(
                         controller: textEditingController,
                         focusNode: focusNode,
@@ -98,23 +98,13 @@ class ExerciseDialog extends ConsumerWidget {
         TextButton(
           onPressed: () {
             final newExercise = Exercise(
-              id: exercise?.id,
-              exerciseId: selectedExerciseId.isNotEmpty ? selectedExerciseId : exercise?.exerciseId,
+              id: exercise?.id ?? '',
+              exerciseId: selectedExerciseId.isNotEmpty ? selectedExerciseId : exercise?.exerciseId ?? '',
               name: nameController.text,
               variant: variantController.text,
               order: exercise?.order ?? 0,
               series: exercise?.series ?? [],
-              weekProgressions: exercise?.weekProgressions ?? List.generate(
-                controller.program.weeks.length,
-                (index) => WeekProgression(
-                  weekNumber: index + 1,
-                  reps: 0,
-                  sets: 0,
-                  intensity: '',
-                  rpe: '',
-                  weight: 0,
-                ),
-              ),
+              weekProgressions: exercise?.weekProgressions ?? [],
             );
             Navigator.pop(context, newExercise);
           },

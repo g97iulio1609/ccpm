@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'trainingModel.dart';
 import '../usersServices.dart';
 import 'training_program_controller.dart';
@@ -30,7 +31,7 @@ class SeriesDialog extends ConsumerWidget {
     final intensityController = TextEditingController(text: series?.intensity ?? '');
     final rpeController = TextEditingController(text: series?.rpe ?? '');
     final weightController = TextEditingController(text: series?.weight.toStringAsFixed(2) ?? '');
-    
+
     return AlertDialog(
       title: Text(series == null ? 'Add New Series' : 'Edit Series'),
       content: SingleChildScrollView(
@@ -38,11 +39,17 @@ class SeriesDialog extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildTextField(repsController, 'Reps'),
+            _buildTextField(repsController, 'Reps', onChanged: (_) {
+              _updateWeightFromRPE(repsController, weightController, rpeController, intensityController);
+            }),
             _buildTextField(setsController, 'Sets'),
-            _buildTextField(intensityController, 'Intensity (%)', onChanged: (_) => _updateWeight(weightController, intensityController)),
-            _buildTextField(rpeController, 'RPE', onChanged: (_) => _updateWeightFromRPE(repsController, weightController, rpeController, intensityController)),
-            _buildTextField(weightController, 'Weight (kg)', onChanged: (_) {
+            _buildNumberField(intensityController, 'Intensity (%)', onChanged: (_) {
+              _updateWeight(weightController, intensityController);
+            }),
+            _buildNumberField(rpeController, 'RPE', stepValue: 0.5, stepIncrement: 0.5, minValue: 6.0, maxValue: 10.0, onChanged: (_) {
+              _updateWeightFromRPE(repsController, weightController, rpeController, intensityController);
+            }),
+            _buildWeightField(weightController, onChanged: (_) {
               _updateIntensity(weightController, intensityController);
               _updateRPE(repsController, weightController, rpeController, intensityController);
             }),
@@ -76,65 +83,131 @@ class SeriesDialog extends ConsumerWidget {
     );
   }
 
-  void _updateWeight(TextEditingController weightController, TextEditingController intensityController) async {
-  final intensity = double.tryParse(intensityController.text) ?? 0;
-  final latestMaxWeight = await _getLatestMaxWeight();
-  final calculatedWeight = (latestMaxWeight * intensity) / 100;
-  weightController.text = calculatedWeight.toStringAsFixed(2);
-}
-void _updateIntensity(TextEditingController weightController, TextEditingController intensityController) async {
-  final weight = double.tryParse(weightController.text) ?? 0;
-  final latestMaxWeight = await _getLatestMaxWeight();
-  if (latestMaxWeight != 0) {
-    final calculatedIntensity = (weight / latestMaxWeight) * 100;
-    intensityController.text = calculatedIntensity.toStringAsFixed(2);
-  } else {
-    intensityController.clear();
+  Widget _buildNumberField(TextEditingController controller, String labelText, {double? minValue, double? maxValue, double? stepValue, double? stepIncrement, ValueChanged<String>? onChanged}) {
+    return Row(
+      children: [
+        Expanded(
+          child: TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              labelText: labelText,
+              labelStyle: const TextStyle(color: Colors.grey),
+              enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
+              focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.blue)),
+            ),
+            keyboardType: TextInputType.number,
+            onChanged: onChanged,
+          ),
+        ),
+        if (stepValue != null && stepIncrement != null)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                onPressed: () {
+                  final currentValue = double.tryParse(controller.text) ?? (minValue ?? 0.0);
+                  final decrementedValue = currentValue - stepValue;
+                  if (minValue == null || decrementedValue >= minValue) {
+                    controller.text = decrementedValue.toStringAsFixed(1);
+                    onChanged?.call(controller.text);
+                  }
+                },
+                icon: const Icon(Icons.remove),
+              ),
+              IconButton(
+                onPressed: () {
+                  final currentValue = double.tryParse(controller.text) ?? (maxValue ?? double.infinity);
+                  final incrementedValue = currentValue + stepIncrement;
+                  if (maxValue == null || incrementedValue <= maxValue) {
+                    controller.text = incrementedValue.toStringAsFixed(1);
+                    onChanged?.call(controller.text);
+                  }
+                },
+                icon: const Icon(Icons.add),
+              ),
+            ],
+          ),
+      ],
+    );
   }
-}
- void _updateWeightFromRPE(TextEditingController repsController, TextEditingController weightController, TextEditingController rpeController, TextEditingController intensityController) async {
-  final rpe = double.tryParse(rpeController.text) ?? 0;
-  final reps = int.tryParse(repsController.text) ?? 0;
-  final latestMaxWeight = await _getLatestMaxWeight();
-  final percentage = _getRPEPercentage(rpe, reps);
-  final calculatedWeight = latestMaxWeight * percentage;
 
-  weightController.text = calculatedWeight.toStringAsFixed(2);
-  intensityController.text = (percentage * 100).toStringAsFixed(2);
-}
+  Widget _buildWeightField(TextEditingController controller, {required ValueChanged<String> onChanged}) {
+    final formatter = NumberFormat.decimalPattern();
+    return TextField(
+      controller: controller,
+      decoration: const InputDecoration(
+        labelText: 'Weight (kg)',
+        labelStyle: TextStyle(color: Colors.grey),
+        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
+        focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.blue)),
+      ),
+      keyboardType: TextInputType.number,
+      onChanged: onChanged,
+    );
+  }
 
-void _updateRPE(TextEditingController repsController, TextEditingController weightController, TextEditingController rpeController, TextEditingController intensityController) async {
-  final weight = double.tryParse(weightController.text) ?? 0;
-  final reps = int.tryParse(repsController.text) ?? 0;
-  final latestMaxWeight = await _getLatestMaxWeight();
-  if (latestMaxWeight != 0) {
-    final intensity = weight / latestMaxWeight;
-    final calculatedRPE = _calculateRPE(intensity, reps);
-    if (calculatedRPE != null) {
-      rpeController.text = calculatedRPE.toStringAsFixed(1);
+  void _updateWeight(TextEditingController weightController, TextEditingController intensityController) async {
+    final intensity = double.tryParse(intensityController.text) ?? 0;
+    final latestMaxWeight = await _getLatestMaxWeight();
+    final calculatedWeight = (latestMaxWeight * intensity) / 100;
+    weightController.text = calculatedWeight.toStringAsFixed(2);
+  }
+
+  void _updateIntensity(TextEditingController weightController, TextEditingController intensityController) async {
+    final weight = double.tryParse(weightController.text) ?? 0;
+    final latestMaxWeight = await _getLatestMaxWeight();
+    if (latestMaxWeight != 0) {
+      final calculatedIntensity = (weight / latestMaxWeight) * 100;
+      intensityController.text = calculatedIntensity.toStringAsFixed(2);
+    } else {
+      intensityController.clear();
+    }
+  }
+
+  void _updateWeightFromRPE(TextEditingController repsController, TextEditingController weightController, TextEditingController rpeController, TextEditingController intensityController) async {
+    final rpe = double.tryParse(rpeController.text) ?? 0;
+    final reps = int.tryParse(repsController.text) ?? 0;
+    final latestMaxWeight = await _getLatestMaxWeight();
+    final percentage = _getRPEPercentage(rpe, reps);
+    final calculatedWeight = latestMaxWeight * percentage;
+
+    weightController.text = calculatedWeight.toStringAsFixed(2);
+    intensityController.text = (percentage * 100).toStringAsFixed(2);
+  }
+
+  void _updateRPE(TextEditingController repsController, TextEditingController weightController, TextEditingController rpeController, TextEditingController intensityController) async {
+    final weight = double.tryParse(weightController.text) ?? 0;
+    final reps = int.tryParse(repsController.text) ?? 0;
+    final latestMaxWeight = await _getLatestMaxWeight();
+    if (latestMaxWeight != 0) {
+      final intensity = weight / latestMaxWeight;
+      final calculatedRPE = _calculateRPE(intensity, reps);
+      if (calculatedRPE != null) {
+        rpeController.text = calculatedRPE.toStringAsFixed(1);
+      } else {
+        rpeController.clear();
+      }
     } else {
       rpeController.clear();
+      intensityController.clear();
     }
-  } else {
-    rpeController.clear();
-    intensityController.clear();
   }
-}
 
-Future<int> _getLatestMaxWeight() async {
-  int latestMaxWeight = 0;
-  await usersService.getExerciseRecords(userId: athleteId, exerciseId: exerciseId).first.then((records) {
-    if (records.isNotEmpty && exerciseId.isNotEmpty) {
-      final latestRecord = records.first;
-      latestMaxWeight = latestRecord.maxWeight;
-    }
-  }).catchError((error) {
-    // Handle error
-  });
-  return latestMaxWeight;
-}
+  Future<int> _getLatestMaxWeight() async {
+    int latestMaxWeight = 0;
+    await usersService.getExerciseRecords(userId: athleteId, exerciseId: exerciseId).first.then((records) {
+      if (records.isNotEmpty && exerciseId.isNotEmpty) {
+        final latestRecord = records.first;
+        latestMaxWeight = latestRecord.maxWeight;
+      }
+    }).catchError((error) {
+      // Handle error
+    });
+    return latestMaxWeight;
+  }
 
   double _getRPEPercentage(double rpe, int reps) {
+
     final rpeTable = {
       10: {1: 1.0, 2: 0.955, 3: 0.922, 4: 0.892, 5: 0.863, 6: 0.837, 7: 0.811, 8: 0.786, 9: 0.762, 10: 0.739},
       9: {1: 0.978, 2: 0.939, 3: 0.907, 4: 0.878, 5: 0.850, 6: 0.824, 7: 0.799, 8: 0.774, 9: 0.751, 10: 0.728},
@@ -146,11 +219,12 @@ Future<int> _getLatestMaxWeight() async {
       3: {1: 0.878, 2: 0.850, 3: 0.824, 4: 0.799, 5: 0.774, 6: 0.751, 7: 0.728, 8: 0.706, 9: 0.685, 10: 0.665},
       2: {1: 0.863, 2: 0.837, 3: 0.811, 4: 0.786, 5: 0.762, 6: 0.739, 7: 0.717, 8: 0.696, 9: 0.675, 10: 0.655},
     };
-    
+
     return rpeTable[rpe.toInt()]?[reps] ?? 1.0;
   }
 
   double? _calculateRPE(double intensity, int reps) {
+  
     final rpeTable = {
       10: {1: 1.0, 2: 0.955, 3: 0.922, 4: 0.892, 5: 0.863, 6: 0.837, 7: 0.811, 8: 0.786, 9: 0.762, 10: 0.739},
       9: {1: 0.978, 2: 0.939, 3: 0.907, 4: 0.878, 5: 0.850, 6: 0.824, 7: 0.799, 8: 0.774, 9: 0.751, 10: 0.728},
@@ -170,9 +244,7 @@ Future<int> _getLatestMaxWeight() async {
           calculatedRPE = rpe.toDouble();
         }
       });
-    });
-    
-    return calculatedRPE;
+    });return calculatedRPE;
   }
 
   void _saveSeries(
@@ -188,7 +260,7 @@ Future<int> _getLatestMaxWeight() async {
       id: series?.id,
       serieId: series?.serieId ?? '',
       reps: int.parse(repsController.text),
-      sets: int.parse(setsController.text),
+      sets: 1,
       intensity: intensityController.text,
       rpe: rpeController.text,
       weight: double.parse(weightController.text),

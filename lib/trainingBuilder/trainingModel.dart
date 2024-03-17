@@ -155,16 +155,16 @@ class Exercise {
   String name;
   String variant;
   int order;
-  String? exerciseId;
+  String? exerciseId; // Rendi exerciseId nullable
   List<Series> series;
   List<WeekProgression> weekProgressions;
 
-  Exercise({
+Exercise({
     this.id,
-    this.exerciseId,
     required this.name,
     required this.variant,
     required this.order,
+    this.exerciseId, // Rendi exerciseId nullable
     List<Series>? series,
     List<WeekProgression>? weekProgressions,
   })  : series = series ?? [],
@@ -182,9 +182,9 @@ class Exercise {
     );
   }
 
-  Exercise copyWith({
+Exercise copyWith({
     String? id,
-    String? exerciseId,
+    String? exerciseId, // Modifica questa riga
     String? name,
     String? variant,
     int? order,
@@ -193,7 +193,7 @@ class Exercise {
   }) {
     return Exercise(
       id: id ?? this.id,
-      exerciseId: exerciseId ?? this.exerciseId,
+      exerciseId: exerciseId ?? this.exerciseId, // Modifica questa riga
       name: name ?? this.name,
       variant: variant ?? this.variant,
       order: order ?? this.order,
@@ -218,7 +218,7 @@ class Exercise {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'exerciseId': id,
+      'exerciseId': exerciseId,
       'name': name,
       'variant': variant,
       'order': order,
