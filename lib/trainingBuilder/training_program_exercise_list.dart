@@ -18,26 +18,32 @@ class TrainingProgramExerciseList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final workout = controller.program.weeks[weekIndex].workouts[workoutIndex];
+    final sortedExercises = workout.exercises.toList()..sort((a, b) => a.order.compareTo(b.order));
 
-    // Ordina gli esercizi in base al campo 'order'
-    final sortedExercises = workout.exercises.toList()
-      ..sort((a, b) => a.order.compareTo(b.order));
-
-    return Column(
-      children: [
-        for (int i = 0; i < sortedExercises.length; i++)
-          ExpansionTile(
-            title: Text('Exercise ${sortedExercises[i].order}: ${sortedExercises[i].name} ${sortedExercises[i].variant}'),
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.5, // Imposta l'altezza massima al 50% dell'altezza dello schermo
+      ),
+      child: ReorderableListView.builder(
+        onReorder: (oldIndex, newIndex) {
+          controller.reorderExercises(weekIndex, workoutIndex, oldIndex, newIndex);
+        },
+        itemCount: sortedExercises.length,
+        itemBuilder: (context, index) {
+          final exercise = sortedExercises[index];
+          return ExpansionTile(
+            key: ValueKey(exercise.id),
+            title: Text('Exercise ${exercise.order}: ${exercise.name} ${exercise.variant}'),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
                   icon: const Icon(Icons.edit),
-                  onPressed: () => controller.editExercise(weekIndex, workoutIndex, sortedExercises[i].order - 1, context),
+                  onPressed: () => controller.editExercise(weekIndex, workoutIndex, exercise.order - 1, context),
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete),
-                  onPressed: () => controller.removeExercise(weekIndex, workoutIndex, sortedExercises[i].order - 1),
+                  onPressed: () => controller.removeExercise(weekIndex, workoutIndex, exercise.order - 1),
                 ),
               ],
             ),
@@ -46,15 +52,16 @@ class TrainingProgramExerciseList extends ConsumerWidget {
                 controller: controller,
                 weekIndex: weekIndex,
                 workoutIndex: workoutIndex,
-                exerciseIndex: sortedExercises[i].order - 1,
+                exerciseIndex: exercise.order - 1,
               ),
               ElevatedButton(
-                onPressed: () => controller.addSeries(weekIndex, workoutIndex, sortedExercises[i].order - 1, context),
+                onPressed: () => controller.addSeries(weekIndex, workoutIndex, exercise.order - 1, context),
                 child: const Text('Add New Series'),
               ),
             ],
-          ),
-      ],
+          );
+        },
+      ),
     );
   }
 }

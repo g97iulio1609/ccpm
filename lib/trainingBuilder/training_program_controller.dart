@@ -59,12 +59,6 @@ void removeWeek(int index) {
   notifyListeners();
 }
 
-void _updateWeekNumbers(int startIndex) {
-  for (int i = startIndex; i < program.weeks.length; i++) {
-    program.weeks[i].number = i + 1;
-  }
-}
-
   void _removeWeekAndRelatedData(Week week) {
     if (week.id != null) {
       program.trackToDeleteWeeks.add(week.id!);
@@ -88,11 +82,6 @@ void _updateWeekNumbers(int startIndex) {
   notifyListeners();
 }
 
-void _updateWorkoutOrders(int weekIndex, int startIndex) {
-  for (int i = startIndex; i < program.weeks[weekIndex].workouts.length; i++) {
-    program.weeks[weekIndex].workouts[i].order = i + 1;
-  }
-}
 
   void _removeWorkoutAndRelatedData(Workout workout) {
     if (workout.id != null) {
@@ -142,12 +131,6 @@ void removeExercise(int weekIndex, int workoutIndex, int exerciseIndex) {
   program.weeks[weekIndex].workouts[workoutIndex].exercises.removeAt(exerciseIndex);
   _updateExerciseOrders(weekIndex, workoutIndex, exerciseIndex); // Aggiungi questa riga
   notifyListeners();
-}
-
-void _updateExerciseOrders(int weekIndex, int workoutIndex, int startIndex) {
-  for (int i = startIndex; i < program.weeks[weekIndex].workouts[workoutIndex].exercises.length; i++) {
-    program.weeks[weekIndex].workouts[workoutIndex].exercises[i].order = i + 1;
-  }
 }
 
   void _removeExerciseAndRelatedData(Exercise exercise) {
@@ -206,11 +189,6 @@ void removeSeries(int weekIndex, int workoutIndex, int exerciseIndex, int series
   notifyListeners();
 }
 
-void _updateSeriesOrders(int weekIndex, int workoutIndex, int exerciseIndex, int startIndex) {
-  for (int i = startIndex; i < program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex].series.length; i++) {
-    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex].series[i].order = i + 1;
-  }
-}
 
   void _removeSeriesData(Series series) {
     if (series.serieId != null) {
@@ -236,8 +214,8 @@ void _updateSeriesOrders(int weekIndex, int workoutIndex, int exerciseIndex, int
   }
 
   void applyWeekProgressions(int exerciseIndex, List<WeekProgression> weekProgressions) {
-  print('Applying week progressions for exercise index: $exerciseIndex');
-  print('Week progressions: $weekProgressions');
+  //print('Applying week progressions for exercise index: $exerciseIndex');
+  //print('Week progressions: $weekProgressions');
 
   for (var weekIndex = 0; weekIndex < program.weeks.length; weekIndex++) {
     final week = program.weeks[weekIndex];
@@ -257,8 +235,8 @@ void _updateSeriesOrders(int weekIndex, int workoutIndex, int exerciseIndex, int
                   weight: 0.0,
                 );
 
-          print('Updating series for week: $weekIndex, workout: $workoutIndex, exercise: $currentExerciseIndex');
-          print('Progression: $progression');
+          //print('Updating series for week: $weekIndex, workout: $workoutIndex, exercise: $currentExerciseIndex');
+          //print('Progression: $progression');
           _updateOrCreateSeries(exercise, progression, weekIndex);
           _updateOrAddWeekProgression(exercise, progression, weekIndex);
         }
@@ -269,11 +247,11 @@ void _updateSeriesOrders(int weekIndex, int workoutIndex, int exerciseIndex, int
 }
 
 void _updateOrCreateSeries(Exercise exercise, WeekProgression progression, int weekIndex) {
-  print('Updating or creating series for exercise: ${exercise.id}, week: $weekIndex');
-  print('Progression: $progression');
+  //print('Updating or creating series for exercise: ${exercise.id}, week: $weekIndex');
+  //print('Progression: $progression');
 
   if (exercise.series.isEmpty) {
-    print('Creating new series');
+    //print('Creating new series');
     exercise.series = [
       Series(
         serieId: '${weekIndex}_0',
@@ -289,7 +267,7 @@ void _updateOrCreateSeries(Exercise exercise, WeekProgression progression, int w
       ),
     ];
   } else {
-    print('Updating existing series');
+    //print('Updating existing series');
     exercise.series[0] = Series(
       serieId: exercise.series[0].serieId,
       reps: progression.reps,
@@ -306,14 +284,14 @@ void _updateOrCreateSeries(Exercise exercise, WeekProgression progression, int w
 }
 
 void _updateOrAddWeekProgression(Exercise exercise, WeekProgression progression, int weekIndex) {
-  print('Updating or adding week progression for exercise: ${exercise.id}, week: $weekIndex');
-  print('Progression: $progression');
+  //print('Updating or adding week progression for exercise: ${exercise.id}, week: $weekIndex');
+  //print('Progression: $progression');
 
   if (weekIndex < exercise.weekProgressions.length) {
-    print('Updating existing week progression');
+    //print('Updating existing week progression');
     exercise.weekProgressions[weekIndex] = progression;
   } else {
-    print('Adding new week progression');
+    //print('Adding new week progression');
     exercise.weekProgressions.add(progression);
   }
 }
@@ -333,7 +311,7 @@ void _updateOrAddWeekProgression(Exercise exercise, WeekProgression progression,
   }
 
 void rebuildWeekProgressions() {
-  print('Rebuilding week progressions');
+  //print('Rebuilding week progressions');
 
   for (var weekIndex = 0; weekIndex < program.weeks.length; weekIndex++) {
     final week = program.weeks[weekIndex];
@@ -343,7 +321,7 @@ void rebuildWeekProgressions() {
         final exercise = workout.exercises[exerciseIndex];
         final exerciseId = exercise.exerciseId;
 
-        print('Rebuilding week progressions for exercise: $exerciseId');
+        //print('Rebuilding week progressions for exercise: $exerciseId');
 
         final weekProgressions = List<WeekProgression>.generate(
           program.weeks.length,
@@ -357,7 +335,7 @@ void rebuildWeekProgressions() {
           ),
         );
 
-        print('Generated week progressions: $weekProgressions');
+        //print('Generated week progressions: $weekProgressions');
 
         for (var progressionWeekIndex = 0; progressionWeekIndex < program.weeks.length; progressionWeekIndex++) {
           final progressionWeek = program.weeks[progressionWeekIndex];
@@ -367,8 +345,8 @@ void rebuildWeekProgressions() {
               final progressionExercise = progressionWorkout.exercises[progressionExerciseIndex];
               if (progressionExercise.exerciseId == exerciseId && progressionExercise.series.isNotEmpty) {
                 final series = progressionExercise.series[0];
-                print('Found matching exercise in week: $progressionWeekIndex, workout: $progressionWorkoutIndex, exercise: $progressionExerciseIndex');
-                print('Series: $series');
+                //print('Found matching exercise in week: $progressionWeekIndex, workout: $progressionWorkoutIndex, exercise: $progressionExerciseIndex');
+                //print('Series: $series');
                 weekProgressions[progressionWeekIndex] = WeekProgression(
                   weekNumber: progressionWeekIndex + 1,
                   reps: series.reps,
@@ -377,13 +355,13 @@ void rebuildWeekProgressions() {
                   rpe: series.rpe,
                   weight: series.weight,
                 );
-                print('Updated week progression: ${weekProgressions[progressionWeekIndex]}');
+                //print('Updated week progression: ${weekProgressions[progressionWeekIndex]}');
               }
             }
           }
         }
 
-        print('Rebuilt week progressions: $weekProgressions');
+        //print('Rebuilt week progressions: $weekProgressions');
         exercise.weekProgressions = weekProgressions;
       }
     }
@@ -393,7 +371,7 @@ void rebuildWeekProgressions() {
 }
 
 void _rebuildExerciseProgressions(Exercise exercise, int currentWeekIndex) {
-  print('Rebuilding progressions for exercise: ${exercise.id}, current week: $currentWeekIndex');
+  //print('Rebuilding progressions for exercise: ${exercise.id}, current week: $currentWeekIndex');
 
   final weekProgressions = List<WeekProgression>.generate(
     program.weeks.length,
@@ -407,7 +385,7 @@ void _rebuildExerciseProgressions(Exercise exercise, int currentWeekIndex) {
     ),
   );
 
-  print('Generated week progressions: $weekProgressions');
+  //print('Generated week progressions: $weekProgressions');
 
   for (var weekIndex = 0; weekIndex < program.weeks.length; weekIndex++) {
     final week = program.weeks[weekIndex];
@@ -417,8 +395,8 @@ void _rebuildExerciseProgressions(Exercise exercise, int currentWeekIndex) {
         final currentExercise = workout.exercises[exerciseIndex];
         if (currentExercise.id == exercise.id && currentExercise.series.isNotEmpty) {
           final series = currentExercise.series[0];
-          print('Found matching exercise in week: $weekIndex, workout: $workoutIndex, exercise: $exerciseIndex');
-          print('Series: $series');
+          //print('Found matching exercise in week: $weekIndex, workout: $workoutIndex, exercise: $exerciseIndex');
+          //print('Series: $series');
           weekProgressions[weekIndex] = WeekProgression(
             weekNumber: weekIndex + 1,
             reps: series.reps,
@@ -432,7 +410,7 @@ void _rebuildExerciseProgressions(Exercise exercise, int currentWeekIndex) {
     }
   }
 
-  print('Rebuilt week progressions: $weekProgressions');
+  //print('Rebuilt week progressions: $weekProgressions');
   exercise.weekProgressions = weekProgressions;
 }
 
@@ -454,23 +432,37 @@ void updateExerciseProgressions(Exercise exercise, List<WeekProgression> updated
 }
 
 //Reorder
+//Reorder
 void reorderWeeks(int oldIndex, int newIndex) {
   if (oldIndex < newIndex) {
     newIndex -= 1;
   }
   final week = program.weeks.removeAt(oldIndex);
   program.weeks.insert(newIndex, week);
-  _updateWeekNumbers(0);
+  _updateWeekNumbers(newIndex); // Aggiornato per passare l'indice di partenza
   notifyListeners();
 }
+
+void _updateWeekNumbers(int startIndex) {
+  for (int i = startIndex; i < program.weeks.length; i++) {
+    program.weeks[i].number = i + 1;
+  }
+}
+
 void reorderWorkouts(int weekIndex, int oldIndex, int newIndex) {
   if (oldIndex < newIndex) {
     newIndex -= 1;
   }
   final workout = program.weeks[weekIndex].workouts.removeAt(oldIndex);
   program.weeks[weekIndex].workouts.insert(newIndex, workout);
-  _updateWorkoutOrders(weekIndex, 0);
+  _updateWorkoutOrders(weekIndex, newIndex); // Aggiornato per passare l'indice di partenza
   notifyListeners();
+}
+
+void _updateWorkoutOrders(int weekIndex, int startIndex) {
+  for (int i = startIndex; i < program.weeks[weekIndex].workouts.length; i++) {
+    program.weeks[weekIndex].workouts[i].order = i + 1;
+  }
 }
 
 void reorderExercises(int weekIndex, int workoutIndex, int oldIndex, int newIndex) {
@@ -479,20 +471,33 @@ void reorderExercises(int weekIndex, int workoutIndex, int oldIndex, int newInde
   }
   final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises.removeAt(oldIndex);
   program.weeks[weekIndex].workouts[workoutIndex].exercises.insert(newIndex, exercise);
-  _updateExerciseOrders(weekIndex, workoutIndex, 0);
+  _updateExerciseOrders(weekIndex, workoutIndex, newIndex); // Aggiornato per passare l'indice di partenza
   notifyListeners();
+}
+
+void _updateExerciseOrders(int weekIndex, int workoutIndex, int startIndex) {
+  for (int i = startIndex; i < program.weeks[weekIndex].workouts[workoutIndex].exercises.length; i++) {
+    program.weeks[weekIndex].workouts[workoutIndex].exercises[i].order = i + 1;
+  }
 }
 
 void reorderSeries(int weekIndex, int workoutIndex, int exerciseIndex, int oldIndex, int newIndex) {
   if (oldIndex < newIndex) {
     newIndex -= 1;
   }
-  final series = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex].series.removeAt(oldIndex);
-  program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex].series.insert(newIndex, series);
-  _updateSeriesOrders(weekIndex, workoutIndex, exerciseIndex, 0);
+  final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+  final series = exercise.series.removeAt(oldIndex);
+  exercise.series.insert(newIndex, series);
+  _updateSeriesOrders(weekIndex, workoutIndex, exerciseIndex, newIndex);
   notifyListeners();
 }
 
+void _updateSeriesOrders(int weekIndex, int workoutIndex, int exerciseIndex, int startIndex) {
+  final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+  for (int i = startIndex; i < exercise.series.length; i++) {
+    exercise.series[i].order = i + 1;
+  }
+}
   void submitProgram(BuildContext context) {
     program.name = nameController.text;
     program.description = descriptionController.text;

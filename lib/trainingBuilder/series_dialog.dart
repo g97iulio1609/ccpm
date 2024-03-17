@@ -200,7 +200,7 @@ class SeriesDialog extends ConsumerWidget {
               id: series?.id,
               serieId: series?.serieId ?? '',
               reps: int.parse(repsController.text),
-              sets: 1,
+              sets: int.parse(setsController.text),
               intensity: intensityController.text,
               rpe: rpeController.text,
               weight: double.parse(weightController.text),
@@ -259,10 +259,11 @@ class SeriesDialog extends ConsumerWidget {
               // Gestisci l'errore o ignoralo se necessario
             }
 
-            Navigator.pop(context, seriesList);
+            Navigator.pop(context,seriesList);
           },
           child: Text(series == null ? 'Add' : 'Update'),
         ),
       ],
     );
-  }}
+  }
+}

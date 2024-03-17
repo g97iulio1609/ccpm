@@ -12,31 +12,39 @@ class TrainingProgramWeekList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final program = controller.program;
-
-    // Ordina le settimane in base al valore di 'number'
     final sortedWeeks = program.weeks..sort((a, b) => a.number.compareTo(b.number));
 
-    return Column(
-      children: [
-        for (int i = 0; i < sortedWeeks.length; i++)
-          ExpansionTile(
-            title: Text('Week ${sortedWeeks[i].number}'),
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.7, // Imposta l'altezza massima al 70% dell'altezza dello schermo
+      ),
+      child: ReorderableListView.builder(
+        onReorder: (oldIndex, newIndex) {
+          controller.reorderWeeks(oldIndex, newIndex);
+        },
+        itemCount: sortedWeeks.length,
+        itemBuilder: (context, index) {
+          final week = sortedWeeks[index];
+          return ExpansionTile(
+            key: ValueKey(week.id),
+            title: Text('Week ${week.number}'),
             trailing: IconButton(
               icon: const Icon(Icons.delete),
-              onPressed: () => controller.removeWeek(i),
+              onPressed: () => controller.removeWeek(index),
             ),
             children: [
               TrainingProgramWorkoutList(
                 controller: controller,
-                weekIndex: i,
+                weekIndex: index,
               ),
               ElevatedButton(
-                onPressed: () => controller.addWorkout(i),
+                onPressed: () => controller.addWorkout(index),
                 child: const Text('Add New Workout'),
               ),
             ],
-          ),
-      ],
+          );
+        },
+      ),
     );
   }
 }
