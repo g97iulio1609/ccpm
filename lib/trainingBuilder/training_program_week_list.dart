@@ -6,17 +6,21 @@ import 'training_program_workout_list.dart';
 class TrainingProgramWeekList extends ConsumerWidget {
   final TrainingProgramController controller;
 
-  const TrainingProgramWeekList({required this.controller, Key? key}) : super(key: key);
+  const TrainingProgramWeekList({required this.controller, Key? key})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final program = controller.program;
 
+    // Ordina le settimane in base al valore di 'number'
+    final sortedWeeks = program.weeks..sort((a, b) => a.number.compareTo(b.number));
+
     return Column(
       children: [
-        for (int i = 0; i < program.weeks.length; i++)
+        for (int i = 0; i < sortedWeeks.length; i++)
           ExpansionTile(
-            title: Text('Week ${program.weeks[i].number}'),
+            title: Text('Week ${sortedWeeks[i].number}'),
             trailing: IconButton(
               icon: const Icon(Icons.delete),
               onPressed: () => controller.removeWeek(i),

@@ -2,24 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'trainingModel.dart';
 import '../usersServices.dart';
+import 'training_program_controller.dart';
 
 class SeriesDialog extends ConsumerWidget {
   final UsersService usersService;
   final String athleteId;
   final String exerciseId;
+  final int weekIndex;
+  final Exercise exercise;
   final Series? series;
 
   const SeriesDialog({
     required this.usersService,
     required this.athleteId,
     required this.exerciseId,
+    required this.weekIndex,
+    required this.exercise,
     this.series,
     Key? key,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    //print('Debug: exerciseId passed to SeriesDialog: $exerciseId');
+    final controller = ref.watch(trainingProgramControllerProvider);
 
     final repsController = TextEditingController(text: series?.reps.toString() ?? '');
     final setsController = TextEditingController(text: series?.sets.toString() ?? '');
@@ -31,31 +36,36 @@ class SeriesDialog extends ConsumerWidget {
     final weightFocusNode = FocusNode();
     final rpeFocusNode = FocusNode();
 
-    //print('Debug: Using exerciseId: $exerciseId');
+    // Retrieve the WeekProgression for the current week
+    final weekProgression = exercise.weekProgressions
+        .firstWhere((progression) => progression.weekNumber == weekIndex + 1, orElse: () => WeekProgression(weekNumber: weekIndex + 1, reps: 0, sets: 0, intensity: '', rpe: '', weight: 0));
+
+    // Set the initial values of the form fields based on the WeekProgression
+    repsController.text = weekProgression.reps.toString();
+    setsController.text = weekProgression.sets.toString();
+    intensityController.text = weekProgression.intensity;
+    rpeController.text = weekProgression.rpe;
+    weightController.text = weekProgression.weight.toStringAsFixed(2);
+
     usersService.getExerciseRecords(userId: athleteId, exerciseId: exerciseId).first.then((records) {
       if (records.isNotEmpty && exerciseId.isNotEmpty) {
         final latestRecord = records.first;
         latestMaxWeight = latestRecord.maxWeight;
-        //print('Debug: Latest max weight received: $latestMaxWeight for exerciseId: $exerciseId');
-      } else {
-        //print('Debug: No exercise records found or invalid exerciseId: $exerciseId');
       }
     }).catchError((error) {
-      //print('Error retrieving exercise records for exerciseId: $exerciseId - $error');
+      // Handle error
     });
 
     void updateWeight() {
       final intensity = double.tryParse(intensityController.text) ?? 0;
       final calculatedWeight = (latestMaxWeight * intensity) / 100;
       weightController.text = calculatedWeight.toStringAsFixed(2);
-      //print('Debug: Calculated weight: $calculatedWeight for exerciseId: $exerciseId');
     }
 
     void updateIntensity() {
       final weight = double.tryParse(weightController.text) ?? 0;
       final calculatedIntensity = (weight / latestMaxWeight) * 100;
       intensityController.text = calculatedIntensity.toStringAsFixed(2);
-      //print('Debug: Calculated intensity: $calculatedIntensity for exerciseId: $exerciseId');
     }
 
     void updateWeightFromRPE() {
@@ -80,8 +90,6 @@ class SeriesDialog extends ConsumerWidget {
 
       weightController.text = calculatedWeight.toStringAsFixed(2);
       intensityController.text = (percentage * 100).toStringAsFixed(2);
-
-      //print('Debug: Calculated weight from RPE: $calculatedWeight for exerciseId: $exerciseId');
     }
 
     void updateRPE() {
@@ -116,8 +124,6 @@ class SeriesDialog extends ConsumerWidget {
       } else {
         rpeController.text = '';
       }
-
-      //print('Debug: Calculated RPE: ${calculatedRPE ?? 'N/A'} for exerciseId: $exerciseId');
     }
 
     intensityController.addListener(() {
@@ -185,58 +191,78 @@ class SeriesDialog extends ConsumerWidget {
       ),
       actions: [
         TextButton(
-onPressed: () {
-  final newSeries = Series(
-    id: series?.id,
-    serieId: series?.serieId ?? '',
-    reps: int.parse(repsController.text),
-    sets: 1,
-    intensity: intensityController.text,
-    rpe: rpeController.text,
-    weight: double.parse(weightController.text),
-    order: series?.order ?? 1,
-    done: series?.done ?? false,
-    reps_done: series?.reps_done ?? 0,
-    weight_done: series?.weight_done ?? 0.0,
-  );
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () {
+            final newSeries = Series(
+              id: series?.id,
+              serieId: series?.serieId ?? '',
+              reps: int.parse(repsController.text),
+              sets: 1,
+              intensity: intensityController.text,
+              rpe: rpeController.text,
+              weight: double.parse(weightController.text),
+              order: series?.order ?? 1,
+              done: series?.done ?? false,
+              reps_done: series?.reps_done ?? 0,
+              weight_done: series?.weight_done ?? 0.0,
+            );
 
-  if (newSeries.serieId.isEmpty) {
-    newSeries.serieId = '${DateTime.now().millisecondsSinceEpoch}_0';
-  }
+            if (newSeries.serieId.isEmpty) {
+              newSeries.serieId = '${DateTime.now().millisecondsSinceEpoch}_0';
+            }
 
-  final seriesList = [newSeries];
-  final sets = int.parse(setsController.text);
+            final seriesList = [newSeries];
+            final sets = int.parse(setsController.text);
 
-  //print('Debug: Number of sets: $sets');
+            if (sets > 1) {
+              for (int i = 1; i < sets; i++) {
+                final baseId = DateTime.now().millisecondsSinceEpoch;
+                final automatedSeriesId = '${baseId}_$i';
+                final automatedSeries = Series(
+                  serieId: automatedSeriesId,
+                  reps: newSeries.reps,
+                  sets: 1,
+                  intensity: newSeries.intensity,
+                  rpe: newSeries.rpe,
+                  weight: newSeries.weight,
+                  order: i + 1,
+                  done: false,
+                  reps_done: 0,
+                  weight_done: 0.0,
+                );
+                seriesList.add(automatedSeries);
+              }
+            }
 
-  if (sets > 1) {
-    for (int i = 1; i < sets; i++) {
-      final baseId = DateTime.now().millisecondsSinceEpoch;
-      final automatedSeriesId = '${baseId}_$i';
-      final automatedSeries = Series(
-        serieId: automatedSeriesId,
-        reps: newSeries.reps,
-        sets: 1,
-        intensity: newSeries.intensity,
-        rpe: newSeries.rpe,
-        weight: newSeries.weight,
-        order: i + 1,
-        done: false,
-        reps_done: 0,
-        weight_done: 0.0,
-      );
-      seriesList.add(automatedSeries);
-      //print('Debug: Generated series ${i + 1} with serieId: $automatedSeriesId');
-    }
-  }
+            // Update the WeekProgression with the new values
+            final updatedWeekProgression = WeekProgression(
+              weekNumber: weekIndex + 1,
+              reps: int.parse(repsController.text),
+              sets: int.parse(setsController.text),
+              intensity: intensityController.text,
+              rpe: rpeController.text,
+              weight: double.parse(weightController.text),
+            );
 
-  //print('Debug: Total series generated: ${seriesList.length}');
+            int exerciseIndex = exercise.order - 1;
+            if (exerciseIndex >= 0 && exerciseIndex < controller.program.weeks[weekIndex].workouts.length) {
+              if (controller.program.weeks[weekIndex].workouts.isNotEmpty) {
+                int workoutIndex = 0;
+                if (controller.program.weeks[weekIndex].workouts[workoutIndex].exercises.length > exerciseIndex) {
+                  controller.updateWeekProgression(weekIndex, workoutIndex, exerciseIndex, updatedWeekProgression);
+                }
+              }
+            } else {
+              // Gestisci l'errore o ignoralo se necessario
+            }
 
-  Navigator.pop(context, seriesList);
-},
-  child: Text(series == null ? 'Add' : 'Update'),
+            Navigator.pop(context, seriesList);
+          },
+          child: Text(series == null ? 'Add' : 'Update'),
         ),
       ],
     );
-  }
-}
+  }}
