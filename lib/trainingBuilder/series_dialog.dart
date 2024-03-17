@@ -76,58 +76,63 @@ class SeriesDialog extends ConsumerWidget {
     );
   }
 
-  void _updateWeight(TextEditingController weightController, TextEditingController intensityController) {
-    final intensity = double.tryParse(intensityController.text) ?? 0;
-    final latestMaxWeight = _getLatestMaxWeight();
-    final calculatedWeight = (latestMaxWeight * intensity) / 100;
-    weightController.text = calculatedWeight.toStringAsFixed(2);
-  }
-
-  void _updateIntensity(TextEditingController weightController, TextEditingController intensityController) {
-    final weight = double.tryParse(weightController.text) ?? 0;
-    final latestMaxWeight = _getLatestMaxWeight();
+  void _updateWeight(TextEditingController weightController, TextEditingController intensityController) async {
+  final intensity = double.tryParse(intensityController.text) ?? 0;
+  final latestMaxWeight = await _getLatestMaxWeight();
+  final calculatedWeight = (latestMaxWeight * intensity) / 100;
+  weightController.text = calculatedWeight.toStringAsFixed(2);
+}
+void _updateIntensity(TextEditingController weightController, TextEditingController intensityController) async {
+  final weight = double.tryParse(weightController.text) ?? 0;
+  final latestMaxWeight = await _getLatestMaxWeight();
+  if (latestMaxWeight != 0) {
     final calculatedIntensity = (weight / latestMaxWeight) * 100;
     intensityController.text = calculatedIntensity.toStringAsFixed(2);
+  } else {
+    intensityController.clear();
   }
+}
+ void _updateWeightFromRPE(TextEditingController repsController, TextEditingController weightController, TextEditingController rpeController, TextEditingController intensityController) async {
+  final rpe = double.tryParse(rpeController.text) ?? 0;
+  final reps = int.tryParse(repsController.text) ?? 0;
+  final latestMaxWeight = await _getLatestMaxWeight();
+  final percentage = _getRPEPercentage(rpe, reps);
+  final calculatedWeight = latestMaxWeight * percentage;
 
-  void _updateWeightFromRPE(TextEditingController repsController, TextEditingController weightController, TextEditingController rpeController, TextEditingController intensityController) {
-    final rpe = double.tryParse(rpeController.text) ?? 0;
-    final reps = int.tryParse(repsController.text) ?? 0;
-    final latestMaxWeight = _getLatestMaxWeight();
-    final percentage = _getRPEPercentage(rpe, reps);
-    final calculatedWeight = latestMaxWeight * percentage;
-    
-    weightController.text = calculatedWeight.toStringAsFixed(2);
-    intensityController.text = (percentage * 100).toStringAsFixed(2);
-  }
+  weightController.text = calculatedWeight.toStringAsFixed(2);
+  intensityController.text = (percentage * 100).toStringAsFixed(2);
+}
 
-  void _updateRPE(TextEditingController repsController, TextEditingController weightController, TextEditingController rpeController, TextEditingController intensityController) {
-    final weight = double.tryParse(weightController.text) ?? 0;
-    final reps = int.tryParse(repsController.text) ?? 0;
-    final latestMaxWeight = _getLatestMaxWeight();
+void _updateRPE(TextEditingController repsController, TextEditingController weightController, TextEditingController rpeController, TextEditingController intensityController) async {
+  final weight = double.tryParse(weightController.text) ?? 0;
+  final reps = int.tryParse(repsController.text) ?? 0;
+  final latestMaxWeight = await _getLatestMaxWeight();
+  if (latestMaxWeight != 0) {
     final intensity = weight / latestMaxWeight;
-    
     final calculatedRPE = _calculateRPE(intensity, reps);
-    
     if (calculatedRPE != null) {
       rpeController.text = calculatedRPE.toStringAsFixed(1);
     } else {
       rpeController.clear();
     }
+  } else {
+    rpeController.clear();
+    intensityController.clear();
   }
+}
 
-  int _getLatestMaxWeight() {
-    int latestMaxWeight = 0;
-    usersService.getExerciseRecords(userId: athleteId, exerciseId: exerciseId).first.then((records) {
-      if (records.isNotEmpty && exerciseId.isNotEmpty) {
-        final latestRecord = records.first;
-        latestMaxWeight = latestRecord.maxWeight;
-      }
-    }).catchError((error) {
-      // Handle error
-    });
-    return latestMaxWeight;
-  }
+Future<int> _getLatestMaxWeight() async {
+  int latestMaxWeight = 0;
+  await usersService.getExerciseRecords(userId: athleteId, exerciseId: exerciseId).first.then((records) {
+    if (records.isNotEmpty && exerciseId.isNotEmpty) {
+      final latestRecord = records.first;
+      latestMaxWeight = latestRecord.maxWeight;
+    }
+  }).catchError((error) {
+    // Handle error
+  });
+  return latestMaxWeight;
+}
 
   double _getRPEPercentage(double rpe, int reps) {
     final rpeTable = {

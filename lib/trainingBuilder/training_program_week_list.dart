@@ -6,8 +6,7 @@ import 'training_program_workout_list.dart';
 class TrainingProgramWeekList extends ConsumerWidget {
   final TrainingProgramController controller;
 
-  const TrainingProgramWeekList({required this.controller, Key? key})
-      : super(key: key);
+  const TrainingProgramWeekList({required this.controller, super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

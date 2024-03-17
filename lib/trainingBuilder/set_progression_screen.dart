@@ -18,9 +18,9 @@ Widget build(BuildContext context, WidgetRef ref) {
   final controller = ref.watch(trainingProgramControllerProvider);
   final weekProgressions = exercise?.weekProgressions ?? [];
 
-  print('Building SetProgressionScreen');
-  print('Exercise ID: $exerciseId');
-  print('Week Progressions: $weekProgressions');
+  //print('Building SetProgressionScreen');
+  //print('Exercise ID: $exerciseId');
+  //print('Week Progressions: $weekProgressions');
 
   return Scaffold(
     appBar: AppBar(
@@ -29,8 +29,8 @@ Widget build(BuildContext context, WidgetRef ref) {
         IconButton(
           icon: const Icon(Icons.check),
           onPressed: () {
-            print('Updating exercise progressions');
-            print('Updated Week Progressions: $weekProgressions');
+            //print('Updating exercise progressions');
+            //print('Updated Week Progressions: $weekProgressions');
             controller.updateExerciseProgressions(exercise!, weekProgressions);
             controller.applyWeekProgressions(
                 exercise!.order - 1, weekProgressions);
@@ -68,8 +68,8 @@ Widget build(BuildContext context, WidgetRef ref) {
                       weight: 0.0,
                     );
 
-              print('Week Index: $weekIndex');
-              print('Progression: $progression');
+              //print('Week Index: $weekIndex');
+              //print('Progression: $progression');
 
               return DataRow(
                 cells: [
@@ -86,8 +86,8 @@ Widget build(BuildContext context, WidgetRef ref) {
                         } else {
                           weekProgressions.add(progression.copyWith(reps: reps));
                         }
-                        print('Updated Reps: $reps');
-                        print('Updated Week Progressions: $weekProgressions');
+                        //print('Updated Reps: $reps');
+                        //print('Updated Week Progressions: $weekProgressions');
                       },
                       decoration: InputDecoration(
                         border: OutlineInputBorder(
