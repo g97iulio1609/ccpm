@@ -195,5 +195,25 @@ void clearUserData() {
   ref.read(userRoleProvider.notifier).state = '';
 }
 
+Future<ExerciseRecord?> getLatestExerciseRecord({
+  required String userId,
+  required String exerciseId,
+}) async {
+  final snapshot = await _firestore
+      .collection('users')
+      .doc(userId)
+      .collection('exercises')
+      .doc(exerciseId)
+      .collection('records')
+      .orderBy('date', descending: true)
+      .limit(1)
+      .get();
+
+  if (snapshot.docs.isNotEmpty) {
+    return ExerciseRecord.fromFirestore(snapshot.docs.first);
+  } else {
+    return null;
+  }
+}
 }
 
