@@ -30,6 +30,13 @@ class ExerciseDialog extends ConsumerWidget {
     final exercisesService = ref.watch(exercisesServiceProvider);
 
     return AlertDialog(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      titleTextStyle: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+      contentTextStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
       title: Text(exercise == null ? 'Add New Exercise' : 'Edit Exercise'),
       content: SingleChildScrollView(
         child: ListBody(
@@ -39,8 +46,9 @@ class ExerciseDialog extends ConsumerWidget {
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
                   final exercises = snapshot.data!;
-                  return Autocomplete<String>(
-                    initialValue: TextEditingValue(text: nameController.text),
+                  return RawAutocomplete<String>(
+                    textEditingController: nameController,
+                    focusNode: FocusNode(),
                     optionsBuilder: (textEditingValue) {
                       final options = exercises
                           .where((exercise) =>
@@ -65,14 +73,73 @@ class ExerciseDialog extends ConsumerWidget {
                         selectedExerciseId = exercises.firstWhere((exercise) => exercise.name == selection).id;
                       }
                     },
-                    fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
-                      textEditingController.text = nameController.text;
+                    fieldViewBuilder: (BuildContext context, TextEditingController textEditingController,
+                        FocusNode focusNode, VoidCallback onFieldSubmitted) {
                       return TextFormField(
                         controller: textEditingController,
                         focusNode: focusNode,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'Exercise',
-                          border: OutlineInputBorder(),
+                          labelStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                              ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: Theme.of(context).colorScheme.outline,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: Theme.of(context).colorScheme.outline,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: Theme.of(context).colorScheme.primary,
+                              width: 2,
+                            ),
+                          ),
+                          filled: true,
+                          fillColor: Theme.of(context).colorScheme.surface,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        ),
+                      );
+                    },
+                    optionsViewBuilder: (BuildContext context, AutocompleteOnSelected<String> onSelected,
+                        Iterable<String> options) {
+                      return Material(
+                        elevation: 4,
+                        child: Container(
+                          constraints: BoxConstraints(
+                            maxHeight: MediaQuery.of(context).size.height * 0.3,
+                            maxWidth: MediaQuery.of(context).size.width * 0.8,
+                          ),
+                          child: ListView.builder(
+                            padding: EdgeInsets.zero,
+                            shrinkWrap: true,
+                            itemCount: options.length,
+                            itemBuilder: (BuildContext context, int index) {
+                              final String option = options.elementAt(index);
+                              return InkWell(
+                                onTap: () {
+                                  onSelected(option);
+                                },
+                                child: Container(
+                                  color: Theme.of(context).colorScheme.surface,
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  child: Text(
+                                    option,
+                                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                          color: Theme.of(context).colorScheme.onSurface,
+                                        ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       );
                     },
@@ -84,10 +151,39 @@ class ExerciseDialog extends ConsumerWidget {
                 }
               },
             ),
+            const SizedBox(height: 16),
             TextFormField(
               controller: variantController,
-              decoration: const InputDecoration(labelText: 'Variant'),
+              decoration: InputDecoration(
+                labelText: 'Variant',
+                labelStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 2,
+                  ),
+                ),
+                filled: true,
+                fillColor: Theme.of(context).colorScheme.surface,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
             ),
+            const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
@@ -100,6 +196,14 @@ class ExerciseDialog extends ConsumerWidget {
                   ),
                 );
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
               child: const Text('Set Progression'),
             ),
           ],
@@ -108,9 +212,12 @@ class ExerciseDialog extends ConsumerWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
+          style: TextButton.styleFrom(
+            foregroundColor: Theme.of(context).colorScheme.onSurface,
+          ),
           child: const Text('Cancel'),
         ),
-        TextButton(
+        ElevatedButton(
           onPressed: () {
             final newExercise = Exercise(
               id: exercise?.id ?? '',
@@ -123,6 +230,14 @@ class ExerciseDialog extends ConsumerWidget {
             );
             Navigator.pop(context, newExercise);
           },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
           child: Text(exercise == null ? 'Add' : 'Update'),
         ),
       ],
