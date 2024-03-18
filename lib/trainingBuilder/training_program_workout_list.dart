@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'trainingModel.dart';
 import 'training_program_controller.dart';
 import 'training_program_exercise_list.dart';
 
@@ -10,8 +11,8 @@ class TrainingProgramWorkoutList extends ConsumerWidget {
   const TrainingProgramWorkoutList({
     required this.controller,
     required this.weekIndex,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -20,36 +21,41 @@ class TrainingProgramWorkoutList extends ConsumerWidget {
 
     return ConstrainedBox(
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.5, // Imposta l'altezza massima al 50% dell'altezza dello schermo
+        maxHeight: MediaQuery.of(context).size.height * 0.5,
       ),
       child: ReorderableListView.builder(
-        onReorder: (oldIndex, newIndex) {
-          controller.reorderWorkouts(weekIndex, oldIndex, newIndex);
-        },
+        onReorder: (oldIndex, newIndex) => controller.reorderWorkouts(weekIndex, oldIndex, newIndex),
         itemCount: sortedWorkouts.length,
         itemBuilder: (context, index) {
           final workout = sortedWorkouts[index];
-          return ExpansionTile(
-            key: ValueKey(workout.id),
-            title: Text('Workout ${workout.order}'),
-            trailing: IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () => controller.removeWorkout(weekIndex, workout.order - 1),
-            ),
-            children: [
-              TrainingProgramExerciseList(
-                controller: controller,
-                weekIndex: weekIndex,
-                workoutIndex: workout.order - 1,
-              ),
-              ElevatedButton(
-                onPressed: () => controller.addExercise(weekIndex, workout.order - 1, context),
-                child: const Text('Add New Exercise'),
-              ),
-            ],
-          );
+          return _buildWorkoutTile(context, workout, index);
         },
       ),
+    );
+  }
+
+  Widget _buildWorkoutTile(BuildContext context, Workout workout, int index) {
+    return ExpansionTile(
+      key: ValueKey(workout.id),
+      title: Text(
+        'Workout ${workout.order}',
+        style: Theme.of(context).textTheme.titleMedium,
+      ),
+      trailing: IconButton(
+        icon: const Icon(Icons.delete),
+        onPressed: () => controller.removeWorkout(weekIndex, workout.order - 1),
+      ),
+      children: [
+        TrainingProgramExerciseList(
+          controller: controller,
+          weekIndex: weekIndex,
+          workoutIndex: workout.order - 1,
+        ),
+        ElevatedButton(
+          onPressed: () => controller.addExercise(weekIndex, workout.order - 1, context),
+          child: const Text('Add New Exercise'),
+        ),
+      ],
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'trainingModel.dart';
 import 'training_program_controller.dart';
 
 class TrainingProgramSeriesList extends ConsumerWidget {
@@ -22,33 +23,38 @@ class TrainingProgramSeriesList extends ConsumerWidget {
 
     return ConstrainedBox(
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.3, // Imposta l'altezza massima al 30% dell'altezza dello schermo
+        maxHeight: MediaQuery.of(context).size.height * 0.3,
       ),
       child: ReorderableListView.builder(
-        onReorder: (oldIndex, newIndex) {
-          controller.reorderSeries(weekIndex, workoutIndex, exerciseIndex, oldIndex, newIndex);
-        },
+        onReorder: (oldIndex, newIndex) => controller.reorderSeries(weekIndex, workoutIndex, exerciseIndex, oldIndex, newIndex),
         itemCount: exercise.series.length,
         itemBuilder: (context, index) {
           final series = exercise.series[index];
-          return ListTile(
-            key: UniqueKey(), // Usa una chiave univoca per ogni ListTile
-            title: Text('Series: Sets ${series.sets} x Reps ${series.reps} x ${series.weight} Kg'),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () => controller.editSeries(weekIndex, workoutIndex, exerciseIndex, index, context),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () => controller.removeSeries(weekIndex, workoutIndex, exerciseIndex, index),
-                ),
-              ],
-            ),
-          );
+          return _buildSeriesTile(context, series, index);
         },
+      ),
+    );
+  }
+
+  Widget _buildSeriesTile(BuildContext context, Series series, int index) {
+    return ListTile(
+      key: UniqueKey(),
+      title: Text(
+        'Series: Sets ${series.sets} x Reps ${series.reps} x ${series.weight} Kg',
+        style: Theme.of(context).textTheme.bodyMedium,
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () => controller.editSeries(weekIndex, workoutIndex, exerciseIndex, index, context),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: () => controller.removeSeries(weekIndex, workoutIndex, exerciseIndex, index),
+          ),
+        ],
       ),
     );
   }

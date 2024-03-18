@@ -1,3 +1,4 @@
+import 'package:alphanessone/trainingBuilder/trainingModel.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'training_program_controller.dart';
@@ -15,35 +16,40 @@ class TrainingProgramWeekList extends ConsumerWidget {
 
     return ConstrainedBox(
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.7, // Imposta l'altezza massima al 70% dell'altezza dello schermo
+        maxHeight: MediaQuery.of(context).size.height * 0.7,
       ),
       child: ReorderableListView.builder(
-        onReorder: (oldIndex, newIndex) {
-          controller.reorderWeeks(oldIndex, newIndex);
-        },
+        onReorder: controller.reorderWeeks,
         itemCount: sortedWeeks.length,
         itemBuilder: (context, index) {
           final week = sortedWeeks[index];
-          return ExpansionTile(
-            key: ValueKey(week.id),
-            title: Text('Week ${week.number}'),
-            trailing: IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () => controller.removeWeek(index),
-            ),
-            children: [
-              TrainingProgramWorkoutList(
-                controller: controller,
-                weekIndex: index,
-              ),
-              ElevatedButton(
-                onPressed: () => controller.addWorkout(index),
-                child: const Text('Add New Workout'),
-              ),
-            ],
-          );
+          return _buildWeekTile(context, week, index);
         },
       ),
+    );
+  }
+
+  Widget _buildWeekTile(BuildContext context, Week week, int index) {
+    return ExpansionTile(
+      key: ValueKey(week.id),
+      title: Text(
+        'Week ${week.number}',
+        style: Theme.of(context).textTheme.titleMedium,
+      ),
+      trailing: IconButton(
+        icon: const Icon(Icons.delete),
+        onPressed: () => controller.removeWeek(index),
+      ),
+      children: [
+        TrainingProgramWorkoutList(
+          controller: controller,
+          weekIndex: index,
+        ),
+        ElevatedButton(
+          onPressed: () => controller.addWorkout(index),
+          child: const Text('Add New Workout'),
+        ),
+      ],
     );
   }
 }
