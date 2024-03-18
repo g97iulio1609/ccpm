@@ -188,20 +188,28 @@ class TrainingProgramController extends ChangeNotifier {
     }
   }
 
-  void updateWeekProgression(int weekIndex, int workoutIndex, int exerciseIndex, WeekProgression weekProgression) {
-    if (_isValidIndex(weekIndex, workoutIndex, exerciseIndex)) {
-      _program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex]
-          .weekProgressions[weekProgression.weekNumber - 1] = weekProgression;
-      notifyListeners();
-    }
-  }
+void updateWeekProgression(int weekIndex, int workoutIndex, int exerciseIndex, WeekProgression weekProgression) {
+  _createWeekProgressionIfNotExists(weekIndex, workoutIndex, exerciseIndex);
+  _program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex]
+      .weekProgressions[weekProgression.weekNumber - 1] = weekProgression;
+  notifyListeners();
+}
 
-  bool _isValidIndex(int weekIndex, int workoutIndex, int exerciseIndex) {
-    return weekIndex < _program.weeks.length &&
-        workoutIndex < _program.weeks[weekIndex].workouts.length &&
-        exerciseIndex < _program.weeks[weekIndex].workouts[workoutIndex].exercises.length;
-  }
+void _createWeekProgressionIfNotExists(int weekIndex, int workoutIndex, int exerciseIndex) {
+  final exercise = _program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+  final weekCount = _program.weeks.length;
 
+  while (exercise.weekProgressions.length < weekCount) {
+    exercise.weekProgressions.add(WeekProgression(
+      weekNumber: exercise.weekProgressions.length + 1,
+      reps: 0,
+      sets: 0,
+      intensity: '',
+      rpe: '',
+      weight: 0.0,
+    ));
+  }
+}
   void updateSeries(int weekIndex, int workoutIndex, int exerciseIndex, List<Series> updatedSeries) {
     _program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex].series = updatedSeries;
     notifyListeners();

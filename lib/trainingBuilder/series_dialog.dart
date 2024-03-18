@@ -248,13 +248,13 @@ class SeriesDialog extends ConsumerWidget {
   }
 
   void _saveSeries(
-    BuildContext context,
-    TrainingProgramController controller,
-    TextEditingController repsController,
-    TextEditingController setsController,
-    TextEditingController intensityController,
-    TextEditingController rpeController,
-    TextEditingController weightController,
+  BuildContext context,
+  TrainingProgramController controller,
+  TextEditingController repsController,
+  TextEditingController setsController,
+  TextEditingController intensityController,
+  TextEditingController rpeController,
+  TextEditingController weightController,
   ) {
     final newSeries = Series(
       id: series?.id,
@@ -309,9 +309,9 @@ class SeriesDialog extends ConsumerWidget {
     final exerciseIndex = exercise.order - 1;
     if (exerciseIndex >= 0 && exerciseIndex < controller.program.weeks[weekIndex].workouts.length) {
       final workoutIndex = 0;
-      if (controller.program.weeks[weekIndex].workouts[workoutIndex].exercises.length > exerciseIndex) {
-        controller.updateWeekProgression(weekIndex, workoutIndex, exerciseIndex, updatedWeekProgression);
-      }
+      if (exerciseIndex >= 0 && exerciseIndex < controller.program.weeks[weekIndex].workouts[workoutIndex].exercises.length) {
+  controller.updateWeekProgression(weekIndex, workoutIndex, exerciseIndex, updatedWeekProgression);
+  }
     }
 
     Navigator.pop(context, seriesList);
