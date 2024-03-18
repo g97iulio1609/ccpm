@@ -7,6 +7,7 @@ import '../exerciseManager/exercisesServices.dart';
 import 'trainingModel.dart';
 import 'series_dialog.dart';
 import 'training_program_controller.dart';
+import 'add_exercise_dialog.dart';
 
 class ExerciseDialog extends ConsumerWidget {
   final UsersService usersService;
@@ -38,15 +39,33 @@ class ExerciseDialog extends ConsumerWidget {
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
                   final exercises = snapshot.data!;
-                  return Autocomplete<ExerciseModel>(
-                    initialValue: TextEditingValue(text: nameController.text), // Imposta il valore iniziale basato sul controller
+                  return Autocomplete<String>(
+                    initialValue: TextEditingValue(text: nameController.text),
                     optionsBuilder: (textEditingValue) {
-                      return exercises.where((exercise) =>
-                          exercise.name.toLowerCase().startsWith(textEditingValue.text.toLowerCase()));
+                      final options = exercises
+                          .where((exercise) =>
+                              exercise.name.toLowerCase().startsWith(textEditingValue.text.toLowerCase()))
+                          .map((exercise) => exercise.name)
+                          .toList();
+                      options.add("Add New Exercise");
+                      return options;
                     },
-                    displayStringForOption: (exercise) => exercise.name,
+                    onSelected: (selection) async {
+                      if (selection == "Add New Exercise") {
+                        final newExercise = await showDialog<ExerciseModel>(
+                          context: context,
+                          builder: (context) => AddExerciseDialog(exercisesService: exercisesService),
+                        );
+                        if (newExercise != null) {
+                          nameController.text = newExercise.name;
+                          selectedExerciseId = newExercise.id;
+                        }
+                      } else {
+                        nameController.text = selection;
+                        selectedExerciseId = exercises.firstWhere((exercise) => exercise.name == selection).id;
+                      }
+                    },
                     fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
-                      // Collega il textEditingController del Autocomplete con il nameController
                       textEditingController.text = nameController.text;
                       return TextFormField(
                         controller: textEditingController,
@@ -56,10 +75,6 @@ class ExerciseDialog extends ConsumerWidget {
                           border: OutlineInputBorder(),
                         ),
                       );
-                    },
-                    onSelected: (selection) {
-                      nameController.text = selection.name;
-                      selectedExerciseId = selection.id;
                     },
                   );
                 } else if (snapshot.hasError) {

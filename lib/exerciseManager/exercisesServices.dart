@@ -1,4 +1,3 @@
-// exercisesService.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'exerciseModel.dart';
@@ -36,5 +35,14 @@ class ExercisesService {
 
   Future<void> deleteExercise(String id) async {
     await _firestore.collection('exercises').doc(id).delete();
+  }
+
+  Future<ExerciseModel> getExerciseByName(String name) async {
+    final snapshot = await _firestore
+        .collection('exercises')
+        .where('name', isEqualTo: name)
+        .limit(1)
+        .get();
+    return ExerciseModel.fromFirestore(snapshot.docs.first);
   }
 }
