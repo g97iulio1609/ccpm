@@ -11,40 +11,112 @@ class UsersDashboard extends ConsumerWidget {
     final usersService = ref.watch(usersServiceProvider);
     final usersStream = usersService.getUsers();
 
-    return StreamBuilder<List<UserModel>>(
-      stream: usersStream,
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        }
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final users = snapshot.data ?? [];
-        return Column(
-          children: [
-            UserSearchField(usersService: usersService),
-            Expanded(
-              child: ListView.builder(
-                itemCount: users.length,
-                itemBuilder: (context, index) {
-                  final user = users[index];
-                  return UserCard(
-                    user: user,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => UserProfile(userId: user.id),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Users Dashboard'),
+      ),
+      body: StreamBuilder<List<UserModel>>(
+        stream: usersStream,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final users = snapshot.data ?? [];
+          return Column(
+            children: [
+              UserSearchField(usersService: usersService),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: users.length,
+                  itemBuilder: (context, index) {
+                    final user = users[index];
+                    return UserCard(
+                      user: user,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => UserProfile(userId: user.id),
+                        ),
                       ),
-                    ),
-                    onDelete: () => usersService.deleteUser(user.id),
-                  );
-                },
+                      onDelete: () => usersService.deleteUser(user.id),
+                    );
+                  },
+                ),
               ),
+            ],
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showCreateUserDialog(context, ref),
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  void _showCreateUserDialog(BuildContext context, WidgetRef ref) {
+    final usersService = ref.read(usersServiceProvider);
+    final nameController = TextEditingController();
+    final emailController = TextEditingController();
+    final passwordController = TextEditingController();
+    String selectedRole = 'client';
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Create User'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(labelText: 'Name'),
+            ),
+            TextField(
+              controller: emailController,
+              decoration: const InputDecoration(labelText: 'Email'),
+            ),
+            TextField(
+              controller: passwordController,
+              decoration: const InputDecoration(labelText: 'Password'),
+              obscureText: true,
+            ),
+            DropdownButtonFormField<String>(
+              value: selectedRole,
+              onChanged: (value) {
+                selectedRole = value!;
+              },
+              items: const [
+                DropdownMenuItem(value: 'admin', child: Text('Admin')),
+                DropdownMenuItem(value: 'client', child: Text('Client')),
+                DropdownMenuItem(value: 'coach', child: Text('Coach')),
+              ],
+              decoration: const InputDecoration(labelText: 'Role'),
             ),
           ],
-        );
-      },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              usersService.createUser(
+                name: nameController.text,
+                email: emailController.text,
+                password: passwordController.text,
+                role: selectedRole,
+              );
+              Navigator.pop(context);
+            },
+            child: const Text('Create'),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -136,8 +208,19 @@ class UserCard extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         leading: CircleAvatar(
           radius: 30,
-          backgroundImage: user.photoURL.isNotEmpty ? NetworkImage(user.photoURL) : null,
-          child: user.photoURL.isEmpty ? const Icon(Icons.person) : null,
+          child: user.photoURL.isNotEmpty
+              ? ClipOval(
+                  child: Image.network(
+                    user.photoURL,
+                    fit: BoxFit.cover,
+                    width: 60,
+                    height: 60,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(Icons.person);
+                    },
+                  ),
+                )
+              : const Icon(Icons.person),
         ),
         title: Text(
           user.name,

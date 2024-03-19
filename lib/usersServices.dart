@@ -1,9 +1,9 @@
-// usersServices.dart
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:rxdart/rxdart.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 final userNameProvider = StateProvider<String>((ref) => '');
 final userRoleProvider = StateProvider<String>((ref) => '');
@@ -70,23 +70,24 @@ class UsersService {
   final ProviderRef ref;
   final FirebaseFirestore _firestore;
   final FirebaseAuth _auth;
+  final FirebaseAuth _authForUserCreation = FirebaseAuth.instanceFor(app: Firebase.app());
   final _usersStreamController = BehaviorSubject<List<UserModel>>();
   String _searchQuery = '';
   StreamSubscription? _userChangesSubscription;
 
-UsersService(this.ref, this._firestore, this._auth) {
-  _auth.authStateChanges().listen((user) async {
-    if (user != null) {
-      _updateUserName(user.displayName);
-      if (user.uid != _auth.currentUser?.uid) {
-        await _updateUserRole(user.uid);
+  UsersService(this.ref, this._firestore, this._auth) {
+    _auth.authStateChanges().listen((user) async {
+      if (user != null) {
+        _updateUserName(user.displayName);
+        if (user.uid != _auth.currentUser?.uid) {
+          await _updateUserRole(user.uid);
+        }
+        _initializeUsersStream();
+      } else {
+        _clearUsersStream();
       }
-      _initializeUsersStream();
-    } else {
-      _clearUsersStream();
-    }
-  });
-}
+    });
+  }
 
   void _initializeUsersStream() {
     _userChangesSubscription?.cancel();
@@ -130,9 +131,13 @@ UsersService(this.ref, this._firestore, this._auth) {
   }
 
   Future<void> _updateUserRole(String userId) async {
-    final DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
-    final String userRole = userDoc['role'] ?? '';
-    ref.read(userRoleProvider.notifier).state = userRole;
+    try {
+      final DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
+      final String userRole = userDoc.exists ? (userDoc.data() as Map<String, dynamic>)['role'] ?? '' : '';
+      ref.read(userRoleProvider.notifier).state = userRole;
+    } catch (error) {
+      print('Error updating user role: $error');
+    }
   }
 
   Future<void> fetchUserRole() async {
@@ -148,10 +153,16 @@ UsersService(this.ref, this._firestore, this._auth) {
   }
 
   Future<void> setUserRole(String userId) async {
-    final DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
-    final String userRole = userDoc['role'] ?? '';
-    ref.read(userRoleProvider.notifier).state = userRole;
-    print('User role: $userRole');
+    try {
+      final DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
+      if (userDoc.exists) {
+        final String userRole = (userDoc.data() as Map<String, dynamic>)['role'] ?? '';
+        ref.read(userRoleProvider.notifier).state = userRole;
+        print('User role: $userRole');
+      }
+    } catch (error) {
+      print('Error setting user role: $error');
+    }
   }
 
   Stream<List<UserModel>> getUsers() {
@@ -264,35 +275,26 @@ UsersService(this.ref, this._firestore, this._auth) {
     await _firestore.collection('users').doc(userId).delete();
   }
 
-  Future<void> createUser({
-    required String name,
-    required String email,
-    required String password,
-    required String role,
-  }) async {
-    try {
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      User? newUser = userCredential.user;
-      if (newUser != null) {
-        await _firestore.collection('users').doc(newUser.uid).set({
-          'name': name,
-          'email': email,
-          'role': role,
-          'photoURL': '',
-        });
-        await newUser.sendEmailVerification();
-      }
-    } on FirebaseAuthException catch (e) {
-      if (e.code == 'weak-password') {
-        throw Exception('The password provided is too weak.');
-      } else if (e.code == 'email-already-in-use') {
-        throw Exception('The account already exists for that email.');
-      }
-    } catch (e) {
-      throw Exception(e.toString());
-    }
+Future<void> createUser({
+  required String name,
+  required String email,
+  required String password,
+  required String role,
+}) async {
+  try {
+    await _firestore.runTransaction((transaction) async {
+      // Crea un nuovo documento utente con un ID generato automaticamente
+      DocumentReference userRef = _firestore.collection('users').doc();
+
+      // Imposta i dati dell'utente nel documento
+      await transaction.set(userRef, {
+        'name': name,
+        'email': email,
+        'role': role,
+        'photoURL': '', // Imposta il valore predefinito per photoURL
+      });
+    });
+  } catch (e) {
+    throw Exception(e.toString());
   }
-}
+}}

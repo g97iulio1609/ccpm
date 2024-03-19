@@ -10,12 +10,12 @@ class ExerciseDetails extends StatefulWidget {
   final List<Map<String, dynamic>> seriesList;
 
   const ExerciseDetails({
-    Key? key,
+    super.key,
     required this.exerciseId,
     required this.exerciseName,
     this.exerciseVariant,
     required this.seriesList,
-  }) : super(key: key);
+  });
 
   @override
   _ExerciseDetailsState createState() => _ExerciseDetailsState();
