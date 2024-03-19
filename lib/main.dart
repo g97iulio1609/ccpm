@@ -96,22 +96,21 @@ class MyApp extends ConsumerWidget {
 class AuthWrapper extends ConsumerWidget {
   const AuthWrapper({super.key});
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.active) {
-          final User? user = snapshot.data;
-          if (user == null) {
-            return AuthScreen();
-          } else {
-            Future.microtask(() => ref.read(usersServiceProvider).setUserRole(user.uid));
-            return const HomeScreen();
-          }
+@override
+Widget build(BuildContext context, WidgetRef ref) {
+  return StreamBuilder<User?>(
+    stream: FirebaseAuth.instance.authStateChanges(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.active) {
+        final User? user = snapshot.data;
+        if (user == null) {
+          return AuthScreen();
+        } else {
+          Future.microtask(() => ref.read(usersServiceProvider).fetchUserRole());
+          return const HomeScreen();
         }
-        return const Center(child: CircularProgressIndicator());
-      },
-    );
-  }
-}
+      }
+      return const Center(child: CircularProgressIndicator());
+    },
+  );
+}}

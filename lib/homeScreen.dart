@@ -30,30 +30,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       _buildUI();
     });
   }
+  
+void _buildUI() {
+  final userRole = ref.read(userRoleProvider);
 
-  void _buildUI() {
-    final userRole = ref.read(userRoleProvider);
+  _pages = [
+    const ProgramsScreen(),
+    if (userRole == 'admin') ExercisesList(),
+    if (userRole == 'admin') const MaxRMDashboard(),
+    const UserProfile(),
+    if (userRole == 'admin') const TrainingProgramPage(),
+    if (userRole == 'admin') const UsersDashboard(),
+  ];
 
-    _pages = [
-      const ProgramsScreen(),
-      if (userRole == 'admin') ExercisesList(),
-      if (userRole == 'admin') const MaxRMDashboard(),
-      const UserProfile(),
-      if (userRole == 'admin') const TrainingProgramPage(),
-      if (userRole == 'admin') const UsersDashboard(),
-    ];
+  menuItemToPageIndex = {
+    'Allenamenti': 0,
+    'Esercizi': userRole == 'admin' ? 1 : -1,
+    'Massimali': userRole == 'admin' ? 2 : -1,
+    'Profilo Utente': userRole == 'admin' ? 3 : _pages.length - 1,
+    'TrainingProgram': userRole == 'admin' ? 4 : -1,
+    'Gestione Utenti': userRole == 'admin' ? 5 : -1,
+  };
 
-    menuItemToPageIndex = {
-      'Allenamenti': 0,
-      'Esercizi': userRole == 'admin' ? 1 : -1,
-      'Massimali': userRole == 'admin' ? 2 : -1,
-      'Profilo Utente': userRole == 'admin' ? 3 : _pages.length - 2,
-      'TrainingProgram': userRole == 'admin' ? 4 : -1,
-      'Gestione Utenti': userRole == 'admin' ? 5 : -1,
-    };
-
-    setState(() {});
-  }
+  setState(() {});
+}
 
   void _onItemTapped(int index) {
     setState(() {

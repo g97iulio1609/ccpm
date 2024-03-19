@@ -142,23 +142,31 @@ class UsersService {
     ref.read(userNameProvider.notifier).state = userName;
   }
 
-  Future<void> _updateUserRole(String userId) async {
-    try {
-      final DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
-      final String userRole = userDoc.exists ? (userDoc.data() as Map<String, dynamic>)['role'] ?? '' : '';
-      ref.read(userRoleProvider.notifier).state = userRole;
-    } catch (error) {
-      debugPrint('Error updating user role: $error');
-    }
+Future<void> _updateUserRole(String userId) async {
+  try {
+    final DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
+    final String userRole = userDoc.exists ? (userDoc.data() as Map<String, dynamic>)['role'] ?? '' : '';
+    ref.read(userRoleProvider.notifier).state = userRole;
+  } catch (error) {
+    debugPrint('Error updating user role: $error');
+    // In caso di errore di permessi o se il documento utente non esiste, imposta il ruolo predefinito a 'client'
+    ref.read(userRoleProvider.notifier).state = 'client';
   }
+}
 
-  Future<void> fetchUserRole() async {
-    final user = _auth.currentUser;
-    if (user != null) {
-      ref.read(userNameProvider.notifier).state = user.displayName ?? '';
+Future<void> fetchUserRole() async {
+  final user = _auth.currentUser;
+  if (user != null) {
+    ref.read(userNameProvider.notifier).state = user.displayName ?? '';
+    try {
       await _updateUserRole(user.uid);
+    } catch (error) {
+      debugPrint('Error fetching user role: $error');
+      // In caso di errore di permessi, imposta il ruolo predefinito a 'client'
+      ref.read(userRoleProvider.notifier).state = 'client';
     }
   }
+}
 
   String getCurrentUserRole() {
     return ref.read(userRoleProvider);
