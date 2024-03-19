@@ -40,8 +40,13 @@ void main() async {
   );
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
   await requestNotificationPermission();
+  final AndroidFlutterLocalNotificationsPlugin? androidPlugin =
+      flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+  await androidPlugin?.requestExactAlarmsPermission();
   runApp(const ProviderScope(child: MyApp()));
 }
+
 
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
