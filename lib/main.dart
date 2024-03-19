@@ -1,4 +1,3 @@
-// main.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -11,12 +10,36 @@ import 'trainingBuilder/trainingProgram.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'users_services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:permission_handler/permission_handler.dart';
+
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
+
+Future<void> requestNotificationPermission() async {
+  final status = await Permission.notification.request();
+  if (status.isGranted) {
+    // I permessi delle notifiche sono stati concessi
+  } else {
+    // I permessi delle notifiche sono stati negati o l'utente ha selezionato "Non chiedere più"
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  const AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('app_icon');
+  const DarwinInitializationSettings initializationSettingsIOS =
+      DarwinInitializationSettings();
+  const InitializationSettings initializationSettings = InitializationSettings(
+    android: initializationSettingsAndroid,
+    iOS: initializationSettingsIOS,
+  );
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  await requestNotificationPermission();
   runApp(const ProviderScope(child: MyApp()));
 }
 
@@ -96,21 +119,22 @@ class MyApp extends ConsumerWidget {
 class AuthWrapper extends ConsumerWidget {
   const AuthWrapper({super.key});
 
-@override
-Widget build(BuildContext context, WidgetRef ref) {
-  return StreamBuilder<User?>(
-    stream: FirebaseAuth.instance.authStateChanges(),
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.active) {
-        final User? user = snapshot.data;
-        if (user == null) {
-          return AuthScreen();
-        } else {
-          Future.microtask(() => ref.read(usersServiceProvider).fetchUserRole());
-          return const HomeScreen();
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.active) {
+          final User? user = snapshot.data;
+          if (user == null) {
+            return AuthScreen();
+          } else {
+            Future.microtask(() => ref.read(usersServiceProvider).fetchUserRole());
+            return const HomeScreen();
+          }
         }
-      }
-      return const Center(child: CircularProgressIndicator());
-    },
-  );
-}}
+        return const Center(child: CircularProgressIndicator());
+      },
+    );
+  }
+}

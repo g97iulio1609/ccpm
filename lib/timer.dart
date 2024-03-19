@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class TimerPage extends StatefulWidget {
   final int currentSeriesIndex;
@@ -56,9 +57,34 @@ class _TimerPageState extends State<TimerPage> with SingleTickerProviderStateMix
       _remainingSeconds = widget.restTime;
       _startTimer();
     } else {
+      _showNotification('Rest Time Completed', 'Your rest time has ended.');
       Navigator.pop(context, true);
     }
   }
+
+ Future<void> _showNotification(String title, String body) async {
+  const AndroidNotificationDetails androidPlatformChannelSpecifics =
+      AndroidNotificationDetails(
+    'rest_timer_channel',
+    'Rest Timer',
+    importance: Importance.max,
+    priority: Priority.high,
+    ticker: 'ticker',
+    visibility: NotificationVisibility.public,
+    enableLights: true,
+    enableVibration: true,
+    playSound: true,
+    timeoutAfter: 5000,
+  );
+  const NotificationDetails platformChannelSpecifics =
+      NotificationDetails(android: androidPlatformChannelSpecifics);
+  await FlutterLocalNotificationsPlugin().show(
+    0,
+    title,
+    body,
+    platformChannelSpecifics,
+  );
+}
 
   @override
   void dispose() {
@@ -96,7 +122,7 @@ class _TimerPageState extends State<TimerPage> with SingleTickerProviderStateMix
                   _buildCountdownText(theme),
                 ],
               ),
-              const SizedBox(height: 24), // Ridotto spazio tra il timer e il pulsante SKIP
+              const SizedBox(height: 24),
               if (!widget.isEmomMode) _buildSkipButton(theme),
             ],
           ),
