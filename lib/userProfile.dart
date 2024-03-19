@@ -48,7 +48,6 @@ class UserProfileState extends State<UserProfile> {
   }
 
   void updateSnackBar(String message, Color color) {
-    // Update snackbar message and color
     _snackBarMessage = message;
     _snackBarColor = color;
     if (mounted) {
@@ -58,14 +57,12 @@ class UserProfileState extends State<UserProfile> {
 
   @override
   Widget build(BuildContext context) {
-    // Check and display the snackbar if message is available
     if (_snackBarMessage != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(_snackBarMessage!),
           backgroundColor: _snackBarColor,
         ));
-        // Reset the message to prevent it from appearing again.
         _snackBarMessage = null;
       });
     }
@@ -73,28 +70,21 @@ class UserProfileState extends State<UserProfile> {
     String? userPhotoURL = _controllers['photoURL']?.text;
     bool hasValidPhotoURL = userPhotoURL != null && userPhotoURL.isNotEmpty && Uri.parse(userPhotoURL).isAbsolute;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('User Profile'),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: <Widget>[
+          CircleAvatar(
+            backgroundImage: hasValidPhotoURL ? NetworkImage(userPhotoURL) : null,
+            radius: 50,
+            backgroundColor: Colors.grey[200],
+            foregroundColor: Colors.grey[800],
+            child: !hasValidPhotoURL ? const Icon(Icons.person, size: 50) : null,
+          ),
+          const SizedBox(height: 20),
+          ..._controllers.keys.where((field) => field != 'photoURL').map((field) => buildEditableField(field, _controllers[field]!)).toList(),
+        ],
       ),
-      body: _controllers.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: <Widget>[
-                  CircleAvatar(
-                    backgroundImage: hasValidPhotoURL ? NetworkImage(userPhotoURL) : null,
-                    radius: 50,
-                    backgroundColor: Colors.grey[200],
-                    foregroundColor: Colors.grey[800],
-                    child: !hasValidPhotoURL ? const Icon(Icons.person, size: 50) : null,
-                  ),
-                  const SizedBox(height: 20),
-                  ..._controllers.keys.where((field) => field != 'photoURL').map((field) => buildEditableField(field, _controllers[field]!)).toList(),
-                ],
-              ),
-            ),
     );
   }
 
@@ -112,7 +102,7 @@ class UserProfileState extends State<UserProfile> {
         ),
         onChanged: (value) => saveProfile(field, value),
         autovalidateMode: AutovalidateMode.onUserInteraction,
-        enabled: widget.userId == null, // Disabilita i campi se userId è definito
+        enabled: widget.userId == null,
       ),
     );
   }

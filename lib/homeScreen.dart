@@ -1,4 +1,3 @@
-// homeScreen.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,7 +25,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Aspetta che il ruolo dell'utente sia caricato prima di costruire l'interfaccia utente
     Future.microtask(() async {
       await ref.read(usersServiceProvider).fetchUserRole();
       _buildUI();
@@ -36,7 +34,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void _buildUI() {
     final userRole = ref.read(userRoleProvider);
 
-    // Qui modifichiamo la costruzione delle pagine in base al ruolo
     _pages = [
       const ProgramsScreen(),
       if (userRole == 'admin') ExercisesList(),
@@ -46,7 +43,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (userRole == 'admin') const UsersDashboard(),
     ];
 
-    // Aggiornamento degli indici delle pagine
     menuItemToPageIndex = {
       'Allenamenti': 0,
       'Esercizi': userRole == 'admin' ? 1 : -1,
@@ -69,7 +65,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     try {
       await FirebaseAuth.instance.signOut();
       ref.read(usersServiceProvider).clearUserData();
-      // Pulisci lo stack di navigazione e ritorna alla schermata di autenticazione
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => AuthScreen()),
         (Route<dynamic> route) => false,
@@ -87,6 +82,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_getTitleForIndex(_selectedIndex, userRole)),
+        actions: _getActionsForIndex(_selectedIndex, userRole, context),
       ),
       drawer: isLargeScreen ? null : Drawer(
         child: _buildDrawer(isLargeScreen, context, userRole),
@@ -122,6 +118,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return 'Gestione Utenti';
       default:
         return 'Allenamenti';
+    }
+  }
+
+  List<Widget> _getActionsForIndex(int index, String userRole, BuildContext context) {
+    switch (index) {
+      case 5: // Gestione Utenti
+        return [
+          IconButton(
+            onPressed: () => _showAddUserDialog(context),
+            icon: const Icon(Icons.person_add),
+          ),
+        ];
+      default:
+        return [];
     }
   }
 
@@ -193,5 +203,90 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         Navigator.pop(context);
       }
     }
+  }
+
+  void _showAddUserDialog(BuildContext context) {
+    final _formKey = GlobalKey<FormState>();
+    final _nameController = TextEditingController();
+    final _emailController = TextEditingController();
+    final _passwordController = TextEditingController();
+    final _roleController = TextEditingController(text: 'client');
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Add User'),
+          content: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(labelText: 'Name'),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a name';
+                    }
+                    return null;
+                  },
+                ),
+                TextFormField(
+                  controller: _emailController,
+                  decoration: const InputDecoration(labelText: 'Email'),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter an email';
+                    }
+                    return null;
+                  },
+                ),
+                TextFormField(
+                  controller: _passwordController,
+                  decoration: const InputDecoration(labelText: 'Password'),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a password';
+                    }
+                    return null;
+                  },
+                ),
+                TextFormField(
+                  controller: _roleController,
+                  decoration: const InputDecoration(labelText: 'Role'),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a role';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (_formKey.currentState!.validate()) {
+                  await ref.read(usersServiceProvider).createUser(
+                        name: _nameController.text,
+                        email: _emailController.text,
+                        password: _passwordController.text,
+                        role: _roleController.text,
+                      );
+                  Navigator.of(context).pop();
+                }
+              },
+              child: const Text('Add'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

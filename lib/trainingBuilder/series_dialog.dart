@@ -308,9 +308,9 @@ class SeriesDialog extends ConsumerWidget {
 
     final exerciseIndex = exercise.order - 1;
     if (exerciseIndex >= 0 && exerciseIndex < controller.program.weeks[weekIndex].workouts.length) {
-      final workoutIndex = 0;
-      if (exerciseIndex >= 0 && exerciseIndex < controller.program.weeks[weekIndex].workouts[workoutIndex].exercises.length) {
-  controller.updateWeekProgression(weekIndex, workoutIndex, exerciseIndex, updatedWeekProgression);
+      const workoutIndex = 0;
+if (exerciseIndex >= 0 && exerciseIndex < controller.program.weeks[weekIndex].workouts[workoutIndex].exercises.length) {
+    controller.updateWeekProgression(weekIndex, workoutIndex, exerciseIndex, updatedWeekProgression);
   }
     }
 

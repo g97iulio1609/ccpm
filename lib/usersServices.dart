@@ -1,6 +1,5 @@
 // usersServices.dart
 import 'dart:async';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -75,17 +74,19 @@ class UsersService {
   String _searchQuery = '';
   StreamSubscription? _userChangesSubscription;
 
-  UsersService(this.ref, this._firestore, this._auth) {
-    _auth.userChanges().listen((user) async {
-      if (user != null) {
-        _updateUserName(user.displayName);
+UsersService(this.ref, this._firestore, this._auth) {
+  _auth.authStateChanges().listen((user) async {
+    if (user != null) {
+      _updateUserName(user.displayName);
+      if (user.uid != _auth.currentUser?.uid) {
         await _updateUserRole(user.uid);
-        _initializeUsersStream();
-      } else {
-        _clearUsersStream();
       }
-    });
-  }
+      _initializeUsersStream();
+    } else {
+      _clearUsersStream();
+    }
+  });
+}
 
   void _initializeUsersStream() {
     _userChangesSubscription?.cancel();
@@ -146,12 +147,12 @@ class UsersService {
     return ref.read(userRoleProvider);
   }
 
- Future<void> setUserRole(String userId) async {
-  final DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
-  final String userRole = userDoc['role'] ?? '';
-  ref.read(userRoleProvider.notifier).state = userRole;
-  print('User role: $userRole');
-}
+  Future<void> setUserRole(String userId) async {
+    final DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
+    final String userRole = userDoc['role'] ?? '';
+    ref.read(userRoleProvider.notifier).state = userRole;
+    print('User role: $userRole');
+  }
 
   Stream<List<UserModel>> getUsers() {
     return _usersStreamController.stream;
@@ -274,16 +275,15 @@ class UsersService {
         email: email,
         password: password,
       );
-      User? user = userCredential.user;
-      if (user != null) {
-        await _firestore.collection('users').doc(user.uid).set({
+      User? newUser = userCredential.user;
+      if (newUser != null) {
+        await _firestore.collection('users').doc(newUser.uid).set({
           'name': name,
           'email': email,
           'role': role,
           'photoURL': '',
         });
-        await user.updateDisplayName(name);
-        await user.sendEmailVerification();
+        await newUser.sendEmailVerification();
       }
     } on FirebaseAuthException catch (e) {
       if (e.code == 'weak-password') {

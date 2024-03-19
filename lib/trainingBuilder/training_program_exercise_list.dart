@@ -26,21 +26,20 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     final athleteId = controller.athleteIdController.text;
     final dateFormat = DateFormat('yyyy-MM-dd');
 
-  return ListView.builder(
-  shrinkWrap: true,
-  physics: const NeverScrollableScrollPhysics(),
-  itemCount: sortedExercises.length,
-  itemBuilder: (context, index) {
-    final exercise = sortedExercises[index];
-    return _buildExerciseCard(context, exercise, index, usersService, athleteId, dateFormat);
-  },
-);
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: sortedExercises.length,
+      itemBuilder: (context, index) {
+        final exercise = sortedExercises[index];
+        return _buildExerciseCard(context, exercise, usersService, athleteId, dateFormat);
+      },
+    );
   }
 
   Widget _buildExerciseCard(
     BuildContext context,
     Exercise exercise,
-    int index,
     UsersService usersService,
     String athleteId,
     DateFormat dateFormat,

@@ -21,11 +21,11 @@ class TrainingProgramController extends ChangeNotifier {
   TrainingProgramController(this._service, this._usersService);
 
   TrainingProgram _program = TrainingProgram();
-  TextEditingController _nameController = TextEditingController();
-  TextEditingController _descriptionController = TextEditingController();
-  TextEditingController _athleteIdController = TextEditingController();
-  TextEditingController _athleteNameController = TextEditingController();
-  TextEditingController _mesocycleNumberController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _athleteIdController = TextEditingController();
+  final TextEditingController _athleteNameController = TextEditingController();
+  final TextEditingController _mesocycleNumberController = TextEditingController();
 
   TrainingProgram get program => _program;
   TextEditingController get nameController => _nameController;
@@ -43,6 +43,14 @@ class TrainingProgramController extends ChangeNotifier {
       _descriptionController.text = _program.description;
       _athleteIdController.text = _program.athleteId;
       _mesocycleNumberController.text = _program.mesocycleNumber.toString();
+
+      // Ordina gli esercizi in base al campo 'order'
+      for (final week in _program.weeks) {
+        for (final workout in week.workouts) {
+          workout.exercises.sort((a, b) => a.order.compareTo(b.order));
+        }
+      }
+
       _rebuildWeekProgressions();
       notifyListeners();
     } catch (error) {
@@ -92,21 +100,21 @@ class TrainingProgramController extends ChangeNotifier {
     workout.exercises.forEach(_removeExerciseAndRelatedData);
   }
 
-  Future<void> addExercise(int weekIndex, int workoutIndex, BuildContext context) async {
-    final exercise = await showDialog<Exercise>(
-      context: context,
-      builder: (context) => ExerciseDialog(
-        usersService: _usersService,
-        athleteId: _athleteIdController.text,
-      ),
-    );
-    if (exercise != null) {
-      exercise.id = UniqueKey().toString();
-      exercise.order = _program.weeks[weekIndex].workouts[workoutIndex].exercises.length + 1;
-      _program.weeks[weekIndex].workouts[workoutIndex].exercises.add(exercise);
-      notifyListeners();
-    }
+Future<void> addExercise(int weekIndex, int workoutIndex, BuildContext context) async {
+  final exercise = await showDialog<Exercise>(
+    context: context,
+    builder: (context) => ExerciseDialog(
+      usersService: _usersService,
+      athleteId: _athleteIdController.text,
+    ),
+  );
+  if (exercise != null) {
+    exercise.id = UniqueKey().toString();
+    exercise.order = _program.weeks[weekIndex].workouts[workoutIndex].exercises.length + 1;
+    _program.weeks[weekIndex].workouts[workoutIndex].exercises.add(exercise);
+    notifyListeners();
   }
+}
 
   Future<void> editExercise(int weekIndex, int workoutIndex, int exerciseIndex, BuildContext context) async {
     final exercise = _program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
