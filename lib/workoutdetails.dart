@@ -6,7 +6,7 @@ import 'dart:async';
 class WorkoutDetails extends StatefulWidget {
   final String workoutId;
 
-  const WorkoutDetails({Key? key, required this.workoutId}) : super(key: key);
+  const WorkoutDetails({super.key, required this.workoutId});
 
   @override
   _WorkoutDetailsState createState() => _WorkoutDetailsState();

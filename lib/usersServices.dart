@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:rxdart/rxdart.dart';
@@ -70,16 +71,19 @@ class UsersService {
   final ProviderRef ref;
   final FirebaseFirestore _firestore;
   final FirebaseAuth _auth;
-  final FirebaseAuth _authForUserCreation = FirebaseAuth.instanceFor(app: Firebase.app());
+  FirebaseAuth? _authForUserCreation;
   final _usersStreamController = BehaviorSubject<List<UserModel>>();
   String _searchQuery = '';
   StreamSubscription? _userChangesSubscription;
 
   UsersService(this.ref, this._firestore, this._auth) {
+    _initializeUserCreationAuth();
     _auth.authStateChanges().listen((user) async {
+      debugPrint('Main auth state changed. User: $user');
       if (user != null) {
         _updateUserName(user.displayName);
         if (user.uid != _auth.currentUser?.uid) {
+          debugPrint('Updating user role for user: ${user.uid}');
           await _updateUserRole(user.uid);
         }
         _initializeUsersStream();
@@ -87,6 +91,14 @@ class UsersService {
         _clearUsersStream();
       }
     });
+  }
+
+  Future<void> _initializeUserCreationAuth() async {
+    final FirebaseApp userCreationApp = await Firebase.initializeApp(
+      name: 'UserCreationApp',
+      options: Firebase.app().options,
+    );
+    _authForUserCreation = FirebaseAuth.instanceFor(app: userCreationApp);
   }
 
   void _initializeUsersStream() {
@@ -136,7 +148,7 @@ class UsersService {
       final String userRole = userDoc.exists ? (userDoc.data() as Map<String, dynamic>)['role'] ?? '' : '';
       ref.read(userRoleProvider.notifier).state = userRole;
     } catch (error) {
-      print('Error updating user role: $error');
+      debugPrint('Error updating user role: $error');
     }
   }
 
@@ -158,10 +170,10 @@ class UsersService {
       if (userDoc.exists) {
         final String userRole = (userDoc.data() as Map<String, dynamic>)['role'] ?? '';
         ref.read(userRoleProvider.notifier).state = userRole;
-        print('User role: $userRole');
+        debugPrint('User role: $userRole');
       }
     } catch (error) {
-      print('Error setting user role: $error');
+      debugPrint('Error setting user role: $error');
     }
   }
 
@@ -275,26 +287,36 @@ class UsersService {
     await _firestore.collection('users').doc(userId).delete();
   }
 
-Future<void> createUser({
-  required String name,
-  required String email,
-  required String password,
-  required String role,
-}) async {
-  try {
-    await _firestore.runTransaction((transaction) async {
-      // Crea un nuovo documento utente con un ID generato automaticamente
-      DocumentReference userRef = _firestore.collection('users').doc();
+  Future<void> createUser({
+    required String name,
+    required String email,
+    required String password,
+    required String role,
+  }) async {
+    try {
+      debugPrint('Creating user with email: $email');
+      UserCredential userCredential = await _authForUserCreation!.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
-      // Imposta i dati dell'utente nel documento
-      await transaction.set(userRef, {
-        'name': name,
-        'email': email,
-        'role': role,
-        'photoURL': '', // Imposta il valore predefinito per photoURL
-      });
-    });
-  } catch (e) {
-    throw Exception(e.toString());
+      User? newUser = userCredential.user;
+      if (newUser != null) {
+        debugPrint('User created. User ID: ${newUser.uid}');
+        await _firestore.collection('users').doc(newUser.uid).set({
+          'name': name,
+          'email': email,
+          'role': role,
+          'photoURL': '', // Imposta il valore predefinito per photoURL
+        });
+        debugPrint('User document created in Firestore.');
+
+        await _authForUserCreation!.signOut();
+        debugPrint('Signed out from user creation auth instance.');
+      }
+    } catch (e) {
+      debugPrint('Error creating user: $e');
+      throw Exception(e.toString());
+    }
   }
-}}
+}
