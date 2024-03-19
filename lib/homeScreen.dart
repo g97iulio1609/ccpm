@@ -9,6 +9,7 @@ import '../exerciseManager/exerciseList.dart';
 import 'maxRMDashboard.dart';
 import 'trainingBuilder/trainingProgram.dart';
 import 'usersServices.dart';
+import 'users_dashboard.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -19,31 +20,43 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedIndex = 0;
-  late final List<Widget> _pages;
-  late final Map<String, int> menuItemToPageIndex;
+  List<Widget> _pages = [];
+  Map<String, int> menuItemToPageIndex = {};
 
   @override
   void initState() {
     super.initState();
+    // Aspetta che il ruolo dell'utente sia caricato prima di costruire l'interfaccia utente
+    Future.microtask(() async {
+      await ref.read(usersServiceProvider).fetchUserRole();
+      _buildUI();
+    });
+  }
+
+  void _buildUI() {
     final userRole = ref.read(userRoleProvider);
 
     // Qui modifichiamo la costruzione delle pagine in base al ruolo
     _pages = [
       const ProgramsScreen(),
       if (userRole == 'admin') ExercisesList(),
-      const MaxRMDashboard(),
+      if (userRole == 'admin') const MaxRMDashboard(),
       const UserProfile(),
       if (userRole == 'admin') const TrainingProgramPage(),
+      if (userRole == 'admin') const UsersDashboard(),
     ];
 
     // Aggiornamento degli indici delle pagine
     menuItemToPageIndex = {
       'Allenamenti': 0,
       'Esercizi': userRole == 'admin' ? 1 : -1,
-      'Massimali': userRole == 'admin' ? 2 : 1, // Massimali è sempre visibile
-      'Profilo Utente': userRole == 'admin' ? 3 : 2,
+      'Massimali': userRole == 'admin' ? 2 : -1,
+      'Profilo Utente': userRole == 'admin' ? 3 : _pages.length - 2,
       'TrainingProgram': userRole == 'admin' ? 4 : -1,
+      'Gestione Utenti': userRole == 'admin' ? 5 : -1,
     };
+
+    setState(() {});
   }
 
   void _onItemTapped(int index) {
@@ -52,19 +65,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
-void _logout() async {
-  try {
-    await FirebaseAuth.instance.signOut();
-    ref.read(usersServiceProvider).clearUserData();
-    // Pulisci lo stack di navigazione e ritorna alla schermata di autenticazione
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => AuthScreen()),
-      (Route<dynamic> route) => false,
-    );
-  } catch (e) {
-    print('Errore durante il logout: $e');
+  void _logout() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      ref.read(usersServiceProvider).clearUserData();
+      // Pulisci lo stack di navigazione e ritorna alla schermata di autenticazione
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => AuthScreen()),
+        (Route<dynamic> route) => false,
+      );
+    } catch (e) {
+      print('Errore durante il logout: $e');
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -86,7 +99,7 @@ void _logout() async {
               child: _buildDrawer(isLargeScreen, context, userRole),
             ),
           Expanded(
-            child: _pages[_selectedIndex],
+            child: _pages.isNotEmpty ? _pages[_selectedIndex] : const SizedBox(),
           ),
         ],
       ),
@@ -105,6 +118,8 @@ void _logout() async {
         return 'Profilo Utente';
       case 4:
         return 'TrainingProgram';
+      case 5:
+        return 'Gestione Utenti';
       default:
         return 'Allenamenti';
     }
@@ -114,9 +129,10 @@ void _logout() async {
     final List<String> menuItems = [
       'Allenamenti',
       if (userRole == 'admin') 'Esercizi',
-      'Massimali', // Rimosso la condizione di admin
+      if (userRole == 'admin') 'Massimali',
       'Profilo Utente',
       if (userRole == 'admin') 'TrainingProgram',
+      if (userRole == 'admin') 'Gestione Utenti',
     ];
 
     return Column(
