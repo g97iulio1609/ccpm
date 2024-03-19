@@ -62,31 +62,32 @@ class _TimerPageState extends State<TimerPage> with SingleTickerProviderStateMix
     }
   }
 
-  Future<void> _showNotification(String title, String body) async {
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails(
-      'rest_timer_channel',
-      'Rest Timer',
-      importance: Importance.max,
-      priority: Priority.high,
-      ticker: 'ticker',
-      visibility: NotificationVisibility.public,
-      enableLights: true,
-      enableVibration: true,
-      playSound: true,
-      timeoutAfter: 5000,
-      fullScreenIntent: true,
-    );
-    const NotificationDetails platformChannelSpecifics =
-        NotificationDetails(android: androidPlatformChannelSpecifics);
-    await FlutterLocalNotificationsPlugin().show(
-      0,
-      title,
-      body,
-      platformChannelSpecifics,
-    );
-  }
-
+Future<void> _showNotification(String title, String body) async {
+  const AndroidNotificationDetails androidPlatformChannelSpecifics =
+      AndroidNotificationDetails(
+    'rest_timer_channel',
+    'Rest Timer',
+    importance: Importance.max,
+    priority: Priority.high,
+    ticker: 'ticker',
+    visibility: NotificationVisibility.public,
+    enableLights: true,
+    enableVibration: true,
+    playSound: true,
+    timeoutAfter: null, // Rimuovi il timeout
+    autoCancel: false, // Imposta autoCancel su false
+    ongoing: true, // Imposta ongoing su true
+    fullScreenIntent: true,
+  );
+  const NotificationDetails platformChannelSpecifics =
+      NotificationDetails(android: androidPlatformChannelSpecifics);
+  await FlutterLocalNotificationsPlugin().show(
+    0,
+    title,
+    body,
+    platformChannelSpecifics,
+  );
+}
 
   @override
   void dispose() {
