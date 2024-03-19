@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'usersServices.dart';
-import 'userProfile.dart';
+import 'users_services.dart';
+import 'user_profile.dart';
 
 class UsersDashboard extends ConsumerWidget {
   const UsersDashboard({super.key});

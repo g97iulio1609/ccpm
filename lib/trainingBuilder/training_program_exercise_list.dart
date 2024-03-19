@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import 'trainingModel.dart';
 import 'training_program_controller.dart';
 import 'training_program_series_list.dart';
-import '../usersServices.dart';
+import '../users_services.dart';
 
 class TrainingProgramExerciseList extends ConsumerWidget {
   final TrainingProgramController controller;

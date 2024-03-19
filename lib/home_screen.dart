@@ -3,11 +3,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'authScreen.dart';
 import 'programsScreen.dart';
-import 'userProfile.dart';
+import 'user_profile.dart';
 import '../exerciseManager/exerciseList.dart';
 import 'maxRMDashboard.dart';
 import 'trainingBuilder/trainingProgram.dart';
-import 'usersServices.dart';
+import 'users_services.dart';
 import 'users_dashboard.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -19,8 +19,8 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedIndex = 0;
-  List<Widget> _pages = [];
-  Map<String, int> menuItemToPageIndex = {};
+  List<Widget> _adminPages = [];
+  List<Widget> _clientPages = [];
 
   @override
   void initState() {
@@ -30,30 +30,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       _buildUI();
     });
   }
-  
-void _buildUI() {
-  final userRole = ref.read(userRoleProvider);
 
-  _pages = [
-    const ProgramsScreen(),
-    if (userRole == 'admin') ExercisesList(),
-    if (userRole == 'admin') const MaxRMDashboard(),
-    const UserProfile(),
-    if (userRole == 'admin') const TrainingProgramPage(),
-    if (userRole == 'admin') const UsersDashboard(),
-  ];
+  void _buildUI() {
+    final userRole = ref.read(userRoleProvider);
 
-  menuItemToPageIndex = {
-    'Allenamenti': 0,
-    'Esercizi': userRole == 'admin' ? 1 : -1,
-    'Massimali': userRole == 'admin' ? 2 : -1,
-    'Profilo Utente': userRole == 'admin' ? 3 : _pages.length - 1,
-    'TrainingProgram': userRole == 'admin' ? 4 : -1,
-    'Gestione Utenti': userRole == 'admin' ? 5 : -1,
-  };
+    _adminPages = [
+      const ProgramsScreen(),
+      ExercisesList(),
+      const MaxRMDashboard(),
+      const UserProfile(),
+      const TrainingProgramPage(),
+      const UsersDashboard(),
+    ];
 
-  setState(() {});
-}
+    _clientPages = [
+      const ProgramsScreen(),
+      const MaxRMDashboard(),
+      const UserProfile(),
+    ];
+
+    setState(() {});
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -78,6 +75,7 @@ void _buildUI() {
   Widget build(BuildContext context) {
     var isLargeScreen = MediaQuery.of(context).size.width > 600;
     final userRole = ref.watch(userRoleProvider);
+    final pages = userRole == 'admin' ? _adminPages : _clientPages;
 
     return Scaffold(
       appBar: AppBar(
@@ -95,7 +93,7 @@ void _buildUI() {
               child: _buildDrawer(isLargeScreen, context, userRole),
             ),
           Expanded(
-            child: _pages.isNotEmpty ? _pages[_selectedIndex] : const SizedBox(),
+            child: pages.isNotEmpty ? pages[_selectedIndex] : const SizedBox(),
           ),
         ],
       ),
@@ -103,47 +101,43 @@ void _buildUI() {
   }
 
   String _getTitleForIndex(int index, String userRole) {
-    switch (index) {
-      case 0:
-        return 'Allenamenti';
-      case 1:
-        return userRole == 'admin' ? 'Esercizi' : 'Massimali';
-      case 2:
-        return userRole == 'admin' ? 'Massimali' : 'Profilo Utente';
-      case 3:
-        return 'Profilo Utente';
-      case 4:
-        return 'TrainingProgram';
-      case 5:
-        return 'Gestione Utenti';
-      default:
-        return 'Allenamenti';
-    }
+    final titles = userRole == 'admin' ? _getAdminTitles() : _getClientTitles();
+    return titles[index];
+  }
+
+  List<String> _getAdminTitles() {
+    return [
+      'Allenamenti',
+      'Esercizi',
+      'Massimali',
+      'Profilo Utente',
+      'TrainingProgram',
+      'Gestione Utenti',
+    ];
+  }
+
+  List<String> _getClientTitles() {
+    return [
+      'Allenamenti',
+      'Massimali',
+      'Profilo Utente',
+    ];
   }
 
   List<Widget> _getActionsForIndex(int index, String userRole, BuildContext context) {
-    switch (index) {
-      case 5: // Gestione Utenti
-        return [
-          IconButton(
-            onPressed: () => _showAddUserDialog(context),
-            icon: const Icon(Icons.person_add),
-          ),
-        ];
-      default:
-        return [];
+    if (userRole == 'admin' && index == 5) { // Gestione Utenti
+      return [
+        IconButton(
+          onPressed: () => _showAddUserDialog(context),
+          icon: const Icon(Icons.person_add),
+        ),
+      ];
     }
+    return [];
   }
 
   Widget _buildDrawer(bool isLargeScreen, BuildContext context, String userRole) {
-    final List<String> menuItems = [
-      'Allenamenti',
-      if (userRole == 'admin') 'Esercizi',
-      if (userRole == 'admin') 'Massimali',
-      'Profilo Utente',
-      if (userRole == 'admin') 'TrainingProgram',
-      if (userRole == 'admin') 'Gestione Utenti',
-    ];
+    final List<String> menuItems = userRole == 'admin' ? _getAdminMenuItems() : _getClientMenuItems();
 
     return Column(
       children: [
@@ -168,7 +162,7 @@ void _buildUI() {
             itemBuilder: (context, index) {
               return ListTile(
                 title: Text(menuItems[index]),
-                onTap: () => _navigateTo(menuItems[index], isLargeScreen),
+                onTap: () => _navigateTo(menuItems[index], isLargeScreen, userRole),
               );
             },
           ),
@@ -183,7 +177,7 @@ void _buildUI() {
                 child: Icon(Icons.person),
               ),
               title: Text(displayName),
-              onTap: () => _navigateTo('Profilo Utente', isLargeScreen),
+              onTap: () => _navigateTo('Profilo Utente', isLargeScreen, userRole),
             );
           },
         ),
@@ -195,14 +189,39 @@ void _buildUI() {
     );
   }
 
-  void _navigateTo(String menuItem, bool isLargeScreen) {
-    final int? pageIndex = menuItemToPageIndex[menuItem];
+  List<String> _getAdminMenuItems() {
+    return [
+      'Allenamenti',
+      'Esercizi',
+      'Massimali',
+      'Profilo Utente',
+      'TrainingProgram',
+      'Gestione Utenti',
+    ];
+  }
+
+  List<String> _getClientMenuItems() {
+    return [
+      'Allenamenti',
+      'Massimali',
+      'Profilo Utente',
+    ];
+  }
+
+  void _navigateTo(String menuItem, bool isLargeScreen, String userRole) {
+    final pages = userRole == 'admin' ? _adminPages : _clientPages;
+    final int? pageIndex = _getPageIndexForMenuItem(menuItem, userRole);
     if (pageIndex != null && pageIndex >= 0) {
       _onItemTapped(pageIndex);
       if (!isLargeScreen) {
         Navigator.pop(context);
       }
     }
+  }
+
+  int? _getPageIndexForMenuItem(String menuItem, String userRole) {
+    final menuItems = userRole == 'admin' ? _getAdminMenuItems() : _getClientMenuItems();
+    return menuItems.indexOf(menuItem);
   }
 
   void _showAddUserDialog(BuildContext context) {

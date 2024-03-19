@@ -4,8 +4,8 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'trainingBuilder/trainingProgram.dart';
-import 'trainingViewer.dart';
-import 'usersServices.dart';
+import 'training_viewer.dart';
+import 'users_services.dart';
 
 class ProgramsScreen extends HookConsumerWidget {
   const ProgramsScreen({super.key});

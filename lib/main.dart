@@ -4,13 +4,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'authScreen.dart';
-import 'homeScreen.dart';
+import 'home_screen.dart';
 import '../exerciseManager/exerciseList.dart';
 import 'maxRMDashboard.dart';
 import 'trainingBuilder/trainingProgram.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'usersServices.dart';
+import 'users_services.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

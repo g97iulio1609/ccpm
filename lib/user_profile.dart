@@ -70,20 +70,25 @@ class UserProfileState extends State<UserProfile> {
     String? userPhotoURL = _controllers['photoURL']?.text;
     bool hasValidPhotoURL = userPhotoURL != null && userPhotoURL.isNotEmpty && Uri.parse(userPhotoURL).isAbsolute;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: <Widget>[
-          CircleAvatar(
-            backgroundImage: hasValidPhotoURL ? NetworkImage(userPhotoURL) : null,
-            radius: 50,
-            backgroundColor: Colors.grey[200],
-            foregroundColor: Colors.grey[800],
-            child: !hasValidPhotoURL ? const Icon(Icons.person, size: 50) : null,
-          ),
-          const SizedBox(height: 20),
-          ..._controllers.keys.where((field) => field != 'photoURL').map((field) => buildEditableField(field, _controllers[field]!)).toList(),
-        ],
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('User Profile'),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: <Widget>[
+            CircleAvatar(
+              backgroundImage: hasValidPhotoURL ? NetworkImage(userPhotoURL) : null,
+              radius: 50,
+              backgroundColor: Colors.grey[200],
+              foregroundColor: Colors.grey[800],
+              child: !hasValidPhotoURL ? const Icon(Icons.person, size: 50) : null,
+            ),
+            const SizedBox(height: 20),
+            ..._controllers.keys.where((field) => field != 'photoURL').map((field) => buildEditableField(field, _controllers[field]!)).toList(),
+          ],
+        ),
       ),
     );
   }

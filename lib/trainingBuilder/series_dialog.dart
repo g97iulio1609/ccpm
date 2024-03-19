@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'trainingModel.dart';
-import '../usersServices.dart';
+import '../users_services.dart';
 import 'training_program_controller.dart';
 
 class SeriesDialog extends ConsumerWidget {

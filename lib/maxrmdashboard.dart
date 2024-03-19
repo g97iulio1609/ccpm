@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:rxdart/rxdart.dart';
 import '../exerciseManager/exerciseModel.dart';
 import '../exerciseManager/exercisesServices.dart';
-import 'usersServices.dart';
+import 'users_services.dart';
 
 // Providers
 final authProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
