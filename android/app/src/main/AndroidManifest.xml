@@ -9,7 +9,8 @@
         android:name="${applicationName}"
         android:roundIcon="@mipmap/round_launcher"
         android:icon="@mipmap/ic_launcher"
-        android:enableOnBackInvokedCallback="true">
+        android:enableOnBackInvokedCallback="true"
+        android:showOnLockScreen="true">
 
         <activity
             android:name=".MainActivity"
@@ -49,6 +50,19 @@
         </receiver>
 
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver" />
+
+        <!-- Xiaomi -->
+        <service
+            android:name="com.dexterous.flutterlocalnotifications.XiaomiService"
+            android:enabled="true"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+
+        <!-- Oppo -->
+        <service
+            android:name="com.dexterous.flutterlocalnotifications.OppoService"
+            android:enabled="true"
+            android:exported="false" />
 
     </application>
 

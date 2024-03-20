@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -17,11 +18,13 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
 
 Future<void> requestNotificationPermission() async {
-  final status = await Permission.notification.request();
-  if (status.isGranted) {
-    // I permessi delle notifiche sono stati concessi
-  } else {
-    // I permessi delle notifiche sono stati negati o l'utente ha selezionato "Non chiedere più"
+  if (!kIsWeb) { // Esegui la richiesta solo se non sei sul web.
+    final status = await Permission.notification.request();
+    if (status.isGranted) {
+      // I permessi delle notifiche sono stati concessi.
+    } else {
+      // I permessi delle notifiche sono stati negati o l'utente ha selezionato "Non chiedere più".
+    }
   }
 }
 
@@ -40,13 +43,14 @@ void main() async {
   );
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
   await requestNotificationPermission();
-  final AndroidFlutterLocalNotificationsPlugin? androidPlugin =
-      flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
-  await androidPlugin?.requestExactAlarmsPermission();
+  if (!kIsWeb) { // Esegui questa parte solo se non sei sul web.
+    final AndroidFlutterLocalNotificationsPlugin? androidPlugin =
+        flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+    await androidPlugin?.requestExactAlarmsPermission();
+  }
   runApp(const ProviderScope(child: MyApp()));
 }
-
 
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
@@ -134,10 +138,12 @@ class AuthWrapper extends ConsumerWidget {
           if (user == null) {
             return AuthScreen();
           } else {
+            // Assicurati che l'utente sia caricato prima di passare a HomeScreen
             Future.microtask(() => ref.read(usersServiceProvider).fetchUserRole());
             return const HomeScreen();
           }
         }
+        // Mostra un indicatore di caricamento mentre lo stato di autenticazione viene risolto
         return const Center(child: CircularProgressIndicator());
       },
     );

@@ -372,6 +372,7 @@ class MaxRMDashboard extends HookConsumerWidget {
                   newRepetitions = 1;
                 }
                 if (userId.isNotEmpty) {
+                  debugPrint("newMaxWeight:$newMaxWeight");
                   usersService.updateExerciseRecord(
                     userId: userId,
                     exerciseId: exercise.id,
