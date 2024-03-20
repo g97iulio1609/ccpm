@@ -40,27 +40,27 @@ class MaxRMDashboard extends HookConsumerWidget {
     final dateFormat = DateFormat('yyyy-MM-dd');
 
     Future<void> addRecord({
-      required String exerciseId,
-      required String exerciseName,
-      required int maxWeight,
-      required int repetitions,
-    }) async {
-      String userId = user?.uid ?? '';
-      if (usersService.getCurrentUserRole() == 'admin' &&
-          selectedUserController.value != null) {
-        userId = selectedUserController.value!.id;
-      }
-      if (userId.isNotEmpty) {
-        await usersService.addExerciseRecord(
-          userId: userId,
-          exerciseId: exerciseId,
-          exerciseName: exerciseName,
-          maxWeight: maxWeight,
-          repetitions: repetitions,
-          date: dateFormat.format(DateTime.now()),
-        );
-      }
-    }
+  required String exerciseId,
+  required String exerciseName,
+  required int maxWeight,
+  required int repetitions,
+}) async {
+  String userId = user?.uid ?? '';
+  if (usersService.getCurrentUserRole() == 'admin' &&
+      selectedUserController.value != null) {
+    userId = selectedUserController.value!.id;
+  }
+  if (userId.isNotEmpty) {
+    await usersService.addExerciseRecord(
+      userId: userId,
+      exerciseId: exerciseId,
+      exerciseName: exerciseName,
+      maxWeight: maxWeight,
+      repetitions: repetitions,
+      date: dateFormat.format(DateTime.now()),
+    );
+  }
+}
 
     return Scaffold(
       body: Padding(

@@ -206,32 +206,32 @@ class UsersService {
     });
   }
 
-  Future<void> addExerciseRecord({
-    required String userId,
-    required String exerciseId,
-    required String exerciseName,
-    required int maxWeight,
-    required int repetitions,
-    required String date,
-  }) async {
-    await _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('exercises')
-        .doc(exerciseId)
-        .collection('records')
-        .add({
-      'date': date,
-      'exerciseId': exerciseId,
-      'exerciseName': exerciseName,
-      'maxWeight': maxWeight,
-      'repetitions': repetitions,
-      'userId': userId,
-    });
+Future<void> addExerciseRecord({
+  required String userId,
+  required String exerciseId,
+  required String exerciseName,
+  required int maxWeight,
+  required int repetitions,
+  required String date,
+}) async {
+  await _firestore
+      .collection('users')
+      .doc(userId)
+      .collection('exercises')
+      .doc(exerciseId)
+      .collection('records')
+      .add({
+    'date': date,
+    'exerciseId': exerciseId,
+    'exerciseName': exerciseName,
+    'maxWeight': maxWeight,
+    'repetitions': repetitions,
+    'userId': userId,
+  });
 
-    // Aggiorna i pesi del programma corrente dopo aver aggiunto il record
-    await _updateCurrentProgramWeights(userId, exerciseId,maxWeight);
-  }
+  // Aggiorna i pesi del programma corrente dopo aver aggiunto il record
+  await _updateCurrentProgramWeights(userId, exerciseId, maxWeight);
+}
 
   Future<void> updateExerciseRecord({
   required String userId,
