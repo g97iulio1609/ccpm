@@ -14,11 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "179277367624-316al8froivg0s8cdm7gaangn9qi23c4.apps.googleusercontent.com",
+          "client_id": "179277367624-phnq1hd5in8bq70feupougt4p8mqdaqp.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.alphaness.alphanessone",
-            "certificate_hash": "75ca0f816fd9e4093fd4860e9320aeaff848afef"
+            "certificate_hash": "bcd22e9dd5a122cb447de4ac1ba2360a028c0306"
           }
         },
         {
@@ -42,7 +42,7 @@
               "client_id": "179277367624-c8rp756q5jgi7t6oso5lng8l6he2591h.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.example.alphanessone"
+                "bundle_id": "com.alphaness.alphanessone"
               }
             }
           ]

@@ -76,7 +76,7 @@ Future<void> _showNotification(String title, String body) async {
     playSound: true,
     timeoutAfter: null, // Rimuovi il timeout
     autoCancel: false, // Imposta autoCancel su false
-    ongoing: false, // Imposta ongoing su true
+    ongoing: false, 
     fullScreenIntent: true,
   );
   const NotificationDetails platformChannelSpecifics =
