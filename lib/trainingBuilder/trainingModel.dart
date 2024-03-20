@@ -317,15 +317,15 @@ class Series {
     return Series(
       id: map['id'],
       serieId: map['serieId'] ?? '',
-      reps: map['reps'],
-      sets: map['sets'],
-      intensity: map['intensity'],
-      rpe: map['rpe'],
-      weight: map['weight'].toDouble(),
-      order: map['order'],
-      done: map['done'],
-      reps_done: map['reps_done'],
-      weight_done: map['weight_done'].toDouble(),
+      reps: map['reps']?.toInt() ?? 0,
+      sets: map['sets']?.toInt() ?? 0,
+      intensity: map['intensity'] ?? '',
+      rpe: map['rpe'] ?? '',
+      weight: map['weight']?.toDouble() ?? 0.0,
+      order: map['order']?.toInt() ?? 0,
+      done: map['done'] ?? false,
+      reps_done: map['reps_done']?.toInt() ?? 0,
+      weight_done: map['weight_done']?.toDouble() ?? 0.0,
     );
   }
 
@@ -334,14 +334,14 @@ class Series {
     return Series(
       id: doc.id,
       serieId: data['serieId'] ?? '',
-      reps: data['reps'],
-      sets: data['sets'],
-      intensity: data['intensity'],
-      rpe: data['rpe'],
-      weight: data.containsKey('weight') ? (data['weight'] ?? 0).toDouble() : 0.0,
-      order: data['order'],
+      reps: data['reps']?.toInt() ?? 0,
+      sets: data['sets']?.toInt() ?? 0,
+      intensity: data['intensity'] ?? '',
+      rpe: data['rpe'] ?? '',
+      weight: data['weight']?.toDouble() ?? 0.0,
+      order: data['order']?.toInt() ?? 0,
       done: data['done'] ?? false,
-      reps_done: data['reps_done'] ?? 0,
+      reps_done: data['reps_done']?.toInt() ?? 0,
       weight_done: data['weight_done']?.toDouble() ?? 0.0,
     );
   }

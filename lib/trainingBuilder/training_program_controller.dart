@@ -432,6 +432,7 @@ for (int i = startIndex; i < exercise.series.length; i++) {
 exercise.series[i].order = i + 1;
 }
 }
+
 Future<void> submitProgram(BuildContext context) async {
 _program.name = _nameController.text;
 _program.description = _descriptionController.text;
@@ -440,6 +441,8 @@ _program.mesocycleNumber = int.tryParse(_mesocycleNumberController.text) ?? 0;
 try {
   await _service.addOrUpdateTrainingProgram(_program);
   await _service.removeToDeleteItems(_program);
+  await _usersService.updateUser(_athleteIdController.text, {'currentProgram': program.id});
+
   ScaffoldMessenger.of(context).showSnackBar(
     const SnackBar(content: Text('Program added/updated successfully')),
   );
@@ -449,6 +452,8 @@ try {
     SnackBar(content: Text('Error adding/updating program: $error')),
   );
 }}
+
+
 void resetFields() {
 _program = TrainingProgram();
 _nameController.clear();
