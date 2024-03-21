@@ -164,16 +164,16 @@ class SeriesDialog extends ConsumerWidget {
     }
   }
 
-  void _updateWeightFromRPE(TextEditingController repsController, TextEditingController weightController, TextEditingController rpeController, TextEditingController intensityController) async {
-    final rpe = double.tryParse(rpeController.text) ?? 0;
-    final reps = int.tryParse(repsController.text) ?? 0;
-    final latestMaxWeight = await _getLatestMaxWeight();
-    final percentage = _getRPEPercentage(rpe, reps);
-    final calculatedWeight = latestMaxWeight * percentage;
+void _updateWeightFromRPE(TextEditingController repsController, TextEditingController weightController, TextEditingController rpeController, TextEditingController intensityController) async {
+  final rpe = double.tryParse(rpeController.text) ?? 0;
+  final reps = int.tryParse(repsController.text) ?? 0;
+  final latestMaxWeight = await _getLatestMaxWeight();
+  final percentage = _getRPEPercentage(rpe, reps);
+  final calculatedWeight = latestMaxWeight * percentage;
 
-    weightController.text = calculatedWeight.toStringAsFixed(2);
-    intensityController.text = (percentage * 100).toStringAsFixed(2);
-  }
+  weightController.text = calculatedWeight.toStringAsFixed(2);
+  intensityController.text = (percentage * 100).toStringAsFixed(2); // Aggiorna anche l'intensità
+}
 
   void _updateRPE(TextEditingController repsController, TextEditingController weightController, TextEditingController rpeController, TextEditingController intensityController) async {
     final weight = double.tryParse(weightController.text) ?? 0;
