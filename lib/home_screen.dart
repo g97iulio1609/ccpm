@@ -67,7 +67,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         (Route<dynamic> route) => false,
       );
     } catch (e) {
-      print('Errore durante il logout: $e');
+      debugPrint('Errore durante il logout: $e');
     }
   }
 

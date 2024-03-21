@@ -75,6 +75,31 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
     _subscriptions.add(exercisesSubscription);
   }
 
+int findFirstNotDoneSeriesIndex(List<Map<String, dynamic>> series) {
+  debugPrint('Searching for first not done series...');
+  for (int i = 0; i < series.length; i++) {
+    final serie = series[i];
+    debugPrint('Checking series at index $i: $serie');
+    
+    final repsDone = serie['reps_done'];
+    final weightDone = serie['weight_done'];
+    final reps = serie['reps'];
+    final weight = serie['weight'];
+    final done = serie['done'];
+    
+    if (done == true ||
+        (done == false && repsDone != null && repsDone <= reps && repsDone > 0 &&
+         weightDone != null && weightDone <= weight && weightDone > 0)) {
+      debugPrint('Series at index $i is considered done');
+    } else {
+      debugPrint('Found first not done series at index $i');
+      return i;
+    }
+  }
+  debugPrint('All series are done');
+  return series.length;
+}
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -94,13 +119,19 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
               itemCount: exercises.length,
               itemBuilder: (context, index) {
                 final exercise = exercises[index];
+                final firstNotDoneSeriesIndex =
+                    findFirstNotDoneSeriesIndex(exercise['series']);
+                final isContinueMode = firstNotDoneSeriesIndex > 0;
+
                 return Card(
                   elevation: 4,
                   margin: const EdgeInsets.only(bottom: 20),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  color: isDarkMode ? colorScheme.surface : colorScheme.background,
+                  color: isDarkMode
+                      ? colorScheme.surface
+                      : colorScheme.background,
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -114,9 +145,12 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                                 "${exercise['name']} ${exercise['variant'] ?? ''}",
                                 style: theme.textTheme.titleLarge?.copyWith(
                                   fontWeight: FontWeight.bold,
-                                  color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+                                  color: isDarkMode
+                                      ? colorScheme.onSurface
+                                      : colorScheme.onBackground,
                                 ),
-                                textAlign: TextAlign.center, // Center the exercise name
+                                textAlign: TextAlign
+                                    .center, // Center the exercise name
                               ),
                             ),
                           ],
@@ -131,20 +165,24 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                                   exerciseId: exercise['id'],
                                   exerciseName: exercise['name'],
                                   exerciseVariant: exercise['variant'],
-                                  seriesList: exercise['series']
-                                      .cast<Map<String, dynamic>>(),
+      seriesList: List<Map<String, dynamic>>.from(exercise['series']),
+                                  startIndex: firstNotDoneSeriesIndex,
                                 ),
                               ),
                             );
                           },
                           style: ElevatedButton.styleFrom(
-                            foregroundColor: isDarkMode ? colorScheme.onPrimary : colorScheme.onSecondary,
-                            backgroundColor: isDarkMode ? colorScheme.primary : colorScheme.secondary,
+                            foregroundColor: isDarkMode
+                                ? colorScheme.onPrimary
+                                : colorScheme.onSecondary,
+                            backgroundColor: isDarkMode
+                                ? colorScheme.primary
+                                : colorScheme.secondary,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(20),
                             ),
                           ),
-                          child: const Text('START'),
+                          child: Text(isContinueMode ? 'CONTINUA' : 'START'),
                         ),
                         const SizedBox(height: 16),
                         Row(
@@ -155,7 +193,9 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                               child: Text(
                                 "Serie",
                                 style: theme.textTheme.titleMedium?.copyWith(
-                                  color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+                                  color: isDarkMode
+                                      ? colorScheme.onSurface
+                                      : colorScheme.onBackground,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -165,7 +205,9 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                               child: Text(
                                 "Reps",
                                 style: theme.textTheme.titleMedium?.copyWith(
-                                  color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+                                  color: isDarkMode
+                                      ? colorScheme.onSurface
+                                      : colorScheme.onBackground,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -175,7 +217,9 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                               child: Text(
                                 "Peso(kg)",
                                 style: theme.textTheme.titleMedium?.copyWith(
-                                  color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+                                  color: isDarkMode
+                                      ? colorScheme.onSurface
+                                      : colorScheme.onBackground,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -185,7 +229,9 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                               child: Text(
                                 "Svolto",
                                 style: theme.textTheme.titleMedium?.copyWith(
-                                  color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+                                  color: isDarkMode
+                                      ? colorScheme.onSurface
+                                      : colorScheme.onBackground,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -198,7 +244,9 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                           return Container(
                             margin: const EdgeInsets.symmetric(vertical: 8),
                             decoration: BoxDecoration(
-                              color: isDarkMode ? colorScheme.surfaceVariant : colorScheme.primaryContainer,
+                              color: isDarkMode
+                                  ? colorScheme.surfaceVariant
+                                  : colorScheme.primaryContainer,
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Row(
@@ -209,8 +257,11 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                                   child: Center(
                                     child: Text(
                                       "${seriesIndex + 1}",
-                                      style: theme.textTheme.bodyLarge?.copyWith(
-                                        color: isDarkMode ? colorScheme.onSurfaceVariant : colorScheme.onPrimaryContainer,
+                                      style: theme.textTheme.bodyLarge
+                                          ?.copyWith(
+                                        color: isDarkMode
+                                            ? colorScheme.onSurfaceVariant
+                                            : colorScheme.onPrimaryContainer,
                                       ),
                                     ),
                                   ),
@@ -219,9 +270,12 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                                   flex: 2,
                                   child: Center(
                                     child: Text(
-                                      "${series['reps']}/${series['reps_done'] ?? '-'}R",
-                                      style: theme.textTheme.bodyLarge?.copyWith(
-                                        color: isDarkMode ? colorScheme.onSurfaceVariant : colorScheme.onPrimaryContainer,
+                                      "${series['reps']}/${series['reps_done'] == 0 ? '' : series['reps_done']}R",
+                                      style: theme.textTheme.bodyLarge
+                                          ?.copyWith(
+                                        color: isDarkMode
+                                            ? colorScheme.onSurfaceVariant
+                                            : colorScheme.onPrimaryContainer,
                                       ),
                                     ),
                                   ),
@@ -230,9 +284,12 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                                   flex: 2,
                                   child: Center(
                                     child: Text(
-                                      "${series['weight']}/${series['weight_done'] ?? '-'} Kg",
-                                      style: theme.textTheme.bodyLarge?.copyWith(
-                                        color: isDarkMode ? colorScheme.onSurfaceVariant : colorScheme.onPrimaryContainer,
+                                      "${series['weight']}/${series['weight_done'] == 0 ? '' : series['weight_done']} Kg", // Cambiato qui
+                                      style: theme.textTheme.bodyLarge
+                                          ?.copyWith(
+                                        color: isDarkMode
+                                            ? colorScheme.onSurfaceVariant
+                                            : colorScheme.onPrimaryContainer,
                                       ),
                                     ),
                                   ),
@@ -243,10 +300,12 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                                     child: Icon(
                                       series['done'] == true
                                           ? Icons.check_circle
-                                          : Icons.circle_outlined,
+                                          : Icons.cancel,
                                       color: series['done'] == true
                                           ? colorScheme.primary
-                                          : isDarkMode ? colorScheme.onSurfaceVariant : colorScheme.onPrimaryContainer,
+                                          : isDarkMode
+                                              ? colorScheme.onSurfaceVariant
+                                              : colorScheme.onPrimaryContainer,
                                     ),
                                   ),
                                 ),

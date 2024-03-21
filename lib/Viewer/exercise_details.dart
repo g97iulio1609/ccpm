@@ -8,6 +8,7 @@ class ExerciseDetails extends StatefulWidget {
   final String exerciseName;
   final String? exerciseVariant;
   final List<Map<String, dynamic>> seriesList;
+  final int startIndex;
 
   const ExerciseDetails({
     super.key,
@@ -15,6 +16,7 @@ class ExerciseDetails extends StatefulWidget {
     required this.exerciseName,
     this.exerciseVariant,
     required this.seriesList,
+    required this.startIndex,
   });
 
   @override
@@ -43,13 +45,20 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
     }
   }
 
-  void _setCurrentSeriesIndex() {
-    currentSeriesIndex = widget.seriesList.indexWhere((series) => !series['done']);
-  }
+void _setCurrentSeriesIndex() {
+  currentSeriesIndex = widget.startIndex;
+}
 
   Future<void> _updateSeriesData(String seriesId, int? repsDone, double? weightDone) async {
+    final currentSeries = widget.seriesList[currentSeriesIndex];
+    final expectedReps = currentSeries['reps'];
+    final expectedWeight = currentSeries['weight'];
+
+    final done = (repsDone != null && repsDone >= expectedReps) &&
+        (weightDone != null && weightDone >= expectedWeight);
+
     await FirebaseFirestore.instance.collection('series').doc(seriesId).update({
-      'done': repsDone != null && weightDone != null,
+      'done': done,
       'reps_done': repsDone,
       'weight_done': weightDone,
     });
