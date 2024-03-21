@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'authScreen.dart';
-import 'programsScreen.dart';
+import 'auth_screen.dart';
+import 'programs_screen.dart';
 import 'user_profile.dart';
-import '../exerciseManager/exerciseList.dart';
+import 'exerciseManager/exercise_list.dart';
 import 'maxRMDashboard.dart';
-import 'trainingBuilder/trainingProgram.dart';
+import 'trainingBuilder/training_program.dart';
 import 'users_services.dart';
 import 'users_dashboard.dart';
 
@@ -225,11 +225,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _showAddUserDialog(BuildContext context) {
-    final _formKey = GlobalKey<FormState>();
-    final _nameController = TextEditingController();
-    final _emailController = TextEditingController();
-    final _passwordController = TextEditingController();
-    final _roleController = TextEditingController(text: 'client');
+    final formKey = GlobalKey<FormState>();
+    final nameController = TextEditingController();
+    final emailController = TextEditingController();
+    final passwordController = TextEditingController();
+    final roleController = TextEditingController(text: 'client');
 
     showDialog(
       context: context,
@@ -237,12 +237,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return AlertDialog(
           title: const Text('Add User'),
           content: Form(
-            key: _formKey,
+            key: formKey,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextFormField(
-                  controller: _nameController,
+                  controller: nameController,
                   decoration: const InputDecoration(labelText: 'Name'),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -252,7 +252,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   },
                 ),
                 TextFormField(
-                  controller: _emailController,
+                  controller: emailController,
                   decoration: const InputDecoration(labelText: 'Email'),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -262,7 +262,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   },
                 ),
                 TextFormField(
-                  controller: _passwordController,
+                  controller: passwordController,
                   decoration: const InputDecoration(labelText: 'Password'),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -272,7 +272,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   },
                 ),
                 TextFormField(
-                  controller: _roleController,
+                  controller: roleController,
                   decoration: const InputDecoration(labelText: 'Role'),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -291,12 +291,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             ElevatedButton(
               onPressed: () async {
-                if (_formKey.currentState!.validate()) {
+                if (formKey.currentState!.validate()) {
                   await ref.read(usersServiceProvider).createUser(
-                        name: _nameController.text,
-                        email: _emailController.text,
-                        password: _passwordController.text,
-                        role: _roleController.text,
+                        name: nameController.text,
+                        email: emailController.text,
+                        password: passwordController.text,
+                        role: roleController.text,
                       );
                   Navigator.of(context).pop();
                 }

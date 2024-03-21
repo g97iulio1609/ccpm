@@ -2,8 +2,8 @@ import 'package:alphanessone/trainingBuilder/exercise_dialog.dart';
 import 'package:alphanessone/trainingBuilder/series_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'trainingModel.dart';
-import 'trainingServices.dart';
+import 'training_model.dart';
+import 'training_services.dart';
 import '../users_services.dart';
 
 final firestoreServiceProvider = Provider<FirestoreService>((ref) => FirestoreService());

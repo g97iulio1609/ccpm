@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'trainingModel.dart';
+import 'training_model.dart';
 import 'training_program_controller.dart';
 import 'training_program_exercise_list.dart';
 

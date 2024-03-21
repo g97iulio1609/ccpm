@@ -1,4 +1,4 @@
-import 'package:alphanessone/trainingBuilder/trainingModel.dart';
+import 'package:alphanessone/trainingBuilder/training_model.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'training_program_controller.dart';

@@ -9,12 +9,12 @@ class TimerPage extends StatefulWidget {
   final bool isEmomMode;
 
   const TimerPage({
-    Key? key,
+    super.key,
     required this.currentSeriesIndex,
     required this.totalSeries,
     required this.restTime,
     required this.isEmomMode,
-  }) : super(key: key);
+  });
 
   @override
   _TimerPageState createState() => _TimerPageState();

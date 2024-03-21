@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'exerciseModel.dart';
+import 'exercise_model.dart';
 
 final exercisesServiceProvider = Provider<ExercisesService>((ref) {
   return ExercisesService(FirebaseFirestore.instance);

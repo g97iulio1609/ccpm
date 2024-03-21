@@ -5,8 +5,8 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:rxdart/rxdart.dart';
-import '../exerciseManager/exerciseModel.dart';
-import '../exerciseManager/exercisesServices.dart';
+import 'exerciseManager/exercise_model.dart';
+import 'exerciseManager/exercises_services.dart';
 import 'users_services.dart';
 
 // Providers

@@ -133,7 +133,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.0),
         ),
-        contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -142,8 +142,8 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
             child: TextField(
               controller: _weightControllers[currentSeries['id']],
               textAlign: TextAlign.center,
-              decoration: InputDecoration.collapsed(hintText: ''),
-              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration.collapsed(hintText: ''),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*'))],
             ),
           ),
@@ -160,12 +160,12 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.0),
         ),
-        contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       ),
       child: TextField(
         controller: _repsControllers[currentSeries['id']],
         textAlign: TextAlign.center,
-        decoration: InputDecoration.collapsed(hintText: ''),
+        decoration: const InputDecoration.collapsed(hintText: ''),
         keyboardType: TextInputType.number,
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
       ),

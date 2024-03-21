@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'exerciseModel.dart';
-import 'exercisesServices.dart';
+import 'exercise_model.dart';
+import 'exercises_services.dart';
 
 final muscleGroupsProvider = StreamProvider((ref) {
   return FirebaseFirestore.instance.collection('muscleGroups').snapshots().map(
@@ -16,6 +16,8 @@ final exerciseTypesProvider = StreamProvider((ref) {
 });
 
 class ExercisesList extends HookConsumerWidget {
+  const ExercisesList({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final exercisesService = ref.watch(exercisesServiceProvider);
