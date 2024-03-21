@@ -23,6 +23,10 @@ class SeriesDialog extends ConsumerWidget {
     super.key,
   });
 
+double _roundWeight(double weight) {
+    return (weight / 2.5).round() * 2.5;
+}
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.watch(trainingProgramControllerProvider);
@@ -146,12 +150,13 @@ class SeriesDialog extends ConsumerWidget {
     );
   }
 
-  void _updateWeight(TextEditingController weightController, TextEditingController intensityController) async {
-    final intensity = double.tryParse(intensityController.text) ?? 0;
-    final latestMaxWeight = await _getLatestMaxWeight();
-    final calculatedWeight = (latestMaxWeight * intensity) / 100;
-    weightController.text = calculatedWeight.toStringAsFixed(2);
-  }
+void _updateWeight(TextEditingController weightController, TextEditingController intensityController) async {
+  final intensity = double.tryParse(intensityController.text) ?? 0;
+  final latestMaxWeight = await _getLatestMaxWeight();
+  final calculatedWeight = (latestMaxWeight * intensity) / 100;
+  final roundedWeight = _roundWeight(calculatedWeight);
+  weightController.text = roundedWeight.toStringAsFixed(2);
+}
 
   void _updateIntensity(TextEditingController weightController, TextEditingController intensityController) async {
     final weight = double.tryParse(weightController.text) ?? 0;
@@ -170,9 +175,10 @@ void _updateWeightFromRPE(TextEditingController repsController, TextEditingContr
   final latestMaxWeight = await _getLatestMaxWeight();
   final percentage = _getRPEPercentage(rpe, reps);
   final calculatedWeight = latestMaxWeight * percentage;
+  final roundedWeight = _roundWeight(calculatedWeight);
 
-  weightController.text = calculatedWeight.toStringAsFixed(2);
-  intensityController.text = (percentage * 100).toStringAsFixed(2); // Aggiorna anche l'intensità
+  weightController.text = roundedWeight.toStringAsFixed(2);
+  intensityController.text = (percentage * 100).toStringAsFixed(2);
 }
 
   void _updateRPE(TextEditingController repsController, TextEditingController weightController, TextEditingController rpeController, TextEditingController intensityController) async {
