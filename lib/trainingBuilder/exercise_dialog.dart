@@ -27,6 +27,8 @@ class ExerciseDialog extends ConsumerWidget {
     final variantController = TextEditingController(text: exercise?.variant ?? '');
     String selectedExerciseId = exercise?.exerciseId ?? '';
     final exercisesService = ref.watch(exercisesServiceProvider);
+        List<ExerciseModel> exercises = []; // Aggiungi questa riga
+
 
     return AlertDialog(
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -44,7 +46,7 @@ class ExerciseDialog extends ConsumerWidget {
               stream: exercisesService.getExercises(),
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
-                  final exercises = snapshot.data!;
+                  exercises = snapshot.data!; // Aggiorna il valore di exercises qui
                   return RawAutocomplete<String>(
                     textEditingController: nameController,
                     focusNode: FocusNode(),
@@ -70,6 +72,7 @@ class ExerciseDialog extends ConsumerWidget {
                       } else {
                         nameController.text = selection;
                         selectedExerciseId = exercises.firstWhere((exercise) => exercise.name == selection).id;
+                          exercises.firstWhere((exercise) => exercise.name == selection);
                       }
                     },
                     fieldViewBuilder: (BuildContext context, TextEditingController textEditingController,
@@ -222,6 +225,7 @@ class ExerciseDialog extends ConsumerWidget {
               id: exercise?.id ?? '',
               exerciseId: selectedExerciseId.isNotEmpty ? selectedExerciseId : exercise?.exerciseId ?? '',
               name: nameController.text,
+    type: exercise?.type ?? exercises.firstWhere((e) => e.id == selectedExerciseId).type,
               variant: variantController.text,
               order: exercise?.order ?? 0,
               series: exercise?.series ?? [],

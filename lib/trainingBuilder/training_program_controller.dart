@@ -168,19 +168,19 @@ Future<void> addExercise(int weekIndex, int workoutIndex, BuildContext context) 
     }
   }
 
-  Future<List<Series>?> _showSeriesDialog(BuildContext context, Exercise exercise, int weekIndex, [Series? series]) async {
-    return await showDialog<List<Series>>(
-      context: context,
-      builder: (context) => SeriesDialog(
-        usersService: _usersService,
-        athleteId: _athleteIdController.text,
-        exerciseId: exercise.exerciseId ?? '',
-        weekIndex: weekIndex,
-        exercise: exercise,
-        series: series,
-      ),
-    );
-  }
+Future<List<Series>?> _showSeriesDialog(BuildContext context, Exercise exercise, int weekIndex, [Series? series]) async {
+  return await showDialog<List<Series>>(
+    context: context,
+    builder: (context) => SeriesDialog(
+      usersService: _usersService,
+      athleteId: _athleteIdController.text,
+      exerciseId: exercise.exerciseId ?? '',
+      weekIndex: weekIndex,
+      exercise: exercise, // Passa l'intero oggetto Exercise
+      series: series,
+    ),
+  );
+}
 
   void removeSeries(int weekIndex, int workoutIndex, int exerciseIndex, int seriesIndex) {
     final series = _program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex].series[seriesIndex];

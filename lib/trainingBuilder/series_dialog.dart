@@ -23,9 +23,13 @@ class SeriesDialog extends ConsumerWidget {
     super.key,
   });
 
-double _roundWeight(double weight) {
-    return (weight / 2.5).round() * 2.5;
-}
+  double _roundWeight(double weight, String? type) {
+    if (type == "Manubri") {
+      return (weight / 2).round() * 2.0;
+    } else {
+      return (weight / 2.5).round() * 2.5;
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -154,7 +158,7 @@ void _updateWeight(TextEditingController weightController, TextEditingController
   final intensity = double.tryParse(intensityController.text) ?? 0;
   final latestMaxWeight = await _getLatestMaxWeight();
   final calculatedWeight = (latestMaxWeight * intensity) / 100;
-  final roundedWeight = _roundWeight(calculatedWeight);
+  final roundedWeight = _roundWeight(calculatedWeight,exercise.type);
   weightController.text = roundedWeight.toStringAsFixed(2);
 }
 
@@ -175,7 +179,7 @@ void _updateWeightFromRPE(TextEditingController repsController, TextEditingContr
   final latestMaxWeight = await _getLatestMaxWeight();
   final percentage = _getRPEPercentage(rpe, reps);
   final calculatedWeight = latestMaxWeight * percentage;
-  final roundedWeight = _roundWeight(calculatedWeight);
+  final roundedWeight = _roundWeight(calculatedWeight,exercise.type);
 
   weightController.text = roundedWeight.toStringAsFixed(2);
   intensityController.text = (percentage * 100).toStringAsFixed(2);

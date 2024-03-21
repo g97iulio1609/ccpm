@@ -14,8 +14,8 @@ class TrainingProgramForm extends ConsumerWidget {
     required this.controller,
     required this.onSubmit,
     required this.child,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
