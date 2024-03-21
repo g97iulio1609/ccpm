@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'training_program_controller.dart';
-import '../usersServices.dart';
+import '../users_services.dart';
 
 class AthleteSelectionDialog extends ConsumerWidget {
   final TrainingProgramController controller;

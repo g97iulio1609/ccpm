@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'training_model.dart';
 import 'training_program_controller.dart';
 import 'training_program_exercise_list.dart';
 
@@ -10,39 +11,54 @@ class TrainingProgramWorkoutList extends ConsumerWidget {
   const TrainingProgramWorkoutList({
     required this.controller,
     required this.weekIndex,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final week = controller.program.weeks[weekIndex];
+    final sortedWorkouts = week.workouts.toList()..sort((a, b) => a.order.compareTo(b.order));
 
-    // Ordina i workouts in base al campo 'order'
-    final sortedWorkouts = week.workouts.toList()
-      ..sort((a, b) => a.order.compareTo(b.order));
+return ListView.builder(
+  shrinkWrap: true,
+  physics: const NeverScrollableScrollPhysics(),
+  itemCount: sortedWorkouts.length,
+  itemBuilder: (context, index) {
+    final workout = sortedWorkouts[index];
+    return _buildWorkoutCard(context, workout, index);
+  },
+);
+  }
 
-    return Column(
-      children: [
-        for (int i = 0; i < sortedWorkouts.length; i++)
-          ExpansionTile(
-            title: Text('Workout ${sortedWorkouts[i].order}'),
+  Widget _buildWorkoutCard(BuildContext context, Workout workout, int index) {
+    return Card(
+      margin: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          ListTile(
+            title: Text(
+              'Workout ${workout.order}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             trailing: IconButton(
               icon: const Icon(Icons.delete),
-              onPressed: () => controller.removeWorkout(weekIndex, sortedWorkouts[i].order - 1),
+              onPressed: () => controller.removeWorkout(weekIndex, workout.order - 1),
             ),
-            children: [
-              TrainingProgramExerciseList(
-                controller: controller,
-                weekIndex: weekIndex,
-                workoutIndex: sortedWorkouts[i].order - 1,
-              ),
-              ElevatedButton(
-                onPressed: () => controller.addExercise(weekIndex, sortedWorkouts[i].order - 1, context),
-                child: const Text('Add New Exercise'),
-              ),
-            ],
           ),
-      ],
+          TrainingProgramExerciseList(
+            controller: controller,
+            weekIndex: weekIndex,
+            workoutIndex: workout.order - 1,
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: ElevatedButton(
+              onPressed: () => controller.addExercise(weekIndex, workout.order - 1, context),
+              child: const Text('Add New Exercise'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

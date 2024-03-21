@@ -5,9 +5,9 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:rxdart/rxdart.dart';
-import '../exerciseManager/exerciseModel.dart';
-import '../exerciseManager/exercisesServices.dart';
-import 'usersServices.dart';
+import 'exerciseManager/exercise_model.dart';
+import 'exerciseManager/exercises_services.dart';
+import 'users_services.dart';
 
 // Providers
 final authProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
@@ -18,7 +18,10 @@ final exercisesStreamProvider = StreamProvider<List<ExerciseModel>>((ref) {
 final userServiceProvider = Provider<UsersService>((ref) {
   return UsersService(ref, FirebaseFirestore.instance, FirebaseAuth.instance);
 });
-
+final usersStreamProvider = StreamProvider<List<UserModel>>((ref) {
+  final service = ref.watch(userServiceProvider);
+  return service.getUsers();
+});
 
 class MaxRMDashboard extends HookConsumerWidget {
   const MaxRMDashboard({super.key});
@@ -28,35 +31,84 @@ class MaxRMDashboard extends HookConsumerWidget {
     final FirebaseAuth auth = ref.watch(authProvider);
     final User? user = auth.currentUser;
     final exercisesAsyncValue = ref.watch(exercisesStreamProvider);
+    final usersAsyncValue = ref.watch(usersStreamProvider);
     final usersService = ref.watch(userServiceProvider);
     final selectedExerciseController = useState<ExerciseModel?>(null);
+    final selectedUserController = useState<UserModel?>(null);
     final maxWeightController = useTextEditingController();
     final repetitionsController = useTextEditingController();
     final dateFormat = DateFormat('yyyy-MM-dd');
 
     Future<void> addRecord({
-      required String exerciseId,
-      required String exerciseName,
-      required int maxWeight,
-      required int repetitions,
-    }) async {
-      if (user != null) {
-        await usersService.addExerciseRecord(
-          userId: user.uid,
-          exerciseId: exerciseId,
-          exerciseName: exerciseName,
-          maxWeight: maxWeight,
-          repetitions: repetitions,
-          date: dateFormat.format(DateTime.now()),
-        );
-      }
-    }
+  required String exerciseId,
+  required String exerciseName,
+  required int maxWeight,
+  required int repetitions,
+}) async {
+  String userId = user?.uid ?? '';
+  if (usersService.getCurrentUserRole() == 'admin' &&
+      selectedUserController.value != null) {
+    userId = selectedUserController.value!.id;
+  }
+  if (userId.isNotEmpty) {
+    await usersService.addExerciseRecord(
+      userId: userId,
+      exerciseId: exerciseId,
+      exerciseName: exerciseName,
+      maxWeight: maxWeight,
+      repetitions: repetitions,
+      date: dateFormat.format(DateTime.now()),
+    );
+  }
+}
 
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            if (usersService.getCurrentUserRole() == 'admin')
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: usersAsyncValue.when(
+                  data: (users) {
+                    return Autocomplete<UserModel>(
+                      optionsBuilder: (TextEditingValue textEditingValue) {
+                        if (textEditingValue.text.isEmpty) {
+                          return const Iterable<UserModel>.empty();
+                        }
+                        return users.where((UserModel user) {
+                          return user.name
+                              .toLowerCase()
+                              .startsWith(textEditingValue.text.toLowerCase());
+                        });
+                      },
+                      displayStringForOption: (UserModel user) => user.name,
+                      fieldViewBuilder: (
+                        BuildContext context,
+                        TextEditingController fieldTextEditingController,
+                        FocusNode fieldFocusNode,
+                        VoidCallback onFieldSubmitted,
+                      ) {
+                        return TextFormField(
+                          controller: fieldTextEditingController,
+                          focusNode: fieldFocusNode,
+                          decoration: const InputDecoration(
+                            labelText: 'Seleziona utente',
+                            border: OutlineInputBorder(),
+                          ),
+                        );
+                      },
+                      onSelected: (UserModel selection) {
+                        selectedUserController.value = selection;
+                      },
+                    );
+                  },
+                  loading: () => const CircularProgressIndicator(),
+                  error: (error, stack) =>
+                      Text("Errore nel caricamento degli utenti: $error"),
+                ),
+              ),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: exercisesAsyncValue.when(
@@ -99,7 +151,6 @@ class MaxRMDashboard extends HookConsumerWidget {
                     Text("Errore nel caricamento degli esercizi: $error"),
               ),
             ),
-
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: TextField(
@@ -150,27 +201,33 @@ class MaxRMDashboard extends HookConsumerWidget {
                 child: const Text('Aggiungi Record'),
               ),
             ),
-            _buildAllExercisesMaxRMs(ref, user),
+            if (usersService.getCurrentUserRole() == 'admin')
+              _buildAllExercisesMaxRMs(
+                  ref, selectedUserController.value?.id ?? ''),
+            if (usersService.getCurrentUserRole() != 'admin' && user != null)
+              _buildAllExercisesMaxRMs(ref, user.uid),
           ],
         ),
       ),
     );
   }
 
-
-   Widget _buildAllExercisesMaxRMs(WidgetRef ref, User? user) {
+  Widget _buildAllExercisesMaxRMs(WidgetRef ref, String userId) {
     final exercisesAsyncValue = ref.watch(exercisesStreamProvider);
     final usersService = ref.watch(userServiceProvider);
 
     return exercisesAsyncValue.when(
       data: (exercises) {
         List<Stream<ExerciseRecord?>> exerciseRecordStreams = [];
-        if (user != null) {
+        if (userId.isNotEmpty) {
           exerciseRecordStreams = exercises.map((exercise) {
             return usersService.getExerciseRecords(
-              userId: user.uid,
+              userId: userId,
               exerciseId: exercise.id,
-            ).map((records) => records.isNotEmpty ? records.reduce((a, b) => a.date.compareTo(b.date) > 0 ? a : b) : null);
+            ).map((records) => records.isNotEmpty
+                ? records.reduce(
+                    (a, b) => a.date.compareTo(b.date) > 0 ? a : b)
+                : null);
           }).toList();
         }
 
@@ -182,9 +239,16 @@ class MaxRMDashboard extends HookConsumerWidget {
             }
             var latestRecords = snapshot.data ?? [];
             // Filtra i record per rimuovere quelli nulli.
-            latestRecords = latestRecords.where((record) => record != null).toList();
+            latestRecords =
+                latestRecords.where((record) => record != null).toList();
             var width = MediaQuery.of(context).size.width;
-            int crossAxisCount = width > 1200 ? 4 : width > 800 ? 3 : width > 600 ? 2 : 1;
+            int crossAxisCount = width > 1200
+                ? 4
+                : width > 800
+                    ? 3
+                    : width > 600
+                        ? 2
+                        : 1;
 
             return Expanded(
               child: GridView.builder(
@@ -197,16 +261,19 @@ class MaxRMDashboard extends HookConsumerWidget {
                 itemCount: latestRecords.length,
                 itemBuilder: (context, index) {
                   var record = latestRecords[index];
-                  // Non è più necessario il controllo per record nulli qui perché abbiamo già filtrato la lista.
-                  ExerciseModel exercise = exercises.firstWhere((ex) => ex.id == record?.exerciseId);
-
+                  ExerciseModel exercise = exercises.firstWhere(
+                      (ex) => ex.id == record?.exerciseId,
+                      orElse: () => ExerciseModel(
+                          id: '', name: 'Esercizio non trovato', type: '', muscleGroup: ''));
                   return Card(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(exercise.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        Text(exercise.name,
+                            style: const TextStyle(fontWeight: FontWeight.bold)),
                         ListTile(
-                          title: Text('${record?.maxWeight} kg x ${record?.repetitions} ripetizioni'),
+                          title: Text(
+                              '${record?.maxWeight} kg x ${record?.repetitions} ripetizioni'),
                           subtitle: Text(record!.date),
                         ),
                         Row(
@@ -218,7 +285,13 @@ class MaxRMDashboard extends HookConsumerWidget {
                                 backgroundColor: Colors.green,
                               ),
                               child: const Text('Modifica'),
-                              onPressed: () => showEditDialog(context, record, exercise, user, usersService),
+                              onPressed: () => showEditDialog(
+                                context,
+                                record,
+                                exercise,
+                                userId,
+                                usersService,
+                              ),
                             ),
                             ElevatedButton(
                               style: ElevatedButton.styleFrom(
@@ -226,7 +299,13 @@ class MaxRMDashboard extends HookConsumerWidget {
                                 backgroundColor: Colors.red,
                               ),
                               child: const Text('Elimina'),
-                              onPressed: () => showDeleteDialog(context, record, exercise, user, usersService),
+                              onPressed: () => showDeleteDialog(
+                                context,
+                                record,
+                                exercise,
+                                userId,
+                                usersService,
+                              ),
                             ),
                           ],
                         ),
@@ -240,7 +319,8 @@ class MaxRMDashboard extends HookConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(child: Text('Errore nel caricamento dei massimali: $error')),
+      error: (error, stack) => Center(
+          child: Text('Errore nel caricamento dei massimali: $error')),
     );
   }
 
@@ -248,7 +328,7 @@ class MaxRMDashboard extends HookConsumerWidget {
     BuildContext context,
     ExerciseRecord record,
     ExerciseModel exercise,
-    User? user,
+    String userId,
     UsersService usersService,
   ) {
     TextEditingController maxWeightController =
@@ -291,9 +371,10 @@ class MaxRMDashboard extends HookConsumerWidget {
                           .round();
                   newRepetitions = 1;
                 }
-                if (user != null) {
+                if (userId.isNotEmpty) {
+                  debugPrint("newMaxWeight:$newMaxWeight");
                   usersService.updateExerciseRecord(
-                    userId: user.uid,
+                    userId: userId,
                     exerciseId: exercise.id,
                     recordId: record.id,
                     maxWeight: newMaxWeight,
@@ -314,7 +395,7 @@ class MaxRMDashboard extends HookConsumerWidget {
     BuildContext context,
     ExerciseRecord record,
     ExerciseModel exercise,
-    User? user,
+    String userId,
     UsersService usersService,
   ) {
     showDialog(
@@ -330,9 +411,9 @@ class MaxRMDashboard extends HookConsumerWidget {
             ),
             TextButton(
               onPressed: () {
-                if (user != null) {
+                if (userId.isNotEmpty) {
                   usersService.deleteExerciseRecord(
-                    userId: user.uid,
+                    userId: userId,
                     exerciseId: exercise.id,
                     recordId: record.id,
                   );

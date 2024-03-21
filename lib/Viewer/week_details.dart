@@ -1,37 +1,44 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'weekdetails.dart';
+import 'workout_details.dart';
 
-class TrainingViewer extends StatefulWidget {
-  final String programId;
-  const TrainingViewer({super.key, required this.programId});
+class WeekDetails extends StatefulWidget {
+  final String weekId;
+  const WeekDetails({super.key, required this.weekId});
 
   @override
-  _TrainingViewerState createState() => _TrainingViewerState();
+  _WeekDetailsState createState() => _WeekDetailsState();
 }
 
-class _TrainingViewerState extends State<TrainingViewer> {
+class _WeekDetailsState extends State<WeekDetails> {
   bool loading = true;
-  List<Map<String, dynamic>> weeks = [];
+  List<Map<String, dynamic>> workouts = [];
 
   @override
   void initState() {
     super.initState();
-    fetchTrainingWeeks();
+    fetchWorkouts();
   }
 
-  void fetchTrainingWeeks() async {
+  void fetchWorkouts() async {
     setState(() {
       loading = true;
     });
+
     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-        .collection('weeks')
-        .where('programId', isEqualTo: widget.programId)
-        .orderBy('number')
+        .collection('workouts')
+        .where('weekId', isEqualTo: widget.weekId)
+        .orderBy('order')
         .get();
-    weeks = querySnapshot.docs
-        .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
+
+    workouts = querySnapshot.docs
+        .map((doc) => {
+              'id': doc.id,
+              ...doc.data() as Map<String, dynamic>,
+              'order': doc['order'],
+            })
         .toList();
+
     setState(() {
       loading = false;
     });
@@ -41,16 +48,16 @@ class _TrainingViewerState extends State<TrainingViewer> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Visualizzatore di allenamento'),
+        title: const Text('Dettagli settimana'),
         elevation: 0,
         centerTitle: true,
       ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
-              itemCount: weeks.length,
+              itemCount: workouts.length,
               itemBuilder: (context, index) {
-                var week = weeks[index];
+                var workout = workouts[index];
                 return Padding(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 16.0, vertical: 8.0),
@@ -63,7 +70,8 @@ class _TrainingViewerState extends State<TrainingViewer> {
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (context) => WeekDetails(weekId: week['id']),
+                            builder: (context) =>
+                                WorkoutDetails(workoutId: workout['id']),
                           ),
                         );
                       },
@@ -75,19 +83,19 @@ class _TrainingViewerState extends State<TrainingViewer> {
                             Row(
                               children: [
                                 Icon(
-                                  Icons.calendar_today,
+                                  Icons.fitness_center,
                                   color: Theme.of(context).primaryColor,
                                 ),
                                 const SizedBox(width: 8.0),
                                 Text(
-                                  "Settimana ${week['number']}",
+                                  "Allenamento ${workout['order']}",
                                   style: Theme.of(context).textTheme.titleLarge,
                                 ),
                               ],
                             ),
                             const SizedBox(height: 8.0),
                             Text(
-                              week['description'] ?? '',
+                              workout['description'] ?? '',
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
                           ],

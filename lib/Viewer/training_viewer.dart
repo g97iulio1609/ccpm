@@ -1,44 +1,37 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'workoutdetails.dart';
+import 'week_details.dart';
 
-class WeekDetails extends StatefulWidget {
-  final String weekId;
-  const WeekDetails({super.key, required this.weekId});
+class TrainingViewer extends StatefulWidget {
+  final String programId;
+  const TrainingViewer({super.key, required this.programId});
 
   @override
-  _WeekDetailsState createState() => _WeekDetailsState();
+  _TrainingViewerState createState() => _TrainingViewerState();
 }
 
-class _WeekDetailsState extends State<WeekDetails> {
+class _TrainingViewerState extends State<TrainingViewer> {
   bool loading = true;
-  List<Map<String, dynamic>> workouts = [];
+  List<Map<String, dynamic>> weeks = [];
 
   @override
   void initState() {
     super.initState();
-    fetchWorkouts();
+    fetchTrainingWeeks();
   }
 
-  void fetchWorkouts() async {
+  void fetchTrainingWeeks() async {
     setState(() {
       loading = true;
     });
-
     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-        .collection('workouts')
-        .where('weekId', isEqualTo: widget.weekId)
-        .orderBy('order')
+        .collection('weeks')
+        .where('programId', isEqualTo: widget.programId)
+        .orderBy('number')
         .get();
-
-    workouts = querySnapshot.docs
-        .map((doc) => {
-              'id': doc.id,
-              ...doc.data() as Map<String, dynamic>,
-              'order': doc['order'],
-            })
+    weeks = querySnapshot.docs
+        .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
         .toList();
-
     setState(() {
       loading = false;
     });
@@ -48,16 +41,16 @@ class _WeekDetailsState extends State<WeekDetails> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dettagli settimana'),
+        title: const Text('Visualizzatore di allenamento'),
         elevation: 0,
         centerTitle: true,
       ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
-              itemCount: workouts.length,
+              itemCount: weeks.length,
               itemBuilder: (context, index) {
-                var workout = workouts[index];
+                var week = weeks[index];
                 return Padding(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 16.0, vertical: 8.0),
@@ -70,8 +63,7 @@ class _WeekDetailsState extends State<WeekDetails> {
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (context) =>
-                                WorkoutDetails(workoutId: workout['id']),
+                            builder: (context) => WeekDetails(weekId: week['id']),
                           ),
                         );
                       },
@@ -83,19 +75,19 @@ class _WeekDetailsState extends State<WeekDetails> {
                             Row(
                               children: [
                                 Icon(
-                                  Icons.fitness_center,
+                                  Icons.calendar_today,
                                   color: Theme.of(context).primaryColor,
                                 ),
                                 const SizedBox(width: 8.0),
                                 Text(
-                                  "Allenamento ${workout['order']}",
+                                  "Settimana ${week['number']}",
                                   style: Theme.of(context).textTheme.titleLarge,
                                 ),
                               ],
                             ),
                             const SizedBox(height: 8.0),
                             Text(
-                              workout['description'] ?? '',
+                              week['description'] ?? '',
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
                           ],
