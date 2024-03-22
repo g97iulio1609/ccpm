@@ -76,10 +76,10 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
   }
 
   int findFirstNotDoneSeriesIndex(List<Map<String, dynamic>> series) {
-    debugPrint('Searching for first not done series...');
+    //debugPrint('Searching for first not done series...');
     for (int i = 0; i < series.length; i++) {
       final serie = series[i];
-      debugPrint('Checking series at index $i: $serie');
+      //debugPrint('Checking series at index $i: $serie');
       
       final repsDone = serie['reps_done'];
       final weightDone = serie['weight_done'];
@@ -90,13 +90,13 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
       if (done == true ||
           (done == false && repsDone != null && repsDone <= reps && repsDone > 0 &&
            weightDone != null && weightDone <= weight && weightDone > 0)) {
-        debugPrint('Series at index $i is considered done');
+        //debugPrint('Series at index $i is considered done');
       } else {
-        debugPrint('Found first not done series at index $i');
+        //debugPrint('Found first not done series at index $i');
         return i;
       }
     }
-    debugPrint('All series are done');
+    //debugPrint('All series are done');
     return series.length;
   }
 
