@@ -15,7 +15,7 @@ class WorkoutDetails extends StatefulWidget {
 class _WorkoutDetailsState extends State<WorkoutDetails> {
   bool loading = true;
   List<Map<String, dynamic>> exercises = [];
-  final List<StreamSubscription> _subscriptions = [];
+  final List<StreamSubscription> subscriptions = [];
 
   @override
   void initState() {
@@ -34,7 +34,7 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
         .listen((exerciseSnapshot) {
       List<Map<String, dynamic>> tempExercises =
           exerciseSnapshot.docs.map((doc) {
-        var exerciseData = doc.data() as Map<String, dynamic>? ?? {};
+        var exerciseData = doc.data();
         exerciseData['id'] = doc.id;
         exerciseData['series'] = [];
         return exerciseData;
@@ -49,7 +49,7 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
             .listen((seriesSnapshot) {
           List<Map<String, dynamic>> tempSeries =
               seriesSnapshot.docs.map((seriesDoc) {
-            var seriesData = seriesDoc.data() as Map<String, dynamic>? ?? {};
+            var seriesData = seriesDoc.data();
             seriesData['id'] = seriesDoc.id;
             return seriesData;
           }).toList();
@@ -62,7 +62,7 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
           }
         });
 
-        _subscriptions.add(seriesSubscription);
+        subscriptions.add(seriesSubscription);
       }
 
       if (mounted) {
@@ -72,33 +72,88 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
       }
     });
 
-    _subscriptions.add(exercisesSubscription);
+    subscriptions.add(exercisesSubscription);
   }
 
-int findFirstNotDoneSeriesIndex(List<Map<String, dynamic>> series) {
-  debugPrint('Searching for first not done series...');
-  for (int i = 0; i < series.length; i++) {
-    final serie = series[i];
-    debugPrint('Checking series at index $i: $serie');
-    
-    final repsDone = serie['reps_done'];
-    final weightDone = serie['weight_done'];
-    final reps = serie['reps'];
-    final weight = serie['weight'];
-    final done = serie['done'];
-    
-    if (done == true ||
-        (done == false && repsDone != null && repsDone <= reps && repsDone > 0 &&
-         weightDone != null && weightDone <= weight && weightDone > 0)) {
-      debugPrint('Series at index $i is considered done');
-    } else {
-      debugPrint('Found first not done series at index $i');
-      return i;
+  int findFirstNotDoneSeriesIndex(List<Map<String, dynamic>> series) {
+    debugPrint('Searching for first not done series...');
+    for (int i = 0; i < series.length; i++) {
+      final serie = series[i];
+      debugPrint('Checking series at index $i: $serie');
+      
+      final repsDone = serie['reps_done'];
+      final weightDone = serie['weight_done'];
+      final reps = serie['reps'];
+      final weight = serie['weight'];
+      final done = serie['done'];
+      
+      if (done == true ||
+          (done == false && repsDone != null && repsDone <= reps && repsDone > 0 &&
+           weightDone != null && weightDone <= weight && weightDone > 0)) {
+        debugPrint('Series at index $i is considered done');
+      } else {
+        debugPrint('Found first not done series at index $i');
+        return i;
+      }
     }
+    debugPrint('All series are done');
+    return series.length;
   }
-  debugPrint('All series are done');
-  return series.length;
-}
+
+  Future<void> showEditSeriesDialog(Map<String, dynamic> series) async {
+    final repsController = TextEditingController(text: series['reps_done']?.toString() ?? '');
+    final weightController = TextEditingController(text: series['weight_done']?.toString() ?? '');
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Modifica Serie'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: repsController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Reps'),
+              ),
+              TextField(
+                controller: weightController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Peso (kg)'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Annulla'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final repsDone = int.tryParse(repsController.text) ?? 0;
+                final weightDone = double.tryParse(weightController.text) ?? 0.0;
+                final done = repsDone >= series['reps'] && weightDone >= series['weight'];
+
+                await FirebaseFirestore.instance
+                    .collection('series')
+                    .doc(series['id'])
+                    .update({
+                  'reps_done': repsDone,
+                  'weight_done': weightDone,
+                  'done': done,
+                });
+                Navigator.pop(context);
+              },
+              child: const Text('Salva'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -120,7 +175,7 @@ int findFirstNotDoneSeriesIndex(List<Map<String, dynamic>> series) {
               itemBuilder: (context, index) {
                 final exercise = exercises[index];
                 final firstNotDoneSeriesIndex =
-                    findFirstNotDoneSeriesIndex(exercise['series']);
+                    findFirstNotDoneSeriesIndex(List<Map<String, dynamic>>.from(exercise['series']));
                 final isContinueMode = firstNotDoneSeriesIndex > 0;
 
                 return Card(
@@ -150,7 +205,7 @@ int findFirstNotDoneSeriesIndex(List<Map<String, dynamic>> series) {
                                       : colorScheme.onBackground,
                                 ),
                                 textAlign: TextAlign
-                                    .center, // Center the exercise name
+                                    .center,
                               ),
                             ),
                           ],
@@ -165,7 +220,7 @@ int findFirstNotDoneSeriesIndex(List<Map<String, dynamic>> series) {
                                   exerciseId: exercise['id'],
                                   exerciseName: exercise['name'],
                                   exerciseVariant: exercise['variant'],
-      seriesList: List<Map<String, dynamic>>.from(exercise['series']),
+                                  seriesList: List<Map<String, dynamic>>.from(exercise['series']),
                                   startIndex: firstNotDoneSeriesIndex,
                                 ),
                               ),
@@ -238,78 +293,83 @@ int findFirstNotDoneSeriesIndex(List<Map<String, dynamic>> series) {
                             ),
                           ],
                         ),
-                        ...exercise['series'].asMap().entries.map((entry) {
+                        ...List<Map<String, dynamic>>.from(exercise['series']).asMap().entries.map((entry) {
                           final seriesIndex = entry.key;
                           final series = entry.value;
-                          return Container(
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            decoration: BoxDecoration(
-                              color: isDarkMode
-                                  ? colorScheme.surfaceVariant
-                                  : colorScheme.primaryContainer,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  flex: 1,
-                                  child: Center(
-                                    child: Text(
-                                      "${seriesIndex + 1}",
-                                      style: theme.textTheme.bodyLarge
-                                          ?.copyWith(
-                                        color: isDarkMode
-                                            ? colorScheme.onSurfaceVariant
-                                            : colorScheme.onPrimaryContainer,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  flex: 2,
-                                  child: Center(
-                                    child: Text(
-                                      "${series['reps']}/${series['reps_done'] == 0 ? '' : series['reps_done']}R",
-                                      style: theme.textTheme.bodyLarge
-                                          ?.copyWith(
-                                        color: isDarkMode
-                                            ? colorScheme.onSurfaceVariant
-                                            : colorScheme.onPrimaryContainer,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  flex: 2,
-                                  child: Center(
-                                    child: Text(
-                                      "${series['weight']}/${series['weight_done'] == 0 ? '' : series['weight_done']} Kg", // Cambiato qui
-                                      style: theme.textTheme.bodyLarge
-                                          ?.copyWith(
-                                        color: isDarkMode
-                                            ? colorScheme.onSurfaceVariant
-                                            : colorScheme.onPrimaryContainer,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  flex: 1,
-                                  child: Center(
-                                    child: Icon(
-                                      series['done'] == true
-                                          ? Icons.check_circle
-                                          : Icons.cancel,
-                                      color: series['done'] == true
-                                          ? colorScheme.primary
-                                          : isDarkMode
+                          return GestureDetector(
+                            onTap: () {
+                              showEditSeriesDialog(series);
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isDarkMode
+                                    ? colorScheme.surfaceVariant
+                                    : colorScheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    flex: 1,
+                                    child: Center(
+                                      child: Text(
+                                        "${seriesIndex + 1}",
+                                        style: theme.textTheme.bodyLarge
+                                            ?.copyWith(
+                                          color: isDarkMode
                                               ? colorScheme.onSurfaceVariant
                                               : colorScheme.onPrimaryContainer,
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                  Expanded(
+                                    flex: 2,
+                                    child: Center(
+                                      child: Text(
+                                        "${series['reps']}/${series['reps_done'] == 0 ? '' : series['reps_done']}R",
+                                        style: theme.textTheme.bodyLarge
+                                            ?.copyWith(
+                                          color: isDarkMode
+                                              ? colorScheme.onSurfaceVariant
+                                              : colorScheme.onPrimaryContainer,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 2,
+                                    child: Center(
+                                      child: Text(
+                                        "${series['weight']}/${series['weight_done'] == 0 ? '' : series['weight_done']} Kg",
+                                        style: theme.textTheme.bodyLarge
+                                            ?.copyWith(
+                                          color: isDarkMode
+                                              ? colorScheme.onSurfaceVariant
+                                              : colorScheme.onPrimaryContainer,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 1,
+                                    child: Center(
+                                      child: Icon(
+                                        series['done'] == true
+                                            ? Icons.check_circle
+                                            : Icons.cancel,
+                                        color: series['done'] == true
+                                            ? colorScheme.primary
+                                            : isDarkMode
+                                                ? colorScheme.onSurfaceVariant
+                                                : colorScheme.onPrimaryContainer,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           );
                         }).toList(),
@@ -325,7 +385,7 @@ int findFirstNotDoneSeriesIndex(List<Map<String, dynamic>> series) {
   @override
   void dispose() {
     super.dispose();
-    for (final subscription in _subscriptions) {
+    for (final subscription in subscriptions) {
       subscription.cancel();
     }
   }
