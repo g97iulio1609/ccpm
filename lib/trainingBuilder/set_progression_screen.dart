@@ -13,88 +13,84 @@ class SetProgressionScreen extends ConsumerWidget {
     super.key,
   });
 
- @override
-Widget build(BuildContext context, WidgetRef ref) {
-  final controller = ref.watch(trainingProgramControllerProvider);
-  final weekProgressions = exercise?.weekProgressions ?? [];
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final controller = ref.watch(trainingProgramControllerProvider);
+    final weekProgressions = exercise?.weekProgressions ??
+        List.generate(controller.program.weeks.length, (index) => WeekProgression(
+              weekNumber: index + 1,
+              reps: 0,
+              sets: 0,
+              intensity: '',
+              rpe: '',
+              weight: 0.0,
+            ));
 
-  //print('Building SetProgressionScreen');
-  //print('Exercise ID: $exerciseId');
-  //print('Week Progressions: $weekProgressions');
+    debugPrint('Building SetProgressionScreen');
+    debugPrint('Exercise: $exercise');
+    debugPrint('Week progressions: $weekProgressions');
 
-  return Scaffold(
-    appBar: AppBar(
-      title: const Text('Set Progression'),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.check),
-          onPressed: () {
-            //print('Updating exercise progressions');
-            //print('Updated Week Progressions: $weekProgressions');
-            controller.updateExerciseProgressions(exercise!, weekProgressions);
-            controller.applyWeekProgressions(
-                exercise!.order - 1, weekProgressions);
-            Navigator.pop(context);
-          },
-          tooltip: 'Apply Progression',
-        ),
-      ],
-    ),
-    body: SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: SingleChildScrollView(
-        child: DataTable(
-          columnSpacing: 16,
-          horizontalMargin: 16,
-          columns: const [
-            DataColumn(label: Text('Week')),
-            DataColumn(label: Text('Reps')),
-            DataColumn(label: Text('Sets')),
-            DataColumn(label: Text('Intensity')),
-            DataColumn(label: Text('RPE')),
-            DataColumn(label: Text('Weight')),
-          ],
-          rows: List.generate(
-            controller.program.weeks.length,
-            (weekIndex) {
-              final progression = weekIndex < weekProgressions.length
-                  ? weekProgressions[weekIndex]
-                  : WeekProgression(
-                      weekNumber: weekIndex + 1,
-                      reps: 0,
-                      sets: 0,
-                      intensity: '',
-                      rpe: '',
-                      weight: 0.0,
-                    );
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Set Progression'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.check),
+            onPressed: () {
+              controller.updateExerciseProgressions(exercise!, weekProgressions);
+              controller.applyWeekProgressions(
+                  exercise!.order - 1, weekProgressions);
+              Navigator.pop(context);
+            },
+            tooltip: 'Apply Progression',
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: SingleChildScrollView(
+          child: DataTable(
+            columnSpacing: 16,
+            horizontalMargin: 16,
+            columns: const [
+              DataColumn(label: Text('Week')),
+              DataColumn(label: Text('Reps')),
+              DataColumn(label: Text('Sets')),
+              DataColumn(label: Text('Intensity')),
+              DataColumn(label: Text('RPE')),
+              DataColumn(label: Text('Weight')),
+            ],
+            rows: List.generate(
+              weekProgressions.length,
+              (weekIndex) {
+                final progression = weekProgressions[weekIndex];
 
-              //print('Week Index: $weekIndex');
-              //print('Progression: $progression');
+                debugPrint('Generating row for week: $weekIndex');
+                debugPrint('Progression: $progression');
+                debugPrint('Reps: ${progression.reps}');
+                debugPrint('Sets: ${progression.sets}');
+                debugPrint('Intensity: ${progression.intensity}');
+                debugPrint('RPE: ${progression.rpe}');
+                debugPrint('Weight: ${progression.weight}');
 
-              return DataRow(
-                cells: [
-                  DataCell(Text('${progression.weekNumber}')),
-                  DataCell(
-                    TextFormField(
-                      initialValue: progression.reps.toString(),
-                      keyboardType: TextInputType.number,
-                      onChanged: (value) {
-                        final reps = int.tryParse(value) ?? 0;
-                        if (weekIndex < weekProgressions.length) {
+                return DataRow(
+                  cells: [
+                    DataCell(Text('${progression.weekNumber}')),
+                    DataCell(
+                      TextFormField(
+                        initialValue: progression.reps.toString(),
+                        keyboardType: TextInputType.number,
+                        onChanged: (value) {
+                          final reps = int.tryParse(value) ?? 0;
                           weekProgressions[weekIndex] =
                               progression.copyWith(reps: reps);
-                        } else {
-                          weekProgressions.add(progression.copyWith(reps: reps));
-                        }
-                        //print('Updated Reps: $reps');
-                        //print('Updated Week Progressions: $weekProgressions');
-                      },
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: 12),
+                        },
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          contentPadding:
+                              const EdgeInsets.symmetric(horizontal: 12),
                         ),
                       ),
                     ),
@@ -104,12 +100,8 @@ Widget build(BuildContext context, WidgetRef ref) {
                         keyboardType: TextInputType.number,
                         onChanged: (value) {
                           final sets = int.tryParse(value) ?? 0;
-                          if (weekIndex < weekProgressions.length) {
-                            weekProgressions[weekIndex] =
-                                progression.copyWith(sets: sets);
-                          } else {
-                            weekProgressions.add(progression.copyWith(sets: sets));
-                          }
+                          weekProgressions[weekIndex] =
+                              progression.copyWith(sets: sets);
                         },
                         decoration: InputDecoration(
                           border: OutlineInputBorder(
@@ -125,12 +117,8 @@ Widget build(BuildContext context, WidgetRef ref) {
                         initialValue: progression.intensity,
                         keyboardType: TextInputType.number,
                         onChanged: (value) {
-                          if (weekIndex < weekProgressions.length) {
-                            weekProgressions[weekIndex] =
-                                progression.copyWith(intensity: value);
-                          } else {
-                            weekProgressions.add(progression.copyWith(intensity: value));
-                          }
+                          weekProgressions[weekIndex] =
+                              progression.copyWith(intensity: value);
                         },
                         decoration: InputDecoration(
                           border: OutlineInputBorder(
@@ -146,12 +134,8 @@ Widget build(BuildContext context, WidgetRef ref) {
                         initialValue: progression.rpe,
                         keyboardType: TextInputType.number,
                         onChanged: (value) {
-                          if (weekIndex < weekProgressions.length) {
-                            weekProgressions[weekIndex] =
-                                progression.copyWith(rpe: value);
-                          } else {
-                            weekProgressions.add(progression.copyWith(rpe: value));
-                          }
+                          weekProgressions[weekIndex] =
+                              progression.copyWith(rpe: value);
                         },
                         decoration: InputDecoration(
                           border: OutlineInputBorder(
@@ -168,12 +152,8 @@ Widget build(BuildContext context, WidgetRef ref) {
                         keyboardType: TextInputType.number,
                         onChanged: (value) {
                           final weight = double.tryParse(value) ?? 0;
-                          if (weekIndex < weekProgressions.length) {
-                            weekProgressions[weekIndex] =
-                                progression.copyWith(weight: weight);
-                          } else {
-                            weekProgressions.add(progression.copyWith(weight: weight));
-                          }
+                          weekProgressions[weekIndex] =
+                              progression.copyWith(weight: weight);
                         },
                         decoration: InputDecoration(
                           border: OutlineInputBorder(

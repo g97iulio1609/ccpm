@@ -37,7 +37,7 @@ Future<int> getLatestMaxWeight(UsersService usersService, String userId, String 
   return latestMaxWeight;
 }
 
-double calculateWeightFromIntensity(int latestMaxWeight, double intensity) {
+double calculateWeightFromIntensity( latestMaxWeight, double intensity) {
   return (latestMaxWeight * intensity) / 100;
 }
 
