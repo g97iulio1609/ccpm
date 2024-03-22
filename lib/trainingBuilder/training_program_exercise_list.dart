@@ -38,12 +38,12 @@ class TrainingProgramExerciseList extends ConsumerWidget {
   }
 
   Widget _buildExerciseCard(
-    BuildContext context,
-    Exercise exercise,
-    UsersService usersService,
-    String athleteId,
-    DateFormat dateFormat,
-  ) {
+      BuildContext context,
+      Exercise exercise,
+      UsersService usersService,
+      String athleteId,
+      DateFormat dateFormat,
+      ) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       child: Padding(
@@ -93,12 +93,12 @@ class TrainingProgramExerciseList extends ConsumerWidget {
   }
 
   Future<void> _addOrUpdateMaxRM(
-    Exercise exercise,
-    BuildContext context,
-    UsersService usersService,
-    String athleteId,
-    DateFormat dateFormat,
-  ) async {
+      Exercise exercise,
+      BuildContext context,
+      UsersService usersService,
+      String athleteId,
+      DateFormat dateFormat,
+      ) async {
     final record = await usersService.getLatestExerciseRecord(userId: athleteId, exerciseId: exercise.exerciseId!);
     final maxWeightController = TextEditingController(text: record?.maxWeight.toString() ?? '');
     final repetitionsController = TextEditingController(text: record?.repetitions.toString() ?? '');

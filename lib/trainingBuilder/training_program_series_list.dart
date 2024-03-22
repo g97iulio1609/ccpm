@@ -21,15 +21,15 @@ class TrainingProgramSeriesList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final exercise = controller.program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
 
- return ListView.builder(
-  shrinkWrap: true,
-  physics: const NeverScrollableScrollPhysics(),
-  itemCount: exercise.series.length,
-  itemBuilder: (context, index) {
-    final series = exercise.series[index];
-    return _buildSeriesCard(context, series, index);
-  },
-);
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: exercise.series.length,
+      itemBuilder: (context, index) {
+        final series = exercise.series[index];
+        return _buildSeriesCard(context, series, index);
+      },
+    );
   }
 
   Widget _buildSeriesCard(BuildContext context, Series series, int index) {
