@@ -253,6 +253,8 @@ class TrainingProgramController extends ChangeNotifier {
     }
   }
 
+  //PROGRESSION
+
   void updateWeekProgression(int weekIndex, int workoutIndex, int exerciseIndex, WeekProgression weekProgression) {
     _createWeekProgressionIfNotExists(weekIndex, workoutIndex, exerciseIndex);
     _program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex]
@@ -303,6 +305,16 @@ class TrainingProgramController extends ChangeNotifier {
   WeekProgression _getProgressionFromSeries(List<Series> series, int weekIndex) {
     if (weekIndex < series.length) {
       final currentSeries = series[weekIndex];
+debugPrint("Starting _getProgressionFromSeries");
+debugPrint("weekNumber: ${weekIndex + 1}");
+debugPrint("reps: ${currentSeries.reps}");
+debugPrint("sets: ${currentSeries.sets}");
+debugPrint("intensity: ${currentSeries.intensity}");
+debugPrint("rpe: ${currentSeries.rpe}");
+debugPrint("weight: ${currentSeries.weight}");
+
+
+
       return WeekProgression(
         weekNumber: weekIndex + 1,
         reps: currentSeries.reps,
@@ -311,6 +323,7 @@ class TrainingProgramController extends ChangeNotifier {
         rpe: currentSeries.rpe,
         weight: currentSeries.weight,
       );
+      
     } else {
       return WeekProgression(
         weekNumber: weekIndex + 1,
@@ -329,17 +342,23 @@ class TrainingProgramController extends ChangeNotifier {
         .weekProgressions[weekIndex] = progression;
   }
 
-  void _updateOrCreateSeries(Exercise exercise, WeekProgression progression, int weekIndex) {
-    exercise.series.clear();
-    exercise.series.addAll(_createSeriesFromProgression(progression, weekIndex));
-  }
+void _updateOrCreateSeries(Exercise exercise, WeekProgression progression, int weekIndex) {
+  final newSeriesCount = progression.sets;
+  final existingSeriesCount = exercise.series.length;
 
-  List<Series> _createSeriesFromProgression(WeekProgression progression, int weekIndex) {
-    final seriesList = <Series>[];
-    for (int i = 0; i < progression.sets; i++) {
-      final serieId = '${weekIndex}_$i';
-      final series = Series(
-        serieId: serieId,
+  for (int i = 0; i < newSeriesCount; i++) {
+    if (i < existingSeriesCount) {
+      final existingSeries = exercise.series[i];
+      exercise.series[i] = existingSeries.copyWith(
+        reps: progression.reps,
+        sets: 1,
+        intensity: progression.intensity,
+        rpe: progression.rpe,
+        weight: progression.weight,
+      );
+    } else {
+      final newSeries = Series(
+        serieId: '${exercise.id}_${weekIndex}_$i',
         reps: progression.reps,
         sets: 1,
         intensity: progression.intensity,
@@ -350,10 +369,36 @@ class TrainingProgramController extends ChangeNotifier {
         reps_done: 0,
         weight_done: 0.0,
       );
-      seriesList.add(series);
+      exercise.series.add(newSeries);
     }
-    return seriesList;
   }
+
+  // Rimuovi le serie in eccesso
+  if (existingSeriesCount > newSeriesCount) {
+    exercise.series.removeRange(newSeriesCount, existingSeriesCount);
+  }
+}
+
+List<Series> _createSeriesFromProgression(WeekProgression progression, Exercise exercise) {
+  final seriesList = <Series>[];
+  for (int i = 0; i < progression.sets; i++) {
+    final serieId = '${exercise.id}_$i';
+    final series = Series(
+      serieId: serieId,
+      reps: progression.reps,
+      sets: 1,
+      intensity: progression.intensity,
+      rpe: progression.rpe,
+      weight: progression.weight,
+      order: i + 1,
+      done: false,
+      reps_done: 0,
+      weight_done: 0.0,
+    );
+    seriesList.add(series);
+  }
+  return seriesList;
+}
 
   WeekProgression getWeekProgression(int weekIndex, int exerciseIndex) {
     final week = _program.weeks[weekIndex];
@@ -400,22 +445,23 @@ class TrainingProgramController extends ChangeNotifier {
 
     exercise.weekProgressions = weekProgressions;
   }
-
-  void updateExerciseProgressions(Exercise exercise, List<WeekProgression> updatedProgressions) {
-    for (int weekIndex = 0; weekIndex < _program.weeks.length; weekIndex++) {
-      final week = _program.weeks[weekIndex];
-      for (final workout in week.workouts) {
-        for (final currentExercise in workout.exercises) {
-          if (currentExercise.id == exercise.id) {
-            currentExercise.weekProgressions = updatedProgressions;
+void updateExerciseProgressions(Exercise exercise, List<WeekProgression> updatedProgressions) {
+  for (int weekIndex = 0; weekIndex < _program.weeks.length; weekIndex++) {
+    final week = _program.weeks[weekIndex];
+    for (final workout in week.workouts) {
+      for (final currentExercise in workout.exercises) {
+        if (currentExercise.id == exercise.id) {
+          currentExercise.weekProgressions = updatedProgressions;
+          if (weekIndex < updatedProgressions.length) {
             _updateOrCreateSeries(currentExercise, updatedProgressions[weekIndex], weekIndex);
           }
         }
       }
     }
-    notifyListeners();
   }
-
+  notifyListeners();
+}
+//REORDER FUNCTIONS
   void reorderWeeks(int oldIndex, int newIndex) {
     if (oldIndex < newIndex) {
       newIndex -= 1;

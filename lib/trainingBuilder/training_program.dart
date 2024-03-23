@@ -11,24 +11,20 @@ class TrainingProgramPage extends HookConsumerWidget {
   const TrainingProgramPage({super.key, this.programId});
 
   @override
-Widget build(BuildContext context, WidgetRef ref) {
-  final formKey = useMemoized(() => GlobalKey<FormState>());
-  final controller = ref.watch(trainingProgramControllerProvider);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formKey = useMemoized(() => GlobalKey<FormState>());
+    final controller = ref.watch(trainingProgramControllerProvider);
 
-  useEffect(() {
-    controller.loadProgram(programId);
-    return null;
-  }, [programId]);
+    useEffect(() {
+      controller.loadProgram(programId);
+      return null;
+    }, [programId]);
 
-  return Scaffold(
-    appBar: AppBar(
-      title: const Text('Training Program'),
-    ),
-    body: TrainingProgramForm(
+    return TrainingProgramForm(
       formKey: formKey,
       controller: controller,
       onSubmit: () => controller.submitProgram(context),
       child: TrainingProgramWeekList(controller: controller),
-    ),
-  );
-}}
+    );
+  }
+}

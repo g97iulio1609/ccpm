@@ -351,6 +351,33 @@ class Series {
     );
   }
 
+Series copyWith({
+  String? serieId,
+  int? reps,
+  int? sets,
+  String? intensity,
+  String? rpe,
+  double? weight,
+  int? order,
+  bool? done,
+  int? reps_done,
+  double? weight_done,
+}) {
+  return Series(
+    serieId: serieId ?? this.serieId,
+    reps: reps ?? this.reps,
+    sets: sets ?? this.sets,
+    intensity: intensity ?? this.intensity,
+    rpe: rpe ?? this.rpe,
+    weight: weight ?? this.weight,
+    order: order ?? this.order,
+    done: done ?? this.done,
+    reps_done: reps_done ?? this.reps_done,
+    weight_done: weight_done ?? this.weight_done,
+  );
+}
+
+
   factory Series.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return Series(

@@ -36,7 +36,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     _adminPages = [
       const ProgramsScreen(),
-      ExercisesList(),
+      const ExercisesList(),
       const MaxRMDashboard(),
       const UserProfile(),
       const TrainingProgramPage(),
@@ -82,9 +82,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         title: Text(_getTitleForIndex(_selectedIndex, userRole)),
         actions: _getActionsForIndex(_selectedIndex, userRole, context),
       ),
-      drawer: isLargeScreen ? null : Drawer(
-        child: _buildDrawer(isLargeScreen, context, userRole),
-      ),
+      drawer: isLargeScreen
+          ? null
+          : Drawer(
+              child: _buildDrawer(isLargeScreen, context, userRole),
+            ),
       body: Row(
         children: [
           if (isLargeScreen)
@@ -124,8 +126,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ];
   }
 
-  List<Widget> _getActionsForIndex(int index, String userRole, BuildContext context) {
-    if (userRole == 'admin' && index == 5) { // Gestione Utenti
+  List<Widget> _getActionsForIndex(
+      int index, String userRole, BuildContext context) {
+    if (userRole == 'admin' && index == 5) {
+      // Gestione Utenti
       return [
         IconButton(
           onPressed: () => _showAddUserDialog(context),
@@ -136,8 +140,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return [];
   }
 
-  Widget _buildDrawer(bool isLargeScreen, BuildContext context, String userRole) {
-    final List<String> menuItems = userRole == 'admin' ? _getAdminMenuItems() : _getClientMenuItems();
+  Widget _buildDrawer(
+      bool isLargeScreen, BuildContext context, String userRole) {
+    final List<String> menuItems =
+        userRole == 'admin' ? _getAdminMenuItems() : _getClientMenuItems();
 
     return Column(
       children: [
@@ -162,7 +168,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             itemBuilder: (context, index) {
               return ListTile(
                 title: Text(menuItems[index]),
-                onTap: () => _navigateTo(menuItems[index], isLargeScreen, userRole),
+                onTap: () =>
+                    _navigateTo(menuItems[index], isLargeScreen, userRole),
               );
             },
           ),
@@ -177,7 +184,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Icon(Icons.person),
               ),
               title: Text(displayName),
-              onTap: () => _navigateTo('Profilo Utente', isLargeScreen, userRole),
+              onTap: () =>
+                  _navigateTo('Profilo Utente', isLargeScreen, userRole),
             );
           },
         ),
@@ -220,7 +228,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   int? _getPageIndexForMenuItem(String menuItem, String userRole) {
-    final menuItems = userRole == 'admin' ? _getAdminMenuItems() : _getClientMenuItems();
+    final menuItems =
+        userRole == 'admin' ? _getAdminMenuItems() : _getClientMenuItems();
     return menuItems.indexOf(menuItem);
   }
 
