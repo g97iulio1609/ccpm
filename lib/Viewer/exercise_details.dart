@@ -1,9 +1,13 @@
+import 'package:alphanessone/Viewer/timer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'timer.dart';
+import 'package:go_router/go_router.dart';
 
 class ExerciseDetails extends StatefulWidget {
+  final String programId;
+  final String weekId;
+  final String workoutId;
   final String exerciseId;
   final String exerciseName;
   final String? exerciseVariant;
@@ -12,6 +16,9 @@ class ExerciseDetails extends StatefulWidget {
 
   const ExerciseDetails({
     super.key,
+    required this.programId,
+    required this.weekId,
+    required this.workoutId,
     required this.exerciseId,
     required this.exerciseName,
     this.exerciseVariant,
@@ -45,9 +52,9 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
     }
   }
 
-void _setCurrentSeriesIndex() {
-  currentSeriesIndex = widget.startIndex;
-}
+  void _setCurrentSeriesIndex() {
+    currentSeriesIndex = widget.startIndex;
+  }
 
   Future<void> _updateSeriesData(String seriesId, int? repsDone, double? weightDone) async {
     final currentSeries = widget.seriesList[currentSeriesIndex];
@@ -70,29 +77,33 @@ void _setCurrentSeriesIndex() {
     return (minutes * 60) + seconds;
   }
 
-  Future<void> _handleNextSeries() async {
-    final restTimeInSeconds = _getRestTimeInSeconds();
-    if (currentSeriesIndex < widget.seriesList.length - 1) {
-      final shouldProceed = await Navigator.push<bool>(
-        context,
-        MaterialPageRoute(
-          builder: (context) => TimerPage(
-            currentSeriesIndex: currentSeriesIndex,
-            totalSeries: widget.seriesList.length,
-            restTime: restTimeInSeconds,
-            isEmomMode: _isEmomMode,
-          ),
+Future<void> _handleNextSeries() async {
+  final restTimeInSeconds = _getRestTimeInSeconds();
+  if (currentSeriesIndex < widget.seriesList.length - 1) {
+    final shouldProceed = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TimerPage(
+          programId: widget.programId,
+          weekId: widget.weekId,
+          workoutId: widget.workoutId,
+          exerciseId: widget.exerciseId,
+          currentSeriesIndex: currentSeriesIndex,
+          totalSeries: widget.seriesList.length,
+          restTime: restTimeInSeconds,
+          isEmomMode: _isEmomMode,
         ),
-      );
-      if (shouldProceed == true) {
-        setState(() {
-          currentSeriesIndex++;
-        });
-      }
-    } else {
-      Navigator.pop(context);
+      ),
+    );
+    if (shouldProceed == true) {
+      setState(() {
+        currentSeriesIndex++;
+      });
     }
+  } else {
+    Navigator.pop(context);
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -100,11 +111,6 @@ void _setCurrentSeriesIndex() {
     final currentSeries = widget.seriesList[currentSeriesIndex];
 
     return Scaffold(
-     /* appBar: AppBar(
-        title: Text('${widget.exerciseName} ${widget.exerciseVariant ?? ''}'),
-        backgroundColor: theme.colorScheme.surfaceVariant,
-        foregroundColor: theme.colorScheme.onSurfaceVariant,
-      ),*/
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(

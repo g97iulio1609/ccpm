@@ -1,10 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'workout_details.dart';
+import 'package:go_router/go_router.dart';
 
 class WeekDetails extends StatefulWidget {
+  final String programId;
   final String weekId;
-  const WeekDetails({super.key, required this.weekId});
+  const WeekDetails({super.key, required this.programId, required this.weekId});
 
   @override
   _WeekDetailsState createState() => _WeekDetailsState();
@@ -47,7 +48,6 @@ class _WeekDetailsState extends State<WeekDetails> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-   
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
@@ -64,12 +64,7 @@ class _WeekDetailsState extends State<WeekDetails> {
                     ),
                     child: InkWell(
                       onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                WorkoutDetails(workoutId: workout['id']),
-                          ),
-                        );
+                        context.go('/programs_screen/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${workout['id']}');
                       },
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),

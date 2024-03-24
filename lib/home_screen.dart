@@ -17,7 +17,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() async {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       await ref.read(usersServiceProvider).fetchUserRole();
     });
   }
@@ -46,7 +46,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       case 'TrainingProgram':
         return '/training_program';
       case 'Gestione Utenti':
-        return userRole == 'admin' ? '/users_dashboard' : null;
+      return userRole == 'admin' ? '/users_dashboard' : null;
       default:
         return null;
     }
@@ -62,29 +62,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  
-String _getTitleForRoute(BuildContext context) {
-  final String currentPath = GoRouterState.of(context).uri.toString();
+  String _getTitleForRoute(BuildContext context) {
+    final String currentPath = GoRouterState.of(context).uri.toString();
 
-  switch (currentPath) {
-    case '/programs_screen':
-      return 'Allenamenti';
-    case '/exercises_list':
-      return 'Esercizi';
-    case '/maxrmdashboard':
-      return 'Massimali';
-    case '/user_profile':
-      return 'Profilo Utente';
-    case '/training_program':
-      return 'TrainingProgram';
-    case '/users_dashboard':
-      return 'Gestione Utenti';
-    default:
-      return 'Alphaness One';
+    switch (currentPath) {
+      case '/programs_screen':
+        return 'Allenamenti';
+      case '/exercises_list':
+        return 'Esercizi';
+      case '/maxrmdashboard':
+        return 'Massimali';
+      case '/user_profile':
+        return 'Profilo Utente';
+      case '/training_program':
+        return 'TrainingProgram';
+      case '/users_dashboard':
+        return 'Gestione Utenti';
+      case '/training_viewer':
+        return 'Settimane';
+      case '/week_details':
+        return 'Allenamenti';
+      case '/workout_details':
+        return 'Allenamento';
+      case '/exercise_details':
+        return 'Esercizio';
+      case '/timer':
+        return 'Serie';
+      default:
+        return 'Alphaness One';
+    }
   }
-}
 
-   @override
+  @override
   Widget build(BuildContext context) {
     var isLargeScreen = MediaQuery.of(context).size.width > 600;
     final userRole = ref.watch(userRoleProvider);
@@ -93,7 +102,7 @@ String _getTitleForRoute(BuildContext context) {
       appBar: AppBar(
         title: Text(_getTitleForRoute(context)),
         actions: [
-        if (userRole == 'admin' && GoRouterState.of(context).uri.toString() == '/users_dashboard')
+          if (userRole == 'admin' && GoRouterState.of(context).uri.toString() == '/users_dashboard')
             IconButton(
               onPressed: () => _showAddUserDialog(context),
               icon: const Icon(Icons.person_add),

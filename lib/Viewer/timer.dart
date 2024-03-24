@@ -1,8 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:go_router/go_router.dart';
 
 class TimerPage extends StatefulWidget {
+  final String programId;
+  final String weekId;
+  final String workoutId;
+  final String exerciseId;
   final int currentSeriesIndex;
   final int totalSeries;
   final int restTime;
@@ -10,6 +15,10 @@ class TimerPage extends StatefulWidget {
 
   const TimerPage({
     super.key,
+    required this.programId,
+    required this.weekId,
+    required this.workoutId,
+    required this.exerciseId,
     required this.currentSeriesIndex,
     required this.totalSeries,
     required this.restTime,
@@ -51,43 +60,43 @@ class _TimerPageState extends State<TimerPage> with SingleTickerProviderStateMix
     });
   }
 
-  void _handleNextSeries() {
-    _timer.cancel();
-    if (widget.isEmomMode) {
-      _remainingSeconds = widget.restTime;
-      _startTimer();
-    } else {
-      _showNotification('Rest Time Completed', 'Your rest time has ended.');
-      Navigator.pop(context, true);
-    }
+ void _handleNextSeries() {
+  _timer.cancel();
+  if (widget.isEmomMode) {
+    _remainingSeconds = widget.restTime;
+    _startTimer();
+  } else {
+    _showNotification('Rest Time Completed', 'Your rest time has ended.');
+    Navigator.pop(context, true);
   }
-
-Future<void> _showNotification(String title, String body) async {
-  const AndroidNotificationDetails androidPlatformChannelSpecifics =
-      AndroidNotificationDetails(
-    'rest_timer_channel',
-    'Rest Timer',
-    importance: Importance.max,
-    priority: Priority.high,
-    ticker: 'ticker',
-    visibility: NotificationVisibility.public,
-    enableLights: true,
-    enableVibration: true,
-    playSound: true,
-    timeoutAfter: null, // Rimuovi il timeout
-    autoCancel: false, // Imposta autoCancel su false
-    ongoing: false, 
-    fullScreenIntent: true,
-  );
-  const NotificationDetails platformChannelSpecifics =
-      NotificationDetails(android: androidPlatformChannelSpecifics);
-  await FlutterLocalNotificationsPlugin().show(
-    0,
-    title,
-    body,
-    platformChannelSpecifics,
-  );
 }
+
+  Future<void> _showNotification(String title, String body) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'rest_timer_channel',
+      'Rest Timer',
+      importance: Importance.max,
+      priority: Priority.high,
+      ticker: 'ticker',
+      visibility: NotificationVisibility.public,
+      enableLights: true,
+      enableVibration: true,
+      playSound: true,
+      timeoutAfter: null,
+      autoCancel: false,
+      ongoing: false, 
+      fullScreenIntent: true,
+    );
+    const NotificationDetails platformChannelSpecifics =
+        NotificationDetails(android: androidPlatformChannelSpecifics);
+    await FlutterLocalNotificationsPlugin().show(
+      0,
+      title,
+      body,
+      platformChannelSpecifics,
+    );
+  }
 
   @override
   void dispose() {

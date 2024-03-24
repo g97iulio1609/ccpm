@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:go_router/go_router.dart';
 import 'exercise_details.dart';
 import 'dart:async';
 
 class WorkoutDetails extends StatefulWidget {
+  final String programId;
+  final String weekId;
   final String workoutId;
 
-  const WorkoutDetails({super.key, required this.workoutId});
+  const WorkoutDetails({
+    super.key,
+    required this.programId,
+    required this.weekId,
+    required this.workoutId,
+  });
 
   @override
   _WorkoutDetailsState createState() => _WorkoutDetailsState();
@@ -208,20 +216,17 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ExerciseDetails(
-                                  exerciseId: exercise['id'],
-                                  exerciseName: exercise['name'],
-                                  exerciseVariant: exercise['variant'],
-                                  seriesList: List<Map<String, dynamic>>.from(exercise['series']),
-                                  startIndex: firstNotDoneSeriesIndex,
-                                ),
-                              ),
-                            );
-                          },
+                      onPressed: () {
+                          context.go(
+    '/programs_screen/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${exercise['id']}',
+    extra: {
+      'exerciseName': exercise['name'],
+      'exerciseVariant': exercise['variant'],
+      'seriesList': List<Map<String, dynamic>>.from(exercise['series']),
+      'startIndex': firstNotDoneSeriesIndex,
+    },
+  );
+},
                           style: ElevatedButton.styleFrom(
                             foregroundColor: isDarkMode
                                 ? colorScheme.onPrimary

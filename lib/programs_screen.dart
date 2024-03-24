@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'trainingBuilder/training_program.dart';
-import 'Viewer/training_viewer.dart';
+import 'package:go_router/go_router.dart';
 import 'users_services.dart';
 
 class ProgramsScreen extends HookConsumerWidget {
@@ -13,7 +12,7 @@ class ProgramsScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final TextEditingController controller = useTextEditingController();
-    final userRole = ref.watch(userRoleProvider);  // Usa direttamente il provider per il ruolo dell'utente
+    final userRole = ref.watch(userRoleProvider);
 
     int getCrossAxisCount(double width) {
       if (width > 1200) {
@@ -54,7 +53,7 @@ class ProgramsScreen extends HookConsumerWidget {
     return Scaffold(
       body: Column(
         children: [
-          if (userRole == 'admin') // Mostra solo se l'utente è admin
+          if (userRole == 'admin')
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: TextField(
@@ -94,15 +93,13 @@ class ProgramsScreen extends HookConsumerWidget {
                       elevation: 5,
                       margin: const EdgeInsets.all(10),
                       child: InkWell(
-                        onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                          builder: (context) => TrainingViewer(programId: doc.id),
-                        )),
+                        onTap: () => context.go('/programs_screen/training_viewer/${doc.id}'),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(doc['name'], style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                             const SizedBox(height: 8),
-                            if (userRole == 'admin') // Mostra questi pulsanti solo se l'utente è admin
+                            if (userRole == 'admin')
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                 children: [
@@ -110,9 +107,7 @@ class ProgramsScreen extends HookConsumerWidget {
                                     style: ElevatedButton.styleFrom(
                                       foregroundColor: Colors.white, backgroundColor: Colors.green,
                                     ),
-                                    onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                                      builder: (context) => TrainingProgramPage(programId: doc.id),
-                                    )),
+                                    onPressed: () => context.go('/training_program/${doc.id}'),
                                     child: const Text('Modifica'),
                                   ),
                                   ElevatedButton(

@@ -16,7 +16,12 @@ import 'users_dashboard.dart';
 import 'users_services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'programs_screen.dart'; // Importa programs_screen.dart
+import 'programs_screen.dart';
+import 'Viewer/training_viewer.dart';
+import 'Viewer/week_details.dart';
+import 'Viewer/workout_details.dart';
+import 'Viewer/exercise_details.dart';
+import 'Viewer/timer.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
@@ -112,43 +117,109 @@ class MyApp extends ConsumerWidget {
       visualDensity: VisualDensity.adaptivePlatformDensity,
     );
 
-final GoRouter router = GoRouter(
-  routes: [
-    ShellRoute(
-      builder: (context, state, child) => HomeScreen(child: child),
+    final GoRouter router = GoRouter(
       routes: [
-        GoRoute(
-          path: '/',
-          builder: (context, state) => const AuthWrapper(),
-        ),
-        GoRoute(
-          path: '/programs_screen',
-          builder: (context, state) => const ProgramsScreen(),
-        ),
-        GoRoute(
-          path: '/exercises_list',
-          builder: (context, state) => const ExercisesList(),
-        ),
-        GoRoute(
-          path: '/maxrmdashboard',
-          builder: (context, state) => const MaxRMDashboard(),
-        ),
-        GoRoute(
-          path: '/training_program',
-          builder: (context, state) => const TrainingProgramPage(),
-        ),
-        GoRoute(
+        ShellRoute(
+          builder: (context, state, child) => HomeScreen(child: child),
+          routes: [
+            GoRoute(
+              path: '/',
+              builder: (context, state) => const AuthWrapper(),
+            ),
+            GoRoute(
+              path: '/programs_screen',
+              builder: (context, state) => const ProgramsScreen(),
+              routes: [
+                GoRoute(
+                  path: 'training_viewer/:programId',
+                  builder: (context, state) => TrainingViewer(programId: state.pathParameters['programId']!),
+                  routes: [
+                    GoRoute(
+                      path: 'week_details/:weekId',
+                      builder: (context, state) => WeekDetails(
+                        programId: state.pathParameters['programId']!,
+                        weekId: state.pathParameters['weekId']!,
+                      ),
+                      routes: [
+                        GoRoute(
+                          path: 'workout_details/:workoutId',
+                          builder: (context, state) => WorkoutDetails(
+                            programId: state.pathParameters['programId']!,
+                            weekId: state.pathParameters['weekId']!,
+                            workoutId: state.pathParameters['workoutId']!,
+                          ),
+                          routes: [
+                            GoRoute(
+                      path: 'exercise_details/:exerciseId',
+  builder: (context, state) => ExerciseDetails(
+    programId: state.pathParameters['programId']!,
+    weekId: state.pathParameters['weekId']!,
+    workoutId: state.pathParameters['workoutId']!,
+    exerciseId: state.pathParameters['exerciseId']!,
+    exerciseName: (state.extra as Map<String, dynamic>)['exerciseName'],
+    exerciseVariant: (state.extra as Map<String, dynamic>)['exerciseVariant'],
+    seriesList: List<Map<String, dynamic>>.from((state.extra as Map<String, dynamic>)['seriesList']),
+    startIndex: (state.extra as Map<String, dynamic>)['startIndex'],
+                              ),
+                              routes: [
+                                GoRoute(
+                                  path: 'timer',
+                                  builder: (context, state) => TimerPage(
+                                    programId: state.pathParameters['programId']!,
+                                    weekId: state.pathParameters['weekId']!,
+                                    workoutId: state.pathParameters['workoutId']!,
+                                    exerciseId: state.pathParameters['exerciseId']!,
+                                    currentSeriesIndex: int.parse(state.uri.queryParameters['currentSeriesIndex']!),
+                                    totalSeries: int.parse(state.uri.queryParameters['totalSeries']!),
+                                    restTime: int.parse(state.uri.queryParameters['restTime']!),
+                                    isEmomMode: state.uri.queryParameters['isEmomMode'] == 'true',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            GoRoute(
+              path: '/training_program/:programId',
+              builder: (context, state) => TrainingProgramPage(programId: state.pathParameters['programId']),
+            ),
+            GoRoute(
+              path: '/exercises_list',
+              builder: (context, state) => const ExercisesList(),
+            ),
+            GoRoute(
+              path: '/maxrmdashboard',
+              builder: (context, state) => const MaxRMDashboard(),
+            ),
+            GoRoute(
+              path: '/user_profile/:userId',
+              builder: (context, state) => UserProfile(userId: state.pathParameters['userId']!),
+            ),
+            GoRoute(
+              path: '/users_dashboard',
+              builder: (context, state) => const UsersDashboard(),
+            ),
+              GoRoute(
           path: '/user_profile',
-          builder: (context, state) => const UserProfile(),
+          builder: (context, state) {
+            final userId = FirebaseAuth.instance.currentUser?.uid;
+            return userId != null ? UserProfile(userId: userId) : const SizedBox();
+          }),
+            GoRoute(
+          path: '/training_program',
+          builder: (context, state) => const TrainingProgramPage(), // Aggiungi questa rotta
         ),
-        GoRoute(
-          path: '/users_dashboard',
-          builder: (context, state) => const UsersDashboard(),
+            
+          ],
         ),
       ],
-    ),
-  ],
-);
+    );
 
     return MaterialApp.router(
       routerConfig: router,
@@ -159,6 +230,7 @@ final GoRouter router = GoRouter(
     );
   }
 }
+
 
 class AuthWrapper extends ConsumerWidget {
   const AuthWrapper({super.key});
@@ -174,8 +246,12 @@ class AuthWrapper extends ConsumerWidget {
             return AuthScreen();
           } else {
             // Assicurati che l'utente sia caricato prima di passare a ProgramsScreen
-            Future.microtask(() => ref.read(usersServiceProvider).fetchUserRole());
-            Future.microtask(() => context.go('/programs_screen'));
+            WidgetsBinding.instance.addPostFrameCallback((_) async {
+              await ref.read(usersServiceProvider).fetchUserRole();
+              if (context.mounted) {
+                context.go('/programs_screen');
+              }
+            });
             return const HomeScreen(child: SizedBox());
           }
         }
