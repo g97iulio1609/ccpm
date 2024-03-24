@@ -40,11 +40,7 @@ class _TrainingViewerState extends State<TrainingViewer> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Visualizzatore di allenamento'),
-        elevation: 0,
-        centerTitle: true,
-      ),
+     
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(

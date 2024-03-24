@@ -10,18 +10,19 @@ import 'maxRMDashboard.dart';
 import 'trainingBuilder/training_program.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'user_profile.dart';
 import 'users_dashboard.dart';
 import 'users_services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'programs_screen.dart'; // Importa programs_screen.dart
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
 
 Future<void> requestNotificationPermission() async {
   if (!kIsWeb) {
-    // Esegui la richiesta solo se non sei sul web.
     final status = await Permission.notification.request();
     if (status.isGranted) {
       // I permessi delle notifiche sono stati concessi.
@@ -47,7 +48,6 @@ void main() async {
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
   await requestNotificationPermission();
   if (!kIsWeb) {
-    // Esegui questa parte solo se non sei sul web.
     final AndroidFlutterLocalNotificationsPlugin? androidPlugin =
         flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
@@ -112,21 +112,50 @@ class MyApp extends ConsumerWidget {
       visualDensity: VisualDensity.adaptivePlatformDensity,
     );
 
-    return MaterialApp(
+final GoRouter router = GoRouter(
+  routes: [
+    ShellRoute(
+      builder: (context, state, child) => HomeScreen(child: child),
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => const AuthWrapper(),
+        ),
+        GoRoute(
+          path: '/programs_screen',
+          builder: (context, state) => const ProgramsScreen(),
+        ),
+        GoRoute(
+          path: '/exercises_list',
+          builder: (context, state) => const ExercisesList(),
+        ),
+        GoRoute(
+          path: '/maxrmdashboard',
+          builder: (context, state) => const MaxRMDashboard(),
+        ),
+        GoRoute(
+          path: '/training_program',
+          builder: (context, state) => const TrainingProgramPage(),
+        ),
+        GoRoute(
+          path: '/user_profile',
+          builder: (context, state) => const UserProfile(),
+        ),
+        GoRoute(
+          path: '/users_dashboard',
+          builder: (context, state) => const UsersDashboard(),
+        ),
+      ],
+    ),
+  ],
+);
+
+    return MaterialApp.router(
+      routerConfig: router,
       title: 'AlphanessOne',
       theme: lightTheme,
       darkTheme: darkTheme,
       themeMode: ThemeMode.system,
-      home: const AuthWrapper(),
-      routes: {
-        '/auth': (context) => AuthScreen(),
-        '/home': (context) => const HomeScreen(),
-        '/exercises_list': (context) => const ExercisesList(),
-        '/maxrmdashboard': (context) => const MaxRMDashboard(),
-        '/trainingprogram': (context) => const TrainingProgramPage(),
-        '/usersdashboard': (context) => const UsersDashboard(),
-        '/userprofile': (context) => const UserProfile()
-      },
     );
   }
 }
@@ -144,10 +173,10 @@ class AuthWrapper extends ConsumerWidget {
           if (user == null) {
             return AuthScreen();
           } else {
-            // Assicurati che l'utente sia caricato prima di passare a HomeScreen
-            Future.microtask(
-                () => ref.read(usersServiceProvider).fetchUserRole());
-            return const HomeScreen();
+            // Assicurati che l'utente sia caricato prima di passare a ProgramsScreen
+            Future.microtask(() => ref.read(usersServiceProvider).fetchUserRole());
+            Future.microtask(() => context.go('/programs_screen'));
+            return const HomeScreen(child: SizedBox());
           }
         }
         // Mostra un indicatore di caricamento mentre lo stato di autenticazione viene risolto

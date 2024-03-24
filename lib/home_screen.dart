@@ -1,86 +1,104 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'auth_screen.dart';
-import 'programs_screen.dart';
-import 'user_profile.dart';
-import 'exerciseManager/exercise_list.dart';
-import 'maxRMDashboard.dart';
-import 'trainingBuilder/training_program.dart';
+import 'package:go_router/go_router.dart';
 import 'users_services.dart';
-import 'users_dashboard.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, required this.child});
+
+  final Widget child;
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  int _selectedIndex = 0;
-  List<Widget> _adminPages = [];
-  List<Widget> _clientPages = [];
-
   @override
   void initState() {
     super.initState();
     Future.microtask(() async {
       await ref.read(usersServiceProvider).fetchUserRole();
-      _buildUI();
     });
   }
 
-  void _buildUI() {
-    final userRole = ref.read(userRoleProvider);
-
-    _adminPages = [
-      const ProgramsScreen(),
-      const ExercisesList(),
-      const MaxRMDashboard(),
-      const UserProfile(),
-      const TrainingProgramPage(),
-      const UsersDashboard(),
-    ];
-
-    _clientPages = [
-      const ProgramsScreen(),
-      const MaxRMDashboard(),
-      const UserProfile(),
-    ];
-
-    setState(() {});
+  void _navigateTo(String menuItem, bool isLargeScreen) {
+    final userRole = ref.watch(userRoleProvider);
+    final String? route = _getRouteForMenuItem(menuItem, userRole);
+    if (route != null) {
+      context.go(route);
+      if (!isLargeScreen) {
+        Navigator.pop(context);
+      }
+    }
   }
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+  String? _getRouteForMenuItem(String menuItem, String userRole) {
+    switch (menuItem) {
+      case 'Allenamenti':
+        return '/programs_screen';
+      case 'Esercizi':
+        return '/exercises_list';
+      case 'Massimali':
+        return '/maxrmdashboard';
+      case 'Profilo Utente':
+        return '/user_profile';
+      case 'TrainingProgram':
+        return '/training_program';
+      case 'Gestione Utenti':
+        return userRole == 'admin' ? '/users_dashboard' : null;
+      default:
+        return null;
+    }
   }
 
   void _logout() async {
     try {
       await FirebaseAuth.instance.signOut();
       ref.read(usersServiceProvider).clearUserData();
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => AuthScreen()),
-        (Route<dynamic> route) => false,
-      );
+      context.go('/');
     } catch (e) {
       debugPrint('Errore durante il logout: $e');
     }
   }
 
-  @override
+  
+String _getTitleForRoute(BuildContext context) {
+  final String currentPath = GoRouterState.of(context).uri.toString();
+
+  switch (currentPath) {
+    case '/programs_screen':
+      return 'Allenamenti';
+    case '/exercises_list':
+      return 'Esercizi';
+    case '/maxrmdashboard':
+      return 'Massimali';
+    case '/user_profile':
+      return 'Profilo Utente';
+    case '/training_program':
+      return 'TrainingProgram';
+    case '/users_dashboard':
+      return 'Gestione Utenti';
+    default:
+      return 'Alphaness One';
+  }
+}
+
+   @override
   Widget build(BuildContext context) {
     var isLargeScreen = MediaQuery.of(context).size.width > 600;
     final userRole = ref.watch(userRoleProvider);
-    final pages = userRole == 'admin' ? _adminPages : _clientPages;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_getTitleForIndex(_selectedIndex, userRole)),
-        actions: _getActionsForIndex(_selectedIndex, userRole, context),
+        title: Text(_getTitleForRoute(context)),
+        actions: [
+        if (userRole == 'admin' && GoRouterState.of(context).uri.toString() == '/users_dashboard')
+            IconButton(
+              onPressed: () => _showAddUserDialog(context),
+              icon: const Icon(Icons.person_add),
+            ),
+        ],
       ),
       drawer: isLargeScreen
           ? null
@@ -95,55 +113,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: _buildDrawer(isLargeScreen, context, userRole),
             ),
           Expanded(
-            child: pages.isNotEmpty ? pages[_selectedIndex] : const SizedBox(),
+            child: widget.child,
           ),
         ],
       ),
     );
   }
 
-  String _getTitleForIndex(int index, String userRole) {
-    final titles = userRole == 'admin' ? _getAdminTitles() : _getClientTitles();
-    return titles[index];
-  }
-
-  List<String> _getAdminTitles() {
-    return [
-      'Allenamenti',
-      'Esercizi',
-      'Massimali',
-      'Profilo Utente',
-      'TrainingProgram',
-      'Gestione Utenti',
-    ];
-  }
-
-  List<String> _getClientTitles() {
-    return [
-      'Allenamenti',
-      'Massimali',
-      'Profilo Utente',
-    ];
-  }
-
-  List<Widget> _getActionsForIndex(
-      int index, String userRole, BuildContext context) {
-    if (userRole == 'admin' && index == 5) {
-      // Gestione Utenti
-      return [
-        IconButton(
-          onPressed: () => _showAddUserDialog(context),
-          icon: const Icon(Icons.person_add),
-        ),
-      ];
-    }
-    return [];
-  }
-
-  Widget _buildDrawer(
-      bool isLargeScreen, BuildContext context, String userRole) {
-    final List<String> menuItems =
-        userRole == 'admin' ? _getAdminMenuItems() : _getClientMenuItems();
+  Widget _buildDrawer(bool isLargeScreen, BuildContext context, String userRole) {
+    final List<String> menuItems = userRole == 'admin'
+        ? _getAdminMenuItems()
+        : _getClientMenuItems();
 
     return Column(
       children: [
@@ -168,8 +148,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             itemBuilder: (context, index) {
               return ListTile(
                 title: Text(menuItems[index]),
-                onTap: () =>
-                    _navigateTo(menuItems[index], isLargeScreen, userRole),
+                onTap: () => _navigateTo(menuItems[index], isLargeScreen),
               );
             },
           ),
@@ -184,8 +163,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Icon(Icons.person),
               ),
               title: Text(displayName),
-              onTap: () =>
-                  _navigateTo('Profilo Utente', isLargeScreen, userRole),
+              onTap: () => _navigateTo('Profilo Utente', isLargeScreen),
             );
           },
         ),
@@ -214,23 +192,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       'Massimali',
       'Profilo Utente',
     ];
-  }
-
-  void _navigateTo(String menuItem, bool isLargeScreen, String userRole) {
-    final pages = userRole == 'admin' ? _adminPages : _clientPages;
-    final int? pageIndex = _getPageIndexForMenuItem(menuItem, userRole);
-    if (pageIndex != null && pageIndex >= 0) {
-      _onItemTapped(pageIndex);
-      if (!isLargeScreen) {
-        Navigator.pop(context);
-      }
-    }
-  }
-
-  int? _getPageIndexForMenuItem(String menuItem, String userRole) {
-    final menuItems =
-        userRole == 'admin' ? _getAdminMenuItems() : _getClientMenuItems();
-    return menuItems.indexOf(menuItem);
   }
 
   void _showAddUserDialog(BuildContext context) {
@@ -302,11 +263,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               onPressed: () async {
                 if (formKey.currentState!.validate()) {
                   await ref.read(usersServiceProvider).createUser(
-                        name: nameController.text,
-                        email: emailController.text,
-                        password: passwordController.text,
-                        role: roleController.text,
-                      );
+                    name: nameController.text,
+                    email: emailController.text,
+                    password: passwordController.text,
+                    role: roleController.text,
+                  );
                   Navigator.of(context).pop();
                 }
               },

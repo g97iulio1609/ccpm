@@ -1,20 +1,23 @@
 // authScreen.dart
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'users_services.dart';
+import 'programs_screen.dart'; // Importa programs_screen.dart
 
 final authProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
 final googleSignInProvider = Provider<GoogleSignIn>((ref) => GoogleSignIn());
-final firestoreProvider = Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
+final firestoreProvider =
+    Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
 
 class AuthScreen extends HookConsumerWidget {
-  final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
-
   AuthScreen({super.key});
+
+  final _scaffoldKey = GlobalKey<ScaffoldState>(); // Aggiungi questa riga
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -31,7 +34,7 @@ class AuthScreen extends HookConsumerWidget {
     final usersService = ref.read(usersServiceProvider);
 
     return Scaffold(
-      key: scaffoldMessengerKey,
+      key: _scaffoldKey, // Aggiungi questa riga
       appBar: AppBar(title: Text(isLogin.value ? 'Login' : 'Sign Up')),
       body: Center(
         child: Card(
@@ -49,7 +52,7 @@ class AuthScreen extends HookConsumerWidget {
               userPassword: userPassword,
               userName: userName,
               userGender: userGender,
-              scaffoldMessengerKey: scaffoldMessengerKey,
+              scaffoldKey: _scaffoldKey, // Passa la chiave allo scaffold
             ),
           ),
         ),
@@ -71,7 +74,7 @@ class AuthForm extends HookConsumerWidget {
     required this.userPassword,
     required this.userName,
     required this.userGender,
-    required this.scaffoldMessengerKey,
+    required this.scaffoldKey, // Aggiungi questo parametro
   });
 
   final GlobalKey<FormState> formKey;
@@ -84,7 +87,7 @@ class AuthForm extends HookConsumerWidget {
   final ValueNotifier<String> userPassword;
   final ValueNotifier<String> userName;
   final ValueNotifier<String> userGender;
-  final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey;
+  final GlobalKey<ScaffoldState> scaffoldKey; // Aggiungi questo campo
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -112,14 +115,14 @@ class AuthForm extends HookConsumerWidget {
             userName: userName,
             userGender: userGender,
             ref: ref,
-            scaffoldMessengerKey: scaffoldMessengerKey,
+            scaffoldKey: scaffoldKey, // Passa la chiave allo scaffold
           ),
           ToggleAuthModeButton(isLogin: isLogin),
           GoogleSignInButton(
             googleSignIn: googleSignIn,
             firestore: firestore,
             usersService: usersService,
-            scaffoldMessengerKey: scaffoldMessengerKey, // Passa la chiave del messaggero di Scaffold
+            scaffoldKey: scaffoldKey, // Passa la chiave allo scaffold
           ),
         ],
       ),
@@ -140,7 +143,7 @@ class SubmitButton extends StatelessWidget {
     required this.userName,
     required this.userGender,
     required this.ref,
-    required this.scaffoldMessengerKey,
+    required this.scaffoldKey, // Aggiungi questo parametro
   });
 
   final GlobalKey<FormState> formKey;
@@ -153,7 +156,7 @@ class SubmitButton extends StatelessWidget {
   final ValueNotifier<String> userName;
   final ValueNotifier<String> userGender;
   final WidgetRef ref;
-  final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey;
+  final GlobalKey<ScaffoldState> scaffoldKey; // Aggiungi questo campo
 
   @override
   Widget build(BuildContext context) {
@@ -170,14 +173,6 @@ class SubmitButton extends StatelessWidget {
   }
 
   Future<void> submit(BuildContext context) async {
-    bool widgetMounted = true; // Flag to track if the widget is still mounted
-
-    void showSnackBar(SnackBar snackBar) {
-      if (widgetMounted) {
-        scaffoldMessengerKey.currentState?.showSnackBar(snackBar);
-      }
-    }
-
     if (formKey.currentState?.validate() ?? false) {
       formKey.currentState?.save();
       final email = userEmail.value.trim();
@@ -190,6 +185,8 @@ class SubmitButton extends StatelessWidget {
             password: password,
           );
           await usersService.setUserRole(userCredential.user!.uid);
+          showSnackBar('Authentication successful', Colors.green);
+          context.go('/'); // Navigate to ProgramsScreen after successful login
         } else {
           userCredential = await auth.createUserWithEmailAndPassword(
             email: email,
@@ -212,6 +209,9 @@ class SubmitButton extends StatelessWidget {
             });
             await user.updateDisplayName(userName.value);
             await usersService.setUserRole(user.uid);
+            showSnackBar('Authentication successful', Colors.green);
+            context
+                .go('/'); // Navigate to ProgramsScreen after successful sign up
           }
         }
 
@@ -219,26 +219,25 @@ class SubmitButton extends StatelessWidget {
         if (updatedUser != null) {
           usersService.updateUserName(updatedUser.displayName);
         }
-
-        showSnackBar(
-          const SnackBar(
-            content: Text('Authentication successful'),
-            backgroundColor: Colors.green,
-          ),
-        );
       } on FirebaseAuthException catch (error) {
-        showSnackBar(
-          SnackBar(
-            content: Text(error.message ?? 'An error occurred, please try again'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      } finally {
-        widgetMounted = false;
+        showSnackBar(error.message ?? 'An error occurred, please try again',
+            Colors.red);
       }
     }
   }
-}
+
+void showSnackBar(String message, Color backgroundColor) {
+  final scaffoldContext = scaffoldKey.currentContext;
+  if (scaffoldContext != null) {
+    ScaffoldMessenger.of(scaffoldContext).removeCurrentSnackBar();
+    ScaffoldMessenger.of(scaffoldContext).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: backgroundColor,
+      ),
+    );
+  }
+}}
 
 class GoogleSignInButton extends StatelessWidget {
   const GoogleSignInButton({
@@ -246,73 +245,18 @@ class GoogleSignInButton extends StatelessWidget {
     required this.googleSignIn,
     required this.firestore,
     required this.usersService,
-    required this.scaffoldMessengerKey,
+    required this.scaffoldKey, // Aggiungi questo parametro
   });
 
   final GoogleSignIn googleSignIn;
   final FirebaseFirestore firestore;
   final UsersService usersService;
-  final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey;
+  final GlobalKey<ScaffoldState> scaffoldKey; // Aggiungi questo campo
 
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
-      onPressed: () async {
-        try {
-          final user = await googleSignIn.signIn();
-          if (user != null) {
-            final googleAuth = await user.authentication;
-            final credential = GoogleAuthProvider.credential(
-              accessToken: googleAuth.accessToken,
-              idToken: googleAuth.idToken,
-            );
-            final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
-            final userDocRef = firestore.collection('users').doc(userCredential.user!.uid);
-            final userDocSnapshot = await userDocRef.get();
-
-            // Verifica se l'utente esiste già in Firestore
-            if (userDocSnapshot.exists) {
-              // Se l'utente esiste già, non modificare i dati o il ruolo
-              await usersService.setUserRole(userCredential.user!.uid);
-              scaffoldMessengerKey.currentState?.showSnackBar(
-                const SnackBar(
-                  content: Text('Google Sign-In successful'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            } else {
-              // Se l'utente non esiste, crealo in Firestore
-              await userDocRef.set({
-                'address': '',
-                'currentProgram': '',
-                'displayName': userCredential.user!.displayName,
-                'email': userCredential.user!.email,
-                'gender': '',
-                'id': userCredential.user!.uid,
-                'name': userCredential.user!.displayName,
-                'phoneNumber': null,
-                'photoURL': userCredential.user!.photoURL ?? '',
-                'role': 'client',
-                'socialLinks': {'facebook': '', 'twitter': ''},
-              });
-              await usersService.setUserRole(userCredential.user!.uid);
-              scaffoldMessengerKey.currentState?.showSnackBar(
-                const SnackBar(
-                  content: Text('Google Sign-In successful'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            }
-          }
-        } catch (error) {
-          scaffoldMessengerKey.currentState?.showSnackBar(
-            SnackBar(
-              content: Text('Failed to sign in with Google: $error'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      },
+      onPressed: () => signInWithGoogle(context),
       style: ElevatedButton.styleFrom(
         foregroundColor: Colors.black,
         backgroundColor: Colors.white,
@@ -322,7 +266,65 @@ class GoogleSignInButton extends StatelessWidget {
       child: const Text('Sign in with Google'),
     );
   }
-}
+
+  Future<void> signInWithGoogle(BuildContext context) async {
+    try {
+      final user = await googleSignIn.signIn();
+      if (user != null) {
+        final googleAuth = await user.authentication;
+        final credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+        final userCredential =
+            await FirebaseAuth.instance.signInWithCredential(credential);
+        final userDocRef =
+            firestore.collection('users').doc(userCredential.user!.uid);
+        final userDocSnapshot = await userDocRef.get();
+
+        // Verifica se l'utente esiste già in Firestore
+        if (userDocSnapshot.exists) {
+          // Se l'utente esiste già, non modificare i dati o il ruolo
+          await usersService.setUserRole(userCredential.user!.uid);
+          showSnackBar('Google Sign-In successful', Colors.green);
+        } else {
+          // Se l'utente non esiste, crealo in Firestore
+          await userDocRef.set({
+            'address': '',
+            'currentProgram': '',
+            'displayName': userCredential.user!.displayName,
+            'email': userCredential.user!.email,
+            'gender': '',
+            'id': userCredential.user!.uid,
+            'name': userCredential.user!.displayName,
+            'phoneNumber': null,
+            'photoURL': userCredential.user!.photoURL ?? '',
+            'role': 'client',
+            'socialLinks': {'facebook': '', 'twitter': ''},
+          });
+          await usersService.setUserRole(userCredential.user!.uid);
+          showSnackBar('Google Sign-In successful', Colors.green);
+        }
+        context
+            .go('/'); // Navigate to home screen after successful Google sign-in
+      }
+    } catch (error) {
+      showSnackBar('Failed to sign in with Google: $error', Colors.red);
+    }
+  }
+
+void showSnackBar(String message, Color backgroundColor) {
+  final scaffoldContext = scaffoldKey.currentContext;
+  if (scaffoldContext != null) {
+    ScaffoldMessenger.of(scaffoldContext).removeCurrentSnackBar();
+    ScaffoldMessenger.of(scaffoldContext).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: backgroundColor,
+      ),
+    );
+  }
+}}
 
 class ToggleAuthModeButton extends StatelessWidget {
   const ToggleAuthModeButton({super.key, required this.isLogin});
@@ -332,7 +334,8 @@ class ToggleAuthModeButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TextButton(
-      child: Text(isLogin.value ? 'Create new account' : 'I already have an account'),
+      child: Text(
+          isLogin.value ? 'Create new account' : 'I already have an account'),
       onPressed: () => isLogin.value = !isLogin.value,
     );
   }
@@ -347,9 +350,11 @@ class UsernameField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextFormField(
       key: const ValueKey('username'),
-      validator: (value) =>
-          (value == null || value.isEmpty || value.length < 4) ? 'Please enter at least 4 characters' : null,
-      decoration: const InputDecoration(labelText: 'Username', border: OutlineInputBorder()),
+      validator: (value) => (value == null || value.isEmpty || value.length < 4)
+          ? 'Please enter at least 4 characters'
+          : null,
+      decoration: const InputDecoration(
+          labelText: 'Username', border: OutlineInputBorder()),
       onSaved: (value) => userName.value = value ?? '',
     );
   }
@@ -401,11 +406,13 @@ class EmailField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextFormField(
       key: const ValueKey('email'),
-      validator: (value) => (value == null || value.isEmpty || !value.contains('@'))
-          ? 'Please enter a valid email address'
-          : null,
+      validator: (value) =>
+          (value == null || value.isEmpty || !value.contains('@'))
+              ? 'Please enter a valid email address'
+              : null,
       keyboardType: TextInputType.emailAddress,
-      decoration: const InputDecoration(labelText: 'Email address', border: OutlineInputBorder()),
+      decoration: const InputDecoration(
+          labelText: 'Email address', border: OutlineInputBorder()),
       onSaved: (value) => userEmail.value = value ?? '',
     );
   }
@@ -423,7 +430,8 @@ class PasswordField extends StatelessWidget {
       validator: (value) => (value == null || value.isEmpty || value.length < 7)
           ? 'Password must be at least 7 characters long'
           : null,
-      decoration: const InputDecoration(labelText: 'Password', border: OutlineInputBorder()),
+      decoration: const InputDecoration(
+          labelText: 'Password', border: OutlineInputBorder()),
       obscureText: true,
       onSaved: (value) => userPassword.value = value ?? '',
     );

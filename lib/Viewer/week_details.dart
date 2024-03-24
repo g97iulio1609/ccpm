@@ -47,11 +47,7 @@ class _WeekDetailsState extends State<WeekDetails> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dettagli settimana'),
-        elevation: 0,
-        centerTitle: true,
-      ),
+   
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(

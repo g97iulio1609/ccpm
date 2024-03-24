@@ -100,11 +100,11 @@ void _setCurrentSeriesIndex() {
     final currentSeries = widget.seriesList[currentSeriesIndex];
 
     return Scaffold(
-      appBar: AppBar(
+     /* appBar: AppBar(
         title: Text('${widget.exerciseName} ${widget.exerciseVariant ?? ''}'),
         backgroundColor: theme.colorScheme.surfaceVariant,
         foregroundColor: theme.colorScheme.onSurfaceVariant,
-      ),
+      ),*/
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(

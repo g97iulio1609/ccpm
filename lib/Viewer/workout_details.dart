@@ -162,11 +162,7 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dettagli allenamento'),
-        elevation: 0,
-        centerTitle: true,
-      ),
+      
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
