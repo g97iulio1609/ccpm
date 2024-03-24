@@ -10,6 +10,8 @@ import 'maxRMDashboard.dart';
 import 'trainingBuilder/training_program.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'user_profile.dart';
+import 'users_dashboard.dart';
 import 'users_services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -18,7 +20,8 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
 
 Future<void> requestNotificationPermission() async {
-  if (!kIsWeb) { // Esegui la richiesta solo se non sei sul web.
+  if (!kIsWeb) {
+    // Esegui la richiesta solo se non sei sul web.
     final status = await Permission.notification.request();
     if (status.isGranted) {
       // I permessi delle notifiche sono stati concessi.
@@ -43,7 +46,8 @@ void main() async {
   );
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
   await requestNotificationPermission();
-  if (!kIsWeb) { // Esegui questa parte solo se non sei sul web.
+  if (!kIsWeb) {
+    // Esegui questa parte solo se non sei sul web.
     final AndroidFlutterLocalNotificationsPlugin? androidPlugin =
         flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
@@ -117,9 +121,11 @@ class MyApp extends ConsumerWidget {
       routes: {
         '/auth': (context) => AuthScreen(),
         '/home': (context) => const HomeScreen(),
-        '/exercises_list': (context) => ExercisesList(),
+        '/exercises_list': (context) => const ExercisesList(),
         '/maxrmdashboard': (context) => const MaxRMDashboard(),
         '/trainingprogram': (context) => const TrainingProgramPage(),
+        '/usersdashboard': (context) => const UsersDashboard(),
+        '/userprofile': (context) => const UserProfile()
       },
     );
   }
@@ -139,7 +145,8 @@ class AuthWrapper extends ConsumerWidget {
             return AuthScreen();
           } else {
             // Assicurati che l'utente sia caricato prima di passare a HomeScreen
-            Future.microtask(() => ref.read(usersServiceProvider).fetchUserRole());
+            Future.microtask(
+                () => ref.read(usersServiceProvider).fetchUserRole());
             return const HomeScreen();
           }
         }

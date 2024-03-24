@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -16,6 +18,7 @@ class UserProfileState extends State<UserProfile> {
   final List<String> _excludedFields = ['currentProgram', 'role', 'socialLinks', 'id'];
   String? _snackBarMessage;
   Color? _snackBarColor;
+  final _debouncer = Debouncer(milliseconds: 1000);
 
   @override
   void initState() {
@@ -71,21 +74,21 @@ class UserProfileState extends State<UserProfile> {
     bool hasValidPhotoURL = userPhotoURL != null && userPhotoURL.isNotEmpty && Uri.parse(userPhotoURL).isAbsolute;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('User Profile'),
-      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            CircleAvatar(
-              backgroundImage: hasValidPhotoURL ? NetworkImage(userPhotoURL) : null,
-              radius: 50,
-              backgroundColor: Colors.grey[200],
-              foregroundColor: Colors.grey[800],
-              child: !hasValidPhotoURL ? const Icon(Icons.person, size: 50) : null,
+            Center(
+              child: CircleAvatar(
+                backgroundImage: hasValidPhotoURL ? NetworkImage(userPhotoURL) : null,
+                radius: 60,
+                backgroundColor: Colors.grey[200],
+                foregroundColor: Colors.grey[800],
+                child: !hasValidPhotoURL ? const Icon(Icons.person, size: 60) : null,
+              ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 30),
             ..._controllers.keys.where((field) => field != 'photoURL').map((field) => buildEditableField(field, _controllers[field]!)).toList(),
           ],
         ),
@@ -96,16 +99,26 @@ class UserProfileState extends State<UserProfile> {
   Widget buildEditableField(String field, TextEditingController controller) {
     String label = field[0].toUpperCase() + field.substring(1);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 20),
       child: TextFormField(
         controller: controller,
+        style: TextStyle(
+          color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white,
+        ),
         decoration: InputDecoration(
           labelText: label,
-          border: const OutlineInputBorder(),
+          labelStyle: TextStyle(
+            color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
           filled: true,
-          fillColor: Theme.of(context).colorScheme.surface,
+          fillColor: Theme.of(context).brightness == Brightness.light ? Colors.grey[100] : Colors.grey[800],
         ),
-        onChanged: (value) => saveProfile(field, value),
+        onChanged: (value) {
+          _debouncer.run(() => saveProfile(field, value));
+        },
         autovalidateMode: AutovalidateMode.onUserInteraction,
         enabled: widget.userId == null,
       ),
@@ -118,5 +131,20 @@ class UserProfileState extends State<UserProfile> {
       controller.dispose();
     }
     super.dispose();
+  }
+}
+
+class Debouncer {
+  final int milliseconds;
+  VoidCallback? action;
+  Timer? _timer;
+
+  Debouncer({required this.milliseconds});
+
+  run(VoidCallback action) {
+    if (_timer != null) {
+      _timer!.cancel();
+    }
+    _timer = Timer(Duration(milliseconds: milliseconds), action);
   }
 }

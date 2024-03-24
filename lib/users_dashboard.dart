@@ -11,49 +11,39 @@ class UsersDashboard extends ConsumerWidget {
     final usersService = ref.watch(usersServiceProvider);
     final usersStream = usersService.getUsers();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Users Dashboard'),
-      ),
-      body: StreamBuilder<List<UserModel>>(
-        stream: usersStream,
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final users = snapshot.data ?? [];
-          return Column(
-            children: [
-              UserSearchField(usersService: usersService),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: users.length,
-                  itemBuilder: (context, index) {
-                    final user = users[index];
-                    return UserCard(
-                      user: user,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => UserProfile(userId: user.id),
-                        ),
-                      ),
-                      onDelete: () => usersService.deleteUser(user.id),
-                    );
-                  },
-                ),
+    return StreamBuilder<List<UserModel>>(
+      stream: usersStream,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final users = snapshot.data ?? [];
+        return Column(
+          children: [
+            UserSearchField(usersService: usersService),
+            Expanded(
+              child: ListView.builder(
+                itemCount: users.length,
+                itemBuilder: (context, index) {
+                  final user = users[index];
+                  return UserCard(
+                    user: user,
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      '/userprofile',
+                      arguments: user.id,
+                    ),
+                    onDelete: () => usersService.deleteUser(user.id),
+                  );
+                },
               ),
-            ],
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showCreateUserDialog(context, ref),
-        child: const Icon(Icons.add),
-      ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -205,7 +195,8 @@ class UserCard extends StatelessWidget {
       elevation: 5,
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         leading: CircleAvatar(
           radius: 30,
           child: user.photoURL.isNotEmpty

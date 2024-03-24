@@ -79,11 +79,11 @@ class UsersService {
   UsersService(this.ref, this._firestore, this._auth) {
     _initializeUserCreationAuth();
     _auth.authStateChanges().listen((user) async {
-      debugPrint('Main auth state changed. User: $user');
+      //debugPrint('Main auth state changed. User: $user');
       if (user != null) {
         _updateUserName(user.displayName);
         if (user.uid != _auth.currentUser?.uid) {
-          debugPrint('Updating user role for user: ${user.uid}');
+          //debugPrint('Updating user role for user: ${user.uid}');
           await _updateUserRole(user.uid);
         }
         _initializeUsersStream();
@@ -148,7 +148,7 @@ class UsersService {
       final String userRole = userDoc.exists ? (userDoc.data() as Map<String, dynamic>)['role'] ?? '' : '';
       ref.read(userRoleProvider.notifier).state = userRole;
     } catch (error) {
-      debugPrint('Error updating user role: $error');
+      //debugPrint('Error updating user role: $error');
       // In caso di errore di permessi o se il documento utente non esiste, imposta il ruolo predefinito a 'client'
       ref.read(userRoleProvider.notifier).state = 'client';
     }
@@ -161,7 +161,7 @@ class UsersService {
       try {
         await _updateUserRole(user.uid);
       } catch (error) {
-        debugPrint('Error fetching user role: $error');
+        //debugPrint('Error fetching user role: $error');
         // In caso di errore di permessi, imposta il ruolo predefinito a 'client'
         ref.read(userRoleProvider.notifier).state = 'client';
       }
@@ -178,10 +178,10 @@ class UsersService {
       if (userDoc.exists) {
         final String userRole = (userDoc.data() as Map<String, dynamic>)['role'] ?? '';
         ref.read(userRoleProvider.notifier).state = userRole;
-        debugPrint('User role: $userRole');
+        //debugPrint('User role: $userRole');
       }
     } catch (error) {
-      debugPrint('Error setting user role: $error');
+      //debugPrint('Error setting user role: $error');
     }
   }
 
@@ -312,7 +312,7 @@ Future<void> addExerciseRecord({
     required String role,
   }) async {
     try {
-      debugPrint('Creating user with email: $email');
+      //debugPrint('Creating user with email: $email');
       UserCredential userCredential = await _authForUserCreation!.createUserWithEmailAndPassword(
         email: email,
         password: password,
@@ -320,81 +320,81 @@ Future<void> addExerciseRecord({
 
       User? newUser = userCredential.user;
       if (newUser != null) {
-        debugPrint('User created. User ID: ${newUser.uid}');
+        //debugPrint('User created. User ID: ${newUser.uid}');
         await _firestore.collection('users').doc(newUser.uid).set({
           'name': name,
           'email': email,
           'role': role,
           'photoURL': '', // Imposta il valore predefinito per photoURL
         });
-        debugPrint('User document created in Firestore.');
+        //debugPrint('User document created in Firestore.');
 
         await _authForUserCreation!.signOut();
-        debugPrint('Signed out from user creation auth instance.');
+        //debugPrint('Signed out from user creation auth instance.');
       }
     } catch (e) {
-      debugPrint('Error creating user: $e');
+      //debugPrint('Error creating user: $e');
       throw Exception(e.toString());
     }
   }
 
 Future<void> _updateCurrentProgramWeights(String userId, String exerciseId, int newMaxWeight) async {
-  debugPrint('Updating current program weights for user: $userId, exercise: $exerciseId');
+  //debugPrint('Updating current program weights for user: $userId, exercise: $exerciseId');
   final userDoc = await _firestore.collection('users').doc(userId).get();
   final currentProgramId = userDoc.data()?['currentProgram'];
-  debugPrint('Current program ID: $currentProgramId');
+  //debugPrint('Current program ID: $currentProgramId');
   
   if (currentProgramId != null) {
     // Aggiorna solo le settimane, workout, esercizi e serie senza toccare la mappa weeks in programs
     await _updateWeeksWeights(currentProgramId, exerciseId, newMaxWeight);
-    debugPrint('Updated current program weights without touching the weeks map in programs document');
+    //debugPrint('Updated current program weights without touching the weeks map in programs document');
   } else {
-    debugPrint('No current program found for user: $userId');
+    //debugPrint('No current program found for user: $userId');
   }
 }
 
 Future<List<Map<String, dynamic>>> _updateWeeksWeights(String programId, String exerciseId, int newMaxWeight) async {
-  debugPrint('Updating weeks weights for program: $programId, exercise: $exerciseId');
+  //debugPrint('Updating weeks weights for program: $programId, exercise: $exerciseId');
   final weeksSnapshot = await _firestore.collection('weeks').where('programId', isEqualTo: programId).get();
   final updatedWeeks = await Future.wait(weeksSnapshot.docs.map((weekDoc) async {
     final weekData = weekDoc.data();
     final updatedWorkouts = await _updateWorkoutsWeights(weekDoc.id, exerciseId, newMaxWeight);
-    debugPrint('Updated workouts for week: ${weekDoc.id}');
+    //debugPrint('Updated workouts for week: ${weekDoc.id}');
     return {
       'id': weekDoc.id,
       ...weekData,
       'workouts': updatedWorkouts.map((workout) => workout['id']).toList(),
     };
   }));
-  debugPrint('Updated weeks weights');
+  //debugPrint('Updated weeks weights');
   return updatedWeeks;
 }
 
 Future<List<Map<String, dynamic>>> _updateWorkoutsWeights(String weekId, String exerciseId, int newMaxWeight) async {
-  debugPrint('Updating workouts weights for week: $weekId, exercise: $exerciseId');
+  //debugPrint('Updating workouts weights for week: $weekId, exercise: $exerciseId');
   final workoutsSnapshot = await _firestore.collection('workouts').where('weekId', isEqualTo: weekId).get();
   final updatedWorkouts = await Future.wait(workoutsSnapshot.docs.map((workoutDoc) async {
     final workoutData = workoutDoc.data();
     final updatedExercises = await _updateExercisesWeights(workoutDoc.id, exerciseId, newMaxWeight);
-    debugPrint('Updated exercises for workout: ${workoutDoc.id}');
+    //debugPrint('Updated exercises for workout: ${workoutDoc.id}');
     return {
       'id': workoutDoc.id,
       ...workoutData,
       'exercises': updatedExercises.map((exercise) => exercise['id']).toList(),
     };
   }));
-  debugPrint('Updated workouts weights');
+  //debugPrint('Updated workouts weights');
   return updatedWorkouts;
 }
 
 Future<List<Map<String, dynamic>>> _updateExercisesWeights(String workoutId, String exerciseId, int newMaxWeight) async {
-  debugPrint('Updating exercises weights for workout: $workoutId, exercise: $exerciseId');
+  //debugPrint('Updating exercises weights for workout: $workoutId, exercise: $exerciseId');
   final exercisesSnapshot = await _firestore.collection('exercisesWorkout').where('workoutId', isEqualTo: workoutId).get();
   final updatedExercises = await Future.wait(exercisesSnapshot.docs.map((exerciseDoc) async {
     final exerciseData = exerciseDoc.data();
     if (exerciseData['exerciseId'] == exerciseId) {
       final updatedSeries = await _updateSeriesWeights(exerciseDoc.id, newMaxWeight);
-      debugPrint('Updated series for exercise: ${exerciseDoc.id}');
+      //debugPrint('Updated series for exercise: ${exerciseDoc.id}');
       return {
         'id': exerciseDoc.id,
         ...exerciseData,
@@ -406,22 +406,22 @@ Future<List<Map<String, dynamic>>> _updateExercisesWeights(String workoutId, Str
       ...exerciseData,
     };
   }));
-  debugPrint('Updated exercises weights');
+  //debugPrint('Updated exercises weights');
   return updatedExercises;
 }
 
 Future<List<Map<String, dynamic>>> _updateSeriesWeights(String exerciseWorkoutId, int newMaxWeight) async {
-  debugPrint('Updating series weights for exercise workout: $exerciseWorkoutId');
+  //debugPrint('Updating series weights for exercise workout: $exerciseWorkoutId');
   final seriesSnapshot = await _firestore.collection('series').where('exerciseId', isEqualTo: exerciseWorkoutId).get();
   final updatedSeries = await Future.wait(seriesSnapshot.docs.map((serieDoc) async {
     final serieData = serieDoc.data();
     final intensity = double.parse(serieData['intensity']);
     final calculatedWeight = (newMaxWeight * intensity) / 100;
-    debugPrint("newMaxWeight: $newMaxWeight");
-    debugPrint("intensity: $intensity");
-    debugPrint("calculatedWeight: $calculatedWeight");
+    //debugPrint("newMaxWeight: $newMaxWeight");
+    //debugPrint("intensity: $intensity");
+    //debugPrint("calculatedWeight: $calculatedWeight");
 
-    debugPrint('Updated weight for series: ${serieDoc.id}, weight: $calculatedWeight');
+    //debugPrint('Updated weight for series: ${serieDoc.id}, weight: $calculatedWeight');
     
     // Aggiorna il documento della serie sul Firestore
     await _firestore.collection('series').doc(serieDoc.id).update({
@@ -434,7 +434,7 @@ Future<List<Map<String, dynamic>>> _updateSeriesWeights(String exerciseWorkoutId
       'weight': calculatedWeight,
     };
   }));
-  debugPrint('Updated series weights');
+  //debugPrint('Updated series weights');
   return updatedSeries;
 }
 
@@ -446,24 +446,24 @@ Future<double> _getLatestMaxWeight(String exerciseId) async {
       .limit(1)
       .get();
 
-  debugPrint("exerciseId: $exerciseId");
+  //debugPrint("exerciseId: $exerciseId");
 
   if (snapshot.docs.isNotEmpty) {
     final data = snapshot.docs.first.data();
     final maxWeightData = data['maxWeight'];
     if (maxWeightData is int) {
       final maxWeight = maxWeightData.toDouble();
-      debugPrint("maxWeight: $maxWeight");
+      //debugPrint("maxWeight: $maxWeight");
       return maxWeight;
     } else if (maxWeightData is double) {
-      debugPrint("maxWeight: $maxWeightData");
+      //debugPrint("maxWeight: $maxWeightData");
       return maxWeightData;
     } else {
-      debugPrint("Invalid data type for maxWeight: $maxWeightData");
+      //debugPrint("Invalid data type for maxWeight: $maxWeightData");
       return 0.0;
     }
   } else {
-    debugPrint("No records found for exerciseId: $exerciseId");
+    //debugPrint("No records found for exerciseId: $exerciseId");
     return 0.0;
   }
 }

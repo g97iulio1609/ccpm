@@ -19,15 +19,15 @@ class TrainingProgramWorkoutList extends ConsumerWidget {
     final week = controller.program.weeks[weekIndex];
     final sortedWorkouts = week.workouts.toList()..sort((a, b) => a.order.compareTo(b.order));
 
-return ListView.builder(
-  shrinkWrap: true,
-  physics: const NeverScrollableScrollPhysics(),
-  itemCount: sortedWorkouts.length,
-  itemBuilder: (context, index) {
-    final workout = sortedWorkouts[index];
-    return _buildWorkoutCard(context, workout, index);
-  },
-);
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: sortedWorkouts.length,
+      itemBuilder: (context, index) {
+        final workout = sortedWorkouts[index];
+        return _buildWorkoutCard(context, workout, index);
+      },
+    );
   }
 
   Widget _buildWorkoutCard(BuildContext context, Workout workout, int index) {
