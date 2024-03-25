@@ -1,7 +1,9 @@
+import 'package:alphanessone/Viewer/timer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
+import 'package:numberpicker/numberpicker.dart';
 
 class ExerciseDetails extends StatefulWidget {
   final String programId;
@@ -33,10 +35,8 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
   int currentSeriesIndex = 0;
   final Map<String, TextEditingController> _repsControllers = {};
   final Map<String, TextEditingController> _weightControllers = {};
-  final TextEditingController _minutesController =
-      TextEditingController(text: "00");
-  final TextEditingController _secondsController =
-      TextEditingController(text: "10");
+  int _minutes = 0;
+  int _seconds = 10;
   bool _isEmomMode = false;
 
   @override
@@ -48,10 +48,8 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
 
   void _initControllers() {
     for (final series in widget.seriesList) {
-      _repsControllers[series['id']] =
-          TextEditingController(text: series['reps'].toString());
-      _weightControllers[series['id']] =
-          TextEditingController(text: series['weight'].toString());
+      _repsControllers[series['id']] = TextEditingController(text: series['reps'].toString());
+      _weightControllers[series['id']] = TextEditingController(text: series['weight'].toString());
     }
   }
 
@@ -59,8 +57,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
     currentSeriesIndex = widget.startIndex;
   }
 
-  Future<void> _updateSeriesData(
-      String seriesId, int? repsDone, double? weightDone) async {
+  Future<void> _updateSeriesData(String seriesId, int? repsDone, double? weightDone) async {
     final currentSeries = widget.seriesList[currentSeriesIndex];
     final expectedReps = currentSeries['reps'];
     final expectedWeight = currentSeries['weight'];
@@ -76,25 +73,24 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
   }
 
   int _getRestTimeInSeconds() {
-    final minutes = int.tryParse(_minutesController.text) ?? 0;
-    final seconds = int.tryParse(_secondsController.text) ?? 0;
-    return (minutes * 60) + seconds;
+    return (_minutes * 60) + _seconds;
   }
 
-  Future<void> _handleNextSeries() async {
-    final restTimeInSeconds = _getRestTimeInSeconds();
-    if (currentSeriesIndex < widget.seriesList.length - 1) {
-      final shouldProceed = await context.push<bool>(
-          '/programs_screen/${widget.programId}/training_viewer/${widget.weekId}/week_details/${widget.workoutId}/workout_details/${widget.exerciseId}/exercise_details/timer?currentSeriesIndex=${currentSeriesIndex + 1}&totalSeries=${widget.seriesList.length}&restTime=$restTimeInSeconds&isEmomMode=$_isEmomMode');
-      if (shouldProceed == true) {
-        setState(() {
-          currentSeriesIndex++;
-        });
-      }
-    } else {
-      context.pop();
+Future<void> _handleNextSeries() async {
+  final restTimeInSeconds = _getRestTimeInSeconds();
+  if (currentSeriesIndex < widget.seriesList.length - 1) {
+    final shouldProceed = await context.push<bool>(
+      '/programs_screen/training_viewer/${Uri.encodeComponent(widget.programId)}/week_details/${Uri.encodeComponent(widget.weekId)}/workout_details/${Uri.encodeComponent(widget.workoutId)}/exercise_details/${Uri.encodeComponent(widget.exerciseId)}/timer?currentSeriesIndex=${currentSeriesIndex + 1}&totalSeries=${widget.seriesList.length}&restTime=$restTimeInSeconds&isEmomMode=$_isEmomMode',
+    );
+    if (shouldProceed == true) {
+      setState(() {
+        currentSeriesIndex++;
+      });
     }
+  } else {
+    context.pop();
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -109,14 +105,27 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
           children: [
             _buildSeriesIndicator(theme),
             const SizedBox(height: 32),
-            _buildWeightInput(theme, currentSeries),
+            _buildInputField(
+              theme,
+              'REPS',
+              _repsControllers[currentSeries['id']]!,
+              TextInputType.number,
+              FilteringTextInputFormatter.digitsOnly,
+            ),
             const SizedBox(height: 16),
-            _buildRepsInput(theme, currentSeries),
-            const SizedBox(height: 16),
-            _buildRestTimeInput(theme),
-            const SizedBox(height: 16),
-            _buildEmomSwitch(theme),
+            _buildInputField(
+              theme,
+              'WEIGHT',
+              _weightControllers[currentSeries['id']]!,
+              const TextInputType.numberWithOptions(decimal: true),
+              FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*')),
+              suffix: 'kg',
+            ),
             const SizedBox(height: 32),
+            _buildRestTimeSelector(theme),
+            const SizedBox(height: 32),
+            _buildEmomSwitch(theme),
+            const SizedBox(height: 48),
             _buildNextButton(theme),
           ],
         ),
@@ -125,99 +134,175 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
   }
 
   Widget _buildSeriesIndicator(ThemeData theme) {
-    return Text(
-      'Set ${currentSeriesIndex + 1} / ${widget.seriesList.length}',
-      style: theme.textTheme.headlineSmall,
-      textAlign: TextAlign.center,
-    );
-  }
-
-  Widget _buildWeightInput(
-      ThemeData theme, Map<String, dynamic> currentSeries) {
-    return InputDecorator(
-      decoration: InputDecoration(
-        labelText: 'WEIGHT',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.0),
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _weightControllers[currentSeries['id']],
-              textAlign: TextAlign.center,
-              decoration: const InputDecoration.collapsed(hintText: ''),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*'))
-              ],
-            ),
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withOpacity(0.8),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.primary.withOpacity(0.4),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
-          Text('kg', style: theme.textTheme.titleMedium),
         ],
       ),
-    );
-  }
-
-  Widget _buildRepsInput(ThemeData theme, Map<String, dynamic> currentSeries) {
-    return InputDecorator(
-      decoration: InputDecoration(
-        labelText: 'REPS',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.0),
+      child: Text(
+        'Set ${currentSeriesIndex + 1} / ${widget.seriesList.length}',
+        style: theme.textTheme.headlineSmall?.copyWith(
+          color: theme.colorScheme.onPrimary,
+          fontWeight: FontWeight.bold,
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      ),
-      child: TextField(
-        controller: _repsControllers[currentSeries['id']],
         textAlign: TextAlign.center,
-        decoration: const InputDecoration.collapsed(hintText: ''),
-        keyboardType: TextInputType.number,
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
       ),
     );
   }
 
-  Widget _buildRestTimeInput(ThemeData theme) {
-    return Row(
+  Widget _buildInputField(
+    ThemeData theme,
+    String label,
+    TextEditingController controller,
+    TextInputType keyboardType,
+    TextInputFormatter inputFormatter, {
+    String? suffix,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: TextField(
-            controller: _minutesController,
-            decoration: InputDecoration(
-              labelText: "Minuti",
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12.0),
-              ),
+        Text(
+          label,
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: theme.colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          inputFormatters: [inputFormatter],
+          textAlign: TextAlign.center,
+          style: theme.textTheme.headlineMedium?.copyWith(
+            color: theme.colorScheme.onSurface,
+          ),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: theme.colorScheme.surface.withOpacity(0.8),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
             ),
-            keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(2),
+            suffixText: suffix,
+            suffixStyle: theme.textTheme.titleMedium?.copyWith(
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRestTimeSelector(ThemeData theme) {
+    return Column(
+      children: [
+        Text(
+          'Rest Time',
+          style: theme.textTheme.headlineSmall?.copyWith(
+            color: theme.colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface.withOpacity(0.8),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: theme.colorScheme.onSurface.withOpacity(0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildNumberPicker(
+                theme,
+                _minutes,
+                0,
+                59,
+                (value) => setState(() => _minutes = value),
+                'min',
+              ),
+              const SizedBox(width: 16),
+              Text(
+                ':',
+                style: theme.textTheme.headlineLarge?.copyWith(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(width: 16),
+              _buildNumberPicker(
+                theme,
+                _seconds,
+                0,
+                59,
+                (value) => setState(() => _seconds = value),
+                'sec',
+              ),
             ],
           ),
         ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: TextField(
-            controller: _secondsController,
-            decoration: InputDecoration(
-              labelText: "Secondi",
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12.0),
+      ],
+    );
+  }
+
+  Widget _buildNumberPicker(
+    ThemeData theme,
+    int value,
+    int minValue,
+    int maxValue,
+    ValueChanged<int> onChanged,
+    String label,
+  ) {
+    return Column(
+      children: [
+        NumberPicker(
+          value: value,
+          minValue: minValue,
+          maxValue: maxValue,
+          onChanged: onChanged,
+          itemWidth: 80,
+          itemHeight: 80,
+          textStyle: theme.textTheme.headlineMedium?.copyWith(
+            color: theme.colorScheme.onSurface,
+          ),
+          selectedTextStyle: theme.textTheme.headlineMedium?.copyWith(
+            color: theme.colorScheme.primary,
+            fontWeight: FontWeight.bold,
+          ),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface.withOpacity(0.6),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: theme.colorScheme.primary.withOpacity(0.2),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
               ),
-            ),
-            keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(2),
             ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: theme.colorScheme.onSurface,
           ),
         ),
       ],
@@ -228,15 +313,21 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text('EMOM Mode', style: theme.textTheme.titleMedium),
+        Text(
+          'EMOM Mode',
+          style: theme.textTheme.headlineSmall?.copyWith(
+            color: theme.colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(width: 16),
         Switch(
           value: _isEmomMode,
-          onChanged: (value) {
-            setState(() {
-              _isEmomMode = value;
-            });
-          },
+          onChanged: (value) => setState(() => _isEmomMode = value),
           activeColor: theme.colorScheme.primary,
+          activeTrackColor: theme.colorScheme.primary.withOpacity(0.5),
+          inactiveThumbColor: theme.colorScheme.onSurface.withOpacity(0.5),
+          inactiveTrackColor: theme.colorScheme.onSurface.withOpacity(0.2),
         ),
       ],
     );
@@ -256,17 +347,19 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
       style: ElevatedButton.styleFrom(
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.all(24),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(30),
         ),
+        elevation: 8,
+        shadowColor: theme.colorScheme.primary.withOpacity(0.5),
       ),
       child: Text(
-        currentSeriesIndex == widget.seriesList.length - 1
-            ? 'FINISH'
-            : 'NEXT SET',
-        style: theme.textTheme.titleMedium
-            ?.copyWith(color: theme.colorScheme.onPrimary),
+        currentSeriesIndex == widget.seriesList.length - 1 ? 'FINISH' : 'NEXT SET',
+        style: theme.textTheme.headlineSmall?.copyWith(
+          color: theme.colorScheme.onPrimary,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
@@ -275,8 +368,6 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
   void dispose() {
     _repsControllers.values.forEach((controller) => controller.dispose());
     _weightControllers.values.forEach((controller) => controller.dispose());
-    _minutesController.dispose();
-    _secondsController.dispose();
     super.dispose();
   }
 }
