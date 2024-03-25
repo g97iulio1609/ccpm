@@ -30,7 +30,8 @@ class ProgramsScreen extends HookConsumerWidget {
       if (name.trim().isEmpty) return;
       await FirebaseFirestore.instance.collection('programs').add({
         'name': name,
-        'athleteId': FirebaseAuth.instance.currentUser!.uid, 
+        'athleteId': FirebaseAuth.instance.currentUser!.uid,
+        'hide': false,
       });
       controller.clear();
     }
@@ -44,9 +45,13 @@ class ProgramsScreen extends HookConsumerWidget {
         return FirebaseFirestore.instance
             .collection('programs')
             .where('athleteId', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
+            .where('hide', isEqualTo: false)
             .snapshots();
       } else {
-        return FirebaseFirestore.instance.collection('programs').snapshots();
+        return FirebaseFirestore.instance
+            .collection('programs')
+            .where('hide', isEqualTo: false)
+            .snapshots();
       }
     }
 
