@@ -132,7 +132,8 @@ class MyApp extends ConsumerWidget {
               routes: [
                 GoRoute(
                   path: 'training_viewer/:programId',
-                  builder: (context, state) => TrainingViewer(programId: state.pathParameters['programId']!),
+                  builder: (context, state) => TrainingViewer(
+                      programId: state.pathParameters['programId']!),
                   routes: [
                     GoRoute(
                       path: 'week_details/:weekId',
@@ -150,29 +151,43 @@ class MyApp extends ConsumerWidget {
                           ),
                           routes: [
                             GoRoute(
-                      path: 'exercise_details/:exerciseId',
-  builder: (context, state) => ExerciseDetails(
-    programId: state.pathParameters['programId']!,
-    weekId: state.pathParameters['weekId']!,
-    workoutId: state.pathParameters['workoutId']!,
-    exerciseId: state.pathParameters['exerciseId']!,
-    exerciseName: (state.extra as Map<String, dynamic>)['exerciseName'],
-    exerciseVariant: (state.extra as Map<String, dynamic>)['exerciseVariant'],
-    seriesList: List<Map<String, dynamic>>.from((state.extra as Map<String, dynamic>)['seriesList']),
-    startIndex: (state.extra as Map<String, dynamic>)['startIndex'],
+                              path: 'exercise_details/:exerciseId',
+                              builder: (context, state) => ExerciseDetails(
+                                programId: state.pathParameters['programId']!,
+                                weekId: state.pathParameters['weekId']!,
+                                workoutId: state.pathParameters['workoutId']!,
+                                exerciseId: state.pathParameters['exerciseId']!,
+                                exerciseName: (state.extra
+                                    as Map<String, dynamic>)['exerciseName'],
+                                exerciseVariant: (state.extra
+                                    as Map<String, dynamic>)['exerciseVariant'],
+                                seriesList: List<Map<String, dynamic>>.from(
+                                    (state.extra
+                                        as Map<String, dynamic>)['seriesList']),
+                                startIndex: (state.extra
+                                    as Map<String, dynamic>)['startIndex'],
                               ),
                               routes: [
                                 GoRoute(
                                   path: 'timer',
                                   builder: (context, state) => TimerPage(
-                                    programId: state.pathParameters['programId']!,
+                                    programId:
+                                        state.pathParameters['programId']!,
                                     weekId: state.pathParameters['weekId']!,
-                                    workoutId: state.pathParameters['workoutId']!,
-                                    exerciseId: state.pathParameters['exerciseId']!,
-                                    currentSeriesIndex: int.parse(state.uri.queryParameters['currentSeriesIndex']!),
-                                    totalSeries: int.parse(state.uri.queryParameters['totalSeries']!),
-                                    restTime: int.parse(state.uri.queryParameters['restTime']!),
-                                    isEmomMode: state.uri.queryParameters['isEmomMode'] == 'true',
+                                    workoutId:
+                                        state.pathParameters['workoutId']!,
+                                    exerciseId:
+                                        state.pathParameters['exerciseId']!,
+                                    currentSeriesIndex: int.parse(
+                                        state.uri.queryParameters[
+                                            'currentSeriesIndex']!),
+                                    totalSeries: int.parse(state
+                                        .uri.queryParameters['totalSeries']!),
+                                    restTime: int.parse(
+                                        state.uri.queryParameters['restTime']!),
+                                    isEmomMode: state.uri
+                                            .queryParameters['isEmomMode'] ==
+                                        'true',
                                   ),
                                 ),
                               ],
@@ -187,7 +202,8 @@ class MyApp extends ConsumerWidget {
             ),
             GoRoute(
               path: '/training_program/:programId',
-              builder: (context, state) => TrainingProgramPage(programId: state.pathParameters['programId']),
+              builder: (context, state) => TrainingProgramPage(
+                  programId: state.pathParameters['programId']),
             ),
             GoRoute(
               path: '/exercises_list',
@@ -199,23 +215,26 @@ class MyApp extends ConsumerWidget {
             ),
             GoRoute(
               path: '/user_profile/:userId',
-              builder: (context, state) => UserProfile(userId: state.pathParameters['userId']!),
+              builder: (context, state) =>
+                  UserProfile(userId: state.pathParameters['userId']!),
             ),
             GoRoute(
               path: '/users_dashboard',
               builder: (context, state) => const UsersDashboard(),
             ),
-              GoRoute(
-          path: '/user_profile',
-          builder: (context, state) {
-            final userId = FirebaseAuth.instance.currentUser?.uid;
-            return userId != null ? UserProfile(userId: userId) : const SizedBox();
-          }),
             GoRoute(
-          path: '/training_program',
-          builder: (context, state) => const TrainingProgramPage(), // Aggiungi questa rotta
-        ),
-            
+                path: '/user_profile',
+                builder: (context, state) {
+                  final userId = FirebaseAuth.instance.currentUser?.uid;
+                  return userId != null
+                      ? UserProfile(userId: userId)
+                      : const SizedBox();
+                }),
+            GoRoute(
+              path: '/training_program',
+              builder: (context, state) =>
+                  const TrainingProgramPage(), // Aggiungi questa rotta
+            ),
           ],
         ),
       ],
@@ -230,7 +249,6 @@ class MyApp extends ConsumerWidget {
     );
   }
 }
-
 
 class AuthWrapper extends ConsumerWidget {
   const AuthWrapper({super.key});

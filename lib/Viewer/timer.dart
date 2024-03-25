@@ -29,7 +29,8 @@ class TimerPage extends StatefulWidget {
   _TimerPageState createState() => _TimerPageState();
 }
 
-class _TimerPageState extends State<TimerPage> with SingleTickerProviderStateMixin {
+class _TimerPageState extends State<TimerPage>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
   late Timer _timer;
@@ -60,16 +61,16 @@ class _TimerPageState extends State<TimerPage> with SingleTickerProviderStateMix
     });
   }
 
- void _handleNextSeries() {
-  _timer.cancel();
-  if (widget.isEmomMode) {
-    _remainingSeconds = widget.restTime;
-    _startTimer();
-  } else {
-    _showNotification('Rest Time Completed', 'Your rest time has ended.');
-    Navigator.pop(context, true);
+  void _handleNextSeries() {
+    _timer.cancel();
+    if (widget.isEmomMode) {
+      _remainingSeconds = widget.restTime;
+      _startTimer();
+    } else {
+      _showNotification('Rest Time Completed', 'Your rest time has ended.');
+      context.pop(true);
+    }
   }
-}
 
   Future<void> _showNotification(String title, String body) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
@@ -85,7 +86,7 @@ class _TimerPageState extends State<TimerPage> with SingleTickerProviderStateMix
       playSound: true,
       timeoutAfter: null,
       autoCancel: false,
-      ongoing: false, 
+      ongoing: false,
       fullScreenIntent: true,
     );
     const NotificationDetails platformChannelSpecifics =

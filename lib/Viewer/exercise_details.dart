@@ -1,4 +1,3 @@
-import 'package:alphanessone/Viewer/timer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -34,8 +33,10 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
   int currentSeriesIndex = 0;
   final Map<String, TextEditingController> _repsControllers = {};
   final Map<String, TextEditingController> _weightControllers = {};
-  final TextEditingController _minutesController = TextEditingController(text: "00");
-  final TextEditingController _secondsController = TextEditingController(text: "10");
+  final TextEditingController _minutesController =
+      TextEditingController(text: "00");
+  final TextEditingController _secondsController =
+      TextEditingController(text: "10");
   bool _isEmomMode = false;
 
   @override
@@ -47,8 +48,10 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
 
   void _initControllers() {
     for (final series in widget.seriesList) {
-      _repsControllers[series['id']] = TextEditingController(text: series['reps'].toString());
-      _weightControllers[series['id']] = TextEditingController(text: series['weight'].toString());
+      _repsControllers[series['id']] =
+          TextEditingController(text: series['reps'].toString());
+      _weightControllers[series['id']] =
+          TextEditingController(text: series['weight'].toString());
     }
   }
 
@@ -56,7 +59,8 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
     currentSeriesIndex = widget.startIndex;
   }
 
-  Future<void> _updateSeriesData(String seriesId, int? repsDone, double? weightDone) async {
+  Future<void> _updateSeriesData(
+      String seriesId, int? repsDone, double? weightDone) async {
     final currentSeries = widget.seriesList[currentSeriesIndex];
     final expectedReps = currentSeries['reps'];
     final expectedWeight = currentSeries['weight'];
@@ -77,33 +81,20 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
     return (minutes * 60) + seconds;
   }
 
-Future<void> _handleNextSeries() async {
-  final restTimeInSeconds = _getRestTimeInSeconds();
-  if (currentSeriesIndex < widget.seriesList.length - 1) {
-    final shouldProceed = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => TimerPage(
-          programId: widget.programId,
-          weekId: widget.weekId,
-          workoutId: widget.workoutId,
-          exerciseId: widget.exerciseId,
-          currentSeriesIndex: currentSeriesIndex,
-          totalSeries: widget.seriesList.length,
-          restTime: restTimeInSeconds,
-          isEmomMode: _isEmomMode,
-        ),
-      ),
-    );
-    if (shouldProceed == true) {
-      setState(() {
-        currentSeriesIndex++;
-      });
+  Future<void> _handleNextSeries() async {
+    final restTimeInSeconds = _getRestTimeInSeconds();
+    if (currentSeriesIndex < widget.seriesList.length - 1) {
+      final shouldProceed = await context.push<bool>(
+          '/programs_screen/${widget.programId}/training_viewer/${widget.weekId}/week_details/${widget.workoutId}/workout_details/${widget.exerciseId}/exercise_details/timer?currentSeriesIndex=${currentSeriesIndex + 1}&totalSeries=${widget.seriesList.length}&restTime=$restTimeInSeconds&isEmomMode=$_isEmomMode');
+      if (shouldProceed == true) {
+        setState(() {
+          currentSeriesIndex++;
+        });
+      }
+    } else {
+      context.pop();
     }
-  } else {
-    Navigator.pop(context);
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -141,14 +132,16 @@ Future<void> _handleNextSeries() async {
     );
   }
 
-  Widget _buildWeightInput(ThemeData theme, Map<String, dynamic> currentSeries) {
+  Widget _buildWeightInput(
+      ThemeData theme, Map<String, dynamic> currentSeries) {
     return InputDecorator(
       decoration: InputDecoration(
         labelText: 'WEIGHT',
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.0),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -158,8 +151,11 @@ Future<void> _handleNextSeries() async {
               controller: _weightControllers[currentSeries['id']],
               textAlign: TextAlign.center,
               decoration: const InputDecoration.collapsed(hintText: ''),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*'))],
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*'))
+              ],
             ),
           ),
           Text('kg', style: theme.textTheme.titleMedium),
@@ -175,7 +171,8 @@ Future<void> _handleNextSeries() async {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.0),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       ),
       child: TextField(
         controller: _repsControllers[currentSeries['id']],
@@ -265,8 +262,11 @@ Future<void> _handleNextSeries() async {
         ),
       ),
       child: Text(
-        currentSeriesIndex == widget.seriesList.length - 1 ? 'FINISH' : 'NEXT SET',
-        style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onPrimary),
+        currentSeriesIndex == widget.seriesList.length - 1
+            ? 'FINISH'
+            : 'NEXT SET',
+        style: theme.textTheme.titleMedium
+            ?.copyWith(color: theme.colorScheme.onPrimary),
       ),
     );
   }
