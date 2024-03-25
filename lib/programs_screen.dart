@@ -26,12 +26,13 @@ class ProgramsScreen extends HookConsumerWidget {
       }
     }
 
-    Future<void> addProgram(String name) async {
-      if (name.trim().isEmpty) return;
+    Future<void> addProgram() async {
+      final name = controller.text.trim();
+      if (name.isEmpty) return;
       await FirebaseFirestore.instance.collection('programs').add({
         'name': name,
         'athleteId': FirebaseAuth.instance.currentUser!.uid,
-        'hide': false,
+        'hide': false, // Aggiunto il campo 'hide' con valore iniziale false
       });
       controller.clear();
     }
@@ -40,18 +41,26 @@ class ProgramsScreen extends HookConsumerWidget {
       await FirebaseFirestore.instance.collection('programs').doc(id).delete();
     }
 
+    Future<void> toggleProgramVisibility(
+        String id, bool currentVisibility) async {
+      await FirebaseFirestore.instance.collection('programs').doc(id).update({
+        'hide':
+            !currentVisibility, // Aggiornato il campo 'hide' con il valore opposto a quello attuale
+      });
+    }
+
     Stream<QuerySnapshot> getProgramsStream() {
       if (userRole != 'admin') {
         return FirebaseFirestore.instance
             .collection('programs')
-            .where('athleteId', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
-            .where('hide', isEqualTo: false)
+            .where('athleteId',
+                isEqualTo: FirebaseAuth.instance.currentUser!.uid)
+            .where('hide',
+                isEqualTo:
+                    false) // Filtrato per mostrare solo i programmi non nascosti
             .snapshots();
       } else {
-        return FirebaseFirestore.instance
-            .collection('programs')
-            .where('hide', isEqualTo: false)
-            .snapshots();
+        return FirebaseFirestore.instance.collection('programs').snapshots();
       }
     }
 
@@ -63,11 +72,13 @@ class ProgramsScreen extends HookConsumerWidget {
               padding: const EdgeInsets.all(8.0),
               child: TextField(
                 controller: controller,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Crea Programma Di Allenamento',
-                  suffixIcon: Icon(Icons.add),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.add),
+                    onPressed: addProgram,
+                  ),
                 ),
-                onSubmitted: addProgram,
               ),
             ),
           Expanded(
@@ -94,35 +105,62 @@ class ProgramsScreen extends HookConsumerWidget {
                   itemCount: documents.length,
                   itemBuilder: (context, index) {
                     final doc = documents[index];
+                    final isHidden = doc[
+                        'hide']; // Ottenuto il valore di 'hide' direttamente dal documento
+
                     return Card(
                       elevation: 5,
                       margin: const EdgeInsets.all(10),
                       child: InkWell(
-                        onTap: () => context.go('/programs_screen/training_viewer/${doc.id}'),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        onTap: () => context
+                            .go('/programs_screen/training_viewer/${doc.id}'),
+                        child: Stack(
                           children: [
-                            Text(doc['name'], style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 8),
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(doc['name'],
+                                    style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 8),
+                                if (userRole == 'admin')
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          foregroundColor: Colors.white,
+                                          backgroundColor: Colors.green,
+                                        ),
+                                        onPressed: () => context
+                                            .go('/training_program/${doc.id}'),
+                                        child: const Text('Modifica'),
+                                      ),
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          foregroundColor: Colors.white,
+                                          backgroundColor: Colors.red,
+                                        ),
+                                        onPressed: () => deleteProgram(doc.id),
+                                        child: const Text('Elimina'),
+                                      ),
+                                    ],
+                                  ),
+                              ],
+                            ),
                             if (userRole == 'admin')
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      foregroundColor: Colors.white, backgroundColor: Colors.green,
-                                    ),
-                                    onPressed: () => context.go('/training_program/${doc.id}'),
-                                    child: const Text('Modifica'),
-                                  ),
-                                  ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      foregroundColor: Colors.white, backgroundColor: Colors.red,
-                                    ),
-                                    onPressed: () => deleteProgram(doc.id),
-                                    child: const Text('Elimina'),
-                                  ),
-                                ],
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: IconButton(
+                                  icon: Icon(isHidden
+                                      ? Icons.visibility_off
+                                      : Icons.visibility),
+                                  onPressed: () =>
+                                      toggleProgramVisibility(doc.id, isHidden),
+                                ),
                               ),
                           ],
                         ),
