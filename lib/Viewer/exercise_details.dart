@@ -54,7 +54,9 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
   }
 
   void _setCurrentSeriesIndex() {
-    currentSeriesIndex = widget.startIndex;
+    currentSeriesIndex = widget.startIndex < widget.seriesList.length
+        ? widget.startIndex
+        : widget.seriesList.length - 1;
   }
 
   Future<void> _updateSeriesData(String seriesId, int? repsDone, double? weightDone) async {
@@ -79,12 +81,12 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
 Future<void> _handleNextSeries() async {
   final restTimeInSeconds = _getRestTimeInSeconds();
   if (currentSeriesIndex < widget.seriesList.length - 1) {
-    final shouldProceed = await context.push<bool>(
+    final result = await context.push<Map<String, dynamic>>(
       '/programs_screen/training_viewer/${Uri.encodeComponent(widget.programId)}/week_details/${Uri.encodeComponent(widget.weekId)}/workout_details/${Uri.encodeComponent(widget.workoutId)}/exercise_details/${Uri.encodeComponent(widget.exerciseId)}/timer?currentSeriesIndex=${currentSeriesIndex + 1}&totalSeries=${widget.seriesList.length}&restTime=$restTimeInSeconds&isEmomMode=$_isEmomMode',
     );
-    if (shouldProceed == true) {
+    if (result != null) {
       setState(() {
-        currentSeriesIndex++;
+        currentSeriesIndex = result['startIndex'];
       });
     }
   } else {
@@ -95,7 +97,9 @@ Future<void> _handleNextSeries() async {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final currentSeries = widget.seriesList[currentSeriesIndex];
+    final currentSeries = currentSeriesIndex < widget.seriesList.length
+        ? widget.seriesList[currentSeriesIndex]
+        : null;
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -105,22 +109,24 @@ Future<void> _handleNextSeries() async {
           children: [
             _buildSeriesIndicator(theme),
             const SizedBox(height: 32),
-            _buildInputField(
-              theme,
-              'REPS',
-              _repsControllers[currentSeries['id']]!,
-              TextInputType.number,
-              FilteringTextInputFormatter.digitsOnly,
-            ),
-            const SizedBox(height: 16),
-            _buildInputField(
-              theme,
-              'WEIGHT',
-              _weightControllers[currentSeries['id']]!,
-              const TextInputType.numberWithOptions(decimal: true),
-              FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*')),
-              suffix: 'kg',
-            ),
+            if (currentSeries != null) ...[
+              _buildInputField(
+                theme,
+                'REPS',
+                _repsControllers[currentSeries['id']]!,
+                TextInputType.number,
+                FilteringTextInputFormatter.digitsOnly,
+              ),
+              const SizedBox(height: 16),
+              _buildInputField(
+                theme,
+                'WEIGHT',
+                _weightControllers[currentSeries['id']]!,
+                const TextInputType.numberWithOptions(decimal: true),
+                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*')),
+                suffix: 'kg',
+              ),
+            ],
             const SizedBox(height: 32),
             _buildRestTimeSelector(theme),
             const SizedBox(height: 32),
@@ -335,15 +341,17 @@ Future<void> _handleNextSeries() async {
 
   Widget _buildNextButton(ThemeData theme) {
     return ElevatedButton(
-      onPressed: () async {
-        final currentSeries = widget.seriesList[currentSeriesIndex];
-        await _updateSeriesData(
-          currentSeries['id'],
-          int.tryParse(_repsControllers[currentSeries['id']]!.text),
-          double.tryParse(_weightControllers[currentSeries['id']]!.text),
-        );
-        await _handleNextSeries();
-      },
+      onPressed: currentSeriesIndex < widget.seriesList.length
+          ? () async {
+              final currentSeries = widget.seriesList[currentSeriesIndex];
+              await _updateSeriesData(
+                currentSeries['id'],
+                int.tryParse(_repsControllers[currentSeries['id']]!.text),
+                double.tryParse(_weightControllers[currentSeries['id']]!.text),
+              );
+              await _handleNextSeries();
+            }
+          : null,
       style: ElevatedButton.styleFrom(
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,

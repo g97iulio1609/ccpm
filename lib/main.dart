@@ -150,19 +150,22 @@ class MyApp extends ConsumerWidget {
                         workoutId: state.pathParameters['workoutId']!,
                       ),
                       routes: [
-                        GoRoute(
-                          path: 'exercise_details/:exerciseId',
-                          builder: (context, state) => ExerciseDetails(
-                            programId: Uri.decodeComponent(state.pathParameters['programId']!),
-                            weekId: Uri.decodeComponent(state.pathParameters['weekId']!),
-                            workoutId: Uri.decodeComponent(state.pathParameters['workoutId']!),
-                            exerciseId: Uri.decodeComponent(state.pathParameters['exerciseId']!),
-                            exerciseName: (state.extra as Map<String, dynamic>)['exerciseName'],
-                            exerciseVariant: (state.extra as Map<String, dynamic>)['exerciseVariant'],
-                            seriesList: List<Map<String, dynamic>>.from((state.extra as Map<String, dynamic>)['seriesList']),
-                            startIndex: (state.extra as Map<String, dynamic>)['startIndex'],
-                          ),
-                          routes: [
+                       GoRoute(
+  path: 'exercise_details/:exerciseId',
+  builder: (context, state) {
+    final extra = state.extra as Map<String, dynamic>?;
+    return ExerciseDetails(
+      programId: Uri.decodeComponent(state.pathParameters['programId']!),
+      weekId: Uri.decodeComponent(state.pathParameters['weekId']!),
+      workoutId: Uri.decodeComponent(state.pathParameters['workoutId']!),
+      exerciseId: Uri.decodeComponent(state.pathParameters['exerciseId']!),
+      exerciseName: extra?['exerciseName'] ?? '',
+      exerciseVariant: extra?['exerciseVariant'],
+      seriesList: List<Map<String, dynamic>>.from(extra?['seriesList'] ?? []),
+      startIndex: extra?['startIndex'] ?? 0,
+    );
+  },
+  routes: [
                             GoRoute(
                               path: 'timer',
                               builder: (context, state) => TimerPage(

@@ -61,16 +61,18 @@ class _TimerPageState extends State<TimerPage>
     });
   }
 
-  void _handleNextSeries() {
-    _timer.cancel();
-    if (widget.isEmomMode) {
-      _remainingSeconds = widget.restTime;
-      _startTimer();
-    } else {
-      _showNotification('Rest Time Completed', 'Your rest time has ended.');
-      context.pop(true);
-    }
+void _handleNextSeries() {
+  _timer.cancel();
+  if (widget.isEmomMode) {
+    _remainingSeconds = widget.restTime;
+    _startTimer();
+  } else {
+    _showNotification('Rest Time Completed', 'Your rest time has ended.');
+    context.pop(<String, dynamic>{
+      'startIndex': widget.currentSeriesIndex,
+    });
   }
+}
 
   Future<void> _showNotification(String title, String body) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
