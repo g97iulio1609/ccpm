@@ -48,8 +48,10 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
 
   void _initControllers() {
     for (final series in widget.seriesList) {
-      _repsControllers[series['id']] = TextEditingController(text: series['reps'].toString());
-      _weightControllers[series['id']] = TextEditingController(text: series['weight'].toString());
+      _repsControllers[series['id']] =
+          TextEditingController(text: series['reps'].toString());
+      _weightControllers[series['id']] =
+          TextEditingController(text: series['weight'].toString());
     }
   }
 
@@ -59,7 +61,8 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
         : widget.seriesList.length - 1;
   }
 
-  Future<void> _updateSeriesData(String seriesId, int? repsDone, double? weightDone) async {
+  Future<void> _updateSeriesData(
+      String seriesId, int? repsDone, double? weightDone) async {
     final currentSeries = widget.seriesList[currentSeriesIndex];
     final expectedReps = currentSeries['reps'];
     final expectedWeight = currentSeries['weight'];
@@ -78,21 +81,21 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
     return (_minutes * 60) + _seconds;
   }
 
-Future<void> _handleNextSeries() async {
-  final restTimeInSeconds = _getRestTimeInSeconds();
-  if (currentSeriesIndex < widget.seriesList.length - 1) {
-    final result = await context.push<Map<String, dynamic>>(
-      '/programs_screen/training_viewer/${Uri.encodeComponent(widget.programId)}/week_details/${Uri.encodeComponent(widget.weekId)}/workout_details/${Uri.encodeComponent(widget.workoutId)}/exercise_details/${Uri.encodeComponent(widget.exerciseId)}/timer?currentSeriesIndex=${currentSeriesIndex + 1}&totalSeries=${widget.seriesList.length}&restTime=$restTimeInSeconds&isEmomMode=$_isEmomMode',
-    );
-    if (result != null) {
-      setState(() {
-        currentSeriesIndex = result['startIndex'];
-      });
+  Future<void> _handleNextSeries() async {
+    final restTimeInSeconds = _getRestTimeInSeconds();
+    if (currentSeriesIndex < widget.seriesList.length - 1) {
+      final result = await context.push<Map<String, dynamic>>(
+        '/programs_screen/training_viewer/${Uri.encodeComponent(widget.programId)}/week_details/${Uri.encodeComponent(widget.weekId)}/workout_details/${Uri.encodeComponent(widget.workoutId)}/exercise_details/${Uri.encodeComponent(widget.exerciseId)}/timer?currentSeriesIndex=${currentSeriesIndex + 1}&totalSeries=${widget.seriesList.length}&restTime=$restTimeInSeconds&isEmomMode=$_isEmomMode',
+      );
+      if (result != null) {
+        setState(() {
+          currentSeriesIndex = result['startIndex'];
+        });
+      }
+    } else {
+      context.pop();
     }
-  } else {
-    context.pop();
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -102,38 +105,40 @@ Future<void> _handleNextSeries() async {
         : null;
 
     return Scaffold(
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildSeriesIndicator(theme),
-            const SizedBox(height: 32),
-            if (currentSeries != null) ...[
-              _buildInputField(
-                theme,
-                'REPS',
-                _repsControllers[currentSeries['id']]!,
-                TextInputType.number,
-                FilteringTextInputFormatter.digitsOnly,
-              ),
-              const SizedBox(height: 16),
-              _buildInputField(
-                theme,
-                'WEIGHT',
-                _weightControllers[currentSeries['id']]!,
-                const TextInputType.numberWithOptions(decimal: true),
-                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*')),
-                suffix: 'kg',
-              ),
+      backgroundColor: theme.colorScheme.background,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildSeriesIndicator(theme),
+              const SizedBox(height: 24),
+              if (currentSeries != null) ...[
+                _buildInputField(
+                  theme,
+                  'REPS',
+                  _repsControllers[currentSeries['id']]!,
+                  TextInputType.number,
+                  FilteringTextInputFormatter.digitsOnly,
+                ),
+                const SizedBox(height: 16),
+                _buildInputField(
+                  theme,
+                  'WEIGHT (kg)',
+                  _weightControllers[currentSeries['id']]!,
+                  const TextInputType.numberWithOptions(decimal: true),
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*')),
+                ),
+              ],
+              const Spacer(),
+              _buildRestTimeSelector(theme),
+              const SizedBox(height: 24),
+              _buildEmomSwitch(theme),
+              const SizedBox(height: 24),
+              _buildNextButton(theme),
             ],
-            const SizedBox(height: 32),
-            _buildRestTimeSelector(theme),
-            const SizedBox(height: 32),
-            _buildEmomSwitch(theme),
-            const SizedBox(height: 48),
-            _buildNextButton(theme),
-          ],
+          ),
         ),
       ),
     );
@@ -141,22 +146,15 @@ Future<void> _handleNextSeries() async {
 
   Widget _buildSeriesIndicator(ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.primary.withOpacity(0.8),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.primary.withOpacity(0.4),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: theme.colorScheme.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
         'Set ${currentSeriesIndex + 1} / ${widget.seriesList.length}',
-        style: theme.textTheme.headlineSmall?.copyWith(
-          color: theme.colorScheme.onPrimary,
+        style: theme.textTheme.titleLarge?.copyWith(
+          color: theme.colorScheme.onSurface,
           fontWeight: FontWeight.bold,
         ),
         textAlign: TextAlign.center,
@@ -169,102 +167,76 @@ Future<void> _handleNextSeries() async {
     String label,
     TextEditingController controller,
     TextInputType keyboardType,
-    TextInputFormatter inputFormatter, {
-    String? suffix,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: theme.textTheme.titleMedium?.copyWith(
-            color: theme.colorScheme.onSurface,
-            fontWeight: FontWeight.bold,
-          ),
+    TextInputFormatter inputFormatter,
+  ) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      inputFormatters: [inputFormatter],
+      textAlign: TextAlign.center,
+      style: theme.textTheme.headlineSmall?.copyWith(
+        color: theme.colorScheme.onSurface,
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: theme.textTheme.bodyLarge?.copyWith(
+          color: theme.colorScheme.onSurface.withOpacity(0.6),
         ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          keyboardType: keyboardType,
-          inputFormatters: [inputFormatter],
-          textAlign: TextAlign.center,
-          style: theme.textTheme.headlineMedium?.copyWith(
-            color: theme.colorScheme.onSurface,
-          ),
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: theme.colorScheme.surface.withOpacity(0.8),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide.none,
-            ),
-            suffixText: suffix,
-            suffixStyle: theme.textTheme.titleMedium?.copyWith(
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
+        filled: true,
+        fillColor: theme.colorScheme.surface,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
         ),
-      ],
+      ),
     );
   }
 
   Widget _buildRestTimeSelector(ThemeData theme) {
-    return Column(
-      children: [
-        Text(
-          'Rest Time',
-          style: theme.textTheme.headlineSmall?.copyWith(
-            color: theme.colorScheme.onSurface,
-            fontWeight: FontWeight.bold,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'Rest Time:',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface.withOpacity(0.8),
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: theme.colorScheme.onSurface.withOpacity(0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
+          const SizedBox(width: 16),
+          _buildNumberPicker(
+            theme,
+            _minutes,
+            0,
+            59,
+            (value) => setState(() => _minutes = value),
+            'min',
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildNumberPicker(
-                theme,
-                _minutes,
-                0,
-                59,
-                (value) => setState(() => _minutes = value),
-                'min',
-              ),
-              const SizedBox(width: 16),
-              Text(
-                ':',
-                style: theme.textTheme.headlineLarge?.copyWith(
-                  color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(width: 16),
-              _buildNumberPicker(
-                theme,
-                _seconds,
-                0,
-                59,
-                (value) => setState(() => _seconds = value),
-                'sec',
-              ),
-            ],
+          const SizedBox(width: 8),
+          Text(
+            ':',
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-      ],
+          const SizedBox(width: 8),
+          _buildNumberPicker(
+            theme,
+            _seconds,
+            0,
+            59,
+            (value) => setState(() => _seconds = value),
+            'sec',
+          ),
+        ],
+      ),
     );
   }
 
@@ -276,42 +248,44 @@ Future<void> _handleNextSeries() async {
     ValueChanged<int> onChanged,
     String label,
   ) {
-    return Column(
-      children: [
-        NumberPicker(
-          value: value,
-          minValue: minValue,
-          maxValue: maxValue,
-          onChanged: onChanged,
-          itemWidth: 80,
-          itemHeight: 80,
-          textStyle: theme.textTheme.headlineMedium?.copyWith(
-            color: theme.colorScheme.onSurface,
+    return Container(
+      width: 80,
+      height: 120,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.onSurface.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
-          selectedTextStyle: theme.textTheme.headlineMedium?.copyWith(
-            color: theme.colorScheme.primary,
-            fontWeight: FontWeight.bold,
-          ),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface.withOpacity(0.6),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: theme.colorScheme.primary.withOpacity(0.2),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
+        ],
+      ),
+      child: NumberPicker(
+        value: value,
+        minValue: minValue,
+        maxValue: maxValue,
+        onChanged: onChanged,
+        itemHeight: 40,
+        textStyle: theme.textTheme.titleMedium?.copyWith(
+          color: theme.colorScheme.onSurface,
+        ),
+        selectedTextStyle: theme.textTheme.titleMedium?.copyWith(
+          color: theme.colorScheme.primary,
+          fontWeight: FontWeight.bold,
+        ),
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(
+              color: theme.colorScheme.onSurface.withOpacity(0.2),
+            ),
+            bottom: BorderSide(
+              color: theme.colorScheme.onSurface.withOpacity(0.2),
+            ),
           ),
         ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: theme.textTheme.titleMedium?.copyWith(
-            color: theme.colorScheme.onSurface,
-          ),
-        ),
-      ],
+      ),
     );
   }
 
@@ -321,7 +295,7 @@ Future<void> _handleNextSeries() async {
       children: [
         Text(
           'EMOM Mode',
-          style: theme.textTheme.headlineSmall?.copyWith(
+          style: theme.textTheme.titleMedium?.copyWith(
             color: theme.colorScheme.onSurface,
             fontWeight: FontWeight.bold,
           ),
@@ -355,17 +329,17 @@ Future<void> _handleNextSeries() async {
       style: ElevatedButton.styleFrom(
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(vertical: 16),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(12),
         ),
-        elevation: 8,
-        shadowColor: theme.colorScheme.primary.withOpacity(0.5),
+        elevation: 0,
       ),
       child: Text(
-        currentSeriesIndex == widget.seriesList.length - 1 ? 'FINISH' : 'NEXT SET',
-        style: theme.textTheme.headlineSmall?.copyWith(
-          color: theme.colorScheme.onPrimary,
+        currentSeriesIndex == widget.seriesList.length - 1
+            ? 'FINISH'
+            : 'NEXT SET',
+        style: theme.textTheme.titleMedium?.copyWith(
           fontWeight: FontWeight.bold,
         ),
       ),
