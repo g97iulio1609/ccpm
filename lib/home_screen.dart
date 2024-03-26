@@ -46,7 +46,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       case 'TrainingProgram':
         return '/training_program';
       case 'Gestione Utenti':
-      return userRole == 'admin' ? '/users_dashboard' : null;
+        return userRole == 'admin' ? '/users_dashboard' : null;
+         case 'Volume Allenamento':
+      return '/volume_dashboard';
       default:
         return null;
     }
@@ -102,7 +104,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: AppBar(
         title: Text(_getTitleForRoute(context)),
         actions: [
-          if (userRole == 'admin' && GoRouterState.of(context).uri.toString() == '/users_dashboard')
+          if (userRole == 'admin' &&
+              GoRouterState.of(context).uri.toString() == '/users_dashboard')
             IconButton(
               onPressed: () => _showAddUserDialog(context),
               icon: const Icon(Icons.person_add),
@@ -129,10 +132,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildDrawer(bool isLargeScreen, BuildContext context, String userRole) {
-    final List<String> menuItems = userRole == 'admin'
-        ? _getAdminMenuItems()
-        : _getClientMenuItems();
+  Widget _buildDrawer(
+      bool isLargeScreen, BuildContext context, String userRole) {
+    final List<String> menuItems =
+        userRole == 'admin' ? _getAdminMenuItems() : _getClientMenuItems();
 
     return Column(
       children: [
@@ -192,6 +195,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       'Profilo Utente',
       'TrainingProgram',
       'Gestione Utenti',
+      'Volume Allenamento', // Aggiungi questa voce
     ];
   }
 
@@ -272,11 +276,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               onPressed: () async {
                 if (formKey.currentState!.validate()) {
                   await ref.read(usersServiceProvider).createUser(
-                    name: nameController.text,
-                    email: emailController.text,
-                    password: passwordController.text,
-                    role: roleController.text,
-                  );
+                        name: nameController.text,
+                        email: emailController.text,
+                        password: passwordController.text,
+                        role: roleController.text,
+                      );
                   Navigator.of(context).pop();
                 }
               },

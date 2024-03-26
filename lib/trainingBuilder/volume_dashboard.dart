@@ -1,99 +1,213 @@
 import 'package:flutter/material.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'training_model.dart';
-import 'training_program_controller.dart';
 
-class VolumeDashboard extends ConsumerWidget {
-  final TrainingProgramController controller;
+class VolumeDashboard extends StatefulWidget {
+  final TrainingProgram program;
 
-  const VolumeDashboard({super.key, required this.controller});
+  const VolumeDashboard({required this.program, super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final program = controller.program;
+  _VolumeDashboardState createState() => _VolumeDashboardState();
+}
 
-    // Calcola il volume giornaliero, settimanale e mensile per ogni esercizio
-    final exerciseVolumes = <String, _ExerciseVolume>{};
-    for (final week in program.weeks) {
-      for (final workout in week.workouts) {
-        for (final exercise in workout.exercises) {
-          if (!exerciseVolumes.containsKey(exercise.name)) {
-            exerciseVolumes[exercise.name] = _ExerciseVolume();
-          }
+class _VolumeDashboardState extends State<VolumeDashboard> {
+  String _selectedDataType = 'Volume';
 
-          final volume = exerciseVolumes[exercise.name]!;
-          volume.dailyVolume += _calculateDailyVolume(exercise);
-          volume.weeklyVolume += _calculateWeeklyVolume(exercise);
-          volume.monthlyVolume += _calculateMonthlyVolume(exercise);
-        }
-      }
-    }
+  @override
+  Widget build(BuildContext context) {
+    final exerciseVolumes = _calculateExerciseVolumes(widget.program);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Volume Dashboard'),
+        actions: [
+          DropdownButton<String>(
+            value: _selectedDataType,
+            onChanged: (String? newValue) {
+              setState(() {
+                _selectedDataType = newValue!;
+              });
+            },
+            items: <String>['Volume', 'Number of Lifts']
+                .map<DropdownMenuItem<String>>((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(value),
+              );
+            }).toList(),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
-        child: DataTable(
-          columns: const [
-            DataColumn(label: Text('Exercise')),
-            DataColumn(label: Text('Daily Volume')),
-            DataColumn(label: Text('Weekly Volume')),
-            DataColumn(label: Text('Monthly Volume')),
+        child: Column(
+          children: [
+            SizedBox(
+              height: 300,
+              child: _buildChart(exerciseVolumes),
+            ),
+            DataTable(
+              columns: const [
+                DataColumn(label: Text('Week')),
+                DataColumn(label: Text('Exercise')),
+                DataColumn(label: Text('Weekly Volume')),
+                DataColumn(label: Text('Monthly Volume')),
+                DataColumn(label: Text('Volume Delta')),
+                DataColumn(label: Text('Series Completed')),
+                DataColumn(label: Text('Number of Lifts')),
+              ],
+              rows: exerciseVolumes.entries.expand((entry) {
+                final weekNumber = entry.key;
+                final exerciseVolumesForWeek = entry.value;
+                return exerciseVolumesForWeek.entries.map((exerciseEntry) {
+                  final exerciseName = exerciseEntry.key;
+                  final volume = exerciseEntry.value;
+                  return DataRow(cells: [
+                    DataCell(Text('Week $weekNumber')),
+                    DataCell(Text(exerciseName)),
+                    DataCell(Text(volume.weeklyVolume.toStringAsFixed(2))),
+                    DataCell(Text(volume.monthlyVolume.toStringAsFixed(2))),
+                    DataCell(Text(volume.volumeDelta.toStringAsFixed(2))),
+                    DataCell(Text(volume.seriesCompleted.toString())),
+                    DataCell(Text(volume.numberOfLifts.toString())),
+                  ]);
+                }).toList();
+              }).toList(),
+            ),
           ],
-          rows: exerciseVolumes.entries.map((entry) {
-            final exerciseName = entry.key;
-            final volume = entry.value;
-            return DataRow(cells: [
-              DataCell(Text(exerciseName)),
-              DataCell(Text(volume.dailyVolume.toStringAsFixed(2))),
-              DataCell(Text(volume.weeklyVolume.toStringAsFixed(2))),
-              DataCell(Text(volume.monthlyVolume.toStringAsFixed(2))),
-            ]);
-          }).toList(),
         ),
       ),
     );
   }
 
-  double _calculateDailyVolume(Exercise exercise) {
-    // Implementa la logica per calcolare il volume giornaliero dell'esercizio
-    // Esempio: somma il prodotto di peso e ripetizioni per ogni serie dell'esercizio
-    return exercise.series.fold(
-      0.0,
-      (sum, series) => sum + (series.weight * series.reps),
+  Widget _buildChart(Map<int, Map<String, _ExerciseVolume>> exerciseVolumes) {
+    final spots = exerciseVolumes.entries.map((entry) {
+      final weekNumber = entry.key;
+      final exerciseVolumesForWeek = entry.value;
+      final totalWeeklyVolume = exerciseVolumesForWeek.values.fold(
+        0.0,
+        (sum, volume) => sum + (_selectedDataType == 'Volume' ? volume.weeklyVolume : volume.numberOfLifts.toDouble()),
+      );
+      return FlSpot(weekNumber.toDouble(), totalWeeklyVolume);
+    }).toList();
+
+    return LineChart(
+      LineChartData(
+        lineBarsData: [
+          LineChartBarData(
+            spots: spots,
+            isCurved: true,
+            barWidth: 4,
+            color: Colors.blue,
+            belowBarData: BarAreaData(
+              show: true,
+              color: Colors.blue.withOpacity(0.2),
+            ),
+            dotData: FlDotData(show: false),
+          ),
+        ],
+        minY: 0,
+        titlesData: FlTitlesData(
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, meta) {
+                return Text('Week ${value.toInt()}');
+              },
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+            ),
+          ),
+        ),
+      ),
     );
   }
 
-  double _calculateWeeklyVolume(Exercise exercise) {
-    // Implementa la logica per calcolare il volume settimanale dell'esercizio
-    // Esempio: moltiplica il volume giornaliero per il numero di volte che l'esercizio viene eseguito in una settimana
-    return _calculateDailyVolume(exercise) * _getWeeklyFrequency(exercise);
-  }
+  Map<int, Map<String, _ExerciseVolume>> _calculateExerciseVolumes(TrainingProgram program) {
+    final exerciseVolumes = <int, Map<String, _ExerciseVolume>>{};
 
-  double _calculateMonthlyVolume(Exercise exercise) {
-    // Implementa la logica per calcolare il volume mensile dell'esercizio
-    // Esempio: moltiplica il volume settimanale per 4 (assumendo 4 settimane in un mese)
-    return _calculateWeeklyVolume(exercise) * 4;
-  }
+    for (int weekIndex = 0; weekIndex < program.weeks.length; weekIndex++) {
+      final week = program.weeks[weekIndex];
+      final weekNumber = week.number;
+      final exerciseVolumesForWeek = <String, _ExerciseVolume>{};
 
-  int _getWeeklyFrequency(Exercise exercise) {
-    // Implementa la logica per ottenere la frequenza settimanale dell'esercizio
-    // Esempio: conta il numero di volte che l'esercizio appare nei workout di una settimana
-    int frequency = 0;
-    for (final week in controller.program.weeks) {
       for (final workout in week.workouts) {
-        if (workout.exercises.contains(exercise)) {
-          frequency++;
+        for (final exercise in workout.exercises) {
+          if (!exerciseVolumesForWeek.containsKey(exercise.name)) {
+            exerciseVolumesForWeek[exercise.name] = _ExerciseVolume();
+          }
+
+          final volume = exerciseVolumesForWeek[exercise.name]!;
+          for (final series in exercise.series) {
+            volume.weeklyVolume += _calculateSeriesVolume(series);
+            volume.seriesCompleted++;
+            volume.numberOfLifts += series.reps;
+          }
+
+          final previousWeekVolume = weekIndex > 0
+              ? _getPreviousWeekVolume(exerciseVolumes, weekIndex, exercise.name)
+              : 0;
+          volume.volumeDelta = volume.weeklyVolume - previousWeekVolume;
         }
       }
+
+      for (final volume in exerciseVolumesForWeek.values) {
+        volume.monthlyVolume = _calculateMonthlyVolume(exerciseVolumes, weekIndex, volume.weeklyVolume);
+      }
+
+      exerciseVolumes[weekNumber] = exerciseVolumesForWeek;
     }
-    return frequency;
+
+    return exerciseVolumes;
+  }
+
+  double _calculateSeriesVolume(Series series) {
+    return series.weight * series.reps;
+  }
+
+  double _getPreviousWeekVolume(
+      Map<int, Map<String, _ExerciseVolume>> exerciseVolumes,
+      int weekIndex,
+      String exerciseName) {
+    final previousWeekNumber = weekIndex;
+    if (exerciseVolumes.containsKey(previousWeekNumber)) {
+      final exerciseVolumesForPreviousWeek = exerciseVolumes[previousWeekNumber]!;
+      if (exerciseVolumesForPreviousWeek.containsKey(exerciseName)) {
+        return exerciseVolumesForPreviousWeek[exerciseName]!.weeklyVolume;
+      }
+    }
+    return 0;
+  }
+
+  double _calculateMonthlyVolume(
+      Map<int, Map<String, _ExerciseVolume>> exerciseVolumes,
+      int weekIndex,
+      double weeklyVolume) {
+    final weeksInMonth = 4;
+    final monthIndex = weekIndex ~/ weeksInMonth;
+    final startWeekIndex = monthIndex * weeksInMonth;
+    final endWeekIndex = (monthIndex + 1) * weeksInMonth - 1;
+
+    double monthlyVolume = 0;
+    for (int i = startWeekIndex; i <= endWeekIndex && i < exerciseVolumes.length; i++) {
+      final exerciseVolumesForWeek = exerciseVolumes[i + 1] ?? {};
+      monthlyVolume += exerciseVolumesForWeek.values.fold(
+        0,
+        (sum, volume) => sum + volume.weeklyVolume,
+      );
+    }
+
+    return monthlyVolume;
   }
 }
 
 class _ExerciseVolume {
-  double dailyVolume = 0;
   double weeklyVolume = 0;
   double monthlyVolume = 0;
+  double volumeDelta = 0;
+  int seriesCompleted = 0;
+  int numberOfLifts = 0;
 }

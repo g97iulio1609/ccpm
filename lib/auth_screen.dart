@@ -9,7 +9,8 @@ import 'users_services.dart';
 
 final authProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
 final googleSignInProvider = Provider<GoogleSignIn>((ref) => GoogleSignIn());
-final firestoreProvider = Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
+final firestoreProvider =
+    Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
 
 class AuthScreen extends HookConsumerWidget {
   AuthScreen({super.key});
@@ -29,7 +30,7 @@ class AuthScreen extends HookConsumerWidget {
     final usersService = ref.read(usersServiceProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(isLogin.value ? 'Login' : 'Sign Up')),
+     // appBar: AppBar(title: Text(isLogin.value ? 'Login' : 'Sign Up')),
       body: Center(
         child: Card(
           margin: const EdgeInsets.all(20),
@@ -190,19 +191,24 @@ class _SubmitButtonState extends ConsumerState<SubmitButton> {
           context.go('/');
         }
       } on FirebaseAuthException catch (error) {
-        _showSnackBar(error.message ?? 'An error occurred, please try again', Colors.red);
+        _showSnackBar(
+            error.message ?? 'An error occurred, please try again', Colors.red);
       }
     }
   }
 
-  Future<UserCredential> _signInWithEmailAndPassword(String email, String password) async {
-    final userCredential = await widget.auth.signInWithEmailAndPassword(email: email, password: password);
+  Future<UserCredential> _signInWithEmailAndPassword(
+      String email, String password) async {
+    final userCredential = await widget.auth
+        .signInWithEmailAndPassword(email: email, password: password);
     await widget.usersService.setUserRole(userCredential.user!.uid);
     return userCredential;
   }
 
-  Future<UserCredential> _signUpWithEmailAndPassword(String email, String password) async {
-    final userCredential = await widget.auth.createUserWithEmailAndPassword(email: email, password: password);
+  Future<UserCredential> _signUpWithEmailAndPassword(
+      String email, String password) async {
+    final userCredential = await widget.auth
+        .createUserWithEmailAndPassword(email: email, password: password);
     final user = userCredential.user;
     if (user != null) {
       await widget.firestore.collection('users').doc(user.uid).set({
@@ -289,12 +295,14 @@ class _GoogleSignInButtonState extends ConsumerState<GoogleSignInButton> {
           accessToken: googleAuth.accessToken,
           idToken: googleAuth.idToken,
         );
-        final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+        final userCredential =
+            await FirebaseAuth.instance.signInWithCredential(credential);
         await _updateUserDataIfNeeded(userCredential.user);
         _showSnackBar('Google Sign-In successful', Colors.green);
-   if (mounted) {
+        if (mounted) {
           context.go('/');
-        }      }
+        }
+      }
     } catch (error) {
       _showSnackBar('Failed to sign in with Google: $error', Colors.red);
     }
@@ -342,7 +350,8 @@ class ToggleAuthModeButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TextButton(
-      child: Text(isLogin.value ? 'Create new account' : 'I already have an account'),
+      child: Text(
+          isLogin.value ? 'Create new account' : 'I already have an account'),
       onPressed: () => isLogin.value = !isLogin.value,
     );
   }
@@ -360,7 +369,8 @@ class UsernameField extends StatelessWidget {
       validator: (value) => (value == null || value.isEmpty || value.length < 4)
           ? 'Please enter at least 4 characters'
           : null,
-      decoration: const InputDecoration(labelText: 'Username', border: OutlineInputBorder()),
+      decoration: const InputDecoration(
+          labelText: 'Username', border: OutlineInputBorder()),
       onSaved: (value) => userName.value = value ?? '',
     );
   }
@@ -412,11 +422,13 @@ class EmailField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextFormField(
       key: const ValueKey('email'),
-      validator: (value) => (value == null || value.isEmpty || !value.contains('@'))
-          ? 'Please enter a valid email address'
-          : null,
+      validator: (value) =>
+          (value == null || value.isEmpty || !value.contains('@'))
+              ? 'Please enter a valid email address'
+              : null,
       keyboardType: TextInputType.emailAddress,
-      decoration: const InputDecoration(labelText: 'Email address', border: OutlineInputBorder()),
+      decoration: const InputDecoration(
+          labelText: 'Email address', border: OutlineInputBorder()),
       onSaved: (value) => userEmail.value = value ?? '',
     );
   }
@@ -434,7 +446,8 @@ class PasswordField extends StatelessWidget {
       validator: (value) => (value == null || value.isEmpty || value.length < 7)
           ? 'Password must be at least 7 characters long'
           : null,
-      decoration: const InputDecoration(labelText: 'Password', border: OutlineInputBorder()),
+      decoration: const InputDecoration(
+          labelText: 'Password', border: OutlineInputBorder()),
       obscureText: true,
       onSaved: (value) => userPassword.value = value ?? '',
     );

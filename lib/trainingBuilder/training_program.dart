@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'training_program_controller.dart';
 import 'training_program_form.dart';
 import 'training_program_week_list.dart';
+import 'volume_dashboard.dart';
 
 class TrainingProgramPage extends HookConsumerWidget {
   final String? programId;
-
   const TrainingProgramPage({super.key, this.programId});
 
   @override
@@ -20,11 +21,22 @@ class TrainingProgramPage extends HookConsumerWidget {
       return null;
     }, [programId]);
 
-    return TrainingProgramForm(
-      formKey: formKey,
-      controller: controller,
-      onSubmit: () => controller.submitProgram(context),
-      child: TrainingProgramWeekList(controller: controller),
+    return Scaffold(
+      body: TrainingProgramForm(
+        formKey: formKey,
+        controller: controller,
+        onSubmit: () => controller.submitProgram(context),
+        child: TrainingProgramWeekList(controller: controller),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          if (controller.program != null) {
+            context.go('/training_program/$programId/volume_dashboard',
+                extra: controller.program);
+          }
+        },
+        child: const Icon(Icons.show_chart),
+      ),
     );
   }
 }
