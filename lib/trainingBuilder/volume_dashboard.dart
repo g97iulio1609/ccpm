@@ -26,6 +26,7 @@ class _VolumeDashboardState extends State<VolumeDashboard> {
 
     return SingleChildScrollView(
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -47,9 +48,13 @@ class _VolumeDashboardState extends State<VolumeDashboard> {
                         child: Text(value),
                       );
                     }).toList(),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Data Type',
-                      border: OutlineInputBorder(),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[800],
                     ),
                   ),
                 ),
@@ -72,15 +77,20 @@ class _VolumeDashboardState extends State<VolumeDashboard> {
                             child: Text(exercise),
                           )),
                     ],
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Exercise',
-                      border: OutlineInputBorder(),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[800],
                     ),
                   ),
                 ),
                 IconButton(
                   icon: Icon(
                     _showChart ? Icons.table_chart : Icons.bar_chart,
+                    color: Colors.white,
                   ),
                   onPressed: () {
                     setState(() {
@@ -92,26 +102,107 @@ class _VolumeDashboardState extends State<VolumeDashboard> {
             ),
           ),
           if (_showChart)
-            SizedBox(
-              height: 300,
-              child: _buildChart(exerciseVolumes),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: AspectRatio(
+                aspectRatio: 1.6,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8.0),
+                    gradient: LinearGradient(
+                      colors: [Colors.grey[900]!, Colors.grey[700]!],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        spreadRadius: 2,
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: _buildChart(exerciseVolumes),
+                  ),
+                ),
+              ),
             ),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DataTable(
-              columns: const [
-                DataColumn(label: Text('Week')),
-                DataColumn(label: Text('Day')),
-                DataColumn(label: Text('Exercise')),
-                DataColumn(label: Text('Daily Volume')),
-                DataColumn(label: Text('Weekly Volume')),
-                DataColumn(label: Text('Monthly Volume')),
-                DataColumn(label: Text('Volume Delta')),
-                DataColumn(label: Text('Series Completed')),
-                DataColumn(label: Text('Number of Lifts')),
-              ],
-rows: exerciseVolumes.entries
-    .expand((entry) {
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Colors.grey[800],
+                borderRadius: BorderRadius.circular(8.0),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    spreadRadius: 2,
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: _buildDataTable(exerciseVolumes),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDataTable(Map<int, Map<String, Map<int, _ExerciseVolume>>> exerciseVolumes) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: DataTable(
+        columns: const [
+          DataColumn(label: Text('Week')),
+          DataColumn(label: Text('Day')),
+          DataColumn(label: Text('Exercise')),
+          DataColumn(label: Text('Daily Volume')),
+          DataColumn(label: Text('Weekly Volume')),
+          DataColumn(label: Text('Monthly Volume')),
+          DataColumn(label: Text('Volume Delta')),
+          DataColumn(label: Text('Series Completed')),
+          DataColumn(label: Text('Number of Lifts')),
+        ],
+        rows: exerciseVolumes.entries.expand((entry) {
+          final weekNumber = entry.key;
+          final exerciseVolumesForWeek = entry.value;
+          return exerciseVolumesForWeek.entries.expand((exerciseEntry) {
+            final exerciseName = exerciseEntry.key;
+            if (_selectedExercise != null && _selectedExercise != exerciseName) {
+              return [];
+            }
+            final volumesByDay = exerciseEntry.value;
+            return volumesByDay.entries.map((dayEntry) {
+              final dayNumber = dayEntry.key;
+              final volume = dayEntry.value;
+              return DataRow(
+                cells: [
+                  DataCell(Text('Week $weekNumber', style: const TextStyle(color: Colors.white))),
+                  DataCell(Text('Day $dayNumber', style: const TextStyle(color: Colors.white))),
+                  DataCell(Text(exerciseName, style: const TextStyle(color: Colors.white))),
+                  DataCell(Text(volume.dailyVolume.toStringAsFixed(2), style: const TextStyle(color: Colors.white))),
+                  DataCell(Text(volume.weeklyVolume.toStringAsFixed(2), style: const TextStyle(color: Colors.white))),
+                  DataCell(Text(volume.monthlyVolume.toStringAsFixed(2), style: const TextStyle(color: Colors.white))),
+                  DataCell(Text(volume.volumeDelta.toStringAsFixed(2), style: const TextStyle(color: Colors.white))),
+                  DataCell(Text(volume.seriesCompleted.toString(), style: const TextStyle(color: Colors.white))),
+                  DataCell(Text(volume.numberOfLifts.toString(), style: const TextStyle(color: Colors.white))),
+                ],
+              );
+            });
+          });
+        }).toList().cast<DataRow>(),
+      ),
+    );
+  }
+
+  Widget _buildChart(
+      Map<int, Map<String, Map<int, _ExerciseVolume>>> exerciseVolumes) {
+    final spots = exerciseVolumes.entries.expand((entry) {
       final weekNumber = entry.key;
       final exerciseVolumesForWeek = entry.value;
       return exerciseVolumesForWeek.entries.expand((exerciseEntry) {
@@ -124,64 +215,25 @@ rows: exerciseVolumes.entries
         return volumesByDay.entries.map((dayEntry) {
           final dayNumber = dayEntry.key;
           final volume = dayEntry.value;
-          return DataRow(cells: [
-            DataCell(Text('Week $weekNumber')),
-            DataCell(Text('Day $dayNumber')),
-            DataCell(Text(exerciseName)),
-            DataCell(Text(volume.dailyVolume.toStringAsFixed(2))),
-            DataCell(Text(volume.weeklyVolume.toStringAsFixed(2))),
-            DataCell(Text(volume.monthlyVolume.toStringAsFixed(2))),
-            DataCell(Text(volume.volumeDelta.toStringAsFixed(2))),
-            DataCell(Text(volume.seriesCompleted.toString())),
-            DataCell(Text(volume.numberOfLifts.toString())),
-          ]);
+          final value = _selectedDataType == 'Volume'
+              ? volume.dailyVolume
+              : volume.numberOfLifts.toDouble();
+          return FlSpot(weekNumber * 10 + dayNumber.toDouble(), value);
         });
       });
-    })
-    .toList()
-    .cast<DataRow>(),
-                 
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildChart(
-      Map<int, Map<String, Map<int, _ExerciseVolume>>> exerciseVolumes) {
-  final spots = exerciseVolumes.entries.expand((entry) {
-  final weekNumber = entry.key;
-  final exerciseVolumesForWeek = entry.value;
-  return exerciseVolumesForWeek.entries.expand((exerciseEntry) {
-    final exerciseName = exerciseEntry.key;
-    if (_selectedExercise != null &&
-        _selectedExercise != exerciseName) {
-      return [];
-    }
-    final volumesByDay = exerciseEntry.value;
-    return volumesByDay.entries.map((dayEntry) {
-      final dayNumber = dayEntry.key;
-      final volume = dayEntry.value;
-      final value = _selectedDataType == 'Volume'
-          ? volume.dailyVolume
-          : volume.numberOfLifts.toDouble();
-      return FlSpot(weekNumber * 10 + dayNumber.toDouble(), value);
-    });
-  });
-}).toList().cast<FlSpot>();
+    }).toList().cast<FlSpot>();
 
     return LineChart(
       LineChartData(
         lineBarsData: [
           LineChartBarData(
             spots: spots,
-            isCurved: false,
-            barWidth: 2,
-            color: Colors.blue,
+            isCurved: true,
+            barWidth: 4,
+            color: Colors.white,
             belowBarData: BarAreaData(
               show: true,
-              color: Colors.blue.withOpacity(0.2),
+              color: Colors.white.withOpacity(0.3),
             ),
             dotData: FlDotData(show: true),
           ),
@@ -194,15 +246,38 @@ rows: exerciseVolumes.entries
               getTitlesWidget: (value, meta) {
                 final weekNumber = (value ~/ 10).toInt();
                 final dayNumber = (value % 10).toInt();
-                return Text('W$weekNumber D$dayNumber');
+                return Text(
+                  'W$weekNumber D$dayNumber',
+                  style: const TextStyle(color: Colors.white),
+                );
               },
             ),
           ),
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
+              getTitlesWidget: (value, meta) {
+                return Text(
+                  value.toStringAsFixed(0),
+                  style: const TextStyle(color: Colors.white),
+                );
+              },
             ),
           ),
+        ),
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          getDrawingHorizontalLine: (value) {
+            return FlLine(
+              color: Colors.white24,
+              strokeWidth: 1,
+            );
+          },
+        ),
+        borderData: FlBorderData(
+          show: true,
+          border: Border.all(color: Colors.white24),
         ),
       ),
     );
@@ -221,31 +296,22 @@ rows: exerciseVolumes.entries
         final dayNumber = workout.order;
 
         for (final exercise in workout.exercises) {
-          if (!exerciseVolumesForWeek.containsKey(exercise.name)) {
-            exerciseVolumesForWeek[exercise.name] = <int, _ExerciseVolume>{};
-          }
+          final volumesByDay =
+              exerciseVolumesForWeek.putIfAbsent(exercise.name, () => {});
+          final volume = volumesByDay.putIfAbsent(dayNumber, _ExerciseVolume.new);
 
-          final volumesByDay = exerciseVolumesForWeek[exercise.name]!;
-          if (!volumesByDay.containsKey(dayNumber)) {
-            volumesByDay[dayNumber] = _ExerciseVolume();
-          }
-
-          final volume = volumesByDay[dayNumber]!;
           for (final series in exercise.series) {
-            volume.dailyVolume += _calculateSeriesVolume(series);
-            volume.seriesCompleted++;
-            volume.numberOfLifts += series.reps;
+            volume.addSeries(series);
           }
-          volume.weeklyVolume = _calculateWeeklyVolume(volumesByDay.values);
 
-          final previousWeekVolume = weekIndex > 0
-              ? _getPreviousWeekVolume(
-                  exerciseVolumes, weekIndex, exercise.name, dayNumber)
-              : 0;
-          volume.volumeDelta = volume.weeklyVolume - previousWeekVolume;
-
-          volume.monthlyVolume =
-              _calculateMonthlyVolume(program, weekIndex, volume.weeklyVolume);
+          volume.calculateWeeklyVolume(volumesByDay.values);
+          volume.calculateVolumeDelta(
+            weekIndex > 0
+                ? _getPreviousWeekVolume(
+                    exerciseVolumes, weekIndex, exercise.name, dayNumber)
+                : 0,
+          );
+          volume.calculateMonthlyVolume(program, weekIndex);
         }
       }
 
@@ -255,59 +321,18 @@ rows: exerciseVolumes.entries
     return exerciseVolumes;
   }
 
-  double _calculateSeriesVolume(Series series) {
-    return series.weight * series.reps;
-  }
-
-  double _calculateWeeklyVolume(Iterable<_ExerciseVolume> dailyVolumes) {
-    return dailyVolumes.fold(0, (sum, volume) => sum + volume.dailyVolume);
-  }
-
   double _getPreviousWeekVolume(
-      Map<int, Map<String, Map<int, _ExerciseVolume>>> exerciseVolumes,
-      int weekIndex,
-      String exerciseName,
-      int dayNumber) {
-    final previousWeekNumber = weekIndex;
-    if (exerciseVolumes.containsKey(previousWeekNumber)) {
-      final exerciseVolumesForPreviousWeek =
-          exerciseVolumes[previousWeekNumber]!;
-      if (exerciseVolumesForPreviousWeek.containsKey(exerciseName)) {
-        final volumesByDayForPreviousWeek =
-            exerciseVolumesForPreviousWeek[exerciseName]!;
-        if (volumesByDayForPreviousWeek.containsKey(dayNumber)) {
-          return volumesByDayForPreviousWeek[dayNumber]!.weeklyVolume;
-        }
-      }
-    }
-    return 0;
+    Map<int, Map<String, Map<int, _ExerciseVolume>>> exerciseVolumes,
+    int weekIndex,
+    String exerciseName,
+    int dayNumber,
+  ) {
+    final previousWeekNumber = weekIndex - 1;
+    final exerciseVolumesForPreviousWeek =
+        exerciseVolumes[previousWeekNumber]?[exerciseName];
+    return exerciseVolumesForPreviousWeek?[dayNumber]?.weeklyVolume ?? 0;
   }
-
-double _calculateMonthlyVolume(
-    TrainingProgram program, int weekIndex, double weeklyVolume) {
-  double monthlyVolume = 0;
-  int weeksInMonth = 0;
-
-  for (int i = weekIndex; i >= 0; i--) {
-    if (weeksInMonth < 4) {
-      double weekVolume = 0;
-      final week = program.weeks[i];
-      for (final workout in week.workouts) {
-        for (final exercise in workout.exercises) {
-          for (final series in exercise.series) {
-            weekVolume += _calculateSeriesVolume(series);
-          }
-        }
-      }
-      monthlyVolume += weekVolume;
-      weeksInMonth++;
-    } else {
-      break;
-    }
-  }
-
-  return monthlyVolume;
-    }}
+}
 
 class _ExerciseVolume {
   double dailyVolume = 0;
@@ -316,4 +341,36 @@ class _ExerciseVolume {
   double volumeDelta = 0;
   int seriesCompleted = 0;
   int numberOfLifts = 0;
+
+  void addSeries(Series series) {
+    dailyVolume += series.weight * series.reps;
+    seriesCompleted++;
+    numberOfLifts += series.reps;
+  }
+
+  void calculateWeeklyVolume(Iterable<_ExerciseVolume> dailyVolumes) {
+    weeklyVolume = dailyVolumes.fold(0, (sum, volume) => sum + volume.dailyVolume);
+  }
+
+  void calculateVolumeDelta(double previousWeekVolume) {
+    volumeDelta = weeklyVolume - previousWeekVolume;
+  }
+
+  void calculateMonthlyVolume(TrainingProgram program, int weekIndex) {
+    double monthlyVolume = 0;
+    int weeksInMonth = 0;
+
+    for (int i = weekIndex; i >= 0 && weeksInMonth < 4; i--, weeksInMonth++) {
+      final week = program.weeks[i];
+      for (final workout in week.workouts) {
+        for (final exercise in workout.exercises) {
+          for (final series in exercise.series) {
+            monthlyVolume += series.weight * series.reps;
+          }
+        }
+      }
+    }
+
+    this.monthlyVolume = monthlyVolume;
+  }
 }
