@@ -24,7 +24,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _navigateTo(String menuItem, bool isLargeScreen) {
     final userRole = ref.watch(userRoleProvider);
-    final String? route = _getRouteForMenuItem(menuItem, userRole);
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    final String? route = _getRouteForMenuItem(menuItem, userRole, userId);
     if (route != null) {
       context.go(route);
       if (!isLargeScreen) {
@@ -33,10 +34,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  String? _getRouteForMenuItem(String menuItem, String userRole) {
+  String? _getRouteForMenuItem(String menuItem, String userRole, String? userId) {
     switch (menuItem) {
       case 'Allenamenti':
-        return '/programs_screen';
+        return userRole == 'admin'
+            ? '/programs_screen'
+            : userId != null
+                ? '/programs_screen/user_programs/$userId'
+                : null;
       case 'Esercizi':
         return '/exercises_list';
       case 'Massimali':
@@ -47,8 +52,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return '/training_program';
       case 'Gestione Utenti':
         return userRole == 'admin' ? '/users_dashboard' : null;
-         case 'Volume Allenamento':
-      return '/volume_dashboard';
+      case 'Volume Allenamento':
+        return '/volume_dashboard';
       default:
         return null;
     }
@@ -90,53 +95,56 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return 'Esercizio';
       case '/timer':
         return 'Serie';
+      case '/volume_dashboard':
+        return 'Volume Allenamento';
+      case '/user_programs':
+        return 'Programmi Utente';
       default:
         return 'Alphaness One';
     }
   }
 
- @override
-Widget build(BuildContext context) {
-  var isLargeScreen = MediaQuery.of(context).size.width > 600;
-  final userRole = ref.watch(userRoleProvider);
-  final user = FirebaseAuth.instance.currentUser;
+  @override
+  Widget build(BuildContext context) {
+    var isLargeScreen = MediaQuery.of(context).size.width > 600;
+    final userRole = ref.watch(userRoleProvider);
+    final user = FirebaseAuth.instance.currentUser;
 
-  return Scaffold(
-    appBar: user != null
-        ? AppBar(
-            title: Text(_getTitleForRoute(context)),
-            actions: [
-              if (userRole == 'admin' &&
-                  GoRouterState.of(context).uri.toString() == '/users_dashboard')
-                IconButton(
-                  onPressed: () => _showAddUserDialog(context),
-                  icon: const Icon(Icons.person_add),
-                ),
-            ],
-          )
-        : null,
-    drawer: user != null && !isLargeScreen
-        ? Drawer(
-            child: _buildDrawer(isLargeScreen, context, userRole),
-          )
-        : null,
-    body: Row(
-      children: [
-        if (user != null && isLargeScreen)
-          SizedBox(
-            width: 300,
-            child: _buildDrawer(isLargeScreen, context, userRole),
+    return Scaffold(
+      appBar: user != null
+          ? AppBar(
+              title: Text(_getTitleForRoute(context)),
+              actions: [
+                if (userRole == 'admin' &&
+                    GoRouterState.of(context).uri.toString() == '/users_dashboard')
+                  IconButton(
+                    onPressed: () => _showAddUserDialog(context),
+                    icon: const Icon(Icons.person_add),
+                  ),
+              ],
+            )
+          : null,
+      drawer: user != null && !isLargeScreen
+          ? Drawer(
+              child: _buildDrawer(isLargeScreen, context, userRole),
+            )
+          : null,
+      body: Row(
+        children: [
+          if (user != null && isLargeScreen)
+            SizedBox(
+              width: 300,
+              child: _buildDrawer(isLargeScreen, context, userRole),
+            ),
+          Expanded(
+            child: widget.child,
           ),
-        Expanded(
-          child: widget.child,
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
-  Widget _buildDrawer(
-      bool isLargeScreen, BuildContext context, String userRole) {
+  Widget _buildDrawer(bool isLargeScreen, BuildContext context, String userRole) {
     final List<String> menuItems =
         userRole == 'admin' ? _getAdminMenuItems() : _getClientMenuItems();
 
@@ -196,9 +204,7 @@ Widget build(BuildContext context) {
       'Esercizi',
       'Massimali',
       'Profilo Utente',
-      'TrainingProgram',
       'Gestione Utenti',
-      'Volume Allenamento', // Aggiungi questa voce
     ];
   }
 
