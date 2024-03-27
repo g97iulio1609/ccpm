@@ -5,7 +5,8 @@ import 'package:go_router/go_router.dart';
 class WeekDetails extends StatefulWidget {
   final String programId;
   final String weekId;
-  const WeekDetails({super.key, required this.programId, required this.weekId});
+  final String userId;
+  const WeekDetails({super.key, required this.programId, required this.weekId, required this.userId});
 
   @override
   _WeekDetailsState createState() => _WeekDetailsState();
@@ -64,7 +65,7 @@ class _WeekDetailsState extends State<WeekDetails> {
                     ),
                     child: InkWell(
                       onTap: () {
-                        context.go('/programs_screen/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${workout['id']}');
+                        context.go('/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${workout['id']}');
                       },
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),

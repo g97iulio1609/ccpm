@@ -26,9 +26,9 @@ class SetProgressionScreen extends ConsumerWidget {
               weight: 0.0,
             ));
 
-    debugPrint('Building SetProgressionScreen');
-    debugPrint('Exercise: $exercise');
-    debugPrint('Week progressions: $weekProgressions');
+    /*debugPrint('Building SetProgressionScreen');
+    //debugPrint('Exercise: $exercise');
+    debugPrint('Week progressions: $weekProgressions');*/
 
     return Scaffold(
       appBar: AppBar(
@@ -65,13 +65,13 @@ class SetProgressionScreen extends ConsumerWidget {
               (weekIndex) {
                 final progression = weekProgressions[weekIndex];
 
-                debugPrint('Generating row for week: $weekIndex');
+              /* debugPrint('Generating row for week: $weekIndex');
                 debugPrint('Progression: $progression');
                 debugPrint('Reps: ${progression.reps}');
                 debugPrint('Sets: ${progression.sets}');
                 debugPrint('Intensity: ${progression.intensity}');
                 debugPrint('RPE: ${progression.rpe}');
-                debugPrint('Weight: ${progression.weight}');
+                debugPrint('Weight: ${progression.weight}');*/
 
                 return DataRow(
                   cells: [

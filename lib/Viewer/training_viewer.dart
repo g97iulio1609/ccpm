@@ -5,7 +5,8 @@ import 'week_details.dart';
 
 class TrainingViewer extends StatefulWidget {
   final String programId;
-  const TrainingViewer({super.key, required this.programId});
+    final String userId;
+  const TrainingViewer({super.key, required this.programId, required this.userId});
 
   @override
   _TrainingViewerState createState() => _TrainingViewerState();
@@ -58,7 +59,7 @@ class _TrainingViewerState extends State<TrainingViewer> {
                     ),
                     child: InkWell(
                   onTap: () {
-  context.go('/programs_screen/training_viewer/${widget.programId}/week_details/${week['id']}');
+  context.go('/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${week['id']}');
 },
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),

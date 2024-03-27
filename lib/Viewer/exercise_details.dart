@@ -1,4 +1,3 @@
-import 'package:alphanessone/Viewer/timer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -6,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:numberpicker/numberpicker.dart';
 
 class ExerciseDetails extends StatefulWidget {
+  final String userId;
+
   final String programId;
   final String weekId;
   final String workoutId;
@@ -17,6 +18,7 @@ class ExerciseDetails extends StatefulWidget {
 
   const ExerciseDetails({
     super.key,
+    required this.userId,
     required this.programId,
     required this.weekId,
     required this.workoutId,
@@ -85,7 +87,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
     final restTimeInSeconds = _getRestTimeInSeconds();
     if (currentSeriesIndex < widget.seriesList.length - 1) {
       final result = await context.push<Map<String, dynamic>>(
-        '/programs_screen/training_viewer/${Uri.encodeComponent(widget.programId)}/week_details/${Uri.encodeComponent(widget.weekId)}/workout_details/${Uri.encodeComponent(widget.workoutId)}/exercise_details/${Uri.encodeComponent(widget.exerciseId)}/timer?currentSeriesIndex=${currentSeriesIndex + 1}&totalSeries=${widget.seriesList.length}&restTime=$restTimeInSeconds&isEmomMode=$_isEmomMode',
+        '/programs_screen/user_programs/${widget.userId}/training_viewer/${Uri.encodeComponent(widget.programId)}/week_details/${Uri.encodeComponent(widget.weekId)}/workout_details/${Uri.encodeComponent(widget.workoutId)}/exercise_details/${Uri.encodeComponent(widget.exerciseId)}/timer?currentSeriesIndex=${currentSeriesIndex + 1}&totalSeries=${widget.seriesList.length}&restTime=$restTimeInSeconds&isEmomMode=$_isEmomMode',
       );
       if (result != null) {
         setState(() {

@@ -95,42 +95,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    var isLargeScreen = MediaQuery.of(context).size.width > 600;
-    final userRole = ref.watch(userRoleProvider);
+ @override
+Widget build(BuildContext context) {
+  var isLargeScreen = MediaQuery.of(context).size.width > 600;
+  final userRole = ref.watch(userRoleProvider);
+  final user = FirebaseAuth.instance.currentUser;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_getTitleForRoute(context)),
-        actions: [
-          if (userRole == 'admin' &&
-              GoRouterState.of(context).uri.toString() == '/users_dashboard')
-            IconButton(
-              onPressed: () => _showAddUserDialog(context),
-              icon: const Icon(Icons.person_add),
-            ),
-        ],
-      ),
-      drawer: isLargeScreen
-          ? null
-          : Drawer(
-              child: _buildDrawer(isLargeScreen, context, userRole),
-            ),
-      body: Row(
-        children: [
-          if (isLargeScreen)
-            SizedBox(
-              width: 300,
-              child: _buildDrawer(isLargeScreen, context, userRole),
-            ),
-          Expanded(
-            child: widget.child,
+  return Scaffold(
+    appBar: user != null
+        ? AppBar(
+            title: Text(_getTitleForRoute(context)),
+            actions: [
+              if (userRole == 'admin' &&
+                  GoRouterState.of(context).uri.toString() == '/users_dashboard')
+                IconButton(
+                  onPressed: () => _showAddUserDialog(context),
+                  icon: const Icon(Icons.person_add),
+                ),
+            ],
+          )
+        : null,
+    drawer: user != null && !isLargeScreen
+        ? Drawer(
+            child: _buildDrawer(isLargeScreen, context, userRole),
+          )
+        : null,
+    body: Row(
+      children: [
+        if (user != null && isLargeScreen)
+          SizedBox(
+            width: 300,
+            child: _buildDrawer(isLargeScreen, context, userRole),
           ),
-        ],
-      ),
-    );
-  }
+        Expanded(
+          child: widget.child,
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildDrawer(
       bool isLargeScreen, BuildContext context, String userRole) {

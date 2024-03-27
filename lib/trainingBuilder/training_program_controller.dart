@@ -305,14 +305,14 @@ class TrainingProgramController extends ChangeNotifier {
   WeekProgression _getProgressionFromSeries(List<Series> series, int weekIndex) {
     if (weekIndex < series.length) {
       final currentSeries = series[weekIndex];
-debugPrint("Starting _getProgressionFromSeries");
+/*debugPrint("Starting _getProgressionFromSeries");
 debugPrint("weekNumber: ${weekIndex + 1}");
 debugPrint("reps: ${currentSeries.reps}");
 debugPrint("sets: ${currentSeries.sets}");
 debugPrint("intensity: ${currentSeries.intensity}");
 debugPrint("rpe: ${currentSeries.rpe}");
 debugPrint("weight: ${currentSeries.weight}");
-
+*/
 
 
       return WeekProgression(

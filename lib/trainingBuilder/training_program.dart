@@ -8,8 +8,10 @@ import 'training_program_week_list.dart';
 import 'volume_dashboard.dart';
 
 class TrainingProgramPage extends HookConsumerWidget {
-  final String? programId;
-  const TrainingProgramPage({super.key, this.programId});
+  final String?programId;
+  final String userId;
+  
+  const TrainingProgramPage({super.key, this.programId, required this.userId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -31,7 +33,7 @@ class TrainingProgramPage extends HookConsumerWidget {
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           if (controller.program != null) {
-            context.go('/training_program/$programId/volume_dashboard',
+            context.go('/programs_screen/user_programs/$userId/training_program/$programId/volume_dashboard',
                 extra: controller.program);
           }
         },

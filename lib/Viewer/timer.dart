@@ -22,7 +22,7 @@ class TimerPage extends StatefulWidget {
     required this.currentSeriesIndex,
     required this.totalSeries,
     required this.restTime,
-    required this.isEmomMode,
+    required this.isEmomMode, required String userId,
   });
 
   @override

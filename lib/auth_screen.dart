@@ -30,7 +30,6 @@ class AuthScreen extends HookConsumerWidget {
     final usersService = ref.read(usersServiceProvider);
 
     return Scaffold(
-     // appBar: AppBar(title: Text(isLogin.value ? 'Login' : 'Sign Up')),
       body: Center(
         child: Card(
           margin: const EdgeInsets.all(20),
@@ -173,29 +172,37 @@ class _SubmitButtonState extends ConsumerState<SubmitButton> {
     );
   }
 
-  Future<void> _submit(BuildContext context) async {
-    if (widget.formKey.currentState?.validate() ?? false) {
-      widget.formKey.currentState?.save();
-      final email = widget.userEmail.value.trim();
-      final password = widget.userPassword.value.trim();
-      try {
-        UserCredential userCredential;
-        if (widget.isLogin.value) {
-          userCredential = await _signInWithEmailAndPassword(email, password);
-        } else {
-          userCredential = await _signUpWithEmailAndPassword(email, password);
-        }
-        await _updateUserData(userCredential.user);
-        _showSnackBar('Authentication successful', Colors.green);
-        if (mounted) {
-          context.go('/');
-        }
-      } on FirebaseAuthException catch (error) {
-        _showSnackBar(
-            error.message ?? 'An error occurred, please try again', Colors.red);
+ Future<void> _submit(BuildContext context) async {
+  if (widget.formKey.currentState?.validate() ?? false) {
+    widget.formKey.currentState?.save();
+    final email = widget.userEmail.value.trim();
+    final password = widget.userPassword.value.trim();
+    try {
+      UserCredential userCredential;
+      if (widget.isLogin.value) {
+        userCredential = await _signInWithEmailAndPassword(email, password);
+      } else {
+        userCredential = await _signUpWithEmailAndPassword(email, password);
       }
+      await _updateUserData(userCredential.user);
+      _showSnackBar('Authentication successful', Colors.green);
+      if (mounted) {
+        final userRole = ref.read(userRoleProvider);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (userRole == 'admin') {
+            context.go('/programs_screen');
+          } else {
+            context.go(
+                '/programs_screen/user_programs/${userCredential.user!.uid}');
+          }
+        });
+      }
+    } on FirebaseAuthException catch (error) {
+      _showSnackBar(
+          error.message ?? 'An error occurred, please try again', Colors.red);
     }
   }
+}
 
   Future<UserCredential> _signInWithEmailAndPassword(
       String email, String password) async {
@@ -299,8 +306,16 @@ class _GoogleSignInButtonState extends ConsumerState<GoogleSignInButton> {
             await FirebaseAuth.instance.signInWithCredential(credential);
         await _updateUserDataIfNeeded(userCredential.user);
         _showSnackBar('Google Sign-In successful', Colors.green);
+        final userRole = ref.read(userRoleProvider);
         if (mounted) {
-          context.go('/');
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (userRole == 'admin') {
+              context.go('/programs_screen');
+            } else {
+              context.go(
+                  '/programs_screen/user_programs/${userCredential.user!.uid}');
+            }
+          });
         }
       }
     } catch (error) {
