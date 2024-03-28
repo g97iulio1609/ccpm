@@ -46,48 +46,46 @@ class TrainingProgramExerciseList extends ConsumerWidget {
       ) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Exercise ${exercise.order}: ${exercise.name} ${exercise.variant}',
-                  style: Theme.of(context).textTheme.titleMedium,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ListTile(
+            title: Text(
+              '${exercise.name}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            subtitle: Text(exercise.variant),
+            trailing: PopupMenuButton(
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  child: const Text('Edit'),
+                  onTap: () => controller.editExercise(weekIndex, workoutIndex, exercise.order - 1, context),
                 ),
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () => controller.editExercise(weekIndex, workoutIndex, exercise.order - 1, context),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () => controller.removeExercise(weekIndex, workoutIndex, exercise.order - 1),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.fitness_center),
-                      onPressed: () => _addOrUpdateMaxRM(exercise, context, usersService, athleteId, dateFormat),
-                    ),
-                  ],
+                PopupMenuItem(
+                  child: const Text('Delete'),
+                  onTap: () => controller.removeExercise(weekIndex, workoutIndex, exercise.order - 1),
+                ),
+                PopupMenuItem(
+                  child: const Text('Update Max RM'),
+                  onTap: () => _addOrUpdateMaxRM(exercise, context, usersService, athleteId, dateFormat),
                 ),
               ],
             ),
-            TrainingProgramSeriesList(
-              controller: controller,
-              weekIndex: weekIndex,
-              workoutIndex: workoutIndex,
-              exerciseIndex: exercise.order - 1,
-            ),
-            ElevatedButton(
+          ),
+          TrainingProgramSeriesList(
+            controller: controller,
+            weekIndex: weekIndex,
+            workoutIndex: workoutIndex,
+            exerciseIndex: exercise.order - 1,
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: ElevatedButton(
               onPressed: () => controller.addSeries(weekIndex, workoutIndex, exercise.order - 1, context),
               child: const Text('Add New Series'),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

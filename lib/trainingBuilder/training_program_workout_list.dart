@@ -32,19 +32,17 @@ class TrainingProgramWorkoutList extends ConsumerWidget {
 
   Widget _buildWorkoutCard(BuildContext context, Workout workout, int index) {
     return Card(
-      margin: const EdgeInsets.all(16),
-      child: Column(
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      child: ExpansionTile(
+        title: Text(
+          'Workout ${workout.order}',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        trailing: IconButton(
+          icon: const Icon(Icons.delete),
+          onPressed: () => controller.removeWorkout(weekIndex, workout.order - 1),
+        ),
         children: [
-          ListTile(
-            title: Text(
-              'Workout ${workout.order}',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            trailing: IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () => controller.removeWorkout(weekIndex, workout.order - 1),
-            ),
-          ),
           TrainingProgramExerciseList(
             controller: controller,
             weekIndex: weekIndex,

@@ -50,17 +50,7 @@ class TrainingProgramForm extends ConsumerWidget {
               validator: (value) => value?.isEmpty ?? true ? 'Please enter a mesocycle number' : null,
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => controller.addWeek(),
-              child: const Text('Add New Week'),
-            ),
-            const SizedBox(height: 16),
             child,
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => controller.addWeek(),
-              child: const Text('Add New Week'),
-            ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: onSubmit,
