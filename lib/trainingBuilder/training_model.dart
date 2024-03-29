@@ -8,6 +8,7 @@ class TrainingProgram {
   String description;
   String athleteId;
   int mesocycleNumber;
+  bool hide;
   List<Week> weeks;
   List<String> trackToDeleteWeeks = [];
   List<String> trackToDeleteWorkouts = [];
@@ -20,6 +21,7 @@ class TrainingProgram {
     this.description = '',
     this.athleteId = '',
     this.mesocycleNumber = 0,
+    this.hide=false,
     List<Week>? weeks,
   }) : weeks = weeks ?? [];
 

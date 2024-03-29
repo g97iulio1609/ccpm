@@ -46,24 +46,25 @@ class TrainingProgramController extends ChangeNotifier {
     _mesocycleNumberController = TextEditingController();
   }
 
-  Future<void> loadProgram(String? programId) async {
-    _initProgram();
-    if (programId == null) return;
+Future<void> loadProgram(String? programId) async {
+  _initProgram();
+  if (programId == null) return;
 
-    try {
-      _program = await _service.fetchTrainingProgram(programId);
-      _nameController.text = _program.name;
-      _descriptionController.text = _program.description;
-      _athleteIdController.text = _program.athleteId;
-      _mesocycleNumberController.text = _program.mesocycleNumber.toString();
+  try {
+    _program = await _service.fetchTrainingProgram(programId);
+    _nameController.text = _program.name;
+    _descriptionController.text = _program.description;
+    _athleteIdController.text = _program.athleteId;
+    _mesocycleNumberController.text = _program.mesocycleNumber.toString();
+    _program.hide = _program.hide;
 
-      _sortExercises();
-      _rebuildWeekProgressions();
-      notifyListeners();
-    } catch (error) {
-      // Handle error
-    }
+    _sortExercises();
+    _rebuildWeekProgressions();
+    notifyListeners();
+  } catch (error) {
+    // Handle error
   }
+}
 
   void _sortExercises() {
     for (final week in _program.weeks) {
@@ -267,23 +268,28 @@ Future<void> editSeries(
   }
 }
 
-  void removeSeries(
-    int weekIndex,
-    int workoutIndex,
-    int exerciseIndex,
-    int groupIndex,
-    int seriesIndex,
-  ) {
-    final series = _program.weeks[weekIndex].workouts[workoutIndex]
-        .exercises[exerciseIndex].series[groupIndex * 1 + seriesIndex];
-    _removeSeriesData(series);
-    _program
-        .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex].series
-        .removeAt(groupIndex * 1 + seriesIndex);
-    _updateSeriesOrders(
-        weekIndex, workoutIndex, exerciseIndex, groupIndex * 1 + seriesIndex);
-    notifyListeners();
+void removeSeries(
+  int weekIndex,
+  int workoutIndex,
+  int exerciseIndex,
+  int groupIndex,
+  int seriesIndex,
+) {
+  final exercise = _program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+  final series = exercise.series[groupIndex * 1 + seriesIndex];
+
+  // Aggiungi la serie all'elenco delle serie da eliminare
+  if (series.serieId != null) {
+    _program.trackToDeleteSeries.add(series.serieId!);
+    debugPrint('Aggiunta la serie ${series.serieId} alla lista trackToDeleteSeries');
+  } else {
+    debugPrint('La serie non ha un ID valido');
   }
+
+  exercise.series.removeAt(groupIndex * 1 + seriesIndex);
+  _updateSeriesOrders(weekIndex, workoutIndex, exerciseIndex, groupIndex * 1 + seriesIndex);
+  notifyListeners();
+}
 
   void _removeSeriesData(Series series) {
     if (series.serieId != null) {
@@ -594,27 +600,27 @@ debugPrint("weight: ${currentSeries.weight}");
     }
   }
 
-  Future<void> submitProgram(BuildContext context) async {
-    _program.name = _nameController.text;
-    _program.description = _descriptionController.text;
-    _program.athleteId = _athleteIdController.text;
-    _program.mesocycleNumber =
-        int.tryParse(_mesocycleNumberController.text) ?? 0;
-    try {
-      await _service.addOrUpdateTrainingProgram(_program);
-      await _service.removeToDeleteItems(_program);
-      await _usersService.updateUser(
-          _athleteIdController.text, {'currentProgram': _program.id});
+Future<void> submitProgram(BuildContext context) async {
+  _program.name = _nameController.text;
+  _program.description = _descriptionController.text;
+  _program.athleteId = _athleteIdController.text;
+  _program.mesocycleNumber = int.tryParse(_mesocycleNumberController.text) ?? 0;
+  _program.hide = _program.hide;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Program added/updated successfully')),
-      );
-    } catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error adding/updating program: $error')),
-      );
-    }
+  try {
+    await _service.addOrUpdateTrainingProgram(_program);
+    await _service.removeToDeleteItems(_program);
+    await _usersService.updateUser(_athleteIdController.text, {'currentProgram': _program.id});
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Program added/updated successfully')),
+    );
+  } catch (error) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error adding/updating program: $error')),
+    );
   }
+}
 
   void resetFields() {
     _initProgram();

@@ -145,6 +145,7 @@ Future<void> addOrUpdateTrainingProgram(TrainingProgram program) async {
     'description': program.description,
     'athleteId': program.athleteId,
     'mesocycleNumber': program.mesocycleNumber,
+    'hide':program.hide,
   }, SetOptions(merge: true));
 
   for (var week in program.weeks) {

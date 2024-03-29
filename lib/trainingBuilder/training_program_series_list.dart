@@ -26,33 +26,37 @@ class TrainingProgramSeriesList extends ConsumerWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: groupedSeries.length,
-      itemBuilder: (context, groupIndex) {
-        final seriesGroup = groupedSeries[groupIndex];
-        return _buildSeriesGroupCard(context, seriesGroup, groupIndex);
+      itemBuilder: (context, index) {
+        final item = groupedSeries[index];
+        if (item is List<Series>) {
+          return _buildSeriesGroupCard(context, item, index);
+        } else {
+          return _buildSeriesCard(context, item as Series, index);
+        }
       },
     );
   }
 
-  List<List<Series>> _groupSeries(List<Series> series) {
-    final groupedSeries = <List<Series>>[];
+  List<dynamic> _groupSeries(List<Series> series) {
+    final groupedSeries = <dynamic>[];
     for (final s in series) {
       final existingGroup = groupedSeries.firstWhere(
-        (group) => group.first.reps == s.reps && group.first.weight == s.weight,
-        orElse: () => [],
+        (item) => item is List<Series> && item.first.reps == s.reps && item.first.weight == s.weight,
+        orElse: () => null,
       );
-      if (existingGroup.isEmpty) {
-        groupedSeries.add([s]);
-      } else {
+      if (existingGroup != null) {
         existingGroup.add(s);
+      } else {
+        groupedSeries.add([s]);
       }
     }
-    return groupedSeries;
+    return groupedSeries.map((item) => item.length == 1 ? item.first : item).toList();
   }
 
   Widget _buildSeriesGroupCard(BuildContext context, List<Series> seriesGroup, int groupIndex) {
     final series = seriesGroup.first;
     return GestureDetector(
-      onTap: () => _showSeriesGroupDialog(context, seriesGroup, groupIndex),
+      onTap: () => _showSeriesDialog(context, seriesGroup, groupIndex),
       child: Card(
         margin: const EdgeInsets.symmetric(vertical: 8),
         child: ListTile(
@@ -60,36 +64,83 @@ class TrainingProgramSeriesList extends ConsumerWidget {
             '${seriesGroup.length} serie${seriesGroup.length > 1 ? 's' : ''}, ${series.reps} reps x ${series.weight} kg',
             style: Theme.of(context).textTheme.bodyLarge,
           ),
+          trailing: IconButton(
+            icon: Icon(Icons.delete),
+            onPressed: () => _showDeleteSeriesGroupDialog(context, seriesGroup, groupIndex),
+          ),
         ),
       ),
     );
   }
 
-  void _showSeriesGroupDialog(BuildContext context, List<Series> seriesGroup, int groupIndex) {
+  void _showDeleteSeriesGroupDialog(BuildContext context, List<Series> seriesGroup, int groupIndex) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Series Group'),
-        content: SingleChildScrollView(
-          child: ListBody(
-            children: seriesGroup.asMap().entries.map((entry) {
-              final seriesIndex = entry.key;
-              final series = entry.value;
-              return _buildSeriesCard(context, series, groupIndex, seriesIndex);
-            }).toList(),
-          ),
-        ),
+        title: Text('Delete Series Group'),
+        content: Text('Are you sure you want to delete this series group?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Close'),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              _deleteSeriesGroup(seriesGroup, groupIndex);
+              Navigator.pop(context);
+            },
+            child: Text('Delete'),
           ),
         ],
       ),
     );
   }
 
-Widget _buildSeriesCard(BuildContext context, Series series, int groupIndex, int seriesIndex) {
+void _deleteSeriesGroup(List<Series> seriesGroup, int groupIndex) {
+  final exercise = controller.program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+  seriesGroup.forEach((series) {
+    final seriesIndex = exercise.series.indexOf(series);
+    controller.removeSeries(weekIndex, workoutIndex, exerciseIndex, groupIndex, seriesIndex);
+  });
+}
+
+  void _showSeriesDialog(BuildContext context, List<Series> seriesGroup, int groupIndex) {
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: Text('Series Group'),
+            content: SingleChildScrollView(
+              child: ListBody(
+                children: seriesGroup.asMap().entries.map((entry) {
+                  final seriesIndex = entry.key;
+                  final series = entry.value;
+                  return _buildSeriesCard(context, series, groupIndex, seriesIndex, () {
+                    setState(() => _removeSeries(seriesGroup, groupIndex, seriesIndex));
+                  });
+                }).toList(),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Close'),
+              ),
+            ],
+          );
+        },
+      ),
+    ).then((_) => controller.notifyListeners());
+  }
+
+  void _removeSeries(List<Series> seriesGroup, int groupIndex, int seriesIndex) {
+    final exercise = controller.program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+    final series = seriesGroup[seriesIndex];
+    exercise.series.remove(series);
+  }
+
+Widget _buildSeriesCard(BuildContext context, Series series, [int? groupIndex, int? seriesIndex, VoidCallback? onRemove]) {
   return ListTile(
     title: Text(
       '${series.reps} reps x ${series.weight} kg',
@@ -99,23 +150,17 @@ Widget _buildSeriesCard(BuildContext context, Series series, int groupIndex, int
       itemBuilder: (context) => [
         PopupMenuItem(
           child: const Text('Edit'),
-          onTap: () => controller.editSeries(
-            weekIndex,
-            workoutIndex,
-            exerciseIndex,
-            series, // Pass the current series object
-            context,
-          ),
+          onTap: () => controller.editSeries(weekIndex, workoutIndex, exerciseIndex, series, context),
         ),
         PopupMenuItem(
           child: const Text('Delete'),
-          onTap: () => controller.removeSeries(
-            weekIndex,
-            workoutIndex,
-            exerciseIndex,
-            groupIndex,
-            seriesIndex,
-          ),
+          onTap: () {
+            if (onRemove != null) {
+              onRemove();
+            } else {
+              controller.removeSeries(weekIndex, workoutIndex, exerciseIndex, groupIndex ?? 0, seriesIndex ?? 0);
+            }
+          },
         ),
       ],
     ),
