@@ -72,7 +72,7 @@ class TrainingProgramSeriesList extends ConsumerWidget {
             style: Theme.of(context).textTheme.bodyLarge,
           ),
           trailing: IconButton(
-            icon: Icon(Icons.delete),
+            icon: const Icon(Icons.delete),
             onPressed: () =>
                 _showDeleteSeriesGroupDialog(context, seriesGroup, groupIndex),
           ),
@@ -86,19 +86,19 @@ class TrainingProgramSeriesList extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Delete Series Group'),
-        content: Text('Are you sure you want to delete this series group?'),
+        title: const Text('Delete Series Group'),
+        content: const Text('Are you sure you want to delete this series group?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () {
               _deleteSeriesGroup(seriesGroup, groupIndex);
               Navigator.pop(context);
             },
-            child: Text('Delete'),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -138,7 +138,7 @@ void _deleteSeriesGroup(List<Series> seriesGroup, int groupIndex) {
       builder: (context) => StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
-            title: Text('Series Group'),
+            title: const Text('Series Group'),
             content: SingleChildScrollView(
               child: ListBody(
                 children: seriesGroup.asMap().entries.map((entry) {
@@ -155,7 +155,7 @@ void _deleteSeriesGroup(List<Series> seriesGroup, int groupIndex) {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text('Close'),
+                child: const Text('Close'),
               ),
             ],
           );
