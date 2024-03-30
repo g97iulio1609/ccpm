@@ -21,7 +21,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final workout = controller.program.weeks[weekIndex].workouts[workoutIndex];
-    final sortedExercises = workout.exercises.toList()..sort((a, b) => a.order.compareTo(b.order));
+    final exercises = workout.exercises;
     final usersService = ref.watch(usersServiceProvider);
     final athleteId = controller.athleteIdController.text;
     final dateFormat = DateFormat('yyyy-MM-dd');
@@ -29,21 +29,21 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: sortedExercises.length,
+      itemCount: exercises.length,
       itemBuilder: (context, index) {
-        final exercise = sortedExercises[index];
+        final exercise = exercises[index];
         return _buildExerciseCard(context, exercise, usersService, athleteId, dateFormat);
       },
     );
   }
 
   Widget _buildExerciseCard(
-      BuildContext context,
-      Exercise exercise,
-      UsersService usersService,
-      String athleteId,
-      DateFormat dateFormat,
-      ) {
+    BuildContext context,
+    Exercise exercise,
+    UsersService usersService,
+    String athleteId,
+    DateFormat dateFormat,
+  ) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       child: Column(
@@ -91,12 +91,12 @@ class TrainingProgramExerciseList extends ConsumerWidget {
   }
 
   Future<void> _addOrUpdateMaxRM(
-      Exercise exercise,
-      BuildContext context,
-      UsersService usersService,
-      String athleteId,
-      DateFormat dateFormat,
-      ) async {
+    Exercise exercise,
+    BuildContext context,
+    UsersService usersService,
+    String athleteId,
+    DateFormat dateFormat,
+  ) async {
     final record = await usersService.getLatestExerciseRecord(userId: athleteId, exerciseId: exercise.exerciseId!);
     final maxWeightController = TextEditingController(text: record?.maxWeight.toString() ?? '');
     final repetitionsController = TextEditingController(text: record?.repetitions.toString() ?? '');

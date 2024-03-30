@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 import 'training_model.dart';
 
 class FirestoreService {
@@ -104,33 +103,48 @@ class FirestoreService {
    await _db.collection('series').doc(seriesId).delete();
  }
 
- Future<List<TrainingProgram>> fetchTrainingPrograms() async {
-   var snapshot = await _db.collection('programs').get();
-   return snapshot.docs.map((doc) => TrainingProgram.fromFirestore(doc)).toList();
- }
-
- Future<List<Week>> fetchWeeksByProgramId(String programId) async {
-   var snapshot = await _db.collection('weeks').where('programId', isEqualTo: programId).get();
-   return snapshot.docs.map((doc) => Week.fromFirestore(doc)).toList();
- }
-
- Future<List<Workout>> fetchWorkoutsByWeekId(String weekId) async {
-   var snapshot = await _db.collection('workouts').where('weekId', isEqualTo: weekId).get();
-   return snapshot.docs.map((doc) => Workout.fromFirestore(doc)).toList();
- }
-
-Future<List<Exercise>> fetchExercisesByWorkoutId(String workoutId) async {
-  var snapshot = await _db.collection('exercisesWorkout').where('workoutId', isEqualTo: workoutId).get();
-  return snapshot.docs.map((doc) {
-    final data = doc.data();
-    return Exercise.fromFirestore(doc).copyWith(exerciseId: data['exerciseId']);
-  }).toList();
+ 
+Future<List<TrainingProgram>> fetchTrainingPrograms() async {
+  var snapshot = await _db.collection('programs').get();
+  var programs = snapshot.docs.map((doc) => TrainingProgram.fromFirestore(doc)).toList();
+  return programs;
 }
 
- Future<List<Series>> fetchSeriesByExerciseId(String exerciseId) async {
-   var snapshot = await _db.collection('series').where('exerciseId', isEqualTo: exerciseId).get();
-   return snapshot.docs.map((doc) => Series.fromFirestore(doc)).toList();
- }
+Future<List<Week>> fetchWeeksByProgramId(String programId) async {
+  var snapshot = await _db.collection('weeks')
+      .where('programId', isEqualTo: programId)
+      .orderBy('number')
+      .get();
+  var weeks = snapshot.docs.map((doc) => Week.fromFirestore(doc)).toList();
+  return weeks;
+}
+
+Future<List<Workout>> fetchWorkoutsByWeekId(String weekId) async {
+  var snapshot = await _db.collection('workouts')
+      .where('weekId', isEqualTo: weekId)
+      .orderBy('order')
+      .get();
+  var workouts = snapshot.docs.map((doc) => Workout.fromFirestore(doc)).toList();
+  return workouts;
+}
+
+Future<List<Exercise>> fetchExercisesByWorkoutId(String workoutId) async {
+  var snapshot = await _db.collection('exercisesWorkout')
+      .where('workoutId', isEqualTo: workoutId)
+      .orderBy('order')
+      .get();
+  var exercises = snapshot.docs.map((doc) => Exercise.fromFirestore(doc)).toList();
+  return exercises;
+}
+
+Future<List<Series>> fetchSeriesByExerciseId(String exerciseId) async {
+  var snapshot = await _db.collection('series')
+      .where('exerciseId', isEqualTo: exerciseId)
+      .orderBy('order')
+      .get();
+  var seriesList = snapshot.docs.map((doc) => Series.fromFirestore(doc)).toList();
+  return seriesList;
+}
 
 Future<void> addOrUpdateTrainingProgram(TrainingProgram program) async {
   FirebaseFirestore db = FirebaseFirestore.instance;
@@ -217,28 +231,61 @@ Future<TrainingProgram> fetchTrainingProgram(String programId) async {
   if (!programSnapshot.exists) {
     throw Exception('Training program not found');
   }
-
   TrainingProgram program = TrainingProgram.fromFirestore(programSnapshot);
 
-  List<Week> weeks = await fetchWeeksByProgramId(programId);
-  for (Week week in weeks) {
-    List<Workout> workouts = await fetchWorkoutsByWeekId(week.id!);
-    for (Workout workout in workouts) {
-      List<Exercise> exercises = await fetchExercisesByWorkoutId(workout.id!);
-      for (Exercise exercise in exercises) {
-        List<Series> seriesList = await fetchSeriesByExerciseId(exercise.id!);
+  QuerySnapshot weeksSnapshot = await _db.collection('weeks')
+      .where('programId', isEqualTo: programId)
+      .orderBy('number')
+      .get();
+  List<Week> weeks = weeksSnapshot.docs.map((doc) => Week.fromFirestore(doc)).toList();
+
+  List<Future<QuerySnapshot>> workoutsFutures = weeks.map((week) {
+    return _db.collection('workouts')
+        .where('weekId', isEqualTo: week.id)
+        .orderBy('order')
+        .get();
+  }).toList();
+  List<QuerySnapshot> workoutsSnapshots = await Future.wait(workoutsFutures);
+
+  for (int i = 0; i < weeks.length; i++) {
+    Week week = weeks[i];
+    List<Workout> workouts = workoutsSnapshots[i].docs.map((doc) => Workout.fromFirestore(doc)).toList();
+
+    List<Future<QuerySnapshot>> exercisesFutures = workouts.map((workout) {
+      return _db.collection('exercisesWorkout')
+          .where('workoutId', isEqualTo: workout.id)
+          .orderBy('order')
+          .get();
+    }).toList();
+    List<QuerySnapshot> exercisesSnapshots = await Future.wait(exercisesFutures);
+
+    for (int j = 0; j < workouts.length; j++) {
+      Workout workout = workouts[j];
+      List<Exercise> exercises = exercisesSnapshots[j].docs.map((doc) => Exercise.fromFirestore(doc)).toList();
+
+      List<Future<QuerySnapshot>> seriesFutures = exercises.map((exercise) {
+        return _db.collection('series')
+            .where('exerciseId', isEqualTo: exercise.id)
+            .orderBy('order')
+            .get();
+      }).toList();
+      List<QuerySnapshot> seriesSnapshots = await Future.wait(seriesFutures);
+
+      for (int k = 0; k < exercises.length; k++) {
+        Exercise exercise = exercises[k];
+        List<Series> seriesList = seriesSnapshots[k].docs.map((doc) => Series.fromFirestore(doc)).toList();
         exercise.series = seriesList;
       }
+
       workout.exercises = exercises;
     }
+
     week.workouts = workouts;
   }
 
   program.weeks = weeks;
-
   return program;
 }
-
 Future<void> removeToDeleteItems(TrainingProgram program) async {
   WriteBatch batch = _db.batch();
 

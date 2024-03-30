@@ -220,23 +220,23 @@ class Exercise {
     );
   }
 
-  factory Exercise.fromFirestore(DocumentSnapshot doc) {
-    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-    return Exercise(
-      id: doc.id,
-      exerciseId: data['exerciseId'],
-      name: data['name'],
-      type: data['type'], // Aggiungi questa riga
-      variant: data['variant'],
-      order: data['order'],
-      series: (data['series'] as List<dynamic>? ?? [])
-          .map((doc) => Series.fromFirestore(doc))
-          .toList(),
-      weekProgressions: (data['weekProgressions'] as List<dynamic>? ?? [])
-          .map((doc) => WeekProgression.fromMap(doc))
-          .toList(),
-    );
-  }
+factory Exercise.fromFirestore(DocumentSnapshot doc) {
+  Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+  return Exercise(
+    id: doc.id,
+    exerciseId: data['exerciseId'] ?? '',
+    name: data['name'] ?? '',
+    type: data['type'] ?? '',
+    variant: data['variant'] ?? '',
+    order: data['order']?.toInt() ?? 0,
+    series: (data['series'] as List<dynamic>? ?? [])
+        .map((doc) => Series.fromFirestore(doc))
+        .toList(),
+    weekProgressions: (data['weekProgressions'] as List<dynamic>? ?? [])
+        .map((doc) => WeekProgression.fromMap(doc))
+        .toList(),
+  );
+}
 
   Map<String, dynamic> toMap() {
     return {
@@ -337,21 +337,22 @@ class Series {
     this.weight_done = 0.0,
   });
 
-  factory Series.fromMap(Map<String, dynamic> map) {
-    return Series(
-      id: map['id'],
-      serieId: map['serieId'] ?? '',
-      reps: map['reps']?.toInt() ?? 0,
-      sets: map['sets']?.toInt() ?? 0,
-      intensity: map['intensity'] ?? '',
-      rpe: map['rpe'] ?? '',
-      weight: map['weight']?.toDouble() ?? 0.0,
-      order: map['order']?.toInt() ?? 0,
-      done: map['done'] ?? false,
-      reps_done: map['reps_done']?.toInt() ?? 0,
-      weight_done: map['weight_done']?.toDouble() ?? 0.0,
-    );
-  }
+factory Series.fromMap(Map<String, dynamic> map) {
+  return Series(
+    id: map['id'],
+    serieId: map['serieId'] ?? '',
+    reps: map['reps']?.toInt() ?? 0,
+    sets: map['sets']?.toInt() ?? 0,
+    intensity: map['intensity'] ?? '',
+    rpe: map['rpe'] ?? '',
+    weight: map['weight']?.toDouble() ?? 0.0,
+    order: map['order']?.toInt() ?? 0,
+    done: map['done'] ?? false,
+    reps_done: map['reps_done']?.toInt() ?? 0,
+    weight_done: map['weight_done']?.toDouble() ?? 0.0,
+  );
+}
+
 
 Series copyWith({
   String? serieId,
@@ -380,22 +381,22 @@ Series copyWith({
 }
 
 
-  factory Series.fromFirestore(DocumentSnapshot doc) {
-    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-    return Series(
-      id: doc.id,
-      serieId: data['serieId'] ?? '',
-      reps: data['reps']?.toInt() ?? 0,
-      sets: data['sets']?.toInt() ?? 0,
-      intensity: data['intensity'] ?? '',
-      rpe: data['rpe'] ?? '',
-      weight: data['weight']?.toDouble() ?? 0.0,
-      order: data['order']?.toInt() ?? 0,
-      done: data['done'] ?? false,
-      reps_done: data['reps_done']?.toInt() ?? 0,
-      weight_done: data['weight_done']?.toDouble() ?? 0.0,
-    );
-  }
+factory Series.fromFirestore(DocumentSnapshot doc) {
+  Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+  return Series(
+    id: doc.id,
+    serieId: data['serieId'] ?? '',
+    reps: data['reps']?.toInt() ?? 0,
+    sets: data['sets']?.toInt() ?? 0,
+    intensity: data['intensity'] ?? '',
+    rpe: data['rpe'] ?? '',
+    weight: data['weight']?.toDouble() ?? 0.0,
+    order: data['order']?.toInt() ?? 0,
+    done: data['done'] ?? false,
+    reps_done: data['reps_done']?.toInt() ?? 0,
+    weight_done: data['weight_done']?.toDouble() ?? 0.0,
+  );
+}
 
   Map<String, dynamic> toMap() {
     return {

@@ -12,14 +12,14 @@ class TrainingProgramWeekList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final program = controller.program;
-    final sortedWeeks = program.weeks..sort((a, b) => a.number.compareTo(b.number));
+    final weeks = program.weeks;
 
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: sortedWeeks.length,
+      itemCount: weeks.length,
       itemBuilder: (context, index) {
-        final week = sortedWeeks[index];
+        final week = weeks[index];
         return _buildWeekCard(context, week, index);
       },
     );
