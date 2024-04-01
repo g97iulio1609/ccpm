@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'training_model.dart';
 
 class FirestoreService {
@@ -286,6 +287,7 @@ Future<TrainingProgram> fetchTrainingProgram(String programId) async {
   program.weeks = weeks;
   return program;
 }
+
 Future<void> removeToDeleteItems(TrainingProgram program) async {
   WriteBatch batch = _db.batch();
 

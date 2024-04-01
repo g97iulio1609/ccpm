@@ -413,4 +413,20 @@ factory Series.fromFirestore(DocumentSnapshot doc) {
       'weight_done': weight_done,
     };
   }
+
+  Map<String, dynamic> toFirestore() {
+  return {
+    'reps': reps,
+    'sets': sets,
+    'intensity': intensity,
+    'rpe': rpe,
+    'weight': weight,
+    'id': id,
+    'serieId': serieId,
+    'order': order,
+    'done': done,
+    'reps_done': reps_done,
+    'weight_done': weight_done,
+  };
+}
 }
