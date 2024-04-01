@@ -17,34 +17,32 @@ class TrainingProgramWorkoutList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final week = controller.program.weeks[weekIndex];
-    final sortedWorkouts = week.workouts.toList()..sort((a, b) => a.order.compareTo(b.order));
+    final workouts = week.workouts;
 
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: sortedWorkouts.length,
+      itemCount: workouts.length,
       itemBuilder: (context, index) {
-        final workout = sortedWorkouts[index];
-        return _buildWorkoutCard(context, workout, index);
+        final workout = workouts[index];
+        return _buildWorkoutCard(context, workout);
       },
     );
   }
 
-  Widget _buildWorkoutCard(BuildContext context, Workout workout, int index) {
+  Widget _buildWorkoutCard(BuildContext context, Workout workout) {
     return Card(
-      margin: const EdgeInsets.all(16),
-      child: Column(
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      child: ExpansionTile(
+        title: Text(
+          'Workout ${workout.order}',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        trailing: IconButton(
+          icon: const Icon(Icons.delete),
+          onPressed: () => controller.removeWorkout(weekIndex, workout.order),
+        ),
         children: [
-          ListTile(
-            title: Text(
-              'Workout ${workout.order}',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            trailing: IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () => controller.removeWorkout(weekIndex, workout.order - 1),
-            ),
-          ),
           TrainingProgramExerciseList(
             controller: controller,
             weekIndex: weekIndex,

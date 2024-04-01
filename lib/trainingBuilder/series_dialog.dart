@@ -12,7 +12,7 @@ class SeriesDialog extends ConsumerWidget {
   final String exerciseId;
   final int weekIndex;
   final Exercise exercise;
-  final Series? series;
+  final Series? currentSeries;
 
   const SeriesDialog({
     required this.usersService,
@@ -20,18 +20,18 @@ class SeriesDialog extends ConsumerWidget {
     required this.exerciseId,
     required this.weekIndex,
     required this.exercise,
-    this.series,
+    this.currentSeries,
     super.key,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.watch(trainingProgramControllerProvider);
-    final repsController = TextEditingController(text: series?.reps.toString() ?? '');
-    final setsController = TextEditingController(text: series?.sets.toString() ?? '');
-    final intensityController = TextEditingController(text: series?.intensity ?? '');
-    final rpeController = TextEditingController(text: series?.rpe ?? '');
-    final weightController = TextEditingController(text: series?.weight.toStringAsFixed(2) ?? '');
+    final repsController = TextEditingController(text: currentSeries?.reps.toString() ?? '');
+    final setsController = TextEditingController(text: currentSeries?.sets.toString() ?? '');
+    final intensityController = TextEditingController(text: currentSeries?.intensity ?? '');
+    final rpeController = TextEditingController(text: currentSeries?.rpe ?? '');
+    final weightController = TextEditingController(text: currentSeries?.weight.toStringAsFixed(2) ?? '');
 
     FocusNode repsFocusNode = FocusNode();
     FocusNode setsFocusNode = FocusNode();
@@ -40,7 +40,7 @@ class SeriesDialog extends ConsumerWidget {
     FocusNode weightFocusNode = FocusNode();
 
     return AlertDialog(
-      title: Text(series == null ? 'Add New Series' : 'Edit Series'),
+      title: Text(currentSeries == null ? 'Add New Series' : 'Edit Series'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -70,7 +70,7 @@ class SeriesDialog extends ConsumerWidget {
         ),
         TextButton(
           onPressed: () => _saveSeries(context, controller, repsController, setsController, intensityController, rpeController, weightController),
-          child: Text(series == null ? 'Add' : 'Update'),
+          child: Text(currentSeries == null ? 'Add' : 'Update'),
         ),
       ],
     );
@@ -243,17 +243,17 @@ class SeriesDialog extends ConsumerWidget {
     final weight = double.tryParse(weightController.text) ?? 0;
 
     final newSeries = Series(
-      id: series?.id,
-      serieId: series?.serieId ?? '',
+      id: currentSeries?.id,
+      serieId: currentSeries?.serieId ?? '',
       reps: reps,
       sets: 1,
       intensity: intensity,
       rpe: rpe,
       weight: weight,
-      order: series?.order ?? 1,
-      done: series?.done ?? false,
-      reps_done: series?.reps_done ?? 0,
-      weight_done: series?.weight_done ?? 0.0,
+      order: currentSeries?.order ?? 1,
+      done: currentSeries?.done ?? false,
+      reps_done: currentSeries?.reps_done ?? 0,
+      weight_done: currentSeries?.weight_done ?? 0.0,
     );
 
     if (newSeries.serieId.isEmpty) {

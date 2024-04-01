@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'timer.dart';
+import 'package:go_router/go_router.dart';
+import 'package:numberpicker/numberpicker.dart';
 
 class ExerciseDetails extends StatefulWidget {
+  final String userId;
+
+  final String programId;
+  final String weekId;
+  final String workoutId;
   final String exerciseId;
   final String exerciseName;
   final String? exerciseVariant;
@@ -12,6 +18,10 @@ class ExerciseDetails extends StatefulWidget {
 
   const ExerciseDetails({
     super.key,
+    required this.userId,
+    required this.programId,
+    required this.weekId,
+    required this.workoutId,
     required this.exerciseId,
     required this.exerciseName,
     this.exerciseVariant,
@@ -27,8 +37,8 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
   int currentSeriesIndex = 0;
   final Map<String, TextEditingController> _repsControllers = {};
   final Map<String, TextEditingController> _weightControllers = {};
-  final TextEditingController _minutesController = TextEditingController(text: "00");
-  final TextEditingController _secondsController = TextEditingController(text: "10");
+  int _minutes = 0;
+  int _seconds = 10;
   bool _isEmomMode = false;
 
   @override
@@ -40,16 +50,21 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
 
   void _initControllers() {
     for (final series in widget.seriesList) {
-      _repsControllers[series['id']] = TextEditingController(text: series['reps'].toString());
-      _weightControllers[series['id']] = TextEditingController(text: series['weight'].toString());
+      _repsControllers[series['id']] =
+          TextEditingController(text: series['reps'].toString());
+      _weightControllers[series['id']] =
+          TextEditingController(text: series['weight'].toString());
     }
   }
 
-void _setCurrentSeriesIndex() {
-  currentSeriesIndex = widget.startIndex;
-}
+  void _setCurrentSeriesIndex() {
+    currentSeriesIndex = widget.startIndex < widget.seriesList.length
+        ? widget.startIndex
+        : widget.seriesList.length - 1;
+  }
 
-  Future<void> _updateSeriesData(String seriesId, int? repsDone, double? weightDone) async {
+  Future<void> _updateSeriesData(
+      String seriesId, int? repsDone, double? weightDone) async {
     final currentSeries = widget.seriesList[currentSeriesIndex];
     final expectedReps = currentSeries['reps'];
     final expectedWeight = currentSeries['weight'];
@@ -65,159 +80,214 @@ void _setCurrentSeriesIndex() {
   }
 
   int _getRestTimeInSeconds() {
-    final minutes = int.tryParse(_minutesController.text) ?? 0;
-    final seconds = int.tryParse(_secondsController.text) ?? 0;
-    return (minutes * 60) + seconds;
+    return (_minutes * 60) + _seconds;
   }
 
   Future<void> _handleNextSeries() async {
     final restTimeInSeconds = _getRestTimeInSeconds();
     if (currentSeriesIndex < widget.seriesList.length - 1) {
-      final shouldProceed = await Navigator.push<bool>(
-        context,
-        MaterialPageRoute(
-          builder: (context) => TimerPage(
-            currentSeriesIndex: currentSeriesIndex,
-            totalSeries: widget.seriesList.length,
-            restTime: restTimeInSeconds,
-            isEmomMode: _isEmomMode,
-          ),
-        ),
+      final result = await context.push<Map<String, dynamic>>(
+        '/programs_screen/user_programs/${widget.userId}/training_viewer/${Uri.encodeComponent(widget.programId)}/week_details/${Uri.encodeComponent(widget.weekId)}/workout_details/${Uri.encodeComponent(widget.workoutId)}/exercise_details/${Uri.encodeComponent(widget.exerciseId)}/timer?currentSeriesIndex=${currentSeriesIndex + 1}&totalSeries=${widget.seriesList.length}&restTime=$restTimeInSeconds&isEmomMode=$_isEmomMode',
       );
-      if (shouldProceed == true) {
+      if (result != null) {
         setState(() {
-          currentSeriesIndex++;
+          currentSeriesIndex = result['startIndex'];
         });
       }
     } else {
-      Navigator.pop(context);
+      context.pop();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final currentSeries = widget.seriesList[currentSeriesIndex];
+    final currentSeries = currentSeriesIndex < widget.seriesList.length
+        ? widget.seriesList[currentSeriesIndex]
+        : null;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('${widget.exerciseName} ${widget.exerciseVariant ?? ''}'),
-        backgroundColor: theme.colorScheme.surfaceVariant,
-        foregroundColor: theme.colorScheme.onSurfaceVariant,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildSeriesIndicator(theme),
-            const SizedBox(height: 32),
-            _buildWeightInput(theme, currentSeries),
-            const SizedBox(height: 16),
-            _buildRepsInput(theme, currentSeries),
-            const SizedBox(height: 16),
-            _buildRestTimeInput(theme),
-            const SizedBox(height: 16),
-            _buildEmomSwitch(theme),
-            const SizedBox(height: 32),
-            _buildNextButton(theme),
-          ],
+      backgroundColor: theme.colorScheme.background,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildSeriesIndicator(theme),
+              const SizedBox(height: 24),
+              if (currentSeries != null) ...[
+                _buildInputField(
+                  theme,
+                  'REPS',
+                  _repsControllers[currentSeries['id']]!,
+                  TextInputType.number,
+                  FilteringTextInputFormatter.digitsOnly,
+                ),
+                const SizedBox(height: 16),
+                _buildInputField(
+                  theme,
+                  'WEIGHT (kg)',
+                  _weightControllers[currentSeries['id']]!,
+                  const TextInputType.numberWithOptions(decimal: true),
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*')),
+                ),
+              ],
+              const Spacer(),
+              _buildRestTimeSelector(theme),
+              const SizedBox(height: 24),
+              _buildEmomSwitch(theme),
+              const SizedBox(height: 24),
+              _buildNextButton(theme),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildSeriesIndicator(ThemeData theme) {
-    return Text(
-      'Set ${currentSeriesIndex + 1} / ${widget.seriesList.length}',
-      style: theme.textTheme.headlineSmall,
-      textAlign: TextAlign.center,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        'Set ${currentSeriesIndex + 1} / ${widget.seriesList.length}',
+        style: theme.textTheme.titleLarge?.copyWith(
+          color: theme.colorScheme.onSurface,
+          fontWeight: FontWeight.bold,
+        ),
+        textAlign: TextAlign.center,
+      ),
     );
   }
 
-  Widget _buildWeightInput(ThemeData theme, Map<String, dynamic> currentSeries) {
-    return InputDecorator(
+  Widget _buildInputField(
+    ThemeData theme,
+    String label,
+    TextEditingController controller,
+    TextInputType keyboardType,
+    TextInputFormatter inputFormatter,
+  ) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      inputFormatters: [inputFormatter],
+      textAlign: TextAlign.center,
+      style: theme.textTheme.headlineSmall?.copyWith(
+        color: theme.colorScheme.onSurface,
+      ),
       decoration: InputDecoration(
-        labelText: 'WEIGHT',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.0),
+        labelText: label,
+        labelStyle: theme.textTheme.bodyLarge?.copyWith(
+          color: theme.colorScheme.onSurface.withOpacity(0.6),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        filled: true,
+        fillColor: theme.colorScheme.surface,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRestTimeSelector(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Expanded(
-            child: TextField(
-              controller: _weightControllers[currentSeries['id']],
-              textAlign: TextAlign.center,
-              decoration: const InputDecoration.collapsed(hintText: ''),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*'))],
+          Text(
+            'Rest Time:',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
             ),
           ),
-          Text('kg', style: theme.textTheme.titleMedium),
+          const SizedBox(width: 16),
+          _buildNumberPicker(
+            theme,
+            _minutes,
+            0,
+            59,
+            (value) => setState(() => _minutes = value),
+            'min',
+          ),
+          const SizedBox(width: 8),
+          Text(
+            ':',
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(width: 8),
+          _buildNumberPicker(
+            theme,
+            _seconds,
+            0,
+            59,
+            (value) => setState(() => _seconds = value),
+            'sec',
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildRepsInput(ThemeData theme, Map<String, dynamic> currentSeries) {
-    return InputDecorator(
-      decoration: InputDecoration(
-        labelText: 'REPS',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.0),
+  Widget _buildNumberPicker(
+    ThemeData theme,
+    int value,
+    int minValue,
+    int maxValue,
+    ValueChanged<int> onChanged,
+    String label,
+  ) {
+    return Container(
+      width: 80,
+      height: 120,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.onSurface.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: NumberPicker(
+        value: value,
+        minValue: minValue,
+        maxValue: maxValue,
+        onChanged: onChanged,
+        itemHeight: 40,
+        textStyle: theme.textTheme.titleMedium?.copyWith(
+          color: theme.colorScheme.onSurface,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      ),
-      child: TextField(
-        controller: _repsControllers[currentSeries['id']],
-        textAlign: TextAlign.center,
-        decoration: const InputDecoration.collapsed(hintText: ''),
-        keyboardType: TextInputType.number,
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-      ),
-    );
-  }
-
-  Widget _buildRestTimeInput(ThemeData theme) {
-    return Row(
-      children: [
-        Expanded(
-          child: TextField(
-            controller: _minutesController,
-            decoration: InputDecoration(
-              labelText: "Minuti",
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12.0),
-              ),
+        selectedTextStyle: theme.textTheme.titleMedium?.copyWith(
+          color: theme.colorScheme.primary,
+          fontWeight: FontWeight.bold,
+        ),
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(
+              color: theme.colorScheme.onSurface.withOpacity(0.2),
             ),
-            keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(2),
-            ],
+            bottom: BorderSide(
+              color: theme.colorScheme.onSurface.withOpacity(0.2),
+            ),
           ),
         ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: TextField(
-            controller: _secondsController,
-            decoration: InputDecoration(
-              labelText: "Secondi",
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12.0),
-              ),
-            ),
-            keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(2),
-            ],
-          ),
-        ),
-      ],
+      ),
     );
   }
 
@@ -225,15 +295,21 @@ void _setCurrentSeriesIndex() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text('EMOM Mode', style: theme.textTheme.titleMedium),
+        Text(
+          'EMOM Mode',
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: theme.colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(width: 16),
         Switch(
           value: _isEmomMode,
-          onChanged: (value) {
-            setState(() {
-              _isEmomMode = value;
-            });
-          },
+          onChanged: (value) => setState(() => _isEmomMode = value),
           activeColor: theme.colorScheme.primary,
+          activeTrackColor: theme.colorScheme.primary.withOpacity(0.5),
+          inactiveThumbColor: theme.colorScheme.onSurface.withOpacity(0.5),
+          inactiveTrackColor: theme.colorScheme.onSurface.withOpacity(0.2),
         ),
       ],
     );
@@ -241,26 +317,33 @@ void _setCurrentSeriesIndex() {
 
   Widget _buildNextButton(ThemeData theme) {
     return ElevatedButton(
-      onPressed: () async {
-        final currentSeries = widget.seriesList[currentSeriesIndex];
-        await _updateSeriesData(
-          currentSeries['id'],
-          int.tryParse(_repsControllers[currentSeries['id']]!.text),
-          double.tryParse(_weightControllers[currentSeries['id']]!.text),
-        );
-        await _handleNextSeries();
-      },
+      onPressed: currentSeriesIndex < widget.seriesList.length
+          ? () async {
+              final currentSeries = widget.seriesList[currentSeriesIndex];
+              await _updateSeriesData(
+                currentSeries['id'],
+                int.tryParse(_repsControllers[currentSeries['id']]!.text),
+                double.tryParse(_weightControllers[currentSeries['id']]!.text),
+              );
+              await _handleNextSeries();
+            }
+          : null,
       style: ElevatedButton.styleFrom(
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
         padding: const EdgeInsets.symmetric(vertical: 16),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(12),
         ),
+        elevation: 0,
       ),
       child: Text(
-        currentSeriesIndex == widget.seriesList.length - 1 ? 'FINISH' : 'NEXT SET',
-        style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onPrimary),
+        currentSeriesIndex == widget.seriesList.length - 1
+            ? 'FINISH'
+            : 'NEXT SET',
+        style: theme.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
@@ -269,8 +352,6 @@ void _setCurrentSeriesIndex() {
   void dispose() {
     _repsControllers.values.forEach((controller) => controller.dispose());
     _weightControllers.values.forEach((controller) => controller.dispose());
-    _minutesController.dispose();
-    _secondsController.dispose();
     super.dispose();
   }
 }

@@ -1,10 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'week_details.dart';
 
 class TrainingViewer extends StatefulWidget {
   final String programId;
-  const TrainingViewer({super.key, required this.programId});
+    final String userId;
+  const TrainingViewer({super.key, required this.programId, required this.userId});
 
   @override
   _TrainingViewerState createState() => _TrainingViewerState();
@@ -40,11 +42,7 @@ class _TrainingViewerState extends State<TrainingViewer> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Visualizzatore di allenamento'),
-        elevation: 0,
-        centerTitle: true,
-      ),
+     
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
@@ -60,13 +58,9 @@ class _TrainingViewerState extends State<TrainingViewer> {
                       borderRadius: BorderRadius.circular(16.0),
                     ),
                     child: InkWell(
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => WeekDetails(weekId: week['id']),
-                          ),
-                        );
-                      },
+                  onTap: () {
+  context.go('/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${week['id']}');
+},
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(

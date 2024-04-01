@@ -1,12 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'exercise_details.dart';
+import 'package:go_router/go_router.dart';
 import 'dart:async';
 
 class WorkoutDetails extends StatefulWidget {
+  final String programId;
+  final String userId;
+  final String weekId;
   final String workoutId;
 
-  const WorkoutDetails({super.key, required this.workoutId});
+  const WorkoutDetails({
+    super.key,
+    required this.userId,
+    required this.programId,
+    required this.weekId,
+    required this.workoutId,
+  });
 
   @override
   _WorkoutDetailsState createState() => _WorkoutDetailsState();
@@ -80,16 +89,21 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
     for (int i = 0; i < series.length; i++) {
       final serie = series[i];
       //debugPrint('Checking series at index $i: $serie');
-      
+
       final repsDone = serie['reps_done'];
       final weightDone = serie['weight_done'];
       final reps = serie['reps'];
       final weight = serie['weight'];
       final done = serie['done'];
-      
+
       if (done == true ||
-          (done == false && repsDone != null && repsDone <= reps && repsDone > 0 &&
-           weightDone != null && weightDone <= weight && weightDone > 0)) {
+          (done == false &&
+              repsDone != null &&
+              repsDone <= reps &&
+              repsDone > 0 &&
+              weightDone != null &&
+              weightDone <= weight &&
+              weightDone > 0)) {
         //debugPrint('Series at index $i is considered done');
       } else {
         //debugPrint('Found first not done series at index $i');
@@ -101,8 +115,10 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
   }
 
   Future<void> showEditSeriesDialog(Map<String, dynamic> series) async {
-    final repsController = TextEditingController(text: series['reps_done']?.toString() ?? '');
-    final weightController = TextEditingController(text: series['weight_done']?.toString() ?? '');
+    final repsController =
+        TextEditingController(text: series['reps_done']?.toString() ?? '');
+    final weightController =
+        TextEditingController(text: series['weight_done']?.toString() ?? '');
 
     await showDialog(
       context: context,
@@ -134,8 +150,10 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
             ElevatedButton(
               onPressed: () async {
                 final repsDone = int.tryParse(repsController.text) ?? 0;
-                final weightDone = double.tryParse(weightController.text) ?? 0.0;
-                final done = repsDone >= series['reps'] && weightDone >= series['weight'];
+                final weightDone =
+                    double.tryParse(weightController.text) ?? 0.0;
+                final done = repsDone >= series['reps'] &&
+                    weightDone >= series['weight'];
 
                 await FirebaseFirestore.instance
                     .collection('series')
@@ -162,11 +180,6 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dettagli allenamento'),
-        elevation: 0,
-        centerTitle: true,
-      ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
@@ -174,8 +187,8 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
               itemCount: exercises.length,
               itemBuilder: (context, index) {
                 final exercise = exercises[index];
-                final firstNotDoneSeriesIndex =
-                    findFirstNotDoneSeriesIndex(List<Map<String, dynamic>>.from(exercise['series']));
+                final firstNotDoneSeriesIndex = findFirstNotDoneSeriesIndex(
+                    List<Map<String, dynamic>>.from(exercise['series']));
                 final isContinueMode = firstNotDoneSeriesIndex > 0;
 
                 return Card(
@@ -184,9 +197,8 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  color: isDarkMode
-                      ? colorScheme.surface
-                      : colorScheme.background,
+                  color:
+                      isDarkMode ? colorScheme.surface : colorScheme.background,
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -204,8 +216,7 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                                       ? colorScheme.onSurface
                                       : colorScheme.onBackground,
                                 ),
-                                textAlign: TextAlign
-                                    .center,
+                                textAlign: TextAlign.center,
                               ),
                             ),
                           ],
@@ -213,17 +224,15 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                         const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ExerciseDetails(
-                                  exerciseId: exercise['id'],
-                                  exerciseName: exercise['name'],
-                                  exerciseVariant: exercise['variant'],
-                                  seriesList: List<Map<String, dynamic>>.from(exercise['series']),
-                                  startIndex: firstNotDoneSeriesIndex,
-                                ),
-                              ),
+                            context.go(
+                              '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${exercise['id']}',
+                              extra: {
+                                'exerciseName': exercise['name'],
+                                'exerciseVariant': exercise['variant'],
+                                'seriesList': List<Map<String, dynamic>>.from(
+                                    exercise['series']),
+                                'startIndex': firstNotDoneSeriesIndex,
+                              },
                             );
                           },
                           style: ElevatedButton.styleFrom(
@@ -293,7 +302,10 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                             ),
                           ],
                         ),
-                        ...List<Map<String, dynamic>>.from(exercise['series']).asMap().entries.map((entry) {
+                        ...List<Map<String, dynamic>>.from(exercise['series'])
+                            .asMap()
+                            .entries
+                            .map((entry) {
                           final seriesIndex = entry.key;
                           final series = entry.value;
                           return GestureDetector(
@@ -309,15 +321,16 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Expanded(
                                     flex: 1,
                                     child: Center(
                                       child: Text(
                                         "${seriesIndex + 1}",
-                                        style: theme.textTheme.bodyLarge
-                                            ?.copyWith(
+                                        style:
+                                            theme.textTheme.bodyLarge?.copyWith(
                                           color: isDarkMode
                                               ? colorScheme.onSurfaceVariant
                                               : colorScheme.onPrimaryContainer,
@@ -330,8 +343,8 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                                     child: Center(
                                       child: Text(
                                         "${series['reps']}/${series['reps_done'] == 0 ? '' : series['reps_done']}R",
-                                        style: theme.textTheme.bodyLarge
-                                            ?.copyWith(
+                                        style:
+                                            theme.textTheme.bodyLarge?.copyWith(
                                           color: isDarkMode
                                               ? colorScheme.onSurfaceVariant
                                               : colorScheme.onPrimaryContainer,
@@ -344,8 +357,8 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                                     child: Center(
                                       child: Text(
                                         "${series['weight']}/${series['weight_done'] == 0 ? '' : series['weight_done']} Kg",
-                                        style: theme.textTheme.bodyLarge
-                                            ?.copyWith(
+                                        style:
+                                            theme.textTheme.bodyLarge?.copyWith(
                                           color: isDarkMode
                                               ? colorScheme.onSurfaceVariant
                                               : colorScheme.onPrimaryContainer,
@@ -364,7 +377,8 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                                             ? colorScheme.primary
                                             : isDarkMode
                                                 ? colorScheme.onSurfaceVariant
-                                                : colorScheme.onPrimaryContainer,
+                                                : colorScheme
+                                                    .onPrimaryContainer,
                                       ),
                                     ),
                                   ),
