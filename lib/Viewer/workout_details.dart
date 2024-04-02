@@ -79,6 +79,9 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
               loading = false;
             });
           }
+
+          debugPrint('Exercise: ${exercise['name']}');
+          debugPrint('Series: $tempSeries');
         });
 
         subscriptions.add(seriesSubscription);
@@ -89,6 +92,8 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
           exercises = tempExercises;
         });
       }
+
+      debugPrint('Exercises: $exercises');
     });
 
     subscriptions.add(exercisesSubscription);
@@ -245,8 +250,9 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                                   extra: {
                                     'exerciseName': exercise['name'],
                                     'exerciseVariant': exercise['variant'],
-                                    'seriesList': List<Map<String, dynamic>>.from(
-                                        exercise['series']),
+                                    'seriesList':
+                                        List<Map<String, dynamic>>.from(
+                                            exercise['series']),
                                     'startIndex': firstNotDoneSeriesIndex,
                                   },
                                 );

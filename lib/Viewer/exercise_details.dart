@@ -6,7 +6,6 @@ import 'package:numberpicker/numberpicker.dart';
 
 class ExerciseDetails extends StatefulWidget {
   final String userId;
-
   final String programId;
   final String weekId;
   final String workoutId;
@@ -99,6 +98,13 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
     }
   }
 
+  void _hideKeyboard(BuildContext context) {
+    final currentFocus = FocusScope.of(context);
+    if (!currentFocus.hasPrimaryFocus && currentFocus.focusedChild != null) {
+      FocusManager.instance.primaryFocus?.unfocus();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -109,37 +115,43 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
     return Scaffold(
       backgroundColor: theme.colorScheme.background,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildSeriesIndicator(theme),
-              const SizedBox(height: 24),
-              if (currentSeries != null) ...[
-                _buildInputField(
-                  theme,
-                  'REPS',
-                  _repsControllers[currentSeries['id']]!,
-                  TextInputType.number,
-                  FilteringTextInputFormatter.digitsOnly,
-                ),
-                const SizedBox(height: 16),
-                _buildInputField(
-                  theme,
-                  'WEIGHT (kg)',
-                  _weightControllers[currentSeries['id']]!,
-                  const TextInputType.numberWithOptions(decimal: true),
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*')),
-                ),
-              ],
-              const Spacer(),
-              _buildRestTimeSelector(theme),
-              const SizedBox(height: 24),
-              _buildEmomSwitch(theme),
-              const SizedBox(height: 24),
-              _buildNextButton(theme),
-            ],
+        child: GestureDetector(
+          onTap: () => _hideKeyboard(context),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildSeriesIndicator(theme),
+                  const SizedBox(height: 32),
+                  if (currentSeries != null) ...[
+                    _buildInputField(
+                      theme,
+                      'REPS',
+                      _repsControllers[currentSeries['id']]!,
+                      TextInputType.number,
+                      FilteringTextInputFormatter.digitsOnly,
+                    ),
+                    const SizedBox(height: 24),
+                    _buildInputField(
+                      theme,
+                      'WEIGHT (kg)',
+                      _weightControllers[currentSeries['id']]!,
+                      const TextInputType.numberWithOptions(decimal: true),
+                      FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*')),
+                    ),
+                  ],
+                  const SizedBox(height: 32),
+                  _buildRestTimeSelector(theme),
+                  const SizedBox(height: 32),
+                  _buildEmomSwitch(theme),
+                  const SizedBox(height: 40),
+                  _buildNextButton(theme),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -148,14 +160,14 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
 
   Widget _buildSeriesIndicator(ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: theme.colorScheme.primary.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Text(
         'Set ${currentSeriesIndex + 1} / ${widget.seriesList.length}',
-        style: theme.textTheme.titleLarge?.copyWith(
+        style: theme.textTheme.headlineSmall?.copyWith(
           color: theme.colorScheme.onSurface,
           fontWeight: FontWeight.bold,
         ),
@@ -176,18 +188,18 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
       keyboardType: keyboardType,
       inputFormatters: [inputFormatter],
       textAlign: TextAlign.center,
-      style: theme.textTheme.headlineSmall?.copyWith(
+      style: theme.textTheme.titleLarge?.copyWith(
         color: theme.colorScheme.onSurface,
       ),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: theme.textTheme.bodyLarge?.copyWith(
+        labelStyle: theme.textTheme.titleMedium?.copyWith(
           color: theme.colorScheme.onSurface.withOpacity(0.6),
         ),
         filled: true,
         fillColor: theme.colorScheme.surface,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
         ),
       ),
@@ -196,22 +208,22 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
 
   Widget _buildRestTimeSelector(ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
             'Rest Time:',
-            style: theme.textTheme.titleMedium?.copyWith(
+            style: theme.textTheme.titleLarge?.copyWith(
               color: theme.colorScheme.onSurface,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 20),
           _buildNumberPicker(
             theme,
             _minutes,
@@ -220,15 +232,15 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
             (value) => setState(() => _minutes = value),
             'min',
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           Text(
             ':',
-            style: theme.textTheme.titleLarge?.copyWith(
+            style: theme.textTheme.headlineSmall?.copyWith(
               color: theme.colorScheme.primary,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           _buildNumberPicker(
             theme,
             _seconds,
@@ -251,16 +263,16 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
     String label,
   ) {
     return Container(
-      width: 80,
-      height: 120,
+      width: 90,
+      height: 130,
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
             color: theme.colorScheme.onSurface.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -269,11 +281,11 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
         minValue: minValue,
         maxValue: maxValue,
         onChanged: onChanged,
-        itemHeight: 40,
-        textStyle: theme.textTheme.titleMedium?.copyWith(
+        itemHeight: 45,
+        textStyle: theme.textTheme.titleLarge?.copyWith(
           color: theme.colorScheme.onSurface,
         ),
-        selectedTextStyle: theme.textTheme.titleMedium?.copyWith(
+        selectedTextStyle: theme.textTheme.titleLarge?.copyWith(
           color: theme.colorScheme.primary,
           fontWeight: FontWeight.bold,
         ),
@@ -297,12 +309,12 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
       children: [
         Text(
           'EMOM Mode',
-          style: theme.textTheme.titleMedium?.copyWith(
+          style: theme.textTheme.titleLarge?.copyWith(
             color: theme.colorScheme.onSurface,
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 20),
         Switch(
           value: _isEmomMode,
           onChanged: (value) => setState(() => _isEmomMode = value),
@@ -331,9 +343,9 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
       style: ElevatedButton.styleFrom(
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.symmetric(vertical: 20),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
         ),
         elevation: 0,
       ),
@@ -341,7 +353,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
         currentSeriesIndex == widget.seriesList.length - 1
             ? 'FINISH'
             : 'NEXT SET',
-        style: theme.textTheme.titleMedium?.copyWith(
+        style: theme.textTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.bold,
         ),
       ),

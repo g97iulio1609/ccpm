@@ -298,6 +298,110 @@ class TrainingProgramController extends ChangeNotifier {
     }
   }
 
+
+//COPY
+Future<void> copyWorkout(int sourceWeekIndex, int workoutIndex, BuildContext context) async {
+  final destinationWeekIndex = await _showCopyWorkoutDialog(context);
+  if (destinationWeekIndex != null) {
+    final sourceWorkout = _program.weeks[sourceWeekIndex].workouts[workoutIndex];
+    final copiedWorkout = _copyWorkout(sourceWorkout);
+
+    if (destinationWeekIndex < _program.weeks.length) {
+      final destinationWeek = _program.weeks[destinationWeekIndex];
+      final existingWorkoutIndex = destinationWeek.workouts.indexWhere(
+        (workout) => workout.order == sourceWorkout.order,
+      );
+
+      if (existingWorkoutIndex != -1) {
+        // Se il workout esiste, aggiungi il workout esistente a trackToDeleteWorkouts
+        final existingWorkout = destinationWeek.workouts[existingWorkoutIndex];
+        if (existingWorkout.id != null) {
+          _program.trackToDeleteWorkouts.add(existingWorkout.id!);
+        }
+        // Sovrascrivi l'allenamento esistente
+        destinationWeek.workouts[existingWorkoutIndex] = copiedWorkout;
+      } else {
+        // Aggiungi il nuovo allenamento
+        destinationWeek.workouts.add(copiedWorkout);
+      }
+    } else {
+      while (_program.weeks.length <= destinationWeekIndex) {
+        addWeek();
+      }
+      _program.weeks[destinationWeekIndex].workouts.add(copiedWorkout);
+    }
+
+    debugPrint('Copied workout from week $sourceWeekIndex to week $destinationWeekIndex');
+    debugPrint('Copied workout: $copiedWorkout');
+
+    notifyListeners();
+  }
+}
+
+Workout _copyWorkout(Workout sourceWorkout) {
+  final copiedExercises = sourceWorkout.exercises.map((exercise) => _copyExercise(exercise)).toList();
+
+  return Workout(
+    id: null, // Lasciamo che Firestore generi l'ID del workout
+    order: sourceWorkout.order,
+    exercises: copiedExercises,
+  );
+}
+
+Exercise _copyExercise(Exercise sourceExercise) {
+  final newExerciseId = UniqueKey().toString();
+  final copiedSeries = sourceExercise.series.map((series) => _copySeries(series)).toList();
+
+  return sourceExercise.copyWith(
+    id: newExerciseId,
+    exerciseId: sourceExercise.exerciseId,
+    series: copiedSeries,
+  );
+}
+
+Series _copySeries(Series sourceSeries) {
+  final newSeriesId = UniqueKey().toString();
+  return sourceSeries.copyWith(
+    serieId: newSeriesId,
+    done: false,
+    reps_done: 0,
+    weight_done: 0.0,
+  );
+}
+
+Future<int?> _showCopyWorkoutDialog(BuildContext context) async {
+  return showDialog<int>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text('Copy Workout'),
+        content: DropdownButtonFormField<int>(
+          value: null,
+          items: List.generate(
+            _program.weeks.length,
+            (index) => DropdownMenuItem(
+              value: index,
+              child: Text('Week ${index + 1}'),
+            ),
+          ),
+          onChanged: (value) {
+            Navigator.pop(context, value);
+          },
+          decoration: const InputDecoration(
+            labelText: 'Destination Week',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
   //PROGRESSION
 
   void updateWeekProgression(int weekIndex, int workoutIndex, int exerciseIndex,

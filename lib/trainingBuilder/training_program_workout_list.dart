@@ -38,9 +38,17 @@ class TrainingProgramWorkoutList extends ConsumerWidget {
           'Workout ${workout.order}',
           style: Theme.of(context).textTheme.titleMedium,
         ),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete),
-          onPressed: () => controller.removeWorkout(weekIndex, workout.order),
+        trailing: PopupMenuButton(
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              child: const Text('Delete'),
+              onTap: () => controller.removeWorkout(weekIndex, workout.order),
+            ),
+            PopupMenuItem(
+              child: const Text('Copy Workout'),
+              onTap: () => controller.copyWorkout(weekIndex, workout.order - 1, context),
+            ),
+          ],
         ),
         children: [
           TrainingProgramExerciseList(
