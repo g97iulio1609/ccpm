@@ -38,21 +38,21 @@ class TrainingProgramController extends ChangeNotifier {
       _mesocycleNumberController;
 
   void _initProgram() {
-    debugPrint('Initializing program...');
+    //debugPrint('Initializing program...');
     _program = TrainingProgram();
     _nameController = TextEditingController();
     _descriptionController = TextEditingController();
     _athleteIdController = TextEditingController();
     _athleteNameController = TextEditingController();
     _mesocycleNumberController = TextEditingController();
-    debugPrint('Program initialized.');
+    //debugPrint('Program initialized.');
   }
 
   Future<void> loadProgram(String? programId) async {
-    debugPrint('Loading program with ID: $programId');
+    //debugPrint('Loading program with ID: $programId');
     _initProgram();
     if (programId == null) {
-      debugPrint('No program ID provided. Initialization only.');
+      //debugPrint('No program ID provided. Initialization only.');
       return;
     }
 
@@ -64,12 +64,12 @@ class TrainingProgramController extends ChangeNotifier {
       _mesocycleNumberController.text = _program.mesocycleNumber.toString();
       _program.hide = _program.hide;
 
-      debugPrint('Program loaded successfully. Name: ${_program.name}, Description: ${_program.description}');
+      //debugPrint('Program loaded successfully. Name: ${_program.name}, Description: ${_program.description}');
 
       _rebuildWeekProgressions();
       notifyListeners();
     } catch (error) {
-      debugPrint('Error loading program: $error');
+      //debugPrint('Error loading program: $error');
       // Handle error
     }
   }
@@ -285,9 +285,9 @@ Future<void> addSeries(int weekIndex, int workoutIndex, int exerciseIndex,
     // Aggiungi la serie all'elenco delle serie da eliminare
     if (series.serieId != null) {
       _program.trackToDeleteSeries.add(series.serieId!);
-      debugPrint('Aggiunta la serie ${series.serieId} alla lista trackToDeleteSeries');
+      //debugPrint('Aggiunta la serie ${series.serieId} alla lista trackToDeleteSeries');
     } else {
-      debugPrint('La serie non ha un ID valido');
+      //debugPrint('La serie non ha un ID valido');
     }
 
     exercise.series.removeAt(groupIndex * 1 + seriesIndex);
@@ -318,8 +318,8 @@ Future<void> copyWeek(int sourceWeekIndex, BuildContext context) async {
       _program.weeks.add(copiedWeek);
     }
 
-    debugPrint('Copied week from index $sourceWeekIndex to index $destinationWeekIndex');
-    debugPrint('Copied week: $copiedWeek');
+    //debugPrint('Copied week from index $sourceWeekIndex to index $destinationWeekIndex');
+    //debugPrint('Copied week: $copiedWeek');
 
     notifyListeners();
   }
@@ -399,8 +399,8 @@ Future<void> copyWorkout(int sourceWeekIndex, int workoutIndex, BuildContext con
       _program.weeks[destinationWeekIndex].workouts.add(copiedWorkout);
     }
 
-    debugPrint('Copied workout from week $sourceWeekIndex to week $destinationWeekIndex');
-    debugPrint('Copied workout: $copiedWorkout');
+    //debugPrint('Copied workout from week $sourceWeekIndex to week $destinationWeekIndex');
+    //debugPrint('Copied workout: $copiedWorkout');
 
     notifyListeners();
   }
@@ -509,25 +509,25 @@ Future<int?> _showCopyWorkoutDialog(BuildContext context) async {
   }
 
 Future<void> applyWeekProgressions(int exerciseIndex, List<WeekProgression> weekProgressions) async {
-  debugPrint('Applying week progressions for exercise index: $exerciseIndex');
-  debugPrint('Week progressions: $weekProgressions');
+  //debugPrint('Applying week progressions for exercise index: $exerciseIndex');
+  //debugPrint('Week progressions: $weekProgressions');
 
   for (int weekIndex = 0; weekIndex < _program.weeks.length; weekIndex++) {
     final week = _program.weeks[weekIndex];
-    debugPrint('Processing week: $weekIndex');
+    //debugPrint('Processing week: $weekIndex');
 
     for (final workout in week.workouts) {
-      debugPrint('Processing workout: ${workout.order}');
+      //debugPrint('Processing workout: ${workout.order}');
 
       for (int currentExerciseIndex = 0; currentExerciseIndex < workout.exercises.length; currentExerciseIndex++) {
         final exercise = workout.exercises[currentExerciseIndex];
-        debugPrint('Processing exercise: ${exercise.name} (index: $currentExerciseIndex)');
+        //debugPrint('Processing exercise: ${exercise.name} (index: $currentExerciseIndex)');
 
         if (currentExerciseIndex == exerciseIndex) {
           WeekProgression progression;
           if (weekIndex < weekProgressions.length) {
             progression = weekProgressions[weekIndex];
-            debugPrint('Using provided progression for week $weekIndex: $progression');
+            //debugPrint('Using provided progression for week $weekIndex: $progression');
           } else {
             final previousWeekProgression = weekProgressions.last;
             progression = WeekProgression(
@@ -538,7 +538,7 @@ Future<void> applyWeekProgressions(int exerciseIndex, List<WeekProgression> week
               rpe: previousWeekProgression.rpe,
               weight: previousWeekProgression.weight,
             );
-            debugPrint('Using previous week progression for week $weekIndex: $progression');
+            //debugPrint('Using previous week progression for week $weekIndex: $progression');
           }
 
           await _updateOrCreateSeries(exercise, progression, weekIndex);
@@ -583,8 +583,8 @@ Future<void> applyWeekProgressions(int exerciseIndex, List<WeekProgression> week
         .weekProgressions[weekIndex] = progression;
   }
 Future<void> _updateOrCreateSeries(Exercise exercise, WeekProgression progression, int weekIndex) async {
-  debugPrint('Updating or creating series for exercise: ${exercise.name}, week: $weekIndex');
-  debugPrint('Progression: $progression');
+  //debugPrint('Updating or creating series for exercise: ${exercise.name}, week: $weekIndex');
+  //debugPrint('Progression: $progression');
 
   final newSeriesCount = progression.sets;
 
@@ -607,14 +607,14 @@ Future<void> _updateOrCreateSeries(Exercise exercise, WeekProgression progressio
       weight_done: 0.0,
     );
     newSeries.add(series);
-    debugPrint('Added new series: $series');
-    debugPrint('Reps: ${series.reps}, Weight: ${series.weight}, Sets: ${series.sets}, Intensity: ${series.intensity}, RPE: ${series.rpe}');
+    //debugPrint('Added new series: $series');
+    //debugPrint('Reps: ${series.reps}, Weight: ${series.weight}, Sets: ${series.sets}, Intensity: ${series.intensity}, RPE: ${series.rpe}');
   }
 
   // Aggiungi le nuove serie all'elenco delle serie dell'esercizio
   exercise.series.addAll(newSeries);
 
-  debugPrint('Updated series for exercise ${exercise.name}: ${exercise.series}');
+  //debugPrint('Updated series for exercise ${exercise.name}: ${exercise.series}');
   notifyListeners();
 }
 

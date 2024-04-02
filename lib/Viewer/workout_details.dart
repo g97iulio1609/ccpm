@@ -80,8 +80,8 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
             });
           }
 
-          debugPrint('Exercise: ${exercise['name']}');
-          debugPrint('Series: $tempSeries');
+          //debugPrint('Exercise: ${exercise['name']}');
+          //debugPrint('Series: $tempSeries');
         });
 
         subscriptions.add(seriesSubscription);
@@ -93,7 +93,7 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
         });
       }
 
-      debugPrint('Exercises: $exercises');
+      //debugPrint('Exercises: $exercises');
     });
 
     subscriptions.add(exercisesSubscription);
