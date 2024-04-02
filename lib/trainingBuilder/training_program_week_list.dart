@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'training_program_controller.dart';
 import 'training_program_workout_list.dart';
+import 'reorder_dialog.dart';
 
 class TrainingProgramWeekList extends ConsumerWidget {
   final TrainingProgramController controller;
@@ -43,6 +44,10 @@ class TrainingProgramWeekList extends ConsumerWidget {
               child: const Text('Delete Week'),
               onTap: () => controller.removeWeek(index),
             ),
+            PopupMenuItem(
+              child: const Text('Reorder Weeks'),
+              onTap: () => _showReorderWeeksDialog(context),
+            ),
           ],
         ),
         children: [
@@ -58,6 +63,17 @@ class TrainingProgramWeekList extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showReorderWeeksDialog(BuildContext context) {
+    final weekNames = controller.program.weeks.map((week) => 'Week ${week.number}').toList();
+    showDialog(
+      context: context,
+      builder: (context) => ReorderDialog(
+        items: weekNames,
+        onReorder: controller.reorderWeeks,
       ),
     );
   }

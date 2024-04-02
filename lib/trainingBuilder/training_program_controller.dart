@@ -470,6 +470,9 @@ Future<int?> _showCopyWorkoutDialog(BuildContext context) async {
   );
 }
 
+//REORDER
+
+
   //PROGRESSION
 
   void updateWeekProgression(int weekIndex, int workoutIndex, int exerciseIndex,
@@ -702,61 +705,54 @@ Future<void> updateExerciseProgressions(Exercise exercise, List<WeekProgression>
 }
 
   //REORDER FUNCTIONS
-  void reorderWeeks(int oldIndex, int newIndex) {
-    if (oldIndex < newIndex) {
-      newIndex -= 1;
-    }
-    final week = _program.weeks.removeAt(oldIndex);
-    _program.weeks.insert(newIndex, week);
-    _updateWeekNumbers(newIndex);
-    notifyListeners();
+void reorderWeeks(int oldIndex, int newIndex) {
+  if (oldIndex < newIndex) {
+    newIndex -= 1;
   }
+  final week = _program.weeks.removeAt(oldIndex);
+  _program.weeks.insert(newIndex, week);
+  _updateWeekNumbers(newIndex);
+  notifyListeners();
+}
 
-  void _updateWeekNumbers(int startIndex) {
-    for (int i = startIndex; i < _program.weeks.length; i++) {
-      _program.weeks[i].number = i + 1;
-    }
+void _updateWeekNumbers(int startIndex) {
+  for (int i = startIndex; i < _program.weeks.length; i++) {
+    _program.weeks[i].number = i + 1;
   }
+}
 
-  void reorderWorkouts(int weekIndex, int oldIndex, int newIndex) {
-    if (oldIndex < newIndex) {
-      newIndex -= 1;
-    }
-    final workout = _program.weeks[weekIndex].workouts.removeAt(oldIndex);
-    _program.weeks[weekIndex].workouts.insert(newIndex, workout);
-    _updateWorkoutOrders(weekIndex, newIndex);
-    notifyListeners();
-  }
 
-  void _updateWorkoutOrders(int weekIndex, int startIndex) {
-    for (int i = startIndex;
-        i < _program.weeks[weekIndex].workouts.length;
-        i++) {
-      _program.weeks[weekIndex].workouts[i].order = i + 1;
-    }
+ void reorderWorkouts(int weekIndex, int oldIndex, int newIndex) {
+  if (oldIndex < newIndex) {
+    newIndex -= 1;
   }
+  final workout = _program.weeks[weekIndex].workouts.removeAt(oldIndex);
+  _program.weeks[weekIndex].workouts.insert(newIndex, workout);
+  _updateWorkoutOrders(weekIndex, newIndex);
+  notifyListeners();
+}
 
-  void reorderExercises(
-      int weekIndex, int workoutIndex, int oldIndex, int newIndex) {
-    if (oldIndex < newIndex) {
-      newIndex -= 1;
-    }
-    final exercise = _program.weeks[weekIndex].workouts[workoutIndex].exercises
-        .removeAt(oldIndex);
-    _program.weeks[weekIndex].workouts[workoutIndex].exercises
-        .insert(newIndex, exercise);
-    _updateExerciseOrders(weekIndex, workoutIndex, newIndex);
-    notifyListeners();
+void _updateWorkoutOrders(int weekIndex, int startIndex) {
+  for (int i = startIndex; i < _program.weeks[weekIndex].workouts.length; i++) {
+    _program.weeks[weekIndex].workouts[i].order = i + 1;
   }
+}
 
-  void _updateExerciseOrders(int weekIndex, int workoutIndex, int startIndex) {
-    for (int i = startIndex;
-        i < _program.weeks[weekIndex].workouts[workoutIndex].exercises.length;
-        i++) {
-      _program.weeks[weekIndex].workouts[workoutIndex].exercises[i].order =
-          i + 1;
-    }
+ void reorderExercises(int weekIndex, int workoutIndex, int oldIndex, int newIndex) {
+  if (oldIndex < newIndex) {
+    newIndex -= 1;
   }
+  final exercise = _program.weeks[weekIndex].workouts[workoutIndex].exercises.removeAt(oldIndex);
+  _program.weeks[weekIndex].workouts[workoutIndex].exercises.insert(newIndex, exercise);
+  _updateExerciseOrders(weekIndex, workoutIndex, newIndex);
+  notifyListeners();
+}
+
+void _updateExerciseOrders(int weekIndex, int workoutIndex, int startIndex) {
+  for (int i = startIndex; i < _program.weeks[weekIndex].workouts[workoutIndex].exercises.length; i++) {
+    _program.weeks[weekIndex].workouts[workoutIndex].exercises[i].order = i + 1;
+  }
+}
 
   void reorderSeries(int weekIndex, int workoutIndex, int exerciseIndex,
       int oldIndex, int newIndex) {

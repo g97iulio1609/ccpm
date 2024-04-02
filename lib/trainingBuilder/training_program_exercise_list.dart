@@ -5,6 +5,7 @@ import 'training_model.dart';
 import 'training_program_controller.dart';
 import 'training_program_series_list.dart';
 import '../users_services.dart';
+import 'reorder_dialog.dart';
 
 class TrainingProgramExerciseList extends ConsumerWidget {
   final TrainingProgramController controller;
@@ -68,6 +69,10 @@ class TrainingProgramExerciseList extends ConsumerWidget {
                 PopupMenuItem(
                   child: const Text('Update Max RM'),
                   onTap: () => _addOrUpdateMaxRM(exercise, context, usersService, athleteId, dateFormat),
+                ),
+                PopupMenuItem(
+                  child: const Text('Reorder Exercises'),
+                  onTap: () => _showReorderExercisesDialog(context, weekIndex, workoutIndex),
                 ),
               ],
             ),
@@ -156,6 +161,17 @@ class TrainingProgramExerciseList extends ConsumerWidget {
           ],
         );
       },
+    );
+  }
+
+  void _showReorderExercisesDialog(BuildContext context, int weekIndex, int workoutIndex) {
+    final exerciseNames = controller.program.weeks[weekIndex].workouts[workoutIndex].exercises.map((exercise) => exercise.name).toList();
+    showDialog(
+      context: context,
+      builder: (context) => ReorderDialog(
+        items: exerciseNames,
+        onReorder: (oldIndex, newIndex) => controller.reorderExercises(weekIndex, workoutIndex, oldIndex, newIndex),
+      ),
     );
   }
 }

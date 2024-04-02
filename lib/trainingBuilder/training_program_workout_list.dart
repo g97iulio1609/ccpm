@@ -3,6 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'training_model.dart';
 import 'training_program_controller.dart';
 import 'training_program_exercise_list.dart';
+import 'reorder_dialog.dart';
 
 class TrainingProgramWorkoutList extends ConsumerWidget {
   final TrainingProgramController controller;
@@ -48,6 +49,10 @@ class TrainingProgramWorkoutList extends ConsumerWidget {
               child: const Text('Copy Workout'),
               onTap: () => controller.copyWorkout(weekIndex, workout.order - 1, context),
             ),
+            PopupMenuItem(
+              child: const Text('Reorder Workouts'),
+              onTap: () => _showReorderWorkoutsDialog(context, weekIndex),
+            ),
           ],
         ),
         children: [
@@ -64,6 +69,17 @@ class TrainingProgramWorkoutList extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showReorderWorkoutsDialog(BuildContext context, int weekIndex) {
+    final workoutNames = controller.program.weeks[weekIndex].workouts.map((workout) => 'Workout ${workout.order}').toList();
+    showDialog(
+      context: context,
+      builder: (context) => ReorderDialog(
+        items: workoutNames,
+        onReorder: (oldIndex, newIndex) => controller.reorderWorkouts(weekIndex, oldIndex, newIndex),
       ),
     );
   }
