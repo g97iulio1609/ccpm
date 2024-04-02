@@ -33,9 +33,17 @@ class TrainingProgramWeekList extends ConsumerWidget {
           'Week ${week.number}',
           style: Theme.of(context).textTheme.titleLarge,
         ),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete),
-          onPressed: () => controller.removeWeek(index),
+        trailing: PopupMenuButton(
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              child: const Text('Copy Week'),
+              onTap: () => controller.copyWeek(index, context),
+            ),
+            PopupMenuItem(
+              child: const Text('Delete Week'),
+              onTap: () => controller.removeWeek(index),
+            ),
+          ],
         ),
         children: [
           TrainingProgramWorkoutList(
