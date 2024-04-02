@@ -256,7 +256,7 @@ void _saveSeries(
     weight_done: currentSeries?.weight_done ?? 0.0,
   );
 
-  if (newSeries.serieId.isEmpty) {
+  if (newSeries.serieId!.isEmpty) {
     newSeries.serieId = '${DateTime.now().millisecondsSinceEpoch}_0';
   }
 

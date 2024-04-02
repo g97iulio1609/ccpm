@@ -118,17 +118,17 @@ class TrainingProgramController extends ChangeNotifier {
     workout.exercises.forEach(_removeExerciseAndRelatedData);
   }
 
-  Future<void> addExercise(
-      int weekIndex, int workoutIndex, BuildContext context) async {
-    final exercise = await _showExerciseDialog(context, null);
-    if (exercise != null) {
-      exercise.id = UniqueKey().toString();
-      exercise.order =
-          _program.weeks[weekIndex].workouts[workoutIndex].exercises.length + 1;
-      _program.weeks[weekIndex].workouts[workoutIndex].exercises.add(exercise);
-      notifyListeners();
-    }
+Future<void> addExercise(
+    int weekIndex, int workoutIndex, BuildContext context) async {
+  final exercise = await _showExerciseDialog(context, null);
+  if (exercise != null) {
+    exercise.id = null; // Lasciamo che Firestore generi l'ID dell'esercizio
+    exercise.order =
+        _program.weeks[weekIndex].workouts[workoutIndex].exercises.length + 1;
+    _program.weeks[weekIndex].workouts[workoutIndex].exercises.add(exercise);
+    notifyListeners();
   }
+}
 
   Future<Exercise?> _showExerciseDialog(
       BuildContext context, Exercise? exercise) async {
@@ -221,16 +221,19 @@ class TrainingProgramController extends ChangeNotifier {
     }
   }
 
-  Future<void> addSeries(int weekIndex, int workoutIndex, int exerciseIndex,
-      BuildContext context) async {
-    final exercise = _program
-        .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
-    final seriesList = await _showSeriesDialog(context, exercise, weekIndex);
-    if (seriesList != null) {
-      exercise.series.addAll(seriesList);
-      notifyListeners();
+Future<void> addSeries(int weekIndex, int workoutIndex, int exerciseIndex,
+    BuildContext context) async {
+  final exercise = _program
+      .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+  final seriesList = await _showSeriesDialog(context, exercise, weekIndex);
+  if (seriesList != null) {
+    for (final series in seriesList) {
+      series.serieId = null; // Lasciamo che Firestore generi l'ID della serie
     }
+    exercise.series.addAll(seriesList);
+    notifyListeners();
   }
+}
 
   Future<List<Series>?> _showSeriesDialog(BuildContext context, Exercise exercise, int weekIndex, [Series? currentSeries]) async {
     return await showDialog<List<Series>>(

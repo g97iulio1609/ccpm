@@ -312,7 +312,7 @@ class WeekProgression {
 
 class Series {
   String? id;
-  String serieId;
+  String? serieId;
   int reps;
   int sets;
   String intensity;
