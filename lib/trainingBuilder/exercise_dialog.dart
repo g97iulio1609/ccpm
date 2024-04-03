@@ -1,6 +1,6 @@
 import 'package:alphanessone/exerciseManager/exercise_model.dart';
 import 'package:alphanessone/users_services.dart';
-import 'package:alphanessone/trainingBuilder/set_progression_screen.dart';
+import 'package:alphanessone/trainingBuilder/set_progression.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../exerciseManager/exercises_services.dart';

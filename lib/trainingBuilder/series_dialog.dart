@@ -282,22 +282,6 @@ void _saveSeries(
     }
   }
 
-  final updatedWeekProgression = WeekProgression(
-    weekNumber: weekIndex + 1,
-    reps: reps,
-    sets: sets,
-    intensity: intensity,
-    rpe: rpe,
-    weight: weight,
-  );
-
-  final exerciseIndex = exercise.order - 1;
-  if (exerciseIndex >= 0 && exerciseIndex < controller.program.weeks[weekIndex].workouts.length) {
-    const workoutIndex = 0;
-    if (exerciseIndex >= 0 && exerciseIndex < controller.program.weeks[weekIndex].workouts[workoutIndex].exercises.length) {
-      controller.updateWeekProgression(weekIndex, workoutIndex, exerciseIndex, updatedWeekProgression);
-    }
-  }
-
   Navigator.pop(context, seriesList);
-}}
+}
+}
