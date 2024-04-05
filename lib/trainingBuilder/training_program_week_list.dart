@@ -24,9 +24,6 @@ class TrainingProgramWeekList extends ConsumerWidget {
     final weeks = program.weeks;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Program Weeks'),
-      ),
       body: ListView.builder(
         itemCount: weeks.length,
         itemBuilder: (context, index) {
@@ -46,7 +43,7 @@ class TrainingProgramWeekList extends ConsumerWidget {
   Widget _buildWeekCard(BuildContext context, Week week, int index) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: ExpansionTile(
+      child: ListTile(
         title: Text(
           'Week ${week.number}',
           style: Theme.of(context).textTheme.titleLarge,
@@ -67,20 +64,17 @@ class TrainingProgramWeekList extends ConsumerWidget {
             ),
           ],
         ),
-        children: [
-          ListTile(
-            title: Text('Week ${week.number}'),
-            onTap: () {
-              context.go('/programs_screen/user_programs/$userId/training_program/$programId/week/$index');
-            },
-          ),
-        ],
+        onTap: () {
+          context.go(
+              '/programs_screen/user_programs/$userId/training_program/$programId/week/$index');
+        },
       ),
     );
   }
 
   void _showReorderWeeksDialog(BuildContext context) {
-    final weekNames = controller.program.weeks.map((week) => 'Week ${week.number}').toList();
+    final weekNames =
+        controller.program.weeks.map((week) => 'Week ${week.number}').toList();
     showDialog(
       context: context,
       builder: (context) => ReorderDialog(
