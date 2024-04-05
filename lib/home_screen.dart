@@ -86,14 +86,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return 'Programma di Allenamento';
       case '/users_dashboard':
         return 'Gestione Utenti';
-      case '/week_details':
-        return 'Dettagli Settimana';
-      case '/workout_details':
-        return 'Dettagli Allenamento';
-      case '/exercise_details':
-        return 'Dettagli Esercizio';
-      case '/timer':
-        return 'Timer';
       case '/volume_dashboard':
         return 'Volume Allenamento';
       case '/user_programs':
@@ -102,8 +94,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         break;
     }
 
-    final pattern = RegExp(r'/programs_screen/user_programs/\w+/training_program/\w+/week/\d+$');
-    if (pattern.hasMatch(currentPath)) {
+    final pattern1 = RegExp(r'/programs_screen/user_programs/\w+/training_viewer/\w+/week_details/\w+$');
+    if (pattern1.hasMatch(currentPath)) {
+      return 'Dettagli Settimana';
+    }
+
+    final pattern2 = RegExp(r'/programs_screen/user_programs/\w+/training_viewer/\w+/week_details/\w+/workout_details/\w+$');
+    if (pattern2.hasMatch(currentPath)) {
+      return 'Dettagli Allenamento';
+    }
+
+    final pattern3 = RegExp(r'/programs_screen/user_programs/\w+/training_viewer/\w+/week_details/\w+/workout_details/\w+/exercise_details/\w+$');
+    if (pattern3.hasMatch(currentPath)) {
+      return 'Dettagli Esercizio';
+    }
+
+    final pattern4 = RegExp(r'/programs_screen/user_programs/\w+/training_viewer/\w+/week_details/\w+/workout_details/\w+/exercise_details/\w+/timer$');
+    if (pattern4.hasMatch(currentPath)) {
+      return 'Timer';
+    }
+
+    final weekPattern = RegExp(r'/programs_screen/user_programs/\w+/training_program/\w+/week/\d+$');
+    if (weekPattern.hasMatch(currentPath)) {
       final weekIndex = int.parse(currentPath.split('/').last);
       return 'Settimana ${weekIndex + 1}';
     }
@@ -120,24 +132,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final isTrainingProgramWeekRoute = GoRouterState.of(context).uri.toString().contains('/training_program/') &&
         GoRouterState.of(context).uri.toString().contains('/week/');
     String? programId;
+    String? userId;
 
     if (isTrainingProgramWeekRoute) {
       final uriParts = GoRouterState.of(context).uri.toString().split('/');
       programId = uriParts[uriParts.length - 3];
+      userId = uriParts[uriParts.length - 7];
     }
+
+    final isBackButtonVisible = GoRouterState.of(context).uri.toString().contains('/week_details/') ||
+        GoRouterState.of(context).uri.toString().contains('/workout_details/') ||
+        GoRouterState.of(context).uri.toString().contains('/exercise_details/') ||
+        GoRouterState.of(context).uri.toString().contains('/timer') ||
+        GoRouterState.of(context).uri.toString().contains('/training_program/') ||
+        isTrainingProgramWeekRoute;
 
     return Scaffold(
       appBar: user != null
           ? AppBar(
               title: Text(_getTitleForRoute(context)),
-              leading: isTrainingProgramWeekRoute
+              leading: isBackButtonVisible
                   ? IconButton(
                       icon: const Icon(Icons.arrow_back),
                       onPressed: () {
-                        if (programId != null) {
-                          context.push('/programs_screen/user_programs/${FirebaseAuth.instance.currentUser?.uid}/training_program/$programId');
+                        if (isTrainingProgramWeekRoute && userId != null && programId != null) {
+                          context.go('/programs_screen/user_programs/$userId/training_program/$programId');
                         } else {
-                          // Gestisci il caso in cui programId è null
+                          context.pop();
                         }
                       },
                     )
@@ -338,4 +359,4 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       },
     );
   }
-} 
+}
