@@ -27,14 +27,9 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     final athleteId = controller.athleteIdController.text;
     final dateFormat = DateFormat('yyyy-MM-dd');
 
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: exercises.length,
-      itemBuilder: (context, index) {
-        final exercise = exercises[index];
-        return _buildExerciseCard(context, exercise, usersService, athleteId, dateFormat);
-      },
+    return ResponsiveGridView(
+      items: exercises,
+      itemBuilder: (context, index, exercise) => _buildExerciseCard(context, exercise, usersService, athleteId, dateFormat),
     );
   }
 
@@ -172,6 +167,47 @@ class TrainingProgramExerciseList extends ConsumerWidget {
         items: exerciseNames,
         onReorder: (oldIndex, newIndex) => controller.reorderExercises(weekIndex, workoutIndex, oldIndex, newIndex),
       ),
+    );
+  }
+}
+
+class ResponsiveGridView<T> extends StatelessWidget {
+  final List<T> items;
+  final Widget Function(BuildContext context, int index, T item) itemBuilder;
+
+  const ResponsiveGridView({
+    required this.items,
+    required this.itemBuilder,
+    super.key,
+  });
+
+  int _getCrossAxisCount(double width) {
+    if (width > 1200) {
+      return 3;
+    } else if (width > 800) {
+      return 3;
+    } else if (width > 600) {
+      return 2;
+    } else {
+      return 1;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    return GridView.builder(
+      shrinkWrap: true,
+     // physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: _getCrossAxisCount(screenWidth),
+        childAspectRatio: 3 / 2,
+        crossAxisSpacing: 20,
+        mainAxisSpacing: 20,
+      ),
+      itemCount: items.length,
+      itemBuilder: (context, index) => itemBuilder(context, index, items[index]),
     );
   }
 }

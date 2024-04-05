@@ -1,79 +1,47 @@
-import 'package:alphanessone/trainingBuilder/training_model.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'training_program_controller.dart';
-import 'training_program_workout_list.dart';
-import 'reorder_dialog.dart';
+import 'training_program_state_provider.dart';
 
-class TrainingProgramWeekList extends ConsumerWidget {
+class TrainingProgramWeekList extends HookConsumerWidget {
+  final String programId;
+  final String userId;
   final TrainingProgramController controller;
 
-  const TrainingProgramWeekList({required this.controller, super.key});
+  const TrainingProgramWeekList({
+    super.key,
+    required this.programId,
+    required this.userId,
+    required this.controller,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final program = controller.program;
-    final weeks = program.weeks;
+    final program = ref.watch(trainingProgramStateProvider);
 
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: weeks.length,
-      itemBuilder: (context, index) {
-        final week = weeks[index];
-        return _buildWeekCard(context, week, index);
-      },
-    );
-  }
-
-  Widget _buildWeekCard(BuildContext context, Week week, int index) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: ExpansionTile(
-        title: Text(
-          'Week ${week.number}',
-          style: Theme.of(context).textTheme.titleLarge,
+    return Scaffold(
+      appBar: AppBar(title: const Text('Select Week')),
+      body: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 400),
+        child: ListView.builder(
+          itemCount: program.weeks.length,
+          itemBuilder: (context, index) {
+            final week = program.weeks[index];
+            debugPrint('numero di settimane ${program.weeks.length}');
+            return ListTile(
+              title: Text('Week ${week.number}'),
+              onTap: () {
+                context.go('/programs_screen/user_programs/$userId/training_program/$programId/week/$index');
+              },
+            );
+          },
         ),
-        trailing: PopupMenuButton(
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              child: const Text('Copy Week'),
-              onTap: () => controller.copyWeek(index, context),
-            ),
-            PopupMenuItem(
-              child: const Text('Delete Week'),
-              onTap: () => controller.removeWeek(index),
-            ),
-            PopupMenuItem(
-              child: const Text('Reorder Weeks'),
-              onTap: () => _showReorderWeeksDialog(context),
-            ),
-          ],
-        ),
-        children: [
-          TrainingProgramWorkoutList(
-            controller: controller,
-            weekIndex: index,
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: ElevatedButton(
-              onPressed: () => controller.addWorkout(index),
-              child: const Text('Add New Workout'),
-            ),
-          ),
-        ],
       ),
-    );
-  }
-
-  void _showReorderWeeksDialog(BuildContext context) {
-    final weekNames = controller.program.weeks.map((week) => 'Week ${week.number}').toList();
-    showDialog(
-      context: context,
-      builder: (context) => ReorderDialog(
-        items: weekNames,
-        onReorder: controller.reorderWeeks,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => controller.addWeek(),
+        child: const Icon(Icons.add),
       ),
     );
   }

@@ -1,3 +1,4 @@
+import 'package:alphanessone/trainingBuilder/training_program_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -82,26 +83,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       case '/user_profile':
         return 'Profilo Utente';
       case '/training_program':
-        return 'TrainingProgram';
+        return 'Programma di Allenamento';
       case '/users_dashboard':
         return 'Gestione Utenti';
-      case '/training_viewer':
-        return 'Settimane';
       case '/week_details':
-        return 'Allenamenti';
+        return 'Dettagli Settimana';
       case '/workout_details':
-        return 'Allenamento';
+        return 'Dettagli Allenamento';
       case '/exercise_details':
-        return 'Esercizio';
+        return 'Dettagli Esercizio';
       case '/timer':
-        return 'Serie';
+        return 'Timer';
       case '/volume_dashboard':
         return 'Volume Allenamento';
       case '/user_programs':
         return 'Programmi Utente';
       default:
-        return 'Alphaness One';
+        break;
     }
+
+    final pattern = RegExp(r'/programs_screen/user_programs/\w+/training_program/\w+/week/\d+$');
+    if (pattern.hasMatch(currentPath)) {
+      final weekIndex = int.parse(currentPath.split('/').last);
+      return 'Settimana ${weekIndex + 1}';
+    }
+
+    return 'Alphaness One';
   }
 
   @override
@@ -109,14 +116,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     var isLargeScreen = MediaQuery.of(context).size.width > 600;
     final userRole = ref.watch(userRoleProvider);
     final user = FirebaseAuth.instance.currentUser;
+    final controller = ref.watch(trainingProgramControllerProvider);
+    final isTrainingProgramWeekRoute = GoRouterState.of(context).uri.toString().contains('/training_program/') &&
+        GoRouterState.of(context).uri.toString().contains('/week/');
+    String? programId;
+
+    if (isTrainingProgramWeekRoute) {
+      final uriParts = GoRouterState.of(context).uri.toString().split('/');
+      programId = uriParts[uriParts.length - 3];
+    }
 
     return Scaffold(
       appBar: user != null
           ? AppBar(
               title: Text(_getTitleForRoute(context)),
+              leading: isTrainingProgramWeekRoute
+                  ? IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: () {
+                        if (programId != null) {
+                          context.go('/programs_screen/user_programs/${FirebaseAuth.instance.currentUser?.uid}/training_program/$programId');
+                        } else {
+                          // Gestisci il caso in cui programId è null
+                        }
+                      },
+                    )
+                  : null,
               actions: [
-                if (userRole == 'admin' &&
-                    GoRouterState.of(context).uri.toString() == '/users_dashboard')
+                if (userRole == 'admin' && GoRouterState.of(context).uri.toString() == '/users_dashboard')
                   IconButton(
                     onPressed: () => _showAddUserDialog(context),
                     icon: const Icon(Icons.person_add),
@@ -126,7 +153,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           : null,
       drawer: user != null && !isLargeScreen
           ? Drawer(
-              child: _buildDrawer(isLargeScreen, context, userRole),
+              child: _buildDrawer(isLargeScreen, context, userRole, controller),
             )
           : null,
       body: Row(
@@ -134,7 +161,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           if (user != null && isLargeScreen)
             SizedBox(
               width: 300,
-              child: _buildDrawer(isLargeScreen, context, userRole),
+              child: _buildDrawer(isLargeScreen, context, userRole, controller),
             ),
           Expanded(
             child: widget.child,
@@ -144,9 +171,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildDrawer(bool isLargeScreen, BuildContext context, String userRole) {
-    final List<String> menuItems =
-        userRole == 'admin' ? _getAdminMenuItems() : _getClientMenuItems();
+  Widget _buildDrawer(bool isLargeScreen, BuildContext context, String userRole, TrainingProgramController controller) {
+    final List<String> menuItems = userRole == 'admin' ? _getAdminMenuItems() : _getClientMenuItems();
+    final isTrainingProgramRoute = GoRouterState.of(context).uri.toString().contains('/training_program/');
 
     return Column(
       children: [
@@ -167,12 +194,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         Expanded(
           child: ListView.builder(
             padding: EdgeInsets.zero,
-            itemCount: menuItems.length,
+            itemCount: menuItems.length + (isTrainingProgramRoute ? controller.program.weeks.length : 0),
             itemBuilder: (context, index) {
-              return ListTile(
-                title: Text(menuItems[index]),
-                onTap: () => _navigateTo(menuItems[index], isLargeScreen),
-              );
+              if (index < menuItems.length) {
+                return ListTile(
+                  title: Text(menuItems[index]),
+                  onTap: () => _navigateTo(menuItems[index], isLargeScreen),
+                );
+              } else {
+                final weekIndex = index - menuItems.length;
+                final week = controller.program.weeks[weekIndex];
+                return ListTile(
+                  title: Text('Week ${week.number}'),
+                  onTap: () {
+                    context.go('/programs_screen/user_programs/${FirebaseAuth.instance.currentUser?.uid}/training_program/${controller.program.id}/week/$weekIndex/workout_list');
+                  },
+                );
+              }
             },
           ),
         ),

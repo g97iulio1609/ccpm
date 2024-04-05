@@ -6,6 +6,7 @@ import 'training_model.dart';
 import 'training_services.dart';
 import '../users_services.dart';
 import 'utility_functions.dart';
+import 'training_program_state_provider.dart';
 
 final firestoreServiceProvider =
     Provider<FirestoreService>((ref) => FirestoreService());
@@ -13,14 +14,18 @@ final firestoreServiceProvider =
 final trainingProgramControllerProvider = ChangeNotifierProvider((ref) {
   final service = ref.watch(firestoreServiceProvider);
   final usersService = ref.watch(usersServiceProvider);
-  return TrainingProgramController(service, usersService);
+  final programStateNotifier = ref.watch(trainingProgramStateProvider.notifier);
+  return TrainingProgramController(service, usersService, programStateNotifier);
 });
 
 class TrainingProgramController extends ChangeNotifier {
   final FirestoreService _service;
   final UsersService _usersService;
+  final TrainingProgramStateNotifier _programStateNotifier;
 
-  TrainingProgramController(this._service, this._usersService);
+TrainingProgramController(this._service, this._usersService, this._programStateNotifier) {
+  _initProgram();
+}
 
   late TrainingProgram _program;
   late TextEditingController _nameController;
@@ -29,7 +34,7 @@ class TrainingProgramController extends ChangeNotifier {
   late TextEditingController _athleteNameController;
   late TextEditingController _mesocycleNumberController;
 
-  TrainingProgram get program => _program;
+TrainingProgram get program => _programStateNotifier.state;
   TextEditingController get nameController => _nameController;
   TextEditingController get descriptionController => _descriptionController;
   TextEditingController get athleteIdController => _athleteIdController;
@@ -38,46 +43,71 @@ class TrainingProgramController extends ChangeNotifier {
       _mesocycleNumberController;
 
   void _initProgram() {
-    //debugPrint('Initializing program...');
-    _program = TrainingProgram();
-    _nameController = TextEditingController();
-    _descriptionController = TextEditingController();
-    _athleteIdController = TextEditingController();
+    _program = _programStateNotifier.state;
+    _nameController = TextEditingController(text: _program.name);
+    _descriptionController = TextEditingController(text: _program.description);
+    _athleteIdController = TextEditingController(text: _program.athleteId);
     _athleteNameController = TextEditingController();
-    _mesocycleNumberController = TextEditingController();
-    //debugPrint('Program initialized.');
+    _mesocycleNumberController = TextEditingController(text: _program.mesocycleNumber.toString());
   }
 
-  Future<void> loadProgram(String? programId) async {
-    //debugPrint('Loading program with ID: $programId');
+ Future<void> loadProgram(String? programId) async {
+  if (programId == null) {
     _initProgram();
-    if (programId == null) {
-      //debugPrint('No program ID provided. Initialization only.');
-      return;
-    }
-
-    try {
-      _program = await _service.fetchTrainingProgram(programId);
-      _nameController.text = _program.name;
-      _descriptionController.text = _program.description;
-      _athleteIdController.text = _program.athleteId;
-      _mesocycleNumberController.text = _program.mesocycleNumber.toString();
-      _program.hide = _program.hide;
-
-      //debugPrint('Program loaded successfully. Name: ${_program.name}, Description: ${_program.description}');
-
-      notifyListeners();
-    } catch (error) {
-      //debugPrint('Error loading program: $error');
-      // Handle error
-    }
+    return;
   }
 
-  void addWeek() {
-    final newWeek = Week(number: _program.weeks.length + 1, workouts: []);
-    _program.weeks.add(newWeek);
+  try {
+    _program = await _service.fetchTrainingProgram(programId);
+    _updateProgram();
+  } catch (error) {
+    // Handle error
+  }
+}
+  void _updateProgram() {
+    _nameController.text = _program.name;
+    _descriptionController.text = _program.description;
+    _athleteIdController.text = _program.athleteId;
+    _mesocycleNumberController.text = _program.mesocycleNumber.toString();
+    _program.hide = _program.hide;
+  _programStateNotifier.updateProgram(_program);
+  }
+
+  void updateHideProgram(bool value) {
+    _program.hide = value;
+    _programStateNotifier.updateProgram(_program);
     notifyListeners();
   }
+
+Future<void> addWeek() async {
+  debugPrint('Adding new week...');
+  
+  final newWeekId = UniqueKey().toString();
+  final newWeek = Week(
+    id: newWeekId,
+    number: _program.weeks.length + 1,
+    workouts: [],
+  );
+
+  // Aggiungi un workout vuoto alla nuova settimana
+  final newWorkout = Workout(
+    id: '',
+    order: 1,
+    exercises: [],
+  );
+  newWeek.workouts.add(newWorkout);
+
+  debugPrint('New week: $newWeek');
+  debugPrint('Current program weeks: ${_program.weeks}');
+  
+  _program.weeks.add(newWeek);
+
+  debugPrint('Updated program weeks: ${_program.weeks}');
+  
+  notifyListeners();
+
+  debugPrint('Listeners notified.');
+}
 
   void removeWeek(int index) {
     final week = _program.weeks[index];

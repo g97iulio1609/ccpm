@@ -5,29 +5,35 @@ import 'training_program_controller.dart';
 import 'training_program_exercise_list.dart';
 import 'reorder_dialog.dart';
 
-class TrainingProgramWorkoutList extends ConsumerWidget {
+class TrainingProgramWorkoutListPage extends StatefulWidget {
   final TrainingProgramController controller;
   final int weekIndex;
 
-  const TrainingProgramWorkoutList({
+  const TrainingProgramWorkoutListPage({
     required this.controller,
     required this.weekIndex,
     super.key,
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final week = controller.program.weeks[weekIndex];
+  State<TrainingProgramWorkoutListPage> createState() => _TrainingProgramWorkoutListPageState();
+}
+
+class _TrainingProgramWorkoutListPageState extends State<TrainingProgramWorkoutListPage> {
+  @override
+  Widget build(BuildContext context) {
+    final week = widget.controller.program.weeks[widget.weekIndex];
     final workouts = week.workouts;
 
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: workouts.length,
-      itemBuilder: (context, index) {
-        final workout = workouts[index];
-        return _buildWorkoutCard(context, workout);
-      },
+    return Scaffold(
+    
+      body: ListView.builder(
+        itemCount: workouts.length,
+        itemBuilder: (context, index) {
+          final workout = workouts[index];
+          return _buildWorkoutCard(context, workout);
+        },
+      ),
     );
   }
 
@@ -43,28 +49,28 @@ class TrainingProgramWorkoutList extends ConsumerWidget {
           itemBuilder: (context) => [
             PopupMenuItem(
               child: const Text('Delete'),
-              onTap: () => controller.removeWorkout(weekIndex, workout.order),
+              onTap: () => widget.controller.removeWorkout(widget.weekIndex, workout.order),
             ),
             PopupMenuItem(
               child: const Text('Copy Workout'),
-              onTap: () => controller.copyWorkout(weekIndex, workout.order - 1, context),
+              onTap: () => widget.controller.copyWorkout(widget.weekIndex, workout.order - 1, context),
             ),
             PopupMenuItem(
               child: const Text('Reorder Workouts'),
-              onTap: () => _showReorderWorkoutsDialog(context, weekIndex),
+              onTap: () => _showReorderWorkoutsDialog(context),
             ),
           ],
         ),
         children: [
           TrainingProgramExerciseList(
-            controller: controller,
-            weekIndex: weekIndex,
+            controller: widget.controller,
+            weekIndex: widget.weekIndex,
             workoutIndex: workout.order - 1,
           ),
           Padding(
             padding: const EdgeInsets.all(16),
             child: ElevatedButton(
-              onPressed: () => controller.addExercise(weekIndex, workout.order - 1, context),
+              onPressed: () => widget.controller.addExercise(widget.weekIndex, workout.order - 1, context),
               child: const Text('Add New Exercise'),
             ),
           ),
@@ -73,13 +79,13 @@ class TrainingProgramWorkoutList extends ConsumerWidget {
     );
   }
 
-  void _showReorderWorkoutsDialog(BuildContext context, int weekIndex) {
-    final workoutNames = controller.program.weeks[weekIndex].workouts.map((workout) => 'Workout ${workout.order}').toList();
+  void _showReorderWorkoutsDialog(BuildContext context) {
+    final workoutNames = widget.controller.program.weeks[widget.weekIndex].workouts.map((workout) => 'Workout ${workout.order}').toList();
     showDialog(
       context: context,
       builder: (context) => ReorderDialog(
         items: workoutNames,
-        onReorder: (oldIndex, newIndex) => controller.reorderWorkouts(weekIndex, oldIndex, newIndex),
+        onReorder: (oldIndex, newIndex) => widget.controller.reorderWorkouts(widget.weekIndex, oldIndex, newIndex),
       ),
     );
   }

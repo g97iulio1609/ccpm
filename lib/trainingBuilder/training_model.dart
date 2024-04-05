@@ -26,22 +26,22 @@ class TrainingProgram {
   }) : weeks = weeks ?? [];
 
   TrainingProgram copyWith({
-    String? id,
-    String? name,
-    String? description,
-    String? athleteId,
-    int? mesocycleNumber,
-    List<Week>? weeks,
-  }) {
-    return TrainingProgram(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      description: description ?? this.description,
-      athleteId: athleteId ?? this.athleteId,
-      mesocycleNumber: mesocycleNumber ?? this.mesocycleNumber,
-      weeks: weeks ?? this.weeks,
-    );
-  }
+  String? id,
+  String? name,
+  String? description,
+  String? athleteId,
+  int? mesocycleNumber,
+  List<Week>? weeks,
+}) {
+  return TrainingProgram(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    description: description ?? this.description,
+    athleteId: athleteId ?? this.athleteId,
+    mesocycleNumber: mesocycleNumber ?? this.mesocycleNumber,
+    weeks: weeks ?? this.weeks,
+  );
+}
 
   factory TrainingProgram.fromMap(Map<String, dynamic> map) {
     return TrainingProgram(

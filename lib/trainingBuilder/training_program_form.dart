@@ -50,14 +50,13 @@ class TrainingProgramForm extends ConsumerWidget {
               validator: (value) => value?.isEmpty ?? true ? 'Please enter a mesocycle number' : null,
             ),
             const SizedBox(height: 16),
-            SwitchListTile(
-              title: const Text('Hide Program'),
-              value: controller.program.hide,
-              onChanged: (value) {
-                controller.program.hide = value;
-                controller.notifyListeners();
-              },
-            ),
+         SwitchListTile(
+  title: const Text('Hide Program'),
+  value: controller.program.hide,
+  onChanged: (value) {
+    controller.updateHideProgram(value);
+  },
+),
             const SizedBox(height: 16),
             child,
             const SizedBox(height: 16),
