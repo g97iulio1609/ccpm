@@ -22,14 +22,12 @@ class TrainingProgramWeekList extends HookConsumerWidget {
     final program = ref.watch(trainingProgramStateProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Select Week')),
       body: ConstrainedBox(
         constraints: const BoxConstraints(maxHeight: 400),
         child: ListView.builder(
           itemCount: program.weeks.length,
           itemBuilder: (context, index) {
             final week = program.weeks[index];
-            debugPrint('numero di settimane ${program.weeks.length}');
             return ListTile(
               title: Text('Week ${week.number}'),
               onTap: () {

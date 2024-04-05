@@ -28,9 +28,7 @@ class TrainingProgramPage extends HookConsumerWidget {
     }, [programId]);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Training Program'),
-      ),
+     
       body: program != null
           ? SingleChildScrollView(
               child: TrainingProgramForm(
