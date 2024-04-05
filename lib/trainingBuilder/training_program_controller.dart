@@ -80,7 +80,6 @@ TrainingProgram get program => _programStateNotifier.state;
   }
 
 Future<void> addWeek() async {
-  debugPrint('Adding new week...');
   
   final newWeekId = UniqueKey().toString();
   final newWeek = Week(
@@ -97,16 +96,13 @@ Future<void> addWeek() async {
   );
   newWeek.workouts.add(newWorkout);
 
-  debugPrint('New week: $newWeek');
-  debugPrint('Current program weeks: ${_program.weeks}');
+ 
   
   _program.weeks.add(newWeek);
 
-  debugPrint('Updated program weeks: ${_program.weeks}');
   
   notifyListeners();
 
-  debugPrint('Listeners notified.');
 }
 
   void removeWeek(int index) {
@@ -316,9 +312,7 @@ Future<void> addSeries(int weekIndex, int workoutIndex, int exerciseIndex,
     // Aggiungi la serie all'elenco delle serie da eliminare
     if (series.serieId != null) {
       _program.trackToDeleteSeries.add(series.serieId!);
-      //debugPrint('Aggiunta la serie ${series.serieId} alla lista trackToDeleteSeries');
     } else {
-      //debugPrint('La serie non ha un ID valido');
     }
 
     exercise.series.removeAt(groupIndex * 1 + seriesIndex);
@@ -349,8 +343,7 @@ Future<void> copyWeek(int sourceWeekIndex, BuildContext context) async {
       _program.weeks.add(copiedWeek);
     }
 
-    //debugPrint('Copied week from index $sourceWeekIndex to index $destinationWeekIndex');
-    //debugPrint('Copied week: $copiedWeek');
+
 
     notifyListeners();
   }
@@ -430,8 +423,7 @@ Future<void> copyWorkout(int sourceWeekIndex, int workoutIndex, BuildContext con
       _program.weeks[destinationWeekIndex].workouts.add(copiedWorkout);
     }
 
-    //debugPrint('Copied workout from week $sourceWeekIndex to week $destinationWeekIndex');
-    //debugPrint('Copied workout: $copiedWorkout');
+   
 
     notifyListeners();
   }
@@ -648,6 +640,12 @@ void _updateWeekNumbers(int startIndex) {
   for (int i = startIndex; i < _program.weeks.length; i++) {
     _program.weeks[i].number = i + 1;
   }
+}
+
+void updateWeek(int weekIndex, Week updatedWeek) {
+  _program.weeks[weekIndex] = updatedWeek;
+  _programStateNotifier.updateProgram(_program);
+  notifyListeners();
 }
 
 

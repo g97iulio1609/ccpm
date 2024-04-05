@@ -21,14 +21,13 @@ class TrainingProgramPage extends HookConsumerWidget {
     final program = ref.watch(trainingProgramStateProvider);
 
     useEffect(() {
-      if (programId != null) {
+      if (programId != null && program.id != programId) {
         controller.loadProgram(programId!);
       }
       return null;
     }, [programId]);
 
     return Scaffold(
-     
       body: program != null
           ? SingleChildScrollView(
               child: TrainingProgramForm(

@@ -135,7 +135,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       icon: const Icon(Icons.arrow_back),
                       onPressed: () {
                         if (programId != null) {
-                          context.go('/programs_screen/user_programs/${FirebaseAuth.instance.currentUser?.uid}/training_program/$programId');
+                          context.push('/programs_screen/user_programs/${FirebaseAuth.instance.currentUser?.uid}/training_program/$programId');
                         } else {
                           // Gestisci il caso in cui programId è null
                         }
@@ -207,7 +207,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 return ListTile(
                   title: Text('Week ${week.number}'),
                   onTap: () {
-                    context.go('/programs_screen/user_programs/${FirebaseAuth.instance.currentUser?.uid}/training_program/${controller.program.id}/week/$weekIndex/workout_list');
+                    context.push('/programs_screen/user_programs/${FirebaseAuth.instance.currentUser?.uid}/training_program/${controller.program.id}/week/$weekIndex/workout_list');
                   },
                 );
               }
@@ -338,4 +338,4 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       },
     );
   }
-}
+} 
