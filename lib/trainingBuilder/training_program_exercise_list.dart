@@ -45,44 +45,50 @@ class TrainingProgramExerciseList extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ListTile(
-            title: Text(
-              '${exercise.name}',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            subtitle: Text(exercise.variant),
-            trailing: PopupMenuButton(
-              itemBuilder: (context) => [
-                PopupMenuItem(
-                  child: const Text('Edit'),
-                  onTap: () => controller.editExercise(weekIndex, workoutIndex, exercise.order - 1, context),
-                ),
-                PopupMenuItem(
-                  child: const Text('Delete'),
-                  onTap: () => controller.removeExercise(weekIndex, workoutIndex, exercise.order - 1),
-                ),
-                PopupMenuItem(
-                  child: const Text('Update Max RM'),
-                  onTap: () => _addOrUpdateMaxRM(exercise, context, usersService, athleteId, dateFormat),
-                ),
-                PopupMenuItem(
-                  child: const Text('Reorder Exercises'),
-                  onTap: () => _showReorderExercisesDialog(context, weekIndex, workoutIndex),
-                ),
-              ],
+          Flexible(
+            child: ListTile(
+              title: Text(
+                '${exercise.name}',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              subtitle: Text(exercise.variant),
+              trailing: PopupMenuButton(
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    child: const Text('Edit'),
+                    onTap: () => controller.editExercise(weekIndex, workoutIndex, exercise.order - 1, context),
+                  ),
+                  PopupMenuItem(
+                    child: const Text('Delete'),
+                    onTap: () => controller.removeExercise(weekIndex, workoutIndex, exercise.order - 1),
+                  ),
+                  PopupMenuItem(
+                    child: const Text('Update Max RM'),
+                    onTap: () => _addOrUpdateMaxRM(exercise, context, usersService, athleteId, dateFormat),
+                  ),
+                  PopupMenuItem(
+                    child: const Text('Reorder Exercises'),
+                    onTap: () => _showReorderExercisesDialog(context, weekIndex, workoutIndex),
+                  ),
+                ],
+              ),
             ),
           ),
-          TrainingProgramSeriesList(
-            controller: controller,
-            weekIndex: weekIndex,
-            workoutIndex: workoutIndex,
-            exerciseIndex: exercise.order - 1,
+          Flexible(
+            child: TrainingProgramSeriesList(
+              controller: controller,
+              weekIndex: weekIndex,
+              workoutIndex: workoutIndex,
+              exerciseIndex: exercise.order - 1,
+            ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: ElevatedButton(
-              onPressed: () => controller.addSeries(weekIndex, workoutIndex, exercise.order - 1, context),
-              child: const Text('Add New Series'),
+          Flexible(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: ElevatedButton(
+                onPressed: () => controller.addSeries(weekIndex, workoutIndex, exercise.order - 1, context),
+                child: const Text('Add New Series'),
+              ),
             ),
           ),
         ],
@@ -181,6 +187,30 @@ class ResponsiveGridView<T> extends StatelessWidget {
     super.key,
   });
 
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final crossAxisCount = _getCrossAxisCount(width);
+        final childAspectRatio = _getChildAspectRatio(width);
+
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            childAspectRatio: childAspectRatio,
+            crossAxisSpacing: 20,
+            mainAxisSpacing: 20,
+          ),
+          itemCount: items.length,
+          itemBuilder: (context, index) => itemBuilder(context, index, items[index]),
+        );
+      },
+    );
+  }
+
   int _getCrossAxisCount(double width) {
     if (width > 1200) {
       return 3;
@@ -193,21 +223,15 @@ class ResponsiveGridView<T> extends StatelessWidget {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-
-    return GridView.builder(
-      shrinkWrap: true,
-     // physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: _getCrossAxisCount(screenWidth),
-        childAspectRatio: 3 / 2,
-        crossAxisSpacing: 20,
-        mainAxisSpacing: 20,
-      ),
-      itemCount: items.length,
-      itemBuilder: (context, index) => itemBuilder(context, index, items[index]),
-    );
+  double _getChildAspectRatio(double width) {
+    if (width > 1200) {
+      return 1.2;
+    } else if (width > 800) {
+      return 1.1;
+    } else if (width > 600) {
+      return 1.0;
+    } else {
+      return 0.9;
+    }
   }
 }

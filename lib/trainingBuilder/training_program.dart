@@ -41,7 +41,7 @@ class TrainingProgramPage extends HookConsumerWidget {
                     onSubmit: () => controller.submitProgram(context),
                     child: ConstrainedBox(
                       constraints: BoxConstraints(
-                        maxHeight: MediaQuery.of(context).size.height * 0.8,
+                        maxHeight: MediaQuery.of(context).size.height * 0.9,
                       ),
                       child: TrainingProgramWeekList(
                         programId: programId!,
