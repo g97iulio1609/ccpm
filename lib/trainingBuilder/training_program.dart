@@ -29,28 +29,28 @@ class TrainingProgramPage extends HookConsumerWidget {
 
     return Scaffold(
       body: program != null
-          ? SingleChildScrollView(
-              child: TrainingProgramForm(
-                formKey: formKey,
-                controller: controller,
-                onSubmit: () => controller.submitProgram(context),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxHeight: MediaQuery.of(context).size.height * 0.8,
+          ? weekIndex != null
+              ? TrainingProgramWorkoutListPage(
+                  controller: controller,
+                  weekIndex: weekIndex!,
+                )
+              : SingleChildScrollView(
+                  child: TrainingProgramForm(
+                    formKey: formKey,
+                    controller: controller,
+                    onSubmit: () => controller.submitProgram(context),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(context).size.height * 0.8,
+                      ),
+                      child: TrainingProgramWeekList(
+                        programId: programId!,
+                        userId: userId,
+                        controller: controller,
+                      ),
+                    ),
                   ),
-                  child: weekIndex != null
-                      ? TrainingProgramWorkoutListPage(
-                          controller: controller,
-                          weekIndex: weekIndex!,
-                        )
-                      : TrainingProgramWeekList(
-                          programId: programId!,
-                          userId: userId,
-                          controller: controller,
-                        ),
-                ),
-              ),
-            )
+                )
           : const Center(
               child: CircularProgressIndicator(),
             ),
