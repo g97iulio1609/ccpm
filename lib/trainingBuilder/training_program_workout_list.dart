@@ -16,23 +16,28 @@ class TrainingProgramWorkoutListPage extends StatefulWidget {
   });
 
   @override
-  State<TrainingProgramWorkoutListPage> createState() => _TrainingProgramWorkoutListPageState();
+  State<TrainingProgramWorkoutListPage> createState() =>
+      _TrainingProgramWorkoutListPageState();
 }
 
-class _TrainingProgramWorkoutListPageState extends State<TrainingProgramWorkoutListPage> {
+class _TrainingProgramWorkoutListPageState
+    extends State<TrainingProgramWorkoutListPage> {
   @override
   Widget build(BuildContext context) {
     final week = widget.controller.program.weeks[widget.weekIndex];
     final workouts = week.workouts;
 
     return Scaffold(
-    
       body: ListView.builder(
         itemCount: workouts.length,
         itemBuilder: (context, index) {
           final workout = workouts[index];
           return _buildWorkoutCard(context, workout);
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => widget.controller.addWorkout(widget.weekIndex),
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -49,11 +54,13 @@ class _TrainingProgramWorkoutListPageState extends State<TrainingProgramWorkoutL
           itemBuilder: (context) => [
             PopupMenuItem(
               child: const Text('Delete'),
-              onTap: () => widget.controller.removeWorkout(widget.weekIndex, workout.order),
+              onTap: () => widget.controller.removeWorkout(
+                  widget.weekIndex, workout.order),
             ),
             PopupMenuItem(
               child: const Text('Copy Workout'),
-              onTap: () => widget.controller.copyWorkout(widget.weekIndex, workout.order - 1, context),
+              onTap: () => widget.controller.copyWorkout(
+                  widget.weekIndex, workout.order - 1, context),
             ),
             PopupMenuItem(
               child: const Text('Reorder Workouts'),
@@ -70,7 +77,8 @@ class _TrainingProgramWorkoutListPageState extends State<TrainingProgramWorkoutL
           Padding(
             padding: const EdgeInsets.all(16),
             child: ElevatedButton(
-              onPressed: () => widget.controller.addExercise(widget.weekIndex, workout.order - 1, context),
+              onPressed: () => widget.controller.addExercise(
+                  widget.weekIndex, workout.order - 1, context),
               child: const Text('Add New Exercise'),
             ),
           ),
@@ -80,12 +88,17 @@ class _TrainingProgramWorkoutListPageState extends State<TrainingProgramWorkoutL
   }
 
   void _showReorderWorkoutsDialog(BuildContext context) {
-    final workoutNames = widget.controller.program.weeks[widget.weekIndex].workouts.map((workout) => 'Workout ${workout.order}').toList();
+    final workoutNames = widget.controller.program.weeks[widget.weekIndex]
+        .workouts
+        .map((workout) => 'Workout ${workout.order}')
+        .toList();
+
     showDialog(
       context: context,
       builder: (context) => ReorderDialog(
         items: workoutNames,
-        onReorder: (oldIndex, newIndex) => widget.controller.reorderWorkouts(widget.weekIndex, oldIndex, newIndex),
+        onReorder: (oldIndex, newIndex) => widget.controller
+            .reorderWorkouts(widget.weekIndex, oldIndex, newIndex),
       ),
     );
   }

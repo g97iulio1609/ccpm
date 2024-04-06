@@ -1,5 +1,4 @@
 import 'package:alphanessone/trainingBuilder/training_program_controller.dart';
-import 'package:alphanessone/trainingBuilder/training_program_week_list.dart';
 import 'package:alphanessone/trainingBuilder/training_program_workout_list.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -10,7 +9,6 @@ import 'auth_screen.dart';
 import 'home_screen.dart';
 import 'exerciseManager/exercise_list.dart';
 import 'maxRMDashboard.dart';
-import 'trainingBuilder/training_model.dart';
 import 'trainingBuilder/training_program.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
