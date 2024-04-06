@@ -77,6 +77,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
           Flexible(
             child: TrainingProgramSeriesList(
               controller: controller,
+              usersService: usersService, // Pass the usersService here
               weekIndex: weekIndex,
               workoutIndex: workoutIndex,
               exerciseIndex: exercise.order - 1,
