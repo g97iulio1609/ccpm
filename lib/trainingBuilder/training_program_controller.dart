@@ -495,12 +495,12 @@ Future<int?> _showCopyWorkoutDialog(BuildContext context) async {
 
 //REORDER
 
-  void updateSeries(int weekIndex, int workoutIndex, int exerciseIndex,
-      List<Series> updatedSeries) {
-    _program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex]
-        .series = updatedSeries;
-    notifyListeners();
-  }
+ void updateSeries(int weekIndex, int workoutIndex, int exerciseIndex,
+    List<Series> updatedSeries) {
+  _program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex]
+      .series = updatedSeries;
+  notifyListeners();
+}
   //PROGRESSION
 
  Future<void> applyWeekProgressions(int exerciseIndex, List<WeekProgression> weekProgressions, BuildContext context) async {

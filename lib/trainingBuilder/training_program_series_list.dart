@@ -60,26 +60,34 @@ class TrainingProgramSeriesList extends ConsumerWidget {
   }
 
   Widget _buildSeriesGroupCard(
-      BuildContext context, List<Series> seriesGroup, int groupIndex) {
-    final series = seriesGroup.first;
-    return GestureDetector(
-      onTap: () => _showSeriesDialog(context, seriesGroup, groupIndex),
-      child: Card(
-        margin: const EdgeInsets.symmetric(vertical: 8),
-        child: ListTile(
-          title: Text(
-            '${seriesGroup.length} serie${seriesGroup.length > 1 ? 's' : ''}, ${series.reps} reps x ${series.weight} kg',
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
-          trailing: IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: () =>
-                _showDeleteSeriesGroupDialog(context, seriesGroup, groupIndex),
-          ),
+    BuildContext context, List<Series> seriesGroup, int groupIndex) {
+  final series = seriesGroup.first;
+  return GestureDetector(
+    onTap: () => _showSeriesDialog(context, seriesGroup, groupIndex),
+    child: Card(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: ListTile(
+        title: Text(
+          '${seriesGroup.length} serie${seriesGroup.length > 1 ? 's' : ''}, ${series.reps} reps x ${series.weight} kg',
+          style: Theme.of(context).textTheme.bodyLarge,
+        ),
+        trailing: PopupMenuButton(
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              child: const Text('Edit All'),
+              onTap: () => _showEditAllSeriesDialog(context, seriesGroup),
+            ),
+            PopupMenuItem(
+              child: const Text('Delete'),
+              onTap: () =>
+                  _showDeleteSeriesGroupDialog(context, seriesGroup, groupIndex),
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   void _showDeleteSeriesGroupDialog(
       BuildContext context, List<Series> seriesGroup, int groupIndex) {
@@ -163,6 +171,59 @@ void _deleteSeriesGroup(List<Series> seriesGroup, int groupIndex) {
       ),
     ).then((_) => controller.notifyListeners());
   }
+
+  void _showEditAllSeriesDialog(
+    BuildContext context, List<Series> seriesGroup) async {
+  final series = seriesGroup.first;
+  final repsController = TextEditingController(text: series.reps.toString());
+  final weightController =
+      TextEditingController(text: series.weight.toString());
+
+  final result = await showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Edit All Series'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: repsController,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'Reps'),
+          ),
+          TextField(
+            controller: weightController,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'Weight (kg)'),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('Save'),
+        ),
+      ],
+    ),
+  );
+
+  if (result == true) {
+    final reps = int.parse(repsController.text);
+    final weight = double.parse(weightController.text);
+
+    for (final s in seriesGroup) {
+      s.reps = reps;
+      s.weight = weight;
+    }
+
+    controller.updateSeries(
+        weekIndex, workoutIndex, exerciseIndex, seriesGroup);
+  }
+}
 
   void _removeSeries(
       List<Series> seriesGroup, int groupIndex, int seriesIndex) {
