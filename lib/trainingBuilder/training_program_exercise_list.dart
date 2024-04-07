@@ -48,6 +48,18 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     DateFormat dateFormat,
   ) {
     return Slidable(
+      startActionPane: ActionPane(
+        motion: const DrawerMotion(),
+        children: [
+          SlidableAction(
+            onPressed: (context) => controller.addExercise(weekIndex, workoutIndex, context),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            icon: Icons.add,
+            label: 'Aggiungi Esercizio',
+          ),
+        ],
+      ),
       endActionPane: ActionPane(
         motion: const DrawerMotion(),
         children: [
@@ -101,12 +113,26 @@ class TrainingProgramExerciseList extends ConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
-            child: Text(
-              exercise.name,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+            child: GestureDetector(
+              onTap: () => controller.editExercise(weekIndex, workoutIndex, exercise.order - 1, context),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    exercise.name,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                    textAlign: TextAlign.center,
                   ),
-              textAlign: TextAlign.center,
+                  if (exercise.variant.isNotEmpty)
+                    Text(
+                      exercise.variant,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                ],
+              ),
             ),
           ),
           _buildExercisePopupMenu(context, exercise, usersService, athleteId, dateFormat),
@@ -153,6 +179,13 @@ class TrainingProgramExerciseList extends ConsumerWidget {
   Widget _buildAddSeriesButton(BuildContext context, Exercise exercise) {
     return ElevatedButton(
       onPressed: () => controller.addSeries(weekIndex, workoutIndex, exercise.order - 1, context),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
       child: const Text('Aggiungi Nuova Serie'),
     );
   }
@@ -162,6 +195,13 @@ class TrainingProgramExerciseList extends ConsumerWidget {
       padding: const EdgeInsets.all(16.0),
       child: ElevatedButton(
         onPressed: () => controller.addExercise(weekIndex, workoutIndex, context),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
         child: const Text('Aggiungi Esercizio'),
       ),
     );
