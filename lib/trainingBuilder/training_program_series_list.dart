@@ -29,7 +29,7 @@ class TrainingProgramSeriesList extends ConsumerWidget {
 
     return ListView.builder(
       shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
+      physics: NeverScrollableScrollPhysics(),
       itemCount: groupedSeries.length,
       itemBuilder: (context, index) {
         final item = groupedSeries[index];
@@ -69,27 +69,35 @@ class TrainingProgramSeriesList extends ConsumerWidget {
     return GestureDetector(
       onTap: () => _showSeriesDialog(context, seriesGroup, groupIndex),
       child: Card(
-        margin: const EdgeInsets.symmetric(vertical: 8),
-        child: ListTile(
-          title: Text(
-            '${seriesGroup.length} serie${seriesGroup.length > 1 ? 's' : ''}, ${series.reps} reps x ${series.weight} kg',
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
-          trailing: PopupMenuButton(
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                child: const Text('Edit All'),
-                onTap: () => _showEditAllSeriesDialog(context, seriesGroup),
-              ),
-              PopupMenuItem(
-                child: const Text('Delete'),
-                onTap: () =>
-                    _showDeleteSeriesGroupDialog(context, seriesGroup, groupIndex),
-              ),
-            ],
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${seriesGroup.length} serie${seriesGroup.length > 1 ? 's' : ''}, ${series.reps} reps x ${series.weight} kg',
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 8),
+            _buildSeriesGroupPopupMenu(context, seriesGroup, groupIndex),
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSeriesGroupPopupMenu(
+      BuildContext context, List<Series> seriesGroup, int groupIndex) {
+    return PopupMenuButton(
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          child: const Text('Edit All'),
+          onTap: () => _showEditAllSeriesDialog(context, seriesGroup),
+        ),
+        PopupMenuItem(
+          child: const Text('Delete'),
+          onTap: () =>
+              _showDeleteSeriesGroupDialog(context, seriesGroup, groupIndex),
+        ),
+      ],
     );
   }
 
@@ -191,6 +199,7 @@ class TrainingProgramSeriesList extends ConsumerWidget {
         '${series.reps} reps x ${series.weight} kg',
         style: Theme.of(context).textTheme.bodyLarge,
       ),
+      subtitle: Text('RPE: ${series.rpe}, Intensity: ${series.intensity}'),
       trailing: PopupMenuButton(
         itemBuilder: (context) => [
           PopupMenuItem(
@@ -420,7 +429,7 @@ class TrainingProgramSeriesList extends ConsumerWidget {
         weightController.text = roundedWeight.toStringAsFixed(2);
         final calculatedIntensity =
             calculateIntensityFromWeight(roundedWeight, latestMaxWeight);
-        intensityController.text = calculatedIntensity.toStringAsFixed(2);
+        intensityController.text =calculatedIntensity.toStringAsFixed(2);
       });
     }
   }
@@ -435,7 +444,8 @@ class TrainingProgramSeriesList extends ConsumerWidget {
     final weight = double.tryParse(weightController.text) ?? 0;
     final reps = int.tryParse(repsController.text) ?? 0;
     final latestMaxWeight = await getLatestMaxWeight(
-        usersService,controller.athleteIdController.text,
+        usersService,
+        controller.athleteIdController.text,
         controller.program.weeks[weekIndex].workouts[workoutIndex]
             .exercises[exerciseIndex].exerciseId!);
     final calculatedRPE = calculateRPE(weight, latestMaxWeight, reps);
