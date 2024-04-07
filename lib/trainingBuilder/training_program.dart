@@ -2,6 +2,7 @@ import 'package:alphanessone/trainingBuilder/training_program_controller.dart';
 import 'package:alphanessone/trainingBuilder/training_program_form.dart';
 import 'package:alphanessone/trainingBuilder/training_program_week_list.dart';
 import 'package:alphanessone/trainingBuilder/training_program_workout_list.dart';
+import 'package:alphanessone/trainingBuilder/training_program_exercise_list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -11,8 +12,15 @@ class TrainingProgramPage extends HookConsumerWidget {
   final String? programId;
   final String userId;
   final int? weekIndex;
+  final int? workoutIndex;
 
-  const TrainingProgramPage({super.key, this.programId, required this.userId, this.weekIndex});
+  const TrainingProgramPage({
+    super.key,
+    this.programId,
+    required this.userId,
+    this.weekIndex,
+    this.workoutIndex,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -30,10 +38,16 @@ class TrainingProgramPage extends HookConsumerWidget {
     return Scaffold(
       body: program != null
           ? weekIndex != null
-              ? TrainingProgramWorkoutListPage(
-                  controller: controller,
-                  weekIndex: weekIndex!,
-                )
+              ? workoutIndex != null
+                  ? TrainingProgramExerciseList(
+                      controller: controller,
+                      weekIndex: weekIndex!,
+                      workoutIndex: workoutIndex!,
+                    )
+                  : TrainingProgramWorkoutListPage(
+                      controller: controller,
+                      weekIndex: weekIndex!,
+                    )
               : SingleChildScrollView(
                   child: TrainingProgramForm(
                     formKey: formKey,

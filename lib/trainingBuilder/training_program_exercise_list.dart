@@ -27,14 +27,9 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     final athleteId = controller.athleteIdController.text;
     final dateFormat = DateFormat('yyyy-MM-dd');
 
-    return GridView.builder(
+    return ListView.builder(
       shrinkWrap: true,
-      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 400,
-        childAspectRatio: 1.0,
-        crossAxisSpacing: 20,
-        mainAxisSpacing: 20,
-      ),
+      physics: NeverScrollableScrollPhysics(),
       itemCount: exercises.length,
       itemBuilder: (context, index) =>
           _buildExerciseCard(context, exercises[index], usersService, athleteId, dateFormat),
@@ -49,13 +44,18 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     DateFormat dateFormat,
   ) {
     return Card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildExerciseHeader(context, exercise, usersService, athleteId, dateFormat),
-          _buildExerciseSeries(context, exercise, usersService),
-          _buildAddSeriesButton(context, exercise),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildExerciseHeader(context, exercise, usersService, athleteId, dateFormat),
+            const SizedBox(height: 16),
+            _buildExerciseSeries(context, exercise, usersService),
+            const SizedBox(height: 16),
+            _buildAddSeriesButton(context, exercise),
+          ],
+        ),
       ),
     );
   }
@@ -117,12 +117,9 @@ class TrainingProgramExerciseList extends ConsumerWidget {
   }
 
   Widget _buildAddSeriesButton(BuildContext context, Exercise exercise) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: ElevatedButton(
-        onPressed: () => controller.addSeries(weekIndex, workoutIndex, exercise.order - 1, context),
-        child: const Text('Add New Series'),
-      ),
+    return ElevatedButton(
+      onPressed: () => controller.addSeries(weekIndex, workoutIndex, exercise.order - 1, context),
+      child: const Text('Add New Series'),
     );
   }
 

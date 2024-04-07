@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'training_model.dart';
 import 'training_program_controller.dart';
-import 'training_program_exercise_list.dart';
 import 'reorder_dialog.dart';
 
 class TrainingProgramWorkoutListPage extends StatefulWidget {
@@ -45,7 +45,7 @@ class _TrainingProgramWorkoutListPageState
   Widget _buildWorkoutCard(BuildContext context, Workout workout) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: ExpansionTile(
+      child: ListTile(
         title: Text(
           'Workout ${workout.order}',
           style: Theme.of(context).textTheme.titleMedium,
@@ -68,21 +68,10 @@ class _TrainingProgramWorkoutListPageState
             ),
           ],
         ),
-        children: [
-          TrainingProgramExerciseList(
-            controller: widget.controller,
-            weekIndex: widget.weekIndex,
-            workoutIndex: workout.order - 1,
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: ElevatedButton(
-              onPressed: () => widget.controller.addExercise(
-                  widget.weekIndex, workout.order - 1, context),
-              child: const Text('Add New Exercise'),
-            ),
-          ),
-        ],
+        onTap: () {
+          context.go(
+              '/programs_screen/user_programs/${widget.controller.program.athleteId}/training_program/${widget.controller.program.id}/week/${widget.weekIndex}/workout/${workout.order - 1}');
+        },
       ),
     );
   }

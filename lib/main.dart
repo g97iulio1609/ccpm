@@ -254,13 +254,14 @@ final GoRouter router = GoRouter(
                       ),
                       routes: [
                         GoRoute(
-                          path: 'workout_list',
-                          builder: (context, state) =>
-                              TrainingProgramWorkoutListPage(
-                            controller: ref
-                                .read(trainingProgramControllerProvider),
+                          path: 'workout/:workoutIndex',
+                          builder: (context, state) => TrainingProgramPage(
+                            programId: state.pathParameters['programId']!,
+                            userId: state.pathParameters['userId']!,
                             weekIndex: int.parse(
                                 state.pathParameters['weekIndex']!),
+                            workoutIndex:
+                                int.parse(state.pathParameters['workoutIndex']!),
                           ),
                         ),
                       ],
@@ -308,7 +309,6 @@ final GoRouter router = GoRouter(
     )
   ],
 );
-
     return MaterialApp.router(
       routerConfig: router,
       title: 'AlphanessOne',

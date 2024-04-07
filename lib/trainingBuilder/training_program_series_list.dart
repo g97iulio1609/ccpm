@@ -66,20 +66,18 @@ class TrainingProgramSeriesList extends ConsumerWidget {
   Widget _buildSeriesGroupCard(
       BuildContext context, List<Series> seriesGroup, int groupIndex) {
     final series = seriesGroup.first;
-    return GestureDetector(
-      onTap: () => _showSeriesDialog(context, seriesGroup, groupIndex),
-      child: Card(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
+    return Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ListTile(
+            title: Text(
               '${seriesGroup.length} serie${seriesGroup.length > 1 ? 's' : ''}, ${series.reps} reps x ${series.weight} kg',
               style: Theme.of(context).textTheme.bodyLarge,
             ),
-            const SizedBox(height: 8),
-            _buildSeriesGroupPopupMenu(context, seriesGroup, groupIndex),
-          ],
-        ),
+            trailing: _buildSeriesGroupPopupMenu(context, seriesGroup, groupIndex),
+          ),
+        ],
       ),
     );
   }
@@ -149,47 +147,6 @@ class TrainingProgramSeriesList extends ConsumerWidget {
 
     // Notifica il controller delle modifiche
     controller.notifyListeners();
-  }
-
-  void _showSeriesDialog(
-      BuildContext context, List<Series> seriesGroup, int groupIndex) {
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            title: const Text('Series Group'),
-            content: SingleChildScrollView(
-              child: ListBody(
-                children: seriesGroup.asMap().entries.map((entry) {
-                  final seriesIndex = entry.key;
-                  final series = entry.value;
-                  return _buildSeriesCard(
-                      context, series, groupIndex, seriesIndex, () {
-                    setState(() =>
-                        _removeSeries(seriesGroup, groupIndex, seriesIndex));
-                  });
-                }).toList(),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Close'),
-              ),
-            ],
-          );
-        },
-      ),
-    ).then((_) => controller.notifyListeners());
-  }
-
-  void _removeSeries(
-      List<Series> seriesGroup, int groupIndex, int seriesIndex) {
-    final exercise = controller.program.weeks[weekIndex].workouts[workoutIndex]
-        .exercises[exerciseIndex];
-    final series = seriesGroup[seriesIndex];
-    exercise.series.remove(series);
   }
 
   Widget _buildSeriesCard(BuildContext context, Series series,
@@ -429,7 +386,7 @@ class TrainingProgramSeriesList extends ConsumerWidget {
         weightController.text = roundedWeight.toStringAsFixed(2);
         final calculatedIntensity =
             calculateIntensityFromWeight(roundedWeight, latestMaxWeight);
-        intensityController.text =calculatedIntensity.toStringAsFixed(2);
+        intensityController.text = calculatedIntensity.toStringAsFixed(2);
       });
     }
   }

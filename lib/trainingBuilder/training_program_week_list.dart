@@ -84,4 +84,3 @@ class TrainingProgramWeekList extends ConsumerWidget {
     );
   }
 }
- 
