@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'training_model.dart';
 import 'training_program_controller.dart';
 import 'training_program_series_list.dart';
@@ -29,10 +30,13 @@ class TrainingProgramExerciseList extends ConsumerWidget {
 
     return ListView.builder(
       shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
-      itemCount: exercises.length,
-      itemBuilder: (context, index) =>
-          _buildExerciseCard(context, exercises[index], usersService, athleteId, dateFormat),
+      itemCount: exercises.length + 1,
+      itemBuilder: (context, index) {
+        if (index == exercises.length) {
+          return _buildAddExerciseButton(context);
+        }
+        return _buildExerciseCard(context, exercises[index], usersService, athleteId, dateFormat);
+      },
     );
   }
 
@@ -43,18 +47,38 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     String athleteId,
     DateFormat dateFormat,
   ) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildExerciseHeader(context, exercise, usersService, athleteId, dateFormat),
-            const SizedBox(height: 16),
-            _buildExerciseSeries(context, exercise, usersService),
-            const SizedBox(height: 16),
-            _buildAddSeriesButton(context, exercise),
-          ],
+    return Slidable(
+      endActionPane: ActionPane(
+        motion: const DrawerMotion(),
+        children: [
+          SlidableAction(
+            onPressed: (context) => controller.removeExercise(weekIndex, workoutIndex, exercise.order - 1),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            foregroundColor: Theme.of(context).colorScheme.onError,
+            icon: Icons.delete,
+            label: 'Elimina',
+          ),
+        ],
+      ),
+      child: Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        elevation: 2,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildExerciseHeader(context, exercise, usersService, athleteId, dateFormat),
+              const SizedBox(height: 16),
+              _buildExerciseSeries(context, exercise, usersService),
+              const SizedBox(height: 16),
+              Center(
+                child: _buildAddSeriesButton(context, exercise),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -67,13 +91,27 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     String athleteId,
     DateFormat dateFormat,
   ) {
-    return ListTile(
-      title: Text(
-        exercise.name,
-        style: Theme.of(context).textTheme.titleMedium,
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceVariant,
+        borderRadius: BorderRadius.circular(8),
       ),
-      subtitle: Text(exercise.variant),
-      trailing: _buildExercisePopupMenu(context, exercise, usersService, athleteId, dateFormat),
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Text(
+              exercise.name,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          _buildExercisePopupMenu(context, exercise, usersService, athleteId, dateFormat),
+        ],
+      ),
     );
   }
 
@@ -87,19 +125,15 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     return PopupMenuButton(
       itemBuilder: (context) => [
         PopupMenuItem(
-          child: const Text('Edit'),
+          child: const Text('Modifica'),
           onTap: () => controller.editExercise(weekIndex, workoutIndex, exercise.order - 1, context),
         ),
         PopupMenuItem(
-          child: const Text('Delete'),
-          onTap: () => controller.removeExercise(weekIndex, workoutIndex, exercise.order - 1),
-        ),
-        PopupMenuItem(
-          child: const Text('Update Max RM'),
+          child: const Text('Aggiorna Max RM'),
           onTap: () => _addOrUpdateMaxRM(exercise, context, usersService, athleteId, dateFormat),
         ),
         PopupMenuItem(
-          child: const Text('Reorder Exercises'),
+          child: const Text('Riordina Esercizi'),
           onTap: () => _showReorderExercisesDialog(context, weekIndex, workoutIndex),
         ),
       ],
@@ -119,7 +153,17 @@ class TrainingProgramExerciseList extends ConsumerWidget {
   Widget _buildAddSeriesButton(BuildContext context, Exercise exercise) {
     return ElevatedButton(
       onPressed: () => controller.addSeries(weekIndex, workoutIndex, exercise.order - 1, context),
-      child: const Text('Add New Series'),
+      child: const Text('Aggiungi Nuova Serie'),
+    );
+  }
+
+  Widget _buildAddExerciseButton(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: ElevatedButton(
+        onPressed: () => controller.addExercise(weekIndex, workoutIndex, context),
+        child: const Text('Aggiungi Esercizio'),
+      ),
     );
   }
 
@@ -138,12 +182,12 @@ class TrainingProgramExerciseList extends ConsumerWidget {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Update Max RM'),
+          title: const Text('Aggiorna Max RM'),
           content: _buildMaxRMInputFields(maxWeightController, repetitionsController),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: const Text('Annulla'),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -158,7 +202,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
                 );
                 Navigator.pop(context);
               },
-              child: const Text('Save'),
+              child: const Text('Salva'),
             ),
           ],
         );
@@ -176,12 +220,12 @@ class TrainingProgramExerciseList extends ConsumerWidget {
         TextField(
           controller: maxWeightController,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'Max Weight'),
+          decoration: const InputDecoration(labelText: 'Peso Massimo'),
         ),
         TextField(
           controller: repetitionsController,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'Repetitions'),
+          decoration: const InputDecoration(labelText: 'Ripetizioni'),
         ),
       ],
     );
