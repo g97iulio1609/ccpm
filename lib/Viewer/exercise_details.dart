@@ -63,10 +63,12 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
   }
 
   Future<void> _updateSeriesData(
-      String seriesId, int? repsDone, double? weightDone) async {
+      String seriesId, int? repsDone, String? weightDoneString) async {
     final currentSeries = widget.seriesList[currentSeriesIndex];
     final expectedReps = currentSeries['reps'];
     final expectedWeight = currentSeries['weight'];
+
+    final weightDone = double.tryParse(weightDoneString ?? '');
 
     final done = (repsDone != null && repsDone >= expectedReps) &&
         (weightDone != null && weightDone >= expectedWeight);
@@ -85,7 +87,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
   double? _getNextSeriesWeight() {
     if (currentSeriesIndex < widget.seriesList.length - 1) {
       final nextSeries = widget.seriesList[currentSeriesIndex + 1];
-      return nextSeries['weight'];
+      return nextSeries['weight'].toDouble();
     }
     return null;
   }
@@ -344,7 +346,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
               await _updateSeriesData(
                 currentSeries['id'],
                 int.tryParse(_repsControllers[currentSeries['id']]!.text),
-                double.tryParse(_weightControllers[currentSeries['id']]!.text),
+                _weightControllers[currentSeries['id']]!.text,
               );
               await _handleNextSeries();
             }
@@ -361,7 +363,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
       child: Text(
         currentSeriesIndex == widget.seriesList.length - 1
             ? 'FINISH'
-            : 'NEXT SET ${nextSeriesWeight != null ? '(${nextSeriesWeight.toStringAsFixed(1)} kg)' : ''}',
+            : 'NEXT SET ${nextSeriesWeight != null ? '(${nextSeriesWeight.toStringAsFixed(2)} kg)' : ''}',
         style: theme.textTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.bold,
         ),
