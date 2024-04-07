@@ -36,8 +36,8 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
   int currentSeriesIndex = 0;
   final Map<String, TextEditingController> _repsControllers = {};
   final Map<String, TextEditingController> _weightControllers = {};
-  int _minutes = 0;
-  int _seconds = 10;
+  int _minutes = 1;
+  int _seconds = 0;
   bool _isEmomMode = false;
 
   @override
@@ -80,6 +80,14 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
 
   int _getRestTimeInSeconds() {
     return (_minutes * 60) + _seconds;
+  }
+
+  double? _getNextSeriesWeight() {
+    if (currentSeriesIndex < widget.seriesList.length - 1) {
+      final nextSeries = widget.seriesList[currentSeriesIndex + 1];
+      return nextSeries['weight'];
+    }
+    return null;
   }
 
   Future<void> _handleNextSeries() async {
@@ -328,6 +336,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
   }
 
   Widget _buildNextButton(ThemeData theme) {
+    final nextSeriesWeight = _getNextSeriesWeight();
     return ElevatedButton(
       onPressed: currentSeriesIndex < widget.seriesList.length
           ? () async {
@@ -352,7 +361,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
       child: Text(
         currentSeriesIndex == widget.seriesList.length - 1
             ? 'FINISH'
-            : 'NEXT SET',
+            : 'NEXT SET ${nextSeriesWeight != null ? '(${nextSeriesWeight.toStringAsFixed(1)} kg)' : ''}',
         style: theme.textTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.bold,
         ),
