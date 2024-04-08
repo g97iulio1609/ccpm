@@ -7,6 +7,21 @@ import 'utility_functions.dart';
 import '../users_services.dart';
 import 'reorder_dialog.dart';
 
+final expansionStateProvider = StateNotifierProvider.autoDispose<ExpansionStateNotifier, Map<String, bool>>((ref) {
+  return ExpansionStateNotifier();
+});
+
+class ExpansionStateNotifier extends StateNotifier<Map<String, bool>> {
+  ExpansionStateNotifier() : super({});
+
+  void toggleExpansionState(String key) {
+    state = {
+      ...state,
+      key: !state[key]!,
+    };
+  }
+}
+
 class TrainingProgramSeriesList extends ConsumerWidget {
   final TrainingProgramController controller;
   final UsersService usersService;
@@ -23,35 +38,39 @@ class TrainingProgramSeriesList extends ConsumerWidget {
     super.key,
   });
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final exercise = controller.program.weeks[weekIndex].workouts[workoutIndex]
-        .exercises[exerciseIndex];
-    final groupedSeries = _groupSeries(exercise.series);
+@override
+Widget build(BuildContext context, WidgetRef ref) {
+  final exercise = controller.program.weeks[weekIndex].workouts[workoutIndex]
+      .exercises[exerciseIndex];
+  final groupedSeries = _groupSeries(exercise.series);
+  final expansionState = ref.watch(expansionStateProvider);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: groupedSeries.length,
-          itemBuilder: (context, index) {
-            final item = groupedSeries[index];
-            if (item is List<Series>) {
-              return _buildSeriesGroupCard(context, item, index);
-            } else {
-              return _buildSeriesCard(context, item as Series, index);
-            }
-          },
-        ),
-        TextButton(
-          onPressed: () => _showReorderSeriesDialog(context, exercise.series),
-          child: const Text('Reorder Series'),
-        ),
-      ],
-    );
-  }
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      ListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: groupedSeries.length,
+        itemBuilder: (context, index) {
+          final item = groupedSeries[index];
+          final key = 'series_group_$index';
+          final isExpanded = expansionState[key] ?? false;
+
+          if (item is List<Series>) {
+            return _buildSeriesGroupCard(context, item, index, isExpanded, key, ref); // Passa ref come parametro
+          } else {
+            return _buildSeriesCard(context, item as Series, index);
+          }
+        },
+      ),
+      TextButton(
+        onPressed: () => _showReorderSeriesDialog(context, exercise.series),
+        child: const Text('Reorder Series'),
+      ),
+    ],
+  );
+}
 
   List<dynamic> _groupSeries(List<Series> series) {
     final groupedSeries = <dynamic>[];
@@ -68,24 +87,35 @@ class TrainingProgramSeriesList extends ConsumerWidget {
     return groupedSeries;
   }
 
-  Widget _buildSeriesGroupCard(
-      BuildContext context, List<Series> seriesGroup, int groupIndex) {
-    final series = seriesGroup.first;
-    return Card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ListTile(
-            title: Text(
-              '${seriesGroup.length} serie${seriesGroup.length > 1 ? 's' : ''}, ${series.reps} reps x ${series.weight} kg',
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-            trailing: _buildSeriesGroupPopupMenu(context, seriesGroup, groupIndex),
-          ),
-        ],
-      ),
-    );
-  }
+Widget _buildSeriesGroupCard(
+  BuildContext context,
+  List<Series> seriesGroup,
+  int groupIndex,
+  bool isExpanded,
+  String key,
+  WidgetRef ref, // Aggiungi il parametro WidgetRef
+) {
+  final series = seriesGroup.first;
+  return ExpansionTile(
+    key: Key(key),
+    initiallyExpanded: isExpanded,
+    onExpansionChanged: (value) {
+      ref.read(expansionStateProvider.notifier).toggleExpansionState(key); // Usa la variabile ref passata come parametro
+    },
+    title: Text(
+      '${seriesGroup.length} serie${seriesGroup.length > 1 ? 's' : ''}, ${series.reps} reps x ${series.weight} kg',
+      style: Theme.of(context).textTheme.bodyLarge,
+    ),
+    trailing: _buildSeriesGroupPopupMenu(context, seriesGroup, groupIndex),
+    children: [
+      for (int i = 0; i < seriesGroup.length; i++)
+        _buildSeriesCard(context, seriesGroup[i], groupIndex, i, () {
+          seriesGroup.removeAt(i);
+          controller.notifyListeners();
+        }),
+    ],
+  );
+}
 
   Widget _buildSeriesGroupPopupMenu(
       BuildContext context, List<Series> seriesGroup, int groupIndex) {
@@ -422,7 +452,8 @@ class TrainingProgramSeriesList extends ConsumerWidget {
             calculateIntensityFromWeight(roundedWeight, latestMaxWeight);
         intensityController.text = calculatedIntensity.toStringAsFixed(2);
       });
-    }}
+    }
+  }
 
   void _updateRPE(
     TextEditingController repsController,
