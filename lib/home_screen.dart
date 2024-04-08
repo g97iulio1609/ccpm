@@ -129,23 +129,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final userRole = ref.watch(userRoleProvider);
     final user = FirebaseAuth.instance.currentUser;
     final controller = ref.watch(trainingProgramControllerProvider);
-    final isTrainingProgramWeekRoute = GoRouterState.of(context).uri.toString().contains('/training_program/') &&
-        GoRouterState.of(context).uri.toString().contains('/week/');
-    String? programId;
-    String? userId;
 
-    if (isTrainingProgramWeekRoute) {
-      final uriParts = GoRouterState.of(context).uri.toString().split('/');
-      programId = uriParts[uriParts.length - 3];
-      userId = uriParts[uriParts.length - 7];
-    }
-
-    final isBackButtonVisible = GoRouterState.of(context).uri.toString().contains('/week_details/') ||
-        GoRouterState.of(context).uri.toString().contains('/workout_details/') ||
-        GoRouterState.of(context).uri.toString().contains('/exercise_details/') ||
-        GoRouterState.of(context).uri.toString().contains('/timer') ||
-        GoRouterState.of(context).uri.toString().contains('/training_program/') ||
-        isTrainingProgramWeekRoute;
+    final currentRoute = GoRouterState.of(context).uri.toString();
+    final isBackButtonVisible = currentRoute.split('/').length > 2;
 
     return Scaffold(
       appBar: user != null
@@ -155,8 +141,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ? IconButton(
                       icon: const Icon(Icons.arrow_back),
                       onPressed: () {
-                        if (isTrainingProgramWeekRoute && userId != null && programId != null) {
+                        final currentPath = GoRouterState.of(context).uri.toString();
+                        final trainingProgramWeekPattern = RegExp(r'/programs_screen/user_programs/\w+/training_program/\w+/week/\d+$');
+                        final trainingProgramPattern = RegExp(r'/programs_screen/user_programs/\w+/training_program/\w+$');
+
+                        if (trainingProgramWeekPattern.hasMatch(currentPath)) {
+                          final programId = currentPath.split('/')[5];
+                          final userId = currentPath.split('/')[3];
                           context.go('/programs_screen/user_programs/$userId/training_program/$programId');
+                        } else if (trainingProgramPattern.hasMatch(currentPath)) {
+                          final userId = currentPath.split('/')[3];
+                          context.go('/programs_screen/user_programs/$userId');
                         } else {
                           context.pop();
                         }

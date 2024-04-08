@@ -1,5 +1,3 @@
-import 'package:alphanessone/trainingBuilder/training_program_controller.dart';
-import 'package:alphanessone/trainingBuilder/training_program_workout_list.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
