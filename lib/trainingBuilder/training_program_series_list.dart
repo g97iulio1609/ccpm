@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'training_model.dart';
 import 'training_program_controller.dart';
 import 'utility_functions.dart';
 import '../users_services.dart';
+import 'reorder_dialog.dart';
 
 class TrainingProgramSeriesList extends ConsumerWidget {
   final TrainingProgramController controller;
@@ -27,33 +29,44 @@ class TrainingProgramSeriesList extends ConsumerWidget {
         .exercises[exerciseIndex];
     final groupedSeries = _groupSeries(exercise.series);
 
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
-      itemCount: groupedSeries.length,
-      itemBuilder: (context, index) {
-        final item = groupedSeries[index];
-        if (item is List<Series>) {
-          return _buildSeriesGroupCard(context, item, index);
-        } else {
-          return _buildSeriesCard(context, item as Series, index);
-        }
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: groupedSeries.length,
+          itemBuilder: (context, index) {
+            final item = groupedSeries[index];
+            if (item is List<Series>) {
+              return _buildSeriesGroupCard(context, item, index);
+            } else {
+              return _buildSeriesCard(context, item as Series, index);
+            }
+          },
+        ),
+        TextButton(
+          onPressed: () => _showReorderSeriesDialog(context, exercise.series),
+          child: const Text('Reorder Series'),
+        ),
+      ],
     );
   }
 
-List<dynamic> _groupSeries(List<Series> series) {
-  final groupedSeries = <dynamic>[];
-  for (int i = 0; i < series.length; i++) {
-    final currentSeries = series[i];
-    if (i == 0 || currentSeries.reps != series[i - 1].reps || currentSeries.weight != series[i - 1].weight) {
-      groupedSeries.add([currentSeries]);
-    } else {
-      (groupedSeries.last as List<Series>).add(currentSeries);
+  List<dynamic> _groupSeries(List<Series> series) {
+    final groupedSeries = <dynamic>[];
+    for (int i = 0; i < series.length; i++) {
+      final currentSeries = series[i];
+      if (i == 0 ||
+          currentSeries.reps != series[i - 1].reps ||
+          currentSeries.weight != series[i - 1].weight) {
+        groupedSeries.add([currentSeries]);
+      } else {
+        (groupedSeries.last as List<Series>).add(currentSeries);
+      }
     }
+    return groupedSeries;
   }
-  return groupedSeries.map((item) => item.length == 1 ? item.first : item).toList();
-}
 
   Widget _buildSeriesGroupCard(
       BuildContext context, List<Series> seriesGroup, int groupIndex) {
@@ -172,137 +185,173 @@ List<dynamic> _groupSeries(List<Series> series) {
     );
   }
 
-void _showEditAllSeriesDialog(BuildContext context, List<Series> seriesGroup) async {
-  final series = seriesGroup.first;
-  final repsController = TextEditingController(text: series.reps.toString());
-  final setsController = TextEditingController(text: seriesGroup.length.toString());
-  final intensityController = TextEditingController(text: series.intensity);
-  final rpeController = TextEditingController(text: series.rpe);
-  final weightController = TextEditingController(text: series.weight.toString());
-
-  FocusNode weightFocusNode = FocusNode();
-  FocusNode intensityFocusNode = FocusNode();
-
-  final result = await showDialog(
-    context: context,
-    builder: (context) => StatefulBuilder(
-      builder: (context, setState) {
-        return AlertDialog(
-          title: const Text('Edit All Series'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: repsController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Reps'),
-                  onChanged: (_) {
-                    _updateRPE(repsController, weightController, rpeController, intensityController, setState);
-                  },
-                ),
-                TextField(
-                  controller: setsController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Sets'),
-                ),
-                TextField(
-                  controller: intensityController,
-                  keyboardType: TextInputType.number,
-                  focusNode: intensityFocusNode,
-                  decoration: const InputDecoration(labelText: 'Intensity (%)'),
-                  onChanged: (_) {
-                    if (intensityFocusNode.hasFocus) {
-                      _updateWeight(weightController, intensityController, setState);
-                    }
-                  },
-                ),
-                TextField(
-                  controller: rpeController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'RPE'),
-                  onChanged: (_) {
-                    _updateWeightAndIntensity(repsController, weightController, rpeController, intensityController, setState);
-                  },
-                ),
-                TextField(
-                  controller: weightController,
-                  keyboardType: TextInputType.number,
-                  focusNode: weightFocusNode,
-                  decoration: const InputDecoration(labelText: 'Weight (kg)'),
-                  onChanged: (_) {
-                    if (weightFocusNode.hasFocus) {
-                      _updateIntensity(weightController, intensityController, setState);
-                    }
-                    _updateRPE(repsController, weightController, rpeController, intensityController, setState);
-                  },
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    ),
-  );
-
-  weightFocusNode.dispose();
-  intensityFocusNode.dispose();
-
-  if (result == true) {
-    final reps = int.parse(repsController.text);
-    final sets = int.parse(setsController.text);
-    final intensity = intensityController.text;
-    final rpe = rpeController.text;
-    final weight = double.parse(weightController.text);
-
-    // Update the series within the group
-    for (int i = 0; i < seriesGroup.length; i++) {
-      final s = seriesGroup[i];
-      s.reps = reps;
-      s.intensity = intensity;
-      s.rpe = rpe;
-      s.weight = weight;
-    }
-
-    // Add or remove series to match the new sets count
-    final exercise = controller.program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
-    final seriesIndex = exercise.series.indexOf(seriesGroup.first);
-    if (sets > seriesGroup.length) {
-      for (int i = seriesGroup.length; i < sets; i++) {
-        final newSeries = Series(
-          serieId: UniqueKey().toString(),
-          reps: reps,
-          sets: 1,
-          intensity: intensity,
-          rpe: rpe,
-          weight: weight,
-          order: series.order + i,
-          done: false,
-          reps_done: 0,
-          weight_done: 0.0,
-        );
-        exercise.series.insert(seriesIndex + i, newSeries);
+  void _showReorderSeriesDialog(BuildContext context, List<Series> series) {
+    final seriesNames = series.map((s) {
+      if (s.sets == 1) {
+        return 'Series ${s.order}: ${s.reps} reps x ${s.weight} kg';
+      } else {
+        return 'Series Group ${s.order}: ${s.sets} sets, ${s.reps} reps x ${s.weight} kg';
       }
-    } else if (sets < seriesGroup.length) {
-      for (int i = sets; i < seriesGroup.length; i++) {
-        final removedSeries = exercise.series.removeAt(seriesIndex + sets);
-        controller.program.trackToDeleteSeries.add(removedSeries.serieId!);
-      }
-    }
+    }).toList();
 
-    controller.notifyListeners();
+    showDialog(
+      context: context,
+      builder: (context) => ReorderDialog(
+        items: seriesNames,
+        onReorder: (oldIndex, newIndex) {
+          controller.reorderSeries(
+              weekIndex, workoutIndex, exerciseIndex, oldIndex, newIndex);
+        },
+      ),
+    );
   }
-}
+
+  void _showEditAllSeriesDialog(
+      BuildContext context, List<Series> seriesGroup) async {
+    final series = seriesGroup.first;
+    final repsController = TextEditingController(text: series.reps.toString());
+    final setsController =
+        TextEditingController(text: seriesGroup.length.toString());
+    final intensityController = TextEditingController(text: series.intensity);
+    final rpeController = TextEditingController(text: series.rpe);
+    final weightController =
+        TextEditingController(text: series.weight.toString());
+
+    FocusNode weightFocusNode = FocusNode();
+    FocusNode intensityFocusNode = FocusNode();
+
+    final result = await showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Edit All Series'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: repsController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'Reps'),
+                    onChanged: (_) {
+                      _updateRPE(repsController, weightController, rpeController,
+                          intensityController, setState);
+                    },
+                  ),
+                  TextField(
+                    controller: setsController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'Sets'),
+                  ),
+                  TextField(
+                    controller: intensityController,
+                    keyboardType: TextInputType.number,
+                    focusNode: intensityFocusNode,
+                    decoration:
+                        const InputDecoration(labelText: 'Intensity (%)'),
+                    onChanged: (_) {
+                      if (intensityFocusNode.hasFocus) {
+                        _updateWeight(
+                            weightController, intensityController, setState);
+                      }
+                    },
+                  ),
+                  TextField(
+                    controller: rpeController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'RPE'),
+                    onChanged: (_) {
+                      _updateWeightAndIntensity(
+                          repsController,
+                          weightController,
+                          rpeController,
+                          intensityController,
+                          setState);
+                    },
+                  ),
+                  TextField(
+                    controller: weightController,
+                    keyboardType: TextInputType.number,
+                    focusNode: weightFocusNode,
+                    decoration:
+                        const InputDecoration(labelText: 'Weight (kg)'),
+                    onChanged: (_) {
+                      if (weightFocusNode.hasFocus) {
+                        _updateIntensity(
+                            weightController, intensityController, setState);
+                      }
+                      _updateRPE(repsController, weightController, rpeController,
+                          intensityController, setState);
+                    },
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Save'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    weightFocusNode.dispose();
+    intensityFocusNode.dispose();
+
+    if (result == true) {
+      final reps = int.parse(repsController.text);
+      final sets = int.parse(setsController.text);
+      final intensity = intensityController.text;
+      final rpe = rpeController.text;
+      final weight = double.parse(weightController.text);
+
+      // Update the series within the group
+      for (int i = 0; i < seriesGroup.length; i++) {
+        final s = seriesGroup[i];
+        s.reps = reps;
+        s.intensity = intensity;
+        s.rpe = rpe;
+        s.weight = weight;
+      }
+
+      // Add or remove series to match the new sets count
+      final exercise = controller.program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+      final seriesIndex = exercise.series.indexOf(seriesGroup.first);
+      if (sets > seriesGroup.length) {
+        for (int i = seriesGroup.length; i < sets; i++) {
+          final newSeries = Series(
+            serieId: UniqueKey().toString(),
+            reps: reps,
+            sets: 1,
+            intensity: intensity,
+            rpe: rpe,
+            weight: weight,
+            order: series.order + i,
+            done: false,
+            reps_done: 0,
+            weight_done: 0.0,
+          );
+          exercise.series.insert(seriesIndex + i, newSeries);
+        }
+      } else if (sets < seriesGroup.length) {
+        for (int i = sets; i < seriesGroup.length; i++) {
+          final removedSeries = exercise.series.removeAt(seriesIndex + sets);
+          controller.program.trackToDeleteSeries.add(removedSeries.serieId!);
+        }
+      }
+
+      controller.notifyListeners();
+    }
+  }
+
   void _updateWeight(TextEditingController weightController,
       TextEditingController intensityController, StateSetter setState) async {
     final intensity = double.tryParse(intensityController.text) ?? 0;
@@ -373,8 +422,7 @@ void _showEditAllSeriesDialog(BuildContext context, List<Series> seriesGroup) as
             calculateIntensityFromWeight(roundedWeight, latestMaxWeight);
         intensityController.text = calculatedIntensity.toStringAsFixed(2);
       });
-    }
-  }
+    }}
 
   void _updateRPE(
     TextEditingController repsController,
