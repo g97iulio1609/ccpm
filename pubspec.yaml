@@ -54,7 +54,7 @@ dependencies:
   go_router: ^13.2.1
   numberpicker: ^2.1.2
   fl_chart: ^0.67.0
-  js: ^0.7.1
+  js: ^0.6.7
   material_color_utilities: ^0.8.0
   meta: ^1.11.0
   vm_service: ^13.0.0
@@ -131,4 +131,3 @@ flutter_launcher_icons:
     icon_size: 48
   macos:
     generate: true
-
