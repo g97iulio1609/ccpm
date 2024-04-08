@@ -81,7 +81,7 @@ class TrainingProgramController extends ChangeNotifier {
 
   Future<void> addWeek() async {
     final newWeek = Week(
-      id: UniqueKey().toString(),
+      id: null,
       number: _program.weeks.length + 1,
       workouts: [
         Workout(
