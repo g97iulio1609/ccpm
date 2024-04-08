@@ -32,14 +32,12 @@ class TrainingProgramController extends ChangeNotifier {
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
   late TextEditingController _athleteIdController;
-  late TextEditingController _athleteNameController;
   late TextEditingController _mesocycleNumberController;
 
   TrainingProgram get program => _programStateNotifier.state;
   TextEditingController get nameController => _nameController;
   TextEditingController get descriptionController => _descriptionController;
   TextEditingController get athleteIdController => _athleteIdController;
-  TextEditingController get athleteNameController => _athleteNameController;
   TextEditingController get mesocycleNumberController =>
       _mesocycleNumberController;
 
@@ -48,7 +46,6 @@ class TrainingProgramController extends ChangeNotifier {
     _nameController = TextEditingController(text: _program.name);
     _descriptionController = TextEditingController(text: _program.description);
     _athleteIdController = TextEditingController(text: _program.athleteId);
-    _athleteNameController = TextEditingController();
     _mesocycleNumberController =
         TextEditingController(text: _program.mesocycleNumber.toString());
   }
@@ -83,22 +80,19 @@ class TrainingProgramController extends ChangeNotifier {
   }
 
   Future<void> addWeek() async {
-    final newWeekId = UniqueKey().toString();
     final newWeek = Week(
-      id: newWeekId,
+      id: UniqueKey().toString(),
       number: _program.weeks.length + 1,
-      workouts: [],
+      workouts: [
+        Workout(
+          id: '',
+          order: 1,
+          exercises: [],
+        ),
+      ],
     );
-
-    final newWorkout = Workout(
-      id: '',
-      order: 1,
-      exercises: [],
-    );
-    newWeek.workouts.add(newWorkout);
 
     _program.weeks.add(newWeek);
-
     notifyListeners();
   }
 
@@ -119,7 +113,9 @@ class TrainingProgramController extends ChangeNotifier {
 
   void addWorkout(int weekIndex) {
     final newWorkout = Workout(
-        order: _program.weeks[weekIndex].workouts.length + 1, exercises: []);
+      order: _program.weeks[weekIndex].workouts.length + 1,
+      exercises: [],
+    );
     _program.weeks[weekIndex].workouts.add(newWorkout);
     notifyListeners();
   }
@@ -205,8 +201,7 @@ class TrainingProgramController extends ChangeNotifier {
     if (changedExercise != null) {
       final newMaxWeight = await getLatestMaxWeight(
           _usersService, _athleteIdController.text, exerciseId);
-      _updateExerciseSeries(changedExercise, newMaxWeight as double);
-      _updateExerciseWeekProgressions(changedExercise, newMaxWeight as double);
+      _updateExerciseWeights(changedExercise, newMaxWeight as double);
     }
   }
 
@@ -223,23 +218,28 @@ class TrainingProgramController extends ChangeNotifier {
     return null;
   }
 
-  void _updateExerciseSeries(Exercise exercise, double newMaxWeight) {
-    for (final series in exercise.series) {
-      final intensity = double.tryParse(series.intensity) ?? 0;
-      final calculatedWeight =
-          calculateWeightFromIntensity(newMaxWeight, intensity);
-      final roundedWeight = roundWeight(calculatedWeight, exercise.type);
-      series.weight = roundedWeight;
+ void _updateExerciseWeights(Exercise exercise, double newMaxWeight) {
+  final exerciseType = exercise.type ?? '';
+  _updateSeriesWeights(exercise.series, newMaxWeight, exerciseType);
+  _updateWeekProgressionWeights(exercise.weekProgressions, newMaxWeight, exerciseType);
+}
+
+ void _updateSeriesWeights(
+      List<Series> series, double maxWeight, String exerciseType) {
+    for (final item in series) {
+      final intensity = double.tryParse(item.intensity) ?? 0;
+      final calculatedWeight = calculateWeightFromIntensity(maxWeight, intensity);
+      item.weight = roundWeight(calculatedWeight, exerciseType);
     }
   }
 
-  void _updateExerciseWeekProgressions(Exercise exercise, double newMaxWeight) {
-    for (final progression in exercise.weekProgressions) {
-      final intensity = double.tryParse(progression.intensity) ?? 0;
-      final calculatedWeight =
-          calculateWeightFromIntensity(newMaxWeight, intensity);
-      final roundedWeight = roundWeight(calculatedWeight, exercise.type);
-      progression.weight = roundedWeight;
+
+ void _updateWeekProgressionWeights(
+      List<WeekProgression> progressions, double maxWeight, String exerciseType) {
+    for (final item in progressions) {
+      final intensity = double.tryParse(item.intensity) ?? 0;
+      final calculatedWeight = calculateWeightFromIntensity(maxWeight, intensity);
+      item.weight = roundWeight(calculatedWeight, exerciseType);
     }
   }
 
@@ -306,11 +306,7 @@ class TrainingProgramController extends ChangeNotifier {
     final exercise = _program
         .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     final series = exercise.series[groupIndex * 1 + seriesIndex];
-
-    if (series.serieId != null) {
-      _program.trackToDeleteSeries.add(series.serieId!);
-    }
-
+    _removeSeriesData(series);
     exercise.series.removeAt(groupIndex * 1 + seriesIndex);
     _updateSeriesOrders(
         weekIndex, workoutIndex, exerciseIndex, groupIndex * 1 + seriesIndex);
@@ -436,21 +432,19 @@ class TrainingProgramController extends ChangeNotifier {
   }
 
   Exercise _copyExercise(Exercise sourceExercise) {
-    final newExerciseId = UniqueKey().toString();
     final copiedSeries =
         sourceExercise.series.map((series) => _copySeries(series)).toList();
 
     return sourceExercise.copyWith(
-      id: newExerciseId,
+      id: UniqueKey().toString(),
       exerciseId: sourceExercise.exerciseId,
       series: copiedSeries,
     );
   }
 
   Series _copySeries(Series sourceSeries) {
-    final newSeriesId = UniqueKey().toString();
     return sourceSeries.copyWith(
-      serieId: newSeriesId,
+      serieId: UniqueKey().toString(),
       done: false,
       reps_done: 0,
       weight_done: 0.0,
@@ -513,12 +507,9 @@ class TrainingProgramController extends ChangeNotifier {
           final exercise = workout.exercises[currentExerciseIndex];
 
           if (currentExerciseIndex == exerciseIndex) {
-            WeekProgression progression;
-            if (weekIndex < weekProgressions.length) {
-              progression = weekProgressions[weekIndex];
-            } else {
-              progression = weekProgressions.last;
-            }
+            final progression = weekIndex < weekProgressions.length
+                ? weekProgressions[weekIndex]
+                : weekProgressions.last;
 
             await _updateOrCreateSeries(exercise, progression, weekIndex,
                 workoutIndex, currentExerciseIndex, context);
@@ -542,8 +533,28 @@ class TrainingProgramController extends ChangeNotifier {
     final existingSeries = exercise.series
         .where((series) => series.order ~/ 100 == weekIndex)
         .toList();
-    final newSeriesCount = progression.sets;
 
+    await _adjustSeriesCount(existingSeries, progression.sets, weekIndex,
+        workoutIndex, exerciseIndex, context);
+
+    for (int i = 0; i < progression.sets; i++) {
+      final series = existingSeries[i];
+      series.reps = progression.reps;
+      series.intensity = progression.intensity;
+      series.rpe = progression.rpe;
+      series.weight = progression.weight;
+    }
+
+    notifyListeners();
+  }
+
+  Future<void> _adjustSeriesCount(
+      List<Series> existingSeries,
+      int newSeriesCount,
+      int weekIndex,
+      int workoutIndex,
+      int exerciseIndex,
+      BuildContext context) async {
     if (existingSeries.length < newSeriesCount) {
       for (int i = existingSeries.length; i < newSeriesCount; i++) {
         await addSeries(weekIndex, workoutIndex, exerciseIndex, context);
@@ -554,16 +565,6 @@ class TrainingProgramController extends ChangeNotifier {
         removeSeries(weekIndex, workoutIndex, exerciseIndex, 0, seriesIndex);
       }
     }
-
-    for (int i = 0; i < newSeriesCount; i++) {
-      final series = existingSeries[i];
-      series.reps = progression.reps;
-      series.intensity = progression.intensity;
-      series.rpe = progression.rpe;
-      series.weight = progression.weight;
-    }
-
-    notifyListeners();
   }
 
   void _updateWeekProgression(int weekIndex, int workoutIndex,
@@ -615,12 +616,9 @@ class TrainingProgramController extends ChangeNotifier {
           final currentExercise = workout.exercises[exerciseIndex];
           currentExercise.weekProgressions = updatedProgressions;
 
-          WeekProgression progression;
-          if (weekIndex < updatedProgressions.length) {
-            progression = updatedProgressions[weekIndex];
-          } else {
-            progression = updatedProgressions.last;
-          }
+          final progression = weekIndex < updatedProgressions.length
+              ? updatedProgressions[weekIndex]
+              : updatedProgressions.last;
 
           currentExercise.series.clear();
 
@@ -723,12 +721,7 @@ class TrainingProgramController extends ChangeNotifier {
   }
 
   Future<void> submitProgram(BuildContext context) async {
-    _program.name = _nameController.text;
-    _program.description = _descriptionController.text;
-    _program.athleteId = _athleteIdController.text;
-    _program.mesocycleNumber =
-        int.tryParse(_mesocycleNumberController.text) ?? 0;
-    _program.hide = _program.hide;
+    _updateProgramFields();
 
     try {
       await _service.addOrUpdateTrainingProgram(_program);
@@ -736,14 +729,31 @@ class TrainingProgramController extends ChangeNotifier {
       await _usersService.updateUser(
           _athleteIdController.text, {'currentProgram': _program.id});
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Program added/updated successfully')),
-      );
+      _showSuccessSnackBar(context, 'Program added/updated successfully');
     } catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error adding/updating program: $error')),
-      );
+      _showErrorSnackBar(context, 'Error adding/updating program: $error');
     }
+  }
+
+  void _updateProgramFields() {
+    _program.name = _nameController.text;
+    _program.description = _descriptionController.text;
+    _program.athleteId = _athleteIdController.text;
+    _program.mesocycleNumber =
+        int.tryParse(_mesocycleNumberController.text) ?? 0;
+    _program.hide = _program.hide;
+  }
+
+  void _showSuccessSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  void _showErrorSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   void resetFields() {

@@ -30,11 +30,10 @@ class AthleteSelectionDialog extends ConsumerWidget {
                 },
                 displayStringForOption: (user) => user.name,
                 fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
-                  textEditingController.text = controller.athleteNameController.text;
                   return TextField(
                     controller: textEditingController,
                     focusNode: focusNode,
-                    onChanged: (value) => controller.athleteNameController.text = value,
+                    onChanged: (value) {},
                     decoration: const InputDecoration(
                       labelText: 'Athlete Name',
                       border: OutlineInputBorder(),
@@ -43,7 +42,6 @@ class AthleteSelectionDialog extends ConsumerWidget {
                 },
                 onSelected: (user) {
                   controller.athleteIdController.text = user.id;
-                  controller.athleteNameController.text = user.name;
                 },
               );
             } else if (snapshot.hasError) {

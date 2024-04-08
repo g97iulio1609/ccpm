@@ -123,9 +123,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return 'Alphaness One';
   }
 
+  bool _isTrainingProgramRoute(BuildContext context) {
+    final currentRoute = GoRouterState.of(context).uri.toString();
+    return currentRoute.startsWith('/programs_screen/user_programs/') &&
+        (currentRoute.contains('/training_program/') ||
+            currentRoute.contains('/week/'));
+  }
+
   @override
   Widget build(BuildContext context) {
-    var isLargeScreen = MediaQuery.of(context).size.width > 600;
+    final isLargeScreen = MediaQuery.of(context).size.width > 600;
     final userRole = ref.watch(userRoleProvider);
     final user = FirebaseAuth.instance.currentUser;
     final controller = ref.watch(trainingProgramControllerProvider);
@@ -163,6 +170,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   IconButton(
                     onPressed: () => _showAddUserDialog(context),
                     icon: const Icon(Icons.person_add),
+                  ),
+                if (_isTrainingProgramRoute(context))
+                  IconButton(
+                    onPressed: () => controller.submitProgram(context),
+                    icon: const Icon(Icons.save),
                   ),
               ],
             )
