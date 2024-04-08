@@ -41,13 +41,18 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
         .orderBy('order')
         .snapshots()
         .listen((exerciseSnapshot) {
-      List<Map<String, dynamic>> tempExercises =
-          exerciseSnapshot.docs.map((doc) {
+      List<Map<String, dynamic>> tempExercises = [];
+
+      // Create a batch for reading the exercise documents
+      final batch = FirebaseFirestore.instance.batch();
+      for (var doc in exerciseSnapshot.docs) {
+        batch.set(doc.reference, doc.data(), SetOptions(merge: true));
         var exerciseData = doc.data();
         exerciseData['id'] = doc.id;
         exerciseData['series'] = [];
-        return exerciseData;
-      }).toList();
+        tempExercises.add(exerciseData);
+      }
+      batch.commit();
 
       for (var exercise in tempExercises) {
         var seriesSubscription = FirebaseFirestore.instance
@@ -56,12 +61,17 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
             .orderBy('order')
             .snapshots()
             .listen((seriesSnapshot) {
-          List<Map<String, dynamic>> tempSeries =
-              seriesSnapshot.docs.map((seriesDoc) {
-            var seriesData = seriesDoc.data();
-            seriesData['id'] = seriesDoc.id;
-            return seriesData;
-          }).toList();
+          List<Map<String, dynamic>> tempSeries = [];
+
+          // Create a batch for reading the series documents
+          final batch = FirebaseFirestore.instance.batch();
+          for (var doc in seriesSnapshot.docs) {
+            batch.set(doc.reference, doc.data(), SetOptions(merge: true));
+            var seriesData = doc.data();
+            seriesData['id'] = doc.id;
+            tempSeries.add(seriesData);
+          }
+          batch.commit();
 
           if (mounted) {
             setState(() {
@@ -69,6 +79,9 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
               loading = false;
             });
           }
+
+          //debugPrint('Exercise: ${exercise['name']}');
+          //debugPrint('Series: $tempSeries');
         });
 
         subscriptions.add(seriesSubscription);
@@ -79,16 +92,16 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
           exercises = tempExercises;
         });
       }
+
+      //debugPrint('Exercises: $exercises');
     });
 
     subscriptions.add(exercisesSubscription);
   }
 
   int findFirstNotDoneSeriesIndex(List<Map<String, dynamic>> series) {
-    //debugPrint('Searching for first not done series...');
     for (int i = 0; i < series.length; i++) {
       final serie = series[i];
-      //debugPrint('Checking series at index $i: $serie');
 
       final repsDone = serie['reps_done'];
       final weightDone = serie['weight_done'];
@@ -104,13 +117,10 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
               weightDone != null &&
               weightDone <= weight &&
               weightDone > 0)) {
-        //debugPrint('Series at index $i is considered done');
       } else {
-        //debugPrint('Found first not done series at index $i');
         return i;
       }
     }
-    //debugPrint('All series are done');
     return series.length;
   }
 
@@ -155,14 +165,20 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                 final done = repsDone >= series['reps'] &&
                     weightDone >= series['weight'];
 
-                await FirebaseFirestore.instance
-                    .collection('series')
-                    .doc(series['id'])
-                    .update({
-                  'reps_done': repsDone,
-                  'weight_done': weightDone,
-                  'done': done,
-                });
+                // Update the series document in a batch
+                final batch = FirebaseFirestore.instance.batch();
+                batch.update(
+                  FirebaseFirestore.instance
+                      .collection('series')
+                      .doc(series['id']),
+                  {
+                    'reps_done': repsDone,
+                    'weight_done': weightDone,
+                    'done': done,
+                  },
+                );
+                await batch.commit();
+
                 Navigator.pop(context);
               },
               child: const Text('Salva'),
@@ -190,6 +206,8 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                 final firstNotDoneSeriesIndex = findFirstNotDoneSeriesIndex(
                     List<Map<String, dynamic>>.from(exercise['series']));
                 final isContinueMode = firstNotDoneSeriesIndex > 0;
+                final allSeriesDone =
+                    firstNotDoneSeriesIndex == exercise['series'].length;
 
                 return Card(
                   elevation: 4,
@@ -222,32 +240,38 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                           ],
                         ),
                         const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () {
-                            context.go(
-                              '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${exercise['id']}',
-                              extra: {
-                                'exerciseName': exercise['name'],
-                                'exerciseVariant': exercise['variant'],
-                                'seriesList': List<Map<String, dynamic>>.from(
-                                    exercise['series']),
-                                'startIndex': firstNotDoneSeriesIndex,
+                        if (!allSeriesDone)
+                          Align(
+                            alignment: Alignment.center,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                context.go(
+                                  '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${exercise['id']}',
+                                  extra: {
+                                    'exerciseName': exercise['name'],
+                                    'exerciseVariant': exercise['variant'],
+                                    'seriesList':
+                                        List<Map<String, dynamic>>.from(
+                                            exercise['series']),
+                                    'startIndex': firstNotDoneSeriesIndex,
+                                  },
+                                );
                               },
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            foregroundColor: isDarkMode
-                                ? colorScheme.onPrimary
-                                : colorScheme.onSecondary,
-                            backgroundColor: isDarkMode
-                                ? colorScheme.primary
-                                : colorScheme.secondary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
+                              style: ElevatedButton.styleFrom(
+                                foregroundColor: isDarkMode
+                                    ? colorScheme.onPrimary
+                                    : colorScheme.onSecondary,
+                                backgroundColor: isDarkMode
+                                    ? colorScheme.primary
+                                    : colorScheme.secondary,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                              child:
+                                  Text(isContinueMode ? 'CONTINUA' : 'START'),
                             ),
                           ),
-                          child: Text(isContinueMode ? 'CONTINUA' : 'START'),
-                        ),
                         const SizedBox(height: 16),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,

@@ -26,22 +26,22 @@ class TrainingProgram {
   }) : weeks = weeks ?? [];
 
   TrainingProgram copyWith({
-    String? id,
-    String? name,
-    String? description,
-    String? athleteId,
-    int? mesocycleNumber,
-    List<Week>? weeks,
-  }) {
-    return TrainingProgram(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      description: description ?? this.description,
-      athleteId: athleteId ?? this.athleteId,
-      mesocycleNumber: mesocycleNumber ?? this.mesocycleNumber,
-      weeks: weeks ?? this.weeks,
-    );
-  }
+  String? id,
+  String? name,
+  String? description,
+  String? athleteId,
+  int? mesocycleNumber,
+  List<Week>? weeks,
+}) {
+  return TrainingProgram(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    description: description ?? this.description,
+    athleteId: athleteId ?? this.athleteId,
+    mesocycleNumber: mesocycleNumber ?? this.mesocycleNumber,
+    weeks: weeks ?? this.weeks,
+  );
+}
 
   factory TrainingProgram.fromMap(Map<String, dynamic> map) {
     return TrainingProgram(
@@ -312,7 +312,7 @@ class WeekProgression {
 
 class Series {
   String? id;
-  String serieId;
+  String? serieId;
   int reps;
   int sets;
   String intensity;
@@ -413,4 +413,20 @@ factory Series.fromFirestore(DocumentSnapshot doc) {
       'weight_done': weight_done,
     };
   }
+
+  Map<String, dynamic> toFirestore() {
+  return {
+    'reps': reps,
+    'sets': sets,
+    'intensity': intensity,
+    'rpe': rpe,
+    'weight': weight,
+    'id': id,
+    'serieId': serieId,
+    'order': order,
+    'done': done,
+    'reps_done': reps_done,
+    'weight_done': weight_done,
+  };
+}
 }

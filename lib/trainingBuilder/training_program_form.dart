@@ -40,7 +40,7 @@ class TrainingProgramForm extends ConsumerWidget {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => _showAthleteSelectionDialog(context, ref),
-              child: Text(controller.athleteNameController.text.isEmpty ? 'Select Athlete' : controller.athleteNameController.text),
+              child: const Text('Select Athlete'),
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -54,8 +54,7 @@ class TrainingProgramForm extends ConsumerWidget {
               title: const Text('Hide Program'),
               value: controller.program.hide,
               onChanged: (value) {
-                controller.program.hide = value;
-                controller.notifyListeners();
+                controller.updateHideProgram(value);
               },
             ),
             const SizedBox(height: 16),

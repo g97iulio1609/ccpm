@@ -227,78 +227,61 @@ class SeriesDialog extends ConsumerWidget {
     }
   }
 
-  void _saveSeries(
-    BuildContext context,
-    TrainingProgramController controller,
-    TextEditingController repsController,
-    TextEditingController setsController,
-    TextEditingController intensityController,
-    TextEditingController rpeController,
-    TextEditingController weightController,
-  ) {
-    final reps = int.tryParse(repsController.text) ?? 0;
-    final sets = int.tryParse(setsController.text) ?? 0;
-    final intensity = intensityController.text;
-    final rpe = rpeController.text;
-    final weight = double.tryParse(weightController.text) ?? 0;
+void _saveSeries(
+  BuildContext context,
+  TrainingProgramController controller,
+  TextEditingController repsController,
+  TextEditingController setsController,
+  TextEditingController intensityController,
+  TextEditingController rpeController,
+  TextEditingController weightController,
+) {
+  final reps = int.tryParse(repsController.text) ?? 0;
+  final sets = int.tryParse(setsController.text) ?? 0;
+  final intensity = intensityController.text;
+  final rpe = rpeController.text;
+  final weight = double.tryParse(weightController.text) ?? 0;
 
-    final newSeries = Series(
-      id: currentSeries?.id,
-      serieId: currentSeries?.serieId ?? '',
-      reps: reps,
-      sets: 1,
-      intensity: intensity,
-      rpe: rpe,
-      weight: weight,
-      order: currentSeries?.order ?? 1,
-      done: currentSeries?.done ?? false,
-      reps_done: currentSeries?.reps_done ?? 0,
-      weight_done: currentSeries?.weight_done ?? 0.0,
-    );
+  final newSeries = Series(
+    id: currentSeries?.id,
+    serieId: currentSeries?.serieId ?? '',
+    reps: reps,
+    sets: 1,
+    intensity: intensity,
+    rpe: rpe,
+    weight: weight,
+    order: currentSeries?.order ?? (weekIndex * 100 + 1),
+    done: currentSeries?.done ?? false,
+    reps_done: currentSeries?.reps_done ?? 0,
+    weight_done: currentSeries?.weight_done ?? 0.0,
+  );
 
-    if (newSeries.serieId.isEmpty) {
-      newSeries.serieId = '${DateTime.now().millisecondsSinceEpoch}_0';
-    }
-
-    final seriesList = [newSeries];
-
-    if (sets > 1) {
-      for (int i = 1; i < sets; i++) {
-        final baseId = DateTime.now().millisecondsSinceEpoch;
-        final automatedSeriesId = '${baseId}_$i';
-        final automatedSeries = Series(
-          serieId: automatedSeriesId,
-          reps: newSeries.reps,
-          sets: 1,
-          intensity: newSeries.intensity,
-          rpe: newSeries.rpe,
-          weight: newSeries.weight,
-          order: i + 1,
-          done: false,
-          reps_done: 0,
-          weight_done: 0.0,
-        );
-        seriesList.add(automatedSeries);
-      }
-    }
-
-    final updatedWeekProgression = WeekProgression(
-      weekNumber: weekIndex + 1,
-      reps: reps,
-      sets: sets,
-      intensity: intensity,
-      rpe: rpe,
-      weight: weight,
-    );
-
-    final exerciseIndex = exercise.order - 1;
-    if (exerciseIndex >= 0 && exerciseIndex < controller.program.weeks[weekIndex].workouts.length) {
-      const workoutIndex = 0;
-      if (exerciseIndex >= 0 && exerciseIndex < controller.program.weeks[weekIndex].workouts[workoutIndex].exercises.length) {
-        controller.updateWeekProgression(weekIndex, workoutIndex, exerciseIndex, updatedWeekProgression);
-      }
-    }
-
-    Navigator.pop(context, seriesList);
+  if (newSeries.serieId!.isEmpty) {
+    newSeries.serieId = '${DateTime.now().millisecondsSinceEpoch}_0';
   }
+
+  final seriesList = [newSeries];
+
+  if (sets > 1) {
+    for (int i = 1; i < sets; i++) {
+      final baseId = DateTime.now().millisecondsSinceEpoch;
+      final automatedSeriesId = '${baseId}_$i';
+      final automatedSeries = Series(
+        serieId: automatedSeriesId,
+        reps: newSeries.reps,
+        sets: 1,
+        intensity: newSeries.intensity,
+        rpe: newSeries.rpe,
+        weight: newSeries.weight,
+        order: weekIndex * 100 + i + 1,
+        done: false,
+        reps_done: 0,
+        weight_done: 0.0,
+      );
+      seriesList.add(automatedSeries);
+    }
+  }
+
+  Navigator.pop(context, seriesList);
+}
 }

@@ -1,61 +1,93 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'training_model.dart';
 import 'training_program_controller.dart';
-import 'training_program_exercise_list.dart';
+import 'reorder_dialog.dart';
 
-class TrainingProgramWorkoutList extends ConsumerWidget {
+class TrainingProgramWorkoutListPage extends StatefulWidget {
   final TrainingProgramController controller;
   final int weekIndex;
 
-  const TrainingProgramWorkoutList({
+  const TrainingProgramWorkoutListPage({
     required this.controller,
     required this.weekIndex,
     super.key,
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final week = controller.program.weeks[weekIndex];
+  State<TrainingProgramWorkoutListPage> createState() =>
+      _TrainingProgramWorkoutListPageState();
+}
+
+class _TrainingProgramWorkoutListPageState
+    extends State<TrainingProgramWorkoutListPage> {
+  @override
+  Widget build(BuildContext context) {
+    final week = widget.controller.program.weeks[widget.weekIndex];
     final workouts = week.workouts;
 
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: workouts.length,
-      itemBuilder: (context, index) {
-        final workout = workouts[index];
-        return _buildWorkoutCard(context, workout);
-      },
+    return Scaffold(
+      body: ListView.builder(
+        itemCount: workouts.length,
+        itemBuilder: (context, index) {
+          final workout = workouts[index];
+          return _buildWorkoutCard(context, workout);
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => widget.controller.addWorkout(widget.weekIndex),
+        child: const Icon(Icons.add),
+      ),
     );
   }
 
   Widget _buildWorkoutCard(BuildContext context, Workout workout) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: ExpansionTile(
+      child: ListTile(
         title: Text(
           'Workout ${workout.order}',
           style: Theme.of(context).textTheme.titleMedium,
         ),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete),
-          onPressed: () => controller.removeWorkout(weekIndex, workout.order),
-        ),
-        children: [
-          TrainingProgramExerciseList(
-            controller: controller,
-            weekIndex: weekIndex,
-            workoutIndex: workout.order - 1,
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: ElevatedButton(
-              onPressed: () => controller.addExercise(weekIndex, workout.order - 1, context),
-              child: const Text('Add New Exercise'),
+        trailing: PopupMenuButton(
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              child: const Text('Delete'),
+              onTap: () => widget.controller.removeWorkout(
+                  widget.weekIndex, workout.order),
             ),
-          ),
-        ],
+            PopupMenuItem(
+              child: const Text('Copy Workout'),
+              onTap: () => widget.controller.copyWorkout(
+                  widget.weekIndex, workout.order - 1, context),
+            ),
+            PopupMenuItem(
+              child: const Text('Reorder Workouts'),
+              onTap: () => _showReorderWorkoutsDialog(context),
+            ),
+          ],
+        ),
+        onTap: () {
+          context.go(
+              '/programs_screen/user_programs/${widget.controller.program.athleteId}/training_program/${widget.controller.program.id}/week/${widget.weekIndex}/workout/${workout.order - 1}');
+        },
+      ),
+    );
+  }
+
+  void _showReorderWorkoutsDialog(BuildContext context) {
+    final workoutNames = widget.controller.program.weeks[widget.weekIndex]
+        .workouts
+        .map((workout) => 'Workout ${workout.order}')
+        .toList();
+
+    showDialog(
+      context: context,
+      builder: (context) => ReorderDialog(
+        items: workoutNames,
+        onReorder: (oldIndex, newIndex) => widget.controller
+            .reorderWorkouts(widget.weekIndex, oldIndex, newIndex),
       ),
     );
   }

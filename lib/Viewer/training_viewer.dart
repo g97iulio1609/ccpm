@@ -1,11 +1,11 @@
+// training_viewer.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'week_details.dart';
 
 class TrainingViewer extends StatefulWidget {
   final String programId;
-    final String userId;
+  final String userId;
   const TrainingViewer({super.key, required this.programId, required this.userId});
 
   @override
@@ -26,14 +26,24 @@ class _TrainingViewerState extends State<TrainingViewer> {
     setState(() {
       loading = true;
     });
+
     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
         .collection('weeks')
         .where('programId', isEqualTo: widget.programId)
         .orderBy('number')
         .get();
+
+    // Create a batch for reading the week documents
+    final batch = FirebaseFirestore.instance.batch();
+    for (var doc in querySnapshot.docs) {
+      batch.set(doc.reference, doc.data(), SetOptions(merge: true));
+    }
+    await batch.commit();
+
     weeks = querySnapshot.docs
         .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
         .toList();
+
     setState(() {
       loading = false;
     });
@@ -42,7 +52,6 @@ class _TrainingViewerState extends State<TrainingViewer> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-     
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
@@ -50,17 +59,18 @@ class _TrainingViewerState extends State<TrainingViewer> {
               itemBuilder: (context, index) {
                 var week = weeks[index];
                 return Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0, vertical: 8.0),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                   child: Card(
                     elevation: 4,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16.0),
                     ),
                     child: InkWell(
-                  onTap: () {
-  context.go('/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${week['id']}');
-},
+                      onTap: () {
+                        context.go(
+                            '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${week['id']}');
+                      },
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
@@ -71,15 +81,24 @@ class _TrainingViewerState extends State<TrainingViewer> {
                                 Icon(
                                   Icons.calendar_today,
                                   color: Theme.of(context).primaryColor,
+                                  size: 28.0,
                                 ),
-                                const SizedBox(width: 8.0),
+                                const SizedBox(width: 12.0),
                                 Text(
                                   "Settimana ${week['number']}",
-                                  style: Theme.of(context).textTheme.titleLarge,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleLarge
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .secondary,
+                                      ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 8.0),
+                            const SizedBox(height: 12.0),
                             Text(
                               week['description'] ?? '',
                               style: Theme.of(context).textTheme.bodyMedium,
