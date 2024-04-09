@@ -169,13 +169,13 @@ class Workout {
 
 class SuperSet {
   String id;
-    String name;
+    String? name;
 
   List<String> exerciseIds;
 
   SuperSet({
     required this.id,
-      required this.name,
+       this.name,
 
     required this.exerciseIds,
   });

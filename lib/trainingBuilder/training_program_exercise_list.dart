@@ -386,10 +386,9 @@ Future<void> _showAddToSuperSetDialog(BuildContext context, Exercise exercise) a
               items: superSets?.map((ss) {
                 return DropdownMenuItem<String>(
                   value: ss.id,
-                  child: Text(ss.name),
+                  child: Text(ss.name ?? ''), // Aggiungi l'operatore di coalescenza nulla qui
                 );
-              }).toList() ??
-                  [],
+              }).toList() ?? [],
               onChanged: (value) {
                 setState(() {
                   selectedSuperSetId = value;
@@ -427,7 +426,6 @@ Future<void> _showAddToSuperSetDialog(BuildContext context, Exercise exercise) a
     controller.addExerciseToSuperSet(weekIndex, workoutIndex, selectedSuperSetId!, exercise.id!);
   }
 }
-
   Future<void> _showRemoveFromSuperSetDialog(BuildContext context, Exercise exercise) async {
     final superSets = controller.program.weeks[weekIndex].workouts[workoutIndex].superSets
         .where((ss) => ss.exerciseIds.contains(exercise.id))
