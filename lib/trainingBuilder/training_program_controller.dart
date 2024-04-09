@@ -24,7 +24,7 @@ class TrainingProgramController extends ChangeNotifier {
   final FirestoreService _service;
   final UsersService _usersService;
   final TrainingProgramStateNotifier _programStateNotifier;
-    static int superSetCounter = 1;
+    static int superSetCounter = 0;
 
 
   TrainingProgramController(
@@ -300,9 +300,14 @@ String generateRandomId(int length) {
 }
 
 void createSuperSet(int weekIndex, int workoutIndex) {
-  final superSetId = generateRandomId(16).toString();
-  final superSetName = 'SS${TrainingProgramController.superSetCounter}';
-  TrainingProgramController.superSetCounter++; // Incrementiamo il contatore
+  final superSetId = generateRandomId(16);
+  final superSetName = 'SS${TrainingProgramController.superSetCounter + 1}';
+  TrainingProgramController.superSetCounter++;
+
+  // Controlla se il contatore ha superato il valore massimo (ad esempio, 100)
+  if (TrainingProgramController.superSetCounter > 100) {
+    TrainingProgramController.superSetCounter = 1;
+  }
 
   final superSet = SuperSet(id: superSetId, name: superSetName, exerciseIds: []);
   _program.weeks[weekIndex].workouts[workoutIndex].superSets.add(superSet);
@@ -346,18 +351,22 @@ void removeExerciseFromSuperSet(int weekIndex, int workoutIndex, String superSet
 
 void removeSuperSet(int weekIndex, int workoutIndex, String superSetId) {
   final workout = _program.weeks[weekIndex].workouts[workoutIndex];
+  final removedSuperSets = workout.superSets.where((ss) => ss.id == superSetId).toList();
   workout.superSets.removeWhere((ss) => ss.id == superSetId);
-  
-  // Aggiorniamo gli indici dei supersets rimanenti
-  int counter = 1;
-  for (final superSet in workout.superSets) {
-    superSet.name = 'SS$counter';
-    counter++;
+
+  // Aggiorniamo il contatore dei supersets
+  if (removedSuperSets.isNotEmpty) {
+    final removedSuperSetIndex = int.tryParse(removedSuperSets.first.name?.replaceAll('SS', '') ?? '0') ?? 0;
+    TrainingProgramController.superSetCounter = removedSuperSetIndex;
   }
-  
+
+  // Aggiorniamo gli indici dei supersets rimanenti
+  for (int i = 0; i < workout.superSets.length; i++) {
+    workout.superSets[i].name = 'SS${i + 1}';
+  }
+
   notifyListeners();
 }
-
 
   Future<void> addSeries(int weekIndex, int workoutIndex, int exerciseIndex,
       BuildContext context) async {
