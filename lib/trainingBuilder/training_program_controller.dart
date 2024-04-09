@@ -357,7 +357,7 @@ void removeSuperSet(int weekIndex, int workoutIndex, String superSetId) {
   // Aggiorniamo il contatore dei supersets
   if (removedSuperSets.isNotEmpty) {
     final removedSuperSetIndex = int.tryParse(removedSuperSets.first.name?.replaceAll('SS', '') ?? '0') ?? 0;
-    TrainingProgramController.superSetCounter = removedSuperSetIndex;
+    TrainingProgramController.superSetCounter = removedSuperSetIndex + 1;
   }
 
   // Aggiorniamo gli indici dei supersets rimanenti
