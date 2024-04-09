@@ -371,61 +371,69 @@ Future<void> _createNewSuperSet(BuildContext context) async {
 
 Future<void> _showAddToSuperSetDialog(BuildContext context, Exercise exercise) async {
   String? selectedSuperSetId;
+  final superSets = controller.program.weeks[weekIndex].workouts[workoutIndex].superSets;
 
-  selectedSuperSetId = await showDialog<String>(
-    context: context,
-    builder: (context) {
-      return StatefulBuilder(
-        builder: (context, setState) {
-          final superSets = controller.program.weeks[weekIndex].workouts[workoutIndex].superSets;
-
-          return AlertDialog(
-            title: const Text('Aggiungi al Superset'),
-            content: DropdownButtonFormField<String>(
-              value: selectedSuperSetId,
-              items: superSets?.map((ss) {
-                return DropdownMenuItem<String>(
-                  value: ss.id,
-                  child: Text(ss.name ?? ''), // Aggiungi l'operatore di coalescenza nulla qui
-                );
-              }).toList() ?? [],
-              onChanged: (value) {
-                setState(() {
-                  selectedSuperSetId = value;
-                });
-              },
-              decoration: const InputDecoration(
-                hintText: 'Seleziona il Superset',
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Annulla'),
-              ),
-              TextButton(
-                onPressed: () {
-                  controller.createSuperSet(weekIndex, workoutIndex);
-                  setState(() {});
-                  Navigator.of(context).pop(superSets.last.id);
+  if (superSets.isEmpty) {
+    // Crea un nuovo superset se non ce ne sono
+    controller.createSuperSet(weekIndex, workoutIndex);
+    selectedSuperSetId = controller.program.weeks[weekIndex].workouts[workoutIndex].superSets.first.id;
+  } else {
+    selectedSuperSetId = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Aggiungi al Superset'),
+              content: DropdownButtonFormField<String>(
+                value: selectedSuperSetId,
+                items: superSets.map((ss) {
+                  return DropdownMenuItem<String>(
+                    value: ss.id,
+                    child: Text(ss.name ?? ''),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    selectedSuperSetId = value;
+                  });
                 },
-                child: const Text('Crea Nuovo Superset'),
+                decoration: const InputDecoration(
+                  hintText: 'Seleziona il Superset',
+                ),
               ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(selectedSuperSetId),
-                child: const Text('Aggiungi'),
-              ),
-            ],
-          );
-        },
-      );
-    },
-  );
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Annulla'),
+                ),
+                if (superSets.isNotEmpty)
+                  TextButton(
+                    onPressed: () {
+                      controller.createSuperSet(weekIndex, workoutIndex);
+                      setState(() {});
+                      Navigator.of(context).pop(superSets.last.id);
+                    },
+                    child: const Text('Crea Nuovo Superset'),
+                  ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(selectedSuperSetId),
+                  child: const Text('Aggiungi'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   if (selectedSuperSetId != null) {
     controller.addExerciseToSuperSet(weekIndex, workoutIndex, selectedSuperSetId!, exercise.id!);
   }
 }
+
+
   Future<void> _showRemoveFromSuperSetDialog(BuildContext context, Exercise exercise) async {
     final superSets = controller.program.weeks[weekIndex].workouts[workoutIndex].superSets
         .where((ss) => ss.exerciseIds.contains(exercise.id))

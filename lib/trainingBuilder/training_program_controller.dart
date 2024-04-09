@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:alphanessone/trainingBuilder/exercise_dialog.dart';
 import 'package:alphanessone/trainingBuilder/series_dialog.dart';
 import 'package:flutter/material.dart';
@@ -81,7 +83,10 @@ Future<void> loadProgram(String? programId) async {
     _programStateNotifier.updateProgram(_program);
     notifyListeners();
   }
+
+
 void loadSuperSets() {
+  int maxSuperSetIndex = 0;
   final superSets = <SuperSet>[];
   final exercisesWithSuperSet = _program.weeks.expand((week) =>
       week.workouts.expand((workout) =>
@@ -94,6 +99,10 @@ void loadSuperSets() {
         (superSet) => superSet.id == superSetId,
         orElse: () => SuperSet(id: superSetId, name: 'SS${superSets.length + 1}', exerciseIds: []),
       );
+      final superSetIndex = int.tryParse(existingSuperSet.name?.replaceAll('SS', '') ?? '0') ?? 0;
+      if (superSetIndex > maxSuperSetIndex) {
+        maxSuperSetIndex = superSetIndex;
+      }
       if (!existingSuperSet.exerciseIds.contains(exercise.id)) {
         existingSuperSet.exerciseIds.add(exercise.id!);
       }
@@ -114,6 +123,7 @@ void loadSuperSets() {
     }
   }
 
+  TrainingProgramController.superSetCounter = maxSuperSetIndex + 1;
   notifyListeners();
 }
   Future<void> addWeek() async {
@@ -280,9 +290,17 @@ void loadSuperSets() {
     }
   }
 
+String generateRandomId(int length) {
+  final random = Random.secure();
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  return String.fromCharCodes(Iterable.generate(
+    length,
+    (_) => chars.codeUnitAt(random.nextInt(chars.length)),
+  ));
+}
 
 void createSuperSet(int weekIndex, int workoutIndex) {
-  final superSetId = UniqueKey().toString();
+  final superSetId = generateRandomId(16).toString();
   final superSetName = 'SS${TrainingProgramController.superSetCounter}';
   TrainingProgramController.superSetCounter++; // Incrementiamo il contatore
 
@@ -318,12 +336,25 @@ void removeExerciseFromSuperSet(int weekIndex, int workoutIndex, String superSet
   );
   exercise.superSetId = null;
 
+  // Se il superset non contiene più esercizi, rimuovilo
+  if (superSet.exerciseIds.isEmpty) {
+    removeSuperSet(weekIndex, workoutIndex, superSetId);
+  }
+
   notifyListeners();
 }
 
 void removeSuperSet(int weekIndex, int workoutIndex, String superSetId) {
   final workout = _program.weeks[weekIndex].workouts[workoutIndex];
   workout.superSets.removeWhere((ss) => ss.id == superSetId);
+  
+  // Aggiorniamo gli indici dei supersets rimanenti
+  int counter = 1;
+  for (final superSet in workout.superSets) {
+    superSet.name = 'SS$counter';
+    counter++;
+  }
+  
   notifyListeners();
 }
 
