@@ -81,46 +81,41 @@ Future<void> loadProgram(String? programId) async {
     _programStateNotifier.updateProgram(_program);
     notifyListeners();
   }
-
 void loadSuperSets() {
-  debugPrint('Starting loadSuperSets()');
   final superSets = <SuperSet>[];
-  debugPrint('Created superSets list: $superSets');
-
-  final exercisesWithSuperSet = _program.weeks.expand((week) => week.workouts.expand((workout) => workout.exercises.where((exercise) => exercise.superSetId != null)));
-  debugPrint('Found exercises with superSet: $exercisesWithSuperSet');
+  final exercisesWithSuperSet = _program.weeks.expand((week) =>
+      week.workouts.expand((workout) =>
+          workout.exercises.where((exercise) => exercise.superSetId != null)));
 
   for (final exercise in exercisesWithSuperSet) {
-    debugPrint('Processing exercise: $exercise');
     final superSetId = exercise.superSetId;
     if (superSetId != null) {
-      debugPrint('Exercise has superSetId: $superSetId');
       final existingSuperSet = superSets.firstWhere(
         (superSet) => superSet.id == superSetId,
-        orElse: () {
-          debugPrint('Creating new SuperSet with id: $superSetId');
-          return SuperSet(id: superSetId, exerciseIds: []);
-        },
+        orElse: () => SuperSet(id: superSetId, name: 'SS${superSets.length + 1}', exerciseIds: []),
       );
-      debugPrint('Existing SuperSet: $existingSuperSet');
-      existingSuperSet.exerciseIds.add(exercise.id!);
-      debugPrint('Added exercise ${exercise.id} to SuperSet ${existingSuperSet.id}');
+      if (!existingSuperSet.exerciseIds.contains(exercise.id)) {
+        existingSuperSet.exerciseIds.add(exercise.id!);
+      }
+      if (!superSets.contains(existingSuperSet)) {
+        superSets.add(existingSuperSet);
+      }
     }
   }
 
   for (final week in _program.weeks) {
-    debugPrint('Processing week: $week');
     for (final workout in week.workouts) {
-      debugPrint('Processing workout: $workout');
-      workout.superSets = superSets;
-      debugPrint('Assigned superSets to workout: $superSets');
+      final workoutSuperSets = superSets.where((superSet) {
+        return superSet.exerciseIds.any((exerciseId) {
+          return workout.exercises.any((exercise) => exercise.id == exerciseId);
+        });
+      }).toList();
+      workout.superSets = workoutSuperSets;
     }
   }
 
-  debugPrint('Finished loadSuperSets()');
   notifyListeners();
 }
-
   Future<void> addWeek() async {
     final newWeek = Week(
       id: null,
