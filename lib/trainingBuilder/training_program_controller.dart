@@ -22,6 +22,8 @@ class TrainingProgramController extends ChangeNotifier {
   final FirestoreService _service;
   final UsersService _usersService;
   final TrainingProgramStateNotifier _programStateNotifier;
+    static int superSetCounter = 1;
+
 
   TrainingProgramController(
       this._service, this._usersService, this._programStateNotifier) {
@@ -50,19 +52,20 @@ class TrainingProgramController extends ChangeNotifier {
         TextEditingController(text: _program.mesocycleNumber.toString());
   }
 
-  Future<void> loadProgram(String? programId) async {
-    if (programId == null) {
-      _initProgram();
-      return;
-    }
-
-    try {
-      _program = await _service.fetchTrainingProgram(programId);
-      _updateProgram();
-    } catch (error) {
-      // Handle error
-    }
+Future<void> loadProgram(String? programId) async {
+  if (programId == null) {
+    _initProgram();
+    return;
   }
+
+  try {
+    _program = await _service.fetchTrainingProgram(programId);
+    _updateProgram();
+    loadSuperSets(); // Chiamiamo il nuovo metodo loadSuperSets
+  } catch (error) {
+    // Handle error
+  }
+}
 
   void _updateProgram() {
     _nameController.text = _program.name;
@@ -78,6 +81,32 @@ class TrainingProgramController extends ChangeNotifier {
     _programStateNotifier.updateProgram(_program);
     notifyListeners();
   }
+
+void loadSuperSets() {
+  final superSets = <SuperSet>[];
+  final exercisesWithSuperSet = _program.weeks.expand((week) =>
+      week.workouts.expand((workout) =>
+          workout.exercises.where((exercise) => exercise.superSetId != null)));
+
+  for (final exercise in exercisesWithSuperSet) {
+    final superSetId = exercise.superSetId;
+    if (superSetId != null) {
+      final existingSuperSet = superSets.firstWhere(
+        (superSet) => superSet.id == superSetId,
+        orElse: () => SuperSet(id: superSetId, name: 'SS${superSets.length + 1}', exerciseIds: []),
+      );
+      existingSuperSet.exerciseIds.add(exercise.id!);
+    }
+  }
+
+  for (final week in _program.weeks) {
+    for (final workout in week.workouts) {
+      workout.superSets = superSets;
+    }
+  }
+
+  notifyListeners();
+}
 
   Future<void> addWeek() async {
     final newWeek = Week(
@@ -242,6 +271,54 @@ class TrainingProgramController extends ChangeNotifier {
       item.weight = roundWeight(calculatedWeight, exerciseType);
     }
   }
+
+
+void createSuperSet(int weekIndex, int workoutIndex) {
+  final superSetId = UniqueKey().toString();
+  final superSetName = 'SS${TrainingProgramController.superSetCounter}';
+  TrainingProgramController.superSetCounter++; // Incrementiamo il contatore
+
+  final superSet = SuperSet(id: superSetId, name: superSetName, exerciseIds: []);
+  _program.weeks[weekIndex].workouts[workoutIndex].superSets.add(superSet);
+  notifyListeners();
+}
+
+void addExerciseToSuperSet(int weekIndex, int workoutIndex, String superSetId, String exerciseId) {
+  final superSet = _program.weeks[weekIndex].workouts[workoutIndex].superSets.firstWhere(
+    (ss) => ss.id == superSetId,
+  );
+  superSet.exerciseIds.add(exerciseId);
+
+  // Aggiorna la proprietà superSetId dell'esercizio
+  final exercise = _program.weeks[weekIndex].workouts[workoutIndex].exercises.firstWhere(
+    (e) => e.id == exerciseId,
+  );
+  exercise.superSetId = superSetId;
+
+  notifyListeners();
+}
+
+void removeExerciseFromSuperSet(int weekIndex, int workoutIndex, String superSetId, String exerciseId) {
+  final superSet = _program.weeks[weekIndex].workouts[workoutIndex].superSets.firstWhere(
+    (ss) => ss.id == superSetId,
+  );
+  superSet.exerciseIds.remove(exerciseId);
+
+  // Reimposta la proprietà superSetId dell'esercizio a null
+  final exercise = _program.weeks[weekIndex].workouts[workoutIndex].exercises.firstWhere(
+    (e) => e.id == exerciseId,
+  );
+  exercise.superSetId = null;
+
+  notifyListeners();
+}
+
+void removeSuperSet(int weekIndex, int workoutIndex, String superSetId) {
+  final workout = _program.weeks[weekIndex].workouts[workoutIndex];
+  workout.superSets.removeWhere((ss) => ss.id == superSetId);
+  notifyListeners();
+}
+
 
   Future<void> addSeries(int weekIndex, int workoutIndex, int exerciseIndex,
       BuildContext context) async {
