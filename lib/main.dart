@@ -185,6 +185,9 @@ final GoRouter router = GoRouter(
                                       state.pathParameters['workoutId']!),
                                   exerciseId: Uri.decodeComponent(
                                       state.pathParameters['exerciseId']!),
+                                           superSetExercises: extra?['superSetExercises'] != null
+          ? List<Map<String, dynamic>>.from(extra?['superSetExercises'])
+          : [],
                                   exerciseName:
                                       extra?['exerciseName'] ?? '',
                                   exerciseVariant:
@@ -211,6 +214,9 @@ final GoRouter router = GoRouter(
                                     currentSeriesIndex: int.parse(
                                         state.uri.queryParameters[
                                             'currentSeriesIndex']!),
+                                              superSetExerciseIndex: int.parse(
+                                        state.uri.queryParameters[
+                                            'superSetExerciseIndex']!),
                                     totalSeries: int.parse(state.uri
                                         .queryParameters['totalSeries']!),
                                     restTime: int.parse(state

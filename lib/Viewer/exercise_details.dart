@@ -14,6 +14,7 @@ class ExerciseDetails extends StatefulWidget {
   final String? exerciseVariant;
   final List<Map<String, dynamic>> seriesList;
   final int startIndex;
+  final List<Map<String,dynamic>> superSetExercises;
 
   const ExerciseDetails({
     super.key,
@@ -26,6 +27,7 @@ class ExerciseDetails extends StatefulWidget {
     this.exerciseVariant,
     required this.seriesList,
     required this.startIndex,
+    required this.superSetExercises,
   });
 
   @override
@@ -34,6 +36,7 @@ class ExerciseDetails extends StatefulWidget {
 
 class _ExerciseDetailsState extends State<ExerciseDetails> {
   int currentSeriesIndex = 0;
+  int currentSuperSetExerciseIndex = 0;
   final Map<String, TextEditingController> _repsControllers = {};
   final Map<String, TextEditingController> _weightControllers = {};
   int _minutes = 1;
@@ -96,13 +99,19 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
     final restTimeInSeconds = _getRestTimeInSeconds();
     if (currentSeriesIndex < widget.seriesList.length - 1) {
       final result = await context.push<Map<String, dynamic>>(
-        '/programs_screen/user_programs/${widget.userId}/training_viewer/${Uri.encodeComponent(widget.programId)}/week_details/${Uri.encodeComponent(widget.weekId)}/workout_details/${Uri.encodeComponent(widget.workoutId)}/exercise_details/${Uri.encodeComponent(widget.exerciseId)}/timer?currentSeriesIndex=${currentSeriesIndex + 1}&totalSeries=${widget.seriesList.length}&restTime=$restTimeInSeconds&isEmomMode=$_isEmomMode',
+        '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${widget.exerciseId}/timer?currentSeriesIndex=${currentSeriesIndex + 1}&totalSeries=${widget.seriesList.length}&restTime=$restTimeInSeconds&isEmomMode=$_isEmomMode&superSetExerciseIndex=$currentSuperSetExerciseIndex',
       );
       if (result != null) {
         setState(() {
           currentSeriesIndex = result['startIndex'];
+          currentSuperSetExerciseIndex = result['superSetExerciseIndex'];
         });
       }
+    } else if (currentSuperSetExerciseIndex < widget.superSetExercises.length - 1) {
+      setState(() {
+        currentSuperSetExerciseIndex++;
+        currentSeriesIndex = 0;
+      });
     } else {
       context.pop();
     }
@@ -121,6 +130,10 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
     final currentSeries = currentSeriesIndex < widget.seriesList.length
         ? widget.seriesList[currentSeriesIndex]
         : null;
+
+    final currentExercise = widget.superSetExercises.isEmpty
+        ? null
+        : widget.superSetExercises[currentSuperSetExerciseIndex];
 
     return Scaffold(
       backgroundColor: theme.colorScheme.background,
@@ -153,6 +166,16 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
                     ),
                   ],
                   const SizedBox(height: 32),
+                  if (currentExercise != null)
+                    Text(
+                      'Next: ${currentExercise['name']}',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: theme.colorScheme.onBackground,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  const SizedBox(height: 32),
                   _buildRestTimeSelector(theme),
                   const SizedBox(height: 32),
                   _buildEmomSwitch(theme),
@@ -167,24 +190,42 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
       ),
     );
   }
+Widget _buildSeriesIndicator(ThemeData theme) {
+  final currentExercise = widget.superSetExercises.isEmpty
+      ? null
+      : widget.superSetExercises[currentSuperSetExerciseIndex];
 
-  Widget _buildSeriesIndicator(ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primary.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Text(
-        'Set ${currentSeriesIndex + 1} / ${widget.seriesList.length}',
-        style: theme.textTheme.headlineSmall?.copyWith(
-          color: theme.colorScheme.onSurface,
-          fontWeight: FontWeight.bold,
+  return Container(
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: theme.colorScheme.primary.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: Column(
+      children: [
+        if (currentExercise != null)
+          Text(
+            'Super Set ${currentSuperSetExerciseIndex + 1}',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        Text(
+          currentExercise != null
+              ? '${currentExercise['name']} ${currentExercise['variant'] ?? ''}'
+              : 'Set ${currentSeriesIndex + 1} / ${widget.seriesList.length}',
+          style: theme.textTheme.titleLarge?.copyWith(
+            color: theme.colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
+          textAlign: TextAlign.center,
         ),
-        textAlign: TextAlign.center,
-      ),
-    );
-  }
+      ],
+    ),
+  );
+}
 
   Widget _buildInputField(
     ThemeData theme,
@@ -361,9 +402,10 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
         elevation: 0,
       ),
       child: Text(
-        currentSeriesIndex == widget.seriesList.length - 1
+        currentSeriesIndex == widget.seriesList.length - 1 &&
+                currentSuperSetExerciseIndex == widget.superSetExercises.length - 1
             ? 'FINISH'
-            : 'NEXT SET ${nextSeriesWeight != null ? '(${nextSeriesWeight.toStringAsFixed(2)} kg)' : ''}',
+            : 'NEXT ${nextSeriesWeight != null ? '(${nextSeriesWeight.toStringAsFixed(2)} kg)' : ''}',
         style: theme.textTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.bold,
         ),
@@ -378,3 +420,5 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
     super.dispose();
   }
 }
+
+

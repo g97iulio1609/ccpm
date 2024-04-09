@@ -12,6 +12,7 @@ class TimerPage extends StatefulWidget {
   final int totalSeries;
   final int restTime;
   final bool isEmomMode;
+  final int superSetExerciseIndex;
 
   const TimerPage({
     super.key,
@@ -22,18 +23,18 @@ class TimerPage extends StatefulWidget {
     required this.currentSeriesIndex,
     required this.totalSeries,
     required this.restTime,
-    required this.isEmomMode, required String userId,
+    required this.isEmomMode,
+    required this.superSetExerciseIndex,
+    required String userId,
   });
 
   @override
   _TimerPageState createState() => _TimerPageState();
 }
 
-class _TimerPageState extends State<TimerPage>
-    with SingleTickerProviderStateMixin {
+class _TimerPageState extends State<TimerPage> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _animation;
-  late Timer _timer;
+  late Animation<double> _animation;late Timer _timer;
   int _remainingSeconds = 0;
 
   @override
@@ -61,18 +62,19 @@ class _TimerPageState extends State<TimerPage>
     });
   }
 
-void _handleNextSeries() {
-  _timer.cancel();
-  if (widget.isEmomMode) {
-    _remainingSeconds = widget.restTime;
-    _startTimer();
-  } else {
-    _showNotification('Rest Time Completed', 'Your rest time has ended.');
-    context.pop(<String, dynamic>{
-      'startIndex': widget.currentSeriesIndex,
-    });
+  void _handleNextSeries() {
+    _timer.cancel();
+    if (widget.isEmomMode) {
+      _remainingSeconds = widget.restTime;
+      _startTimer();
+    } else {
+      _showNotification('Rest Time Completed', 'Your rest time has ended.');
+      context.pop(<String, dynamic>{
+        'startIndex': widget.currentSeriesIndex,
+        'superSetExerciseIndex': widget.superSetExerciseIndex,
+      });
+    }
   }
-}
 
   Future<void> _showNotification(String title, String body) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
@@ -112,7 +114,6 @@ void _handleNextSeries() {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    
     return Scaffold(
       body: Container(
         width: double.infinity,
