@@ -150,7 +150,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     );
   }
 
-  PopupMenuButton _buildExercisePopupMenu(
+Widget _buildExercisePopupMenu(
     BuildContext context,
     Exercise exercise,
     UsersService usersService,
@@ -172,17 +172,14 @@ class TrainingProgramExerciseList extends ConsumerWidget {
           onTap: () => _showReorderExercisesDialog(context, weekIndex, workoutIndex),
         ),
         PopupMenuItem(
-          child: const Text('Crea Nuovo Superset'),
-          onTap: () => _createNewSuperSet(context),
-        ),
-        PopupMenuItem(
           child: const Text('Aggiungi al Superset'),
           onTap: () => _showAddToSuperSetDialog(context, exercise),
         ),
-        PopupMenuItem(
-          child: const Text('Rimuovi dal Superset'),
-          onTap: () => _showRemoveFromSuperSetDialog(context, exercise),
-        ),
+        if (exercise.superSetId != null) // Mostra questa opzione solo se l'esercizio appartiene ad un superset
+          PopupMenuItem(
+            child: const Text('Rimuovi dal Superset'),
+            onTap: () => controller.removeExerciseFromSuperSet(weekIndex, workoutIndex, exercise.superSetId!, exercise.id!),
+          ),
       ],
     );
   }
