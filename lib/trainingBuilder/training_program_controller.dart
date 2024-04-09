@@ -301,7 +301,7 @@ String generateRandomId(int length) {
 
 void createSuperSet(int weekIndex, int workoutIndex) {
   final superSetId = generateRandomId(16);
-  final superSetName = 'SS${TrainingProgramController.superSetCounter + 1}';
+  final superSetName = 'SS${TrainingProgramController.superSetCounter}'; // Rimuovi l'aggiunta di 1
   TrainingProgramController.superSetCounter++;
 
   // Controlla se il contatore ha superato il valore massimo (ad esempio, 100)
