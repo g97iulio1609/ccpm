@@ -245,13 +245,25 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
-              'Super Set: ${superSetExercises.map((e) => "${e['name']} ${e['variant'] ?? ''}").join(' + ')}',
+              'Super Set:',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
                   ),
               textAlign: TextAlign.center,
             ),
+            const SizedBox(height: 8),
+            ...superSetExercises.asMap().entries.map((entry) {
+              final index = entry.key;
+              final exercise = entry.value;
+              return Text(
+                '${index + 1}. ${exercise['name']} ${exercise['variant'] ?? ''}',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+                    ),
+                textAlign: TextAlign.center,
+              );
+            }).toList(),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
