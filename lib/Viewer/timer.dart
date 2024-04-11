@@ -5,6 +5,9 @@ import 'package:go_router/go_router.dart';
 
 class TimerPage extends StatefulWidget {
   final String programId;
+    final String userId;
+  final List<Map<String, dynamic>> seriesList;
+
   final String weekId;
   final String workoutId;
   final String exerciseId;
@@ -17,6 +20,9 @@ class TimerPage extends StatefulWidget {
   const TimerPage({
     super.key,
     required this.programId,
+        required this.userId,
+    required this.seriesList,
+
     required this.weekId,
     required this.workoutId,
     required this.exerciseId,
@@ -25,7 +31,6 @@ class TimerPage extends StatefulWidget {
     required this.restTime,
     required this.isEmomMode,
     required this.superSetExerciseIndex,
-    required String userId,
   });
 
   @override
@@ -62,19 +67,29 @@ class _TimerPageState extends State<TimerPage> with SingleTickerProviderStateMix
     });
   }
 
-  void _handleNextSeries() {
-    _timer.cancel();
-    if (widget.isEmomMode) {
-      _remainingSeconds = widget.restTime;
-      _startTimer();
-    } else {
-      _showNotification('Rest Time Completed', 'Your rest time has ended.');
-      context.pop(<String, dynamic>{
-        'startIndex': widget.currentSeriesIndex,
+void _handleNextSeries() {
+  _timer.cancel();
+  if (widget.isEmomMode) {
+    _remainingSeconds = widget.restTime;
+    _startTimer();
+  } else {
+    _showNotification('Rest Time Completed', 'Your rest time has ended.');
+    if (widget.currentSeriesIndex < widget.seriesList.length - 1) {
+      // Passa alla serie successiva
+      final result = <String, dynamic>{
+        'startIndex': widget.currentSeriesIndex + 1,
         'superSetExerciseIndex': widget.superSetExerciseIndex,
-      });
+        'seriesList': widget.seriesList, // Usa widget.seriesList
+      };
+      context.pop(result);
+    } else {
+      // Torna a workout_details.dart
+      final workoutDetailsUrl =
+          '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}';
+      context.go(workoutDetailsUrl);
     }
   }
+}
 
   Future<void> _showNotification(String title, String body) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
