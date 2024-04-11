@@ -238,24 +238,28 @@ Widget build(BuildContext context) {
 
 
 Widget _buildCurrentExerciseIndicator(ThemeData theme) {
-  final currentExercise = widget.superSetExercises[widget.superSetExerciseIndex];
-  final exerciseName = '${currentExercise['name']} ${currentExercise['variant'] ?? ''}';
+  if (widget.superSetExercises.length > 1) {
+    final currentExercise = widget.superSetExercises[widget.superSetExerciseIndex];
+    final exerciseName = '${currentExercise['name']} ${currentExercise['variant'] ?? ''}';
 
-  return Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: theme.colorScheme.primary.withOpacity(0.2),
-      borderRadius: BorderRadius.circular(16),
-    ),
-    child: Text(
-      'Current Exercise: $exerciseName',
-      style: theme.textTheme.titleLarge?.copyWith(
-        color: theme.colorScheme.primary,
-        fontWeight: FontWeight.bold,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(16),
       ),
-      textAlign: TextAlign.center,
-    ),
-  );
+      child: Text(
+        'Current Exercise: $exerciseName',
+        style: theme.textTheme.titleLarge?.copyWith(
+          color: theme.colorScheme.primary,
+          fontWeight: FontWeight.bold,
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
+  } else {
+    return const SizedBox.shrink();
+  }
 }
 
   Widget _buildSeriesIndicator(ThemeData theme) {
