@@ -10,11 +10,10 @@ class ExerciseDetails extends StatefulWidget {
   final String weekId;
   final String workoutId;
   final String exerciseId;
-  final String exerciseName;
-  final String? exerciseVariant;
+  final List<Map<String, dynamic>> superSetExercises;
+  final int superSetExerciseIndex;
   final List<Map<String, dynamic>> seriesList;
   final int startIndex;
-  final List<Map<String,dynamic>> superSetExercises;
 
   const ExerciseDetails({
     super.key,
@@ -23,11 +22,10 @@ class ExerciseDetails extends StatefulWidget {
     required this.weekId,
     required this.workoutId,
     required this.exerciseId,
-    required this.exerciseName,
-    this.exerciseVariant,
+    required this.superSetExercises,
+    required this.superSetExerciseIndex,
     required this.seriesList,
     required this.startIndex,
-    required this.superSetExercises,
   });
 
   @override
@@ -36,9 +34,8 @@ class ExerciseDetails extends StatefulWidget {
 
 class _ExerciseDetailsState extends State<ExerciseDetails> {
   int currentSeriesIndex = 0;
-  int currentSuperSetExerciseIndex = 0;
-  final Map<String, TextEditingController> _repsControllers = {};
-  final Map<String, TextEditingController> _weightControllers = {};
+  final Map<String, Map<String, TextEditingController>> _repsControllers = {};
+  final Map<String, Map<String, TextEditingController>> _weightControllers = {};
   int _minutes = 1;
   int _seconds = 0;
   bool _isEmomMode = false;
@@ -51,23 +48,32 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
   }
 
   void _initControllers() {
-    for (final series in widget.seriesList) {
-      _repsControllers[series['id']] =
-          TextEditingController(text: series['reps'].toString());
-      _weightControllers[series['id']] =
-          TextEditingController(text: series['weight'].toString());
+    for (final exercise in widget.superSetExercises) {
+      _repsControllers[exercise['id']] = {};
+      _weightControllers[exercise['id']] = {};
+      for (final series in exercise['series']) {
+        _repsControllers[exercise['id']]![series['id']] =
+            TextEditingController(text: series['reps'].toString());
+        _weightControllers[exercise['id']]![series['id']] =
+            TextEditingController(text: series['weight'].toString());
+      }
     }
   }
 
   void _setCurrentSeriesIndex() {
-    currentSeriesIndex = widget.startIndex < widget.seriesList.length
+    final currentExercise =
+        widget.superSetExercises[widget.superSetExerciseIndex];
+    final currentSeriesList = currentExercise['series'];
+    currentSeriesIndex = widget.startIndex < currentSeriesList.length
         ? widget.startIndex
-        : widget.seriesList.length - 1;
+        : currentSeriesList.length - 1;
   }
 
   Future<void> _updateSeriesData(
-      String seriesId, int? repsDone, String? weightDoneString) async {
-    final currentSeries = widget.seriesList[currentSeriesIndex];
+      String exerciseId, String seriesId, int? repsDone, String? weightDoneString) async {
+    final currentSeries = widget.superSetExercises
+        .firstWhere((exercise) => exercise['id'] == exerciseId)['series']
+        .firstWhere((series) => series['id'] == seriesId);
     final expectedReps = currentSeries['reps'];
     final expectedWeight = currentSeries['weight'];
 
@@ -87,9 +93,11 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
     return (_minutes * 60) + _seconds;
   }
 
-  double? _getNextSeriesWeight() {
-    if (currentSeriesIndex < widget.seriesList.length - 1) {
-      final nextSeries = widget.seriesList[currentSeriesIndex + 1];
+  double? _getNextSeriesWeight(int index) {
+    final currentExercise = widget.superSetExercises[index];
+    final currentSeriesList = currentExercise['series'];
+    if (currentSeriesIndex < currentSeriesList.length - 1) {
+      final nextSeries = currentSeriesList[currentSeriesIndex + 1];
       return nextSeries['weight'].toDouble();
     }
     return null;
@@ -97,21 +105,43 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
 
   Future<void> _handleNextSeries() async {
     final restTimeInSeconds = _getRestTimeInSeconds();
-    if (currentSeriesIndex < widget.seriesList.length - 1) {
+    final currentExercise =
+        widget.superSetExercises[widget.superSetExerciseIndex];
+    final currentSeriesList = currentExercise['series'];
+    if (currentSeriesIndex < currentSeriesList.length - 1) {
       final result = await context.push<Map<String, dynamic>>(
-        '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${widget.exerciseId}/timer?currentSeriesIndex=${currentSeriesIndex + 1}&totalSeries=${widget.seriesList.length}&restTime=$restTimeInSeconds&isEmomMode=$_isEmomMode&superSetExerciseIndex=$currentSuperSetExerciseIndex',
+        '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${widget.exerciseId}?currentSeriesIndex=${currentSeriesIndex + 1}&totalSeries=${currentSeriesList.length}&restTime=$restTimeInSeconds&isEmomMode=$_isEmomMode&superSetExerciseIndex=${widget.superSetExerciseIndex}',
+        extra: {
+          'superSetExercises': widget.superSetExercises,
+          'superSetExerciseIndex': widget.superSetExerciseIndex,
+          'seriesList': currentSeriesList,
+          'startIndex': currentSeriesIndex + 1,
+        },
       );
       if (result != null) {
         setState(() {
           currentSeriesIndex = result['startIndex'];
-          currentSuperSetExerciseIndex = result['superSetExerciseIndex'];
         });
       }
-    } else if (currentSuperSetExerciseIndex < widget.superSetExercises.length - 1) {
-      setState(() {
-        currentSuperSetExerciseIndex++;
-        currentSeriesIndex = 0;
-      });
+    } else if (widget.superSetExerciseIndex <
+        widget.superSetExercises.length - 1) {
+      final nextExerciseIndex = widget.superSetExerciseIndex + 1;
+      final nextExercise = widget.superSetExercises[nextExerciseIndex];
+      final nextSeriesList = nextExercise['series'];
+      final result = await context.push<Map<String, dynamic>>(
+        '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${nextExercise['id']}?currentSeriesIndex=0&totalSeries=${nextSeriesList.length}&restTime=$restTimeInSeconds&isEmomMode=$_isEmomMode&superSetExerciseIndex=$nextExerciseIndex',
+        extra: {
+          'superSetExercises': widget.superSetExercises,
+          'superSetExerciseIndex': nextExerciseIndex,
+          'seriesList': nextSeriesList,
+          'startIndex': 0,
+        },
+      );
+      if (result != null) {
+        setState(() {
+          currentSeriesIndex = result['startIndex'];
+        });
+      }
     } else {
       context.pop();
     }
@@ -127,13 +157,12 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final currentSeries = currentSeriesIndex < widget.seriesList.length
-        ? widget.seriesList[currentSeriesIndex]
+    final currentExercise =
+        widget.superSetExercises[widget.superSetExerciseIndex];
+    final currentSeriesList = currentExercise['series'];
+    final currentSeries = currentSeriesIndex < currentSeriesList.length
+        ? currentSeriesList[currentSeriesIndex]
         : null;
-
-    final currentExercise = widget.superSetExercises.isEmpty
-        ? null
-        : widget.superSetExercises[currentSuperSetExerciseIndex];
 
     return Scaffold(
       backgroundColor: theme.colorScheme.background,
@@ -152,7 +181,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
                     _buildInputField(
                       theme,
                       'REPS',
-                      _repsControllers[currentSeries['id']]!,
+                      _repsControllers[currentExercise['id']]![currentSeries['id']]!,
                       TextInputType.number,
                       FilteringTextInputFormatter.digitsOnly,
                     ),
@@ -160,15 +189,16 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
                     _buildInputField(
                       theme,
                       'WEIGHT (kg)',
-                      _weightControllers[currentSeries['id']]!,
+                      _weightControllers[currentExercise['id']]![currentSeries['id']]!,
                       const TextInputType.numberWithOptions(decimal: true),
                       FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*')),
                     ),
                   ],
                   const SizedBox(height: 32),
-                  if (currentExercise != null)
+                  if (widget.superSetExerciseIndex <
+                      widget.superSetExercises.length - 1)
                     Text(
-                      'Next: ${currentExercise['name']}',
+                      'Next: ${widget.superSetExercises[widget.superSetExerciseIndex + 1]['name']}',
                       style: theme.textTheme.titleLarge?.copyWith(
                         color: theme.colorScheme.onBackground,
                         fontWeight: FontWeight.bold,
@@ -190,42 +220,44 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
       ),
     );
   }
-Widget _buildSeriesIndicator(ThemeData theme) {
-  final currentExercise = widget.superSetExercises.isEmpty
-      ? null
-      : widget.superSetExercises[currentSuperSetExerciseIndex];
 
-  return Container(
-    padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(
-      color: theme.colorScheme.primary.withOpacity(0.1),
-      borderRadius: BorderRadius.circular(16),
-    ),
-    child: Column(
-      children: [
-        if (currentExercise != null)
+  Widget _buildSeriesIndicator(ThemeData theme) {
+    final exerciseNames = widget.superSetExercises
+        .map((exercise) => '${exercise['name']} ${exercise['variant'] ?? ''}')
+        .toList();
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
           Text(
-            'Super Set ${currentSuperSetExerciseIndex + 1}',
+            widget.superSetExercises.length > 1
+                ? 'Super Set ${widget.superSetExerciseIndex + 1}'
+                : 'Set ${currentSeriesIndex + 1} / ${widget.seriesList.length}',
             style: theme.textTheme.headlineSmall?.copyWith(
               color: theme.colorScheme.onSurface,
               fontWeight: FontWeight.bold,
             ),
             textAlign: TextAlign.center,
           ),
-        Text(
-          currentExercise != null
-              ? '${currentExercise['name']} ${currentExercise['variant'] ?? ''}'
-              : 'Set ${currentSeriesIndex + 1} / ${widget.seriesList.length}',
-          style: theme.textTheme.titleLarge?.copyWith(
-            color: theme.colorScheme.onSurface,
-            fontWeight: FontWeight.bold,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    ),
-  );
-}
+          ...exerciseNames.map((exerciseName) {
+            return Text(
+              exerciseName,
+              style: theme.textTheme.titleLarge?.copyWith(
+                color: theme.colorScheme.onSurface,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            );
+          }).toList(),
+        ],
+      ),
+    );
+  }
 
   Widget _buildInputField(
     ThemeData theme,
@@ -378,16 +410,18 @@ Widget _buildSeriesIndicator(ThemeData theme) {
     );
   }
 
-  Widget _buildNextButton(ThemeData theme) {
-    final nextSeriesWeight = _getNextSeriesWeight();
+   Widget _buildNextButton(ThemeData theme) {
+    final nextSeriesWeight = _getNextSeriesWeight(widget.superSetExerciseIndex);
     return ElevatedButton(
       onPressed: currentSeriesIndex < widget.seriesList.length
           ? () async {
-              final currentSeries = widget.seriesList[currentSeriesIndex];
+              final currentSeries =
+                  widget.superSetExercises[widget.superSetExerciseIndex]['series'][currentSeriesIndex];
               await _updateSeriesData(
+                widget.superSetExercises[widget.superSetExerciseIndex]['id'],
                 currentSeries['id'],
-                int.tryParse(_repsControllers[currentSeries['id']]!.text),
-                _weightControllers[currentSeries['id']]!.text,
+                int.tryParse(_repsControllers[widget.superSetExercises[widget.superSetExerciseIndex]['id']]![currentSeries['id']]!.text),
+                _weightControllers[widget.superSetExercises[widget.superSetExerciseIndex]['id']]![currentSeries['id']]!.text,
               );
               await _handleNextSeries();
             }
@@ -403,7 +437,8 @@ Widget _buildSeriesIndicator(ThemeData theme) {
       ),
       child: Text(
         currentSeriesIndex == widget.seriesList.length - 1 &&
-                currentSuperSetExerciseIndex == widget.superSetExercises.length - 1
+                widget.superSetExerciseIndex ==
+                    widget.superSetExercises.length - 1
             ? 'FINISH'
             : 'NEXT ${nextSeriesWeight != null ? '(${nextSeriesWeight.toStringAsFixed(2)} kg)' : ''}',
         style: theme.textTheme.titleLarge?.copyWith(
@@ -415,10 +450,12 @@ Widget _buildSeriesIndicator(ThemeData theme) {
 
   @override
   void dispose() {
-    _repsControllers.values.forEach((controller) => controller.dispose());
-    _weightControllers.values.forEach((controller) => controller.dispose());
+    for (final controllers in _repsControllers.values) {
+      controllers.values.forEach((controller) => controller.dispose());
+    }
+    for (final controllers in _weightControllers.values) {
+      controllers.values.forEach((controller) => controller.dispose());
+    }
     super.dispose();
   }
 }
-
-

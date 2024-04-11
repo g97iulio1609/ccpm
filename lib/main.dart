@@ -144,8 +144,8 @@ final GoRouter router = GoRouter(
           routes: [
             GoRoute(
               path: 'user_programs/:userId',
-              builder: (context, state) => UserProgramsScreen(
-                  userId: state.pathParameters['userId']!),
+              builder: (context, state) =>
+                  UserProgramsScreen(userId: state.pathParameters['userId']!),
               routes: [
                 GoRoute(
                   path: 'training_viewer/:programId',
@@ -185,16 +185,14 @@ final GoRouter router = GoRouter(
                                       state.pathParameters['workoutId']!),
                                   exerciseId: Uri.decodeComponent(
                                       state.pathParameters['exerciseId']!),
-                                           superSetExercises: extra?['superSetExercises'] != null
-          ? List<Map<String, dynamic>>.from(extra?['superSetExercises'])
-          : [],
-                                  exerciseName:
-                                      extra?['exerciseName'] ?? '',
-                                  exerciseVariant:
-                                      extra?['exerciseVariant'],
-                                  seriesList:
-                                      List<Map<String, dynamic>>.from(
-                                          extra?['seriesList'] ?? []),
+                                  superSetExercises: extra?['superSetExercises'] != null
+                                      ? List<Map<String, dynamic>>.from(
+                                          extra?['superSetExercises'])
+                                      : [],
+                                  superSetExerciseIndex:
+                                      extra?['superSetExerciseIndex'] ?? 0,
+                                  seriesList: List<Map<String, dynamic>>.from(
+                                      extra?['seriesList'] ?? []),
                                   startIndex: extra?['startIndex'] ?? 0,
                                   userId: state.pathParameters['userId']!,
                                 );
