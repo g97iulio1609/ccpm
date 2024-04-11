@@ -169,22 +169,20 @@ class Workout {
 
 class SuperSet {
   String id;
-    String? name;
+  String? name;
 
   List<String> exerciseIds;
 
   SuperSet({
     required this.id,
-       this.name,
-
+    this.name,
     required this.exerciseIds,
   });
 
   factory SuperSet.fromMap(Map<String, dynamic> map) {
     return SuperSet(
       id: map['id'],
-            name: map['name'],
-
+      name: map['name'],
       exerciseIds: List<String>.from(map['exerciseIds']),
     );
   }
@@ -192,8 +190,7 @@ class SuperSet {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-            'name': name,
-
+      'name': name,
       'exerciseIds': exerciseIds,
     };
   }
@@ -206,7 +203,7 @@ class Exercise {
   String variant;
   int order;
   String? exerciseId;
-    String? superSetId; // Aggiungi questa proprietà
+  String? superSetId; // Aggiungi questa proprietà
 
   List<Series> series;
   List<WeekProgression> weekProgressions;
@@ -218,7 +215,7 @@ class Exercise {
     required this.variant,
     required this.order,
     this.exerciseId,
-     this.superSetId, 
+    this.superSetId,
     List<Series>? series,
     List<WeekProgression>? weekProgressions,
   })  : series = series ?? [],
@@ -230,7 +227,7 @@ class Exercise {
       type: map['type'],
       id: map['id'],
       exerciseId: map['exerciseId'],
-            superSetId: map['superSetId'], // Aggiungi questa riga
+      superSetId: map['superSetId'], // Aggiungi questa riga
 
       variant: map['variant'],
       order: map['order'],
@@ -245,6 +242,7 @@ class Exercise {
   Exercise copyWith({
     String? id,
     String? exerciseId,
+    String? superSetId,
     String? name,
     String? type,
     String? variant,
@@ -255,6 +253,7 @@ class Exercise {
     return Exercise(
       id: id ?? this.id,
       exerciseId: exerciseId ?? this.exerciseId,
+      superSetId: superSetId ?? this.superSetId,
       name: name ?? this.name,
       type: type ?? this.type,
       variant: variant ?? this.variant,
@@ -269,8 +268,7 @@ class Exercise {
     return Exercise(
       id: doc.id,
       exerciseId: data['exerciseId'] ?? '',
-            superSetId: data['superSetId'], // Aggiungi questa riga
-
+      superSetId: data['superSetId'], // Aggiungi questa riga
       name: data['name'] ?? '',
       type: data['type'] ?? '',
       variant: data['variant'] ?? '',
@@ -288,7 +286,7 @@ class Exercise {
     return {
       'id': id,
       'exerciseId': exerciseId,
-            'superSetId': superSetId, // Aggiungi questa riga
+      'superSetId': superSetId, // Aggiungi questa riga
 
       'name': name,
       'type': type,
