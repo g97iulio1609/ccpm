@@ -102,7 +102,6 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
     }
     return null;
   }
-
 Future<void> _handleNextSeries() async {
   final restTimeInSeconds = _getRestTimeInSeconds();
   final currentExercise = widget.superSetExercises[widget.superSetExerciseIndex];
@@ -129,29 +128,39 @@ Future<void> _handleNextSeries() async {
       });
     }
   } else {
-    // Passa alla serie successiva del primo esercizio
-    final nextSeriesIndex = currentSeriesIndex + 1;
-    if (nextSeriesIndex < currentSeriesList.length) {
-      final result = await context.push<Map<String, dynamic>>(
-        '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${widget.exerciseId}?currentSeriesIndex=$nextSeriesIndex&totalSeries=${currentSeriesList.length}&restTime=$restTimeInSeconds&isEmomMode=$_isEmomMode&superSetExerciseIndex=0',
-        extra: {
-          'superSetExercises': widget.superSetExercises,
-          'superSetExerciseIndex': 0,
-          'seriesList': widget.superSetExercises[0]['series'],
-          'startIndex': nextSeriesIndex,
-        },
-      );
-      if (result != null) {
-        setState(() {
-          currentSeriesIndex = result['startIndex'];
-        });
-      }
+    // Controlla se tutte le serie di tutti gli esercizi sono state completate
+    final allExercisesCompleted = widget.superSetExercises.every((exercise) {
+      final seriesList = exercise['series'];
+      return seriesList.every((series) => series['done'] == true);
+    });
+
+    if (allExercisesCompleted) {
+      // Torna alla schermata workout_details.dart utilizzando l'URL completo
+      final workoutDetailsUrl = '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}';
+      context.go(workoutDetailsUrl);
     } else {
-      // Tutte le serie di tutti gli esercizi sono state completate
-      context.pop();
+      // Passa alla serie successiva del primo esercizio
+      final nextSeriesIndex = currentSeriesIndex + 1;
+      if (nextSeriesIndex < currentSeriesList.length) {
+        final result = await context.push<Map<String, dynamic>>(
+          '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${widget.exerciseId}?currentSeriesIndex=$nextSeriesIndex&totalSeries=${currentSeriesList.length}&restTime=$restTimeInSeconds&isEmomMode=$_isEmomMode&superSetExerciseIndex=0',
+          extra: {
+            'superSetExercises': widget.superSetExercises,
+            'superSetExerciseIndex': 0,
+            'seriesList': widget.superSetExercises[0]['series'],
+            'startIndex': nextSeriesIndex,
+          },
+        );
+        if (result != null) {
+          setState(() {
+            currentSeriesIndex = result['startIndex'];
+          });
+        }
+      }
     }
   }
 }
+  
   void _hideKeyboard(BuildContext context) {
     final currentFocus = FocusScope.of(context);
     if (!currentFocus.hasPrimaryFocus && currentFocus.focusedChild != null) {
