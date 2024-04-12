@@ -144,8 +144,8 @@ final GoRouter router = GoRouter(
           routes: [
             GoRoute(
               path: 'user_programs/:userId',
-              builder: (context, state) => UserProgramsScreen(
-                  userId: state.pathParameters['userId']!),
+              builder: (context, state) =>
+                  UserProgramsScreen(userId: state.pathParameters['userId']!),
               routes: [
                 GoRoute(
                   path: 'training_viewer/:programId',
@@ -185,42 +185,40 @@ final GoRouter router = GoRouter(
                                       state.pathParameters['workoutId']!),
                                   exerciseId: Uri.decodeComponent(
                                       state.pathParameters['exerciseId']!),
-                                  exerciseName:
-                                      extra?['exerciseName'] ?? '',
-                                  exerciseVariant:
-                                      extra?['exerciseVariant'],
-                                  seriesList:
-                                      List<Map<String, dynamic>>.from(
-                                          extra?['seriesList'] ?? []),
+                                  superSetExercises: extra?['superSetExercises'] != null
+                                      ? List<Map<String, dynamic>>.from(
+                                          extra?['superSetExercises'])
+                                      : [],
+                                  superSetExerciseIndex:
+                                      extra?['superSetExerciseIndex'] ?? 0,
+                                  seriesList: List<Map<String, dynamic>>.from(
+                                      extra?['seriesList'] ?? []),
                                   startIndex: extra?['startIndex'] ?? 0,
                                   userId: state.pathParameters['userId']!,
                                 );
                               },
                               routes: [
-                                GoRoute(
-                                  path: 'timer',
-                                  builder: (context, state) => TimerPage(
-                                    programId: Uri.decodeComponent(
-                                        state.pathParameters['programId']!),
-                                    weekId: Uri.decodeComponent(
-                                        state.pathParameters['weekId']!),
-                                    workoutId: Uri.decodeComponent(
-                                        state.pathParameters['workoutId']!),
-                                    exerciseId: Uri.decodeComponent(state
-                                        .pathParameters['exerciseId']!),
-                                    currentSeriesIndex: int.parse(
-                                        state.uri.queryParameters[
-                                            'currentSeriesIndex']!),
-                                    totalSeries: int.parse(state.uri
-                                        .queryParameters['totalSeries']!),
-                                    restTime: int.parse(state
-                                        .uri.queryParameters['restTime']!),
-                                    isEmomMode: state.uri.queryParameters[
-                                            'isEmomMode'] ==
-                                        'true',
-                                    userId: state.pathParameters['userId']!,
-                                  ),
-                                ),
+                          GoRoute(
+  path: 'timer',
+  builder: (context, state) {
+    final extra = state.extra as Map<String, dynamic>?;
+    return TimerPage(
+      programId: Uri.decodeComponent(state.pathParameters['programId']!),
+      weekId: Uri.decodeComponent(state.pathParameters['weekId']!),
+      workoutId: Uri.decodeComponent(state.pathParameters['workoutId']!),
+      exerciseId: Uri.decodeComponent(state.pathParameters['exerciseId']!),
+      currentSeriesIndex: int.parse(state.uri.queryParameters['currentSeriesIndex']!),
+      superSetExerciseIndex: int.parse(state.uri.queryParameters['superSetExerciseIndex']!),
+      totalSeries: int.parse(state.uri.queryParameters['totalSeries']!),
+      restTime: int.parse(state.uri.queryParameters['restTime']!),
+      isEmomMode: state.uri.queryParameters['isEmomMode'] == 'true',
+      userId: state.pathParameters['userId']!,
+      seriesList: extra?['seriesList'] != null
+          ? List<Map<String, dynamic>>.from(extra?['seriesList'])
+          : [],
+    );
+  },
+),
                               ],
                             ),
                           ],

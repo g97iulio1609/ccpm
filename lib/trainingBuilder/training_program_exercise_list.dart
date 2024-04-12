@@ -13,6 +13,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
   final int weekIndex;
   final int workoutIndex;
 
+
   const TrainingProgramExerciseList({
     required this.controller,
     required this.weekIndex,
@@ -47,6 +48,10 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     String athleteId,
     DateFormat dateFormat,
   ) {
+    final superSets = controller.program.weeks[weekIndex].workouts[workoutIndex].superSets
+        .where((ss) => ss.exerciseIds.contains(exercise.id))
+        .toList();
+
     return Slidable(
       startActionPane: ActionPane(
         motion: const DrawerMotion(),
@@ -83,6 +88,10 @@ class TrainingProgramExerciseList extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildExerciseHeader(context, exercise, usersService, athleteId, dateFormat),
+              if (superSets.isNotEmpty)
+                Row(
+                  children: superSets.map((ss) => Icon(Icons.group_work, color: Colors.blue)).toList(),
+                ),
               const SizedBox(height: 16),
               _buildExerciseSeries(context, exercise, usersService),
               const SizedBox(height: 16),
@@ -141,7 +150,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     );
   }
 
-  PopupMenuButton _buildExercisePopupMenu(
+Widget _buildExercisePopupMenu(
     BuildContext context,
     Exercise exercise,
     UsersService usersService,
@@ -162,6 +171,15 @@ class TrainingProgramExerciseList extends ConsumerWidget {
           child: const Text('Riordina Esercizi'),
           onTap: () => _showReorderExercisesDialog(context, weekIndex, workoutIndex),
         ),
+        PopupMenuItem(
+          child: const Text('Aggiungi al Superset'),
+          onTap: () => _showAddToSuperSetDialog(context, exercise),
+        ),
+        if (exercise.superSetId != null) // Mostra questa opzione solo se l'esercizio appartiene ad un superset
+          PopupMenuItem(
+            child: const Text('Rimuovi dal Superset'),
+            onTap: () => controller.removeExerciseFromSuperSet(weekIndex, workoutIndex, exercise.superSetId!, exercise.id!),
+          ),
       ],
     );
   }
@@ -304,7 +322,9 @@ class TrainingProgramExerciseList extends ConsumerWidget {
   }
 
   void _showReorderExercisesDialog(BuildContext context, int weekIndex, int workoutIndex) {
-    final exerciseNames = controller.program.weeks[weekIndex].workouts[workoutIndex].exercises.map((exercise) => exercise.name).toList();
+    final exerciseNames = controller.program.weeks[weekIndex].workouts[workoutIndex].exercises
+        .map((exercise) => exercise.name)
+        .toList();
     showDialog(
       context: context,
       builder: (context) => ReorderDialog(
@@ -313,4 +333,141 @@ class TrainingProgramExerciseList extends ConsumerWidget {
       ),
     );
   }
+Future<void> _createNewSuperSet(BuildContext context) async {
+  final superSetName = await showDialog<String>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Nuovo Superset'),
+      content: TextField(
+        autofocus: true,
+        decoration: const InputDecoration(
+          labelText: 'Nome Superset',
+        ),
+        onSubmitted: (value) => Navigator.of(context).pop(value),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Annulla'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            final textFieldController = TextEditingController();
+            Navigator.of(context).pop(textFieldController.text);
+          },
+          child: const Text('Crea'),
+        ),
+      ],
+    ),
+  );
+
+  if (superSetName != null && superSetName.isNotEmpty) {
+    controller.createSuperSet(weekIndex, workoutIndex);
+  }
+}
+
+Future<void> _showAddToSuperSetDialog(BuildContext context, Exercise exercise) async {
+  String? selectedSuperSetId;
+  final superSets = controller.program.weeks[weekIndex].workouts[workoutIndex].superSets;
+
+  if (superSets.isEmpty) {
+    // Crea un nuovo superset se non ce ne sono
+    controller.createSuperSet(weekIndex, workoutIndex);
+    selectedSuperSetId = controller.program.weeks[weekIndex].workouts[workoutIndex].superSets.first.id;
+  } else {
+    selectedSuperSetId = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Aggiungi al Superset'),
+              content: DropdownButtonFormField<String>(
+                value: selectedSuperSetId,
+                items: superSets.map((ss) {
+                  return DropdownMenuItem<String>(
+                    value: ss.id,
+                    child: Text(ss.name ?? ''),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    selectedSuperSetId = value;
+                  });
+                },
+                decoration: const InputDecoration(
+                  hintText: 'Seleziona il Superset',
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Annulla'),
+                ),
+                if (superSets.isNotEmpty)
+                  TextButton(
+                    onPressed: () {
+                      controller.createSuperSet(weekIndex, workoutIndex);
+                      setState(() {});
+                      Navigator.of(context).pop(superSets.last.id);
+                    },
+                    child: const Text('Crea Nuovo Superset'),
+                  ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(selectedSuperSetId),
+                  child: const Text('Aggiungi'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  if (selectedSuperSetId != null) {
+    controller.addExerciseToSuperSet(weekIndex, workoutIndex, selectedSuperSetId!, exercise.id!);
+  }
+}
+
+
+  Future<void> _showRemoveFromSuperSetDialog(BuildContext context, Exercise exercise) async {
+    final superSets = controller.program.weeks[weekIndex].workouts[workoutIndex].superSets
+        .where((ss) => ss.exerciseIds.contains(exercise.id))
+        .toList();
+
+    if (superSets.isEmpty) {
+      return;
+    }
+
+    final superSetId = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Rimuovi dal Superset'),
+        content: DropdownButtonFormField<String>(
+          value: null,
+          items: superSets.map((ss) {
+            return DropdownMenuItem<String>(
+              value: ss.id,
+              child: Text('Superset ${ss.id}'),
+            );
+          }).toList(),
+          onChanged: (value) => Navigator.of(context).pop(value),
+          decoration: const InputDecoration(
+            hintText: 'Seleziona il Superset',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Annulla'),
+          ),
+        ],
+      ),
+    );
+
+    if (superSetId != null) {
+      controller.removeExerciseFromSuperSet(weekIndex, workoutIndex, superSetId, exercise.id!);
+}
+}
 }

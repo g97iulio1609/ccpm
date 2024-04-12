@@ -5,6 +5,9 @@ import 'package:go_router/go_router.dart';
 
 class TimerPage extends StatefulWidget {
   final String programId;
+    final String userId;
+  final List<Map<String, dynamic>> seriesList;
+
   final String weekId;
   final String workoutId;
   final String exerciseId;
@@ -12,28 +15,31 @@ class TimerPage extends StatefulWidget {
   final int totalSeries;
   final int restTime;
   final bool isEmomMode;
+  final int superSetExerciseIndex;
 
   const TimerPage({
     super.key,
     required this.programId,
+        required this.userId,
+    required this.seriesList,
+
     required this.weekId,
     required this.workoutId,
     required this.exerciseId,
     required this.currentSeriesIndex,
     required this.totalSeries,
     required this.restTime,
-    required this.isEmomMode, required String userId,
+    required this.isEmomMode,
+    required this.superSetExerciseIndex,
   });
 
   @override
   _TimerPageState createState() => _TimerPageState();
 }
 
-class _TimerPageState extends State<TimerPage>
-    with SingleTickerProviderStateMixin {
+class _TimerPageState extends State<TimerPage> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _animation;
-  late Timer _timer;
+  late Animation<double> _animation;late Timer _timer;
   int _remainingSeconds = 0;
 
   @override
@@ -68,9 +74,20 @@ void _handleNextSeries() {
     _startTimer();
   } else {
     _showNotification('Rest Time Completed', 'Your rest time has ended.');
-    context.pop(<String, dynamic>{
-      'startIndex': widget.currentSeriesIndex,
-    });
+    if (widget.currentSeriesIndex < widget.seriesList.length - 1) {
+      // Passa alla serie successiva
+      final result = <String, dynamic>{
+        'startIndex': widget.currentSeriesIndex + 1,
+        'superSetExerciseIndex': widget.superSetExerciseIndex,
+        'seriesList': widget.seriesList, // Usa widget.seriesList
+      };
+      context.pop(result);
+    } else {
+      // Torna a workout_details.dart
+      final workoutDetailsUrl =
+          '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}';
+      context.go(workoutDetailsUrl);
+    }
   }
 }
 
@@ -112,7 +129,6 @@ void _handleNextSeries() {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    
     return Scaffold(
       body: Container(
         width: double.infinity,
