@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'auth_screen.dart';
+import 'auth/auth_screen.dart';
 import 'home_screen.dart';
 import 'exerciseManager/exercise_list.dart';
 import 'maxRMDashboard.dart';
