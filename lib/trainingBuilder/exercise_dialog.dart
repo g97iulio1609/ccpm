@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../exerciseManager/exercises_services.dart';
 import 'training_model.dart';
-import 'training_program_controller.dart';
+import 'controller/training_program_controller.dart';
 import 'add_exercise_dialog.dart';
 
 class ExerciseDialog extends ConsumerWidget {

@@ -3,7 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'training_model.dart';
 import '../users_services.dart';
-import 'training_program_controller.dart';
+import 'controller/training_program_controller.dart';
 import 'utility_functions.dart';
 
 class SeriesDialog extends ConsumerWidget {

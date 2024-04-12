@@ -1,4 +1,4 @@
-import 'package:alphanessone/trainingBuilder/training_program_controller.dart';
+import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
 import 'package:alphanessone/trainingBuilder/training_program_form.dart';
 import 'package:alphanessone/trainingBuilder/training_program_week_list.dart';
 import 'package:alphanessone/trainingBuilder/training_program_workout_list.dart';
