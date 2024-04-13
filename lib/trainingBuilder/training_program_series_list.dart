@@ -412,7 +412,7 @@ Widget _buildSeriesGroupCard(
 
     if (weight > 0 && latestMaxWeight > 0) {
       final calculatedIntensity =
-          calculateIntensityFromWeight(weight, latestMaxWeight);
+          calculateIntensityFromWeight(weight, latestMaxWeight as double);
       setState(() {
         intensityController.text = calculatedIntensity.toStringAsFixed(2);
       });
@@ -449,7 +449,7 @@ Widget _buildSeriesGroupCard(
       setState(() {
         weightController.text = roundedWeight.toStringAsFixed(2);
         final calculatedIntensity =
-            calculateIntensityFromWeight(roundedWeight, latestMaxWeight);
+            calculateIntensityFromWeight(roundedWeight, latestMaxWeight as double);
         intensityController.text = calculatedIntensity.toStringAsFixed(2);
       });
     }
@@ -469,7 +469,7 @@ Widget _buildSeriesGroupCard(
         controller.athleteIdController.text,
         controller.program.weeks[weekIndex].workouts[workoutIndex]
             .exercises[exerciseIndex].exerciseId!);
-    final calculatedRPE = calculateRPE(weight, latestMaxWeight, reps);
+    final calculatedRPE = calculateRPE(weight, latestMaxWeight as double, reps);
 
     if (calculatedRPE != null) {
       setState(() {
