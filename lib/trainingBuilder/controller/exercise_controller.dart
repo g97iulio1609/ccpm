@@ -4,7 +4,6 @@ import 'package:alphanessone/users_services.dart';
 import 'package:flutter/material.dart';
 import '../training_model.dart';
 import '../utility_functions.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class ExerciseController extends ChangeNotifier {
   final UsersService _usersService;
@@ -12,38 +11,21 @@ class ExerciseController extends ChangeNotifier {
 
   ExerciseController(this._usersService, this._seriesController);
 
-Future<void> addExercise(TrainingProgram program, int weekIndex, int workoutIndex, BuildContext context) async {
-  debugPrint('Entering addExercise function');
-  final exercise = await _showExerciseDialog(context, null, program.athleteId);
-  debugPrint('Returned from _showExerciseDialog with exercise: $exercise');
-  if (exercise != null) {
-    exercise.id = null;
-    exercise.order = program.weeks[weekIndex].workouts[workoutIndex].exercises.length + 1;
-    exercise.weekProgressions = []; // Initialize weekProgressions
-    debugPrint('Adding exercise to program: $exercise');
-    program.weeks[weekIndex].workouts[workoutIndex].exercises.add(exercise);
-    debugPrint('Exercise added to program');
-
-    // Notify listeners
-    notifyListeners();
-
-    // Update the exercise weights immediately
-    await updateExercise(program, exercise.exerciseId!);
-
-    if (exercise.exerciseId != null) {
-      debugPrint('Calling updateExercise with exerciseId: ${exercise.exerciseId}');
+  Future<void> addExercise(
+      TrainingProgram program, int weekIndex, int workoutIndex, BuildContext context) async {
+    final exercise = await _showExerciseDialog(context, null, program.athleteId);
+    if (exercise != null) {
+      exercise.id = null;
+      exercise.order = program.weeks[weekIndex].workouts[workoutIndex].exercises.length + 1;
+      exercise.weekProgressions = []; // Initialize weekProgressions
+      program.weeks[weekIndex].workouts[workoutIndex].exercises.add(exercise);
+      notifyListeners();
       await updateExercise(program, exercise.exerciseId!);
-    } else {
-      debugPrint('Exercise.exerciseId is null');
     }
-  } else {
-    debugPrint('Exercise is null');
   }
-}
 
   Future<Exercise?> _showExerciseDialog(
       BuildContext context, Exercise? exercise, String athleteId) async {
-    debugPrint('Entering _showExerciseDialog');
     final result = await showDialog<Exercise>(
       context: context,
       builder: (context) => ExerciseDialog(
@@ -52,32 +34,25 @@ Future<void> addExercise(TrainingProgram program, int weekIndex, int workoutInde
         exercise: exercise,
       ),
     );
-    debugPrint('Returned from showDialog with result: $result');
     return result;
   }
 
   Future<void> editExercise(TrainingProgram program, int weekIndex,
       int workoutIndex, int exerciseIndex, BuildContext context) async {
-    final exercise = program
-        .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     final updatedExercise = await _showExerciseDialog(context, exercise, program.athleteId);
     if (updatedExercise != null) {
       updatedExercise.order = exercise.order;
-      if (updatedExercise.weekProgressions == null) {
-        updatedExercise.weekProgressions = []; // Initialize weekProgressions if it's null
-      }
-      program.weeks[weekIndex].workouts[workoutIndex]
-          .exercises[exerciseIndex] = updatedExercise;
+      updatedExercise.weekProgressions ??= [];
+      program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] = updatedExercise;
       await updateExercise(program, updatedExercise.exerciseId ?? '');
     }
   }
 
   void removeExercise(TrainingProgram program, int weekIndex, int workoutIndex, int exerciseIndex) {
-    final exercise = program
-        .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     _removeExerciseAndRelatedData(program, exercise);
-    program.weeks[weekIndex].workouts[workoutIndex].exercises
-        .removeAt(exerciseIndex);
+    program.weeks[weekIndex].workouts[workoutIndex].exercises.removeAt(exerciseIndex);
     _updateExerciseOrders(program, weekIndex, workoutIndex, exerciseIndex);
   }
 
@@ -95,103 +70,71 @@ Future<void> addExercise(TrainingProgram program, int weekIndex, int workoutInde
   }
 
   Future<void> updateExercise(TrainingProgram program, String exerciseId) async {
-    debugPrint('Entering updateExercise with exerciseId: $exerciseId');
     Exercise? changedExercise = _findExerciseById(program, exerciseId);
-
     if (changedExercise != null) {
-      debugPrint('Found exercise with ID $exerciseId: $changedExercise');
-      final newMaxWeight = await getLatestMaxWeight(
-          _usersService, program.athleteId, exerciseId);
-      debugPrint('New max weight for exercise $exerciseId: $newMaxWeight');
-      _updateExerciseWeights(changedExercise, newMaxWeight as double);
-    } else {
-      debugPrint('Could not find exercise with ID $exerciseId');
+      final newMaxWeight = await getLatestMaxWeight(_usersService, program.athleteId, exerciseId);
+      _updateExerciseWeights(changedExercise, newMaxWeight!.toDouble());
     }
   }
 
   Future<void> _onExerciseChanged(TrainingProgram program, String exerciseId) async {
     Exercise? changedExercise = _findExerciseById(program, exerciseId);
-
     if (changedExercise != null) {
-      final newMaxWeight = await getLatestMaxWeight(
-          _usersService, program.athleteId, exerciseId);
+      final newMaxWeight = await getLatestMaxWeight(_usersService, program.athleteId, exerciseId);
       _updateExerciseWeights(changedExercise, newMaxWeight as double);
     }
   }
 
   Exercise? _findExerciseById(TrainingProgram program, String exerciseId) {
-    debugPrint('Entering _findExerciseById with exerciseId: $exerciseId');
     for (final week in program.weeks) {
       for (final workout in week.workouts) {
         for (final exercise in workout.exercises) {
           if (exercise.exerciseId == exerciseId) {
-            debugPrint('Found exercise with ID $exerciseId: $exercise');
             return exercise;
           }
         }
       }
     }
-    debugPrint('Could not find exercise with ID $exerciseId');
     return null;
   }
 
-void _updateExerciseWeights(Exercise exercise, double newMaxWeight) {
-  debugPrint('Entering _updateExerciseWeights with exercise: $exercise and newMaxWeight: $newMaxWeight');
-  final exerciseType = exercise.type;
-  if (exerciseType != null) {
-    debugPrint('Exercise type: $exerciseType');
-    _updateSeriesWeights(exercise.series, newMaxWeight, exerciseType);
-    if (exercise.weekProgressions != null && exercise.weekProgressions.isNotEmpty) {
-      _updateWeekProgressionWeights(exercise.weekProgressions, newMaxWeight, exerciseType);
-    } else {
-      debugPrint('Skipping _updateWeekProgressionWeights, weekProgressions list is null or empty');
-    }
-  } else {
-    debugPrint('Exercise type is null, skipping weight updates');
+  void _updateExerciseWeights(Exercise exercise, num newMaxWeight) {
+    final exerciseType = exercise.type;
+    if (exerciseType != null) {
+      _updateSeriesWeights(exercise.series, newMaxWeight, exerciseType);
+      if (exercise.weekProgressions != null && exercise.weekProgressions.isNotEmpty) {
+        _updateWeekProgressionWeights(exercise.weekProgressions, newMaxWeight, exerciseType);
+      } 
+    } 
   }
-}
 
-  void _updateSeriesWeights(List<Series>? series, double maxWeight, String exerciseType) {
+  void _updateSeriesWeights(List<Series>? series, num maxWeight, String exerciseType) {
     if (series != null) {
-      debugPrint('Entering _updateSeriesWeights with series: $series, maxWeight: $maxWeight, and exerciseType: $exerciseType');
       for (final item in series) {
         final intensity = item.intensity.isNotEmpty ? double.tryParse(item.intensity) : null;
         if (intensity != null) {
           final calculatedWeight = calculateWeightFromIntensity(maxWeight, intensity);
           item.weight = roundWeight(calculatedWeight, exerciseType);
-        } else {
-          debugPrint('Skipping series with null or empty intensity: $item');
-        }
+        } 
       }
-    } else {
-      debugPrint('Series list is null, skipping _updateSeriesWeights');
-    }
+    } 
   }
 
-  void _updateWeekProgressionWeights(List<WeekProgression>? progressions, double maxWeight, String exerciseType) {
+  void _updateWeekProgressionWeights(List<WeekProgression>? progressions, num maxWeight, String exerciseType) {
     if (progressions != null && progressions.isNotEmpty) {
-      debugPrint('Entering _updateWeekProgressionWeights with progressions: $progressions, maxWeight: $maxWeight, and exerciseType: $exerciseType');
       for (final item in progressions) {
         final intensity = item.intensity.isNotEmpty ? double.tryParse(item.intensity) : null;
         if (intensity != null) {
           final calculatedWeight = calculateWeightFromIntensity(maxWeight, intensity);
           item.weight = roundWeight(calculatedWeight, exerciseType);
-        } else {
-          debugPrint('Skipping progression with null or empty intensity: $item');
-        }
+        } 
       }
-    } else {
-      debugPrint('Skipping _updateWeekProgressionWeights, progressions list is null or empty');
-    }
+    } 
   }
 
-  void _updateExerciseOrders(TrainingProgram program, int weekIndex,
-      int workoutIndex, int startIndex) {
-    for (int i = startIndex;
-        i < program.weeks[weekIndex].workouts[workoutIndex].exercises.length;
-        i++) {
-      program.weeks[weekIndex].workouts[workoutIndex].exercises[i].order =
-          i + 1;
+  void _updateExerciseOrders(TrainingProgram program, int weekIndex, int workoutIndex, int startIndex) {
+    for (int i = startIndex; i < program.weeks[weekIndex].workouts[workoutIndex].exercises.length; i++) {
+      program.weeks[weekIndex].workouts[workoutIndex].exercises[i].order = i + 1;
     }
   }
 
@@ -199,26 +142,14 @@ void _updateExerciseWeights(Exercise exercise, double newMaxWeight) {
       List<WeekProgression> weekProgressions, BuildContext context) async {
     for (int weekIndex = 0; weekIndex < program.weeks.length; weekIndex++) {
       final week = program.weeks[weekIndex];
-
-      for (int workoutIndex = 0;
-          workoutIndex < week.workouts.length;
-          workoutIndex++) {
+      for (int workoutIndex = 0; workoutIndex < week.workouts.length; workoutIndex++) {
         final workout = week.workouts[workoutIndex];
-
-        for (int currentExerciseIndex = 0;
-            currentExerciseIndex < workout.exercises.length;
-            currentExerciseIndex++) {
+        for (int currentExerciseIndex = 0; currentExerciseIndex < workout.exercises.length; currentExerciseIndex++) {
           final exercise = workout.exercises[currentExerciseIndex];
-
           if (currentExerciseIndex == exerciseIndex) {
-            final progression = weekIndex < weekProgressions.length
-                ? weekProgressions[weekIndex]
-                : weekProgressions.last;
-
-            await _updateOrCreateSeries(program, exercise, progression, weekIndex,
-                workoutIndex, currentExerciseIndex, context);
-            _updateWeekProgression(
-                program, weekIndex, workoutIndex, currentExerciseIndex, progression);
+            final progression = weekIndex < weekProgressions.length ? weekProgressions[weekIndex] : weekProgressions.last;
+            await _updateOrCreateSeries(program, exercise, progression, weekIndex, workoutIndex, currentExerciseIndex, context);
+            _updateWeekProgression(program, weekIndex, workoutIndex, currentExerciseIndex, progression);
           }
         }
       }
@@ -233,13 +164,8 @@ void _updateExerciseWeights(Exercise exercise, double newMaxWeight) {
       int workoutIndex,
       int exerciseIndex,
       BuildContext context) async {
-    final existingSeries = exercise.series
-        .where((series) => series.order ~/ 100 == weekIndex)
-        .toList();
-
-    await _adjustSeriesCount(program, existingSeries, progression.sets, weekIndex,
-        workoutIndex, exerciseIndex, context);
-
+    final existingSeries = exercise.series.where((series) => series.order ~/ 100 == weekIndex).toList();
+    await _adjustSeriesCount(program, existingSeries, progression.sets, weekIndex, workoutIndex, exerciseIndex, context);
     for (int i = 0; i < progression.sets; i++) {
       final series = existingSeries[i];
       series.reps = progression.reps;
@@ -271,8 +197,7 @@ void _updateExerciseWeights(Exercise exercise, double newMaxWeight) {
 
   Future<void> addSeriesToProgression(TrainingProgram program, int weekIndex,
       int workoutIndex, int exerciseIndex, BuildContext context) async {
-    final exercise = program
-        .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     final newSeriesOrder = exercise.series.length + 1;
     final newSeries = Series(
       serieId: UniqueKey().toString(),
@@ -291,9 +216,7 @@ void _updateExerciseWeights(Exercise exercise, double newMaxWeight) {
 
   void _updateWeekProgression(TrainingProgram program, int weekIndex,
       int workoutIndex, int exerciseIndex, WeekProgression progression) {
-    final exercise =
-        program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
-
+    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     if (exercise.weekProgressions.length <= weekIndex) {
       exercise.weekProgressions.add(progression);
     } else {
@@ -301,29 +224,18 @@ void _updateExerciseWeights(Exercise exercise, double newMaxWeight) {
     }
   }
 
-  Future<void> updateExerciseProgressions(TrainingProgram program,
-      Exercise exercise, List<WeekProgression> updatedProgressions, BuildContext context) async {
+  Future<void> updateExerciseProgressions(TrainingProgram program, Exercise exercise, List<WeekProgression> updatedProgressions, BuildContext context) async {
     for (int weekIndex = 0; weekIndex < program.weeks.length; weekIndex++) {
       final week = program.weeks[weekIndex];
-
-      for (int workoutIndex = 0;
-          workoutIndex < week.workouts.length;
-          workoutIndex++) {
+      for (int workoutIndex = 0; workoutIndex < week.workouts.length; workoutIndex++) {
         final workout = week.workouts[workoutIndex];
-        final exerciseIndex =
-        workout.exercises.indexWhere((e) => e.id == exercise.id);
+        final exerciseIndex = workout.exercises.indexWhere((e) => e.id == exercise.id);
         if (exerciseIndex != -1) {
           final currentExercise = workout.exercises[exerciseIndex];
           currentExercise.weekProgressions = updatedProgressions;
-
-          final progression = weekIndex < updatedProgressions.length
-              ? updatedProgressions[weekIndex]
-              : updatedProgressions.last;
-
+          final progression = weekIndex < updatedProgressions.length ? updatedProgressions[weekIndex] : updatedProgressions.last;
           currentExercise.series.clear();
-
-          await Future.forEach<int>(
-              List.generate(progression.sets, (index) => index), (index) async {
+          await Future.forEach<int>(List.generate(progression.sets, (index) => index), (index) async {
             await addSeriesToProgression(program, weekIndex, workoutIndex, exerciseIndex, context);
             final latestSeries = currentExercise.series[index];
             latestSeries.reps = progression.reps;
@@ -336,15 +248,12 @@ void _updateExerciseWeights(Exercise exercise, double newMaxWeight) {
     }
   }
 
-  void reorderExercises(TrainingProgram program, int weekIndex,
-      int workoutIndex, int oldIndex, int newIndex) {
+  void reorderExercises(TrainingProgram program, int weekIndex, int workoutIndex, int oldIndex, int newIndex) {
     if (oldIndex < newIndex) {
       newIndex -= 1;
     }
-    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises
-        .removeAt(oldIndex);
-    program.weeks[weekIndex].workouts[workoutIndex].exercises
-        .insert(newIndex, exercise);
+    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises.removeAt(oldIndex);
+    program.weeks[weekIndex].workouts[workoutIndex].exercises.insert(newIndex, exercise);
     _updateExerciseOrders(program, weekIndex, workoutIndex, newIndex);
   }
 }

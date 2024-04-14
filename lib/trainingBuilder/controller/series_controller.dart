@@ -1,6 +1,5 @@
 import 'package:alphanessone/trainingBuilder/series_dialog.dart';
 import 'package:flutter/material.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../training_model.dart';
 import 'package:alphanessone/users_services.dart';
 import '../utility_functions.dart';
@@ -21,7 +20,7 @@ Future<void> addSeries(TrainingProgram program, int weekIndex,
       await getLatestMaxWeight(usersService, program.athleteId, exercise.exerciseId ?? '');
 
   // Converti latestMaxWeight in double o utilizza un valore predefinito
-  final double maxWeight = latestMaxWeight != null ? latestMaxWeight.toDouble() : 100.0;
+  final num maxWeight = latestMaxWeight ?? 100.0;
 
   final seriesList = await _showSeriesDialog(context, exercise, weekIndex, null, maxWeight);
   if (seriesList != null) {
@@ -33,7 +32,7 @@ Future<void> addSeries(TrainingProgram program, int weekIndex,
 
 Future<List<Series>?> _showSeriesDialog(
     BuildContext context, Exercise exercise, int weekIndex,
-    [Series? currentSeries, double? latestMaxWeight]) async {
+    [Series? currentSeries, num? latestMaxWeight]) async {
   return await showDialog<List<Series>>(
     context: context,
     builder: (context) => SeriesDialog(
@@ -43,7 +42,7 @@ Future<List<Series>?> _showSeriesDialog(
       weekIndex: weekIndex,
       exercise: exercise,
       currentSeries: currentSeries,
-      latestMaxWeight: latestMaxWeight ?? 100.0,
+      latestMaxWeight: latestMaxWeight ?? 0,
       weightNotifier: weightNotifier,
     ),
   );
@@ -74,30 +73,25 @@ Future<List<Series>?> _showSeriesDialog(
     }
   }
 
-  Future<void> updateSeriesWeights(TrainingProgram program, int weekIndex,
-      int workoutIndex, int exerciseIndex) async {
-    final exercise = program
-        .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
-    final exerciseId = exercise.exerciseId;
-    final athleteId = program.athleteId;
-    if (exerciseId != null) {
-      final latestMaxWeight =
-          await getLatestMaxWeight(usersService, athleteId, exerciseId);
-      if (latestMaxWeight != null) {
-        for (final series in exercise.series) {
-          _calculateWeight(series, exercise.type, latestMaxWeight as double);
-        }
+ Future<void> updateSeriesWeights(TrainingProgram program, int weekIndex,
+    int workoutIndex, int exerciseIndex) async {
+  final exercise = program
+      .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+  final exerciseId = exercise.exerciseId;
+  final athleteId = program.athleteId;
+  if (exerciseId != null) {
+    final latestMaxWeight =
+        await getLatestMaxWeight(usersService, athleteId, exerciseId);
+    if (latestMaxWeight != null) {
+      for (final series in exercise.series) {
+        _calculateWeight(series, exercise.type, latestMaxWeight);
       }
     }
   }
+}
 
-  void _calculateWeight(Series series, String? exerciseType, double? latestMaxWeight) {
-    debugPrint('Latest Max Weight: $latestMaxWeight');
-    debugPrint('Exercise Type: $exerciseType');
-    debugPrint('Series Intensity: ${series.intensity}');
-    debugPrint('Series RPE: ${series.rpe}');
-    debugPrint('Series Reps: ${series.reps}');
-    debugPrint('Series Weight: ${series.weight}');
+  void _calculateWeight(Series series, String? exerciseType, num? latestMaxWeight) {
+
 
     double calculatedWeight = 0;
 
@@ -105,27 +99,24 @@ Future<List<Series>?> _showSeriesDialog(
       if (series.intensity.isNotEmpty) {
         final intensity = double.tryParse(series.intensity) ?? 0;
         if (intensity > 0) {
-          debugPrint('Intensity: $intensity');
-          calculatedWeight = calculateWeightFromIntensity(latestMaxWeight, intensity);
+          calculatedWeight = calculateWeightFromIntensity(latestMaxWeight.toDouble(), intensity);
           series.weight = roundWeight(calculatedWeight, exerciseType);
           updateWeightNotifier(series.weight);
         }
       } else if (series.rpe.isNotEmpty) {
         final rpe = double.tryParse(series.rpe) ?? 0;
         if (rpe > 0) {
-          debugPrint('RPE: $rpe');
           final rpePercentage = getRPEPercentage(rpe, series.reps);
-          calculatedWeight = latestMaxWeight * rpePercentage;
+          calculatedWeight = latestMaxWeight.toDouble() * rpePercentage;
           series.weight = roundWeight(calculatedWeight, exerciseType);
           updateWeightNotifier(series.weight);
         }
       } else {
-        series.intensity = calculateIntensityFromWeight(series.weight, latestMaxWeight).toStringAsFixed(2);
-        final rpe = calculateRPE(series.weight, latestMaxWeight, series.reps);
+        series.intensity = calculateIntensityFromWeight(series.weight, latestMaxWeight.toDouble()).toStringAsFixed(2);
+        final rpe = calculateRPE(series.weight, latestMaxWeight.toDouble(), series.reps);
         series.rpe = rpe != null ? rpe.toStringAsFixed(1) : '';
       }
     } else {
-      debugPrint('Latest Max Weight is null');
     }
   }
 

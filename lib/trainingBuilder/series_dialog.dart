@@ -12,10 +12,10 @@ class SeriesDialog extends StatefulWidget {
   final int weekIndex;
   final Exercise exercise;
   final Series? currentSeries;
-  final double latestMaxWeight;
+  final num latestMaxWeight;
   final ValueNotifier<double> weightNotifier;
 
-  const SeriesDialog({
+  const SeriesDialog({super.key, 
     required this.usersService,
     required this.athleteId,
     required this.exerciseId,

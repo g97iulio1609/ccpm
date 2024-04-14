@@ -38,7 +38,7 @@ class UserModel {
 class ExerciseRecord {
   final String id;
   final String exerciseId;
-  final int maxWeight;
+  final num maxWeight ;
   final int repetitions;
   final String date;
 
@@ -209,7 +209,7 @@ Future<void> addExerciseRecord({
   required String userId,
   required String exerciseId,
   required String exerciseName,
-  required int maxWeight,
+  required num maxWeight ,
   required int repetitions,
   required String date,
 }) async {
@@ -236,7 +236,7 @@ Future<void> addExerciseRecord({
   required String userId,
   required String exerciseId,
   required String recordId,
-  required int maxWeight,
+  required num maxWeight ,
   required int repetitions,
 }) async {
   await _firestore
@@ -337,7 +337,7 @@ Future<void> addExerciseRecord({
     }
   }
 
-Future<void> _updateCurrentProgramWeights(String userId, String exerciseId, int newMaxWeight) async {
+Future<void> _updateCurrentProgramWeights(String userId, String exerciseId, num newMaxWeight) async {
   //debugPrint('Updating current program weights for user: $userId, exercise: $exerciseId');
   final userDoc = await _firestore.collection('users').doc(userId).get();
   final currentProgramId = userDoc.data()?['currentProgram'];
@@ -352,7 +352,7 @@ Future<void> _updateCurrentProgramWeights(String userId, String exerciseId, int 
   }
 }
 
-Future<List<Map<String, dynamic>>> _updateWeeksWeights(String programId, String exerciseId, int newMaxWeight) async {
+Future<List<Map<String, dynamic>>> _updateWeeksWeights(String programId, String exerciseId, num newMaxWeight) async {
   //debugPrint('Updating weeks weights for program: $programId, exercise: $exerciseId');
   final weeksSnapshot = await _firestore.collection('weeks').where('programId', isEqualTo: programId).get();
   final updatedWeeks = await Future.wait(weeksSnapshot.docs.map((weekDoc) async {
@@ -369,7 +369,7 @@ Future<List<Map<String, dynamic>>> _updateWeeksWeights(String programId, String 
   return updatedWeeks;
 }
 
-Future<List<Map<String, dynamic>>> _updateWorkoutsWeights(String weekId, String exerciseId, int newMaxWeight) async {
+Future<List<Map<String, dynamic>>> _updateWorkoutsWeights(String weekId, String exerciseId, num newMaxWeight) async {
   //debugPrint('Updating workouts weights for week: $weekId, exercise: $exerciseId');
   final workoutsSnapshot = await _firestore.collection('workouts').where('weekId', isEqualTo: weekId).get();
   final updatedWorkouts = await Future.wait(workoutsSnapshot.docs.map((workoutDoc) async {
@@ -386,7 +386,7 @@ Future<List<Map<String, dynamic>>> _updateWorkoutsWeights(String weekId, String 
   return updatedWorkouts;
 }
 
-Future<List<Map<String, dynamic>>> _updateExercisesWeights(String workoutId, String exerciseId, int newMaxWeight) async {
+Future<List<Map<String, dynamic>>> _updateExercisesWeights(String workoutId, String exerciseId, num newMaxWeight) async {
   //debugPrint('Updating exercises weights for workout: $workoutId, exercise: $exerciseId');
   final exercisesSnapshot = await _firestore.collection('exercisesWorkout').where('workoutId', isEqualTo: workoutId).get();
   final updatedExercises = await Future.wait(exercisesSnapshot.docs.map((exerciseDoc) async {
@@ -409,19 +409,14 @@ Future<List<Map<String, dynamic>>> _updateExercisesWeights(String workoutId, Str
   return updatedExercises;
 }
 
-Future<List<Map<String, dynamic>>> _updateSeriesWeights(String exerciseWorkoutId, int newMaxWeight) async {
+Future<List<Map<String, dynamic>>> _updateSeriesWeights(String exerciseWorkoutId, num newMaxWeight) async {
   //debugPrint('Updating series weights for exercise workout: $exerciseWorkoutId');
   final seriesSnapshot = await _firestore.collection('series').where('exerciseId', isEqualTo: exerciseWorkoutId).get();
   final updatedSeries = await Future.wait(seriesSnapshot.docs.map((serieDoc) async {
     final serieData = serieDoc.data();
     final intensity = double.parse(serieData['intensity']);
     final calculatedWeight = (newMaxWeight * intensity) / 100;
-    //debugPrint("newMaxWeight: $newMaxWeight");
-    //debugPrint("intensity: $intensity");
-    //debugPrint("calculatedWeight: $calculatedWeight");
 
-    //debugPrint('Updated weight for series: ${serieDoc.id}, weight: $calculatedWeight');
-    
     // Aggiorna il documento della serie sul Firestore
     await _firestore.collection('series').doc(serieDoc.id).update({
       'weight': calculatedWeight,
@@ -437,7 +432,7 @@ Future<List<Map<String, dynamic>>> _updateSeriesWeights(String exerciseWorkoutId
   return updatedSeries;
 }
 
-Future<double> _getLatestMaxWeight(String exerciseId) async {
+Future<num> _getLatestMaxWeight(String exerciseId) async {
   final snapshot = await _firestore
       .collectionGroup('records')
       .where('exerciseId', isEqualTo: exerciseId)

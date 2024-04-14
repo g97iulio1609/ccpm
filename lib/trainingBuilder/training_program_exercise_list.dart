@@ -233,6 +233,7 @@ Widget _buildExercisePopupMenu(
     DateFormat dateFormat,
   ) async {
     final record = await usersService.getLatestExerciseRecord(userId: athleteId, exerciseId: exercise.exerciseId!);
+   
     final maxWeightController = TextEditingController(text: record?.maxWeight.toString() ?? '');
     final repetitionsController = TextEditingController(text: record?.repetitions.toString() ?? '');
 

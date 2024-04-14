@@ -36,8 +36,8 @@ double getRPEPercentage(double rpe, int reps) {
   return rpeTable[rpe.toInt()]?[reps] ?? 1.0;
 }
 
-Future<int> getLatestMaxWeight(UsersService usersService, String userId, String exerciseId) async {
-  int latestMaxWeight = 0;
+Future<num> getLatestMaxWeight(UsersService usersService, String userId, String exerciseId) async {
+  num latestMaxWeight = 0;
   await usersService.getExerciseRecords(userId: userId, exerciseId: exerciseId).first.then((records) {
     if (records.isNotEmpty) {
       final latestRecord = records.first;
@@ -53,7 +53,7 @@ double calculateWeightFromIntensity( latestMaxWeight, double intensity) {
   return (latestMaxWeight * intensity) / 100;
 }
 
-double calculateIntensityFromWeight(double weight, double latestMaxWeight) {
+double calculateIntensityFromWeight(double weight, num latestMaxWeight) {
   if (latestMaxWeight != 0) {
     return (weight / latestMaxWeight) * 100;
   } else {
@@ -61,7 +61,7 @@ double calculateIntensityFromWeight(double weight, double latestMaxWeight) {
   }
 }
 
-double? calculateRPE(double weight, double latestMaxWeight, int reps) {
+double? calculateRPE(double weight, num latestMaxWeight, int reps) {
   final rpeTable = {
     10: {1: 1.0, 2: 0.955, 3: 0.922, 4: 0.892, 5: 0.863, 6: 0.837, 7: 0.811, 8: 0.786, 9: 0.762, 10: 0.739},
     9: {1: 0.978, 2: 0.939, 3: 0.907, 4: 0.878, 5: 0.850, 6: 0.824, 7: 0.799, 8: 0.774, 9: 0.751, 10: 0.728},
