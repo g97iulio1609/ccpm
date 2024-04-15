@@ -1,5 +1,5 @@
 import 'package:alphanessone/trainingBuilder/training_model.dart';
-import 'package:alphanessone/trainingBuilder/training_program_controller.dart';
+import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 

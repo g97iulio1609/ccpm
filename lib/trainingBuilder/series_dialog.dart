@@ -1,287 +1,191 @@
-import 'package:flutter/material.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:intl/intl.dart';
-import 'training_model.dart';
-import '../users_services.dart';
-import 'training_program_controller.dart';
-import 'utility_functions.dart';
+import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 
-class SeriesDialog extends ConsumerWidget {
+import 'package:alphanessone/trainingBuilder/training_model.dart';
+
+import 'package:flutter/material.dart';
+import '../users_services.dart';
+
+class SeriesDialog extends StatefulWidget {
   final UsersService usersService;
   final String athleteId;
   final String exerciseId;
   final int weekIndex;
   final Exercise exercise;
   final Series? currentSeries;
+  final num latestMaxWeight;
+  final ValueNotifier<double> weightNotifier;
 
-  const SeriesDialog({
+  const SeriesDialog({super.key, 
     required this.usersService,
     required this.athleteId,
     required this.exerciseId,
     required this.weekIndex,
     required this.exercise,
     this.currentSeries,
-    super.key,
+    required this.latestMaxWeight,
+    required this.weightNotifier,
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final controller = ref.watch(trainingProgramControllerProvider);
-    final repsController = TextEditingController(text: currentSeries?.reps.toString() ?? '');
-    final setsController = TextEditingController(text: currentSeries?.sets.toString() ?? '');
-    final intensityController = TextEditingController(text: currentSeries?.intensity ?? '');
-    final rpeController = TextEditingController(text: currentSeries?.rpe ?? '');
-    final weightController = TextEditingController(text: currentSeries?.weight.toStringAsFixed(2) ?? '');
+  _SeriesDialogState createState() => _SeriesDialogState();
+}
 
-    FocusNode repsFocusNode = FocusNode();
-    FocusNode setsFocusNode = FocusNode();
-    FocusNode intensityFocusNode = FocusNode();
-    FocusNode rpeFocusNode = FocusNode();
-    FocusNode weightFocusNode = FocusNode();
+class _SeriesDialogState extends State<SeriesDialog> {
+  late TextEditingController _repsController;
+  late TextEditingController _setsController;
+  late TextEditingController _intensityController;
+  late TextEditingController _rpeController;
+  late TextEditingController _weightController;
 
+  @override
+  void initState() {
+    super.initState();
+    _repsController = TextEditingController(
+        text: widget.currentSeries?.reps.toString() ?? '');
+    _setsController = TextEditingController(
+        text: widget.currentSeries?.sets.toString() ?? '1');
+    _intensityController = TextEditingController(
+        text: widget.currentSeries?.intensity.toString() ?? '');
+    _rpeController =
+        TextEditingController(text: widget.currentSeries?.rpe.toString() ?? '');
+    _weightController = TextEditingController(
+        text: widget.currentSeries?.weight.toStringAsFixed(2) ?? '');
+  }
+
+  @override
+  void dispose() {
+    _repsController.dispose();
+    _setsController.dispose();
+    _intensityController.dispose();
+    _rpeController.dispose();
+    _weightController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(currentSeries == null ? 'Add New Series' : 'Edit Series'),
+      title: Text(widget.currentSeries != null ? 'Edit Series' : 'Add Series'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildTextField(repsController, 'Reps', focusNode: repsFocusNode, onChanged: (_) {
-              _updateRPE(repsController, weightController, rpeController, intensityController, rpeFocusNode, weightFocusNode);
-            }),
-            _buildTextField(setsController, 'Sets', focusNode: setsFocusNode),
-            _buildNumberField(intensityController, 'Intensity (%)', focusNode: intensityFocusNode, onChanged: (value) {
-              _updateWeight(weightController, intensityController, weightFocusNode, intensityFocusNode);
-            }),
-            _buildNumberField(rpeController, 'RPE', focusNode: rpeFocusNode, stepValue: 0.5, stepIncrement: 0.5, minValue: 6.0, maxValue: 10.0, onChanged: (value) {
-              _updateWeightAndIntensity(controller, repsController, weightController, rpeController, intensityController, rpeFocusNode, weightFocusNode, intensityFocusNode);
-            }),
-            _buildWeightField(weightController, focusNode: weightFocusNode, onChanged: (value) {
-              _updateIntensity(weightController, intensityController, weightFocusNode, intensityFocusNode);
-              _updateRPE(repsController, weightController, rpeController, intensityController, rpeFocusNode, weightFocusNode);
-            }),
+            TextField(
+              controller: _repsController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Reps'),
+              onChanged: (_) => _updateRPE(),
+            ),
+            TextField(
+              controller: _setsController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Sets'),
+            ),
+            TextField(
+              controller: _intensityController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Intensity (%)'),
+              onChanged: (value) {
+                final intensity = double.tryParse(value) ?? 0;
+                _updateWeight(intensity);
+              },
+            ),
+            TextField(
+              controller: _rpeController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'RPE'),
+              onChanged: (_) => _updateWeightFromRPE(),
+            ),
+            TextField(
+              controller: _weightController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Weight (kg)'),
+              onChanged: (value) {
+                final newWeight = double.tryParse(value) ?? 0;
+                widget.weightNotifier.value = newWeight;
+                _updateIntensity(newWeight);
+                _updateRPE();
+              },
+            ),
           ],
         ),
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
         TextButton(
-          onPressed: () => _saveSeries(context, controller, repsController, setsController, intensityController, rpeController, weightController),
-          child: Text(currentSeries == null ? 'Add' : 'Update'),
+          onPressed: () {
+            final reps = int.tryParse(_repsController.text) ?? 0;
+            final sets = int.tryParse(_setsController.text) ?? 1;
+            final intensity = _intensityController.text;
+            final rpe = _rpeController.text;
+            final weight = double.tryParse(_weightController.text) ?? 0;
+
+            if (widget.currentSeries != null) {
+              widget.currentSeries!.reps = reps;
+              widget.currentSeries!.sets = sets;
+              widget.currentSeries!.intensity = intensity;
+              widget.currentSeries!.rpe = rpe;
+              widget.currentSeries!.weight = weight;
+              Navigator.pop(context, [widget.currentSeries!]);
+            } else {
+              final series = List.generate(
+                sets,
+                (index) => Series(
+                  serieId: UniqueKey().toString(),
+                  reps: reps,
+                  sets: 1,
+                  intensity: intensity,
+                  rpe: rpe,
+                  weight: weight,
+                  order: widget.exercise.series.length + index + 1,
+                  done: false,
+                  reps_done: 0,
+                  weight_done: 0.0,
+                ),
+              );
+              Navigator.pop(context, series);
+            }
+          },
+          child: Text(widget.currentSeries != null ? 'Save' : 'Add'),
         ),
       ],
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String labelText, {required FocusNode focusNode, ValueChanged<String>? onChanged}) {
-    return TextField(
-      controller: controller,
-      focusNode: focusNode,
-      decoration: InputDecoration(
-        labelText: labelText,
-        labelStyle: const TextStyle(color: Colors.grey),
-        enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-        focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.blue)),
-      ),
-      keyboardType: TextInputType.number,
-      onChanged: onChanged,
-    );
+  void _updateWeight(double intensity) {
+    final calculatedWeight =
+        calculateWeightFromIntensity(widget.latestMaxWeight, intensity);
+    widget.weightNotifier.value = calculatedWeight;
+    _weightController.text = calculatedWeight.toStringAsFixed(2);
   }
 
-  Widget _buildNumberField(TextEditingController controller, String labelText, {required FocusNode focusNode, double? minValue, double? maxValue, double? stepValue, double? stepIncrement, required ValueChanged<String> onChanged}) {
-    return Row(
-      children: [
-        Expanded(
-          child: TextField(
-            controller: controller,
-            focusNode: focusNode,
-            decoration: InputDecoration(
-              labelText: labelText,
-              labelStyle: const TextStyle(color: Colors.grey),
-              enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-              focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.blue)),
-            ),
-            keyboardType: TextInputType.number,
-            onChanged: onChanged,
-          ),
-        ),
-        if (stepValue != null && stepIncrement != null)
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                onPressed: () {
-                  final currentValue = double.tryParse(controller.text) ?? (minValue ?? 0.0);
-                  final decrementedValue = currentValue - stepValue;
-                  if (minValue == null || decrementedValue >= minValue) {
-                    controller.text = decrementedValue.toStringAsFixed(1);
-                    onChanged(controller.text);
-                  }
-                },
-                icon: const Icon(Icons.remove),
-              ),
-              IconButton(
-                onPressed: () {
-                  final currentValue = double.tryParse(controller.text) ?? (maxValue ?? double.infinity);
-                  final incrementedValue = currentValue + stepIncrement;
-                  if (maxValue == null || incrementedValue <= maxValue) {
-                    controller.text = incrementedValue.toStringAsFixed(1);
-                    onChanged(controller.text);
-                  }
-                },
-                icon: const Icon(Icons.add),
-              ),
-            ],
-          ),
-      ],
-    );
+  void _updateIntensity(double weight) {
+    final calculatedIntensity =
+        calculateIntensityFromWeight(weight, widget.latestMaxWeight);
+    _intensityController.text = calculatedIntensity.toStringAsFixed(2);
   }
 
-  Widget _buildWeightField(TextEditingController controller, {required FocusNode focusNode, required ValueChanged<String> onChanged}) {
-    final formatter = NumberFormat.decimalPattern();
-    return TextField(
-      controller: controller,
-      focusNode: focusNode,
-      decoration: const InputDecoration(
-        labelText: 'Weight (kg)',
-        labelStyle: TextStyle(color: Colors.grey),
-        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-        focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.blue)),
-      ),
-      keyboardType: TextInputType.number,
-      onChanged: onChanged,
-    );
+  void _updateWeightFromRPE() {
+    final reps = int.tryParse(_repsController.text) ?? 0;
+    final rpe = double.tryParse(_rpeController.text) ?? 0;
+    final percentage = getRPEPercentage(rpe, reps);
+    final calculatedWeight = widget.latestMaxWeight * percentage;
+    widget.weightNotifier.value = calculatedWeight;
+    _weightController.text = calculatedWeight.toStringAsFixed(2);
   }
 
-  void _updateWeight(TextEditingController weightController, TextEditingController intensityController, FocusNode weightFocusNode, FocusNode intensityFocusNode) async {
-    if (intensityFocusNode.hasFocus) {
-      final intensity = double.tryParse(intensityController.text) ?? 0;
-      final latestMaxWeight = await getLatestMaxWeight(usersService, athleteId, exerciseId);
-      final calculatedWeight = calculateWeightFromIntensity(latestMaxWeight, intensity);
-      final roundedWeight = roundWeight(calculatedWeight, exercise.type);
-      weightController.text = roundedWeight.toStringAsFixed(2);
+  void _updateRPE() {
+    final reps = int.tryParse(_repsController.text) ?? 0;
+    final weight = double.tryParse(_weightController.text) ?? 0;
+    final calculatedRPE = calculateRPE(weight, widget.latestMaxWeight, reps);
+    if (calculatedRPE != null) {
+      _rpeController.text = calculatedRPE.toStringAsFixed(1);
+      final intensity =
+          calculateIntensityFromWeight(weight, widget.latestMaxWeight);
+      _intensityController.text = intensity.toStringAsFixed(2);
     }
   }
-
-  void _updateIntensity(TextEditingController weightController, TextEditingController intensityController, FocusNode weightFocusNode, FocusNode intensityFocusNode) async {
-    if (weightFocusNode.hasFocus) {
-      final weight = double.tryParse(weightController.text) ?? 0;
-      final latestMaxWeight = await getLatestMaxWeight(usersService, athleteId, exerciseId);
-      final calculatedIntensity = calculateIntensityFromWeight(weight, latestMaxWeight);
-      intensityController.text = calculatedIntensity.toStringAsFixed(2);
-    }
-  }
-
-  void _updateWeightAndIntensity(
-    TrainingProgramController controller,
-    TextEditingController repsController,
-    TextEditingController weightController,
-    TextEditingController rpeController,
-    TextEditingController intensityController,
-    FocusNode rpeFocusNode,
-    FocusNode weightFocusNode,
-    FocusNode intensityFocusNode,
-  ) async {
-    if (rpeFocusNode.hasFocus) {
-      final rpeText = rpeController.text;
-      if (rpeText.isNotEmpty) {
-        final rpe = double.parse(rpeText);
-        final reps = int.tryParse(repsController.text) ?? 0;
-        final latestMaxWeight = await getLatestMaxWeight(usersService, athleteId, exerciseId);
-        final percentage = getRPEPercentage(rpe, reps);
-        final calculatedWeight = latestMaxWeight * percentage;
-        final roundedWeight = roundWeight(calculatedWeight, exercise.type);
-
-        weightController.text = roundedWeight.toStringAsFixed(2);
-        final calculatedIntensity = calculateIntensityFromWeight(roundedWeight, latestMaxWeight);
-        intensityController.text = calculatedIntensity.toStringAsFixed(2);
-      }
-    }
-  }
-
-  void _updateRPE(
-    TextEditingController repsController,
-    TextEditingController weightController,
-    TextEditingController rpeController,
-    TextEditingController intensityController,
-    FocusNode rpeFocusNode,
-    FocusNode weightFocusNode,
-  ) async {
-    if (!rpeFocusNode.hasFocus && !weightFocusNode.hasFocus) {
-      final weight = double.tryParse(weightController.text) ?? 0;
-      final reps = int.tryParse(repsController.text) ?? 0;
-      final latestMaxWeight = await getLatestMaxWeight(usersService, athleteId, exerciseId);
-      final calculatedRPE = calculateRPE(weight, latestMaxWeight, reps);
-
-      if (calculatedRPE != null) {
-        rpeController.text = calculatedRPE.toStringAsFixed(1);
-        final percentage = getRPEPercentage(calculatedRPE, reps);
-        intensityController.text = (percentage * 100).toStringAsFixed(2);
-      } else {
-        rpeController.clear();
-        intensityController.clear();
-      }
-    }
-  }
-
-void _saveSeries(
-  BuildContext context,
-  TrainingProgramController controller,
-  TextEditingController repsController,
-  TextEditingController setsController,
-  TextEditingController intensityController,
-  TextEditingController rpeController,
-  TextEditingController weightController,
-) {
-  final reps = int.tryParse(repsController.text) ?? 0;
-  final sets = int.tryParse(setsController.text) ?? 0;
-  final intensity = intensityController.text;
-  final rpe = rpeController.text;
-  final weight = double.tryParse(weightController.text) ?? 0;
-
-  final newSeries = Series(
-    id: currentSeries?.id,
-    serieId: currentSeries?.serieId ?? '',
-    reps: reps,
-    sets: 1,
-    intensity: intensity,
-    rpe: rpe,
-    weight: weight,
-    order: currentSeries?.order ?? (weekIndex * 100 + 1),
-    done: currentSeries?.done ?? false,
-    reps_done: currentSeries?.reps_done ?? 0,
-    weight_done: currentSeries?.weight_done ?? 0.0,
-  );
-
-  if (newSeries.serieId!.isEmpty) {
-    newSeries.serieId = '${DateTime.now().millisecondsSinceEpoch}_0';
-  }
-
-  final seriesList = [newSeries];
-
-  if (sets > 1) {
-    for (int i = 1; i < sets; i++) {
-      final baseId = DateTime.now().millisecondsSinceEpoch;
-      final automatedSeriesId = '${baseId}_$i';
-      final automatedSeries = Series(
-        serieId: automatedSeriesId,
-        reps: newSeries.reps,
-        sets: 1,
-        intensity: newSeries.intensity,
-        rpe: newSeries.rpe,
-        weight: newSeries.weight,
-        order: weekIndex * 100 + i + 1,
-        done: false,
-        reps_done: 0,
-        weight_done: 0.0,
-      );
-      seriesList.add(automatedSeries);
-    }
-  }
-
-  Navigator.pop(context, seriesList);
-}
 }

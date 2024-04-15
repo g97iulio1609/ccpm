@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'training_model.dart';
-import 'training_program_controller.dart';
+import 'controller/training_program_controller.dart';
 import 'utility_functions.dart';
 import '../users_services.dart';
 import 'reorder_dialog.dart';
@@ -197,8 +196,7 @@ Widget _buildSeriesGroupCard(
           PopupMenuItem(
             child: const Text('Edit'),
             onTap: () => controller.editSeries(
-                weekIndex, workoutIndex, exerciseIndex, series, context),
-          ),
+                weekIndex, workoutIndex, exerciseIndex, series, context),),
           PopupMenuItem(
             child: const Text('Delete'),
             onTap: () {
@@ -391,7 +389,7 @@ Widget _buildSeriesGroupCard(
         controller.program.weeks[weekIndex].workouts[workoutIndex]
             .exercises[exerciseIndex].exerciseId!);
     final calculatedWeight =
-        calculateWeightFromIntensity(latestMaxWeight, intensity);
+        calculateWeightFromIntensity(latestMaxWeight?.toDouble() ?? 0, intensity);
     final roundedWeight = roundWeight(
         calculatedWeight,
         controller.program.weeks[weekIndex].workouts[workoutIndex]
@@ -410,9 +408,9 @@ Widget _buildSeriesGroupCard(
         controller.program.weeks[weekIndex].workouts[workoutIndex]
             .exercises[exerciseIndex].exerciseId!);
 
-    if (weight > 0 && latestMaxWeight > 0) {
+    if (weight > 0 && latestMaxWeight != null && latestMaxWeight > 0) {
       final calculatedIntensity =
-          calculateIntensityFromWeight(weight, latestMaxWeight);
+          calculateIntensityFromWeight(weight, latestMaxWeight.toDouble());
       setState(() {
         intensityController.text = calculatedIntensity.toStringAsFixed(2);
       });
@@ -440,7 +438,7 @@ Widget _buildSeriesGroupCard(
           controller.program.weeks[weekIndex].workouts[workoutIndex]
               .exercises[exerciseIndex].exerciseId!);
       final percentage = getRPEPercentage(rpe, reps);
-      final calculatedWeight = latestMaxWeight * percentage;
+      final calculatedWeight = (latestMaxWeight?.toDouble() ?? 0) * percentage;
       final roundedWeight = roundWeight(
           calculatedWeight,
           controller.program.weeks[weekIndex].workouts[workoutIndex]
@@ -449,7 +447,7 @@ Widget _buildSeriesGroupCard(
       setState(() {
         weightController.text = roundedWeight.toStringAsFixed(2);
         final calculatedIntensity =
-            calculateIntensityFromWeight(roundedWeight, latestMaxWeight);
+            calculateIntensityFromWeight(roundedWeight, latestMaxWeight?.toDouble() ?? 0);
         intensityController.text = calculatedIntensity.toStringAsFixed(2);
       });
     }
@@ -469,7 +467,7 @@ Widget _buildSeriesGroupCard(
         controller.athleteIdController.text,
         controller.program.weeks[weekIndex].workouts[workoutIndex]
             .exercises[exerciseIndex].exerciseId!);
-    final calculatedRPE = calculateRPE(weight, latestMaxWeight, reps);
+    final calculatedRPE = calculateRPE(weight, latestMaxWeight?.toDouble() ?? 0, reps);
 
     if (calculatedRPE != null) {
       setState(() {

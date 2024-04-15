@@ -209,17 +209,17 @@ class Exercise {
   List<WeekProgression> weekProgressions;
 
   Exercise({
-    this.id,
-    required this.name,
-    this.type,
-    required this.variant,
-    required this.order,
-    this.exerciseId,
-    this.superSetId,
-    List<Series>? series,
-    List<WeekProgression>? weekProgressions,
-  })  : series = series ?? [],
-        weekProgressions = weekProgressions ?? [];
+  this.id,
+  required this.name,
+  this.type,
+  required this.variant,
+  required this.order,
+  this.exerciseId,
+  this.superSetId,
+  List<Series>? series,
+  List<WeekProgression>? weekProgressions,
+})  : series = series ?? [],
+     weekProgressions = weekProgressions ?? [];
 
   factory Exercise.fromMap(Map<String, dynamic> map) {
     return Exercise(
