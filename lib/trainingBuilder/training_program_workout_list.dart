@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'training_model.dart';
 import 'controller/training_program_controller.dart';
 import 'reorder_dialog.dart';

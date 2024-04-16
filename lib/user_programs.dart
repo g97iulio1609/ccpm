@@ -5,6 +5,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'users_services.dart';
+import './trainingBuilder/controller/training_program_controller.dart';
+
 
 class UserProgramsScreen extends HookConsumerWidget {
   final String? userId;
@@ -102,7 +104,7 @@ class UserProgramsScreen extends HookConsumerWidget {
                 ),
               ),
             ),
-          Expanded(
+           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: getProgramsStream(),
               builder: (context, snapshot) {
@@ -128,6 +130,8 @@ class UserProgramsScreen extends HookConsumerWidget {
                   itemBuilder: (context, index) {
                     final doc = documents[index];
                     final isHidden = doc['hide'];
+                        final controller = ref.read(trainingProgramControllerProvider);
+
 
                     return Card(
                       elevation: 2,
@@ -135,7 +139,8 @@ class UserProgramsScreen extends HookConsumerWidget {
                         borderRadius: BorderRadius.circular(12.0),
                       ),
                       child: InkWell(
-                        onTap: () => context.go('/programs_screen/user_programs/$userId/training_viewer/${doc.id}'),
+                        onTap: () => context.go(
+                            '/programs_screen/user_programs/$userId/training_viewer/${doc.id}'),
                         child: Stack(
                           children: [
                             Center(
@@ -147,40 +152,118 @@ class UserProgramsScreen extends HookConsumerWidget {
                                     style: TextStyle(
                                       fontSize: 20,
                                       fontWeight: FontWeight.bold,
-                                      color: Theme.of(context).colorScheme.onSurface,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface,
                                     ),
                                   ),
                                   const SizedBox(height: 16),
                                   if (userRole == 'admin')
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         FilledButton(
                                           onPressed: () {
-                                            context.go('/programs_screen/user_programs/$userId/training_program/${doc.id}');
+                                            context.go(
+                                                '/programs_screen/user_programs/$userId/training_program/${doc.id}');
                                           },
                                           style: FilledButton.styleFrom(
-                                            backgroundColor: Theme.of(context).colorScheme.tertiary,
+                                            backgroundColor: Theme.of(context)
+                                                .colorScheme
+                                                .tertiary,
                                             foregroundColor: Colors.white,
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(8.0),
+                                              borderRadius:
+                                                  BorderRadius.circular(8.0),
                                             ),
-                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 12, vertical: 6),
                                           ),
                                           child: const Text('Modifica'),
                                         ),
                                         const SizedBox(width: 8),
                                         FilledButton(
-                                          onPressed: () => deleteProgram(doc.id),
+                                          onPressed: () =>
+                                              deleteProgram(doc.id),
                                           style: FilledButton.styleFrom(
-                                            backgroundColor: Theme.of(context).colorScheme.error,
+                                            backgroundColor: Theme.of(context)
+                                                .colorScheme
+                                                .error,
                                             foregroundColor: Colors.white,
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(8.0),
+                                              borderRadius:
+                                                  BorderRadius.circular(8.0),
                                             ),
-                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 12, vertical: 6),
                                           ),
                                           child: const Text('Elimina'),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        FilledButton(
+                                          onPressed: () async {
+                                            String? newProgramName =
+                                                await showDialog<String>(
+                                              context: context,
+                                              builder: (BuildContext context) {
+                                                TextEditingController
+                                                    _nameController =
+                                                    TextEditingController();
+                                                return AlertDialog(
+                                                  title: const Text(
+                                                      'Duplica Programma'),
+                                                  content: TextField(
+                                                    controller: _nameController,
+                                                    decoration:
+                                                        const InputDecoration(
+                                                      labelText:
+                                                          'Nuovo Nome del Programma',
+                                                    ),
+                                                  ),
+                                                  actions: <Widget>[
+                                                    TextButton(
+                                                      onPressed: () =>
+                                                          Navigator.of(context)
+                                                              .pop(),
+                                                      child: const Text(
+                                                          'Annulla'),
+                                                    ),
+                                                    ElevatedButton(
+                                                      onPressed: () =>
+                                                          Navigator.of(context)
+                                                              .pop(
+                                                                  _nameController
+                                                                      .text
+                                                                      .trim()),
+                                                      child: const Text('OK'),
+                                                    ),
+                                                  ],
+                                                );
+                                              },
+                                            );
+
+                                            if (newProgramName != null &&
+                                                newProgramName.isNotEmpty) {
+                                              await controller.duplicateProgram(
+                                                  doc.id,
+                                                  newProgramName,
+                                                  context);
+                                            }
+                                          },
+                                          style: FilledButton.styleFrom(
+                                            backgroundColor: Theme.of(context)
+                                                .colorScheme
+                                                .secondary,
+                                            foregroundColor: Colors.white,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8.0),
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 12, vertical: 6),
+                                          ),
+                                          child: const Text('Duplica'),
                                         ),
                                       ],
                                     ),
@@ -192,9 +275,13 @@ class UserProgramsScreen extends HookConsumerWidget {
                                 top: 8,
                                 right: 8,
                                 child: IconButton(
-                                  icon: Icon(isHidden ? Icons.visibility_off : Icons.visibility),
-                                  color: Theme.of(context).colorScheme.onSurface,
-                                  onPressed: () => toggleProgramVisibility(doc.id, isHidden),
+                                  icon: Icon(isHidden
+                                      ? Icons.visibility_off
+                                      : Icons.visibility),
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
+                                  onPressed: () =>
+                                      toggleProgramVisibility(doc.id, isHidden),
                                 ),
                               ),
                           ],

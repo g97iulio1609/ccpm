@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../training_model.dart';
@@ -97,6 +99,8 @@ class TrainingProgramController extends ChangeNotifier {
     _programStateNotifier.updateProgram(_program);
     notifyListeners();
   }
+
+
 
   Future<void> addWeek() async {
     _weekController.addWeek(_program);
@@ -308,4 +312,62 @@ void resetFields() {
 _initProgram();
 notifyListeners();
 }
+
+String generateId() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  final random = Random.secure();
+  return List.generate(20, (_) => chars[random.nextInt(chars.length)]).join();
+}
+
+Future<void> duplicateProgram(
+      String programId, String newProgramName, BuildContext context) async {
+    try {
+      // Fetch the existing program
+      TrainingProgram existingProgram =
+          await _repository.fetchTrainingProgram(programId);
+
+      // Create a new program with the new name and copy the existing program data
+      TrainingProgram newProgram = existingProgram.copyWith(
+        id: generateId(),
+        name: newProgramName,
+      );
+
+      // Generate new IDs for weeks, workouts, exercises, series, and supersets
+      newProgram.weeks = newProgram.weeks.map((week) {
+        return week.copyWith(
+          id: generateId(),
+          workouts: week.workouts.map((workout) {
+            return workout.copyWith(
+              id: generateId(),
+              exercises: workout.exercises.map((exercise) {
+                return exercise.copyWith(
+                  id: generateId(),
+                  series: exercise.series.map((series) {
+                    return series.copyWith(serieId: generateId());
+                  }).toList(),
+                );
+              }).toList(),
+              superSets: workout.superSets.map((superSet) {
+                return SuperSet(
+                  id: generateId(),
+                  name: superSet.name,
+                  exerciseIds: superSet.exerciseIds,
+                );
+              }).toList(),
+            );
+          }).toList(),
+        );
+      }).toList();
+
+      // Save the new program
+      await _repository.addOrUpdateTrainingProgram(newProgram);
+
+      // Show a success message
+      _showSuccessSnackBar(context, 'Programma duplicato con successo');
+    } catch (error) {
+      _showErrorSnackBar(
+          context, 'Errore durante la duplicazione del programma: $error');
+    }
+  }
+
 }

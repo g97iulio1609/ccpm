@@ -326,11 +326,11 @@ class AuthWrapper extends ConsumerWidget {
         if (snapshot.connectionState == ConnectionState.active) {
           final User? user = snapshot.data;
           if (user == null) {
-            return AuthScreen();
+            return const AuthScreen();
           } else {
+            final userRole = ref.read(userRoleProvider);
             WidgetsBinding.instance.addPostFrameCallback((_) async {
               await ref.read(usersServiceProvider).fetchUserRole();
-              final userRole = ref.read(userRoleProvider);
               if (context.mounted) {
                 if (userRole == 'admin') {
                   context.go('/programs_screen');
@@ -346,4 +346,4 @@ class AuthWrapper extends ConsumerWidget {
       },
     );
   }
-} 
+}
