@@ -61,19 +61,37 @@ Future<void> updateExerciseProgressions(Exercise exercise, List<WeekProgression>
 
   notifyListeners();
 }
+
 List<WeekProgression> buildWeekProgressions(List<Week> weeks, Exercise exercise) {
   final progressions = List.generate(weeks.length, (weekIndex) {
-    final progression = exercise.weekProgressions.length > weekIndex
+    final existingProgression = exercise.weekProgressions.length > weekIndex
         ? exercise.weekProgressions[weekIndex]
-        : WeekProgression(
-            weekNumber: weekIndex + 1,
-            reps: 0,
-            sets: 0,
-            intensity: '',
-            rpe: '',
-            weight: 0.0,
-          );
-    return progression;
+        : null;
+
+    if (existingProgression != null) {
+      return existingProgression;
+    } else {
+      final week = weeks[weekIndex];
+      final workout = week.workouts.firstWhere(
+        (w) => w.exercises.any((e) => e.exerciseId == exercise.exerciseId),
+        orElse: () => Workout(order: 0, exercises: []),
+      );
+      final exerciseInWeek = workout.exercises.firstWhere(
+        (e) => e.exerciseId == exercise.exerciseId,
+        orElse: () => Exercise(name: '', variant: '', order: 0),
+      );
+
+      final firstSeries = exerciseInWeek.series.isNotEmpty ? exerciseInWeek.series.first : null;
+
+      return WeekProgression(
+        weekNumber: weekIndex + 1,
+        reps: firstSeries?.reps ?? 0,
+        sets: exerciseInWeek.series.length,
+        intensity: firstSeries?.intensity ?? '',
+        rpe: firstSeries?.rpe ?? '',
+        weight: firstSeries?.weight ?? 0.0,
+      );
+    }
   });
 
   debugPrint('Built week progressions:');
@@ -88,6 +106,7 @@ List<WeekProgression> buildWeekProgressions(List<Week> weeks, Exercise exercise)
 
   return progressions;
 }
+
 }
 
 Future<void> addSeriesToProgression(TrainingProgram program, int weekIndex,
