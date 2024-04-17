@@ -1,3 +1,4 @@
+import 'package:alphanessone/trainingBuilder/set_progression.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -180,6 +181,10 @@ Widget _buildExercisePopupMenu(
             child: const Text('Rimuovi dal Superset'),
             onTap: () => controller.removeExerciseFromSuperSet(weekIndex, workoutIndex, exercise.superSetId!, exercise.id!),
           ),
+             PopupMenuItem(
+        child: const Text('Set Progression'),
+        onTap: () => _showSetProgressionScreen(context, exercise),
+      ),
       ],
     );
   }
@@ -470,5 +475,19 @@ Future<void> _showAddToSuperSetDialog(BuildContext context, Exercise exercise) a
     if (superSetId != null) {
       controller.removeExerciseFromSuperSet(weekIndex, workoutIndex, superSetId, exercise.id!);
 }
+}
+Future<void> _showSetProgressionScreen(BuildContext context, Exercise exercise) async {
+  final updatedExercise = await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => SetProgressionScreen(
+        exerciseId: exercise.exerciseId!,
+        exercise: exercise,
+      ),
+    ),
+  );
+  if (updatedExercise != null) {
+    controller.updateExercise(updatedExercise.exerciseId!);
+  }
 }
 }
