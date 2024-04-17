@@ -1,5 +1,6 @@
 import 'package:alphanessone/trainingBuilder/training_model.dart';
 import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
+import 'package:alphanessone/trainingBuilder/controller/progression_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -15,48 +16,45 @@ class SetProgressionScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    debugPrint('Building SetProgressionScreen');
-    debugPrint('Received exerciseId: $exerciseId');
-    debugPrint('Received exercise: $exercise');
-
-    final controller = ref.watch(trainingProgramControllerProvider);
-    debugPrint('Fetched controller: $controller');
+    final programController = ref.watch(trainingProgramControllerProvider);
+    final progressionController = ref.watch(progressionControllerProvider);
 
     List<WeekProgression> weekProgressions =
-        _buildWeekProgressions(controller.program.weeks, exercise);
-    debugPrint('Initial weekProgressions: $weekProgressions');
+        progressionController.buildWeekProgressions(programController.program.weeks, exercise!);
 
-    void updateProgression(int weekIndex, int reps, int sets, String intensity,
-        String rpe, double weight) {
-      final currentProgression = weekProgressions[weekIndex];
+  void updateProgression(int weekIndex, int reps, int sets, String intensity,
+    String rpe, double weight) {
+  final currentProgression = weekProgressions[weekIndex];
 
-      debugPrint('Updating progression for weekIndex: $weekIndex');
-      debugPrint(
-          'Input values: reps=$reps, sets=$sets, intensity=$intensity, rpe=$rpe, weight=$weight');
+  currentProgression.reps = reps;
+  currentProgression.sets = sets;
+  currentProgression.intensity = intensity;
+  currentProgression.rpe = rpe;
+  currentProgression.weight = weight;
 
-      currentProgression.reps = reps;
-      currentProgression.sets = sets;
-      currentProgression.intensity = intensity;
-      currentProgression.rpe = rpe;
-      currentProgression.weight = weight;
-
-      debugPrint('Updated progression: $currentProgression');
-    }
+  debugPrint('Updated progression for week ${weekIndex + 1}:');
+  debugPrint('Reps: $reps');
+  debugPrint('Sets: $sets');
+  debugPrint('Intensity: $intensity');
+  debugPrint('RPE: $rpe');
+  debugPrint('Weight: $weight');
+}
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Set Progression'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.check),
-            onPressed: () async {
-              debugPrint('Apply Progression button pressed');
-              await controller.updateExerciseProgressions(
-                  exercise!, weekProgressions, context);
-              Navigator.pop(context);
-            },
-            tooltip: 'Apply Progression',
-          ),
+     icon: const Icon(Icons.check),
+  onPressed: () async {
+    debugPrint('Set Progression clicked');
+    debugPrint('Week progressions: $weekProgressions');
+    await progressionController.updateExerciseProgressions(
+        exercise!, weekProgressions, context);
+    Navigator.pop(context);
+  },
+  tooltip: 'Apply Progression',
+),
         ],
       ),
       body: SingleChildScrollView(
@@ -75,8 +73,6 @@ class SetProgressionScreen extends ConsumerWidget {
             weekProgressions.length,
             (weekIndex) {
               final progression = weekProgressions[weekIndex];
-              debugPrint('Building DataRow for weekIndex: $weekIndex');
-              debugPrint('progression: $progression');
 
               return DataRow(
                 cells: [
@@ -174,96 +170,16 @@ class SetProgressionScreen extends ConsumerWidget {
                             progression.intensity,
                             progression.rpe,
                             weight,
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-   List<WeekProgression> _buildWeekProgressions(List<Week> weeks, Exercise? exercise) {
-    debugPrint('Building weekProgressions');
-    debugPrint('weeks: $weeks');
-    debugPrint('exercise: $exercise');
-
-    return List.generate(weeks.length, (weekIndex) {
-      final week = weeks[weekIndex];
-      debugPrint('Processing week: $week');
-
-      final workout = week.workouts.firstWhere(
-        (workout) => workout.exercises.any((e) => e.id == exercise?.id),
-        orElse: () => Workout(order: 0, exercises: []),
-      );
-      debugPrint('Found workout: $workout');
-
-      final exerciseInWorkout = workout.exercises.firstWhere(
-        (e) => e.id == exercise?.id,
-        orElse: () => Exercise(name: '', variant: '', order: 0),
-      );
-      final exerciseSeries = exerciseInWorkout.series;
-      debugPrint('Found series: $exerciseSeries');
-
-      if (exerciseSeries.isNotEmpty) {
-        final firstSeries = exerciseSeries.first;
-        debugPrint('Using values from current week: reps=${firstSeries.reps}, sets=${exerciseSeries.length}, intensity=${firstSeries.intensity}, rpe=${firstSeries.rpe}, weight=${firstSeries.weight}');
-
-        return WeekProgression(
-          weekNumber: weekIndex + 1,
-          reps: firstSeries.reps,
-          sets: exerciseSeries.length,
-          intensity: firstSeries.intensity,
-          rpe: firstSeries.rpe,
-          weight: firstSeries.weight,
-        );
-      } else {
-        debugPrint('No series found for week ${weekIndex + 1}, searching other weeks');
-
-        // Cerca le serie in tutte le altre settimane
-        for (int i = 0; i < weeks.length; i++) {
-          if (i != weekIndex) {
-            final otherWeek = weeks[i];
-            final otherWorkout = otherWeek.workouts.firstWhere(
-              (workout) => workout.exercises.any((e) => e.id == exercise?.id),
-              orElse: () => Workout(order: 0, exercises: []),
-            );
-            final otherExerciseSeries = otherWorkout.exercises
-                .firstWhere((e) => e.id == exercise?.id, orElse: () => Exercise(name: '', variant: '', order: 0))
-                .series;
-
-            if (otherExerciseSeries.isNotEmpty) {
-              final firstSeries = otherExerciseSeries.first;
-              debugPrint('Using values from week ${i + 1}: reps=${firstSeries.reps}, sets=${otherExerciseSeries.length}, intensity=${firstSeries.intensity}, rpe=${firstSeries.rpe}, weight=${firstSeries.weight}');
-
-              return WeekProgression(
-                weekNumber: weekIndex + 1,
-                reps: firstSeries.reps,
-                sets: otherExerciseSeries.length,
-                intensity: firstSeries.intensity,
-                rpe: firstSeries.rpe,
-                weight: firstSeries.weight,
-              );
-            }
-          }
-        }
-
-        debugPrint('No series found in any week, returning default progression');
-
-        return WeekProgression(
-          weekNumber: weekIndex + 1,
-          reps: 0,
-          sets: 0,
-          intensity: '',
-          rpe: '',
-          weight: 0.0,
-        );
-      }
-    });
-  }
+                          );},
+),
+),
+),
+],
+);
+},
+),
+),
+),
+);
+}
 }

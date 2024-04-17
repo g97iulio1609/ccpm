@@ -12,6 +12,7 @@ import 'workout_controller.dart';
 import 'exercise_controller.dart';
 import 'series_controller.dart';
 import 'super_set_controller.dart';
+import 'progression_controller.dart';
 
 final firestoreServiceProvider =
     Provider<FirestoreService>((ref) => FirestoreService());
@@ -99,8 +100,6 @@ class TrainingProgramController extends ChangeNotifier {
     _programStateNotifier.updateProgram(_program);
     notifyListeners();
   }
-
-
 
   Future<void> addWeek() async {
     _weekController.addWeek(_program);
@@ -222,104 +221,99 @@ class TrainingProgramController extends ChangeNotifier {
 
   Future<void> applyWeekProgressions(int exerciseIndex,
       List<WeekProgression> weekProgressions, BuildContext context) async {
-await _exerciseController.applyWeekProgressions(
-_program, exerciseIndex, weekProgressions, context);
-notifyListeners();
-}
+    final progressionController = ProgressionController(this);
+    await progressionController.updateExerciseProgressions(
+        _program.weeks.expand((week) => week.workouts).expand((workout) => workout.exercises).elementAt(exerciseIndex),
+        weekProgressions,
+        context);
+    notifyListeners();
+  }
 
-Future<void> addSeriesToProgression(int weekIndex, int workoutIndex,
-int exerciseIndex, BuildContext context) async {
-await _exerciseController.addSeriesToProgression(
-_program, weekIndex, workoutIndex, exerciseIndex, context);
-notifyListeners();
-}
+  Future<void> updateExerciseProgressions(Exercise exercise,
+      List<WeekProgression> updatedProgressions, BuildContext context) async {
+    final progressionController = ProgressionController(this);
+    await progressionController.updateExerciseProgressions(exercise, updatedProgressions, context);
+    notifyListeners();
+  }
 
-Future<void> updateExerciseProgressions(Exercise exercise,
-List<WeekProgression> updatedProgressions, BuildContext context) async {
-await _exerciseController.updateExerciseProgressions(
-_program, exercise, updatedProgressions, context);
-notifyListeners();
-}
+  void reorderWeeks(int oldIndex, int newIndex) {
+    _weekController.reorderWeeks(_program, oldIndex, newIndex);
+    notifyListeners();
+  }
 
-void reorderWeeks(int oldIndex, int newIndex) {
-_weekController.reorderWeeks(_program, oldIndex, newIndex);
-notifyListeners();
-}
+  void updateWeek(int weekIndex, Week updatedWeek) {
+    _weekController.updateWeek(_program, weekIndex, updatedWeek);
+    notifyListeners();
+  }
 
-void updateWeek(int weekIndex, Week updatedWeek) {
-_weekController.updateWeek(_program, weekIndex, updatedWeek);
-notifyListeners();
-}
+  void reorderWorkouts(int weekIndex, int oldIndex, int newIndex) {
+    _workoutController.reorderWorkouts(_program, weekIndex, oldIndex, newIndex);
+    notifyListeners();
+  }
 
-void reorderWorkouts(int weekIndex, int oldIndex, int newIndex) {
-_workoutController.reorderWorkouts(_program, weekIndex, oldIndex, newIndex);
-notifyListeners();
-}
+  void reorderExercises(
+      int weekIndex, int workoutIndex, int oldIndex, int newIndex) {
+    _exerciseController.reorderExercises(
+        _program, weekIndex, workoutIndex, oldIndex, newIndex);
+    notifyListeners();
+  }
 
-void reorderExercises(
-int weekIndex, int workoutIndex, int oldIndex, int newIndex) {
-_exerciseController.reorderExercises(
-_program, weekIndex, workoutIndex, oldIndex, newIndex);
-notifyListeners();
-}
+  void reorderSeries(int weekIndex, int workoutIndex, int exerciseIndex,
+      int oldIndex, int newIndex) {
+    _seriesController.reorderSeries(
+        _program, weekIndex, workoutIndex, exerciseIndex, oldIndex, newIndex);
+    notifyListeners();
+  }
 
-void reorderSeries(int weekIndex, int workoutIndex, int exerciseIndex,
-int oldIndex, int newIndex) {
-_seriesController.reorderSeries(
-_program, weekIndex, workoutIndex, exerciseIndex, oldIndex, newIndex);
-notifyListeners();
-}
+  Future<void> submitProgram(BuildContext context) async {
+    _updateProgramFields();
 
-Future<void> submitProgram(BuildContext context) async {
-_updateProgramFields();
+    try {
+      await _repository.addOrUpdateTrainingProgram(_program);
+      await _repository.removeToDeleteItems(_program);
+      await _usersService.updateUser(
+          _athleteIdController.text, {'currentProgram': _program.id});
 
+      _showSuccessSnackBar(context, 'Program added/updated successfully');
+    } catch (error) {
+      _showErrorSnackBar(context, 'Error adding/updating program: $error');
+    }
+  }
 
+  void _updateProgramFields() {
+    _program.name = _nameController.text;
+    _program.description = _descriptionController.text;
+    _program.athleteId = _athleteIdController.text;
+    _program.mesocycleNumber =
+        int.tryParse(_mesocycleNumberController.text) ?? 0;
+    _program.hide = _program.hide;
+  }
 
-try {
-  await _repository.addOrUpdateTrainingProgram(_program);
-  await _repository.removeToDeleteItems(_program);
-  await _usersService.updateUser(
-      _athleteIdController.text, {'currentProgram': _program.id});
+  void _showSuccessSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
 
-  _showSuccessSnackBar(context, 'Program added/updated successfully');
-} catch (error) {
-  _showErrorSnackBar(context, 'Error adding/updating program: $error');
-}
-}
+  void _showErrorSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
 
-void _updateProgramFields() {
-_program.name = _nameController.text;
-_program.description = _descriptionController.text;
-_program.athleteId = _athleteIdController.text;
-_program.mesocycleNumber =
-int.tryParse(_mesocycleNumberController.text) ?? 0;
-_program.hide = _program.hide;
-}
+  void resetFields() {
+    _initProgram();
+    notifyListeners();
+  }
 
-void _showSuccessSnackBar(BuildContext context, String message) {
-ScaffoldMessenger.of(context).showSnackBar(
-SnackBar(content: Text(message)),
-);
-}
+  String generateId() {
+    const chars =
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    final random = Random.secure();
+    return List.generate(20, (_) => chars[random.nextInt(chars.length)]).join();
+  }
 
-void _showErrorSnackBar(BuildContext context, String message) {
-ScaffoldMessenger.of(context).showSnackBar(
-SnackBar(content: Text(message)),
-);
-}
-
-void resetFields() {
-_initProgram();
-notifyListeners();
-}
-
-String generateId() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  final random = Random.secure();
-  return List.generate(20, (_) => chars[random.nextInt(chars.length)]).join();
-}
-
-Future<void> duplicateProgram(
+  Future<void> duplicateProgram(
       String programId, String newProgramName, BuildContext context) async {
     try {
       // Fetch the existing program
@@ -369,5 +363,4 @@ Future<void> duplicateProgram(
           context, 'Errore durante la duplicazione del programma: $error');
     }
   }
-
 }
