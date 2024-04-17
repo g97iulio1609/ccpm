@@ -219,15 +219,34 @@ class TrainingProgramController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> applyWeekProgressions(int exerciseIndex,
-      List<WeekProgression> weekProgressions, BuildContext context) async {
-    final progressionController = ProgressionController(this);
-    await progressionController.updateExerciseProgressions(
-        _program.weeks.expand((week) => week.workouts).expand((workout) => workout.exercises).elementAt(exerciseIndex),
-        weekProgressions,
-        context);
-    notifyListeners();
+Future<void> applyWeekProgressions(int exerciseIndex, List<WeekProgression> weekProgressions, BuildContext context) async {
+  final exercise = _program.weeks.expand((week) => week.workouts).expand((workout) => workout.exercises).elementAt(exerciseIndex);
+  
+  for (int weekIndex = 0; weekIndex < _program.weeks.length; weekIndex++) {
+    final progression = weekIndex < weekProgressions.length ? weekProgressions[weekIndex] : weekProgressions.last;
+    final series = List.generate(progression.sets, (index) => Series(
+      serieId: UniqueKey().toString(),
+      reps: progression.reps,
+      sets: 1,
+      intensity: progression.intensity,
+      rpe: progression.rpe,
+      weight: progression.weight,
+      order: index + 1,
+      done: false,
+      reps_done: 0,
+      weight_done: 0.0,
+    ));
+    
+    _program.weeks[weekIndex].workouts.forEach((workout) {
+      final exerciseIndex = workout.exercises.indexWhere((e) => e.id == exercise.id);
+      if (exerciseIndex != -1) {
+        workout.exercises[exerciseIndex] = workout.exercises[exerciseIndex].copyWith(series: series);
+      }
+    });
   }
+
+  notifyListeners();
+}
 
   Future<void> updateExerciseProgressions(Exercise exercise,
       List<WeekProgression> updatedProgressions, BuildContext context) async {

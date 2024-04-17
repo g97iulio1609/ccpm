@@ -15,6 +15,8 @@ class ProgressionController extends ChangeNotifier {
 
   TrainingProgram get program => _trainingProgramController.program;
 
+
+
 Future<void> updateExerciseProgressions(Exercise exercise, List<WeekProgression> updatedProgressions, BuildContext context) async {
   debugPrint('Updating exercise progressions:');
   for (var progression in updatedProgressions) {
@@ -25,30 +27,40 @@ Future<void> updateExerciseProgressions(Exercise exercise, List<WeekProgression>
     debugPrint('RPE: ${progression.rpe}');
     debugPrint('Weight: ${progression.weight}');
   }
-    for (int weekIndex = 0; weekIndex < program.weeks.length; weekIndex++) {
+
+  for (int weekIndex = 0; weekIndex < program.weeks.length; weekIndex++) {
     final week = program.weeks[weekIndex];
     for (int workoutIndex = 0; workoutIndex < week.workouts.length; workoutIndex++) {
       final workout = week.workouts[workoutIndex];
-      final exerciseIndex = workout.exercises.indexWhere((e) => e.id == exercise.id);
+      final exerciseIndex = workout.exercises.indexWhere((e) => e.exerciseId == exercise.exerciseId);
       if (exerciseIndex != -1) {
         final currentExercise = workout.exercises[exerciseIndex];
         currentExercise.weekProgressions = updatedProgressions;
+        
+        // Aggiorna le serie dell'esercizio in base alla progressione della settimana corrente
         final progression = weekIndex < updatedProgressions.length ? updatedProgressions[weekIndex] : updatedProgressions.last;
         currentExercise.series.clear();
-        await Future.forEach<int>(List.generate(progression.sets, (index) => index), (index) async {
-          await addSeriesToProgression(program, weekIndex, workoutIndex, exerciseIndex);
-          final latestSeries = currentExercise.series[index];
-          latestSeries.reps = progression.reps;
-          latestSeries.intensity = progression.intensity;
-          latestSeries.rpe = progression.rpe;
-          latestSeries.weight = progression.weight;
-        });
+        for (int i = 0; i < progression.sets; i++) {
+          final newSeries = Series(
+            serieId: UniqueKey().toString(),
+            reps: progression.reps,
+            sets: 1,
+            intensity: progression.intensity,
+            rpe: progression.rpe,
+            weight: progression.weight,
+            order: i + 1,
+            done: false,
+            reps_done: 0,
+            weight_done: 0.0,
+          );
+          currentExercise.series.add(newSeries);
+        }
       }
     }
   }
+
   notifyListeners();
 }
-
 List<WeekProgression> buildWeekProgressions(List<Week> weeks, Exercise exercise) {
   final progressions = List.generate(weeks.length, (weekIndex) {
     final progression = exercise.weekProgressions.length > weekIndex

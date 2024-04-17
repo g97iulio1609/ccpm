@@ -44,13 +44,13 @@ class SetProgressionScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Set Progression'),
         actions: [
-          IconButton(
-     icon: const Icon(Icons.check),
+ IconButton(
+  icon: const Icon(Icons.check),
   onPressed: () async {
     debugPrint('Set Progression clicked');
     debugPrint('Week progressions: $weekProgressions');
-    await progressionController.updateExerciseProgressions(
-        exercise!, weekProgressions, context);
+    await progressionController.updateExerciseProgressions(exercise!, weekProgressions, context);
+    await programController.applyWeekProgressions(programController.program.weeks.expand((week) => week.workouts).expand((workout) => workout.exercises).toList().indexOf(exercise!), weekProgressions, context);
     Navigator.pop(context);
   },
   tooltip: 'Apply Progression',
