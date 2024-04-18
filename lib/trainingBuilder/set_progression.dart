@@ -23,6 +23,9 @@ class SetProgressionScreen extends ConsumerStatefulWidget {
 
 class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
   List<TextEditingController> _weightControllers = [];
+  List<TextEditingController> _intensityControllers = [];
+  List<FocusNode> _weightFocusNodes = [];
+  List<FocusNode> _intensityFocusNodes = [];
 
   @override
   void initState() {
@@ -31,12 +34,24 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
     final progressionController = ref.read(progressionControllerProvider);
     final weekProgressions = progressionController.buildWeekProgressions(programController.program.weeks, widget.exercise!);
     _weightControllers = List.generate(weekProgressions.length, (index) => TextEditingController(text: weekProgressions[index].weight.toString()));
+    _intensityControllers = List.generate(weekProgressions.length, (index) => TextEditingController(text: weekProgressions[index].intensity));
+    _weightFocusNodes = List.generate(weekProgressions.length, (index) => FocusNode());
+    _intensityFocusNodes = List.generate(weekProgressions.length, (index) => FocusNode());
   }
 
   @override
   void dispose() {
     for (var controller in _weightControllers) {
       controller.dispose();
+    }
+    for (var controller in _intensityControllers) {
+      controller.dispose();
+    }
+    for (var focusNode in _weightFocusNodes) {
+      focusNode.dispose();
+    }
+    for (var focusNode in _intensityFocusNodes) {
+      focusNode.dispose();
     }
     super.dispose();
   }
@@ -66,7 +81,7 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
     void updateWeightFromIntensity(int weekIndex, String intensity) {
       final currentProgression = weekProgressions[weekIndex];
 
-      if (intensity.isNotEmpty) {
+      if (intensity.isNotEmpty && !_weightFocusNodes[weekIndex].hasFocus) {
         debugPrint('Calculating weight from intensity: $intensity');
         final calculatedWeight = calculateWeightFromIntensity(widget.latestMaxWeight.toDouble(), double.parse(intensity));
         currentProgression.weight = roundWeight(calculatedWeight, widget.exercise?.type);
@@ -78,7 +93,7 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
     void updateWeightFromRPE(int weekIndex, String rpe, int reps) {
       final currentProgression = weekProgressions[weekIndex];
 
-      if (rpe.isNotEmpty) {
+      if (rpe.isNotEmpty && !_weightFocusNodes[weekIndex].hasFocus) {
         debugPrint('Calculating weight from RPE: $rpe');
         final rpePercentage = getRPEPercentage(double.parse(rpe), reps);
         final calculatedWeight = widget.latestMaxWeight.toDouble() * rpePercentage;
@@ -91,9 +106,10 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
     void updateIntensityFromWeight(int weekIndex, double weight) {
       final currentProgression = weekProgressions[weekIndex];
 
-      if (weight != 0) {
+      if (weight != 0 && !_intensityFocusNodes[weekIndex].hasFocus) {
         debugPrint('Updating intensity based on weight: $weight');
         currentProgression.intensity = calculateIntensityFromWeight(weight, widget.latestMaxWeight.toDouble()).toStringAsFixed(2);
+        _intensityControllers[weekIndex].text = currentProgression.intensity;
         debugPrint('Updated intensity: ${currentProgression.intensity}');
       }
     }
@@ -185,7 +201,8 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
                     SizedBox(
                       width: 80,
                       child: TextFormField(
-                        initialValue: progression.intensity,
+                        controller: _intensityControllers[weekIndex],
+                        focusNode: _intensityFocusNodes[weekIndex],
                         keyboardType: TextInputType.text,
                         onChanged: (value) {
                           updateProgression(
@@ -226,6 +243,7 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
                       width: 80,
                       child: TextFormField(
                         controller: _weightControllers[weekIndex],
+                        focusNode: _weightFocusNodes[weekIndex],
                         keyboardType: TextInputType.number,
                         onChanged: (value) {
                           final weight = double.tryParse(value) ?? 0;
