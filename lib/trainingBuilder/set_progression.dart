@@ -5,215 +5,249 @@ import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class SetProgressionScreen extends ConsumerWidget {
+class SetProgressionScreen extends ConsumerStatefulWidget {
   final String exerciseId;
   final Exercise? exercise;
-    final num latestMaxWeight;
-
+  final num latestMaxWeight;
 
   const SetProgressionScreen({
     required this.exerciseId,
     this.exercise,
-        required this.latestMaxWeight,
-
+    required this.latestMaxWeight,
     super.key,
   });
 
-@override
-Widget build(BuildContext context, WidgetRef ref) {
-  final programController = ref.watch(trainingProgramControllerProvider);
-  final progressionController = ref.watch(progressionControllerProvider);
+  @override
+  ConsumerState<SetProgressionScreen> createState() => _SetProgressionScreenState();
+}
 
-  List<WeekProgression> weekProgressions = progressionController
-      .buildWeekProgressions(programController.program.weeks, exercise!);
+class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
+  List<TextEditingController> _weightControllers = [];
 
-  void updateProgression(int weekIndex, int reps, int sets, String intensity,
-      String rpe, double weight) {
-    final currentProgression = weekProgressions[weekIndex];
-
-    currentProgression.reps = reps;
-    currentProgression.sets = sets;
-    currentProgression.intensity = intensity;
-    currentProgression.rpe = rpe;
-    currentProgression.weight = weight;
-
-    debugPrint('Updating progression for week ${currentProgression.weekNumber}');
-    debugPrint('Reps: ${currentProgression.reps}, Sets: ${currentProgression.sets}, Intensity: ${currentProgression.intensity}, RPE: ${currentProgression.rpe}, Weight: ${currentProgression.weight}');
-
-    // Aggiorna il valore di weight in base all'intensità o all'RPE
-    if (intensity.isNotEmpty) {
-      debugPrint('Calculating weight from intensity: $intensity');
-      final calculatedWeight = calculateWeightFromIntensity(latestMaxWeight.toDouble(), double.parse(intensity));
-      currentProgression.weight = roundWeight(calculatedWeight, exercise?.type);
-      debugPrint('Calculated weight: ${currentProgression.weight}');
-    } else if (rpe.isNotEmpty) {
-      debugPrint('Calculating weight from RPE: $rpe');
-      final rpePercentage = getRPEPercentage(double.parse(rpe), reps);
-      final calculatedWeight = latestMaxWeight.toDouble() * rpePercentage;
-      currentProgression.weight = roundWeight(calculatedWeight, exercise?.type);
-      debugPrint('Calculated weight: ${currentProgression.weight}');
-    }
-
-    // Aggiorna l'intensità in base al peso
-    if (currentProgression.weight != 0) {
-      debugPrint('Updating intensity based on weight: ${currentProgression.weight}');
-      currentProgression.intensity = calculateIntensityFromWeight(currentProgression.weight, latestMaxWeight.toDouble()).toStringAsFixed(2);
-      debugPrint('Updated intensity: ${currentProgression.intensity}');
-    }
-
-    // Aggiorna l'RPE in base al peso e alle ripetizioni
-    final calculatedRPE = calculateRPE(currentProgression.weight, latestMaxWeight.toDouble(), reps);
-    currentProgression.rpe = calculatedRPE != null ? calculatedRPE.toStringAsFixed(1) : '';
-    debugPrint('Updated RPE: ${currentProgression.rpe}');
+  @override
+  void initState() {
+    super.initState();
+    final programController = ref.read(trainingProgramControllerProvider);
+    final progressionController = ref.read(progressionControllerProvider);
+    final weekProgressions = progressionController.buildWeekProgressions(programController.program.weeks, widget.exercise!);
+    _weightControllers = List.generate(weekProgressions.length, (index) => TextEditingController(text: weekProgressions[index].weight.toString()));
   }
 
+  @override
+  void dispose() {
+    for (var controller in _weightControllers) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
 
-  return Scaffold(
-    appBar: AppBar(
-      title: const Text('Set Progression'),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.check),
-          onPressed: () async {
-            await progressionController.updateExerciseProgressions(
-                exercise!, weekProgressions, context);
-            await programController.applyWeekProgressions(
-                programController.program.weeks
-                    .expand((week) => week.workouts)
-                    .expand((workout) => workout.exercises)
-                    .toList()
-                    .indexOf(exercise!),
-                weekProgressions,
-                context);
-            Navigator.pop(context);
-          },
-          tooltip: 'Apply Progression',
-        ),
-      ],
-    ),
-    body: SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: DataTable(
-        columnSpacing: 16.0,
-        columns: const [
-          DataColumn(label: Text('Week')),
-          DataColumn(label: Text('Reps')),
-          DataColumn(label: Text('Sets')),
-          DataColumn(label: Text('Intensity')),
-          DataColumn(label: Text('RPE')),
-          DataColumn(label: Text('Weight')),
+  @override
+  Widget build(BuildContext context) {
+    final programController = ref.watch(trainingProgramControllerProvider);
+    final progressionController = ref.watch(progressionControllerProvider);
+
+    List<WeekProgression> weekProgressions = progressionController
+        .buildWeekProgressions(programController.program.weeks, widget.exercise!);
+
+    void updateProgression(int weekIndex, int reps, int sets, String intensity,
+        String rpe, double weight) {
+      final currentProgression = weekProgressions[weekIndex];
+
+      currentProgression.reps = reps;
+      currentProgression.sets = sets;
+      currentProgression.intensity = intensity;
+      currentProgression.rpe = rpe;
+      currentProgression.weight = weight;
+
+      debugPrint('Updating progression for week ${currentProgression.weekNumber}');
+      debugPrint('Reps: ${currentProgression.reps}, Sets: ${currentProgression.sets}, Intensity: ${currentProgression.intensity}, RPE: ${currentProgression.rpe}, Weight: ${currentProgression.weight}');
+    }
+
+    void updateWeightFromIntensity(int weekIndex, String intensity) {
+      final currentProgression = weekProgressions[weekIndex];
+
+      if (intensity.isNotEmpty) {
+        debugPrint('Calculating weight from intensity: $intensity');
+        final calculatedWeight = calculateWeightFromIntensity(widget.latestMaxWeight.toDouble(), double.parse(intensity));
+        currentProgression.weight = roundWeight(calculatedWeight, widget.exercise?.type);
+        _weightControllers[weekIndex].text = currentProgression.weight.toString();
+        debugPrint('Calculated weight: ${currentProgression.weight}');
+      }
+    }
+
+    void updateWeightFromRPE(int weekIndex, String rpe, int reps) {
+      final currentProgression = weekProgressions[weekIndex];
+
+      if (rpe.isNotEmpty) {
+        debugPrint('Calculating weight from RPE: $rpe');
+        final rpePercentage = getRPEPercentage(double.parse(rpe), reps);
+        final calculatedWeight = widget.latestMaxWeight.toDouble() * rpePercentage;
+        currentProgression.weight = roundWeight(calculatedWeight, widget.exercise?.type);
+        _weightControllers[weekIndex].text = currentProgression.weight.toString();
+        debugPrint('Calculated weight: ${currentProgression.weight}');
+      }
+    }
+
+    void updateIntensityFromWeight(int weekIndex, double weight) {
+      final currentProgression = weekProgressions[weekIndex];
+
+      if (weight != 0) {
+        debugPrint('Updating intensity based on weight: $weight');
+        currentProgression.intensity = calculateIntensityFromWeight(weight, widget.latestMaxWeight.toDouble()).toStringAsFixed(2);
+        debugPrint('Updated intensity: ${currentProgression.intensity}');
+      }
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Set Progression'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.check),
+            onPressed: () async {
+              await progressionController.updateExerciseProgressions(
+                  widget.exercise!, weekProgressions, context);
+              await programController.applyWeekProgressions(
+                  programController.program.weeks
+                      .expand((week) => week.workouts)
+                      .expand((workout) => workout.exercises)
+                      .toList()
+                      .indexOf(widget.exercise!),
+                  weekProgressions,
+                  context);
+              Navigator.pop(context);
+            },
+            tooltip: 'Apply Progression',
+          ),
         ],
-        rows: List.generate(
-          weekProgressions.length,
-          (weekIndex) {
-            final progression = weekProgressions[weekIndex];
+      ),
+      body: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          columnSpacing: 16.0,
+          columns: const [
+            DataColumn(label: Text('Week')),
+            DataColumn(label: Text('Reps')),
+            DataColumn(label: Text('Sets')),
+            DataColumn(label: Text('Intensity')),
+            DataColumn(label: Text('RPE')),
+            DataColumn(label: Text('Weight')),
+          ],
+          rows: List.generate(
+            weekProgressions.length,
+            (weekIndex) {
+              final progression = weekProgressions[weekIndex];
 
-            return DataRow(
-              cells: [
-                DataCell(Text('${progression.weekNumber}')),
-                DataCell(
-                  SizedBox(
-                    width: 60,
-                    child: TextFormField(
-                      initialValue: progression.reps.toString(),
-                      keyboardType: TextInputType.number,
-                      onChanged: (value) {
-                        final reps = int.tryParse(value) ?? 0;
-                        updateProgression(
-                          weekIndex,
-                          reps,
-                          progression.sets,
-                          progression.intensity,
-                          progression.rpe,
-                          progression.weight,
-                        );
-                      },
+              return DataRow(
+                cells: [
+                  DataCell(Text('${progression.weekNumber}')),
+                  DataCell(
+                    SizedBox(
+                      width: 60,
+                      child: TextFormField(
+                        initialValue: progression.reps.toString(),
+                        keyboardType: TextInputType.number,
+                        onChanged: (value) {
+                          final reps = int.tryParse(value) ?? 0;
+                          updateProgression(
+                            weekIndex,
+                            reps,
+                            progression.sets,
+                            progression.intensity,
+                            progression.rpe,
+                            progression.weight,
+                          );
+                        },
+                      ),
                     ),
                   ),
-                ),
-                DataCell(
-                  SizedBox(
-                    width: 60,
-                    child: TextFormField(
-                      initialValue: progression.sets.toString(),
-                      keyboardType: TextInputType.number,
-                      onChanged: (value) {
-                        final sets = int.tryParse(value) ?? 0;
-                        updateProgression(
-                          weekIndex,
-                          progression.reps,
-                          sets,
-                          progression.intensity,
-                          progression.rpe,
-                          progression.weight,
-                        );
-                      },
+                  DataCell(
+                    SizedBox(
+                      width: 60,
+                      child: TextFormField(
+                        initialValue: progression.sets.toString(),
+                        keyboardType: TextInputType.number,
+                        onChanged: (value) {
+                          final sets = int.tryParse(value) ?? 0;
+                          updateProgression(
+                            weekIndex,
+                            progression.reps,
+                            sets,
+                            progression.intensity,
+                            progression.rpe,
+                            progression.weight,
+                          );
+                        },
+                      ),
                     ),
                   ),
-                ),
-                DataCell(
-                  SizedBox(
-                    width: 80,
-                    child: TextFormField(
-                      initialValue: progression.intensity,
-                      keyboardType: TextInputType.text,
-                      onChanged: (value) {
-                        updateProgression(
-                          weekIndex,
-                          progression.reps,
-                          progression.sets,
-                          value,
-                          progression.rpe,
-                          progression.weight,
-                        );
-                      },
+                  DataCell(
+                    SizedBox(
+                      width: 80,
+                      child: TextFormField(
+                        initialValue: progression.intensity,
+                        keyboardType: TextInputType.text,
+                        onChanged: (value) {
+                          updateProgression(
+                            weekIndex,
+                            progression.reps,
+                            progression.sets,
+                            value,
+                            progression.rpe,
+                            progression.weight,
+                          );
+                          updateWeightFromIntensity(weekIndex, value);
+                        },
+                      ),
                     ),
                   ),
-                ),
-                DataCell(
-                  SizedBox(
-                    width: 60,
-                    child: TextFormField(
-                      initialValue: progression.rpe,
-                      keyboardType: TextInputType.text,
-                      onChanged: (value) {
-                        updateProgression(
-                          weekIndex,
-                          progression.reps,
-                          progression.sets,
-                          progression.intensity,
-                          value,
-                          progression.weight,
-                        );
-                      },
+                  DataCell(
+                    SizedBox(
+                      width: 60,
+                      child: TextFormField(
+                        initialValue: progression.rpe,
+                        keyboardType: TextInputType.text,
+                        onChanged: (value) {
+                          updateProgression(
+                            weekIndex,
+                            progression.reps,
+                            progression.sets,
+                            progression.intensity,
+                            value,
+                            progression.weight,
+                          );
+                          updateWeightFromRPE(weekIndex, value, progression.reps);
+                        },
+                      ),
                     ),
                   ),
-                ),
-                DataCell(
-                  SizedBox(
-                    width: 80,
-                    child: TextFormField(
-                      initialValue: progression.weight.toString(),
-                      keyboardType: TextInputType.number,
-                      onChanged: (value) {
-                        final weight = double.tryParse(value) ?? 0;
-                        updateProgression(
-                          weekIndex,
-                          progression.reps,
-                          progression.sets,
-                          progression.intensity,
-                          progression.rpe,
-                          weight,
-                        );
-                      },
+                  DataCell(
+                    SizedBox(
+                      width: 80,
+                      child: TextFormField(
+                        controller: _weightControllers[weekIndex],
+                        keyboardType: TextInputType.number,
+                        onChanged: (value) {
+                          final weight = double.tryParse(value) ?? 0;
+                          updateProgression(
+                            weekIndex,
+                            progression.reps,
+                            progression.sets,
+                            progression.intensity,
+                            progression.rpe,
+                            weight,
+                          );
+                          updateIntensityFromWeight(weekIndex, weight);
+                        },
+                      ),
                     ),
                   ),
-                ),
-              ],
-            );
-          },
+                ],
+              );
+            },
+          ),
         ),
       ),
-    ),
-  );
-}}
+    );
+  }
+}
