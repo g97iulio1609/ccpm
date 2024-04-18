@@ -50,7 +50,6 @@ Future<void> fetchExercises() async {
     return exerciseData;
   }));
 
-  debugPrint('Fetched exercises: $tempExercises');
 
   setState(() {
     exercises = tempExercises;
@@ -73,7 +72,6 @@ Future<List<Map<String, dynamic>>> fetchSeries(String exerciseId) async {
           })
       .toList();
 
-  debugPrint('Fetched series for exercise $exerciseId: $series');
 
   return series;
 }
@@ -155,7 +153,6 @@ Widget build(BuildContext context) {
   final groupedExercises = groupExercisesBySuperSet();
   final processedSuperSets = <String>{};
 
-  debugPrint('Grouped exercises: $groupedExercises');
 
   return Scaffold(
     body: loading
@@ -167,7 +164,6 @@ Widget build(BuildContext context) {
               final exercise = exercises[index];
               final superSetId = exercise['superSetId'];
 
-              debugPrint('Building card for exercise: $exercise');
 
               if (superSetId != null) {
                 if (processedSuperSets.contains(superSetId)) {
