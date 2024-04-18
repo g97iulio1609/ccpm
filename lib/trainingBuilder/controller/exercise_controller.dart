@@ -60,7 +60,9 @@ class ExerciseController extends ChangeNotifier {
     if (exercise.id != null) {
       program.trackToDeleteExercises.add(exercise.id!);
     }
-    exercise.series.forEach((series) => _removeSeriesData(program, series));
+    for (var series in exercise.series) {
+      _removeSeriesData(program, series);
+    }
   }
 
   void _removeSeriesData(TrainingProgram program, Series series) {
