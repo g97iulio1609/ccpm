@@ -18,15 +18,7 @@ class ProgressionController extends ChangeNotifier {
 
 
 Future<void> updateExerciseProgressions(Exercise exercise, List<WeekProgression> updatedProgressions, BuildContext context) async {
-  debugPrint('Updating exercise progressions:');
-  for (var progression in updatedProgressions) {
-    debugPrint('Week ${progression.weekNumber}:');
-    debugPrint('Reps: ${progression.reps}');
-    debugPrint('Sets: ${progression.sets}');
-    debugPrint('Intensity: ${progression.intensity}');
-    debugPrint('RPE: ${progression.rpe}');
-    debugPrint('Weight: ${progression.weight}');
-  }
+
 
   for (int weekIndex = 0; weekIndex < program.weeks.length; weekIndex++) {
     final week = program.weeks[weekIndex];
@@ -94,15 +86,6 @@ List<WeekProgression> buildWeekProgressions(List<Week> weeks, Exercise exercise)
     }
   });
 
-  debugPrint('Built week progressions:');
-  for (var progression in progressions) {
-    debugPrint('Week ${progression.weekNumber}:');
-    debugPrint('Reps: ${progression.reps}');
-    debugPrint('Sets: ${progression.sets}');
-    debugPrint('Intensity: ${progression.intensity}');
-    debugPrint('RPE: ${progression.rpe}');
-    debugPrint('Weight: ${progression.weight}');
-  }
 
   return progressions;
 }

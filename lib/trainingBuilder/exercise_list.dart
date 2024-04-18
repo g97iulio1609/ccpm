@@ -1,4 +1,5 @@
 import 'package:alphanessone/trainingBuilder/set_progression.dart';
+import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -42,69 +43,75 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     );
   }
 
-  Widget _buildExerciseCard(
-    BuildContext context,
-    Exercise exercise,
-    UsersService usersService,
-    String athleteId,
-    DateFormat dateFormat,
-  ) {
-    final superSets = controller.program.weeks[weekIndex].workouts[workoutIndex].superSets
-        .where((ss) => ss.exerciseIds.contains(exercise.id))
-        .toList();
+Widget _buildExerciseCard(
+  BuildContext context,
+  Exercise exercise,
+  UsersService usersService,
+  String athleteId,
+  DateFormat dateFormat,
+) {
+  final superSets = controller.program.weeks[weekIndex].workouts[workoutIndex].superSets
+      .where((ss) => ss.exerciseIds.contains(exercise.id))
+      .toList();
 
-    return Slidable(
-      startActionPane: ActionPane(
-        motion: const DrawerMotion(),
-        children: [
-          SlidableAction(
-            onPressed: (context) => controller.addExercise(weekIndex, workoutIndex, context),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            foregroundColor: Theme.of(context).colorScheme.onPrimary,
-            icon: Icons.add,
-            label: 'Aggiungi Esercizio',
-          ),
-        ],
-      ),
-      endActionPane: ActionPane(
-        motion: const DrawerMotion(),
-        children: [
-          SlidableAction(
-            onPressed: (context) => controller.removeExercise(weekIndex, workoutIndex, exercise.order - 1),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            foregroundColor: Theme.of(context).colorScheme.onError,
-            icon: Icons.delete,
-            label: 'Elimina',
-          ),
-        ],
-      ),
-      child: Card(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
+  return FutureBuilder<num>(
+    future: getLatestMaxWeight(usersService, athleteId, exercise.exerciseId ?? ''),
+    builder: (context, snapshot) {
+      final latestMaxWeight = snapshot.data ?? 0;
+      return Slidable(
+        startActionPane: ActionPane(
+          motion: const DrawerMotion(),
+          children: [
+            SlidableAction(
+              onPressed: (context) => controller.addExercise(weekIndex, workoutIndex, context),
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+              icon: Icons.add,
+              label: 'Aggiungi Esercizio',
+            ),
+          ],
         ),
-        elevation: 2,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildExerciseHeader(context, exercise, usersService, athleteId, dateFormat),
-              if (superSets.isNotEmpty)
-                Row(
-                  children: superSets.map((ss) => Icon(Icons.group_work, color: Colors.blue)).toList(),
+        endActionPane: ActionPane(
+          motion: const DrawerMotion(),
+          children: [
+            SlidableAction(
+              onPressed: (context) => controller.removeExercise(weekIndex, workoutIndex, exercise.order - 1),
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+              icon: Icons.delete,
+              label: 'Elimina',
+            ),
+          ],
+        ),
+        child: Card(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          elevation: 2,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildExerciseHeader(context, exercise, usersService, athleteId, dateFormat, latestMaxWeight),
+                if (superSets.isNotEmpty)
+                  Row(
+                    children: superSets.map((ss) => Icon(Icons.group_work, color: Colors.blue)).toList(),
+                  ),
+                const SizedBox(height: 16),
+                _buildExerciseSeries(context, exercise, usersService),
+                const SizedBox(height: 16),
+                Center(
+                  child: _buildAddSeriesButton(context, exercise),
                 ),
-              const SizedBox(height: 16),
-              _buildExerciseSeries(context, exercise, usersService),
-              const SizedBox(height: 16),
-              Center(
-                child: _buildAddSeriesButton(context, exercise),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
-    );
-  }
+      );
+    },
+  );
+}
 
   Widget _buildExerciseHeader(
     BuildContext context,
@@ -112,6 +119,8 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     UsersService usersService,
     String athleteId,
     DateFormat dateFormat,
+      num latestMaxWeight,
+
   ) {
     return Container(
       decoration: BoxDecoration(
@@ -145,7 +154,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
               ),
             ),
           ),
-          _buildExercisePopupMenu(context, exercise, usersService, athleteId, dateFormat),
+        _buildExercisePopupMenu(context, exercise, usersService, athleteId, dateFormat, latestMaxWeight),
         ],
       ),
     );
@@ -157,6 +166,8 @@ Widget _buildExercisePopupMenu(
     UsersService usersService,
     String athleteId,
     DateFormat dateFormat,
+      num latestMaxWeight,
+
   ) {
     return PopupMenuButton(
       itemBuilder: (context) => [
@@ -183,7 +194,7 @@ Widget _buildExercisePopupMenu(
           ),
              PopupMenuItem(
         child: const Text('Set Progression'),
-        onTap: () => _showSetProgressionScreen(context, exercise),
+        onTap: () => _showSetProgressionScreen(context, exercise, latestMaxWeight),
       ),
       ],
     );
@@ -476,13 +487,15 @@ Future<void> _showAddToSuperSetDialog(BuildContext context, Exercise exercise) a
       controller.removeExerciseFromSuperSet(weekIndex, workoutIndex, superSetId, exercise.id!);
 }
 }
-Future<void> _showSetProgressionScreen(BuildContext context, Exercise exercise) async {
+Future<void> _showSetProgressionScreen(BuildContext context, Exercise exercise, num latestMaxWeight) async {
   final updatedExercise = await Navigator.push(
     context,
     MaterialPageRoute(
       builder: (context) => SetProgressionScreen(
         exerciseId: exercise.exerciseId!,
         exercise: exercise,
+                latestMaxWeight: latestMaxWeight,
+
       ),
     ),
   );
