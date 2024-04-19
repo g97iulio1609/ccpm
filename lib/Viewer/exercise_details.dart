@@ -204,8 +204,6 @@ Widget build(BuildContext context) {
   children: [
                 _buildSeriesIndicator(theme),
                 const SizedBox(height: 16),
-                _buildCurrentExerciseIndicator(theme),
-                const SizedBox(height: 32),
                 if (currentSeries != null) ...[
                   _buildInputField(
                     theme,
@@ -251,68 +249,46 @@ Widget build(BuildContext context) {
   }
 
 
-Widget _buildCurrentExerciseIndicator(ThemeData theme) {
-  if (widget.superSetExercises.length > 1) {
-    final currentExercise = widget.superSetExercises[widget.superSetExerciseIndex];
-    final exerciseName = '${currentExercise['name']} ${currentExercise['variant'] ?? ''}';
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primary.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Text(
-        'Current Exercise: $exerciseName',
-        style: theme.textTheme.titleLarge?.copyWith(
-          color: theme.colorScheme.primary,
-          fontWeight: FontWeight.bold,
+
+Widget _buildSeriesIndicator(ThemeData theme) {
+  final exerciseNames = widget.superSetExercises
+      .map((exercise) => '${exercise['name']} ${exercise['variant'] ?? ''}')
+      .toList();
+
+  return Container(
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: theme.colorScheme.primary.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: Column(
+      children: [
+        Text(
+          widget.superSetExercises.length > 1
+              ? 'Super Set ${widget.superSetExerciseIndex + 1}'
+              : 'Set ${currentSeriesIndex + 1} / ${widget.seriesList.length}',
+          style: theme.textTheme.headlineSmall?.copyWith(
+            color: theme.colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
+          textAlign: TextAlign.center,
         ),
-        textAlign: TextAlign.center,
-      ),
-    );
-  } else {
-    return const SizedBox.shrink();
-  }
-}
-
-  Widget _buildSeriesIndicator(ThemeData theme) {
-    final exerciseNames = widget.superSetExercises
-        .map((exercise) => '${exercise['name']} ${exercise['variant'] ?? ''}')
-        .toList();
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primary.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        children: [
-          Text(
-            widget.superSetExercises.length > 1
-                ? 'Super Set ${widget.superSetExerciseIndex + 1}'
-                : 'Set ${currentSeriesIndex + 1} / ${widget.seriesList.length}',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              color: theme.colorScheme.onSurface,
-              fontWeight: FontWeight.bold,
+        ...exerciseNames.map((exerciseName) {
+          final isCurrentExercise = exerciseNames.indexOf(exerciseName) == widget.superSetExerciseIndex;
+          return Text(
+            exerciseName,
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: isCurrentExercise ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+              fontWeight: isCurrentExercise ? FontWeight.bold : FontWeight.normal,
             ),
             textAlign: TextAlign.center,
-          ),
-          ...exerciseNames.map((exerciseName) {
-            return Text(
-              exerciseName,
-              style: theme.textTheme.titleLarge?.copyWith(
-                color: theme.colorScheme.onSurface,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-            );
-          }).toList(),
-        ],
-      ),
-    );
-  }
+          );
+        }).toList(),
+      ],
+    ),
+  );
+}
 
   Widget _buildInputField(
     ThemeData theme,
