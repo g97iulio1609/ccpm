@@ -192,7 +192,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: _buildDrawer(isLargeScreen, context, userRole, controller),
             ),
           Expanded(
-            child: widget.child,
+        child: widget.child ?? const SizedBox(), // Aggiungi un widget non null se widget.child è null
           ),
         ],
       ),

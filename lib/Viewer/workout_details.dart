@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'dart:async';
 
 class WorkoutDetails extends StatefulWidget {
   final String programId;
@@ -26,146 +25,52 @@ class WorkoutDetails extends StatefulWidget {
 class _WorkoutDetailsState extends State<WorkoutDetails> {
   bool loading = true;
   List<Map<String, dynamic>> exercises = [];
-  final List<StreamSubscription> subscriptions = [];
 
-  @override
+ @override
   void initState() {
     super.initState();
     fetchExercises();
   }
 
-  Future<void> fetchExercises() async {
-    setState(() => loading = true);
+Future<void> fetchExercises() async {
+  setState(() => loading = true);
 
-    final exercisesSnapshot = await FirebaseFirestore.instance
-        .collection('exercisesWorkout')
-        .where('workoutId', isEqualTo: widget.workoutId)
-        .orderBy('order')
-        .get();
+  final exercisesSnapshot = await FirebaseFirestore.instance
+      .collection('exercisesWorkout')
+      .where('workoutId', isEqualTo: widget.workoutId)
+      .orderBy('order')
+      .get();
 
-    final exerciseDocs = exercisesSnapshot.docs;
-    final tempExercises = await Future.wait(exerciseDocs.map((doc) async {
-      final exerciseData = doc.data();
-      exerciseData['id'] = doc.id;
-      exerciseData['series'] = await fetchSeries(doc.id);
-      return exerciseData;
-    }));
+  FirebaseFirestore.instance.batch();
+  final exerciseDataList = <Map<String, dynamic>>[];
 
-    setState(() {
-      exercises = tempExercises;
-      loading = false;
-    });
-  }
-
-  Future<List<Map<String, dynamic>>> fetchSeries(String exerciseId) async {
-    final seriesSnapshot = await FirebaseFirestore.instance
+  for (final doc in exercisesSnapshot.docs) {
+    final exerciseData = doc.data()..['id'] = doc.id;
+    final seriesQuery = FirebaseFirestore.instance
         .collection('series')
-        .where('exerciseId', isEqualTo: exerciseId)
-        .orderBy('order')
-        .get();
-
-    final seriesDocs = seriesSnapshot.docs;
-    final series = await Future.wait(seriesDocs.map((doc) async {
-      final seriesData = doc.data();
-      seriesData['id'] = doc.id;
-
-      // Add a new StreamSubscription for this series
-      final subscription = FirebaseFirestore.instance
-          .collection('series')
-          .doc(doc.id)
-          .snapshots()
-          .listen((snapshot) {
-        final updatedSeriesData = snapshot.data();
-        if (updatedSeriesData != null) {
-          setState(() {
-            final index = exercises
-                .indexWhere((exercise) => exercise['id'] == exerciseId);
-            if (index != -1) {
-              final exerciseSeries = exercises[index]['series'] as List;
-              final seriesIndex = exerciseSeries
-                  .indexWhere((serie) => serie['serieId'] == doc.id);
-              if (seriesIndex != -1) {
-                exerciseSeries[seriesIndex] = updatedSeriesData;
-              }
-            }
-          });
-        }
-      });
-      subscriptions.add(subscription);
-
-      return seriesData;
-    }));
-
-    return series;
+        .where('exerciseId', isEqualTo: doc.id)
+        .orderBy('order');
+    final seriesSnapshot = await seriesQuery.get();
+    exerciseData['series'] = seriesSnapshot.docs.map((doc) => doc.data()..['id'] = doc.id).toList();
+    exerciseDataList.add(exerciseData);
   }
 
-  List<Map<String, dynamic>> getExercisesForSuperSet(String superSetId) {
-    return exercises
-        .where((exercise) => exercise['superSetId'] == superSetId)
-        .toList();
-  }
+  setState(() {
+    exercises = exerciseDataList;
+    loading = false;
+  });
+}
 
-  int findFirstNotDoneSeriesIndex(List<Map<String, dynamic>> series) {
-    return series.indexWhere((serie) => serie['done'] != true);
-  }
+Stream<List<Map<String, dynamic>>> fetchSeries(String exerciseId) {
+  final seriesStream = FirebaseFirestore.instance
+      .collection('series')
+      .where('exerciseId', isEqualTo: exerciseId)
+      .orderBy('order')
+      .snapshots();
 
-  Future<void> showEditSeriesDialog(String seriesId, Map<String, dynamic> series) async {
-  final repsController = TextEditingController(text: series['reps_done']?.toString() ?? '');
-  final weightController = TextEditingController(text: series['weight_done']?.toString() ?? '');
-
-  await showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text('Modifica Serie'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: repsController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Reps'),
-            ),
-            TextField(
-              controller: weightController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d+,?\d*')),
-              ],
-              decoration: const InputDecoration(labelText: 'Peso (kg)'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Annulla'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final repsDone = int.tryParse(repsController.text) ?? 0;
-              final weightText = weightController.text.replaceAll(',', '.');
-              final weightDone = double.tryParse(weightText) ?? 0.0;
-              final done = repsDone >= series['reps'] && weightDone >= series['weight'];
-
-              await FirebaseFirestore.instance
-                  .collection('series')
-                  .doc(series['serieId'])
-                  .update({
-                'reps_done': repsDone,
-                'weight_done': weightDone,
-                'done': done,
-              });
-
-              // Chiude la finestra di dialogo dopo il salvataggio
-              Navigator.pop(context);
-            },
-            child: const Text('Salva'),
-          ),
-        ],
-      );
-    },
-  );
+  return seriesStream.map((snapshot) {
+    return snapshot.docs.map((doc) => doc.data()..['id'] = doc.id).toList();
+  });
 }
 
   @override
@@ -186,18 +91,29 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
                 final exercise = exercises[index];
                 final superSetId = exercise['superSetId'];
 
-                if (superSetId != null) {
-                  final superSetExercises = groupedExercises[superSetId]!;
-                  if (superSetExercises.first == exercise) {
-                    return buildSuperSetCard(
-                        superSetExercises, isDarkMode, colorScheme);
-                  } else {
-                    return Container();
-                  }
-                } else {
-                  return buildSingleExerciseCard(
-                      exercise, isDarkMode, colorScheme);
-                }
+                return StreamBuilder<List<Map<String, dynamic>>>(
+                  stream: fetchSeries(exercise['id']),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      exercise['series'] = snapshot.data!;
+
+                      if (superSetId != null) {
+                        final superSetExercises = groupedExercises[superSetId]!;
+                        if (superSetExercises.first == exercise) {
+                          return buildSuperSetCard(
+                              superSetExercises, isDarkMode, colorScheme);
+                        } else {
+                          return Container();
+                        }
+                      } else {
+                        return buildSingleExerciseCard(
+                            exercise, isDarkMode, colorScheme);
+                      }
+                    } else {
+                      return Container();
+                    }
+                  },
+                );
               },
             ),
     );
@@ -216,10 +132,6 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
 
   Widget buildSuperSetCard(List<Map<String, dynamic>> superSetExercises,
       bool isDarkMode, ColorScheme colorScheme) {
-    final maxSeriesCount = superSetExercises
-        .map((exercise) => exercise['series'].length)
-        .reduce((a, b) => a > b ? a : b);
-
     return Card(
       elevation: 4,
       margin: const EdgeInsets.only(bottom: 20),
@@ -260,47 +172,112 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
             buildSeriesHeaderRow(
                 isDarkMode, colorScheme, Theme.of(context).textTheme),
             const SizedBox(height: 8),
-            ...buildSeriesRows(superSetExercises, maxSeriesCount, isDarkMode,
-                colorScheme, Theme.of(context)),
+            ...buildSeriesRows(superSetExercises, isDarkMode, colorScheme,
+                Theme.of(context)),
           ],
         ),
       ),
     );
   }
 
-  Widget buildSingleExerciseCard(
-      Map<String, dynamic> exercise, bool isDarkMode, ColorScheme colorScheme) {
-    final series = List<Map<String, dynamic>>.from(exercise['series']);
-    final firstNotDoneSeriesIndex = findFirstNotDoneSeriesIndex(series);
-    final isContinueMode = firstNotDoneSeriesIndex > 0;
-    final allSeriesDone = firstNotDoneSeriesIndex == series.length;
+  Future<void> showEditSeriesDialog(String seriesId, Map<String, dynamic> series) async {
+  final repsController = TextEditingController(text: series['reps_done']?.toString() ?? '');
+  final weightController = TextEditingController(text: series['weight_done']?.toString() ?? '');
 
-    return Card(
-      elevation: 4,
-      margin: const EdgeInsets.only(bottom: 20),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      color: isDarkMode ? colorScheme.surface : colorScheme.background,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  await showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text('Modifica Serie'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            buildExerciseName(exercise, isDarkMode, colorScheme),
-            const SizedBox(height: 16),
-            if (!allSeriesDone)
-              buildStartButton(exercise, firstNotDoneSeriesIndex,
-                  isContinueMode, isDarkMode, colorScheme),
-            const SizedBox(height: 16),
-            buildSeriesHeaderRow(
-                isDarkMode, colorScheme, Theme.of(context).textTheme),
-            ...buildSeriesContainers(series, isDarkMode, colorScheme),
+            TextField(
+              controller: repsController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Reps'),
+            ),
+            TextField(
+              controller: weightController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*')),
+              ],
+              decoration: const InputDecoration(labelText: 'Peso (kg)'),
+            ),
           ],
         ),
-      ),
-    );
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annulla'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final repsDone = int.tryParse(repsController.text) ?? 0;
+              final weightDone = double.tryParse(weightController.text) ?? 0.0;
+              await updateSeries(seriesId, repsDone, weightDone);
+              Navigator.pop(context);
+            },
+            child: const Text('Salva'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+Future<void> updateSeries(String seriesId, int repsDone, double weightDone) async {
+  final seriesRef = FirebaseFirestore.instance.collection('series').doc(seriesId);
+  final seriesDoc = await seriesRef.get();
+  final seriesData = seriesDoc.data();
+
+  if (seriesData != null) {
+    final reps = seriesData['reps'] ?? 0;
+    final weight = seriesData['weight'] ?? 0.0;
+    final done = repsDone >= reps && weightDone >= weight;
+
+    final batch = FirebaseFirestore.instance.batch();
+    batch.update(seriesRef, {
+      'reps_done': repsDone,
+      'weight_done': weightDone,
+      'done': done,
+    });
+    await batch.commit();
   }
+}
+
+Widget buildSingleExerciseCard(
+    Map<String, dynamic> exercise, bool isDarkMode, ColorScheme colorScheme) {
+  final series = List<Map<String, dynamic>>.from(exercise['series']);
+  final firstNotDoneSeriesIndex = findFirstNotDoneSeriesIndex(series);
+  final isContinueMode = firstNotDoneSeriesIndex > 0;
+
+  return Card(
+    elevation: 4,
+    margin: const EdgeInsets.only(bottom: 20),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+    ),
+    color: isDarkMode ? colorScheme.surface : colorScheme.background,
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          buildExerciseName(exercise, isDarkMode, colorScheme),
+          const SizedBox(height: 16),
+          buildStartButton(exercise, firstNotDoneSeriesIndex,
+              isContinueMode, isDarkMode, colorScheme),
+          const SizedBox(height: 16),
+          buildSeriesHeaderRow(
+              isDarkMode, colorScheme, Theme.of(context).textTheme),
+          ...buildSeriesContainers(series, isDarkMode, colorScheme),
+        ],
+      ),
+    ),
+  );
+}
 
   Widget buildSuperSetExerciseName(int index, Map<String, dynamic> exercise,
       bool isDarkMode, ColorScheme colorScheme, TextTheme textTheme) {
@@ -357,88 +334,64 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Expanded(
-          flex: 1,
-          child: Text(
-            'Serie',
-            style: textTheme.titleMedium?.copyWith(
-              color:
-                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ),
-        Expanded(
-          flex: 2,
-          child: Text(
-            'Reps',
-            style: textTheme.titleMedium?.copyWith(
-              color:
-                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ),
-        Expanded(
-          flex: 2,
-          child: Text(
-            'Kg',
-            style: textTheme.titleMedium?.copyWith(
-              color:
-                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ),
-        Expanded(
-          flex: 1,
-          child: Text(
-            'Svolto',
-            style: textTheme.titleMedium?.copyWith(
-              color:
-                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ),
+        buildHeaderText('Serie', textTheme, isDarkMode, colorScheme),
+        buildHeaderText('Reps', textTheme, isDarkMode, colorScheme),
+        buildHeaderText('Kg', textTheme, isDarkMode, colorScheme),
+        buildHeaderText('Svolto', textTheme, isDarkMode, colorScheme),
       ],
+    );
+  }
+
+  Widget buildHeaderText(String text, TextTheme textTheme, bool isDarkMode,
+      ColorScheme colorScheme) {
+    return Expanded(
+      child: Text(
+        text,
+        style: textTheme.titleMedium?.copyWith(
+          color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+        ),
+        textAlign: TextAlign.center,
+      ),
     );
   }
 
   List<Widget> buildSeriesRows(
       List<Map<String, dynamic>> superSetExercises,
-      int maxSeriesCount,
       bool isDarkMode,
       ColorScheme colorScheme,
       ThemeData theme) {
+    final maxSeriesCount = superSetExercises
+        .map((exercise) => exercise['series'].length)
+        .reduce((a, b) => a > b ? a : b);
+
     return List.generate(maxSeriesCount, (seriesIndex) {
       return Column(
         children: [
           Row(
             children: [
-              Expanded(
-                child: Text(
-                  '${seriesIndex + 1}',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: isDarkMode
-                        ? colorScheme.onSurface
-                        : colorScheme.onBackground,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
+              buildSeriesIndexText(seriesIndex, theme, isDarkMode, colorScheme),
               ...buildSuperSetSeriesColumns(superSetExercises, seriesIndex,
                   isDarkMode, colorScheme, theme.textTheme),
             ],
           ),
           if (seriesIndex < maxSeriesCount - 1)
-            const Divider(
-              height: 16,
-              thickness: 1,
-            ),
+            const Divider(height: 16, thickness: 1),
         ],
       );
     });
+  }
+
+  Widget buildSeriesIndexText(
+      int seriesIndex, ThemeData theme, bool isDarkMode, ColorScheme colorScheme) {
+    return Expanded(
+      child: Text(
+        '${seriesIndex + 1}',
+        style: theme.textTheme.bodyLarge?.copyWith(
+          color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
   }
 
   List<Widget> buildSuperSetSeriesColumns(
@@ -471,13 +424,13 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
           final series = exercise['series'].asMap().containsKey(seriesIndex)
               ? exercise['series'][seriesIndex]
               : null;
-          final serieId = series['seriesId'].toString();
 
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: series != null
                 ? GestureDetector(
-                    onTap: () => showEditSeriesDialog(serieId, series),
+                    onTap: () =>
+                        showEditSeriesDialog(series['serieId'].toString(), series),
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
@@ -534,31 +487,17 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
     );
   }
 
-  Widget buildExerciseName(
-      Map<String, dynamic> exercise, bool isDarkMode, ColorScheme colorScheme) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(
-                "${exercise['name']} ${exercise['variant'] ?? ''}",
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: isDarkMode
-                          ? colorScheme.onSurface
-                          : colorScheme.onBackground,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
+Widget buildExerciseName(
+    Map<String, dynamic> exercise, bool isDarkMode, ColorScheme colorScheme) {
+  return Text(
+    "${exercise['name']} ${exercise['variant'] ?? ''}",
+    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.bold,
+          color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
         ),
-      ],
-    );
-  }
+    textAlign: TextAlign.center,
+  );
+}
 
   Widget buildStartButton(
       Map<String, dynamic> exercise,
@@ -574,7 +513,7 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
             '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${exercise['id']}',
             extra: {
               'exerciseName': exercise['name'],
-              'exerciseVariant': exercise['variant'],
+              'exerciseVariant': exercise['variant'] ?? '',
               'seriesList': exercise['series'],
               'startIndex': firstNotDoneSeriesIndex,
               'superSetExercises': [exercise],
@@ -601,12 +540,9 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
       final seriesIndex = entry.key;
       final seriesData = entry.value;
 
-      final seriesId = seriesData['serieId']?.toString() ?? '';
-
       return GestureDetector(
-        onTap: seriesId.isNotEmpty
-            ? () => showEditSeriesDialog(seriesId, seriesData)
-            : null,
+        onTap: () =>
+            showEditSeriesDialog(seriesData['serieId'].toString(), seriesData),
         child: Container(
           margin: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
@@ -618,60 +554,13 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                flex: 1,
-                child: Center(
-                  child: Text(
-                    "${seriesIndex + 1}",
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: isDarkMode
-                              ? colorScheme.onSurfaceVariant
-                              : colorScheme.onPrimaryContainer,
-                        ),
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Center(
-                  child: Text(
-                    "${seriesData['reps']}/${seriesData['reps_done'] == 0 ? '' : seriesData['reps_done']}R",
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: isDarkMode
-                              ? colorScheme.onSurfaceVariant
-                              : colorScheme.onPrimaryContainer,
-                        ),
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Center(
-                  child: Text(
-                    "${seriesData['weight']}/${seriesData['weight_done'] == 0 ? '' : seriesData['weight_done']} Kg",
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: isDarkMode
-                              ? colorScheme.onSurfaceVariant
-                              : colorScheme.onPrimaryContainer,
-                        ),
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 1,
-                child: Center(
-                  child: Icon(
-                    seriesData['done'] == true
-                        ? Icons.check_circle
-                        : Icons.cancel,
-                    color: seriesData['done'] == true
-                        ? colorScheme.primary
-                        : isDarkMode
-                            ? colorScheme.onSurfaceVariant
-                            : colorScheme.onPrimaryContainer,
-                  ),
-                ),
-              ),
+              buildSeriesIndexText(
+                  seriesIndex, Theme.of(context), isDarkMode, colorScheme),
+              buildSeriesDataText(
+                  'reps', seriesData, Theme.of(context), isDarkMode, colorScheme),
+              buildSeriesDataText('weight', seriesData, Theme.of(context),
+                  isDarkMode, colorScheme),
+              buildSeriesDoneIcon(seriesData, colorScheme, isDarkMode),
             ],
           ),
         ),
@@ -679,11 +568,43 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
     }).toList();
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-    for (final subscription in subscriptions) {
-      subscription.cancel();
-    }
+  Widget buildSeriesDataText(String field, Map<String, dynamic> seriesData,
+      ThemeData theme, bool isDarkMode, ColorScheme colorScheme) {
+    return Expanded(
+      flex: 2,
+      child: Center(
+        child: Text(
+          "${seriesData[field]}/${seriesData['${field}_done'] == 0 ? '' : seriesData['${field}_done']}${field == 'reps' ? 'R' : ' Kg'}",
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: isDarkMode
+                ? colorScheme.onSurfaceVariant
+                : colorScheme.onPrimaryContainer,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget buildSeriesDoneIcon(
+      Map<String, dynamic> seriesData, ColorScheme colorScheme, bool isDarkMode) {
+    return Expanded(
+      child: Center(
+        child: Icon(
+          seriesData['done'] == true ? Icons.check_circle : Icons.cancel,
+          color: seriesData['done'] == true
+              ? colorScheme.primary
+              : isDarkMode
+                  ? colorScheme.onSurfaceVariant
+                  : colorScheme.onPrimaryContainer,
+        ),
+      ),
+    );
+  }
+
+
+  int findFirstNotDoneSeriesIndex(List<Map<String, dynamic>> series) {
+    return series.indexWhere((serie) => serie['done'] != true);
   }
 }
+
+
