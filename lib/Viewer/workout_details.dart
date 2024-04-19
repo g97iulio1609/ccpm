@@ -171,7 +171,7 @@ Widget build(BuildContext context) {
     );
   }
 
-  Future<void> showEditSeriesDialog(String seriesId, Map<String, dynamic> series) async {
+Future<void> showEditSeriesDialog(String seriesId, Map<String, dynamic> series) async {
   final repsController = TextEditingController(text: series['reps_done']?.toString() ?? '');
   final weightController = TextEditingController(text: series['weight_done']?.toString() ?? '');
 
@@ -192,7 +192,14 @@ Widget build(BuildContext context) {
               controller: weightController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*')),
+                FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
+                TextInputFormatter.withFunction((oldValue, newValue) {
+                  final text = newValue.text.replaceAll(',', '.');
+                  return newValue.copyWith(
+                    text: text,
+                    selection: TextSelection.collapsed(offset: text.length),
+                  );
+                }),
               ],
               decoration: const InputDecoration(labelText: 'Peso (kg)'),
             ),
@@ -206,7 +213,7 @@ Widget build(BuildContext context) {
           ElevatedButton(
             onPressed: () async {
               final repsDone = int.tryParse(repsController.text) ?? 0;
-              final weightDone = double.tryParse(weightController.text) ?? 0.0;
+              final weightDone = double.tryParse(weightController.text.replaceAll(',', '.')) ?? 0.0;
               await updateSeries(seriesId, repsDone, weightDone);
               Navigator.pop(context);
             },
@@ -490,40 +497,45 @@ Widget buildExerciseName(
   );
 }
 
-  Widget buildStartButton(
-      Map<String, dynamic> exercise,
-      int firstNotDoneSeriesIndex,
-      bool isContinueMode,
-      bool isDarkMode,
-      ColorScheme colorScheme) {
-    return Align(
-      alignment: Alignment.center,
-      child: ElevatedButton(
-        onPressed: () {
-          context.go(
-            '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${exercise['id']}',
-            extra: {
-              'exerciseName': exercise['name'],
-              'exerciseVariant': exercise['variant'] ?? '',
-              'seriesList': exercise['series'],
-              'startIndex': firstNotDoneSeriesIndex,
-              'superSetExercises': [exercise],
-            },
-          );
-        },
-        style: ElevatedButton.styleFrom(
-          foregroundColor:
-              isDarkMode ? colorScheme.onPrimary : colorScheme.onSecondary,
-          backgroundColor:
-              isDarkMode ? colorScheme.primary : colorScheme.secondary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-        ),
-        child: Text(isContinueMode ? 'CONTINUA' : 'START'),
-      ),
-    );
+Widget buildStartButton(
+    Map<String, dynamic> exercise,
+    int firstNotDoneSeriesIndex,
+    bool isContinueMode,
+    bool isDarkMode,
+    ColorScheme colorScheme) {
+  // Se tutte le serie sono state completate, non mostrare il pulsante
+  if (firstNotDoneSeriesIndex == exercise['series'].length) {
+    return const SizedBox.shrink();
   }
+
+  return Align(
+    alignment: Alignment.center,
+    child: ElevatedButton(
+      onPressed: () {
+        context.go(
+          '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${exercise['id']}',
+          extra: {
+            'exerciseName': exercise['name'],
+            'exerciseVariant': exercise['variant'] ?? '',
+            'seriesList': exercise['series'],
+            'startIndex': firstNotDoneSeriesIndex,
+            'superSetExercises': [exercise],
+          },
+        );
+      },
+      style: ElevatedButton.styleFrom(
+        foregroundColor:
+            isDarkMode ? colorScheme.onPrimary : colorScheme.onSecondary,
+        backgroundColor:
+            isDarkMode ? colorScheme.primary : colorScheme.secondary,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
+      child: Text(isContinueMode ? 'CONTINUA' : 'START'),
+    ),
+  );
+}
 
   List<Widget> buildSeriesContainers(List<Map<String, dynamic>> series,
       bool isDarkMode, ColorScheme colorScheme) {
