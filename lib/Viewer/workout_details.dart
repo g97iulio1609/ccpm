@@ -41,83 +41,74 @@ Future<void> fetchExercises() async {
       .orderBy('order')
       .get();
 
-  FirebaseFirestore.instance.batch();
-  final exerciseDataList = <Map<String, dynamic>>[];
+  final seriesDataList = <String, List<Map<String, dynamic>>>{};
 
   for (final doc in exercisesSnapshot.docs) {
-    final exerciseData = doc.data()..['id'] = doc.id;
+    final exerciseId = doc.id;
     final seriesQuery = FirebaseFirestore.instance
         .collection('series')
-        .where('exerciseId', isEqualTo: doc.id)
+        .where('exerciseId', isEqualTo: exerciseId)
         .orderBy('order');
     final seriesSnapshot = await seriesQuery.get();
-    exerciseData['series'] = seriesSnapshot.docs.map((doc) => doc.data()..['id'] = doc.id).toList();
-    exerciseDataList.add(exerciseData);
+    seriesDataList[exerciseId] = seriesSnapshot.docs.map((doc) => doc.data()..['id'] = doc.id).toList();
   }
 
   setState(() {
-    exercises = exerciseDataList;
+    exercises = exercisesSnapshot.docs.map((doc) {
+      final exerciseData = doc.data()..['id'] = doc.id;
+      exerciseData['series'] = seriesDataList[doc.id] ?? [];
+      return exerciseData;
+    }).toList();
     loading = false;
   });
-}
 
-Stream<List<Map<String, dynamic>>> fetchSeries(String exerciseId) {
-  final seriesStream = FirebaseFirestore.instance
-      .collection('series')
-      .where('exerciseId', isEqualTo: exerciseId)
-      .orderBy('order')
-      .snapshots();
-
-  return seriesStream.map((snapshot) {
-    return snapshot.docs.map((doc) => doc.data()..['id'] = doc.id).toList();
-  });
-}
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
-    final colorScheme = theme.colorScheme;
-
-    final groupedExercises = groupExercisesBySuperSet();
-
-    return Scaffold(
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              padding: const EdgeInsets.all(16.0),
-              itemCount: exercises.length,
-              itemBuilder: (context, index) {
-                final exercise = exercises[index];
-                final superSetId = exercise['superSetId'];
-
-                return StreamBuilder<List<Map<String, dynamic>>>(
-                  stream: fetchSeries(exercise['id']),
-                  builder: (context, snapshot) {
-                    if (snapshot.hasData) {
-                      exercise['series'] = snapshot.data!;
-
-                      if (superSetId != null) {
-                        final superSetExercises = groupedExercises[superSetId]!;
-                        if (superSetExercises.first == exercise) {
-                          return buildSuperSetCard(
-                              superSetExercises, isDarkMode, colorScheme);
-                        } else {
-                          return Container();
-                        }
-                      } else {
-                        return buildSingleExerciseCard(
-                            exercise, isDarkMode, colorScheme);
-                      }
-                    } else {
-                      return Container();
-                    }
-                  },
-                );
-              },
-            ),
-    );
+  // Avvia l'ascolto dei cambiamenti delle serie per ogni esercizio
+  for (final exercise in exercises) {
+    final seriesQuery = FirebaseFirestore.instance
+        .collection('series')
+        .where('exerciseId', isEqualTo: exercise['id'])
+        .orderBy('order');
+    seriesQuery.snapshots().listen((querySnapshot) {
+      setState(() {
+        exercise['series'] = querySnapshot.docs.map((doc) => doc.data()..['id'] = doc.id).toList();
+      });
+    });
   }
+}
+
+@override
+Widget build(BuildContext context) {
+  final theme = Theme.of(context);
+  final isDarkMode = theme.brightness == Brightness.dark;
+  final colorScheme = theme.colorScheme;
+  final groupedExercises = groupExercisesBySuperSet();
+
+  return Scaffold(
+    body: loading
+        ? const Center(child: CircularProgressIndicator())
+        : ListView.builder(
+            padding: const EdgeInsets.all(16.0),
+            itemCount: exercises.length,
+            itemBuilder: (context, index) {
+              final exercise = exercises[index];
+              final superSetId = exercise['superSetId'];
+
+              if (superSetId != null) {
+                final superSetExercises = groupedExercises[superSetId]!;
+                if (superSetExercises.first == exercise) {
+                  return buildSuperSetCard(
+                      superSetExercises, isDarkMode, colorScheme);
+                } else {
+                  return Container();
+                }
+              } else {
+                return buildSingleExerciseCard(
+                    exercise, isDarkMode, colorScheme);
+              }
+            },
+          ),
+  );
+}
 
   Map<String?, List<Map<String, dynamic>>> groupExercisesBySuperSet() {
     final groupedExercises = <String?, List<Map<String, dynamic>>>{};
