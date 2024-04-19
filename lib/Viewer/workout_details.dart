@@ -1,6 +1,7 @@
 // workout_details.dart
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:async';
 
@@ -33,69 +34,71 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
     fetchExercises();
   }
 
-Future<void> fetchExercises() async {
-  setState(() => loading = true);
+  Future<void> fetchExercises() async {
+    setState(() => loading = true);
 
-  final exercisesSnapshot = await FirebaseFirestore.instance
-      .collection('exercisesWorkout')
-      .where('workoutId', isEqualTo: widget.workoutId)
-      .orderBy('order')
-      .get();
+    final exercisesSnapshot = await FirebaseFirestore.instance
+        .collection('exercisesWorkout')
+        .where('workoutId', isEqualTo: widget.workoutId)
+        .orderBy('order')
+        .get();
 
-  final exerciseDocs = exercisesSnapshot.docs;
-  final tempExercises = await Future.wait(exerciseDocs.map((doc) async {
-    final exerciseData = doc.data();
-    exerciseData['id'] = doc.id;
-    exerciseData['series'] = await fetchSeries(doc.id);
-    return exerciseData;
-  }));
+    final exerciseDocs = exercisesSnapshot.docs;
+    final tempExercises = await Future.wait(exerciseDocs.map((doc) async {
+      final exerciseData = doc.data();
+      exerciseData['id'] = doc.id;
+      exerciseData['series'] = await fetchSeries(doc.id);
+      return exerciseData;
+    }));
 
-  setState(() {
-    exercises = tempExercises;
-    loading = false;
-  });
-}
-
-Future<List<Map<String, dynamic>>> fetchSeries(String exerciseId) async {
-  final seriesSnapshot = await FirebaseFirestore.instance
-      .collection('series')
-      .where('exerciseId', isEqualTo: exerciseId)
-      .orderBy('order')
-      .get();
-
-  final seriesDocs = seriesSnapshot.docs;
-  final series = await Future.wait(seriesDocs.map((doc) async {
-    final seriesData = doc.data();
-    seriesData['id'] = doc.id;
-
-
-    // Add a new StreamSubscription for this series
-    final subscription = FirebaseFirestore.instance
-        .collection('series')
-        .doc(doc.id)
-        .snapshots()
-        .listen((snapshot) {
-      final updatedSeriesData = snapshot.data();
-      if (updatedSeriesData != null) {
-        setState(() {
-          final index = exercises.indexWhere((exercise) => exercise['id'] == exerciseId);
-          if (index != -1) {
-            final exerciseSeries = exercises[index]['series'] as List;
-            final seriesIndex = exerciseSeries.indexWhere((serie) => serie['serieId'] == doc.id);
-            if (seriesIndex != -1) {
-              exerciseSeries[seriesIndex] = updatedSeriesData;
-            }
-          }
-        });
-      }
+    setState(() {
+      exercises = tempExercises;
+      loading = false;
     });
-    subscriptions.add(subscription);
+  }
 
-    return seriesData;
-  }));
+  Future<List<Map<String, dynamic>>> fetchSeries(String exerciseId) async {
+    final seriesSnapshot = await FirebaseFirestore.instance
+        .collection('series')
+        .where('exerciseId', isEqualTo: exerciseId)
+        .orderBy('order')
+        .get();
 
-  return series;
-}
+    final seriesDocs = seriesSnapshot.docs;
+    final series = await Future.wait(seriesDocs.map((doc) async {
+      final seriesData = doc.data();
+      seriesData['id'] = doc.id;
+
+      // Add a new StreamSubscription for this series
+      final subscription = FirebaseFirestore.instance
+          .collection('series')
+          .doc(doc.id)
+          .snapshots()
+          .listen((snapshot) {
+        final updatedSeriesData = snapshot.data();
+        if (updatedSeriesData != null) {
+          setState(() {
+            final index = exercises
+                .indexWhere((exercise) => exercise['id'] == exerciseId);
+            if (index != -1) {
+              final exerciseSeries = exercises[index]['series'] as List;
+              final seriesIndex = exerciseSeries
+                  .indexWhere((serie) => serie['serieId'] == doc.id);
+              if (seriesIndex != -1) {
+                exerciseSeries[seriesIndex] = updatedSeriesData;
+              }
+            }
+          });
+        }
+      });
+      subscriptions.add(subscription);
+
+      return seriesData;
+    }));
+
+    return series;
+  }
+
   List<Map<String, dynamic>> getExercisesForSuperSet(String superSetId) {
     return exercises
         .where((exercise) => exercise['superSetId'] == superSetId)
@@ -106,8 +109,7 @@ Future<List<Map<String, dynamic>>> fetchSeries(String exerciseId) async {
     return series.indexWhere((serie) => serie['done'] != true);
   }
 
-Future<void> showEditSeriesDialog(String seriesId, Map<String, dynamic> series) async {
-
+  Future<void> showEditSeriesDialog(String seriesId, Map<String, dynamic> series) async {
   final repsController = TextEditingController(text: series['reps_done']?.toString() ?? '');
   final weightController = TextEditingController(text: series['weight_done']?.toString() ?? '');
 
@@ -126,7 +128,10 @@ Future<void> showEditSeriesDialog(String seriesId, Map<String, dynamic> series) 
             ),
             TextField(
               controller: weightController,
-              keyboardType: TextInputType.number,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d+,?\d*')),
+              ],
               decoration: const InputDecoration(labelText: 'Peso (kg)'),
             ),
           ],
@@ -136,67 +141,67 @@ Future<void> showEditSeriesDialog(String seriesId, Map<String, dynamic> series) 
             onPressed: () => Navigator.pop(context),
             child: const Text('Annulla'),
           ),
-        ElevatedButton(
-  onPressed: () async {
-    final repsDone = int.tryParse(repsController.text) ?? 0;
-    final weightDone = double.tryParse(weightController.text) ?? 0.0;
-    final done = repsDone >= series['reps'] && weightDone >= series['weight'];
+          ElevatedButton(
+            onPressed: () async {
+              final repsDone = int.tryParse(repsController.text) ?? 0;
+              final weightText = weightController.text.replaceAll(',', '.');
+              final weightDone = double.tryParse(weightText) ?? 0.0;
+              final done = repsDone >= series['reps'] && weightDone >= series['weight'];
 
-    await FirebaseFirestore.instance
-        .collection('series')
-        .doc(series['serieId'])
-        .update({
-      'reps_done': repsDone,
-      'weight_done': weightDone,
-      'done': done,
-    });
+              await FirebaseFirestore.instance
+                  .collection('series')
+                  .doc(series['serieId'])
+                  .update({
+                'reps_done': repsDone,
+                'weight_done': weightDone,
+                'done': done,
+              });
 
-    // Chiude la finestra di dialogo dopo il salvataggio
-    Navigator.pop(context);
-  },
-  child: const Text('Salva'),
-
-),
-      
+              // Chiude la finestra di dialogo dopo il salvataggio
+              Navigator.pop(context);
+            },
+            child: const Text('Salva'),
+          ),
         ],
       );
     },
   );
 }
-@override
-Widget build(BuildContext context) {
-  final theme = Theme.of(context);
-  final isDarkMode = theme.brightness == Brightness.dark;
-  final colorScheme = theme.colorScheme;
 
-  final groupedExercises = groupExercisesBySuperSet();
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
 
-  return Scaffold(
-    body: loading
-        ? const Center(child: CircularProgressIndicator())
-        : ListView.builder(
-            padding: const EdgeInsets.all(16.0),
-            itemCount: exercises.length,
-            itemBuilder: (context, index) {
-              final exercise = exercises[index];
-              final superSetId = exercise['superSetId'];
+    final groupedExercises = groupExercisesBySuperSet();
 
-              if (superSetId != null) {
-                final superSetExercises = groupedExercises[superSetId]!;
-                if (superSetExercises.first == exercise) {
-                  return buildSuperSetCard(
-                      superSetExercises, isDarkMode, colorScheme);
+    return Scaffold(
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView.builder(
+              padding: const EdgeInsets.all(16.0),
+              itemCount: exercises.length,
+              itemBuilder: (context, index) {
+                final exercise = exercises[index];
+                final superSetId = exercise['superSetId'];
+
+                if (superSetId != null) {
+                  final superSetExercises = groupedExercises[superSetId]!;
+                  if (superSetExercises.first == exercise) {
+                    return buildSuperSetCard(
+                        superSetExercises, isDarkMode, colorScheme);
+                  } else {
+                    return Container();
+                  }
                 } else {
-                  return Container();
+                  return buildSingleExerciseCard(
+                      exercise, isDarkMode, colorScheme);
                 }
-              } else {
-                return buildSingleExerciseCard(
-                    exercise, isDarkMode, colorScheme);
-              }
-            },
-          ),
-  );
-}
+              },
+            ),
+    );
+  }
 
   Map<String?, List<Map<String, dynamic>>> groupExercisesBySuperSet() {
     final groupedExercises = <String?, List<Map<String, dynamic>>>{};
@@ -452,54 +457,52 @@ Widget build(BuildContext context) {
     ];
   }
 
-Widget buildSuperSetSeriesColumn(
-    List<Map<String, dynamic>> superSetExercises,
-    int seriesIndex,
-    String field,
-    bool isDarkMode,
-    ColorScheme colorScheme,
-    TextTheme textTheme) {
-  return Expanded(
-    flex: 2,
-    child: Column(
-      children: superSetExercises.map((exercise) {
-        final series = exercise['series'].asMap().containsKey(seriesIndex)
-            ? exercise['series'][seriesIndex]
-            : null;
-          final   serieId=series['seriesId'].toString();
+  Widget buildSuperSetSeriesColumn(
+      List<Map<String, dynamic>> superSetExercises,
+      int seriesIndex,
+      String field,
+      bool isDarkMode,
+      ColorScheme colorScheme,
+      TextTheme textTheme) {
+    return Expanded(
+      flex: 2,
+      child: Column(
+        children: superSetExercises.map((exercise) {
+          final series = exercise['series'].asMap().containsKey(seriesIndex)
+              ? exercise['series'][seriesIndex]
+              : null;
+          final serieId = series['seriesId'].toString();
 
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: series != null
-                         
-
-              ? GestureDetector(
-                  onTap: () => showEditSeriesDialog(serieId, series),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: isDarkMode
-                          ? colorScheme.surfaceVariant
-                          : colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      "${series[field]}/${series['${field}_done'] == 0 ? '' : series['${field}_done']}",
-                      style: textTheme.bodyLarge?.copyWith(
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: series != null
+                ? GestureDetector(
+                    onTap: () => showEditSeriesDialog(serieId, series),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
                         color: isDarkMode
-                            ? colorScheme.onSurfaceVariant
-                            : colorScheme.onPrimaryContainer,
+                            ? colorScheme.surfaceVariant
+                            : colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      textAlign: TextAlign.center,
+                      child: Text(
+                        "${series[field]}/${series['${field}_done'] == 0 ? '' : series['${field}_done']}",
+                        style: textTheme.bodyLarge?.copyWith(
+                          color: isDarkMode
+                              ? colorScheme.onSurfaceVariant
+                              : colorScheme.onPrimaryContainer,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                  ),
-                )
-              : const SizedBox(),
-        );
-      }).toList(),
-    ),
-  );
-}
+                  )
+                : const SizedBox(),
+          );
+        }).toList(),
+      ),
+    );
+  }
 
   Widget buildSuperSetSeriesDoneColumn(
       List<Map<String, dynamic>> superSetExercises,
@@ -592,16 +595,18 @@ Widget buildSuperSetSeriesColumn(
     );
   }
 
-  List<Widget> buildSeriesContainers(List<Map<String, dynamic>> series, bool isDarkMode, ColorScheme colorScheme) {
-  return series.asMap().entries.map((entry) {
-    final seriesIndex = entry.key;
-    final seriesData = entry.value;
+  List<Widget> buildSeriesContainers(List<Map<String, dynamic>> series,
+      bool isDarkMode, ColorScheme colorScheme) {
+    return series.asMap().entries.map((entry) {
+      final seriesIndex = entry.key;
+      final seriesData = entry.value;
 
+      final seriesId = seriesData['serieId']?.toString() ?? '';
 
-    final seriesId = seriesData['serieId']?.toString() ?? '';
-
-    return GestureDetector(
-      onTap: seriesId.isNotEmpty ? () => showEditSeriesDialog(seriesId, seriesData) : null,
+      return GestureDetector(
+        onTap: seriesId.isNotEmpty
+            ? () => showEditSeriesDialog(seriesId, seriesData)
+            : null,
         child: Container(
           margin: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
@@ -674,11 +679,11 @@ Widget buildSuperSetSeriesColumn(
     }).toList();
   }
 
-@override
-void dispose() {
-  super.dispose();
-  for (final subscription in subscriptions) {
-    subscription.cancel();
+  @override
+  void dispose() {
+    super.dispose();
+    for (final subscription in subscriptions) {
+      subscription.cancel();
     }
   }
 }
