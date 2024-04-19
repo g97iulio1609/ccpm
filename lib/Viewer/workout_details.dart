@@ -128,7 +128,7 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
             ),
             TextField(
               controller: weightController,
-              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d+,?\d*')),
               ],
