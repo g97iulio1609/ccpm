@@ -170,8 +170,6 @@ Widget build(BuildContext context) {
   final colorScheme = theme.colorScheme;
 
   final groupedExercises = groupExercisesBySuperSet();
-  final processedSuperSets = <String>{};
-
 
   return Scaffold(
     body: loading
@@ -183,15 +181,13 @@ Widget build(BuildContext context) {
               final exercise = exercises[index];
               final superSetId = exercise['superSetId'];
 
-
               if (superSetId != null) {
-                if (processedSuperSets.contains(superSetId)) {
-                  return Container();
-                } else {
-                  processedSuperSets.add(superSetId);
-                  final superSetExercises = groupedExercises[superSetId]!;
+                final superSetExercises = groupedExercises[superSetId]!;
+                if (superSetExercises.first == exercise) {
                   return buildSuperSetCard(
                       superSetExercises, isDarkMode, colorScheme);
+                } else {
+                  return Container();
                 }
               } else {
                 return buildSingleExerciseCard(
