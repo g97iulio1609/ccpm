@@ -3,6 +3,7 @@ import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:alphanessone/trainingBuilder/training_model.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../users_services.dart';
 
 class SeriesDialog extends StatefulWidget {
@@ -15,7 +16,8 @@ class SeriesDialog extends StatefulWidget {
   final num latestMaxWeight;
   final ValueNotifier<double> weightNotifier;
 
-  const SeriesDialog({super.key, 
+  const SeriesDialog({
+    super.key,
     required this.usersService,
     required this.athleteId,
     required this.exerciseId,
@@ -83,7 +85,18 @@ class _SeriesDialogState extends State<SeriesDialog> {
             ),
             TextField(
               controller: _intensityController,
-              keyboardType: TextInputType.number,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
+                TextInputFormatter.withFunction((oldValue, newValue) {
+                  final text = newValue.text.replaceAll(',', '.');
+                  return newValue.copyWith(
+                    text: text,
+                    selection: TextSelection.collapsed(offset: text.length),
+                  );
+                }),
+              ],
               decoration: const InputDecoration(labelText: 'Intensity (%)'),
               onChanged: (value) {
                 final intensity = double.tryParse(value) ?? 0;
@@ -92,13 +105,35 @@ class _SeriesDialogState extends State<SeriesDialog> {
             ),
             TextField(
               controller: _rpeController,
-              keyboardType: TextInputType.number,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
+                TextInputFormatter.withFunction((oldValue, newValue) {
+                  final text = newValue.text.replaceAll(',', '.');
+                  return newValue.copyWith(
+                    text: text,
+                    selection: TextSelection.collapsed(offset: text.length),
+                  );
+                }),
+              ],
               decoration: const InputDecoration(labelText: 'RPE'),
               onChanged: (_) => _updateWeightFromRPE(),
             ),
             TextField(
               controller: _weightController,
-              keyboardType: TextInputType.number,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
+                TextInputFormatter.withFunction((oldValue, newValue) {
+                  final text = newValue.text.replaceAll(',', '.');
+                  return newValue.copyWith(
+                    text: text,
+                    selection: TextSelection.collapsed(offset: text.length),
+                  );
+                }),
+              ],
               decoration: const InputDecoration(labelText: 'Weight (kg)'),
               onChanged: (value) {
                 final newWeight = double.tryParse(value) ?? 0;

@@ -1,6 +1,7 @@
 import 'package:alphanessone/trainingBuilder/set_progression.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -294,8 +295,17 @@ Widget _buildExercisePopupMenu(
       children: [
         TextField(
           controller: maxWeightController,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'Peso Massimo'),
+   keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
+                TextInputFormatter.withFunction((oldValue, newValue) {
+                  final text = newValue.text.replaceAll(',', '.');
+                  return newValue.copyWith(
+                    text: text,
+                    selection: TextSelection.collapsed(offset: text.length),
+                  );
+                }),
+              ],          decoration: const InputDecoration(labelText: 'Peso Massimo'),
         ),
         TextField(
           controller: repetitionsController,

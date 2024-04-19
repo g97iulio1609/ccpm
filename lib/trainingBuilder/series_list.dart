@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'training_model.dart';
 import 'controller/training_program_controller.dart';
@@ -6,7 +7,8 @@ import 'utility_functions.dart';
 import '../users_services.dart';
 import 'reorder_dialog.dart';
 
-final expansionStateProvider = StateNotifierProvider.autoDispose<ExpansionStateNotifier, Map<String, bool>>((ref) {
+final expansionStateProvider = StateNotifierProvider.autoDispose<
+    ExpansionStateNotifier, Map<String, bool>>((ref) {
   return ExpansionStateNotifier();
 });
 
@@ -37,39 +39,40 @@ class TrainingProgramSeriesList extends ConsumerWidget {
     super.key,
   });
 
-@override
-Widget build(BuildContext context, WidgetRef ref) {
-  final exercise = controller.program.weeks[weekIndex].workouts[workoutIndex]
-      .exercises[exerciseIndex];
-  final groupedSeries = _groupSeries(exercise.series);
-  final expansionState = ref.watch(expansionStateProvider);
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final exercise = controller.program.weeks[weekIndex].workouts[workoutIndex]
+        .exercises[exerciseIndex];
+    final groupedSeries = _groupSeries(exercise.series);
+    final expansionState = ref.watch(expansionStateProvider);
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      ListView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: groupedSeries.length,
-        itemBuilder: (context, index) {
-          final item = groupedSeries[index];
-          final key = 'series_group_$index';
-          final isExpanded = expansionState[key] ?? false;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: groupedSeries.length,
+          itemBuilder: (context, index) {
+            final item = groupedSeries[index];
+            final key = 'series_group_$index';
+            final isExpanded = expansionState[key] ?? false;
 
-          if (item is List<Series>) {
-            return _buildSeriesGroupCard(context, item, index, isExpanded, key, ref); // Passa ref come parametro
-          } else {
-            return _buildSeriesCard(context, item as Series, index);
-          }
-        },
-      ),
-      TextButton(
-        onPressed: () => _showReorderSeriesDialog(context, exercise.series),
-        child: const Text('Reorder Series'),
-      ),
-    ],
-  );
-}
+            if (item is List<Series>) {
+              return _buildSeriesGroupCard(context, item, index, isExpanded,
+                  key, ref); // Passa ref come parametro
+            } else {
+              return _buildSeriesCard(context, item as Series, index);
+            }
+          },
+        ),
+        TextButton(
+          onPressed: () => _showReorderSeriesDialog(context, exercise.series),
+          child: const Text('Reorder Series'),
+        ),
+      ],
+    );
+  }
 
   List<dynamic> _groupSeries(List<Series> series) {
     final groupedSeries = <dynamic>[];
@@ -86,35 +89,36 @@ Widget build(BuildContext context, WidgetRef ref) {
     return groupedSeries;
   }
 
-Widget _buildSeriesGroupCard(
-  BuildContext context,
-  List<Series> seriesGroup,
-  int groupIndex,
-  bool isExpanded,
-  String key,
-  WidgetRef ref, // Aggiungi il parametro WidgetRef
-) {
-  final series = seriesGroup.first;
-  return ExpansionTile(
-    key: Key(key),
-    initiallyExpanded: isExpanded,
-    onExpansionChanged: (value) {
-      ref.read(expansionStateProvider.notifier).toggleExpansionState(key); // Usa la variabile ref passata come parametro
-    },
-    title: Text(
-      '${seriesGroup.length} serie${seriesGroup.length > 1 ? 's' : ''}, ${series.reps} reps x ${series.weight} kg',
-      style: Theme.of(context).textTheme.bodyLarge,
-    ),
-    trailing: _buildSeriesGroupPopupMenu(context, seriesGroup, groupIndex),
-    children: [
-      for (int i = 0; i < seriesGroup.length; i++)
-        _buildSeriesCard(context, seriesGroup[i], groupIndex, i, () {
-          seriesGroup.removeAt(i);
-          controller.notifyListeners();
-        }),
-    ],
-  );
-}
+  Widget _buildSeriesGroupCard(
+    BuildContext context,
+    List<Series> seriesGroup,
+    int groupIndex,
+    bool isExpanded,
+    String key,
+    WidgetRef ref, // Aggiungi il parametro WidgetRef
+  ) {
+    final series = seriesGroup.first;
+    return ExpansionTile(
+      key: Key(key),
+      initiallyExpanded: isExpanded,
+      onExpansionChanged: (value) {
+        ref.read(expansionStateProvider.notifier).toggleExpansionState(
+            key); // Usa la variabile ref passata come parametro
+      },
+      title: Text(
+        '${seriesGroup.length} serie${seriesGroup.length > 1 ? 's' : ''}, ${series.reps} reps x ${series.weight} kg',
+        style: Theme.of(context).textTheme.bodyLarge,
+      ),
+      trailing: _buildSeriesGroupPopupMenu(context, seriesGroup, groupIndex),
+      children: [
+        for (int i = 0; i < seriesGroup.length; i++)
+          _buildSeriesCard(context, seriesGroup[i], groupIndex, i, () {
+            seriesGroup.removeAt(i);
+            controller.notifyListeners();
+          }),
+      ],
+    );
+  }
 
   Widget _buildSeriesGroupPopupMenu(
       BuildContext context, List<Series> seriesGroup, int groupIndex) {
@@ -139,7 +143,8 @@ Widget _buildSeriesGroupCard(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Series Group'),
-        content: const Text('Are you sure you want to delete this series group?'),
+        content:
+            const Text('Are you sure you want to delete this series group?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -196,7 +201,8 @@ Widget _buildSeriesGroupCard(
           PopupMenuItem(
             child: const Text('Edit'),
             onTap: () => controller.editSeries(
-                weekIndex, workoutIndex, exerciseIndex, series, context),),
+                weekIndex, workoutIndex, exerciseIndex, series, context),
+          ),
           PopupMenuItem(
             child: const Text('Delete'),
             onTap: () {
@@ -263,8 +269,8 @@ Widget _buildSeriesGroupCard(
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(labelText: 'Reps'),
                     onChanged: (_) {
-                      _updateRPE(repsController, weightController, rpeController,
-                          intensityController, setState);
+                      _updateRPE(repsController, weightController,
+                          rpeController, intensityController, setState);
                     },
                   ),
                   TextField(
@@ -274,7 +280,20 @@ Widget _buildSeriesGroupCard(
                   ),
                   TextField(
                     controller: intensityController,
-                    keyboardType: TextInputType.number,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(
+                          RegExp(r'^\d+[\.,]?\d*')),
+                      TextInputFormatter.withFunction((oldValue, newValue) {
+                        final text = newValue.text.replaceAll(',', '.');
+                        return newValue.copyWith(
+                          text: text,
+                          selection:
+                              TextSelection.collapsed(offset: text.length),
+                        );
+                      }),
+                    ],
                     focusNode: intensityFocusNode,
                     decoration:
                         const InputDecoration(labelText: 'Intensity (%)'),
@@ -287,7 +306,20 @@ Widget _buildSeriesGroupCard(
                   ),
                   TextField(
                     controller: rpeController,
-                    keyboardType: TextInputType.number,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(
+                          RegExp(r'^\d+[\.,]?\d*')),
+                      TextInputFormatter.withFunction((oldValue, newValue) {
+                        final text = newValue.text.replaceAll(',', '.');
+                        return newValue.copyWith(
+                          text: text,
+                          selection:
+                              TextSelection.collapsed(offset: text.length),
+                        );
+                      }),
+                    ],
                     decoration: const InputDecoration(labelText: 'RPE'),
                     onChanged: (_) {
                       _updateWeightAndIntensity(
@@ -300,17 +332,29 @@ Widget _buildSeriesGroupCard(
                   ),
                   TextField(
                     controller: weightController,
-                    keyboardType: TextInputType.number,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(
+                          RegExp(r'^\d+[\.,]?\d*')),
+                      TextInputFormatter.withFunction((oldValue, newValue) {
+                        final text = newValue.text.replaceAll(',', '.');
+                        return newValue.copyWith(
+                          text: text,
+                          selection:
+                              TextSelection.collapsed(offset: text.length),
+                        );
+                      }),
+                    ],
                     focusNode: weightFocusNode,
-                    decoration:
-                        const InputDecoration(labelText: 'Weight (kg)'),
+                    decoration: const InputDecoration(labelText: 'Weight (kg)'),
                     onChanged: (_) {
                       if (weightFocusNode.hasFocus) {
                         _updateIntensity(
                             weightController, intensityController, setState);
                       }
-                      _updateRPE(repsController, weightController, rpeController,
-                          intensityController, setState);
+                      _updateRPE(repsController, weightController,
+                          rpeController, intensityController, setState);
                     },
                   ),
                 ],
@@ -351,7 +395,8 @@ Widget _buildSeriesGroupCard(
       }
 
       // Add or remove series to match the new sets count
-      final exercise = controller.program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+      final exercise = controller.program.weeks[weekIndex]
+          .workouts[workoutIndex].exercises[exerciseIndex];
       final seriesIndex = exercise.series.indexOf(seriesGroup.first);
       if (sets > seriesGroup.length) {
         for (int i = seriesGroup.length; i < sets; i++) {
@@ -388,8 +433,8 @@ Widget _buildSeriesGroupCard(
         controller.athleteIdController.text,
         controller.program.weeks[weekIndex].workouts[workoutIndex]
             .exercises[exerciseIndex].exerciseId!);
-    final calculatedWeight =
-        calculateWeightFromIntensity(latestMaxWeight?.toDouble() ?? 0, intensity);
+    final calculatedWeight = calculateWeightFromIntensity(
+        latestMaxWeight?.toDouble() ?? 0, intensity);
     final roundedWeight = roundWeight(
         calculatedWeight,
         controller.program.weeks[weekIndex].workouts[workoutIndex]
@@ -446,8 +491,8 @@ Widget _buildSeriesGroupCard(
 
       setState(() {
         weightController.text = roundedWeight.toStringAsFixed(2);
-        final calculatedIntensity =
-            calculateIntensityFromWeight(roundedWeight, latestMaxWeight?.toDouble() ?? 0);
+        final calculatedIntensity = calculateIntensityFromWeight(
+            roundedWeight, latestMaxWeight?.toDouble() ?? 0);
         intensityController.text = calculatedIntensity.toStringAsFixed(2);
       });
     }
@@ -467,7 +512,8 @@ Widget _buildSeriesGroupCard(
         controller.athleteIdController.text,
         controller.program.weeks[weekIndex].workouts[workoutIndex]
             .exercises[exerciseIndex].exerciseId!);
-    final calculatedRPE = calculateRPE(weight, latestMaxWeight?.toDouble() ?? 0, reps);
+    final calculatedRPE =
+        calculateRPE(weight, latestMaxWeight?.toDouble() ?? 0, reps);
 
     if (calculatedRPE != null) {
       setState(() {

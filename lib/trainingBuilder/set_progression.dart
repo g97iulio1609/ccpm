@@ -3,6 +3,7 @@ import 'package:alphanessone/trainingBuilder/controller/training_program_control
 import 'package:alphanessone/trainingBuilder/controller/progression_controller.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class SetProgressionScreen extends ConsumerStatefulWidget {
@@ -18,7 +19,8 @@ class SetProgressionScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<SetProgressionScreen> createState() => _SetProgressionScreenState();
+  ConsumerState<SetProgressionScreen> createState() =>
+      _SetProgressionScreenState();
 }
 
 class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
@@ -32,11 +34,20 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
     super.initState();
     final programController = ref.read(trainingProgramControllerProvider);
     final progressionController = ref.read(progressionControllerProvider);
-    final weekProgressions = progressionController.buildWeekProgressions(programController.program.weeks, widget.exercise!);
-    _weightControllers = List.generate(weekProgressions.length, (index) => TextEditingController(text: weekProgressions[index].weight.toString()));
-    _intensityControllers = List.generate(weekProgressions.length, (index) => TextEditingController(text: weekProgressions[index].intensity));
-    _weightFocusNodes = List.generate(weekProgressions.length, (index) => FocusNode());
-    _intensityFocusNodes = List.generate(weekProgressions.length, (index) => FocusNode());
+    final weekProgressions = progressionController.buildWeekProgressions(
+        programController.program.weeks, widget.exercise!);
+    _weightControllers = List.generate(
+        weekProgressions.length,
+        (index) => TextEditingController(
+            text: weekProgressions[index].weight.toString()));
+    _intensityControllers = List.generate(
+        weekProgressions.length,
+        (index) =>
+            TextEditingController(text: weekProgressions[index].intensity));
+    _weightFocusNodes =
+        List.generate(weekProgressions.length, (index) => FocusNode());
+    _intensityFocusNodes =
+        List.generate(weekProgressions.length, (index) => FocusNode());
   }
 
   @override
@@ -61,8 +72,9 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
     final programController = ref.watch(trainingProgramControllerProvider);
     final progressionController = ref.watch(progressionControllerProvider);
 
-    List<WeekProgression> weekProgressions = progressionController
-        .buildWeekProgressions(programController.program.weeks, widget.exercise!);
+    List<WeekProgression> weekProgressions =
+        progressionController.buildWeekProgressions(
+            programController.program.weeks, widget.exercise!);
 
     void updateProgression(int weekIndex, int reps, int sets, String intensity,
         String rpe, double weight) {
@@ -74,8 +86,10 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
       currentProgression.rpe = rpe;
       currentProgression.weight = weight;
 
-      debugPrint('Updating progression for week ${currentProgression.weekNumber}');
-      debugPrint('Reps: ${currentProgression.reps}, Sets: ${currentProgression.sets}, Intensity: ${currentProgression.intensity}, RPE: ${currentProgression.rpe}, Weight: ${currentProgression.weight}');
+      debugPrint(
+          'Updating progression for week ${currentProgression.weekNumber}');
+      debugPrint(
+          'Reps: ${currentProgression.reps}, Sets: ${currentProgression.sets}, Intensity: ${currentProgression.intensity}, RPE: ${currentProgression.rpe}, Weight: ${currentProgression.weight}');
     }
 
     void updateWeightFromIntensity(int weekIndex, String intensity) {
@@ -83,9 +97,12 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
 
       if (intensity.isNotEmpty && !_weightFocusNodes[weekIndex].hasFocus) {
         debugPrint('Calculating weight from intensity: $intensity');
-        final calculatedWeight = calculateWeightFromIntensity(widget.latestMaxWeight.toDouble(), double.parse(intensity));
-        currentProgression.weight = roundWeight(calculatedWeight, widget.exercise?.type);
-        _weightControllers[weekIndex].text = currentProgression.weight.toString();
+        final calculatedWeight = calculateWeightFromIntensity(
+            widget.latestMaxWeight.toDouble(), double.parse(intensity));
+        currentProgression.weight =
+            roundWeight(calculatedWeight, widget.exercise?.type);
+        _weightControllers[weekIndex].text =
+            currentProgression.weight.toString();
         debugPrint('Calculated weight: ${currentProgression.weight}');
       }
     }
@@ -96,9 +113,12 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
       if (rpe.isNotEmpty && !_weightFocusNodes[weekIndex].hasFocus) {
         debugPrint('Calculating weight from RPE: $rpe');
         final rpePercentage = getRPEPercentage(double.parse(rpe), reps);
-        final calculatedWeight = widget.latestMaxWeight.toDouble() * rpePercentage;
-        currentProgression.weight = roundWeight(calculatedWeight, widget.exercise?.type);
-        _weightControllers[weekIndex].text = currentProgression.weight.toString();
+        final calculatedWeight =
+            widget.latestMaxWeight.toDouble() * rpePercentage;
+        currentProgression.weight =
+            roundWeight(calculatedWeight, widget.exercise?.type);
+        _weightControllers[weekIndex].text =
+            currentProgression.weight.toString();
         debugPrint('Calculated weight: ${currentProgression.weight}');
       }
     }
@@ -108,7 +128,9 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
 
       if (weight != 0 && !_intensityFocusNodes[weekIndex].hasFocus) {
         debugPrint('Updating intensity based on weight: $weight');
-        currentProgression.intensity = calculateIntensityFromWeight(weight, widget.latestMaxWeight.toDouble()).toStringAsFixed(2);
+        currentProgression.intensity = calculateIntensityFromWeight(
+                weight, widget.latestMaxWeight.toDouble())
+            .toStringAsFixed(2);
         _intensityControllers[weekIndex].text = currentProgression.intensity;
         debugPrint('Updated intensity: ${currentProgression.intensity}');
       }
@@ -233,7 +255,8 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
                             value,
                             progression.weight,
                           );
-                          updateWeightFromRPE(weekIndex, value, progression.reps);
+                          updateWeightFromRPE(
+                              weekIndex, value, progression.reps);
                         },
                       ),
                     ),
@@ -244,7 +267,20 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
                       child: TextFormField(
                         controller: _weightControllers[weekIndex],
                         focusNode: _weightFocusNodes[weekIndex],
-                        keyboardType: TextInputType.number,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                              RegExp(r'^\d+[\.,]?\d*')),
+                          TextInputFormatter.withFunction((oldValue, newValue) {
+                            final text = newValue.text.replaceAll(',', '.');
+                            return newValue.copyWith(
+                              text: text,
+                              selection:
+                                  TextSelection.collapsed(offset: text.length),
+                            );
+                          }),
+                        ],
                         onChanged: (value) {
                           final weight = double.tryParse(value) ?? 0;
                           updateProgression(
