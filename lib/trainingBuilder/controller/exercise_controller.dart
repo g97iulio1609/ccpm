@@ -137,7 +137,7 @@ class ExerciseController extends ChangeNotifier {
     final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     final newSeriesOrder = exercise.series.length + 1;
     final newSeries = Series(
-      serieId: UniqueKey().toString(),
+      serieId: generateRandomId(16).toString(),
       reps: 0,
       sets: 1,
       intensity: '',

@@ -356,7 +356,7 @@ Widget _buildSeriesGroupCard(
       if (sets > seriesGroup.length) {
         for (int i = seriesGroup.length; i < sets; i++) {
           final newSeries = Series(
-            serieId: UniqueKey().toString(),
+            serieId: generateRandomId(16).toString(),
             reps: reps,
             sets: 1,
             intensity: intensity,

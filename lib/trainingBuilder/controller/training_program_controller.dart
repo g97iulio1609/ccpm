@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../training_model.dart';
@@ -225,7 +226,7 @@ Future<void> applyWeekProgressions(int exerciseIndex, List<WeekProgression> week
   for (int weekIndex = 0; weekIndex < _program.weeks.length; weekIndex++) {
     final progression = weekIndex < weekProgressions.length ? weekProgressions[weekIndex] : weekProgressions.last;
     final series = List.generate(progression.sets, (index) => Series(
-      serieId: UniqueKey().toString(),
+      serieId: generateRandomId(16).toString(),
       reps: progression.reps,
       sets: 1,
       intensity: progression.intensity,

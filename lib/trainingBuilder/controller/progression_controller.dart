@@ -1,3 +1,4 @@
+import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../training_model.dart';
@@ -34,7 +35,7 @@ Future<void> updateExerciseProgressions(Exercise exercise, List<WeekProgression>
         currentExercise.series.clear();
         for (int i = 0; i < progression.sets; i++) {
           final newSeries = Series(
-            serieId: UniqueKey().toString(),
+            serieId: generateRandomId(16).toString(),
             reps: progression.reps,
             sets: 1,
             intensity: progression.intensity,
@@ -97,7 +98,7 @@ Future<void> addSeriesToProgression(TrainingProgram program, int weekIndex,
   final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
   final newSeriesOrder = exercise.series.length + 1;
   final newSeries = Series(
-    serieId: UniqueKey().toString(),
+    serieId: generateRandomId(16).toString(),
     reps: 0,
     sets: 1,
     intensity: '',

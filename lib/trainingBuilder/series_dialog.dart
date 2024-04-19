@@ -134,7 +134,7 @@ class _SeriesDialogState extends State<SeriesDialog> {
               final series = List.generate(
                 sets,
                 (index) => Series(
-                  serieId: UniqueKey().toString(),
+                  serieId: generateRandomId(16).toString(),
                   reps: reps,
                   sets: 1,
                   intensity: intensity,
