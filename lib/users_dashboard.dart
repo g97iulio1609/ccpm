@@ -11,35 +11,52 @@ class UsersDashboard extends ConsumerWidget {
     final usersService = ref.watch(usersServiceProvider);
     final usersStream = usersService.getUsers();
 
-    return StreamBuilder<List<UserModel>>(
-      stream: usersStream,
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        }
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final users = snapshot.data ?? [];
-        return Column(
+    return Scaffold(
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             UserSearchField(usersService: usersService),
+            const SizedBox(height: 24),
             Expanded(
-              child: ListView.builder(
-                itemCount: users.length,
-                itemBuilder: (context, index) {
-                  final user = users[index];
-                  return UserCard(
-                    user: user,
-                    onTap: () => context.go('/user_profile/${user.id}'),
-                    onDelete: () => usersService.deleteUser(user.id),
+              child: StreamBuilder<List<UserModel>>(
+                stream: usersStream,
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Text(
+                        'Error: ${snapshot.error}',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    );
+                  }
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  final users = snapshot.data ?? [];
+                  return ListView.separated(
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: users.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: 16),
+                    itemBuilder: (context, index) {
+                      final user = users[index];
+                      return UserCard(
+                        user: user,
+                        onTap: () => context.go('/user_profile/${user.id}'),
+                        onDelete: () => usersService.deleteUser(user.id),
+                      );
+                    },
                   );
                 },
               ),
             ),
           ],
-        );
-      },
+        ),
+      ),
+ 
     );
   }
 
@@ -54,22 +71,86 @@ class UsersDashboard extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Create User'),
+        backgroundColor: Theme.of(context).colorScheme.surface,
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: nameController,
-              decoration: const InputDecoration(labelText: 'Name'),
+              decoration: InputDecoration(
+                labelText: 'Name',
+                labelStyle: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                ),
+                filled: true,
+                fillColor: Theme.of(context).colorScheme.surface,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+              ),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
+            const SizedBox(height: 16),
             TextField(
               controller: emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
+              decoration: InputDecoration(
+                labelText: 'Email',
+                labelStyle: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                ),
+                filled: true,
+                fillColor: Theme.of(context).colorScheme.surface,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+              ),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
+            const SizedBox(height: 16),
             TextField(
               controller: passwordController,
-              decoration: const InputDecoration(labelText: 'Password'),
+              decoration: InputDecoration(
+                labelText: 'Password',
+                labelStyle: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                ),
+                filled: true,
+                fillColor: Theme.of(context).colorScheme.surface,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+              ),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
               obscureText: true,
             ),
+            const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               value: selectedRole,
               onChanged: (value) {
@@ -80,14 +161,40 @@ class UsersDashboard extends ConsumerWidget {
                 DropdownMenuItem(value: 'client', child: Text('Client')),
                 DropdownMenuItem(value: 'coach', child: Text('Coach')),
               ],
-              decoration: const InputDecoration(labelText: 'Role'),
+              decoration: InputDecoration(
+                labelText: 'Role',
+                labelStyle: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                ),
+                filled: true,
+                fillColor: Theme.of(context).colorScheme.surface,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+              ),
+              dropdownColor: Theme.of(context).colorScheme.surface,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
@@ -99,6 +206,17 @@ class UsersDashboard extends ConsumerWidget {
               );
               Navigator.pop(context);
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 16,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
             child: const Text('Create'),
           ),
         ],
@@ -132,40 +250,44 @@ class _UserSearchFieldState extends ConsumerState<UserSearchField> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              decoration: InputDecoration(
-                labelText: 'Search users',
-                border: const OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _controller.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: _resetFilter,
-                      )
-                    : null,
-              ),
-              onChanged: (value) {
-                if (value.isEmpty) {
-                  _resetFilter();
-                } else {
-                  widget.usersService.searchUsers(value);
-                }
-              },
-            ),
+    return TextField(
+      controller: _controller,
+      decoration: InputDecoration(
+        hintText: 'Search users',
+        hintStyle: TextStyle(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.outline,
           ),
-          const SizedBox(width: 8),
-          ElevatedButton(
-            onPressed: _resetFilter,
-            child: const Text('Reset'),
-          ),
-        ],
+        ),
+        filled: true,
+        fillColor: Theme.of(context).colorScheme.surface,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        prefixIcon: const Icon(Icons.search),
+        suffixIcon: _controller.text.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.clear),
+                onPressed: _resetFilter,
+                color: Theme.of(context).colorScheme.onSurface,
+              )
+            : null,
       ),
+      style: TextStyle(
+        color: Theme.of(context).colorScheme.onSurface,
+      ),
+      onChanged: (value) {
+        if (value.isEmpty) {
+          _resetFilter();
+        } else {
+          widget.usersService.searchUsers(value);
+        }
+      },
     );
   }
 }
@@ -184,55 +306,78 @@ class UserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Card(
+      elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
       ),
-      elevation: 5,
-      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      child: ListTile(
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        leading: CircleAvatar(
-          radius: 30,
-          child: user.photoURL.isNotEmpty
-              ? ClipOval(
-                  child: Image.network(
-                    user.photoURL,
-                    fit: BoxFit.cover,
-                    width: 60,
-                    height: 60,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(Icons.person);
-                    },
-                  ),
-                )
-              : const Icon(Icons.person),
-        ),
-        title: Text(
-          user.name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(user.email),
-            const SizedBox(height: 4),
-            Text(
-              'Role: ${user.role}',
-              style: TextStyle(
-                fontStyle: FontStyle.italic,
-                color: Colors.grey[600],
-              ),
-            ),
-          ],
-        ),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete),
-          color: Colors.red,
-          onPressed: onDelete,
-        ),
+      color: colorScheme.surface,
+      child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 30,
+                child: user.photoURL.isNotEmpty
+                    ? ClipOval(
+                        child: Image.network(
+                          user.photoURL,
+                          fit: BoxFit.cover,
+                          width: 60,
+                          height: 60,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(Icons.person);
+                          },
+                        ),
+                      )
+                    : const Icon(Icons.person),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      user.name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      user.email,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Role: ${user.role}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontStyle: FontStyle.italic,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: onDelete,
+                color: colorScheme.onBackground,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
