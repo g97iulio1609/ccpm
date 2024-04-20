@@ -70,178 +70,256 @@ class ExercisesList extends HookConsumerWidget {
       await exercisesService.deleteExercise(id);
     }
 
-     // Funzione per determinare il numero di colonne in base alla larghezza dello schermo
-    int getCrossAxisCount(double width) {
-      if (width > 1200) {
-        return 4;
-      } else if (width > 800) {
-        return 3;
-      } else if (width > 600) {
-        return 2;
-      } else {
-        return 1;
-      }
-    }
-
     return Scaffold(
-      body: SingleChildScrollView(
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                children: [
-                  TextField(
-                    controller: nameController,
-                    decoration: InputDecoration(
-                      labelText: editingExerciseId.value != null
-                          ? 'Modifica esercizio'
-                          : 'Nuovo esercizio',
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.save),
-                        onPressed: addOrEditExercise,
-                        color: Theme.of(context).colorScheme.secondary,
-                      ),
-                      border: const OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  muscleGroupsStream.when(
-                    data: (muscleGroups) => DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(
-                        labelText: 'Gruppo muscolare',
-                        border: OutlineInputBorder(),
-                      ),
-                      value: selectedMuscleGroup.value,
-                      isExpanded: true,
-                      onChanged: (newValue) {
-                        selectedMuscleGroup.value = newValue;
-                      },
-                      items: muscleGroups
-                          .toSet()
-                          .map<DropdownMenuItem<String>>((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value),
-                            );
-                          }).toList(),
-                    ),
-                    loading: () => const CircularProgressIndicator(),
-                    error: (error, stack) => Text('Errore: $error'),
-                  ),
-                  const SizedBox(height: 10),
-                  exerciseTypesStream.when(
-                    data: (exerciseTypes) => DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(
-                        labelText: 'Tipo di esercizio',
-                        border: OutlineInputBorder(),
-                      ),
-                      value: selectedExerciseType.value,
-                      isExpanded: true,
-                      onChanged: (newValue) {
-                        selectedExerciseType.value = newValue;
-                      },
-                      items: exerciseTypes
-                          .toSet()
-                          .map<DropdownMenuItem<String>>((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value),
-                            );
-                          }).toList(),
-                    ),
-                    loading: () => const CircularProgressIndicator(),
-                    error: (error, stack) => Text('Errore: $error'),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: TextField(
-                onChanged: (value) => searchText.value = value,
-                decoration: const InputDecoration(
-                  labelText: 'Cerca esercizio...',
-                  suffixIcon: Icon(Icons.search),
-                  border: OutlineInputBorder(),
+            const SizedBox(height: 24),
+            TextField(
+              controller: nameController,
+              decoration: InputDecoration(
+                hintText: editingExerciseId.value != null
+                    ? 'Edit Exercise'
+                    : 'New Exercise',
+                hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.add),
+                  onPressed: addOrEditExercise,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
-              ),
-            ),
-         StreamBuilder<List<ExerciseModel>>(
-  stream: exercisesService.getExercises(),
-  builder: (context, snapshot) {
-    if (snapshot.hasData) {
-      final exercises = snapshot.data!;
-      final screenWidth = MediaQuery.of(context).size.width;
-      return GridView.builder(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: getCrossAxisCount(screenWidth),
-          childAspectRatio: 3 / 2,
-          crossAxisSpacing: 4,
-          mainAxisSpacing: 4,
-        ),
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: exercises.length,
-        itemBuilder: (context, index) {
-          final exercise = exercises[index];
-          if (exercise.name.toLowerCase().contains(searchText.value.toLowerCase())) {
-            return Card(
-              child: InkWell(
-                onTap: () => editExercise(exercise),
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center, // Centra verticalmente i contenuti nella colonna
-                    children: [
-                      Text(
-                        exercise.name,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16),
-                      ),
-                      Text('${exercise.muscleGroup} - ${exercise.type}'),
-                      const SizedBox(height: 20), // Aggiungi uno spazio verticale per separare il testo dai pulsanti
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround, // Centra orizzontalmente i pulsanti nella riga
-                        children: [
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              backgroundColor: Colors.green,
-                            ),
-                            child: const Text('Modifica'),
-                            onPressed: () => editExercise(exercise),
-                          ),
-                          const SizedBox(width: 8), // Spazio tra i pulsanti
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              backgroundColor: Colors.red,
-                            ),
-                            child: const Text('Elimina'),
-                            onPressed: () => deleteExercise(exercise.id),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
                 ),
+                filled: true,
+                fillColor: Theme.of(context).colorScheme.surface,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               ),
-            );
-          } else {
-            return Container(); // Ritorna un container vuoto se il nome dell'esercizio non corrisponde al testo di ricerca
-          }
-        },
-      );
-    } else if (snapshot.hasError) {
-      return Text('Errore: ${snapshot.error}');
-    } else {
-      return const CircularProgressIndicator();
-                }
-              },
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+            ),
+            const SizedBox(height: 16),
+            muscleGroupsStream.when(
+              data: (muscleGroups) => DropdownButtonFormField<String>(
+                decoration: InputDecoration(
+                  hintText: 'Muscle Group',
+                  hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                  ),
+                  filled: true,
+                  fillColor: Theme.of(context).colorScheme.surface,
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                ),
+                value: selectedMuscleGroup.value,
+                items: muscleGroups
+                    .toSet()
+                    .map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(
+                      value,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                  );
+                }).toList(),
+                onChanged: (newValue) {
+                  selectedMuscleGroup.value = newValue;
+                },
+                dropdownColor: Theme.of(context).colorScheme.surface,
+              ),
+              loading: () => const SizedBox(),
+              error: (error, stack) => const SizedBox(),
+            ),
+            const SizedBox(height: 16),
+            exerciseTypesStream.when(
+              data: (exerciseTypes) => DropdownButtonFormField<String>(
+                decoration: InputDecoration(
+                  hintText: 'Exercise Type',
+                  hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                  ),
+                  filled: true,
+                  fillColor: Theme.of(context).colorScheme.surface,
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                ),
+                value: selectedExerciseType.value,
+                items: exerciseTypes
+                    .toSet()
+                    .map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(
+                      value,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                  );
+                }).toList(),
+                onChanged: (newValue) {
+                  selectedExerciseType.value = newValue;
+                },
+                dropdownColor: Theme.of(context).colorScheme.surface,
+              ),
+              loading: () => const SizedBox(),
+              error: (error, stack) => const SizedBox(),
+            ),
+            const SizedBox(height: 24),
+            TextField(
+              onChanged: (value) => searchText.value = value,
+              decoration: InputDecoration(
+                hintText: 'Search exercise...',
+                hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                prefixIcon: Icon(Icons.search, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                ),
+                filled: true,
+                fillColor: Theme.of(context).colorScheme.surface,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              ),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+            ),
+            const SizedBox(height: 24),
+            Expanded(
+              child: StreamBuilder<List<ExerciseModel>>(
+                stream: exercisesService.getExercises(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    final exercises = snapshot.data!;
+                    final filteredExercises = exercises.where((exercise) =>
+                        exercise.name
+                            .toLowerCase()
+                            .contains(searchText.value.toLowerCase())).toList();
+
+                    if (filteredExercises.isEmpty) {
+                      return Center(
+                        child: Text(
+                          'No exercises found.',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                      );
+                    }
+
+                    return ListView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: filteredExercises.length,
+                      itemBuilder: (context, index) {
+                        final exercise = filteredExercises[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: ExerciseCard(
+                            exercise: exercise,
+                            onEdit: () => editExercise(exercise),
+                            onDelete: () => deleteExercise(exercise.id),
+                          ),
+                        );
+                      },
+                    );
+                  } else if (snapshot.hasError) {
+                    return Center(
+                      child: Text(
+                        'Error: ${snapshot.error}',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    );
+                  } else {
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  }
+                },
+              ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class ExerciseCard extends StatelessWidget {
+  const ExerciseCard({
+    super.key,
+    required this.exercise,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final ExerciseModel exercise;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      color: colorScheme.surface,
+      child: InkWell(
+        onTap: onEdit,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      exercise.name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${exercise.muscleGroup} - ${exercise.type}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: onEdit,
+                color: Colors.white,
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: onDelete,
+                color: Colors.white,
+              ),
+            ],
+          ),
         ),
       ),
     );

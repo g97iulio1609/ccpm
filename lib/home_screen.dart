@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -35,7 +37,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  String? _getRouteForMenuItem(String menuItem, String userRole, String? userId) {
+  String? _getRouteForMenuItem(
+      String menuItem, String userRole, String? userId) {
     switch (menuItem) {
       case 'Allenamenti':
         return userRole == 'admin'
@@ -94,27 +97,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         break;
     }
 
-    final pattern1 = RegExp(r'/programs_screen/user_programs/\w+/training_viewer/\w+/week_details/\w+$');
+    final pattern1 = RegExp(
+        r'/programs_screen/user_programs/\w+/training_viewer/\w+/week_details/\w+$');
     if (pattern1.hasMatch(currentPath)) {
       return 'Dettagli Settimana';
     }
 
-    final pattern2 = RegExp(r'/programs_screen/user_programs/\w+/training_viewer/\w+/week_details/\w+/workout_details/\w+$');
+    final pattern2 = RegExp(
+        r'/programs_screen/user_programs/\w+/training_viewer/\w+/week_details/\w+/workout_details/\w+$');
     if (pattern2.hasMatch(currentPath)) {
       return 'Dettagli Allenamento';
     }
 
-    final pattern3 = RegExp(r'/programs_screen/user_programs/\w+/training_viewer/\w+/week_details/\w+/workout_details/\w+/exercise_details/\w+$');
+    final pattern3 = RegExp(
+        r'/programs_screen/user_programs/\w+/training_viewer/\w+/week_details/\w+/workout_details/\w+/exercise_details/\w+$');
     if (pattern3.hasMatch(currentPath)) {
       return 'Dettagli Esercizio';
     }
 
-    final pattern4 = RegExp(r'/programs_screen/user_programs/\w+/training_viewer/\w+/week_details/\w+/workout_details/\w+/exercise_details/\w+/timer$');
+    final pattern4 = RegExp(
+        r'/programs_screen/user_programs/\w+/training_viewer/\w+/week_details/\w+/workout_details/\w+/exercise_details/\w+/timer$');
     if (pattern4.hasMatch(currentPath)) {
       return 'Timer';
     }
 
-    final weekPattern = RegExp(r'/programs_screen/user_programs/\w+/training_program/\w+/week/\d+$');
+    final weekPattern = RegExp(
+        r'/programs_screen/user_programs/\w+/training_program/\w+/week/\d+$');
     if (weekPattern.hasMatch(currentPath)) {
       final weekIndex = int.parse(currentPath.split('/').last);
       return 'Settimana ${weekIndex + 1}';
@@ -144,21 +152,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: user != null
           ? AppBar(
               title: Text(_getTitleForRoute(context)),
-               backgroundColor: Colors.transparent,
-        foregroundColor: Theme.of(context).colorScheme.onBackground,
+              backgroundColor: Colors.transparent,
+              foregroundColor: Theme.of(context).colorScheme.onBackground,
               leading: isBackButtonVisible
                   ? IconButton(
                       icon: const Icon(Icons.arrow_back),
                       onPressed: () {
-                        final currentPath = GoRouterState.of(context).uri.toString();
-                        final trainingProgramWeekPattern = RegExp(r'/programs_screen/user_programs/\w+/training_program/\w+/week/\d+$');
-                        final trainingProgramPattern = RegExp(r'/programs_screen/user_programs/\w+/training_program/\w+$');
+                        final currentPath =
+                            GoRouterState.of(context).uri.toString();
+                        final trainingProgramWeekPattern = RegExp(
+                            r'/programs_screen/user_programs/\w+/training_program/\w+/week/\d+$');
+                        final trainingProgramPattern = RegExp(
+                            r'/programs_screen/user_programs/\w+/training_program/\w+$');
 
                         if (trainingProgramWeekPattern.hasMatch(currentPath)) {
                           final programId = currentPath.split('/')[5];
                           final userId = currentPath.split('/')[3];
-                          context.go('/programs_screen/user_programs/$userId/training_program/$programId');
-                        } else if (trainingProgramPattern.hasMatch(currentPath)) {
+                          context.go(
+                              '/programs_screen/user_programs/$userId/training_program/$programId');
+                        } else if (trainingProgramPattern
+                            .hasMatch(currentPath)) {
                           final userId = currentPath.split('/')[3];
                           context.go('/programs_screen/user_programs/$userId');
                         } else {
@@ -168,7 +181,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     )
                   : null,
               actions: [
-                if (userRole == 'admin' && GoRouterState.of(context).uri.toString() == '/users_dashboard')
+                if (userRole == 'admin' &&
+                    GoRouterState.of(context).uri.toString() ==
+                        '/users_dashboard')
                   IconButton(
                     onPressed: () => _showAddUserDialog(context),
                     icon: const Icon(Icons.person_add),
@@ -194,76 +209,160 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: _buildDrawer(isLargeScreen, context, userRole, controller),
             ),
           Expanded(
-        child: widget.child ?? const SizedBox(), // Aggiungi un widget non null se widget.child è null
+            child: widget.child ??
+                const SizedBox(), // Aggiungi un widget non null se widget.child è null
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDrawer(bool isLargeScreen, BuildContext context, String userRole, TrainingProgramController controller) {
-    final List<String> menuItems = userRole == 'admin' ? _getAdminMenuItems() : _getClientMenuItems();
-    final isTrainingProgramRoute = GoRouterState.of(context).uri.toString().contains('/training_program/');
+Widget _buildDrawer(bool isLargeScreen, BuildContext context, String userRole, TrainingProgramController controller) {
+  final List<String> menuItems = userRole == 'admin' ? _getAdminMenuItems() : _getClientMenuItems();
+  final isTrainingProgramRoute = GoRouterState.of(context).uri.toString().contains('/training_program/');
+  final theme = Theme.of(context);
+  final isDarkMode = theme.brightness == Brightness.dark;
 
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.fromLTRB(16.0, 48.0, 16.0, 16.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Menù', style: Theme.of(context).textTheme.titleLarge),
-              if (!isLargeScreen)
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: ListView.builder(
-            padding: EdgeInsets.zero,
-            itemCount: menuItems.length + (isTrainingProgramRoute ? controller.program.weeks.length : 0),
-            itemBuilder: (context, index) {
-              if (index < menuItems.length) {
-                return ListTile(
-                  title: Text(menuItems[index]),
-                  onTap: () => _navigateTo(menuItems[index], isLargeScreen),
-                );
-              } else {
-                final weekIndex = index - menuItems.length;
-                final week = controller.program.weeks[weekIndex];
-                return ListTile(
-                  title: Text('Week ${week.number}'),
-                  onTap: () {
-                    context.push('/programs_screen/user_programs/${FirebaseAuth.instance.currentUser?.uid}/training_program/${controller.program.id}/week/$weekIndex/workout_list');
-                  },
-                );
-              }
-            },
-          ),
-        ),
-        Consumer(
-          builder: (context, ref, child) {
-            final userName = ref.watch(userNameProvider);
-            final user = FirebaseAuth.instance.currentUser;
-            final displayName = user?.displayName ?? userName;
-            return ListTile(
-              leading: const CircleAvatar(
-                child: Icon(Icons.person),
+  return ClipRect(
+    child: BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+      child: Container(
+        color: Colors.black.withOpacity(0.5),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.fromLTRB(16.0, 48.0, 16.0, 16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Menù', style: theme.textTheme.titleLarge),
+                  if (!isLargeScreen)
+                    IconButton(
+                      icon: Icon(Icons.close, color: isDarkMode ? Colors.white : Colors.black),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                ],
               ),
-              title: Text(displayName),
-              onTap: () => _navigateTo('Profilo Utente', isLargeScreen),
-            );
-          },
+            ),
+            Expanded(
+              child: ListView.builder(
+                padding: EdgeInsets.zero,
+                itemCount: menuItems.length + (isTrainingProgramRoute ? controller.program.weeks.length : 0),
+                itemBuilder: (context, index) {
+                  if (index < menuItems.length) {
+                    return ListTile(
+                      leading: Icon(
+                        _getIconForMenuItem(menuItems[index]),
+                        color: isDarkMode ? Colors.white : Colors.grey[700],
+                      ),
+                      title: Text(
+                        menuItems[index],
+                        style: TextStyle(
+                          color: isDarkMode ? Colors.white : Colors.grey[800],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      onTap: () => _navigateTo(menuItems[index], isLargeScreen),
+                      hoverColor: isDarkMode ? Colors.grey[800] : Colors.grey[200],
+                      selectedTileColor: isDarkMode ? Colors.grey[700] : Colors.grey[300],
+                    );
+                  } else {
+                    final weekIndex = index - menuItems.length;
+                    final week = controller.program.weeks[weekIndex];
+                    return ListTile(
+                      leading: Icon(
+                        Icons.calendar_today,
+                        color: isDarkMode ? Colors.white : Colors.grey[700],
+                      ),
+                      title: Text(
+                        'Week ${week.number}',
+                        style: TextStyle(
+                          color: isDarkMode ? Colors.white : Colors.grey[800],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      onTap: () {
+                        context.push('/programs_screen/user_programs/${FirebaseAuth.instance.currentUser?.uid}/training_program/${controller.program.id}/week/$weekIndex/workout_list');
+                      },
+                      hoverColor: isDarkMode ? Colors.grey[800] : Colors.grey[200],
+                      selectedTileColor: isDarkMode ? Colors.grey[700] : Colors.grey[300],
+                    );
+                  }
+                },
+              ),
+            ),
+            Divider(
+              height: 1,
+              color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
+            ),
+            Consumer(
+              builder: (context, ref, child) {
+                final userName = ref.watch(userNameProvider);
+                final user = FirebaseAuth.instance.currentUser;
+                final displayName = user?.displayName ?? userName;
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: isDarkMode ? Colors.grey[700] : Colors.grey[300],
+                    child: Icon(
+                      Icons.person,
+                      color: isDarkMode ? Colors.white : Colors.grey[800],
+                    ),
+                  ),
+                  title: Text(
+                    displayName,
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white : Colors.grey[800],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  onTap: () => _navigateTo('Profilo Utente', isLargeScreen),
+                  hoverColor: isDarkMode ? Colors.grey[800] : Colors.grey[200],
+                  selectedTileColor: isDarkMode ? Colors.grey[700] : Colors.grey[300],
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(
+                Icons.logout,
+                color: isDarkMode ? Colors.white : Colors.grey[700],
+              ),
+              title: Text(
+                'Logout',
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white : Colors.grey[800],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              onTap: _logout,
+              hoverColor: isDarkMode ? Colors.grey[800] : Colors.grey[200],
+              selectedTileColor: isDarkMode ? Colors.grey[700] : Colors.grey[300],
+            ),
+          ],
         ),
-        ListTile(
-          title: const Text('Logout'),
-          onTap: _logout,
-        ),
-      ],
-    );
+      ),
+    ),
+  );
+}
+
+  IconData _getIconForMenuItem(String menuItem) {
+    switch (menuItem) {
+      case 'Allenamenti':
+        return Icons.fitness_center;
+      case 'Esercizi':
+        return Icons.sports;
+      case 'Massimali':
+        return Icons.trending_up;
+      case 'Profilo Utente':
+        return Icons.person;
+      case 'TrainingProgram':
+        return Icons.schedule;
+      case 'Gestione Utenti':
+        return Icons.supervised_user_circle;
+      case 'Volume Allenamento':
+        return Icons.bar_chart;
+      default:
+        return Icons.menu;
+    }
   }
 
   List<String> _getAdminMenuItems() {

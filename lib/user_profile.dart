@@ -117,6 +117,7 @@ class UserProfileState extends ConsumerState<UserProfile> {
     bool hasValidPhotoURL = userPhotoURL != null && userPhotoURL.isNotEmpty && Uri.parse(userPhotoURL).isAbsolute;
 
     return Scaffold(
+      backgroundColor: Colors.black,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -128,14 +129,23 @@ class UserProfileState extends ConsumerState<UserProfile> {
                 child: CircleAvatar(
                   backgroundImage: hasValidPhotoURL ? NetworkImage(userPhotoURL) : null,
                   radius: 60,
-                  backgroundColor: Colors.grey[200],
-                  foregroundColor: Colors.grey[800],
-                  child: !hasValidPhotoURL ? const Icon(Icons.person, size: 60) : null,
+                  backgroundColor: Colors.grey[700],
+                  foregroundColor: Colors.white,
+                  child: !hasValidPhotoURL
+                      ? const Icon(
+                          Icons.person,
+                          size: 60,
+                          color: Colors.white,
+                        )
+                      : null,
                 ),
               ),
             ),
             const SizedBox(height: 30),
-            ..._controllers.keys.where((field) => field != 'photoURL').map((field) => buildEditableField(field, _controllers[field]!)).toList(),
+            ..._controllers.keys
+                .where((field) => field != 'photoURL')
+                .map((field) => buildEditableField(field, _controllers[field]!))
+                .toList(),
           ],
         ),
       ),
@@ -146,26 +156,26 @@ class UserProfileState extends ConsumerState<UserProfile> {
     String label = field[0].toUpperCase() + field.substring(1);
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
-      child: TextFormField(
+      child: TextField(
         controller: controller,
-        style: TextStyle(
-          color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white,
+        style: const TextStyle(
+          color: Colors.white,
         ),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(
-            color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white,
+          labelStyle: const TextStyle(
+            color: Colors.white70,
           ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Colors.grey),
           ),
           filled: true,
-          fillColor: Theme.of(context).brightness == Brightness.light ? Colors.grey[100] : Colors.grey[800],
+          fillColor: Colors.grey[800],
         ),
         onChanged: (value) {
           _debouncer.run(() => saveProfile(field, value));
         },
-        autovalidateMode: AutovalidateMode.onUserInteraction,
       ),
     );
   }
