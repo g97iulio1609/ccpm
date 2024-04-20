@@ -144,6 +144,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: user != null
           ? AppBar(
               title: Text(_getTitleForRoute(context)),
+               backgroundColor: Colors.transparent,
+        foregroundColor: Theme.of(context).colorScheme.onBackground,
               leading: isBackButtonVisible
                   ? IconButton(
                       icon: const Icon(Icons.arrow_back),

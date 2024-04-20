@@ -33,13 +33,6 @@ class _TrainingViewerState extends State<TrainingViewer> {
         .orderBy('number')
         .get();
 
-    // Create a batch for reading the week documents
-    final batch = FirebaseFirestore.instance.batch();
-    for (var doc in querySnapshot.docs) {
-      batch.set(doc.reference, doc.data(), SetOptions(merge: true));
-    }
-    await batch.commit();
-
     weeks = querySnapshot.docs
         .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
         .toList();
@@ -58,59 +51,80 @@ class _TrainingViewerState extends State<TrainingViewer> {
               itemCount: weeks.length,
               itemBuilder: (context, index) {
                 var week = weeks[index];
-                return Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                  child: Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16.0),
-                    ),
-                    child: InkWell(
-                      onTap: () {
-                        context.go(
-                            '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${week['id']}');
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.calendar_today,
-                                  color: Theme.of(context).primaryColor,
-                                  size: 28.0,
-                                ),
-                                const SizedBox(width: 12.0),
-                                Text(
-                                  "Settimana ${week['number']}",
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleLarge
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .secondary,
-                                      ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12.0),
-                            Text(
-                              week['description'] ?? '',
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
+                return WeekCard(
+                  weekNumber: week['number'],
+                  weekDescription: week['description'] ?? '',
+                  onTap: () {
+                    context.go(
+                        '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${week['id']}');
+                  },
                 );
               },
             ),
+    );
+  }
+}
+
+class WeekCard extends StatelessWidget {
+  final int weekNumber;
+  final String weekDescription;
+  final VoidCallback onTap;
+
+  const WeekCard({
+    super.key,
+    required this.weekNumber,
+    required this.weekDescription,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    '$weekNumber',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    'Settimana $weekNumber',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                ),
+              ),
+              const Icon(Icons.chevron_right),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

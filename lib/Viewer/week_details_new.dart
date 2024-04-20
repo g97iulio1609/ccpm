@@ -1,4 +1,4 @@
-// week_details_new.dart
+// week_details.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -18,6 +18,7 @@ class WeekDetails extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+ 
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('workouts')
@@ -33,28 +34,19 @@ class WeekDetails extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final workouts = snapshot.data!.docs
-              .map((doc) => {
-                    'id': doc.id,
-                    ...doc.data() as Map<String, dynamic>,
-                  })
-              .toList();
+          final workouts = snapshot.data!.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
 
           return ListView.builder(
             itemCount: workouts.length,
             itemBuilder: (context, index) {
               final workout = workouts[index];
-              final workoutId = workout['id'];
-
               return WorkoutCard(
                 workoutOrder: workout['order'],
                 workoutDescription: workout['description'] ?? '',
                 onTap: () {
-                  if (workoutId != null) {
-                    context.go(
-                      '/programs_screen/user_programs/$userId/training_viewer/$programId/week_details/$weekId/workout_details/$workoutId',
-                    );
-                  }
+                  context.go(
+                    '/programs_screen/user_programs/$userId/training_viewer/$programId/week_details/$weekId/workout_details/${workout['id']}',
+                  );
                 },
               );
             },
@@ -90,7 +82,6 @@ class WorkoutCard extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
                 width: 48,
@@ -110,14 +101,25 @@ class WorkoutCard extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(width: 16),
               Expanded(
-                child: Center(
-                  child: Text(
-                    'Allenamento $workoutOrder',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Allenamento $workoutOrder',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      workoutDescription,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
               ),
               const Icon(Icons.chevron_right),
