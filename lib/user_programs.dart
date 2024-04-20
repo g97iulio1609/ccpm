@@ -7,7 +7,6 @@ import 'package:go_router/go_router.dart';
 import 'users_services.dart';
 import './trainingBuilder/controller/training_program_controller.dart';
 
-
 class UserProgramsScreen extends HookConsumerWidget {
   final String? userId;
 
@@ -17,18 +16,6 @@ class UserProgramsScreen extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final TextEditingController controller = useTextEditingController();
     final userRole = ref.watch(userRoleProvider);
-
-    int getCrossAxisCount(double width) {
-      if (width > 1200) {
-        return 4;
-      } else if (width > 800) {
-        return 3;
-      } else if (width > 600) {
-        return 2;
-      } else {
-        return 1;
-      }
-    }
 
     Future<void> addProgram() async {
       final name = controller.text.trim();
@@ -87,7 +74,6 @@ class UserProgramsScreen extends HookConsumerWidget {
     }
 
     return Scaffold(
-    
       body: Column(
         children: [
           if (userRole == 'admin')
@@ -97,6 +83,9 @@ class UserProgramsScreen extends HookConsumerWidget {
                 controller: controller,
                 decoration: InputDecoration(
                   labelText: 'Crea Programma Di Allenamento',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.add),
                     onPressed: addProgram,
@@ -104,7 +93,7 @@ class UserProgramsScreen extends HookConsumerWidget {
                 ),
               ),
             ),
-           Expanded(
+          Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: getProgramsStream(),
               builder: (context, snapshot) {
@@ -116,22 +105,14 @@ class UserProgramsScreen extends HookConsumerWidget {
                 }
 
                 final documents = snapshot.data!.docs;
-                final screenWidth = MediaQuery.of(context).size.width;
 
-                return GridView.builder(
+                return ListView.builder(
                   padding: const EdgeInsets.all(16.0),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: getCrossAxisCount(screenWidth),
-                    childAspectRatio: 3 / 2,
-                    crossAxisSpacing: 16.0,
-                    mainAxisSpacing: 16.0,
-                  ),
                   itemCount: documents.length,
                   itemBuilder: (context, index) {
                     final doc = documents[index];
                     final isHidden = doc['hide'];
-                        final controller = ref.read(trainingProgramControllerProvider);
-
+                    final controller = ref.read(trainingProgramControllerProvider);
 
                     return Card(
                       elevation: 2,
@@ -140,151 +121,95 @@ class UserProgramsScreen extends HookConsumerWidget {
                       ),
                       child: InkWell(
                         onTap: () => context.go(
-                            '/programs_screen/user_programs/$userId/training_viewer/${doc.id}'),
-                        child: Stack(
-                          children: [
-                            Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    doc['name'],
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  if (userRole == 'admin')
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        FilledButton(
-                                          onPressed: () {
-                                            context.go(
-                                                '/programs_screen/user_programs/$userId/training_program/${doc.id}');
-                                          },
-                                          style: FilledButton.styleFrom(
-                                            backgroundColor: Theme.of(context)
-                                                .colorScheme
-                                                .tertiary,
-                                            foregroundColor: Colors.white,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8.0),
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 12, vertical: 6),
-                                          ),
-                                          child: const Text('Modifica'),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        FilledButton(
-                                          onPressed: () =>
-                                              deleteProgram(doc.id),
-                                          style: FilledButton.styleFrom(
-                                            backgroundColor: Theme.of(context)
-                                                .colorScheme
-                                                .error,
-                                            foregroundColor: Colors.white,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8.0),
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 12, vertical: 6),
-                                          ),
-                                          child: const Text('Elimina'),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        FilledButton(
-                                          onPressed: () async {
-                                            String? newProgramName =
-                                                await showDialog<String>(
-                                              context: context,
-                                              builder: (BuildContext context) {
-                                                TextEditingController
-                                                    _nameController =
-                                                    TextEditingController();
-                                                return AlertDialog(
-                                                  title: const Text(
-                                                      'Duplica Programma'),
-                                                  content: TextField(
-                                                    controller: _nameController,
-                                                    decoration:
-                                                        const InputDecoration(
-                                                      labelText:
-                                                          'Nuovo Nome del Programma',
-                                                    ),
-                                                  ),
-                                                  actions: <Widget>[
-                                                    TextButton(
-                                                      onPressed: () =>
-                                                          Navigator.of(context)
-                                                              .pop(),
-                                                      child: const Text(
-                                                          'Annulla'),
-                                                    ),
-                                                    ElevatedButton(
-                                                      onPressed: () =>
-                                                          Navigator.of(context)
-                                                              .pop(
-                                                                  _nameController
-                                                                      .text
-                                                                      .trim()),
-                                                      child: const Text('OK'),
-                                                    ),
-                                                  ],
-                                                );
-                                              },
-                                            );
-
-                                            if (newProgramName != null &&
-                                                newProgramName.isNotEmpty) {
-                                              await controller.duplicateProgram(
-                                                  doc.id,
-                                                  newProgramName,
-                                                  context);
-                                            }
-                                          },
-                                          style: FilledButton.styleFrom(
-                                            backgroundColor: Theme.of(context)
-                                                .colorScheme
-                                                .secondary,
-                                            foregroundColor: Colors.white,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8.0),
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 12, vertical: 6),
-                                          ),
-                                          child: const Text('Duplica'),
-                                        ),
-                                      ],
-                                    ),
-                                ],
+                          '/programs_screen/user_programs/$userId/training_viewer/${doc.id}'),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  doc['name'],
+                                  style: Theme.of(context).textTheme.titleLarge,
+                                ),
                               ),
-                            ),
-                            if (userRole == 'admin')
-                              Positioned(
-                                top: 8,
-                                right: 8,
-                                child: IconButton(
+                              if (userRole == 'admin')
+                                IconButton(
                                   icon: Icon(isHidden
                                       ? Icons.visibility_off
                                       : Icons.visibility),
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface,
                                   onPressed: () =>
                                       toggleProgramVisibility(doc.id, isHidden),
                                 ),
-                              ),
-                          ],
+                              if (userRole == 'admin')
+                                PopupMenuButton(
+                                  itemBuilder: (context) => [
+                                    PopupMenuItem(
+                                      child: const Text('Modifica'),
+                                      onTap: () {
+                                        context.go(
+                                          '/programs_screen/user_programs/$userId/training_program/${doc.id}');
+                                      },
+                                    ),
+                                    PopupMenuItem(
+                                      child: const Text('Elimina'),
+                                      onTap: () => deleteProgram(doc.id),
+                                    ),
+                                    PopupMenuItem(
+                                      child: const Text('Duplica'),
+                                      onTap: () async {
+                                        String? newProgramName =
+                                            await showDialog<String>(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            TextEditingController
+                                                _nameController =
+                                                TextEditingController();
+                                            return AlertDialog(
+                                              title: const Text(
+                                                  'Duplica Programma'),
+                                              content: TextField(
+                                                controller: _nameController,
+                                                decoration:
+                                                    const InputDecoration(
+                                                  labelText:
+                                                      'Nuovo Nome del Programma',
+                                                ),
+                                              ),
+                                              actions: <Widget>[
+                                                TextButton(
+                                                  onPressed: () =>
+                                                      Navigator.of(context)
+                                                          .pop(),
+                                                  child: const Text(
+                                                      'Annulla'),
+                                                ),
+                                                ElevatedButton(
+                                                  onPressed: () =>
+                                                      Navigator.of(context)
+                                                          .pop(
+                                                              _nameController
+                                                                  .text
+                                                                  .trim()),
+                                                  child: const Text('OK'),
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        );
+
+                                        if (newProgramName != null &&
+                                            newProgramName.isNotEmpty) {
+                                          await controller.duplicateProgram(
+                                            doc.id,
+                                            newProgramName,
+                                            context);
+                                        }
+                                      },
+                                    ),
+                                  ],
+                                ),
+                            ],
+                          ),
                         ),
                       ),
                     );

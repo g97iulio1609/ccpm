@@ -11,18 +11,6 @@ class ProgramsScreen extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final userRole = ref.watch(userRoleProvider);
 
-    int getCrossAxisCount(double width) {
-      if (width > 1200) {
-        return 4;
-      } else if (width > 800) {
-        return 3;
-      } else if (width > 600) {
-        return 2;
-      } else {
-        return 1;
-      }
-    }
-
     return Scaffold(
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('users').snapshots(),
@@ -35,29 +23,27 @@ class ProgramsScreen extends HookConsumerWidget {
           }
 
           final users = snapshot.data!.docs;
-          final screenWidth = MediaQuery.of(context).size.width;
 
-          return GridView.builder(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: getCrossAxisCount(screenWidth),
-              childAspectRatio: 3 / 2,
-              crossAxisSpacing: 20,
-              mainAxisSpacing: 20,
-            ),
+          return ListView.builder(
+            padding: const EdgeInsets.all(16.0),
             itemCount: users.length,
             itemBuilder: (context, index) {
               final user = users[index];
               final userName = user['name'];
 
               return Card(
-                elevation: 5,
-                margin: const EdgeInsets.all(10),
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
+                margin: const EdgeInsets.symmetric(vertical: 8.0),
                 child: InkWell(
                   onTap: () => context.go('/programs_screen/user_programs/${user.id}'),
-                  child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
                     child: Text(
                       userName,
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
                   ),
                 ),
