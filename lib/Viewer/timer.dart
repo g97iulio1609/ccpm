@@ -135,12 +135,12 @@ class _TimerPageState extends State<TimerPage> with SingleTickerProviderStateMix
                 widget.isEmomMode ? 'EMOM MODE' : 'REST TIME',
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 20,
+                  fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  letterSpacing: 1.5,
+                  letterSpacing: 2.0,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
               Stack(
                 alignment: Alignment.center,
                 children: [
@@ -148,7 +148,7 @@ class _TimerPageState extends State<TimerPage> with SingleTickerProviderStateMix
                   _buildCountdownText(),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               if (!widget.isEmomMode) _buildSkipButton(),
             ],
           ),
@@ -159,11 +159,11 @@ class _TimerPageState extends State<TimerPage> with SingleTickerProviderStateMix
 
   Widget _buildProgressIndicator() {
     return SizedBox(
-      width: 200,
-      height: 200,
+      width: 300,
+      height: 300,
       child: CircularProgressIndicator(
         value: _animation.value,
-        strokeWidth: 8,
+        strokeWidth: 12,
         backgroundColor: Colors.white.withOpacity(0.2),
         valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
       ),
@@ -171,35 +171,41 @@ class _TimerPageState extends State<TimerPage> with SingleTickerProviderStateMix
   }
 
   Widget _buildCountdownText() {
-    final minutes = (_remainingSeconds ~/ 60).toString().padLeft(2, '0');
-    final seconds = (_remainingSeconds % 60).toString().padLeft(2, '0');
-    return Text(
-      '$minutes:$seconds',
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 40,
-        fontWeight: FontWeight.bold,
-      ),
-    );
-  }
+  final minutes = (_remainingSeconds ~/ 60).toString().padLeft(2, '0');
+  final seconds = (_remainingSeconds % 60).toString().padLeft(2, '0');
+  final shadow = Shadow(
+    color: Colors.black.withOpacity(0.3),
+    blurRadius: 10,
+    offset: const Offset(0, 5),
+  );
+  return Text(
+    '$minutes:$seconds',
+    style: TextStyle(
+      color: Colors.white,
+      fontSize: 72,
+      fontWeight: FontWeight.bold,
+      shadows: [shadow],
+    ),
+  );
+}
 
   Widget _buildSkipButton() {
     return TextButton(
       onPressed: _handleNextSeries,
       style: TextButton.styleFrom(
         foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(30),
           side: const BorderSide(color: Colors.white, width: 2),
         ),
       ),
       child: const Text(
         'SKIP',
         style: TextStyle(
-          fontSize: 16,
+          fontSize: 18,
           fontWeight: FontWeight.bold,
-          letterSpacing: 1.2,
+          letterSpacing: 1.5,
         ),
       ),
     );
