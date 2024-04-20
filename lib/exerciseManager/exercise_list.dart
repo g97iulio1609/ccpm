@@ -311,12 +311,12 @@ class ExerciseCard extends StatelessWidget {
               IconButton(
                 icon: const Icon(Icons.edit),
                 onPressed: onEdit,
-                color: Colors.white,
+                color: colorScheme.onBackground,
               ),
               IconButton(
                 icon: const Icon(Icons.delete),
                 onPressed: onDelete,
-                color: Colors.white,
+                color: colorScheme.onBackground,
               ),
             ],
           ),
