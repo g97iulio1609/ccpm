@@ -350,68 +350,70 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
 Widget buildSeriesHeaderRow(
     bool isDarkMode, ColorScheme colorScheme, TextTheme textTheme) {
   return Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
     children: [
-      buildHeaderText('Serie', textTheme, isDarkMode, colorScheme),
-      buildHeaderText('Reps', textTheme, isDarkMode, colorScheme),
-      buildHeaderText('Kg', textTheme, isDarkMode, colorScheme),
-      buildHeaderText('Svolto', textTheme, isDarkMode, colorScheme),
+      buildHeaderText('Serie', textTheme, isDarkMode, colorScheme, 1),
+      buildHeaderText('Reps', textTheme, isDarkMode, colorScheme, 2),
+      buildHeaderText('Kg', textTheme, isDarkMode, colorScheme, 2),
+      buildHeaderText('Svolto', textTheme, isDarkMode, colorScheme, 1),
     ],
   );
 }
 
 Widget buildHeaderText(String text, TextTheme textTheme, bool isDarkMode,
-    ColorScheme colorScheme) {
+    ColorScheme colorScheme, int flex) {
   return Expanded(
+    flex: flex,
     child: Text(
       text,
       style: textTheme.titleMedium?.copyWith(
         color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
       ),
       textAlign: TextAlign.center,
     ),
   );
 }
 
-  List<Widget> buildSeriesRows(
-      List<Map<String, dynamic>> superSetExercises,
-      bool isDarkMode,
-      ColorScheme colorScheme,
-      ThemeData theme) {
-    final maxSeriesCount = superSetExercises
-        .map((exercise) => exercise['series'].length)
-        .reduce((a, b) => a > b ? a : b);
+List<Widget> buildSeriesRows(
+    List<Map<String, dynamic>> superSetExercises,
+    bool isDarkMode,
+    ColorScheme colorScheme,
+    ThemeData theme) {
+  final maxSeriesCount = superSetExercises
+      .map((exercise) => exercise['series'].length)
+      .reduce((a, b) => a > b ? a : b);
 
-    return List.generate(maxSeriesCount, (seriesIndex) {
-      return Column(
-        children: [
-          Row(
-            children: [
-              buildSeriesIndexText(seriesIndex, theme, isDarkMode, colorScheme),
-              ...buildSuperSetSeriesColumns(superSetExercises, seriesIndex,
-                  isDarkMode, colorScheme, theme.textTheme),
-            ],
-          ),
-          if (seriesIndex < maxSeriesCount - 1)
-            const Divider(height: 16, thickness: 1),
-        ],
-      );
-    });
-  }
-
-  Widget buildSeriesIndexText(
-      int seriesIndex, ThemeData theme, bool isDarkMode, ColorScheme colorScheme) {
-    return Expanded(
-      child: Text(
-        '${seriesIndex + 1}',
-        style: theme.textTheme.bodyLarge?.copyWith(
-          color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+  return List.generate(maxSeriesCount, (seriesIndex) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            buildSeriesIndexText(seriesIndex, theme, isDarkMode, colorScheme, 1),
+            ...buildSuperSetSeriesColumns(superSetExercises, seriesIndex,
+                isDarkMode, colorScheme, theme.textTheme),
+          ],
         ),
-        textAlign: TextAlign.center,
-      ),
+        if (seriesIndex < maxSeriesCount - 1)
+          const Divider(height: 16, thickness: 1),
+      ],
     );
-  }
+  });
+}
 
+Widget buildSeriesIndexText(
+    int seriesIndex, ThemeData theme, bool isDarkMode, ColorScheme colorScheme, int flex) {
+  return Expanded(
+    flex: flex,
+    child: Text(
+      '${seriesIndex + 1}',
+      style: theme.textTheme.bodyLarge?.copyWith(
+        color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+      ),
+      textAlign: TextAlign.center,
+    ),
+  );
+}
   List<Widget> buildSuperSetSeriesColumns(
       List<Map<String, dynamic>> superSetExercises,
       int seriesIndex,
@@ -551,7 +553,6 @@ Widget buildHeaderText(String text, TextTheme textTheme, bool isDarkMode,
       ),
     );
   }
-
 List<Widget> buildSeriesContainers(List<Map<String, dynamic>> series,
     bool isDarkMode, ColorScheme colorScheme) {
   return series.asMap().entries.map((entry) {
@@ -564,15 +565,14 @@ List<Widget> buildSeriesContainers(List<Map<String, dynamic>> series,
       child: Column(
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               buildSeriesIndexText(
-                  seriesIndex, Theme.of(context), isDarkMode, colorScheme),
+                  seriesIndex, Theme.of(context), isDarkMode, colorScheme, 1),
               buildSeriesDataText(
-                  'reps', seriesData, Theme.of(context), isDarkMode, colorScheme),
+                  'reps', seriesData, Theme.of(context), isDarkMode, colorScheme, 2),
               buildSeriesDataText('weight', seriesData, Theme.of(context),
-                  isDarkMode, colorScheme),
-              buildSeriesDoneIcon(seriesData, colorScheme, isDarkMode),
+                  isDarkMode, colorScheme, 2),
+              buildSeriesDoneIcon(seriesData, colorScheme, isDarkMode, 1),
             ],
           ),
           if (seriesIndex < series.length - 1)
@@ -584,9 +584,9 @@ List<Widget> buildSeriesContainers(List<Map<String, dynamic>> series,
 }
 
 Widget buildSeriesDataText(String field, Map<String, dynamic> seriesData,
-    ThemeData theme, bool isDarkMode, ColorScheme colorScheme) {
+    ThemeData theme, bool isDarkMode, ColorScheme colorScheme, int flex) {
   return Expanded(
-    flex: 2,
+    flex: flex,
     child: Text(
       "${seriesData[field]}/${seriesData['${field}_done'] ?? ''}${field == 'reps' ? 'R' : ' Kg'}",
       style: theme.textTheme.bodyLarge?.copyWith(
@@ -597,10 +597,10 @@ Widget buildSeriesDataText(String field, Map<String, dynamic> seriesData,
   );
 }
 
-
 Widget buildSeriesDoneIcon(
-    Map<String, dynamic> seriesData, ColorScheme colorScheme, bool isDarkMode) {
+    Map<String, dynamic> seriesData, ColorScheme colorScheme, bool isDarkMode, int flex) {
   return Expanded(
+    flex: flex,
     child: Icon(
       seriesData['done'] == true ? Icons.check_circle : Icons.cancel,
       color: seriesData['done'] == true
@@ -611,7 +611,6 @@ Widget buildSeriesDoneIcon(
     ),
   );
 }
-
   int findFirstNotDoneSeriesIndex(List<Map<String, dynamic>> series) {
     return series.indexWhere((serie) => serie['done'] != true);
   }
