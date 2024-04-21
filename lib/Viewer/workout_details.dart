@@ -170,60 +170,60 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
     );
   }
 
-  Future<void> showEditSeriesDialog(String seriesId, Map<String, dynamic> series) async {
-    final repsController = TextEditingController(text: series['reps_done']?.toString() ?? '');
-    final weightController = TextEditingController(text: series['weight_done']?.toString() ?? '');
+Future<void> showEditSeriesDialog(String seriesId, Map<String, dynamic> series) async {
+  final repsController = TextEditingController(text: series['reps']?.toString() ?? '');
+  final weightController = TextEditingController(text: series['weight']?.toString() ?? '');
 
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Modifica Serie'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: repsController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Reps'),
-              ),
-              TextField(
-                controller: weightController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
-                  TextInputFormatter.withFunction((oldValue, newValue) {
-                    final text = newValue.text.replaceAll(',', '.');
-                    return newValue.copyWith(
-                      text: text,
-                      selection: TextSelection.collapsed(offset: text.length),
-                    );
-                  }),
-                ],
-                decoration: const InputDecoration(labelText: 'Peso (kg)'),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Annulla'),
+  await showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text('Modifica Serie'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: repsController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Reps'),
             ),
-            ElevatedButton(
-              onPressed: () async {
-                final repsDone = int.tryParse(repsController.text) ?? 0;
-                final weightDone =
-                    double.tryParse(weightController.text.replaceAll(',', '.')) ?? 0.0;
-                await updateSeries(seriesId, repsDone, weightDone);
-                Navigator.pop(context);
-              },
-              child: const Text('Salva'),
+            TextField(
+              controller: weightController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
+                TextInputFormatter.withFunction((oldValue, newValue) {
+                  final text = newValue.text.replaceAll(',', '.');
+                  return newValue.copyWith(
+                    text: text,
+                    selection: TextSelection.collapsed(offset: text.length),
+                  );
+                }),
+              ],
+              decoration: const InputDecoration(labelText: 'Peso (kg)'),
             ),
           ],
-        );
-      },
-    );
-  }
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annulla'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final repsDone = int.tryParse(repsController.text) ?? 0;
+              final weightDone =
+                  double.tryParse(weightController.text.replaceAll(',', '.')) ?? 0.0;
+              await updateSeries(seriesId, repsDone, weightDone);
+              Navigator.pop(context);
+            },
+            child: const Text('Salva'),
+          ),
+        ],
+      );
+    },
+  );
+}
 
   Future<void> updateSeries(String seriesId, int repsDone, double weightDone) async {
     final seriesRef = FirebaseFirestore.instance.collection('series').doc(seriesId);
