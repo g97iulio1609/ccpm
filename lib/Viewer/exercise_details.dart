@@ -427,55 +427,59 @@ Widget _buildRestTimeSelector(
   );
 }
 
- Widget _buildNumberPicker(
-   ThemeData theme,
-   int value,
-   int minValue,
-   int maxValue,
-   ValueChanged<int> onChanged,
-   bool isDarkMode,
-   ColorScheme colorScheme,
- ) {
-   return Container(
-     width: 90,
-     height: 130,
-     decoration: BoxDecoration(
-       color: isDarkMode ? colorScheme.surface : colorScheme.background,
-       borderRadius: BorderRadius.circular(12),
-       boxShadow: [
-         BoxShadow(
-           color: isDarkMode ? Colors.black.withOpacity(0.2) : Colors.grey.withOpacity(0.2),
-           blurRadius: 6,
-           offset: const Offset(0, 3),
-         ),
-       ],
-     ),
-     child: NumberPicker(
-       value: value,
-       minValue: minValue,
-       maxValue: maxValue,
-       onChanged: onChanged,
-       itemHeight: 45,
-       textStyle: theme.textTheme.titleLarge?.copyWith(
-         color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
-       ),
-       selectedTextStyle: theme.textTheme.titleLarge?.copyWith(
-         color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
-         fontWeight: FontWeight.bold,
-       ),
-       decoration: BoxDecoration(
-         border: Border(
-           top: BorderSide(
-             color: isDarkMode ? colorScheme.onSurface.withOpacity(0.2) : Colors.grey.withOpacity(0.2),
-           ),
-           bottom: BorderSide(
-             color: isDarkMode ? colorScheme.onSurface.withOpacity(0.2) : Colors.grey.withOpacity(0.2),
-           ),
-         ),
-       ),
-     ),
-   );
- }
+Widget _buildNumberPicker(
+  ThemeData theme,
+  int value,
+  int minValue,
+  int maxValue,
+  ValueChanged<int> onChanged,
+  bool isDarkMode,
+  ColorScheme colorScheme,
+) {
+  return Container(
+    width: 90,
+    height: 130,
+    decoration: BoxDecoration(
+      color: isDarkMode ? colorScheme.surface : colorScheme.background,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(
+        color: isDarkMode ? Colors.white : Colors.white,
+        width: 0.2,
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: isDarkMode ? Colors.black.withOpacity(0.2) : Colors.grey.withOpacity(0.2),
+          blurRadius: 6,
+          offset: const Offset(0, 3),
+        ),
+      ],
+    ),
+    child: NumberPicker(
+      value: value,
+      minValue: minValue,
+      maxValue: maxValue,
+      onChanged: onChanged,
+      itemHeight: 45,
+      textStyle: theme.textTheme.titleLarge?.copyWith(
+        color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+      ),
+      selectedTextStyle: theme.textTheme.titleLarge?.copyWith(
+        color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+        fontWeight: FontWeight.bold,
+      ),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(
+            color: isDarkMode ? colorScheme.onSurface.withOpacity(0.2) : Colors.grey.withOpacity(0.2),
+          ),
+          bottom: BorderSide(
+            color: isDarkMode ? colorScheme.onSurface.withOpacity(0.2) : Colors.grey.withOpacity(0.2),
+          ),
+        ),
+      ),
+    ),
+  );
+}
 
 Widget _buildNumberPickerWithLabel(
   ThemeData theme,
@@ -488,14 +492,16 @@ Widget _buildNumberPickerWithLabel(
   ColorScheme colorScheme,
 ) {
   return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisAlignment: MainAxisAlignment.center,
     children: [
       Text(
         label,
-        style: theme.textTheme.titleLarge?.copyWith(
-          color: isDarkMode ? colorScheme.onSurface : colorScheme.onPrimary,
-          fontWeight: FontWeight.bold,
+        style: theme.textTheme.titleMedium?.copyWith(
+          color: isDarkMode
+              ? colorScheme.onSurface.withOpacity(0.6)
+              : colorScheme.onBackground.withOpacity(0.6),
         ),
+        textAlign: TextAlign.center,
       ),
       const SizedBox(height: 8),
       _buildNumberPicker(
@@ -510,7 +516,6 @@ Widget _buildNumberPickerWithLabel(
     ],
   );
 }
-
  Widget _buildEmomSwitch(ThemeData theme, bool isDarkMode, ColorScheme colorScheme) {
    return Row(
      mainAxisAlignment: MainAxisAlignment.center,
