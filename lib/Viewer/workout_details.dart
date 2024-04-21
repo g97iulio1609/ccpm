@@ -585,10 +585,21 @@ List<Widget> buildSeriesContainers(List<Map<String, dynamic>> series,
 
 Widget buildSeriesDataText(String field, Map<String, dynamic> seriesData,
     ThemeData theme, bool isDarkMode, ColorScheme colorScheme, int flex) {
+  final value = seriesData[field];
+  final valueDone = seriesData['${field}_done'];
+  final unit = field == 'reps' ? 'R' : 'Kg';
+
+  String text;
+  if (valueDone == null || valueDone == 0) {
+    text = '$value$unit';
+  } else {
+    text = '$value/$valueDone$unit';
+  }
+
   return Expanded(
     flex: flex,
     child: Text(
-      "${seriesData[field]}/${seriesData['${field}_done'] ?? ''}${field == 'reps' ? 'R' : ' Kg'}",
+      text,
       style: theme.textTheme.bodyLarge?.copyWith(
         color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
       ),
