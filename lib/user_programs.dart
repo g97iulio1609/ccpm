@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
@@ -14,18 +13,23 @@ class UserProgramsScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final TextEditingController controller = useTextEditingController();
     final userRole = ref.watch(userRoleProvider);
 
     Future<void> addProgram() async {
-      final name = controller.text.trim();
-      if (name.isEmpty) return;
-      await FirebaseFirestore.instance.collection('programs').add({
-        'name': name,
-        'athleteId': userId ?? FirebaseAuth.instance.currentUser!.uid,
-        'hide': false,
-      });
-      controller.clear();
+      final programDetails = await showDialog<Map<String, dynamic>>(
+        context: context,
+        builder: (context) => AddProgramDialog(),
+      );
+
+      if (programDetails != null) {
+        await FirebaseFirestore.instance.collection('programs').add({
+          'name': programDetails['name'],
+          'description': programDetails['description'],
+          'mesocycleNumber': programDetails['mesocycleNumber'],
+          'athleteId': userId ?? FirebaseAuth.instance.currentUser!.uid,
+          'hide': false,
+        });
+      }
     }
 
     Future<void> deleteProgram(String id) async {
@@ -79,16 +83,14 @@ class UserProgramsScreen extends HookConsumerWidget {
           if (userRole == 'admin')
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: TextField(
-                controller: controller,
-                decoration: InputDecoration(
-                  labelText: 'Crea Programma Di Allenamento',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.add),
-                    onPressed: addProgram,
+              child: ElevatedButton.icon(
+                onPressed: addProgram,
+                icon: const Icon(Icons.add),
+                label: const Text('Crea Programma Di Allenamento'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
               ),
@@ -220,6 +222,98 @@ class UserProgramsScreen extends HookConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class AddProgramDialog extends StatefulWidget {
+  @override
+  _AddProgramDialogState createState() => _AddProgramDialogState();
+}
+
+class _AddProgramDialogState extends State<AddProgramDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  int _mesocycleNumber = 1;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Nuovo Programma'),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: _nameController,
+              decoration: const InputDecoration(
+                labelText: 'Nome',
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Inserisci un nome';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _descriptionController,
+              decoration: const InputDecoration(
+                labelText: 'Descrizione',
+              ),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<int>(
+              value: _mesocycleNumber,
+              decoration: const InputDecoration(
+                labelText: 'Numero Mesociclo',
+              ),
+              items: List.generate(12, (index) => index + 1)
+                  .map((number) => DropdownMenuItem(
+                        value: number,
+                        child: Text(number.toString()),
+                      ))
+                  .toList(),
+              onChanged: (value) {
+                setState(() {
+                  _mesocycleNumber = value!;
+                });
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text('Annulla'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            if (_formKey.currentState!.validate()) {
+              final programDetails = {
+                'name': _nameController.text.trim(),
+                'description': _descriptionController.text.trim(),
+                'mesocycleNumber': _mesocycleNumber,
+              };
+              Navigator.of(context).pop(programDetails);
+            }
+          },
+          child: const Text('Crea'),
+        ),
+      ],
     );
   }
 }
