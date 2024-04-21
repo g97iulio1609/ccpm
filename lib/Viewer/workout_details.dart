@@ -308,53 +308,53 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
   }
 
   Widget buildSuperSetStartButton(List<Map<String, dynamic>> superSetExercises,
-      bool isDarkMode, ColorScheme colorScheme) {
-    final allSeriesCompleted = superSetExercises.every((exercise) =>
-        exercise['series'].every((series) => series['done'] == true));
+    bool isDarkMode, ColorScheme colorScheme) {
+  final allSeriesCompleted = superSetExercises.every((exercise) =>
+      exercise['series'].every((series) => series['done'] == true));
 
-    if (allSeriesCompleted) {
-      return const SizedBox.shrink();
-    }
-
-    final firstNotDoneExerciseIndex = superSetExercises.indexWhere((exercise) =>
-        exercise['series'].any((series) => series['done'] != true));
-
-    return GestureDetector(
-      onTap: () {
-        final exercise = superSetExercises[firstNotDoneExerciseIndex];
-        final firstNotDoneSeriesIndex =
-            exercise['series'].indexWhere((series) => series['done'] != true);
-
-        context.go(
-          '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${exercise['id']}',
-          extra: {
-            'exerciseName': exercise['name'],
-            'exerciseVariant': exercise['variant'],
-            'seriesList': exercise['series'],
-            'startIndex': firstNotDoneSeriesIndex,
-            'superSetExercises': superSetExercises,
-          },
-        );
-      },
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: isDarkMode ? colorScheme.primary : colorScheme.secondary,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Text(
-          'START',
-          style: TextStyle(
-            color: isDarkMode ? colorScheme.onPrimary : colorScheme.onSecondary,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ),
-    );
+  if (allSeriesCompleted) {
+    return const SizedBox.shrink();
   }
+
+  final firstNotDoneExerciseIndex = superSetExercises.indexWhere((exercise) =>
+      exercise['series'].any((series) => series['done'] != true));
+
+  return GestureDetector(
+    onTap: () {
+      final exercise = superSetExercises[firstNotDoneExerciseIndex];
+      final firstNotDoneSeriesIndex =
+          exercise['series'].indexWhere((series) => series['done'] != true);
+
+      context.go(
+        '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${exercise['id']}',
+        extra: {
+          'exerciseName': exercise['name'],
+          'exerciseVariant': exercise['variant'],
+          'seriesList': exercise['series'],
+          'startIndex': firstNotDoneSeriesIndex,
+          'superSetExercises': superSetExercises,
+        },
+      );
+    },
+    child: Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+      decoration: BoxDecoration(
+        color: isDarkMode ? colorScheme.primary : colorScheme.secondary,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        'START',
+        style: TextStyle(
+          color: isDarkMode ? colorScheme.onPrimary : colorScheme.onSecondary,
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+        ),
+        textAlign: TextAlign.center,
+      ),
+    ),
+  );
+}
 
   Widget buildSeriesHeaderRow(
       bool isDarkMode, ColorScheme colorScheme, TextTheme textTheme) {
@@ -534,51 +534,51 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
     );
   }
 
-  Widget buildStartButton(
-      Map<String, dynamic> exercise,
-      int firstNotDoneSeriesIndex,
-      bool isContinueMode,
-      bool isDarkMode,
-      ColorScheme colorScheme) {
-    final series = exercise['series'];
-    final allSeriesCompleted = series.every((series) => series['done'] == true);
+Widget buildStartButton(
+    Map<String, dynamic> exercise,
+    int firstNotDoneSeriesIndex,
+    bool isContinueMode,
+    bool isDarkMode,
+    ColorScheme colorScheme) {
+  final series = exercise['series'];
+  final allSeriesCompleted = series.every((series) => series['done'] == true);
 
-    if (allSeriesCompleted) {
-      return const SizedBox.shrink();
-    }
-
-    return GestureDetector(
-      onTap: () {
-        context.go(
-          '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${exercise['id']}',
-          extra: {
-            'exerciseName': exercise['name'],
-            'exerciseVariant': exercise['variant'] ?? '',
-            'seriesList': exercise['series'],
-            'startIndex': firstNotDoneSeriesIndex,
-            'superSetExercises': [exercise],
-          },
-        );
-      },
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: isDarkMode ? colorScheme.primary : colorScheme.secondary,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Text(
-          isContinueMode ? 'CONTINUA' : 'START',
-          style: TextStyle(
-            color: isDarkMode ? colorScheme.onPrimary : colorScheme.onSecondary,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ),
-    );
+  if (allSeriesCompleted) {
+    return const SizedBox.shrink();
   }
+
+  return GestureDetector(
+    onTap: () {
+      context.go(
+        '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${exercise['id']}',
+        extra: {
+          'exerciseName': exercise['name'],
+          'exerciseVariant': exercise['variant'] ?? '',
+          'seriesList': exercise['series'],
+          'startIndex': firstNotDoneSeriesIndex,
+          'superSetExercises': [exercise],
+        },
+      );
+    },
+    child: Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+      decoration: BoxDecoration(
+        color: isDarkMode ? colorScheme.primary : colorScheme.secondary,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        isContinueMode ? 'CONTINUA' : 'START',
+        style: TextStyle(
+          color: isDarkMode ? colorScheme.onPrimary : colorScheme.onSecondary,
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+        ),
+        textAlign: TextAlign.center,
+      ),
+    ),
+  );
+}
 
   List<Widget> buildSeriesContainers(List<Map<String, dynamic>> series,
       bool isDarkMode, ColorScheme colorScheme) {
