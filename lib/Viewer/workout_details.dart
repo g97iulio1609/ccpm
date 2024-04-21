@@ -225,7 +225,7 @@ Future<void> showEditSeriesDialog(String seriesId, Map<String, dynamic> series) 
   );
 }
 
-Future<void> updateSeries(String seriesId, int repsDone, double weightDone) async {
+Future<void> updateSeries(String seriesId, int repsDone, dynamic weightDone) async {
   final seriesRef = FirebaseFirestore.instance.collection('series').doc(seriesId);
   final seriesDoc = await seriesRef.get();
   final seriesData = seriesDoc.data();
@@ -233,7 +233,7 @@ Future<void> updateSeries(String seriesId, int repsDone, double weightDone) asyn
   if (seriesData != null) {
     final reps = seriesData['reps'] ?? 0;
     final weight = seriesData['weight'] ?? 0.0;
-    final done = repsDone >= reps && weightDone >= weight;
+    final done = repsDone >= reps && (weightDone as double) >= weight;
 
     final batch = FirebaseFirestore.instance.batch();
     batch.update(seriesRef, {
