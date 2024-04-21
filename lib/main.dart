@@ -70,7 +70,7 @@ class MyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final ColorScheme lightColorScheme = ColorScheme.fromSeed(
       seedColor: const Color(0xFF2196F3),
-      primary: const Color(0xFF2196F3),
+      primary: const Color.fromARGB(255, 171, 198, 221),
       secondary: const Color(0xFFFF9800),
       tertiary: const Color(0xFF4CAF50),
       error: const Color(0xFFF44336),
