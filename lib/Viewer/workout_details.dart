@@ -225,25 +225,25 @@ Future<void> showEditSeriesDialog(String seriesId, Map<String, dynamic> series) 
   );
 }
 
-  Future<void> updateSeries(String seriesId, int repsDone, double weightDone) async {
-    final seriesRef = FirebaseFirestore.instance.collection('series').doc(seriesId);
-    final seriesDoc = await seriesRef.get();
-    final seriesData = seriesDoc.data();
+Future<void> updateSeries(String seriesId, int repsDone, double weightDone) async {
+  final seriesRef = FirebaseFirestore.instance.collection('series').doc(seriesId);
+  final seriesDoc = await seriesRef.get();
+  final seriesData = seriesDoc.data();
 
-    if (seriesData != null) {
-      final reps = seriesData['reps'] ?? 0;
-      final weight = seriesData['weight'] ?? 0.0;
-      final done = repsDone >= reps && weightDone >= weight;
+  if (seriesData != null) {
+    final reps = seriesData['reps'] ?? 0;
+    final weight = seriesData['weight'] ?? 0.0;
+    final done = repsDone >= reps && weightDone >= weight;
 
-      final batch = FirebaseFirestore.instance.batch();
-      batch.update(seriesRef, {
-        'reps_done': repsDone,
-        'weight_done': weightDone,
-        'done': done,
-      });
-      await batch.commit();
-    }
+    final batch = FirebaseFirestore.instance.batch();
+    batch.update(seriesRef, {
+      'reps_done': repsDone,
+      'weight_done': weightDone,
+      'done': done,
+    });
+    await batch.commit();
   }
+}
 
   Widget buildSingleExerciseCard(
       Map<String, dynamic> exercise, bool isDarkMode, ColorScheme colorScheme) {
@@ -466,35 +466,49 @@ Widget buildSeriesIndexText(
   );
 }
 
-  Widget buildSuperSetSeriesDoneColumn(
-      List<Map<String, dynamic>> superSetExercises,
-      int seriesIndex,
-      bool isDarkMode,
-      ColorScheme colorScheme) {
-    return Expanded(
-      child: Column(
-        children: superSetExercises.map((exercise) {
-          final series = exercise['series'].asMap().containsKey(seriesIndex)
-              ? exercise['series'][seriesIndex]
-              : null;
+Widget buildSuperSetSeriesDoneColumn(
+    List<Map<String, dynamic>> superSetExercises,
+    int seriesIndex,
+    bool isDarkMode,
+    ColorScheme colorScheme) {
+  return Expanded(
+    child: Column(
+      children: superSetExercises.map((exercise) {
+        final series = exercise['series'].asMap().containsKey(seriesIndex)
+            ? exercise['series'][seriesIndex]
+            : null;
 
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: series != null
-                ? Icon(
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: series != null
+              ? GestureDetector(
+                  onTap: () async {
+                    final seriesId = series['id'].toString();
+                    final done = series['done'] == true ? false : true;
+                    final reps = series['reps'] ?? 0;
+                    final weight = series['weight'] ?? 0.0;
+
+                    await updateSeries(
+                      seriesId,
+                      done ? reps : 0,
+                      done ? weight : 0.0,
+                    );
+                  },
+                  child: Icon(
                     series['done'] == true ? Icons.check_circle : Icons.cancel,
                     color: series['done'] == true
                         ? colorScheme.primary
                         : isDarkMode
                             ? colorScheme.onSurfaceVariant
                             : colorScheme.onPrimaryContainer,
-                  )
-                : const SizedBox(),
-          );
-        }).toList(),
-      ),
-    );
-  }
+                  ),
+                )
+              : const SizedBox(),
+        );
+      }).toList(),
+    ),
+  );
+}
 
   Widget buildExerciseName(
       Map<String, dynamic> exercise, bool isDarkMode, ColorScheme colorScheme) {
@@ -612,16 +626,31 @@ Widget buildSeriesDoneIcon(
     Map<String, dynamic> seriesData, ColorScheme colorScheme, bool isDarkMode, int flex) {
   return Expanded(
     flex: flex,
-    child: Icon(
-      seriesData['done'] == true ? Icons.check_circle : Icons.cancel,
-      color: seriesData['done'] == true
-          ? colorScheme.primary
-          : isDarkMode
-              ? colorScheme.onSurface
-              : colorScheme.onBackground,
+    child: GestureDetector(
+      onTap: () async {
+        final seriesId = seriesData['id'].toString();
+        final done = seriesData['done'] == true ? false : true;
+        final reps = seriesData['reps'] ?? 0;
+        final weight = seriesData['weight'] ?? 0.0;
+
+        await updateSeries(
+          seriesId,
+          done ? reps : 0,
+          done ? weight : 0.0,
+        );
+      },
+      child: Icon(
+        seriesData['done'] == true ? Icons.check_circle : Icons.cancel,
+        color: seriesData['done'] == true
+            ? colorScheme.primary
+            : isDarkMode
+                ? colorScheme.onSurface
+                : colorScheme.onBackground,
+      ),
     ),
   );
 }
+
   int findFirstNotDoneSeriesIndex(List<Map<String, dynamic>> series) {
     return series.indexWhere((serie) => serie['done'] != true);
   }
