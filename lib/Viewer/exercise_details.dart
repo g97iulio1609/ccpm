@@ -105,8 +105,10 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
 
   Future<void> _handleNextSeries() async {
     final restTimeInSeconds = _getRestTimeInSeconds();
-    final currentExercise = widget.superSetExercises[widget.superSetExerciseIndex];
-    final currentSeriesList = currentExercise['series'] as List<Map<String, dynamic>>;
+    final currentExercise =
+        widget.superSetExercises[widget.superSetExerciseIndex];
+    final currentSeriesList =
+        currentExercise['series'] as List<Map<String, dynamic>>;
 
     if (widget.superSetExercises.length == 1) {
       final result = await context.push<Map<String, dynamic>>(
@@ -121,11 +123,15 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
           currentSeriesIndex = result['startIndex'] as int;
         });
       }
-    } else if (widget.superSetExerciseIndex < widget.superSetExercises.length - 1) {
+    } else if (widget.superSetExerciseIndex <
+        widget.superSetExercises.length - 1) {
       final nextExerciseIndex = widget.superSetExerciseIndex + 1;
       final nextExercise = widget.superSetExercises[nextExerciseIndex];
-      final nextSeriesList = nextExercise['series'] as List<Map<String, dynamic>>;
-      final nextSeriesIndex = currentSeriesIndex < nextSeriesList.length ? currentSeriesIndex : 0;
+      final nextSeriesList =
+          nextExercise['series'] as List<Map<String, dynamic>>;
+      final nextSeriesIndex = currentSeriesIndex < nextSeriesList.length
+          ? currentSeriesIndex
+          : 0;
       final result = await context.push<Map<String, dynamic>>(
         '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${nextExercise['id']}?currentSeriesIndex=$nextSeriesIndex&totalSeries=${nextSeriesList.length}&restTime=$restTimeInSeconds&isEmomMode=$_isEmomMode&superSetExerciseIndex=$nextExerciseIndex',
         extra: {
@@ -147,7 +153,8 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
       });
 
       if (allExercisesCompleted) {
-        final workoutDetailsUrl = '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}';
+        final workoutDetailsUrl =
+            '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}';
         context.go(workoutDetailsUrl);
       } else {
         final nextSeriesIndex = currentSeriesIndex + 1;
@@ -157,7 +164,8 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
             extra: {
               'superSetExercises': widget.superSetExercises,
               'superSetExerciseIndex': 0,
-              'seriesList': widget.superSetExercises[0]['series'] as List<Map<String, dynamic>>,
+              'seriesList': widget.superSetExercises[0]['series']
+                  as List<Map<String, dynamic>>,
               'startIndex': nextSeriesIndex,
             },
           );
@@ -181,14 +189,16 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final currentExercise = widget.superSetExercises[widget.superSetExerciseIndex];
+    final isDarkMode = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
+    final currentExercise =
+        widget.superSetExercises[widget.superSetExerciseIndex];
     final currentSeriesList = currentExercise['series'];
     final currentSeries = currentSeriesIndex < currentSeriesList.length
         ? currentSeriesList[currentSeriesIndex]
         : null;
 
     return Scaffold(
-      backgroundColor: Colors.black,
       body: SafeArea(
         child: GestureDetector(
           onTap: () => _hideKeyboard(context),
@@ -198,41 +208,49 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _buildSeriesIndicator(theme),
-                  const SizedBox(height: 16),
+                  _buildSeriesIndicator(theme, isDarkMode, colorScheme),
+                  const SizedBox(height: 24),
                   if (currentSeries != null) ...[
-                    _buildInputField(
+                    _buildInputFields(
                       theme,
-                      'REPS',
-                      _repsControllers[currentExercise['id']]![currentSeries['id']]!,
-                      TextInputType.number,
-                      FilteringTextInputFormatter.digitsOnly,
+                      isDarkMode,
+                      colorScheme,
+                      currentExercise,
+                      currentSeries,
                     ),
                     const SizedBox(height: 24),
-                    _buildInputField(
-                      theme,
-                      'WEIGHT (kg)',
-                      _weightControllers[currentExercise['id']]![currentSeries['id']]!,
-                      const TextInputType.numberWithOptions(decimal: true),
-                      FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*')),
-                    ),
                   ],
                   const SizedBox(height: 32),
-                  if (widget.superSetExerciseIndex < widget.superSetExercises.length - 1)
+                  if (widget.superSetExerciseIndex <
+                      widget.superSetExercises.length - 1)
                     Text(
                       'Next: ${widget.superSetExercises[widget.superSetExerciseIndex + 1]['name']}',
                       style: theme.textTheme.titleLarge?.copyWith(
-                        color: Colors.white,
+                        color: isDarkMode
+                            ? colorScheme.onBackground
+                            : colorScheme.onSurface,
                         fontWeight: FontWeight.bold,
                       ),
                       textAlign: TextAlign.center,
                     ),
                   const SizedBox(height: 32),
-                  _buildRestTimeSelector(theme),
+                  _buildRestTimeSelector(
+                    theme,
+                    isDarkMode,
+                    colorScheme,
+                    colorScheme.primary,
+                  ),
                   const SizedBox(height: 32),
-                  _buildEmomSwitch(theme),
+                  _buildEmomSwitch(theme, isDarkMode, colorScheme),
                   const SizedBox(height: 40),
-                  _buildNextButton(theme),
+                  _buildNextButton(
+                    theme,
+                    isDarkMode,
+                    colorScheme,
+                    colorScheme.primary,
+                    currentExercise,
+                    currentSeries,
+                  ),
                   const SizedBox(height: 24),
                 ],
               ),
@@ -243,7 +261,8 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
     );
   }
 
-  Widget _buildSeriesIndicator(ThemeData theme) {
+  Widget _buildSeriesIndicator(
+      ThemeData theme, bool isDarkMode, ColorScheme colorScheme) {
     final exerciseNames = widget.superSetExercises
         .map((exercise) => '${exercise['name']} ${exercise['variant'] ?? ''}')
         .toList();
@@ -251,7 +270,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: isDarkMode ? colorScheme.surface : colorScheme.primary,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -261,7 +280,8 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
                 ? 'Super Set ${widget.superSetExerciseIndex + 1}'
                 : 'Set ${currentSeriesIndex + 1} / ${widget.seriesList.length}',
             style: theme.textTheme.headlineSmall?.copyWith(
-              color: Colors.white,
+              color:
+                  isDarkMode ? colorScheme.onSurface : colorScheme.onPrimary,
               fontWeight: FontWeight.bold,
             ),
             textAlign: TextAlign.center,
@@ -272,8 +292,16 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
             return Text(
               exerciseName,
               style: theme.textTheme.titleLarge?.copyWith(
-                color: isCurrentExercise ? Colors.white : Colors.white.withOpacity(0.6),
-                fontWeight: isCurrentExercise ? FontWeight.bold : FontWeight.normal,
+                color: isCurrentExercise
+                    ? (isDarkMode
+                        ? colorScheme.onSurface
+                        : colorScheme.onPrimary)
+                    : (isDarkMode
+                            ? colorScheme.onSurface
+                            : colorScheme.onPrimary)
+                        .withOpacity(0.6),
+                fontWeight:
+                    isCurrentExercise ? FontWeight.bold : FontWeight.normal,
               ),
               textAlign: TextAlign.center,
             );
@@ -283,204 +311,287 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
     );
   }
 
-  Widget _buildInputField(
+  Widget _buildInputFields(
     ThemeData theme,
-    String label,
-    TextEditingController controller,
-    TextInputType keyboardType,
-    TextInputFormatter inputFormatter,
+    bool isDarkMode,
+    ColorScheme colorScheme,
+    Map<String, dynamic> currentExercise,
+    Map<String, dynamic> currentSeries,
   ) {
-    return TextField(
-      controller: controller,
-      keyboardType: keyboardType,
-      inputFormatters: [inputFormatter],
-      textAlign: TextAlign.center,
-      style: theme.textTheme.titleLarge?.copyWith(
-        color: Colors.white,
-      ),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: theme.textTheme.titleMedium?.copyWith(
-          color: Colors.white.withOpacity(0.6),
-        ),
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.1),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRestTimeSelector(ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            'Rest Time:',
-            style: theme.textTheme.titleLarge?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(width: 20),
-          _buildNumberPicker(
-            theme,
-            _minutes,
-            0,
-            59,
-            (value) => setState(() => _minutes = value),
-            'min',
-          ),
-          const SizedBox(width: 12),
-          Text(
-            ':',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(width: 12),
-          _buildNumberPicker(
-            theme,
-            _seconds,
-            0,
-            59,
-            (value) => setState(() => _seconds = value),
-            'sec',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNumberPicker(
-    ThemeData theme,
-    int value,
-    int minValue,
-    int maxValue,
-    ValueChanged<int> onChanged,
-    String label,
-  ) {
-    return Container(
-      width: 90,
-      height: 130,
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.white.withOpacity(0.2),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: NumberPicker(
-        value: value,
-        minValue: minValue,
-        maxValue: maxValue,
-        onChanged: onChanged,
-        itemHeight:45,
-        textStyle: theme.textTheme.titleLarge?.copyWith(
-          color: Colors.white,
-        ),
-        selectedTextStyle: theme.textTheme.titleLarge?.copyWith(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-        ),
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(
-              color: Colors.white.withOpacity(0.2),
-            ),
-            bottom: BorderSide(
-              color: Colors.white.withOpacity(0.2),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmomSwitch(ThemeData theme) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(
-          'EMOM Mode',
-          style: theme.textTheme.titleLarge?.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+        Expanded(
+          child: _buildInputField(
+            theme,
+            'REPS',
+            _repsControllers[currentExercise['id']]![currentSeries['id']]!,
+            TextInputType.number,
+            FilteringTextInputFormatter.digitsOnly,
+            isDarkMode,
+            colorScheme,
           ),
         ),
-        const SizedBox(width: 20),
-        Switch(
-          value: _isEmomMode,
-          onChanged: (value) => setState(() => _isEmomMode = value),
-          activeColor: Colors.white,
-          activeTrackColor: Colors.white.withOpacity(0.5),
-          inactiveThumbColor: Colors.white.withOpacity(0.5),
-          inactiveTrackColor: Colors.white.withOpacity(0.2),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _buildInputField(
+            theme,
+            'WEIGHT (kg)',
+            _weightControllers[currentExercise['id']]![currentSeries['id']]!,
+            const TextInputType.numberWithOptions(decimal: true),
+            FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*')),
+            isDarkMode,
+            colorScheme,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildNextButton(ThemeData theme) {
-    final nextExerciseIndex = (widget.superSetExerciseIndex + 1) % widget.superSetExercises.length;
-    final nextExercise = widget.superSetExercises[nextExerciseIndex];
-    final nextSeriesList = nextExercise['series'];
-    final nextSeriesIndex = nextExerciseIndex == 0
-        ? (currentSeriesIndex + 1) % nextSeriesList.length
-        : currentSeriesIndex;
-    final nextSeriesWeight = nextSeriesList[nextSeriesIndex]['weight'].toDouble();
-
-    return ElevatedButton(
-      onPressed: () async {
-        final currentSeries = widget.superSetExercises[widget.superSetExerciseIndex]['series'][currentSeriesIndex];
-        await _updateSeriesData(
-          widget.superSetExercises[widget.superSetExerciseIndex]['id'],
-          currentSeries['id'],
-          int.tryParse(_repsControllers[widget.superSetExercises[widget.superSetExerciseIndex]['id']]![currentSeries['id']]!.text),
-          _weightControllers[widget.superSetExercises[widget.superSetExerciseIndex]['id']]![currentSeries['id']]!.text,
-        );
-        await _handleNextSeries();
-      },
-      style: ElevatedButton.styleFrom(
-    backgroundColor: Colors.grey[800], // Grigio scuro
-    foregroundColor: Colors.white,
-    padding: const EdgeInsets.symmetric(vertical: 20),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(16),
-    ),
-    elevation: 0,
-  ),
-  child: Text(
-    'NEXT (${nextSeriesWeight.toStringAsFixed(2)} kg)',
-    style: theme.textTheme.titleLarge?.copyWith(
-      fontWeight: FontWeight.bold,
-      fontSize: 18, // Aumenta le dimensioni del testo
+Widget _buildInputField(
+  ThemeData theme,
+  String label,
+  TextEditingController controller,
+  TextInputType keyboardType,
+  TextInputFormatter inputFormatter,
+  bool isDarkMode,
+  ColorScheme colorScheme, {
+  bool isEnabled = true,
+}) {
+  return Expanded(
+    child: TextField(
+      controller: controller,
+      enabled: isEnabled,
+      keyboardType: keyboardType,
+      inputFormatters: [inputFormatter],
+      textAlign: TextAlign.center,
+      style: theme.textTheme.titleLarge?.copyWith(
+        color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: theme.textTheme.titleMedium?.copyWith(
+          color: isDarkMode
+              ? colorScheme.onSurface.withOpacity(0.6)
+              : colorScheme.onBackground.withOpacity(0.6),
+        ),
+        filled: true,
+        fillColor: isDarkMode ? colorScheme.surface : colorScheme.background,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
-  @override
-  void dispose() {
-    for (final controllers in _repsControllers.values) {
-      controllers.values.forEach((controller) => controller.dispose());
-    }
-    for (final controllers in _weightControllers.values) {
-      controllers.values.forEach((controller) => controller.dispose());
-    }
-    super.dispose();
-  }
+Widget _buildRestTimeSelector(
+  ThemeData theme,
+  bool isDarkMode,
+  ColorScheme colorScheme,
+  Color primaryColor,
+) {
+  return Container(
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: isDarkMode ? colorScheme.surface : primaryColor,
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _buildNumberPickerWithLabel(
+          theme,
+          'Minuti',
+          _minutes,
+          0,
+          59,
+          (value) => setState(() => _minutes = value),
+          isDarkMode,
+          colorScheme,
+        ),
+        const SizedBox(width: 16),
+        _buildNumberPickerWithLabel(
+          theme,
+          'Secondi',
+          _seconds,
+          0,
+          59,
+          (value) => setState(() => _seconds = value),
+          isDarkMode,
+          colorScheme,
+        ),
+      ],
+    ),
+  );
+}
+
+ Widget _buildNumberPicker(
+   ThemeData theme,
+   int value,
+   int minValue,
+   int maxValue,
+   ValueChanged<int> onChanged,
+   bool isDarkMode,
+   ColorScheme colorScheme,
+ ) {
+   return Container(
+     width: 90,
+     height: 130,
+     decoration: BoxDecoration(
+       color: isDarkMode ? colorScheme.surface : colorScheme.background,
+       borderRadius: BorderRadius.circular(12),
+       boxShadow: [
+         BoxShadow(
+           color: isDarkMode ? Colors.black.withOpacity(0.2) : Colors.grey.withOpacity(0.2),
+           blurRadius: 6,
+           offset: const Offset(0, 3),
+         ),
+       ],
+     ),
+     child: NumberPicker(
+       value: value,
+       minValue: minValue,
+       maxValue: maxValue,
+       onChanged: onChanged,
+       itemHeight: 45,
+       textStyle: theme.textTheme.titleLarge?.copyWith(
+         color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+       ),
+       selectedTextStyle: theme.textTheme.titleLarge?.copyWith(
+         color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+         fontWeight: FontWeight.bold,
+       ),
+       decoration: BoxDecoration(
+         border: Border(
+           top: BorderSide(
+             color: isDarkMode ? colorScheme.onSurface.withOpacity(0.2) : Colors.grey.withOpacity(0.2),
+           ),
+           bottom: BorderSide(
+             color: isDarkMode ? colorScheme.onSurface.withOpacity(0.2) : Colors.grey.withOpacity(0.2),
+           ),
+         ),
+       ),
+     ),
+   );
+ }
+
+Widget _buildNumberPickerWithLabel(
+  ThemeData theme,
+  String label,
+  int value,
+  int minValue,
+  int maxValue,
+  ValueChanged<int> onChanged,
+  bool isDarkMode,
+  ColorScheme colorScheme,
+) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        label,
+        style: theme.textTheme.titleLarge?.copyWith(
+          color: isDarkMode ? colorScheme.onSurface : colorScheme.onPrimary,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      const SizedBox(height: 8),
+      _buildNumberPicker(
+        theme,
+        value,
+        minValue,
+        maxValue,
+        onChanged,
+        isDarkMode,
+        colorScheme,
+      ),
+    ],
+  );
+}
+
+ Widget _buildEmomSwitch(ThemeData theme, bool isDarkMode, ColorScheme colorScheme) {
+   return Row(
+     mainAxisAlignment: MainAxisAlignment.center,
+     children: [
+       Text(
+         'EMOM Mode',
+         style: theme.textTheme.titleLarge?.copyWith(
+           color: isDarkMode ? colorScheme.onBackground : colorScheme.onSurface,
+           fontWeight: FontWeight.bold,
+         ),
+       ),
+       const SizedBox(width: 20),
+       Switch(
+         value: _isEmomMode,
+         onChanged: (value) => setState(() => _isEmomMode = value),
+         activeColor: isDarkMode ? colorScheme.primary : colorScheme.secondary,
+         activeTrackColor: isDarkMode ? colorScheme.primary.withOpacity(0.5) : colorScheme.secondary.withOpacity(0.5),
+         inactiveThumbColor: isDarkMode ? colorScheme.onSurface.withOpacity(0.5) : Colors.grey.withOpacity(0.5),
+         inactiveTrackColor: isDarkMode ? colorScheme.onSurface.withOpacity(0.2) : Colors.grey.withOpacity(0.2),
+       ),
+     ],
+   );
+ }
+
+ Widget _buildNextButton(
+   ThemeData theme,
+   bool isDarkMode,
+   ColorScheme colorScheme,
+   Color primaryColor,
+   Map<String, dynamic> currentExercise,
+   Map<String, dynamic> currentSeries,
+ ) {
+   final nextExerciseIndex = (widget.superSetExerciseIndex + 1) % widget.superSetExercises.length;
+   final nextExercise = widget.superSetExercises[nextExerciseIndex];
+   final nextSeriesList = nextExercise['series'];
+   final nextSeriesIndex = nextExerciseIndex == 0
+       ? (currentSeriesIndex + 1) % nextSeriesList.length
+       : currentSeriesIndex;
+   final nextSeriesWeight = nextSeriesList[nextSeriesIndex]['weight'].toDouble();
+
+   return ElevatedButton(
+     onPressed: () async {
+       await _updateSeriesData(
+         currentExercise['id'],
+         currentSeries['id'],
+         int.tryParse(_repsControllers[currentExercise['id']]![currentSeries['id']]!.text),
+         _weightControllers[currentExercise['id']]![currentSeries['id']]!.text,
+       );
+       await _handleNextSeries();
+     },
+     style: ElevatedButton.styleFrom(
+       backgroundColor: primaryColor,
+       foregroundColor: isDarkMode ? colorScheme.onPrimary : colorScheme.onPrimaryContainer,
+       padding: const EdgeInsets.symmetric(vertical: 20),
+       shape: RoundedRectangleBorder(
+         borderRadius: BorderRadius.circular(16),
+       ),
+       elevation: 0,
+     ),
+     child: Text(
+       'NEXT (${nextSeriesWeight.toStringAsFixed(2)} kg)',
+       style: theme.textTheme.titleLarge?.copyWith(
+         fontWeight: FontWeight.bold,
+         fontSize: 18,
+       ),
+     ),
+   );
+ }
+
+ @override
+ void dispose() {
+   for (final controllers in _repsControllers.values) {
+     for (var controller in controllers.values) {
+       controller.dispose();
+     }
+   }
+   for (final controllers in _weightControllers.values) {
+     for (var controller in controllers.values) {
+       controller.dispose();
+     }
+   }
+   super.dispose();
+ }
 }
