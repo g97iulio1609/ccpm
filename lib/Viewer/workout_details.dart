@@ -50,8 +50,9 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
           .where('exerciseId', isEqualTo: exerciseId)
           .orderBy('order');
       final seriesSnapshot = await seriesQuery.get();
-      seriesDataList[exerciseId] =
-          seriesSnapshot.docs.map((doc) => doc.data()..['id'] = doc.id).toList();
+      seriesDataList[exerciseId] = seriesSnapshot.docs
+          .map((doc) => doc.data()..['id'] = doc.id)
+          .toList();
     }
 
     setState(() {
@@ -71,8 +72,9 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
           .orderBy('order');
       seriesQuery.snapshots().listen((querySnapshot) {
         setState(() {
-          exercise['series'] =
-              querySnapshot.docs.map((doc) => doc.data()..['id'] = doc.id).toList();
+          exercise['series'] = querySnapshot.docs
+              .map((doc) => doc.data()..['id'] = doc.id)
+              .toList();
         });
       });
     }
@@ -146,8 +148,9 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
             'Super Set',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color:
-                      isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+                  color: isDarkMode
+                      ? colorScheme.onSurface
+                      : colorScheme.onBackground,
                 ),
             textAlign: TextAlign.center,
           ),
@@ -155,95 +158,102 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
           ...superSetExercises
               .asMap()
               .entries
-              .map((entry) => buildSuperSetExerciseName(
-                  entry.key, entry.value, isDarkMode, colorScheme, Theme.of(context).textTheme))
+              .map((entry) => buildSuperSetExerciseName(entry.key, entry.value,
+                  isDarkMode, colorScheme, Theme.of(context).textTheme))
               .toList(),
           const SizedBox(height: 24),
           buildSuperSetStartButton(superSetExercises, isDarkMode, colorScheme),
           const SizedBox(height: 24),
           buildSeriesHeaderRow(
               isDarkMode, colorScheme, Theme.of(context).textTheme),
-          ...buildSeriesRows(superSetExercises, isDarkMode, colorScheme,
-              Theme.of(context)),
+          ...buildSeriesRows(
+              superSetExercises, isDarkMode, colorScheme, Theme.of(context)),
         ],
       ),
     );
   }
 
-Future<void> showEditSeriesDialog(String seriesId, Map<String, dynamic> series) async {
-  final repsController = TextEditingController(text: series['reps']?.toString() ?? '');
-  final weightController = TextEditingController(text: series['weight']?.toString() ?? '');
+  Future<void> showEditSeriesDialog(
+      String seriesId, Map<String, dynamic> series) async {
+    final repsController =
+        TextEditingController(text: series['reps']?.toString() ?? '');
+    final weightController =
+        TextEditingController(text: series['weight']?.toString() ?? '');
 
-  await showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text('Modifica Serie'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: repsController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Reps'),
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Modifica Serie'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: repsController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Reps'),
+              ),
+              TextField(
+                controller: weightController,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
+                  TextInputFormatter.withFunction((oldValue, newValue) {
+                    final text = newValue.text.replaceAll(',', '.');
+                    return newValue.copyWith(
+                      text: text,
+                      selection: TextSelection.collapsed(offset: text.length),
+                    );
+                  }),
+                ],
+                decoration: const InputDecoration(labelText: 'Peso (kg)'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Annulla'),
             ),
-            TextField(
-              controller: weightController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
-                TextInputFormatter.withFunction((oldValue, newValue) {
-                  final text = newValue.text.replaceAll(',', '.');
-                  return newValue.copyWith(
-                    text: text,
-                    selection: TextSelection.collapsed(offset: text.length),
-                  );
-                }),
-              ],
-              decoration: const InputDecoration(labelText: 'Peso (kg)'),
+            ElevatedButton(
+              onPressed: () async {
+                final repsDone = int.tryParse(repsController.text) ?? 0;
+                final weightDone = double.tryParse(
+                        weightController.text.replaceAll(',', '.')) ??
+                    0.0;
+                await updateSeries(seriesId, repsDone, weightDone);
+                Navigator.pop(context);
+              },
+              child: const Text('Salva'),
             ),
           ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Annulla'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final repsDone = int.tryParse(repsController.text) ?? 0;
-              final weightDone =
-                  double.tryParse(weightController.text.replaceAll(',', '.')) ?? 0.0;
-              await updateSeries(seriesId, repsDone, weightDone);
-              Navigator.pop(context);
-            },
-            child: const Text('Salva'),
-          ),
-        ],
-      );
-    },
-  );
-}
-
-Future<void> updateSeries(String seriesId, int repsDone, dynamic weightDone) async {
-  final seriesRef = FirebaseFirestore.instance.collection('series').doc(seriesId);
-  final seriesDoc = await seriesRef.get();
-  final seriesData = seriesDoc.data();
-
-  if (seriesData != null) {
-    final reps = seriesData['reps'] ?? 0;
-    final weight = seriesData['weight'] ?? 0.0;
-    final done = repsDone >= reps && (weightDone as double) >= weight;
-
-    final batch = FirebaseFirestore.instance.batch();
-    batch.update(seriesRef, {
-      'reps_done': repsDone,
-      'weight_done': weightDone,
-      'done': done,
-    });
-    await batch.commit();
+        );
+      },
+    );
   }
-}
+
+  Future<void> updateSeries(
+      String seriesId, int repsDone, double weightDone) async {
+    final seriesRef =
+        FirebaseFirestore.instance.collection('series').doc(seriesId);
+    final seriesDoc = await seriesRef.get();
+    final seriesData = seriesDoc.data();
+
+    if (seriesData != null) {
+      final reps = seriesData['reps'] ?? 0;
+      final weight = (seriesData['weight'] ?? 0.0).toDouble();
+      final done = repsDone >= reps && weightDone >= weight;
+
+      final batch = FirebaseFirestore.instance.batch();
+      batch.update(seriesRef, {
+        'reps_done': repsDone,
+        'weight_done': weightDone,
+        'done': done,
+      });
+      await batch.commit();
+    }
+  }
 
   Widget buildSingleExerciseCard(
       Map<String, dynamic> exercise, bool isDarkMode, ColorScheme colorScheme) {
@@ -297,7 +307,7 @@ Future<void> updateSeries(String seriesId, int repsDone, dynamic weightDone) asy
     );
   }
 
-   Widget buildSuperSetStartButton(List<Map<String, dynamic>> superSetExercises,
+  Widget buildSuperSetStartButton(List<Map<String, dynamic>> superSetExercises,
       bool isDarkMode, ColorScheme colorScheme) {
     final allSeriesCompleted = superSetExercises.every((exercise) =>
         exercise['series'].every((series) => series['done'] == true));
@@ -306,8 +316,8 @@ Future<void> updateSeries(String seriesId, int repsDone, dynamic weightDone) asy
       return const SizedBox.shrink();
     }
 
-    final firstNotDoneExerciseIndex = superSetExercises.indexWhere(
-        (exercise) => exercise['series'].any((series) => series['done'] != true));
+    final firstNotDoneExerciseIndex = superSetExercises.indexWhere((exercise) =>
+        exercise['series'].any((series) => series['done'] != true));
 
     return GestureDetector(
       onTap: () {
@@ -346,78 +356,78 @@ Future<void> updateSeries(String seriesId, int repsDone, dynamic weightDone) asy
     );
   }
 
-
-Widget buildSeriesHeaderRow(
-    bool isDarkMode, ColorScheme colorScheme, TextTheme textTheme) {
-  return Row(
-    children: [
-      buildHeaderText('Serie', textTheme, isDarkMode, colorScheme, 1),
-      buildHeaderText('Reps', textTheme, isDarkMode, colorScheme, 2),
-      buildHeaderText('Kg', textTheme, isDarkMode, colorScheme, 2),
-      buildHeaderText('Svolto', textTheme, isDarkMode, colorScheme, 1),
-    ],
-  );
-}
-
-Widget buildHeaderText(String text, TextTheme textTheme, bool isDarkMode,
-    ColorScheme colorScheme, int flex) {
-  return Expanded(
-    flex: flex,
-    child: Text(
-      text,
-      style: textTheme.titleMedium?.copyWith(
-        color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-      ),
-      textAlign: TextAlign.center,
-    ),
-  );
-}
-
-List<Widget> buildSeriesRows(
-    List<Map<String, dynamic>> superSetExercises,
-    bool isDarkMode,
-    ColorScheme colorScheme,
-    ThemeData theme) {
-  final maxSeriesCount = superSetExercises
-      .map((exercise) => exercise['series'].length)
-      .reduce((a, b) => a > b ? a : b);
-
-  return List.generate(maxSeriesCount, (seriesIndex) {
-    return Column(
+  Widget buildSeriesHeaderRow(
+      bool isDarkMode, ColorScheme colorScheme, TextTheme textTheme) {
+    return Row(
       children: [
-        Row(
-          children: [
-            buildSeriesIndexText(seriesIndex, theme, isDarkMode, colorScheme, 1),
-            ...buildSuperSetSeriesColumns(superSetExercises, seriesIndex,
-                isDarkMode, colorScheme, theme.textTheme),
-          ],
-        ),
-        if (seriesIndex < maxSeriesCount - 1)
-          const Divider(height: 16, thickness: 1),
+        buildHeaderText('Serie', textTheme, isDarkMode, colorScheme, 1),
+        buildHeaderText('Reps', textTheme, isDarkMode, colorScheme, 2),
+        buildHeaderText('Kg', textTheme, isDarkMode, colorScheme, 2),
+        buildHeaderText('Svolto', textTheme, isDarkMode, colorScheme, 1),
       ],
     );
-  });
-}
+  }
 
-Widget buildSeriesIndexText(
-    int seriesIndex, ThemeData theme, bool isDarkMode, ColorScheme colorScheme, int flex) {
-  return Expanded(
-    flex: flex,
-    child: Text(
-      '${seriesIndex + 1}',
-      style: theme.textTheme.bodyLarge?.copyWith(
-        color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+  Widget buildHeaderText(String text, TextTheme textTheme, bool isDarkMode,
+      ColorScheme colorScheme, int flex) {
+    return Expanded(
+      flex: flex,
+      child: Text(
+        text,
+        style: textTheme.titleMedium?.copyWith(
+          color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
+        textAlign: TextAlign.center,
       ),
-      textAlign: TextAlign.center,
-    ),
-  );
-}
+    );
+  }
+
+  List<Widget> buildSeriesRows(List<Map<String, dynamic>> superSetExercises,
+      bool isDarkMode, ColorScheme colorScheme, ThemeData theme) {
+    final maxSeriesCount = superSetExercises
+        .map((exercise) => exercise['series'].length)
+        .reduce((a, b) => a > b ? a : b);
+
+    return List.generate(maxSeriesCount, (seriesIndex) {
+      return Column(
+        children: [
+          Row(
+            children: [
+              buildSeriesIndexText(
+                  seriesIndex, theme, isDarkMode, colorScheme, 1),
+              ...buildSuperSetSeriesColumns(superSetExercises, seriesIndex,
+                  isDarkMode, colorScheme, theme.textTheme),
+            ],
+          ),
+          if (seriesIndex < maxSeriesCount - 1)
+            const Divider(height: 16, thickness: 1),
+        ],
+      );
+    });
+  }
+
+  Widget buildSeriesIndexText(int seriesIndex, ThemeData theme, bool isDarkMode,
+      ColorScheme colorScheme, int flex) {
+    return Expanded(
+      flex: flex,
+      child: Text(
+        '${seriesIndex + 1}',
+        style: theme.textTheme.bodyLarge?.copyWith(
+          color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+
   List<Widget> buildSuperSetSeriesColumns(
       List<Map<String, dynamic>> superSetExercises,
       int seriesIndex,
-      bool isDarkMode, ColorScheme colorScheme, TextTheme textTheme) {
+      bool isDarkMode,
+      ColorScheme colorScheme,
+      TextTheme textTheme) {
     return [
       buildSuperSetSeriesColumn(superSetExercises, seriesIndex, 'reps',
           isDarkMode, colorScheme, textTheme),
@@ -428,87 +438,88 @@ Widget buildSeriesIndexText(
     ];
   }
 
- Widget buildSuperSetSeriesColumn(
-    List<Map<String, dynamic>> superSetExercises,
-    int seriesIndex,
-    String field,
-    bool isDarkMode,
-    ColorScheme colorScheme,
-    TextTheme textTheme) {
-  return Expanded(
-    flex: 2,
-    child: Column(
-      children: superSetExercises.map((exercise) {
-        final series = exercise['series'].asMap().containsKey(seriesIndex)
-            ? exercise['series'][seriesIndex]
-            : null;
+  Widget buildSuperSetSeriesColumn(
+      List<Map<String, dynamic>> superSetExercises,
+      int seriesIndex,
+      String field,
+      bool isDarkMode,
+      ColorScheme colorScheme,
+      TextTheme textTheme) {
+    return Expanded(
+      flex: 2,
+      child: Column(
+        children: superSetExercises.map((exercise) {
+          final series = exercise['series'].asMap().containsKey(seriesIndex)
+              ? exercise['series'][seriesIndex]
+              : null;
 
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: series != null
-              ? GestureDetector(
-                  onTap: () =>
-                      showEditSeriesDialog(series['id'].toString(), series),
-                  child: Text(
-                    "${series[field]}/${series['${field}_done'] ?? ''}",
-                    style: textTheme.bodyLarge?.copyWith(
-                      color: isDarkMode
-                          ? colorScheme.onSurface
-                          : colorScheme.onBackground,
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: series != null
+                ? GestureDetector(
+                    onTap: () =>
+                        showEditSeriesDialog(series['id'].toString(), series),
+                    child: Text(
+                      "${series[field]}/${series['${field}_done'] ?? ''}",
+                      style: textTheme.bodyLarge?.copyWith(
+                        color: isDarkMode
+                            ? colorScheme.onSurface
+                            : colorScheme.onBackground,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                )
-              : const SizedBox(),
-        );
-      }).toList(),
-    ),
-  );
-}
+                  )
+                : const SizedBox(),
+          );
+        }).toList(),
+      ),
+    );
+  }
 
-Widget buildSuperSetSeriesDoneColumn(
-    List<Map<String, dynamic>> superSetExercises,
-    int seriesIndex,
-    bool isDarkMode,
-    ColorScheme colorScheme) {
-  return Expanded(
-    child: Column(
-      children: superSetExercises.map((exercise) {
-        final series = exercise['series'].asMap().containsKey(seriesIndex)
-            ? exercise['series'][seriesIndex]
-            : null;
+  Widget buildSuperSetSeriesDoneColumn(
+      List<Map<String, dynamic>> superSetExercises,
+      int seriesIndex,
+      bool isDarkMode,
+      ColorScheme colorScheme) {
+    return Expanded(
+      child: Column(
+        children: superSetExercises.map((exercise) {
+          final series = exercise['series'].asMap().containsKey(seriesIndex)
+              ? exercise['series'][seriesIndex]
+              : null;
 
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: series != null
-              ? GestureDetector(
-                  onTap: () async {
-                    final seriesId = series['id'].toString();
-                    final done = series['done'] == true ? false : true;
-                    final reps = series['reps'] ?? 0;
-                    final weight = series['weight'] ?? 0.0;
-
-                    await updateSeries(
-                      seriesId,
-                      done ? reps : 0,
-                      done ? weight : 0.0,
-                    );
-                  },
-                  child: Icon(
-                    series['done'] == true ? Icons.check_circle : Icons.cancel,
-                    color: series['done'] == true
-                        ? colorScheme.primary
-                        : isDarkMode
-                            ? colorScheme.onSurfaceVariant
-                            : colorScheme.onPrimaryContainer,
-                  ),
-                )
-              : const SizedBox(),
-        );
-      }).toList(),
-    ),
-  );
-}
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: series != null
+                ? GestureDetector(
+                    onTap: () async {
+                      final seriesId = series['id'].toString();
+                      final done = series['done'] == true ? false : true;
+                      final reps = series['reps'] ?? 0;
+                      final weight = series['weight'] ?? 0.0;
+                      await updateSeries(
+                        seriesId,
+                        done ? reps : 0,
+                        done ? weight.toDouble() : 0.0,
+                      );
+                    },
+                    child: Icon(
+                      series['done'] == true
+                          ? Icons.check_circle
+                          : Icons.cancel,
+                      color: series['done'] == true
+                          ? colorScheme.primary
+                          : isDarkMode
+                              ? colorScheme.onSurfaceVariant
+                              : colorScheme.onPrimaryContainer,
+                    ),
+                  )
+                : const SizedBox(),
+          );
+        }).toList(),
+      ),
+    );
+  }
 
   Widget buildExerciseName(
       Map<String, dynamic> exercise, bool isDarkMode, ColorScheme colorScheme) {
@@ -516,7 +527,8 @@ Widget buildSuperSetSeriesDoneColumn(
       "${exercise['name']} ${exercise['variant'] ?? ''}",
       style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+            color:
+                isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
           ),
       textAlign: TextAlign.center,
     );
@@ -567,89 +579,90 @@ Widget buildSuperSetSeriesDoneColumn(
       ),
     );
   }
-List<Widget> buildSeriesContainers(List<Map<String, dynamic>> series,
-    bool isDarkMode, ColorScheme colorScheme) {
-  return series.asMap().entries.map((entry) {
-    final seriesIndex = entry.key;
-    final seriesData = entry.value;
 
-    return GestureDetector(
-      onTap: () =>
-          showEditSeriesDialog(seriesData['id'].toString(), seriesData),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              buildSeriesIndexText(
-                  seriesIndex, Theme.of(context), isDarkMode, colorScheme, 1),
-              buildSeriesDataText(
-                  'reps', seriesData, Theme.of(context), isDarkMode, colorScheme, 2),
-              buildSeriesDataText('weight', seriesData, Theme.of(context),
-                  isDarkMode, colorScheme, 2),
-              buildSeriesDoneIcon(seriesData, colorScheme, isDarkMode, 1),
-            ],
-          ),
-          if (seriesIndex < series.length - 1)
-            const Divider(height: 16, thickness: 1),
-        ],
-      ),
-    );
-  }).toList();
-}
+  List<Widget> buildSeriesContainers(List<Map<String, dynamic>> series,
+      bool isDarkMode, ColorScheme colorScheme) {
+    return series.asMap().entries.map((entry) {
+      final seriesIndex = entry.key;
+      final seriesData = entry.value;
 
-Widget buildSeriesDataText(String field, Map<String, dynamic> seriesData,
-    ThemeData theme, bool isDarkMode, ColorScheme colorScheme, int flex) {
-  final value = seriesData[field];
-  final valueDone = seriesData['${field}_done'];
-  final unit = field == 'reps' ? 'R' : 'Kg';
-
-  String text;
-  if (valueDone == null || valueDone == 0) {
-    text = '$value$unit';
-  } else {
-    text = '$value/$valueDone$unit';
+      return GestureDetector(
+        onTap: () =>
+            showEditSeriesDialog(seriesData['id'].toString(), seriesData),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                buildSeriesIndexText(
+                    seriesIndex, Theme.of(context), isDarkMode, colorScheme, 1),
+                buildSeriesDataText('reps', seriesData, Theme.of(context),
+                    isDarkMode, colorScheme, 2),
+                buildSeriesDataText('weight', seriesData, Theme.of(context),
+                    isDarkMode, colorScheme, 2),
+                buildSeriesDoneIcon(seriesData, colorScheme, isDarkMode, 1),
+              ],
+            ),
+            if (seriesIndex < series.length - 1)
+              const Divider(height: 16, thickness: 1),
+          ],
+        ),
+      );
+    }).toList();
   }
 
-  return Expanded(
-    flex: flex,
-    child: Text(
-      text,
-      style: theme.textTheme.bodyLarge?.copyWith(
-        color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
-      ),
-      textAlign: TextAlign.center,
-    ),
-  );
-}
+  Widget buildSeriesDataText(String field, Map<String, dynamic> seriesData,
+      ThemeData theme, bool isDarkMode, ColorScheme colorScheme, int flex) {
+    final value = seriesData[field];
+    final valueDone = seriesData['${field}_done'];
+    final unit = field == 'reps' ? 'R' : 'Kg';
 
-Widget buildSeriesDoneIcon(
-    Map<String, dynamic> seriesData, ColorScheme colorScheme, bool isDarkMode, int flex) {
-  return Expanded(
-    flex: flex,
-    child: GestureDetector(
-      onTap: () async {
-        final seriesId = seriesData['id'].toString();
-        final done = seriesData['done'] == true ? false : true;
-        final reps = seriesData['reps'] ?? 0;
-        final weight = seriesData['weight'] ?? 0.0;
+    String text;
+    if (valueDone == null || valueDone == 0) {
+      text = '$value$unit';
+    } else {
+      text = '$value/$valueDone$unit';
+    }
 
-        await updateSeries(
-          seriesId,
-          done ? reps : 0,
-          done ? weight : 0.0,
-        );
-      },
-      child: Icon(
-        seriesData['done'] == true ? Icons.check_circle : Icons.cancel,
-        color: seriesData['done'] == true
-            ? colorScheme.primary
-            : isDarkMode
-                ? colorScheme.onSurface
-                : colorScheme.onBackground,
+    return Expanded(
+      flex: flex,
+      child: Text(
+        text,
+        style: theme.textTheme.bodyLarge?.copyWith(
+          color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+        ),
+        textAlign: TextAlign.center,
       ),
-    ),
-  );
-}
+    );
+  }
+
+  Widget buildSeriesDoneIcon(Map<String, dynamic> seriesData,
+      ColorScheme colorScheme, bool isDarkMode, int flex) {
+    return Expanded(
+      flex: flex,
+      child: GestureDetector(
+        onTap: () async {
+          final seriesId = seriesData['id'].toString();
+          final done = seriesData['done'] == true ? false : true;
+          final reps = seriesData['reps'] ?? 0;
+          final weight = seriesData['weight'] ?? 0.0;
+
+          await updateSeries(
+            seriesId,
+            done ? reps : 0,
+            done ? weight.toDouble() : 0.0,
+          );
+        },
+        child: Icon(
+          seriesData['done'] == true ? Icons.check_circle : Icons.cancel,
+          color: seriesData['done'] == true
+              ? colorScheme.primary
+              : isDarkMode
+                  ? colorScheme.onSurface
+                  : colorScheme.onBackground,
+        ),
+      ),
+    );
+  }
 
   int findFirstNotDoneSeriesIndex(List<Map<String, dynamic>> series) {
     return series.indexWhere((serie) => serie['done'] != true);
