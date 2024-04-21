@@ -18,7 +18,7 @@ class UserProgramsScreen extends HookConsumerWidget {
     Future<void> addProgram() async {
       final programDetails = await showDialog<Map<String, dynamic>>(
         context: context,
-        builder: (context) => AddProgramDialog(),
+        builder: (context) => AddProgramDialog(userId: userId),
       );
 
       if (programDetails != null) {
@@ -64,18 +64,18 @@ class UserProgramsScreen extends HookConsumerWidget {
         'hide': !currentVisibility,
       });
     }
-
-    Stream<QuerySnapshot> getProgramsStream() {
-      final query = FirebaseFirestore.instance
-          .collection('programs')
-          .where('athleteId', isEqualTo: userId ?? FirebaseAuth.instance.currentUser!.uid);
-      
-      if (userRole != 'admin') {
-        query.where('hide', isEqualTo: false);
-      }
-      
-      return query.snapshots();
-    }
+    
+Stream<QuerySnapshot> getProgramsStream() {
+  final query = FirebaseFirestore.instance
+      .collection('programs')
+      .where('athleteId', isEqualTo: userId ?? FirebaseAuth.instance.currentUser!.uid);
+  
+  if (userRole != 'admin') {
+    return query.where('hide', isEqualTo: false).snapshots();
+  }
+  
+  return query.snapshots();
+}
 
     return Scaffold(
       body: Column(
@@ -83,15 +83,24 @@ class UserProgramsScreen extends HookConsumerWidget {
           if (userRole == 'admin')
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: ElevatedButton.icon(
+              child: ElevatedButton(
                 onPressed: addProgram,
-                icon: const Icon(Icons.add),
-                label: const Text('Crea Programma Di Allenamento'),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  textStyle: Theme.of(context).textTheme.titleMedium,
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.add),
+                    SizedBox(width: 8),
+                    Text('Crea Programma Di Allenamento'),
+                  ],
                 ),
               ),
             ),
@@ -227,6 +236,10 @@ class UserProgramsScreen extends HookConsumerWidget {
 }
 
 class AddProgramDialog extends StatefulWidget {
+  final String? userId;
+
+  const AddProgramDialog({Key? key, this.userId}) : super(key: key);
+
   @override
   _AddProgramDialogState createState() => _AddProgramDialogState();
 }
@@ -307,6 +320,7 @@ class _AddProgramDialogState extends State<AddProgramDialog> {
                 'name': _nameController.text.trim(),
                 'description': _descriptionController.text.trim(),
                 'mesocycleNumber': _mesocycleNumber,
+                'athleteId': widget.userId,
               };
               Navigator.of(context).pop(programDetails);
             }
