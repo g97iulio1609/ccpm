@@ -151,40 +151,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               title: Text(_getTitleForRoute(context)),
               backgroundColor: Colors.transparent,
               foregroundColor: Theme.of(context).colorScheme.onBackground,
-              leading: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (isBackButtonVisible)
-                    Flexible(
-                      child: IconButton(
-                        icon: const Icon(Icons.arrow_back),
-                        onPressed: () {
-                          final currentPath = GoRouterState.of(context).uri.toString();
-                          final trainingProgramWeekPattern = RegExp(r'/programs_screen/user_programs/\w+/training_program/\w+/week/\d+$');
-                          final trainingProgramPattern = RegExp(r'/programs_screen/user_programs/\w+/training_program/\w+$');
+              leading: isBackButtonVisible // Rimuovi la condizione !isLargeScreen
+                  ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: IconButton(
+                            icon: const Icon(Icons.arrow_back),
+                            onPressed: () {
+                              final currentPath = GoRouterState.of(context).uri.toString();
+                              final trainingProgramWeekPattern = RegExp(r'/programs_screen/user_programs/\w+/training_program/\w+/week/\d+$');
+                              final trainingProgramPattern = RegExp(r'/programs_screen/user_programs/\w+/training_program/\w+$');
 
-                          if (trainingProgramWeekPattern.hasMatch(currentPath)) {
-                            final programId = currentPath.split('/')[5];
-                            final userId = currentPath.split('/')[3];
-                            context.go('/programs_screen/user_programs/$userId/training_program/$programId');
-                          } else if (trainingProgramPattern.hasMatch(currentPath)) {
-                            final userId = currentPath.split('/')[3];
-                            context.go('/programs_screen/user_programs/$userId');
-                          } else {
-                            context.pop();
-                          }
-                        },
-                      ),
-                    ),
-                  if (!isLargeScreen)
-                    Flexible(
-                      child: IconButton(
-                        icon: const Icon(Icons.menu),
-                        onPressed: () => _openDrawer(),
-                      ),
-                    ),
-                ],
-              ),
+                              if (trainingProgramWeekPattern.hasMatch(currentPath)) {
+                                final programId = currentPath.split('/')[5];
+                                final userId = currentPath.split('/')[3];
+                                context.go('/programs_screen/user_programs/$userId/training_program/$programId');
+                              } else if (trainingProgramPattern.hasMatch(currentPath)) {
+                                final userId = currentPath.split('/')[3];
+                                context.go('/programs_screen/user_programs/$userId');
+                              } else {
+                                context.pop();
+                              }
+                            },
+                          ),
+                        ),
+                        if (!isLargeScreen)
+                          Flexible(
+                            child: IconButton(
+                              icon: const Icon(Icons.menu),
+                              onPressed: () => _openDrawer(),
+                            ),
+                          ),
+                      ],
+                    )
+                  : null,
               actions: [
                 if (userRole == 'admin' && GoRouterState.of(context).uri.toString() == '/users_dashboard')
                   IconButton(
