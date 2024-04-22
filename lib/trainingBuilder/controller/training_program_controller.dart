@@ -329,8 +329,16 @@ Future<void> duplicateProgram(
     String programId, String newProgramName, BuildContext context) async {
   try {
     // Fetch the existing program
-    TrainingProgram existingProgram =
+    TrainingProgram? existingProgram =
         await _repository.fetchTrainingProgram(programId);
+
+    // Check if the existing program was found
+    if (existingProgram == null) {
+      _showErrorSnackBar(context, 'Programma esistente non trovato');
+      return;
+    }
+
+    debugPrint('Existing Program: ${existingProgram.toMap()}');
 
     // Create a new program with the new name and copy the existing program data
     TrainingProgram newProgram = existingProgram.copyWith(
@@ -338,17 +346,23 @@ Future<void> duplicateProgram(
       name: newProgramName,
     );
 
+    debugPrint('New Program (Before ID Generation): ${newProgram.toMap()}');
+
     // Generate new IDs for weeks, workouts, exercises, series, and supersets
     newProgram.weeks = newProgram.weeks.map((week) {
+      debugPrint('Week: ${week.toMap()}');
       return week.copyWith(
         id: generateRandomId(16).toString(),
         workouts: week.workouts.map((workout) {
+          debugPrint('Workout: ${workout.toMap()}');
           return workout.copyWith(
             id: generateRandomId(16).toString(),
             exercises: workout.exercises.map((exercise) {
+              debugPrint('Exercise: ${exercise.toMap()}');
               return exercise.copyWith(
                 id: generateRandomId(16).toString(),
                 series: exercise.series.map((series) {
+                  debugPrint('Series: ${series.toMap()}');
                   return series.copyWith(
                     serieId: generateRandomId(16).toString(),
                     reps_done: 0,
@@ -359,6 +373,7 @@ Future<void> duplicateProgram(
               );
             }).toList(),
             superSets: workout.superSets.map((superSet) {
+              debugPrint('SuperSet: ${superSet.toMap()}');
               return SuperSet(
                 id: generateRandomId(16).toString(),
                 name: superSet.name,
@@ -370,12 +385,15 @@ Future<void> duplicateProgram(
       );
     }).toList();
 
+    debugPrint('New Program (After ID Generation): ${newProgram.toMap()}');
+
     // Save the new program
     await _repository.addOrUpdateTrainingProgram(newProgram);
 
     // Show a success message
     _showSuccessSnackBar(context, 'Programma duplicato con successo');
   } catch (error) {
+    debugPrint('Error: $error');
     _showErrorSnackBar(
         context, 'Errore durante la duplicazione del programma: $error');
   }
