@@ -157,6 +157,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       children: [
                         Flexible(
                           child: IconButton(
+                                          iconSize: 24, // Aumenta la dimensione dell'icona
+
                             icon: const Icon(Icons.arrow_back),
                             onPressed: () {
                               final currentPath = GoRouterState.of(context).uri.toString();
@@ -179,6 +181,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         if (!isLargeScreen)
                           Flexible(
                             child: IconButton(
+                                            iconSize: 24, // Aumenta la dimensione dell'icona
+
                               icon: const Icon(Icons.menu),
                               onPressed: () => _openDrawer(),
                             ),
