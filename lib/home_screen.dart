@@ -17,6 +17,8 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   @override
   void initState() {
     super.initState();
@@ -37,8 +39,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  String? _getRouteForMenuItem(
-      String menuItem, String userRole, String? userId) {
+  String? _getRouteForMenuItem(String menuItem, String userRole, String? userId) {
     switch (menuItem) {
       case 'Allenamenti':
         return userRole == 'admin'
@@ -97,32 +98,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         break;
     }
 
-    final pattern1 = RegExp(
-        r'/programs_screen/user_programs/\w+/training_viewer/\w+/week_details/\w+$');
+    final pattern1 = RegExp(r'/programs_screen/user_programs/\w+/training_viewer/\w+/week_details/\w+$');
     if (pattern1.hasMatch(currentPath)) {
       return 'Dettagli Settimana';
     }
 
-    final pattern2 = RegExp(
-        r'/programs_screen/user_programs/\w+/training_viewer/\w+/week_details/\w+/workout_details/\w+$');
+    final pattern2 = RegExp(r'/programs_screen/user_programs/\w+/training_viewer/\w+/week_details/\w+/workout_details/\w+$');
     if (pattern2.hasMatch(currentPath)) {
       return 'Dettagli Allenamento';
     }
 
-    final pattern3 = RegExp(
-        r'/programs_screen/user_programs/\w+/training_viewer/\w+/week_details/\w+/workout_details/\w+/exercise_details/\w+$');
+    final pattern3 = RegExp(r'/programs_screen/user_programs/\w+/training_viewer/\w+/week_details/\w+/workout_details/\w+/exercise_details/\w+$');
     if (pattern3.hasMatch(currentPath)) {
       return 'Dettagli Esercizio';
     }
 
-    final pattern4 = RegExp(
-        r'/programs_screen/user_programs/\w+/training_viewer/\w+/week_details/\w+/workout_details/\w+/exercise_details/\w+/timer$');
+    final pattern4 = RegExp(r'/programs_screen/user_programs/\w+/training_viewer/\w+/week_details/\w+/workout_details/\w+/exercise_details/\w+/timer$');
     if (pattern4.hasMatch(currentPath)) {
       return 'Timer';
     }
 
-    final weekPattern = RegExp(
-        r'/programs_screen/user_programs/\w+/training_program/\w+/week/\d+$');
+    final weekPattern = RegExp(r'/programs_screen/user_programs/\w+/training_program/\w+/week/\d+$');
     if (weekPattern.hasMatch(currentPath)) {
       final weekIndex = int.parse(currentPath.split('/').last);
       return 'Settimana ${weekIndex + 1}';
@@ -149,41 +145,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final isBackButtonVisible = currentRoute.split('/').length > 2;
 
     return Scaffold(
+      key: _scaffoldKey,
       appBar: user != null
           ? AppBar(
               title: Text(_getTitleForRoute(context)),
               backgroundColor: Colors.transparent,
               foregroundColor: Theme.of(context).colorScheme.onBackground,
-              leading: isBackButtonVisible
-                  ? IconButton(
-                      icon: const Icon(Icons.arrow_back),
-                      onPressed: () {
-                        final currentPath =
-                            GoRouterState.of(context).uri.toString();
-                        final trainingProgramWeekPattern = RegExp(
-                            r'/programs_screen/user_programs/\w+/training_program/\w+/week/\d+$');
-                        final trainingProgramPattern = RegExp(
-                            r'/programs_screen/user_programs/\w+/training_program/\w+$');
+              leading: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (isBackButtonVisible)
+                    Flexible(
+                      child: IconButton(
+                        icon: const Icon(Icons.arrow_back),
+                        onPressed: () {
+                          final currentPath = GoRouterState.of(context).uri.toString();
+                          final trainingProgramWeekPattern = RegExp(r'/programs_screen/user_programs/\w+/training_program/\w+/week/\d+$');
+                          final trainingProgramPattern = RegExp(r'/programs_screen/user_programs/\w+/training_program/\w+$');
 
-                        if (trainingProgramWeekPattern.hasMatch(currentPath)) {
-                          final programId = currentPath.split('/')[5];
-                          final userId = currentPath.split('/')[3];
-                          context.go(
-                              '/programs_screen/user_programs/$userId/training_program/$programId');
-                        } else if (trainingProgramPattern
-                            .hasMatch(currentPath)) {
-                          final userId = currentPath.split('/')[3];
-                          context.go('/programs_screen/user_programs/$userId');
-                        } else {
-                          context.pop();
-                        }
-                      },
-                    )
-                  : null,
+                          if (trainingProgramWeekPattern.hasMatch(currentPath)) {
+                            final programId = currentPath.split('/')[5];
+                            final userId = currentPath.split('/')[3];
+                            context.go('/programs_screen/user_programs/$userId/training_program/$programId');
+                          } else if (trainingProgramPattern.hasMatch(currentPath)) {
+                            final userId = currentPath.split('/')[3];
+                            context.go('/programs_screen/user_programs/$userId');
+                          } else {
+                            context.pop();
+                          }
+                        },
+                      ),
+                    ),
+                  if (!isLargeScreen)
+                    Flexible(
+                      child: IconButton(
+                        icon: const Icon(Icons.menu),
+                        onPressed: () => _openDrawer(),
+                      ),
+                    ),
+                ],
+              ),
               actions: [
-                if (userRole == 'admin' &&
-                    GoRouterState.of(context).uri.toString() ==
-                        '/users_dashboard')
+                if (userRole == 'admin' && GoRouterState.of(context).uri.toString() == '/users_dashboard')
                   IconButton(
                     onPressed: () => _showAddUserDialog(context),
                     icon: const Icon(Icons.person_add),
@@ -209,8 +212,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: _buildDrawer(isLargeScreen, context, userRole, controller),
             ),
           Expanded(
-            child: widget.child ??
-                const SizedBox(), // Aggiungi un widget non null se widget.child è null
+            child: widget.child ?? const SizedBox(),
           ),
         ],
       ),
@@ -466,5 +468,9 @@ Widget _buildDrawer(bool isLargeScreen, BuildContext context, String userRole, T
         );
       },
     );
+  }
+
+  void _openDrawer() {
+    _scaffoldKey.currentState?.openDrawer();
   }
 }
