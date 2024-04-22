@@ -1,4 +1,3 @@
-// buttons.dart
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/scheduler.dart';
 
@@ -96,66 +95,15 @@ class _SubmitButtonState extends ConsumerState<SubmitButton> {
   }
 }
 
-class GoogleSignInButton extends ConsumerStatefulWidget {
-  const GoogleSignInButton({super.key, required this.authService});
-
-  final AuthService authService;
+class GoogleSignInButtonWrapper extends ConsumerWidget {
+  const GoogleSignInButtonWrapper({super.key});
 
   @override
-  _GoogleSignInButtonState createState() => _GoogleSignInButtonState();
-}
-
-class _GoogleSignInButtonState extends ConsumerState<GoogleSignInButton> {
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authService = ref.watch(authServiceProvider);
     final userRole = ref.watch(userRoleProvider);
 
-    return ElevatedButton(
-      onPressed: () => _signInWithGoogle(context, userRole),
-      style: ElevatedButton.styleFrom(
-        foregroundColor: Colors.black,
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-      ),
-      child: const Text('Sign in with Google'),
-    );
-  }
-
-  Future<void> _signInWithGoogle(BuildContext context, String userRole) async {
-    try {
-      final userCredential = await widget.authService.signInWithGoogle();
-      if (userCredential != null) {
-        final userId = userCredential.user?.uid;
-        if (userId != null) {
-          if (mounted) {
-            _showSnackBar(context, 'Google Sign-In successful', Colors.green);
-            SchedulerBinding.instance.addPostFrameCallback((_) {
-              if (userRole == 'admin') {
-                context.go('/programs_screen');
-              } else {
-                context.go('/programs_screen/user_programs/$userId');
-              }
-            });
-          }
-        } else {
-          if (mounted) {
-            _showSnackBar(context, 'Failed to retrieve user ID', Colors.red);
-          }
-        }
-      }
-    } catch (error) {
-      if (mounted) {
-        _showSnackBar(context, 'Failed to sign in with Google: $error', Colors.red);
-      }
-    }
-  }
-
-  void _showSnackBar(BuildContext context, String message, Color color) {
-    ScaffoldMessenger.of(context).removeCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: color),
-    );
+    return authService.renderGoogleSignInButton(context, userRole);
   }
 }
 

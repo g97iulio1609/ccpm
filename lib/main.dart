@@ -70,7 +70,7 @@ class MyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final ColorScheme lightColorScheme = ColorScheme.fromSeed(
       seedColor: const Color(0xFF2196F3),
-      primary: const Color(0xFF2196F3),
+      primary: const Color.fromARGB(255, 171, 198, 221),
       secondary: const Color(0xFFFF9800),
       tertiary: const Color(0xFF4CAF50),
       error: const Color(0xFFF44336),
@@ -326,11 +326,11 @@ class AuthWrapper extends ConsumerWidget {
         if (snapshot.connectionState == ConnectionState.active) {
           final User? user = snapshot.data;
           if (user == null) {
-            return AuthScreen();
+            return const AuthScreen();
           } else {
+            final userRole = ref.read(userRoleProvider);
             WidgetsBinding.instance.addPostFrameCallback((_) async {
               await ref.read(usersServiceProvider).fetchUserRole();
-              final userRole = ref.read(userRoleProvider);
               if (context.mounted) {
                 if (userRole == 'admin') {
                   context.go('/programs_screen');
@@ -346,4 +346,4 @@ class AuthWrapper extends ConsumerWidget {
       },
     );
   }
-} 
+}

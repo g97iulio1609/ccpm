@@ -1,3 +1,4 @@
+import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
 import '../training_model.dart';
 
@@ -138,7 +139,7 @@ class WeekController {
         sourceExercise.series.map((series) => _copySeries(series)).toList();
 
     return sourceExercise.copyWith(
-      id: UniqueKey().toString(),
+      id: generateRandomId(16).toString(),
       exerciseId: sourceExercise.exerciseId,
       series: copiedSeries,
     );
@@ -146,7 +147,7 @@ class WeekController {
 
   Series _copySeries(Series sourceSeries) {
     return sourceSeries.copyWith(
-      serieId: UniqueKey().toString(),
+      serieId: generateRandomId(16).toString(),
       done: false,
       reps_done: 0,
       weight_done: 0.0,

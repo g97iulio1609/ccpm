@@ -89,6 +89,18 @@ class Week {
     List<Workout>? workouts,
   }) : workouts = workouts ?? [];
 
+  Week copyWith({
+    String? id,
+    int? number,
+    List<Workout>? workouts,
+  }) {
+    return Week(
+      id: id ?? this.id,
+      number: number ?? this.number,
+      workouts: workouts ?? this.workouts,
+    );
+  }
+
   factory Week.fromMap(Map<String, dynamic> map) {
     return Week(
       id: map['id'],
@@ -130,6 +142,20 @@ class Workout {
     List<Exercise>? exercises,
     this.superSets = const [],
   }) : exercises = exercises ?? [];
+
+  Workout copyWith({
+    String? id,
+    int? order,
+    List<Exercise>? exercises,
+    List<SuperSet>? superSets,
+  }) {
+    return Workout(
+      id: id ?? this.id,
+      order: order ?? this.order,
+      exercises: exercises ?? this.exercises,
+      superSets: superSets ?? this.superSets,
+    );
+  }
 
   factory Workout.fromMap(Map<String, dynamic> map) {
     return Workout(

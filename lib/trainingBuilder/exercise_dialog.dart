@@ -184,32 +184,7 @@ class ExerciseDialog extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () async {
-                final updatedExercise = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => SetProgressionScreen(
-                      exerciseId: selectedExerciseId,
-                      exercise: exercise,
-                    ),
-                  ),
-                );
-                if (updatedExercise != null) {
-                  nameController.text = updatedExercise.name;
-                  variantController.text = updatedExercise.variant;
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text('Set Progression'),
-            ),
+          
           ],
         ),
       ),

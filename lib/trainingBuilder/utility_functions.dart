@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:alphanessone/users_services.dart';
 import 'package:flutter/material.dart';
 
@@ -89,3 +91,13 @@ double? calculateRPE(double weight, num latestMaxWeight, int reps) {
     return null;
   }
 }
+
+  String generateRandomId(int length) {
+    final random = Random.secure();
+    const chars =
+        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    return String.fromCharCodes(Iterable.generate(
+      length,
+      (_) => chars.codeUnitAt(random.nextInt(chars.length)),
+    ));
+  }

@@ -5,9 +5,8 @@ import 'package:go_router/go_router.dart';
 
 class TimerPage extends StatefulWidget {
   final String programId;
-    final String userId;
+  final String userId;
   final List<Map<String, dynamic>> seriesList;
-
   final String weekId;
   final String workoutId;
   final String exerciseId;
@@ -20,9 +19,8 @@ class TimerPage extends StatefulWidget {
   const TimerPage({
     super.key,
     required this.programId,
-        required this.userId,
+    required this.userId,
     required this.seriesList,
-
     required this.weekId,
     required this.workoutId,
     required this.exerciseId,
@@ -39,7 +37,8 @@ class TimerPage extends StatefulWidget {
 
 class _TimerPageState extends State<TimerPage> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _animation;late Timer _timer;
+  late Animation<double> _animation;
+  late Timer _timer;
   int _remainingSeconds = 0;
 
   @override
@@ -67,29 +66,27 @@ class _TimerPageState extends State<TimerPage> with SingleTickerProviderStateMix
     });
   }
 
-void _handleNextSeries() {
-  _timer.cancel();
-  if (widget.isEmomMode) {
-    _remainingSeconds = widget.restTime;
-    _startTimer();
-  } else {
-    _showNotification('Rest Time Completed', 'Your rest time has ended.');
-    if (widget.currentSeriesIndex < widget.seriesList.length - 1) {
-      // Passa alla serie successiva
-      final result = <String, dynamic>{
-        'startIndex': widget.currentSeriesIndex + 1,
-        'superSetExerciseIndex': widget.superSetExerciseIndex,
-        'seriesList': widget.seriesList, // Usa widget.seriesList
-      };
-      context.pop(result);
+  void _handleNextSeries() {
+    _timer.cancel();
+    if (widget.isEmomMode) {
+      _remainingSeconds = widget.restTime;
+      _startTimer();
     } else {
-      // Torna a workout_details.dart
-      final workoutDetailsUrl =
-          '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}';
-      context.go(workoutDetailsUrl);
+      _showNotification('Rest Time Completed', 'Your rest time has ended.');
+      if (widget.currentSeriesIndex < widget.seriesList.length - 1) {
+        final result = <String, dynamic>{
+          'startIndex': widget.currentSeriesIndex + 1,
+          'superSetExerciseIndex': widget.superSetExerciseIndex,
+          'seriesList': widget.seriesList,
+        };
+        context.pop(result);
+      } else {
+        final workoutDetailsUrl =
+            '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}';
+        context.go(workoutDetailsUrl);
+      }
     }
   }
-}
 
   Future<void> _showNotification(String title, String body) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
@@ -127,36 +124,32 @@ void _handleNextSeries() {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          color: theme.colorScheme.primary,
-        ),
-        child: SafeArea(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
                 widget.isEmomMode ? 'EMOM MODE' : 'REST TIME',
-                style: theme.textTheme.headlineLarge?.copyWith(
-                  color: theme.colorScheme.onPrimary,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
                   fontWeight: FontWeight.bold,
+                  letterSpacing: 2.0,
                 ),
               ),
               const SizedBox(height: 32),
               Stack(
                 alignment: Alignment.center,
                 children: [
-                  _buildProgressIndicator(theme),
-                  _buildCountdownText(theme),
+                  _buildProgressIndicator(),
+                  _buildCountdownText(),
                 ],
               ),
               const SizedBox(height: 24),
-              if (!widget.isEmomMode) _buildSkipButton(theme),
+              if (!widget.isEmomMode) _buildSkipButton(),
             ],
           ),
         ),
@@ -164,47 +157,55 @@ void _handleNextSeries() {
     );
   }
 
-  Widget _buildProgressIndicator(ThemeData theme) {
+  Widget _buildProgressIndicator() {
     return SizedBox(
-      width: 240,
-      height: 240,
+      width: 300,
+      height: 300,
       child: CircularProgressIndicator(
         value: _animation.value,
         strokeWidth: 12,
-        backgroundColor: theme.colorScheme.onPrimary.withOpacity(0.2),
-        valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.onPrimary),
+        backgroundColor: Colors.white.withOpacity(0.2),
+        valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
       ),
     );
   }
 
-  Widget _buildCountdownText(ThemeData theme) {
-    final minutes = (_remainingSeconds ~/ 60).toString().padLeft(2, '0');
-    final seconds = (_remainingSeconds % 60).toString().padLeft(2, '0');
-    return Text(
-      '$minutes:$seconds',
-      style: theme.textTheme.displayLarge?.copyWith(
-        color: theme.colorScheme.onPrimary,
-        fontWeight: FontWeight.bold,
-      ),
-    );
-  }
+  Widget _buildCountdownText() {
+  final minutes = (_remainingSeconds ~/ 60).toString().padLeft(2, '0');
+  final seconds = (_remainingSeconds % 60).toString().padLeft(2, '0');
+  final shadow = Shadow(
+    color: Colors.black.withOpacity(0.3),
+    blurRadius: 10,
+    offset: const Offset(0, 5),
+  );
+  return Text(
+    '$minutes:$seconds',
+    style: TextStyle(
+      color: Colors.white,
+      fontSize: 72,
+      fontWeight: FontWeight.bold,
+      shadows: [shadow],
+    ),
+  );
+}
 
-  Widget _buildSkipButton(ThemeData theme) {
-    return ElevatedButton(
+  Widget _buildSkipButton() {
+    return TextButton(
       onPressed: _handleNextSeries,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: theme.colorScheme.onPrimary,
-        foregroundColor: theme.colorScheme.primary,
-        padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+      style: TextButton.styleFrom(
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(30),
+          side: const BorderSide(color: Colors.white, width: 2),
         ),
       ),
-      child: Text(
+      child: const Text(
         'SKIP',
-        style: theme.textTheme.headlineMedium?.copyWith(
-          color: theme.colorScheme.primary,
+        style: TextStyle(
+          fontSize: 18,
           fontWeight: FontWeight.bold,
+          letterSpacing: 1.5,
         ),
       ),
     );
