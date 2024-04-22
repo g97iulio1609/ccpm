@@ -409,21 +409,21 @@ class Series {
     this.weight_done = 0.0,
   });
 
-  factory Series.fromMap(Map<String, dynamic> map) {
-    return Series(
-      id: map['id'],
-      serieId: map['serieId'] ?? '',
-      reps: map['reps']?.toInt() ?? 0,
-      sets: map['sets']?.toInt() ?? 0,
-      intensity: map['intensity'] ?? '',
-      rpe: map['rpe'] ?? '',
-      weight: map['weight']?.toDouble() ?? 0.0,
-      order: map['order']?.toInt() ?? 0,
-      done: map['done'] ?? false,
-      reps_done: map['reps_done']?.toInt() ?? 0,
-      weight_done: map['weight_done']?.toDouble() ?? 0.0,
-    );
-  }
+factory Series.fromMap(Map<String, dynamic> map) {
+  return Series(
+    id: map['id'],
+    serieId: map['serieId'] ?? '',
+    reps: int.tryParse(map['reps']?.toString() ?? '0') ?? 0,
+    sets: int.tryParse(map['sets']?.toString() ?? '0') ?? 0,
+    intensity: map['intensity'] ?? '',
+    rpe: map['rpe'] ?? '',
+    weight: map['weight']?.toDouble() ?? 0.0,
+    order: int.tryParse(map['order']?.toString() ?? '0') ?? 0,
+    done: map['done'] ?? false,
+    reps_done: int.tryParse(map['reps_done']?.toString() ?? '0') ?? 0,
+    weight_done: map['weight_done']?.toDouble() ?? 0.0,
+  );
+}
 
   Series copyWith({
     String? serieId,
@@ -451,22 +451,22 @@ class Series {
     );
   }
 
-  factory Series.fromFirestore(DocumentSnapshot doc) {
-    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-    return Series(
-      id: doc.id,
-      serieId: data['serieId'] ?? '',
-      reps: data['reps']?.toInt() ?? 0,
-      sets: data['sets']?.toInt() ?? 0,
-      intensity: data['intensity'] ?? '',
-      rpe: data['rpe'] ?? '',
-      weight: data['weight']?.toDouble() ?? 0.0,
-      order: data['order']?.toInt() ?? 0,
-      done: data['done'] ?? false,
-      reps_done: data['reps_done']?.toInt() ?? 0,
-      weight_done: data['weight_done']?.toDouble() ?? 0.0,
-    );
-  }
+factory Series.fromFirestore(DocumentSnapshot doc) {
+  Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+  return Series(
+    id: doc.id,
+    serieId: data['serieId'] ?? '',
+    reps: int.tryParse(data['reps']?.toString() ?? '0') ?? 0,
+    sets: int.tryParse(data['sets']?.toString() ?? '0') ?? 0,
+    intensity: data['intensity'] ?? '',
+    rpe: data['rpe'] ?? '',
+    weight: data['weight']?.toDouble() ?? 0.0,
+    order: int.tryParse(data['order']?.toString() ?? '0') ?? 0,
+    done: data['done'] ?? false,
+    reps_done: int.tryParse(data['reps_done']?.toString() ?? '0') ?? 0,
+    weight_done: data['weight_done']?.toDouble() ?? 0.0,
+  );
+}
 
   Map<String, dynamic> toMap() {
     return {

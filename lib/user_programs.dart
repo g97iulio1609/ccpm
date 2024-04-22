@@ -122,7 +122,7 @@ Stream<QuerySnapshot> getProgramsStream() {
                   itemCount: documents.length,
                   itemBuilder: (context, index) {
                     final doc = documents[index];
-                    final isHidden = doc['hide'];
+                    final isHidden = doc['hide'] ?? false;
                     final controller = ref.read(trainingProgramControllerProvider);
 
                     return Card(
