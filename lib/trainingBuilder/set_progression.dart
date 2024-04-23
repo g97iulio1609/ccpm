@@ -189,11 +189,7 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
 
     return Scaffold(
       backgroundColor: isDarkMode ? colorScheme.background : colorScheme.surface,
-      appBar: AppBar(
-        title: Text('Set Progression'),
-        backgroundColor: isDarkMode ? colorScheme.surface : colorScheme.primary,
-        foregroundColor: isDarkMode ? colorScheme.onSurface : colorScheme.onPrimary,
-      ),
+    
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
