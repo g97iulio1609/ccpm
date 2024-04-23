@@ -175,9 +175,10 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
     required Function(String) onChanged,
     required bool isDarkMode,
     required ColorScheme colorScheme,
+    double? widthSize,
   }) {
     return SizedBox(
-      width: 70,
+      width: widthSize,
       child: TextFormField(
         controller: controller,
         focusNode: focusNode,
@@ -235,104 +236,112 @@ return Scaffold(
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            buildTextField(
-                              controller: _repsControllers[weekIndex],
-                              focusNode: _repsFocusNodes[weekIndex],
-                              labelText: 'Reps',
-                              keyboardType: TextInputType.number,
-                              onChanged: (value) => updateProgression(
-                                weekIndex,
-                                int.tryParse(value) ?? 0,
-                                progression.sets,
-                                progression.intensity,
-                                progression.rpe,
-                                progression.weight,
-                              ),
-                              isDarkMode: isDarkMode,
-                              colorScheme: colorScheme,
-                            ),
-                            buildTextField(
-                              controller: _setsControllers[weekIndex],
-                              focusNode: _setsFocusNodes[weekIndex],
-                              labelText: 'Sets',
-                              keyboardType: TextInputType.number,
-                              onChanged: (value) => updateProgression(
-                                weekIndex,
-                                progression.reps,
-                                int.tryParse(value) ?? 0,
-                                progression.intensity,
-                                progression.rpe,
-                                progression.weight,
-                              ),
-                              isDarkMode: isDarkMode,
-                              colorScheme: colorScheme,
-                            ),
-                            buildTextField(
-                              controller: _intensityControllers[weekIndex],
-                              focusNode: _intensityFocusNodes[weekIndex],
-                              labelText: '1RM%',
-                              onChanged: (value) {
-                                updateProgression(
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              buildTextField(
+                                controller: _repsControllers[weekIndex],
+                                focusNode: _repsFocusNodes[weekIndex],
+                                labelText: 'Reps',
+                                keyboardType: TextInputType.number,
+                                onChanged: (value) => updateProgression(
                                   weekIndex,
-                                  progression.reps,
-                                  progression.sets,
-                                  value,
-                                  progression.rpe,
-                                  progression.weight,
-                                );
-                                updateWeightFromIntensity(
-                                    weekIndex, value);
-                              },
-                              isDarkMode: isDarkMode,
-                              colorScheme: colorScheme,
-                            ),
-                            buildTextField(
-                              initialValue: progression.rpe,
-                              labelText: 'RPE',
-                              onChanged: (value) {
-                                updateProgression(
-                                  weekIndex,
-                                  progression.reps,
-                                  progression.sets,
-                                  progression.intensity,
-                                  value,
-                                  progression.weight,
-                                );
-                                updateWeightFromRPE(
-                                    weekIndex, value, progression.reps);
-                              },
-                              isDarkMode: isDarkMode,
-                              colorScheme: colorScheme,
-                            ),
-                            buildTextField(
-                              controller: _weightControllers[weekIndex],
-                              focusNode: _weightFocusNodes[weekIndex],
-                              labelText: 'Weight',
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                      decimal: true),
-                              onChanged: (value) {
-                                final weight =
-                                    double.tryParse(value) ?? 0;
-                                updateProgression(
-                                  weekIndex,
-                                  progression.reps,
+                                  int.tryParse(value) ?? 0,
                                   progression.sets,
                                   progression.intensity,
                                   progression.rpe,
-                                  weight,
-                                );
-                                updateIntensityFromWeight(
-                                    weekIndex, weight);
-                              },
-                              isDarkMode: isDarkMode,
-                              colorScheme: colorScheme,
-                            ),
-                          ],
+                                  progression.weight,
+                                ),
+                                isDarkMode: isDarkMode,
+                                colorScheme: colorScheme,
+                                widthSize: 53,
+                              ),
+                              buildTextField(
+                                controller: _setsControllers[weekIndex],
+                                focusNode: _setsFocusNodes[weekIndex],
+                                labelText: 'Sets',
+                                keyboardType: TextInputType.number,
+                                onChanged: (value) => updateProgression(
+                                  weekIndex,
+                                  progression.reps,
+                                  int.tryParse(value) ?? 0,
+                                  progression.intensity,
+                                  progression.rpe,
+                                  progression.weight,
+                                ),
+                                isDarkMode: isDarkMode,
+                                colorScheme: colorScheme,
+                                widthSize: 53,
+                              ),
+                              buildTextField(
+                                controller: _intensityControllers[weekIndex],
+                                focusNode: _intensityFocusNodes[weekIndex],
+                                labelText: '1RM%',
+                                onChanged: (value) {
+                                  updateProgression(
+                                    weekIndex,
+                                    progression.reps,
+                                    progression.sets,
+                                    value,
+                                    progression.rpe,
+                                    progression.weight,
+                                  );
+                                  updateWeightFromIntensity(
+                                      weekIndex, value);
+                                },
+                                isDarkMode: isDarkMode,
+                                colorScheme: colorScheme,
+                                widthSize: 75,
+                              ),
+                              buildTextField(
+                                initialValue: progression.rpe,
+                                labelText: 'RPE',
+                                onChanged: (value) {
+                                  updateProgression(
+                                    weekIndex,
+                                    progression.reps,
+                                    progression.sets,
+                                    progression.intensity,
+                                    value,
+                                    progression.weight,
+                                  );
+                                  updateWeightFromRPE(
+                                      weekIndex, value, progression.reps);
+                                },
+                                isDarkMode: isDarkMode,
+                                colorScheme: colorScheme,
+                                widthSize: 55,
+                              ),
+                              buildTextField(
+                                controller: _weightControllers[weekIndex],
+                                focusNode: _weightFocusNodes[weekIndex],
+                                labelText: 'Weight',
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                        decimal: true),
+                                onChanged: (value) {
+                                  final weight =
+                                      double.tryParse(value) ?? 0;
+                                  updateProgression(
+                                    weekIndex,
+                                    progression.reps,
+                                    progression.sets,
+                                    progression.intensity,
+                                    progression.rpe,
+                                    weight,
+                                  );
+                                  updateIntensityFromWeight(
+                                      weekIndex, weight);
+                                },
+                                isDarkMode: isDarkMode,
+                                colorScheme: colorScheme,
+                                widthSize: 75,
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -379,6 +388,5 @@ return Scaffold(
     ],
   ),
 );
-
 
 }}
