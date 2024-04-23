@@ -47,7 +47,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
       },
     );
   }
-
+  
 Widget _buildExerciseCard(
   BuildContext context,
   Exercise exercise,
@@ -91,43 +91,46 @@ Widget _buildExerciseCard(
             ),
           ],
         ),
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 20),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDarkMode ? colorScheme.surface : colorScheme.background,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildExerciseHeader(context, exercise, usersService, athleteId,
-                  dateFormat, latestMaxWeight, isDarkMode, colorScheme),
-              if (superSets.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: superSets
-                        .map((ss) => Icon(Icons.group_work, color: colorScheme.primary))
-                        .toList(),
-                  ),
+        child: Padding( // AGGIUNTO PADDING
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 20),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDarkMode ? colorScheme.surface : colorScheme.background,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
                 ),
-              const SizedBox(height: 16),
-              _buildExerciseSeries(context, exercise, usersService),
-              const SizedBox(height: 16),
-              Center(
-                child: _buildAddSeriesButton(context, exercise, isDarkMode,
-                    colorScheme),
-              ),
-            ],
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildExerciseHeader(context, exercise, usersService, athleteId,
+                    dateFormat, latestMaxWeight, isDarkMode, colorScheme),
+                if (superSets.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: superSets
+                          .map((ss) => Icon(Icons.group_work, color: colorScheme.primary))
+                          .toList(),
+                    ),
+                  ),
+                const SizedBox(height: 16),
+                _buildExerciseSeries(context, exercise, usersService),
+                const SizedBox(height: 16),
+                Center(
+                  child: _buildAddSeriesButton(context, exercise, isDarkMode,
+                      colorScheme),
+                ),
+              ],
+            ),
           ),
         ),
       );
