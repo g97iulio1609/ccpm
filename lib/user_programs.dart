@@ -99,7 +99,11 @@ Stream<QuerySnapshot> getProgramsStream() {
                   children: [
                     Icon(Icons.add),
                     SizedBox(width: 8),
-                    Text('Crea Programma Di Allenamento'),
+               Text(
+                      'Crea Programma Di Allenamento',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+
                   ],
                 ),
               ),
