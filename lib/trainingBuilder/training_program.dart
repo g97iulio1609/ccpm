@@ -97,38 +97,39 @@ class TrainingProgramPage extends HookConsumerWidget {
                                 },
                               ),
                               const SizedBox(height: 16),
-                              ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  maxHeight: MediaQuery.of(context).size.height * 0.4,
-                                ),
-                                child: TrainingProgramWeekList(
-                                  programId: programId ?? '',
-                                  userId: userId,
-                                  controller: controller,
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: ElevatedButton(
-                                        onPressed: controller.addWeek,
-                                        child: const Text('Aggiungi Settimana'),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: ElevatedButton(
-                                        onPressed: () => controller.submitProgram(context),
-                                        child: const Text('Salva Programma'),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                              Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  TrainingProgramWeekList(
+                                    programId: programId ?? '',
+                                    userId: userId,
+                                    controller: controller,
+                                  ),
+                                  const SizedBox(height: 8),
+                                ],
                               ),
                             ],
                           ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(16.0).copyWith(bottom: 32),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: controller.addWeek,
+                                child: const Text('Aggiungi Settimana'),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () => controller.submitProgram(context),
+                                child: const Text('Salva Programma'),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
