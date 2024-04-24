@@ -80,7 +80,7 @@ Stream<QuerySnapshot> getProgramsStream() {
     return Scaffold(
       body: Column(
         children: [
-          if (userRole == 'admin')
+          if (userRole == 'admin' || userRole == 'client_premium')
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: ElevatedButton(
@@ -155,7 +155,7 @@ Stream<QuerySnapshot> getProgramsStream() {
                                   onPressed: () =>
                                       toggleProgramVisibility(doc.id, isHidden),
                                 ),
-                              if (userRole == 'admin')
+          if (userRole == 'admin' || userRole == 'client_premium')
                                 PopupMenuButton(
                                   itemBuilder: (context) => [
                                     PopupMenuItem(

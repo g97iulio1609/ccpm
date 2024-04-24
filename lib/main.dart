@@ -68,22 +68,22 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ColorScheme lightColorScheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xFF2196F3),
-      primary: const Color.fromARGB(255, 171, 198, 221),
-      secondary: const Color(0xFFFF9800),
-      tertiary: const Color(0xFF4CAF50),
-      error: const Color(0xFFF44336),
-      background: const Color(0xFFF5F5F5),
-      surface: const Color(0xFFFFFFFF),
-      onPrimary: Colors.white,
-      onSecondary: Colors.white,
-      onTertiary: Colors.white,
-      onError: Colors.white,
-      onBackground: Colors.black,
-      onSurface: Colors.black,
-      brightness: Brightness.light,
-    );
+    // final ColorScheme lightColorScheme = ColorScheme.fromSeed(
+    //   seedColor: const Color(0xFF2196F3),
+    //   primary: const Color.fromARGB(255, 171, 198, 221),
+    //   secondary: const Color(0xFFFF9800),
+    //   tertiary: const Color(0xFF4CAF50),
+    //   error: const Color(0xFFF44336),
+    //   background: const Color(0xFFF5F5F5),
+    //   surface: const Color(0xFFFFFFFF),
+    //   onPrimary: Colors.white,
+    //   onSecondary: Colors.white,
+    //   onTertiary: Colors.white,
+    //   onError: Colors.white,
+    //   onBackground: Colors.black,
+    //   onSurface: Colors.black,
+    //   brightness: Brightness.light,
+    // );
 
     final ColorScheme darkColorScheme = ColorScheme.fromSeed(
       seedColor: const Color(0xFF2196F3),
@@ -102,12 +102,12 @@ class MyApp extends ConsumerWidget {
       brightness: Brightness.dark,
     );
 
-    final ThemeData lightTheme = ThemeData(
-      useMaterial3: true,
-      colorScheme: lightColorScheme,
-      textTheme: GoogleFonts.robotoTextTheme(),
-      visualDensity: VisualDensity.adaptivePlatformDensity,
-    );
+    // final ThemeData lightTheme = ThemeData(
+    //   useMaterial3: true,
+    //   colorScheme: lightColorScheme,
+    //   textTheme: GoogleFonts.robotoTextTheme(),
+    //   visualDensity: VisualDensity.adaptivePlatformDensity,
+    // );
 
     final ThemeData darkTheme = ThemeData(
       useMaterial3: true,
@@ -327,9 +327,9 @@ class MyApp extends ConsumerWidget {
     return MaterialApp.router(
       routerConfig: router,
       title: 'AlphanessOne',
-      theme: lightTheme,
+      // theme: lightTheme,
       darkTheme: darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: ThemeMode.dark, // Imposta la modalità dark come default
     );
   }
 }

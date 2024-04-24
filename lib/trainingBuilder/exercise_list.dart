@@ -47,7 +47,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
       },
     );
   }
-  
+
 Widget _buildExerciseCard(
   BuildContext context,
   Exercise exercise,
@@ -183,90 +183,92 @@ Widget _buildExerciseHeader(
   );
 }
 
-  Widget _buildExercisePopupMenu(
-    BuildContext context,
-    Exercise exercise,
-    UsersService usersService,
-    String athleteId,
-    DateFormat dateFormat,
-    num latestMaxWeight,
-    bool isDarkMode,
-    ColorScheme colorScheme,
-  ) {
-    return PopupMenuButton(
-      color: isDarkMode ? colorScheme.surface : colorScheme.background,
-      itemBuilder: (context) => [
+Widget _buildExercisePopupMenu(
+  BuildContext context,
+  Exercise exercise,
+  UsersService usersService,
+  String athleteId,
+  DateFormat dateFormat,
+  num latestMaxWeight,
+  bool isDarkMode,
+  ColorScheme colorScheme,
+) {
+  return PopupMenuButton(
+    color: isDarkMode ? colorScheme.surface : colorScheme.background,
+    itemBuilder: (context) => [
+      PopupMenuItem(
+        child: Text(
+          'Modifica',
+          style: TextStyle(
+            color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+          ),
+        ),
+        onTap: () => controller.editExercise(
+            weekIndex, workoutIndex, exercise.order - 1, context),
+      ),
+      PopupMenuItem(
+        child: Text(
+          'Aggiorna Max RM',
+          style: TextStyle(
+            color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+          ),
+        ),
+        onTap: () => _addOrUpdateMaxRM(exercise, context, usersService,
+            athleteId, dateFormat, isDarkMode, colorScheme),
+      ),
+      PopupMenuItem(
+        child: Text(
+          'Riordina Esercizi',
+          style: TextStyle(
+            color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+          ),
+        ),
+        onTap: () =>
+            _showReorderExercisesDialog(context, weekIndex, workoutIndex),
+      ),
+      PopupMenuItem(
+        child: Text(
+          'Aggiungi al Superset',
+          style: TextStyle(
+            color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+          ),
+        ),
+        onTap: () => _showAddToSuperSetDialog(context, exercise, isDarkMode,
+            colorScheme),
+      ),
+      if (exercise.superSetId != null)
         PopupMenuItem(
           child: Text(
-            'Modifica',
+            'Rimuovi dal Superset',
             style: TextStyle(
-              color:
-                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+              color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
             ),
           ),
-          onTap: () => controller.editExercise(
-              weekIndex, workoutIndex, exercise.order - 1, context),
+          onTap: () => controller.removeExerciseFromSuperSet(
+              weekIndex, workoutIndex, exercise.superSetId!, exercise.id!),
         ),
-        PopupMenuItem(
-          child: Text(
-            'Aggiorna Max RM',
-            style: TextStyle(
-              color:
-                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
-            ),
+      PopupMenuItem(
+        child: Text(
+          'Set Progression',
+          style: TextStyle(
+            color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
           ),
-          onTap: () => _addOrUpdateMaxRM(exercise, context, usersService,
-              athleteId, dateFormat, isDarkMode, colorScheme),
         ),
-        PopupMenuItem(
-          child: Text(
-            'Riordina Esercizi',
-            style: TextStyle(
-              color:
-                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
-            ),
+        onTap: () => _showSetProgressionScreen(context, exercise,
+            latestMaxWeight, isDarkMode, colorScheme),
+      ),
+      PopupMenuItem(
+        child: Text(
+          'Elimina',
+          style: TextStyle(
+            color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
           ),
-          onTap: () =>
-              _showReorderExercisesDialog(context, weekIndex, workoutIndex),
         ),
-        PopupMenuItem(
-          child: Text(
-            'Aggiungi al Superset',
-            style: TextStyle(
-              color:
-                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
-            ),
-          ),
-          onTap: () => _showAddToSuperSetDialog(context, exercise, isDarkMode,
-              colorScheme),
-        ),
-        if (exercise.superSetId != null)
-          PopupMenuItem(
-            child: Text(
-              'Rimuovi dal Superset',
-              style: TextStyle(
-                color: isDarkMode
-                    ? colorScheme.onSurface
-                    : colorScheme.onBackground,
-              ),
-            ),
-            onTap: () => controller.removeExerciseFromSuperSet(
-                weekIndex, workoutIndex, exercise.superSetId!, exercise.id!),
-          ),
-        PopupMenuItem(
-          child: Text(
-            'Set Progression',
-            style: TextStyle(
-              color:
-                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
-            ),
-          ),
-          onTap: () => _showSetProgressionScreen(context, exercise,
-              latestMaxWeight, isDarkMode, colorScheme),
-        ),
-      ],
-    );
-  }
+        onTap: () => controller.removeExercise(weekIndex, workoutIndex, exercise.order - 1),
+      ),
+    ],
+  );
+}
 
   Widget _buildExerciseSeries(
     BuildContext context,

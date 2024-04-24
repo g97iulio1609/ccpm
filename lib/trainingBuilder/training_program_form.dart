@@ -2,6 +2,7 @@ import 'package:alphanessone/trainingBuilder/athlete_selection_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'controller/training_program_controller.dart';
+import '../users_services.dart'; // Aggiungi questa importazione
 
 class TrainingProgramForm extends ConsumerWidget {
   final GlobalKey<FormState> formKey;
@@ -19,6 +20,8 @@ class TrainingProgramForm extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final userRole = ref.watch(userRoleProvider); // Ottieni il ruolo dell'utente corrente
+
     return Form(
       key: formKey,
       child: SingleChildScrollView(
@@ -29,25 +32,29 @@ class TrainingProgramForm extends ConsumerWidget {
             TextFormField(
               controller: controller.nameController,
               decoration: const InputDecoration(labelText: 'Program Name'),
-              validator: (value) => value?.isEmpty ?? true ? 'Please enter a program name' : null,
+              validator: (value) =>
+                  value?.isEmpty ?? true ? 'Please enter a program name' : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: controller.descriptionController,
               decoration: const InputDecoration(labelText: 'Description'),
-              validator: (value) => value?.isEmpty ?? true ? 'Please enter a description' : null,
+              validator: (value) =>
+                  value?.isEmpty ?? true ? 'Please enter a description' : null,
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => _showAthleteSelectionDialog(context, ref),
-              child: const Text('Select Athlete'),
-            ),
-            const SizedBox(height: 16),
+            if (userRole == 'admin') // Mostra il pulsante solo se l'utente è admin
+              ElevatedButton(
+                onPressed: () => _showAthleteSelectionDialog(context, ref),
+                child: const Text('Select Athlete'),
+              ),
+            if (userRole == 'admin') const SizedBox(height: 16), // Aggiungi uno spazio se il pulsante è visibile
             TextFormField(
               controller: controller.mesocycleNumberController,
               decoration: const InputDecoration(labelText: 'Mesocycle Number'),
               keyboardType: TextInputType.number,
-              validator: (value) => value?.isEmpty ?? true ? 'Please enter a mesocycle number' : null,
+              validator: (value) =>
+                  value?.isEmpty ?? true ? 'Please enter a mesocycle number' : null,
             ),
             const SizedBox(height: 16),
             SwitchListTile(

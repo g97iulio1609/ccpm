@@ -106,21 +106,17 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
       currentProgression.rpe = rpe;
       currentProgression.weight = weight;
 
-      debugPrint('Updating progression for week ${currentProgression.weekNumber}');
-      debugPrint(
-          'Reps: ${currentProgression.reps}, Sets: ${currentProgression.sets}, Intensity: ${currentProgression.intensity}, RPE: ${currentProgression.rpe}, Weight: ${currentProgression.weight}');
+
     }
 
     void updateWeightFromIntensity(int weekIndex, String intensity) {
       final currentProgression = weekProgressions[weekIndex];
 
       if (intensity.isNotEmpty && !_weightFocusNodes[weekIndex].hasFocus) {
-        debugPrint('Calculating weight from intensity: $intensity');
         final calculatedWeight = calculateWeightFromIntensity(
             widget.latestMaxWeight.toDouble(), double.parse(intensity));
         currentProgression.weight = roundWeight(calculatedWeight, widget.exercise?.type);
         _weightControllers[weekIndex].text = currentProgression.weight.toString();
-        debugPrint('Calculated weight: ${currentProgression.weight}');
       }
     }
 
@@ -128,12 +124,10 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
       final currentProgression = weekProgressions[weekIndex];
 
       if (rpe.isNotEmpty && !_weightFocusNodes[weekIndex].hasFocus) {
-        debugPrint('Calculating weight from RPE: $rpe');
         final rpePercentage = getRPEPercentage(double.parse(rpe), reps);
         final calculatedWeight = widget.latestMaxWeight.toDouble() * rpePercentage;
         currentProgression.weight = roundWeight(calculatedWeight, widget.exercise?.type);
         _weightControllers[weekIndex].text = currentProgression.weight.toString();
-        debugPrint('Calculated weight: ${currentProgression.weight}');
       }
     }
 
@@ -141,12 +135,10 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
       final currentProgression = weekProgressions[weekIndex];
 
       if (weight != 0 && !_intensityFocusNodes[weekIndex].hasFocus) {
-        debugPrint('Updating intensity based on weight: $weight');
         currentProgression.intensity = calculateIntensityFromWeight(
                 weight, widget.latestMaxWeight.toDouble())
             .toStringAsFixed(2);
         _intensityControllers[weekIndex].text = currentProgression.intensity;
-        debugPrint('Updated intensity: ${currentProgression.intensity}');
       }
     }
 
