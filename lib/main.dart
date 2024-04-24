@@ -65,19 +65,19 @@ void main() async {
   await AppServices().initialize();
 
   final bool isVersionSupported = await AppServices().isAppVersionSupported();
-  debugPrint('Controllo della versione passato: $isVersionSupported');
+  //debugPrint('Controllo della versione passato: $isVersionSupported');
 
   if (isVersionSupported) {
-    debugPrint('La versione corrente è supportata. Avvio dell\'app...');
+    //debugPrint('La versione corrente è supportata. Avvio dell\'app...');
     runApp(const ProviderScope(child: MyApp()));
   } else {
-    debugPrint('La versione corrente non è supportata. Mostra la schermata di aggiornamento...');
+    //debugPrint('La versione corrente non è supportata. Mostra la schermata di aggiornamento...');
     runApp(const UnsupportedVersionApp());
   }
 }
 
 class UnsupportedVersionApp extends StatelessWidget {
-  const UnsupportedVersionApp({Key? key}) : super(key: key);
+  const UnsupportedVersionApp({super.key});
 
   @override
   Widget build(BuildContext context) {

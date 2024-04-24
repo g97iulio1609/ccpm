@@ -17,7 +17,7 @@ class AppServices {
       ));
       await _remoteConfig.fetchAndActivate();
     } catch (e) {
-      debugPrint('Error initializing Remote Config: $e');
+     // debugPrint('Error initializing Remote Config: $e');
     }
   }
 
@@ -31,8 +31,8 @@ class AppServices {
 
       final String minimumVersion = _remoteConfig.getString('minimum_app_version');
 
-      debugPrint('Versione minima richiesta: $minimumVersion');
-      debugPrint('Versione attuale: $currentVersion');
+     // debugPrint('Versione minima richiesta: $minimumVersion');
+     // debugPrint('Versione attuale: $currentVersion');
 
       final List<int> currentVersionParts = currentVersion.split('.').map(int.parse).toList();
       final List<int> minimumVersionParts = minimumVersion.split('.').map(int.parse).toList();
@@ -51,7 +51,7 @@ class AppServices {
 
       return true;
     } catch (e) {
-      debugPrint('Error checking app version: $e');
+   //   debugPrint('Error checking app version: $e');
       return true;
     }
   }
