@@ -30,21 +30,27 @@ class WeekController {
     if (week.id != null) {
       program.trackToDeleteWeeks.add(week.id!);
     }
-    week.workouts.forEach((workout) => _removeWorkoutAndRelatedData(program, workout));
+    for (var workout in week.workouts) {
+      _removeWorkoutAndRelatedData(program, workout);
+    }
   }
 
   void _removeWorkoutAndRelatedData(TrainingProgram program, Workout workout) {
     if (workout.id != null) {
       program.trackToDeleteWorkouts.add(workout.id!);
     }
-    workout.exercises.forEach((exercise) => _removeExerciseAndRelatedData(program, exercise));
+    for (var exercise in workout.exercises) {
+      _removeExerciseAndRelatedData(program, exercise);
+    }
   }
 
   void _removeExerciseAndRelatedData(TrainingProgram program, Exercise exercise) {
     if (exercise.id != null) {
       program.trackToDeleteExercises.add(exercise.id!);
     }
-    exercise.series.forEach((series) => _removeSeriesData(program, series));
+    for (var series in exercise.series) {
+      _removeSeriesData(program, series);
+    }
   }
 
   void _removeSeriesData(TrainingProgram program, Series series) {
