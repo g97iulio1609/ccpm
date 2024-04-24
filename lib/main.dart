@@ -24,6 +24,7 @@ import 'Viewer/week_details.dart';
 import 'Viewer/workout_details.dart';
 import 'Viewer/exercise_details.dart';
 import 'Viewer/timer.dart';
+import 'app_services.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
@@ -60,7 +61,45 @@ void main() async {
             AndroidFlutterLocalNotificationsPlugin>();
     await androidPlugin?.requestExactAlarmsPermission();
   }
-  runApp(const ProviderScope(child: MyApp()));
+
+  await AppServices().initialize();
+
+  final bool isVersionSupported = await AppServices().isAppVersionSupported();
+  debugPrint('Controllo della versione passato: $isVersionSupported');
+
+  if (isVersionSupported) {
+    debugPrint('La versione corrente è supportata. Avvio dell\'app...');
+    runApp(const ProviderScope(child: MyApp()));
+  } else {
+    debugPrint('La versione corrente non è supportata. Mostra la schermata di aggiornamento...');
+    runApp(const UnsupportedVersionApp());
+  }
+}
+
+class UnsupportedVersionApp extends StatelessWidget {
+  const UnsupportedVersionApp({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: AlertDialog(
+            title: const Text('App Update Required'),
+            content: const Text('Please update the app to the latest version to continue using it.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  // Aggiungi qui la logica per reindirizzare l'utente allo store per l'aggiornamento dell'app
+                },
+                child: const Text('Update'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class MyApp extends ConsumerWidget {
@@ -353,16 +392,16 @@ class AuthWrapper extends ConsumerWidget {
               if (context.mounted) {
                 if (userRole == 'admin') {
                   context.go('/programs_screen');
-                } else {
-                  context.go('/programs_screen/user_programs/${user.uid}');
-                }
-              }
-            });
-            return const HomeScreen(child: SizedBox());
-          }
-        }
-        return const Center(child: CircularProgressIndicator());
-      },
-    );
-  }
+} else {
+context.go('/programs_screen/user_programs/${user.uid}');
+}
+}
+});
+return const HomeScreen(child: SizedBox());
+}
+}
+return const Center(child: CircularProgressIndicator());
+},
+);
+}
 }
