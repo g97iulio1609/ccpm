@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'training_model.dart';
 import 'controller/training_program_controller.dart';
 import 'reorder_dialog.dart';
@@ -27,50 +28,120 @@ class _TrainingProgramWorkoutListPageState
     final workouts = week.workouts;
 
     return Scaffold(
-      body: ListView.builder(
-        itemCount: workouts.length,
-        itemBuilder: (context, index) {
-          final workout = workouts[index];
-          return _buildWorkoutCard(context, workout);
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => widget.controller.addWorkout(widget.weekIndex),
-        child: const Icon(Icons.add),
+      body: ListView(
+        children: workouts.asMap().entries.map((entry) {
+          final index = entry.key;
+          final workout = entry.value;
+          return _buildWorkoutSlidable(context, workout, index);
+        }).toList(),
       ),
     );
   }
 
-  Widget _buildWorkoutCard(BuildContext context, Workout workout) {
+  Widget _buildWorkoutSlidable(BuildContext context, Workout workout, int index) {
+    return Slidable(
+      endActionPane: ActionPane(
+        motion: const ScrollMotion(),
+        children: [
+          SlidableAction(
+            onPressed: (context) {
+              widget.controller.removeWorkout(widget.weekIndex, workout.order);
+            },
+            backgroundColor: Colors.red,
+            foregroundColor: Colors.white,
+            icon: Icons.delete,
+            label: 'Elimina',
+          ),
+        ],
+      ),
+      startActionPane: ActionPane(
+        motion: const ScrollMotion(),
+        children: [
+          SlidableAction(
+            onPressed: (context) {
+              widget.controller.addWorkout(widget.weekIndex);
+            },
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Colors.white,
+            icon: Icons.add,
+            label: 'Aggiungi',
+          ),
+        ],
+      ),
+      child: _buildWorkoutCard(context, workout, index),
+    );
+  }
+
+  Widget _buildWorkoutCard(BuildContext context, Workout workout, int index) {
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: ListTile(
-        title: Text(
-          'Workout ${workout.order}',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        trailing: PopupMenuButton(
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              child: const Text('Delete'),
-              onTap: () => widget.controller.removeWorkout(
-                  widget.weekIndex, workout.order),
-            ),
-            PopupMenuItem(
-              child: const Text('Copy Workout'),
-              onTap: () => widget.controller.copyWorkout(
-                  widget.weekIndex, workout.order - 1, context),
-            ),
-            PopupMenuItem(
-              child: const Text('Reorder Workouts'),
-              onTap: () => _showReorderWorkoutsDialog(context),
-            ),
-          ],
-        ),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
         onTap: () {
           context.go(
-              '/programs_screen/user_programs/${widget.controller.program.athleteId}/training_program/${widget.controller.program.id}/week/${widget.weekIndex}/workout/${workout.order - 1}');
+              '/programs_screen/user_programs/${widget.controller.program.athleteId}/training_program/${widget.controller.program.id}/week/${widget.weekIndex}/workout/$index');
         },
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    '${workout.order}',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    'Allenamento ${workout.order}',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                ),
+              ),
+              PopupMenuButton(
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    child: const Text('Copia Allenamento'),
+                    onTap: () => widget.controller.copyWorkout(
+                        widget.weekIndex, index, context),
+                  ),
+                  PopupMenuItem(
+                    child: const Text('Elimina Allenamento'),
+                    onTap: () =>
+                        widget.controller.removeWorkout(widget.weekIndex, workout.order),
+                  ),
+                  PopupMenuItem(
+                    child: const Text('Riordina Allenamenti'),
+                    onTap: () => _showReorderWorkoutsDialog(context),
+                  ),
+                  PopupMenuItem(
+                    child: const Text('Aggiungi Allenamento'),
+                    onTap: () => widget.controller.addWorkout(widget.weekIndex),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -78,7 +149,7 @@ class _TrainingProgramWorkoutListPageState
   void _showReorderWorkoutsDialog(BuildContext context) {
     final workoutNames = widget.controller.program.weeks[widget.weekIndex]
         .workouts
-        .map((workout) => 'Workout ${workout.order}')
+        .map((workout) => 'Allenamento ${workout.order}')
         .toList();
 
     showDialog(
