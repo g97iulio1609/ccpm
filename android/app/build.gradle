@@ -12,8 +12,8 @@ if (localPropertiesFile.exists()) {
     })
 }
 
-def flutterVersionCode = localProperties.getProperty('flutter.versionCode') ?: '5'
-def flutterVersionName = localProperties.getProperty('flutter.versionName') ?: '1.0.2'
+def flutterVersionCode = localProperties.getProperty('flutter.versionCode') ?: '6'
+def flutterVersionName = localProperties.getProperty('flutter.versionName') ?: '1.0.3'
 
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file('key.properties')

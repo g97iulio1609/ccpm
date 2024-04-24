@@ -25,12 +25,17 @@ class TrainingProgramWeekList extends ConsumerWidget {
     final weeks = program.weeks;
 
     return Scaffold(
-      body: ListView(
-        children: weeks.asMap().entries.map((entry) {
-          final index = entry.key;
-          final week = entry.value;
-          return _buildWeekSlidable(context, week, index);
-        }).toList(),
+      body: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height,
+        ),
+        child: ListView(
+          children: weeks.asMap().entries.map((entry) {
+            final index = entry.key;
+            final week = entry.value;
+            return _buildWeekSlidable(context, week, index);
+          }).toList(),
+        ),
       ),
     );
   }

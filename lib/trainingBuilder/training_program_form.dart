@@ -2,7 +2,7 @@ import 'package:alphanessone/trainingBuilder/athlete_selection_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'controller/training_program_controller.dart';
-import '../users_services.dart'; // Aggiungi questa importazione
+import '../users_services.dart';
 
 class TrainingProgramForm extends ConsumerWidget {
   final GlobalKey<FormState> formKey;
@@ -20,7 +20,7 @@ class TrainingProgramForm extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userRole = ref.watch(userRoleProvider); // Ottieni il ruolo dell'utente corrente
+    final userRole = ref.watch(userRoleProvider);
 
     return Form(
       key: formKey,
@@ -28,6 +28,7 @@ class TrainingProgramForm extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
           children: [
             TextFormField(
               controller: controller.nameController,
@@ -43,12 +44,12 @@ class TrainingProgramForm extends ConsumerWidget {
                   value?.isEmpty ?? true ? 'Please enter a description' : null,
             ),
             const SizedBox(height: 16),
-            if (userRole == 'admin') // Mostra il pulsante solo se l'utente è admin
+            if (userRole == 'admin')
               ElevatedButton(
                 onPressed: () => _showAthleteSelectionDialog(context, ref),
                 child: const Text('Select Athlete'),
               ),
-            if (userRole == 'admin') const SizedBox(height: 16), // Aggiungi uno spazio se il pulsante è visibile
+            if (userRole == 'admin') const SizedBox(height: 16),
             TextFormField(
               controller: controller.mesocycleNumberController,
               decoration: const InputDecoration(labelText: 'Mesocycle Number'),
@@ -69,7 +70,7 @@ class TrainingProgramForm extends ConsumerWidget {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: onSubmit,
-              child: const Text('Submit'),
+              child: const Text('Salva'),
             ),
           ],
         ),

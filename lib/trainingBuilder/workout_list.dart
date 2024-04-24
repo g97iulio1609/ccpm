@@ -28,12 +28,25 @@ class _TrainingProgramWorkoutListPageState
     final workouts = week.workouts;
 
     return Scaffold(
-      body: ListView(
-        children: workouts.asMap().entries.map((entry) {
-          final index = entry.key;
-          final workout = entry.value;
-          return _buildWorkoutSlidable(context, workout, index);
-        }).toList(),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView(
+              children: workouts.asMap().entries.map((entry) {
+                final index = entry.key;
+                final workout = entry.value;
+                return _buildWorkoutSlidable(context, workout, index);
+              }).toList(),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ElevatedButton(
+              onPressed: () => widget.controller.addWorkout(widget.weekIndex),
+              child: const Text('Aggiungi Allenamento'),
+            ),
+          ),
+        ],
       ),
     );
   }
