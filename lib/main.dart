@@ -86,7 +86,8 @@ class UnsupportedVersionApp extends StatelessWidget {
         body: Center(
           child: AlertDialog(
             title: const Text('App Update Required'),
-            content: const Text('Please update the app to the latest version to continue using it.'),
+            content: const Text(
+                'Please update the app to the latest version to continue using it.'),
             actions: [
               TextButton(
                 onPressed: () {
@@ -392,16 +393,16 @@ class AuthWrapper extends ConsumerWidget {
               if (context.mounted) {
                 if (userRole == 'admin') {
                   context.go('/programs_screen');
-} else {
-context.go('/programs_screen/user_programs/${user.uid}');
-}
-}
-});
-return const HomeScreen(child: SizedBox());
-}
-}
-return const Center(child: CircularProgressIndicator());
-},
-);
-}
+                } else {
+                  context.go('/programs_screen/user_programs/${user.uid}');
+                }
+              }
+            });
+            return const HomeScreen(child: SizedBox());
+          }
+        }
+        return const Center(child: CircularProgressIndicator());
+      },
+    );
+  }
 }

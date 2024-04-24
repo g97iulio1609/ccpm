@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart';
@@ -39,6 +40,8 @@ class MaxRMDashboard extends HookConsumerWidget {
     final maxWeightController = useTextEditingController();
     final repetitionsController = useTextEditingController();
     final dateFormat = DateFormat('yyyy-MM-dd');
+    final userController = useTextEditingController();
+    final exerciseController = useTextEditingController();
 
     Future<void> addRecord({
       required String exerciseId,
@@ -64,7 +67,6 @@ class MaxRMDashboard extends HookConsumerWidget {
     }
 
     return Scaffold(
-   
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -75,33 +77,40 @@ class MaxRMDashboard extends HookConsumerWidget {
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: usersAsyncValue.when(
                   data: (users) {
-                    return Autocomplete<UserModel>(
-                      optionsBuilder: (TextEditingValue textEditingValue) {
-                        if (textEditingValue.text.isEmpty) {
-                          return const Iterable<UserModel>.empty();
-                        }
-                        return users.where((UserModel user) {
-                          return user.name
-                              .toLowerCase()
-                              .startsWith(textEditingValue.text.toLowerCase());
-                        });
+                    return TypeAheadField<UserModel>(
+                      suggestionsCallback: (search) async {
+                        return users.where((user) =>
+                            user.name.toLowerCase().contains(search.toLowerCase())).toList();
                       },
-                      displayStringForOption: (UserModel user) => user.name,
-                      fieldViewBuilder: (
-                        BuildContext context,
-                        TextEditingController fieldTextEditingController,
-                        FocusNode fieldFocusNode,
-                        VoidCallback onFieldSubmitted,
-                      ) {
-                        return TextFormField(
-                          controller: fieldTextEditingController,
-                          focusNode: fieldFocusNode,
+                      itemBuilder: (context, suggestion) {
+                        return ListTile(
+                          title: Text(suggestion.name),
+                        );
+                      },
+                      onSelected: (suggestion) {
+                        selectedUserController.value = suggestion;
+                        userController.text = suggestion.name;
+                      },
+                      emptyBuilder: (context) => const SizedBox.shrink(),
+                      hideWithKeyboard: true,
+                      hideOnSelect: true,
+                      retainOnLoading: false,
+                      offset: const Offset(0, 8),
+                      decorationBuilder: (context, suggestionsBox) {
+                        return Material(
+                          elevation: 4,
+                          color: Theme.of(context).colorScheme.surface,
+                          child: suggestionsBox,
+                        );
+                      },
+                      builder: (context, controller, focusNode) {
+                        return TextField(
+                          controller: userController,
+                          focusNode: focusNode,
                           decoration: InputDecoration(
                             labelText: 'Select user',
                             labelStyle: TextStyle(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -121,9 +130,6 @@ class MaxRMDashboard extends HookConsumerWidget {
                           ),
                         );
                       },
-                      onSelected: (UserModel selection) {
-                        selectedUserController.value = selection;
-                      },
                     );
                   },
                   loading: () => const CircularProgressIndicator(),
@@ -134,33 +140,40 @@ class MaxRMDashboard extends HookConsumerWidget {
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: exercisesAsyncValue.when(
                 data: (exercises) {
-                  return Autocomplete<ExerciseModel>(
-                    optionsBuilder: (TextEditingValue textEditingValue) {
-                      if (textEditingValue.text.isEmpty) {
-                        return const Iterable<ExerciseModel>.empty();
-                      }
-                      return exercises.where((ExerciseModel exercise) {
-                        return exercise.name
-                            .toLowerCase()
-                            .startsWith(textEditingValue.text.toLowerCase());
-                      });
+                  return TypeAheadField<ExerciseModel>(
+                    suggestionsCallback: (search) async {
+                      return exercises.where((exercise) =>
+                          exercise.name.toLowerCase().contains(search.toLowerCase())).toList();
                     },
-                    displayStringForOption: (ExerciseModel exercise) =>
-                        exercise.name,
-                    fieldViewBuilder: (
-                      BuildContext context,
-                      TextEditingController fieldTextEditingController,
-                      FocusNode fieldFocusNode,
-                      VoidCallback onFieldSubmitted,
-                    ) {
-                      return TextFormField(
-                        controller: fieldTextEditingController,
-                        focusNode: fieldFocusNode,
+                    itemBuilder: (context, suggestion) {
+                      return ListTile(
+                        title: Text(suggestion.name),
+                      );
+                    },
+                    onSelected: (suggestion) {
+                      selectedExerciseController.value = suggestion;
+                      exerciseController.text = suggestion.name;
+                    },
+                    emptyBuilder: (context) => const SizedBox.shrink(),
+                    hideWithKeyboard: true,
+                    hideOnSelect: true,
+                    retainOnLoading: false,
+                    offset: const Offset(0, 8),
+                    decorationBuilder: (context, suggestionsBox) {
+                      return Material(
+                        elevation: 4,
+                        color: Theme.of(context).colorScheme.surface,
+                        child: suggestionsBox,
+                      );
+                    },
+                    builder: (context, controller, focusNode) {
+                      return TextField(
+                        controller: exerciseController,
+                        focusNode: focusNode,
                         decoration: InputDecoration(
                           labelText: 'Select exercise',
                           labelStyle: TextStyle(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -180,14 +193,10 @@ class MaxRMDashboard extends HookConsumerWidget {
                         ),
                       );
                     },
-                    onSelected: (ExerciseModel selection) {
-                      selectedExerciseController.value = selection;
-                    },
                   );
                 },
                 loading: () => const CircularProgressIndicator(),
-                error: (error, stack) =>
-                    Text("Error loading exercises: $error"),
+                error: (error, stack) => Text("Error loading exercises: $error"),
               ),
             ),
             Padding(
@@ -251,16 +260,12 @@ class MaxRMDashboard extends HookConsumerWidget {
               child: Center(
                 child: ElevatedButton(
                   onPressed: () {
-                    final int repetitions =
-                        int.tryParse(repetitionsController.text) ?? 0;
+                    final int repetitions = int.tryParse(repetitionsController.text) ?? 0;
                     int maxWeight = int.tryParse(maxWeightController.text) ?? 0;
                     if (repetitions > 1) {
-                      maxWeight =
-                          (maxWeight / (1.0278 - (0.0278 * repetitions)))
-                              .round();
+                      maxWeight = (maxWeight / (1.0278 - (0.0278 * repetitions))).round();
                     }
-                    final ExerciseModel? selectedExercise =
-                        selectedExerciseController.value;
+                    final ExerciseModel? selectedExercise = selectedExerciseController.value;
                     if (selectedExercise != null && maxWeight > 0) {
                       addRecord(
                         exerciseId: selectedExercise.id,
@@ -289,8 +294,7 @@ class MaxRMDashboard extends HookConsumerWidget {
               ),
             ),
             if (usersService.getCurrentUserRole() == 'admin')
-              _buildAllExercisesMaxRMs(
-                  ref, selectedUserController.value?.id ?? ''),
+              _buildAllExercisesMaxRMs(ref, selectedUserController.value?.id ?? ''),
             if (usersService.getCurrentUserRole() != 'admin' && user != null)
               _buildAllExercisesMaxRMs(ref, user.uid),
           ],
