@@ -52,29 +52,29 @@ class AuthService {
     return userCredential;
   }
 
-Future<UserCredential?> signInWithGoogle() async {
-  try {
-    GoogleSignInAccount? googleUser = await googleSignIn.signInSilently();
-    googleUser ??= await googleSignIn.signIn();
+  Future<UserCredential?> signInWithGoogle() async {
+    try {
+      GoogleSignInAccount? googleUser = await googleSignIn.signInSilently();
+      googleUser ??= await googleSignIn.signIn();
 
-    if (googleUser == null) {
+      if (googleUser == null) {
+        return null;
+      }
+
+      final googleAuth = await googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final userCredential = await auth.signInWithCredential(credential);
+      await updateUserDataIfNeeded(userCredential.user!);
+      return userCredential;
+    } catch (error) {
+      debugPrint('CHECK ERROR: Failed to sign in with Google: $error');
       return null;
     }
-
-    final googleAuth = await googleUser.authentication;
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
-
-    final userCredential = await auth.signInWithCredential(credential);
-    await updateUserDataIfNeeded(userCredential.user!);
-    return userCredential;
-  } catch (error) {
-    debugPrint('CHECK ERROR: Failed to sign in with Google: $error');
-    return null;
   }
-}
 
   Future<void> updateUserDataIfNeeded(User user) async {
     final userDocRef = firestore.collection('users').doc(user.uid);
@@ -103,66 +103,68 @@ Future<UserCredential?> signInWithGoogle() async {
     }
   }
 
-Widget renderGoogleSignInButton(BuildContext context, String userRole) {
-  return ElevatedButton(
-    onPressed: () async {
-      try {
-        final userCredential = await signInWithGoogle();
-        if (userCredential != null) {
-          final userId = userCredential.user?.uid;
-          if (userId != null) {
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Google Sign-In successful'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-              SchedulerBinding.instance.addPostFrameCallback((_) {
-                if (userRole == 'admin') {
-                  Navigator.pushNamed(context, '/programs_screen');
-                } else {
-                  Navigator.pushNamed(context, '/programs_screen/user_programs/$userId');
-                }
-              });
+  Widget renderGoogleSignInButton(BuildContext context, String userRole) {
+    return ElevatedButton(
+      onPressed: () async {
+        try {
+          final userCredential = await signInWithGoogle();
+          if (userCredential != null) {
+            final userId = userCredential.user?.uid;
+            if (userId != null) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Google Sign-In successful'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+                SchedulerBinding.instance.addPostFrameCallback((_) {
+                  if (userRole == 'admin') {
+                    Navigator.pushNamed(context, '/programs_screen');
+                  } else {
+                    Navigator.pushNamed(
+                        context, '/programs_screen/user_programs/$userId');
+                  }
+                });
+              }
+            } else {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Failed to retrieve user ID'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             }
           } else {
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Failed to retrieve user ID'),
-                  backgroundColor: Colors.red,
+                  content: Text('Google Sign-In cancelled'),
+                  backgroundColor: Colors.amber,
                 ),
               );
             }
           }
-        } else {
+        } catch (error) {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Google Sign-In cancelled'),
-                backgroundColor: Colors.amber,
+              SnackBar(
+                content: Text('Failed to sign in with Google: $error'),
+                backgroundColor: Colors.red,
               ),
             );
           }
         }
-      } catch (error) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to sign in with Google: $error'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    },
-    style: ElevatedButton.styleFrom(
-      foregroundColor: Colors.black,
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-    ),
-    child: const Text('Sign in with Google'),
-  );
-}}
+      },
+      style: ElevatedButton.styleFrom(
+        foregroundColor: Colors.black,
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+      ),
+      child: const Text('Sign in with Google'),
+    );
+  }
+}

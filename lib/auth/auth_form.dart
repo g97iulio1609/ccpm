@@ -19,30 +19,83 @@ class AuthForm extends HookConsumerWidget {
     final userName = useState('');
     final userGender = useState('');
 
-    return Form(
-      key: formKey,
+    return Container(
+      color: const Color(0xFF121212),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          if (!isLogin.value) UsernameField(userName: userName),
-          const SizedBox(height: 10),
-          if (!isLogin.value) GenderField(userGender: userGender),
-          const SizedBox(height: 10),
-          EmailField(userEmail: userEmail),
-          const SizedBox(height: 10),
-          PasswordField(userPassword: userPassword),
-          const SizedBox(height: 20),
-          SubmitButton(
-            formKey: formKey,
-            isLogin: isLogin,
-            authService: authService,
-            userEmail: userEmail,
-            userPassword: userPassword,
-            userName: userName,
-            userGender: userGender,
+          const Text(
+            'Begin your journey',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          ToggleAuthModeButton(isLogin: isLogin),
-          const GoogleSignInButtonWrapper(),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const GoogleSignInButtonWrapper(),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Or continue with',
+            style: TextStyle(
+              color: Colors.white,
+            ),
+          ),
+          Form(
+            key: formKey,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  EmailField(userEmail: userEmail),
+                  const SizedBox(height: 16),
+                  PasswordField(userPassword: userPassword),
+                  if (!isLogin.value) ...[
+                    const SizedBox(height: 16),
+                    UsernameField(userName: userName),
+                    const SizedBox(height: 16),
+                    GenderField(userGender: userGender),
+                  ],
+                  const SizedBox(height: 24),
+                  SubmitButton(
+                    formKey: formKey,
+                    isLogin: isLogin,
+                    authService: authService,
+                    userEmail: userEmail,
+                    userPassword: userPassword,
+                    userName: userName,
+                    userGender: userGender,
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () => isLogin.value = !isLogin.value,
+                    child: Text(
+                      isLogin.value ? 'Not a Member? Create an Account' : 'I already have an account',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {},
+                    child: const Text(
+                      'Forgot password?',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );

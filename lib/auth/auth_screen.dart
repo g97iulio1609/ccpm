@@ -1,4 +1,3 @@
-// auth_screen.dart
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'auth_service.dart';
@@ -12,12 +11,14 @@ class AuthScreen extends HookConsumerWidget {
     final authService = ref.watch(authServiceProvider);
 
     return Scaffold(
-      body: Center(
-        child: Card(
-          margin: const EdgeInsets.all(20),
+      backgroundColor: const Color(0xFF121212),
+      body: SafeArea(
+        child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: AuthForm(authService: authService),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: AuthForm(authService: authService),
+            ),
           ),
         ),
       ),
