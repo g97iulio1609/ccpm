@@ -37,11 +37,11 @@ class MaxRMDashboard extends HookConsumerWidget {
     final usersService = ref.watch(userServiceProvider);
     final selectedExerciseController = useState<ExerciseModel?>(null);
     final selectedUserController = useState<UserModel?>(null);
+    final exerciseNameController = useTextEditingController();
     final maxWeightController = useTextEditingController();
     final repetitionsController = useTextEditingController();
+    final userNameController = useTextEditingController();
     final dateFormat = DateFormat('yyyy-MM-dd');
-    final userController = useTextEditingController();
-    final exerciseController = useTextEditingController();
 
     Future<void> addRecord({
       required String exerciseId,
@@ -89,7 +89,7 @@ class MaxRMDashboard extends HookConsumerWidget {
                       },
                       onSelected: (suggestion) {
                         selectedUserController.value = suggestion;
-                        userController.text = suggestion.name;
+                        userNameController.text = suggestion.name;
                       },
                       emptyBuilder: (context) => const SizedBox.shrink(),
                       hideWithKeyboard: true,
@@ -103,33 +103,8 @@ class MaxRMDashboard extends HookConsumerWidget {
                           child: suggestionsBox,
                         );
                       },
-                      builder: (context, controller, focusNode) {
-                        return TextField(
-                          controller: userController,
-                          focusNode: focusNode,
-                          decoration: InputDecoration(
-                            labelText: 'Select user',
-                            labelStyle: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: Theme.of(context).colorScheme.outline,
-                              ),
-                            ),
-                            filled: true,
-                            fillColor: Theme.of(context).colorScheme.surface,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 14,
-                            ),
-                          ),
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                        );
-                      },
+                      controller: userNameController,
+                      focusNode: FocusNode(),
                     );
                   },
                   loading: () => const CircularProgressIndicator(),
@@ -152,7 +127,7 @@ class MaxRMDashboard extends HookConsumerWidget {
                     },
                     onSelected: (suggestion) {
                       selectedExerciseController.value = suggestion;
-                      exerciseController.text = suggestion.name;
+                      exerciseNameController.text = suggestion.name;
                     },
                     emptyBuilder: (context) => const SizedBox.shrink(),
                     hideWithKeyboard: true,
@@ -166,33 +141,8 @@ class MaxRMDashboard extends HookConsumerWidget {
                         child: suggestionsBox,
                       );
                     },
-                    builder: (context, controller, focusNode) {
-                      return TextField(
-                        controller: exerciseController,
-                        focusNode: focusNode,
-                        decoration: InputDecoration(
-                          labelText: 'Select exercise',
-                          labelStyle: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: Theme.of(context).colorScheme.outline,
-                            ),
-                          ),
-                          filled: true,
-                          fillColor: Theme.of(context).colorScheme.surface,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14,
-                          ),
-                        ),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      );
-                    },
+                    controller: exerciseNameController,
+                    focusNode: FocusNode(),
                   );
                 },
                 loading: () => const CircularProgressIndicator(),

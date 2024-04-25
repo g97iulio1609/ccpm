@@ -7,12 +7,15 @@ import '../users_services.dart';
 class AthleteSelectionDialog extends ConsumerWidget {
   final TrainingProgramController controller;
 
-  const AthleteSelectionDialog({required this.controller, Key? key}) : super(key: key);
+  const AthleteSelectionDialog({required this.controller, Key? key})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final usersService = ref.watch(usersServiceProvider);
-    final athleteNameController = TextEditingController(text: '');
+    final athleteNameController = TextEditingController();
+    final focusNode = FocusNode();
+    final suggestionsController = SuggestionsController<UserModel>();
 
     return AlertDialog(
       title: const Text('Select Athlete'),
@@ -30,10 +33,13 @@ class AthleteSelectionDialog extends ConsumerWidget {
                 if (snapshot.hasData) {
                   final users = snapshot.data!;
                   return TypeAheadField<UserModel>(
-                    suggestionsCallback: (search) async {
-                      return users
-                          .where((user) => user.name.toLowerCase().contains(search.toLowerCase()))
-                          .toList();
+                    suggestionsController: suggestionsController,
+                    suggestionsCallback: (pattern) {
+                      return users.where((user) {
+                        final nameLower = user.name.toLowerCase();
+                        final patternLower = pattern.toLowerCase();
+                        return nameLower.contains(patternLower);
+                      }).toList();
                     },
                     itemBuilder: (context, suggestion) {
                       return ListTile(
@@ -48,15 +54,16 @@ class AthleteSelectionDialog extends ConsumerWidget {
                     hideWithKeyboard: true,
                     hideOnSelect: true,
                     retainOnLoading: false,
-                    offset: const Offset(0, 8),
-                    decorationBuilder: (context, suggestionsBox) {
+                    decorationBuilder: (context, child) {
                       return Material(
                         elevation: 4,
-                        color: Theme.of(context).colorScheme.surface,
-                        child: suggestionsBox,
+                        borderRadius: BorderRadius.circular(10),
+                        child: child,
                       );
                     },
-                    builder: (context, controller, focusNode) {
+                    controller: athleteNameController,
+                    focusNode: focusNode,
+                    builder: (context, suggestionsController, focusNode) {
                       return TextField(
                         controller: athleteNameController,
                         focusNode: focusNode,

@@ -24,7 +24,7 @@ class ExerciseDialog extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.watch(trainingProgramControllerProvider);
-    final nameController = TextEditingController(text: exercise?.name ?? '');
+    final exerciseNameController = TextEditingController(text: exercise?.name ?? '');
     final variantController = TextEditingController(text: exercise?.variant ?? '');
     String selectedExerciseId = exercise?.exerciseId ?? '';
     final exercisesService = ref.watch(exercisesServiceProvider);
@@ -62,11 +62,11 @@ class ExerciseDialog extends ConsumerWidget {
                     builder: (context) => AddExerciseDialog(exercisesService: exercisesService),
                   );
                   if (newExercise != null) {
-                    nameController.text = newExercise.name;
+                    exerciseNameController.text = newExercise.name;
                     selectedExerciseId = newExercise.id;
                   }
                 } else {
-                  nameController.text = suggestion.name;
+                  exerciseNameController.text = suggestion.name;
                   selectedExerciseId = suggestion.id;
                 }
               },
@@ -82,40 +82,8 @@ class ExerciseDialog extends ConsumerWidget {
                   child: suggestionsBox,
                 );
               },
-              builder: (context, controller, focusNode) {
-                return TextField(
-                  controller: nameController,
-                  focusNode: focusNode,
-                  decoration: InputDecoration(
-                    labelText: 'Exercise',
-                    labelStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(
-                        color: Theme.of(context).colorScheme.primary,
-                        width: 2,
-                      ),
-                    ),
-                    filled: true,
-                    fillColor: Theme.of(context).colorScheme.surface,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  ),
-                );
-              },
+              controller: exerciseNameController,
+              focusNode: FocusNode(),
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -166,7 +134,7 @@ class ExerciseDialog extends ConsumerWidget {
             final newExercise = Exercise(
               id: exercise?.id ?? '',
               exerciseId: selectedExerciseId,
-              name: nameController.text,
+              name: exerciseNameController.text,
               type: exercise?.type ?? '',
               variant: variantController.text,
               order: exercise?.order ?? 0,
