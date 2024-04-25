@@ -12,60 +12,68 @@ class AthleteSelectionDialog extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final usersService = ref.watch(usersServiceProvider);
-    final athleteNameController = TextEditingController();
+    final athleteNameController = TextEditingController(text: '');
 
     return AlertDialog(
       title: const Text('Select Athlete'),
       content: SizedBox(
         width: double.maxFinite,
-        child: StreamBuilder<List<UserModel>>(
-          stream: usersService.getUsers(),
+        child: FutureBuilder<String>(
+          future: controller.athleteName,
           builder: (context, snapshot) {
             if (snapshot.hasData) {
-              final users = snapshot.data!;
-              return TypeAheadField<UserModel>(
-                suggestionsCallback: (search) async {
-                  return users
-                      .where((user) => user.name.toLowerCase().contains(search.toLowerCase()))
-                      .toList();
-                },
-                itemBuilder: (context, suggestion) {
-                  return ListTile(
-                    title: Text(suggestion.name),
-                  );
-                },
-                onSelected: (suggestion) {
-  controller.athleteIdController.text = suggestion.id; // Assegna il valore al controller di testo
-                  athleteNameController.text = suggestion.name;
-                },
-                emptyBuilder: (context) => const SizedBox.shrink(),
-                hideWithKeyboard: true,
-                hideOnSelect: true,
-                retainOnLoading: false,
-                offset: const Offset(0, 8),
-                decorationBuilder: (context, suggestionsBox) {
-                  return Material(
-                    elevation: 4,
-                    color: Theme.of(context).colorScheme.surface,
-                    child: suggestionsBox,
-                  );
-                },
-                builder: (context, controller, focusNode) {
-                  return TextField(
-                    controller: athleteNameController,
-                    focusNode: focusNode,
-                    decoration: const InputDecoration(
-                      labelText: 'Athlete Name',
-                      border: OutlineInputBorder(),
-                    ),
-                  );
-                },
-              );
-            } else if (snapshot.hasError) {
-              return Text('Error: ${snapshot.error}');
-            } else {
-              return const CircularProgressIndicator();
+              athleteNameController.text = snapshot.data ?? '';
             }
+            return StreamBuilder<List<UserModel>>(
+              stream: usersService.getUsers(),
+              builder: (context, AsyncSnapshot<List<UserModel>> snapshot) {
+                if (snapshot.hasData) {
+                  final users = snapshot.data!;
+                  return TypeAheadField<UserModel>(
+                    suggestionsCallback: (search) async {
+                      return users
+                          .where((user) => user.name.toLowerCase().contains(search.toLowerCase()))
+                          .toList();
+                    },
+                    itemBuilder: (context, suggestion) {
+                      return ListTile(
+                        title: Text(suggestion.name),
+                      );
+                    },
+                    onSelected: (suggestion) {
+                      controller.athleteId = suggestion.id;
+                      athleteNameController.text = suggestion.name;
+                    },
+                    emptyBuilder: (context) => const SizedBox.shrink(),
+                    hideWithKeyboard: true,
+                    hideOnSelect: true,
+                    retainOnLoading: false,
+                    offset: const Offset(0, 8),
+                    decorationBuilder: (context, suggestionsBox) {
+                      return Material(
+                        elevation: 4,
+                        color: Theme.of(context).colorScheme.surface,
+                        child: suggestionsBox,
+                      );
+                    },
+                    builder: (context, controller, focusNode) {
+                      return TextField(
+                        controller: athleteNameController,
+                        focusNode: focusNode,
+                        decoration: const InputDecoration(
+                          labelText: 'Athlete Name',
+                          border: OutlineInputBorder(),
+                        ),
+                      );
+                    },
+                  );
+                } else if (snapshot.hasError) {
+                  return Text('Error: ${snapshot.error}');
+                } else {
+                  return const CircularProgressIndicator();
+                }
+              },
+            );
           },
         ),
       ),

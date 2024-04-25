@@ -30,6 +30,22 @@ class TrainingProgramController extends ChangeNotifier {
   final TrainingProgramStateNotifier _programStateNotifier;
   static int superSetCounter = 0;
 
+   set athleteId(String value) {
+    _program.athleteId = value;
+    _athleteIdController.text = value;
+    notifyListeners();
+  }
+
+
+Future<String> get athleteName async {
+  if (_program.athleteId.isNotEmpty) {
+    final user = await _usersService.getUserById(_program.athleteId);
+    return user?.name ?? '';
+  } else {
+    return '';
+  }
+}
+
   final TrainingProgramRepository _repository;
   final WeekController _weekController;
   final WorkoutController _workoutController;

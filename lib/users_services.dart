@@ -188,6 +188,15 @@ class UsersService {
     return _usersStreamController.stream;
   }
 
+Future<UserModel?> getUserById(String userId) async {
+  final userDoc = await _firestore.collection('users').doc(userId).get();
+  if (userDoc.exists) {
+    return UserModel.fromFirestore(userDoc);
+  } else {
+    return null;
+  }
+}
+
   Stream<List<ExerciseRecord>> getExerciseRecords({
     required String userId,
     required String exerciseId,
