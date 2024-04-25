@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'controller/training_program_controller.dart';
 import '../users_services.dart';
@@ -11,6 +12,7 @@ class AthleteSelectionDialog extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final usersService = ref.watch(usersServiceProvider);
+    final athleteNameController = TextEditingController();
 
     return AlertDialog(
       title: const Text('Select Athlete'),
@@ -21,27 +23,42 @@ class AthleteSelectionDialog extends ConsumerWidget {
           builder: (context, snapshot) {
             if (snapshot.hasData) {
               final users = snapshot.data!;
-              return Autocomplete<UserModel>(
-                optionsBuilder: (textEditingValue) {
-                  if (textEditingValue.text.isEmpty) {
-                    return const Iterable<UserModel>.empty();
-                  }
-                  return users.where((user) => user.name.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+              return TypeAheadField<UserModel>(
+                suggestionsCallback: (search) async {
+                  return users
+                      .where((user) => user.name.toLowerCase().contains(search.toLowerCase()))
+                      .toList();
                 },
-                displayStringForOption: (user) => user.name,
-                fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
+                itemBuilder: (context, suggestion) {
+                  return ListTile(
+                    title: Text(suggestion.name),
+                  );
+                },
+                onSelected: (suggestion) {
+  controller.athleteIdController.text = suggestion.id; // Assegna il valore al controller di testo
+                  athleteNameController.text = suggestion.name;
+                },
+                emptyBuilder: (context) => const SizedBox.shrink(),
+                hideWithKeyboard: true,
+                hideOnSelect: true,
+                retainOnLoading: false,
+                offset: const Offset(0, 8),
+                decorationBuilder: (context, suggestionsBox) {
+                  return Material(
+                    elevation: 4,
+                    color: Theme.of(context).colorScheme.surface,
+                    child: suggestionsBox,
+                  );
+                },
+                builder: (context, controller, focusNode) {
                   return TextField(
-                    controller: textEditingController,
+                    controller: athleteNameController,
                     focusNode: focusNode,
-                    onChanged: (value) {},
                     decoration: const InputDecoration(
                       labelText: 'Athlete Name',
                       border: OutlineInputBorder(),
                     ),
                   );
-                },
-                onSelected: (user) {
-                  controller.athleteIdController.text = user.id;
                 },
               );
             } else if (snapshot.hasError) {
