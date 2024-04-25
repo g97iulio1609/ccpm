@@ -24,4 +24,4 @@ class AuthScreen extends HookConsumerWidget {
       ),
     );
   }
-}
+} 

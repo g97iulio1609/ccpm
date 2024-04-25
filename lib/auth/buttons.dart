@@ -53,7 +53,6 @@ class _SubmitButtonState extends ConsumerState<SubmitButton> {
     );
   }
 
-
   Future<void> _submit(BuildContext context, String userRole) async {
     if (widget.formKey.currentState?.validate() ?? false) {
       widget.formKey.currentState?.save();
@@ -109,28 +108,7 @@ class GoogleSignInButtonWrapper extends ConsumerWidget {
     final authService = ref.watch(authServiceProvider);
     final userRole = ref.watch(userRoleProvider);
 
-    return SizedBox(
-      width: 180,
-      child: ElevatedButton.icon(
-        onPressed: () => authService.renderGoogleSignInButton(context, userRole),
-        icon: const FaIcon(
-          FontAwesomeIcons.google,
-          size: 24,
-          color: Colors.black,
-        ),
-        label: const Text(
-          'Sign in with Google',
-          style: TextStyle(fontSize: 16, color: Colors.black),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-      ),
-    );
+    return authService.renderGoogleSignInButton(context, userRole);
   }
 }
 
