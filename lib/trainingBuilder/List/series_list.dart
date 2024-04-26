@@ -70,7 +70,7 @@ class TrainingProgramSeriesList extends ConsumerWidget {
         ),
         TextButton(
           onPressed: () => _showReorderSeriesDialog(context, exercise.series),
-          child: const Text('Reorder Series'),
+          child: const Text('Riordina Serie'),
         ),
       ],
     );
@@ -127,11 +127,11 @@ class TrainingProgramSeriesList extends ConsumerWidget {
     return PopupMenuButton(
       itemBuilder: (context) => [
         PopupMenuItem(
-          child: const Text('Edit All'),
+          child: const Text('Modifica Tutte'),
           onTap: () => _showEditAllSeriesDialog(context, seriesGroup),
         ),
         PopupMenuItem(
-          child: const Text('Delete'),
+          child: const Text('Elimina'),
           onTap: () =>
               _showDeleteSeriesGroupDialog(context, seriesGroup, groupIndex),
         ),
@@ -144,20 +144,20 @@ class TrainingProgramSeriesList extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Series Group'),
+        title: const Text('Elimina Gruppo Di Serie'),
         content:
-            const Text('Are you sure you want to delete this series group?'),
+            const Text('Confermi Di Voler Eliminare Questo Gruppo Di Serie'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const Text('Annulla'),
           ),
           TextButton(
             onPressed: () {
               _deleteSeriesGroup(seriesGroup, groupIndex);
               Navigator.pop(context);
             },
-            child: const Text('Delete'),
+            child: const Text('Elimina'),
           ),
         ],
       ),
@@ -204,12 +204,12 @@ class TrainingProgramSeriesList extends ConsumerWidget {
       trailing: PopupMenuButton(
         itemBuilder: (context) => [
           PopupMenuItem(
-            child: const Text('Edit'),
+            child: const Text('Modifica'),
             onTap: () => controller.editSeries(weekIndex, workoutIndex,
                 exerciseIndex, series, context, exerciseType ?? ''),
           ),
           PopupMenuItem(
-            child: const Text('Delete'),
+            child: const Text('Elimina'),
             onTap: () {
               if (onRemove != null) {
                 onRemove();
@@ -264,7 +264,7 @@ class TrainingProgramSeriesList extends ConsumerWidget {
       builder: (context) => StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
-            title: const Text('Edit All Series'),
+            title: const Text('Modifica Tutte Le Serie'),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -301,7 +301,7 @@ class TrainingProgramSeriesList extends ConsumerWidget {
                     ],
                     focusNode: intensityFocusNode,
                     decoration:
-                        const InputDecoration(labelText: 'Intensity (%)'),
+                        const InputDecoration(labelText: 'Intensità (%)'),
                     onChanged: (_) {
                       if (intensityFocusNode.hasFocus) {
                         _updateWeight(
@@ -352,7 +352,7 @@ class TrainingProgramSeriesList extends ConsumerWidget {
                       }),
                     ],
                     focusNode: weightFocusNode,
-                    decoration: const InputDecoration(labelText: 'Weight (kg)'),
+                    decoration: const InputDecoration(labelText: 'Peso (kg)'),
                     onChanged: (_) {
                       if (weightFocusNode.hasFocus) {
                         _updateIntensity(
@@ -368,11 +368,11 @@ class TrainingProgramSeriesList extends ConsumerWidget {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
+                child: const Text('Annulla'),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('Save'),
+                child: const Text('Salva'),
               ),
             ],
           );

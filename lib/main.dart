@@ -103,7 +103,7 @@ class UnsupportedVersionApp extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 const Text(
-                  'App Update Required',
+                  "L'App Deve Essere Aggiornata",
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -112,7 +112,7 @@ class UnsupportedVersionApp extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'Please update the app to the latest version to continue using it.',
+                  "Aggiorna L'applicazione all'ultima versione per continaure ad usarla",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 16,
@@ -136,7 +136,7 @@ class UnsupportedVersionApp extends StatelessWidget {
                     ),
                   ),
                   child: const Text(
-                    'Update',
+                    'Aggiorna',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,

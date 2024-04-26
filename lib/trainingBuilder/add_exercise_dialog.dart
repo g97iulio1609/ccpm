@@ -20,7 +20,7 @@ class AddExerciseDialog extends HookConsumerWidget {
     final exerciseTypesStream = ref.watch(exerciseTypesProvider);
 
     return AlertDialog(
-      title: const Text('Add New Exercise'),
+      title: const Text('Crea Nuovo Esercizio'),
       content: Form(
         key: formKey,
         child: Column(
@@ -28,10 +28,10 @@ class AddExerciseDialog extends HookConsumerWidget {
           children: [
             TextFormField(
               controller: nameController,
-              decoration: const InputDecoration(labelText: 'Name'),
+              decoration: const InputDecoration(labelText: 'Nome'),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Please enter a name';
+                  return 'Inserisci il nome';
                 }
                 return null;
               },
@@ -51,12 +51,12 @@ class AddExerciseDialog extends HookConsumerWidget {
                     controller: textEditingController,
                     focusNode: focusNode,
                     decoration: const InputDecoration(
-                      labelText: 'Muscle Group',
+                      labelText: 'Muscolo Target',
                       border: OutlineInputBorder(),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter a muscle group';
+                        return 'Inserire Muscolo Target';
                       }
                       return null;
                     },
@@ -64,7 +64,7 @@ class AddExerciseDialog extends HookConsumerWidget {
                 },
               ),
               loading: () => const CircularProgressIndicator(),
-              error: (error, stack) => Text('Error: $error'),
+              error: (error, stack) => Text('Errore: $error'),
             ),
             const SizedBox(height: 10),
             exerciseTypesStream.when(
@@ -81,12 +81,12 @@ class AddExerciseDialog extends HookConsumerWidget {
                     controller: textEditingController,
                     focusNode: focusNode,
                     decoration: const InputDecoration(
-                      labelText: 'Exercise Type',
+                      labelText: 'Tipologia Esercizio',
                       border: OutlineInputBorder(),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter an exercise type';
+                        return 'Inserire tipologia esercizio';
                       }
                       return null;
                     },
@@ -94,7 +94,7 @@ class AddExerciseDialog extends HookConsumerWidget {
                 },
               ),
               loading: () => const CircularProgressIndicator(),
-              error: (error, stack) => Text('Error: $error'),
+              error: (error, stack) => Text('Errore: $error'),
             ),
           ],
         ),
@@ -102,7 +102,7 @@ class AddExerciseDialog extends HookConsumerWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: const Text('Annulla'),
         ),
         TextButton(
           onPressed: () async {
@@ -115,7 +115,7 @@ class AddExerciseDialog extends HookConsumerWidget {
               Navigator.pop(context);
             }
           },
-          child: const Text('Add'),
+          child: const Text('Crea'),
         ),
       ],
     );

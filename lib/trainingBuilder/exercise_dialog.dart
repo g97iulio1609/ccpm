@@ -38,7 +38,7 @@ class ExerciseDialog extends ConsumerWidget {
       contentTextStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
         color: Theme.of(context).colorScheme.onSurface,
       ),
-      title: Text(exercise == null ? 'Add New Exercise' : 'Edit Exercise'),
+      title: Text(exercise == null ? 'Aggiungi Esercizio' : 'Modifica Esercizio'),
       content: SingleChildScrollView(
         child: ListBody(
           children: [
@@ -48,7 +48,7 @@ class ExerciseDialog extends ConsumerWidget {
                 final suggestions = exercises
                     .where((exercise) => exercise.name.toLowerCase().contains(search.toLowerCase()))
                     .toList();
-                suggestions.add(ExerciseModel(id: '', name: 'Add New Exercise', type: '', muscleGroup: ''));
+                suggestions.add(ExerciseModel(id: '', name: 'Crea Esercizio', type: '', muscleGroup: ''));
                 return suggestions;
               },
               itemBuilder: (context, suggestion) {
@@ -57,7 +57,7 @@ class ExerciseDialog extends ConsumerWidget {
                 );
               },
               onSelected: (suggestion) async {
-                if (suggestion.name == 'Add New Exercise') {
+                if (suggestion.name == 'Crea Esercizio') {
                   final newExercise = await showDialog<ExerciseModel>(
                     context: context,
                     builder: (context) => AddExerciseDialog(exercisesService: exercisesService),
@@ -94,7 +94,7 @@ class ExerciseDialog extends ConsumerWidget {
             TextFormField(
               controller: variantController,
               decoration: InputDecoration(
-                labelText: 'Variant',
+                labelText: 'Variante',
                 labelStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 ),
@@ -132,7 +132,7 @@ class ExerciseDialog extends ConsumerWidget {
           style: TextButton.styleFrom(
             foregroundColor: Theme.of(context).colorScheme.onSurface,
           ),
-          child: const Text('Cancel'),
+          child: const Text('Annulla'),
         ),
         ElevatedButton(
           onPressed: () {
@@ -156,7 +156,7 @@ class ExerciseDialog extends ConsumerWidget {
               borderRadius: BorderRadius.circular(8),
             ),
           ),
-          child: Text(exercise == null ? 'Add' : 'Update'),
+          child: Text(exercise == null ? 'Aggiungi' : 'Aggiorna'),
         ),
       ],
     );
