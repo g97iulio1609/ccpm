@@ -71,7 +71,7 @@ List<WeekProgression> buildWeekProgressions(List<Week> weeks, Exercise exercise)
       );
       final exerciseInWeek = workout.exercises.firstWhere(
         (e) => e.exerciseId == exercise.exerciseId,
-        orElse: () => Exercise(name: '', variant: '', order: 0),
+        orElse: () => Exercise(name: '', type:'',variant: '', order: 0),
       );
 
       final firstSeries = exerciseInWeek.series.isNotEmpty ? exerciseInWeek.series.first : null;

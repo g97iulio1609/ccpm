@@ -1,6 +1,5 @@
 import 'package:alphanessone/exerciseManager/exercise_model.dart';
 import 'package:alphanessone/users_services.dart';
-import 'package:alphanessone/trainingBuilder/set_progression.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -27,6 +26,8 @@ class ExerciseDialog extends ConsumerWidget {
     final exerciseNameController = TextEditingController(text: exercise?.name ?? '');
     final variantController = TextEditingController(text: exercise?.variant ?? '');
     String selectedExerciseId = exercise?.exerciseId ?? '';
+        String selectedExerciseType = exercise?.type ?? '';
+
     final exercisesService = ref.watch(exercisesServiceProvider);
 
     return AlertDialog(
@@ -64,10 +65,14 @@ class ExerciseDialog extends ConsumerWidget {
                   if (newExercise != null) {
                     exerciseNameController.text = newExercise.name;
                     selectedExerciseId = newExercise.id;
+                                        selectedExerciseType = newExercise.type;
+
                   }
                 } else {
                   exerciseNameController.text = suggestion.name;
                   selectedExerciseId = suggestion.id;
+                  selectedExerciseType=suggestion.type;
+
                 }
               },
               emptyBuilder: (context) => const SizedBox.shrink(),
@@ -135,7 +140,7 @@ class ExerciseDialog extends ConsumerWidget {
               id: exercise?.id ?? '',
               exerciseId: selectedExerciseId,
               name: exerciseNameController.text,
-              type: exercise?.type ?? '',
+              type: selectedExerciseType,
               variant: variantController.text,
               order: exercise?.order ?? 0,
               series: exercise?.series ?? [],

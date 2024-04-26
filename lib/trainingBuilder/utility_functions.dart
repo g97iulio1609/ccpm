@@ -1,24 +1,28 @@
 import 'dart:math';
 
 import 'package:alphanessone/users_services.dart';
-import 'package:flutter/material.dart';
 
 double roundWeight(double weight, String? exerciseType) {
   // Imposta un valore predefinito per exerciseType se è null o una stringa vuota
-  final effectiveExerciseType = exerciseType?.isNotEmpty == true ? exerciseType : 'Default';
+  final effectiveExerciseType =
+      exerciseType?.isNotEmpty == true ? exerciseType : 'Default';
 
   switch (effectiveExerciseType) {
     case 'Manubri':
+      // Arrotonda al numero pari più vicino
       return (weight / 2).round() * 2.0;
     case 'Bilanciere':
       // Gestisci il caso in cui weight è 0
       if (weight == 0) {
         return 0;
       } else {
+        // Mantieni il comportamento esistente
         return (weight / 2.5).round() * 2.5;
       }
     default:
-      return double.parse(weight.toStringAsFixed(1));
+      // Arrotonda al numero pari più vicino
+      final roundedWeight = double.parse((weight).toStringAsFixed(1));
+      return (roundedWeight / 2).round() * 2.0;
   }
 }
 
