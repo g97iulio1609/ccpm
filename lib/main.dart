@@ -5,7 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'auth/auth_screen.dart';
 import 'home_screen.dart';
-import 'exerciseManager/exercise_list.dart';
+import 'exerciseManager/exercises_Manager.dart';
 import 'maxRMDashboard.dart';
 import 'trainingBuilder/training_program.dart';
 import 'package:firebase_auth/firebase_auth.dart';

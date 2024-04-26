@@ -6,11 +6,11 @@ import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'training_model.dart';
-import 'controller/training_program_controller.dart';
+import '../training_model.dart';
+import '../controller/training_program_controller.dart';
 import 'series_list.dart';
-import '../users_services.dart';
-import 'reorder_dialog.dart';
+import '../../users_services.dart';
+import '../reorder_dialog.dart';
 
 class TrainingProgramExerciseList extends ConsumerWidget {
   final TrainingProgramController controller;

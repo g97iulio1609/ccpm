@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import '../exerciseManager/exercises_services.dart';
-import '../exerciseManager/exercise_list.dart';
+import '../exerciseManager/exercises_Manager.dart';
 
 class AddExerciseDialog extends HookConsumerWidget {
   final ExercisesService exercisesService;
