@@ -4,11 +4,15 @@ import '../training_model.dart';
 import 'package:alphanessone/users_services.dart';
 import '../utility_functions.dart';
 
-class SeriesController {
+class SeriesController extends ChangeNotifier {
   final UsersService usersService;
   final ValueNotifier<double> weightNotifier;
 
   SeriesController(this.usersService, this.weightNotifier);
+
+   void notifyListeners() {
+    super.notifyListeners();
+  }
 
   Future<void> addSeries(TrainingProgram program, int weekIndex,
     int workoutIndex, int exerciseIndex, BuildContext context) async {
@@ -82,22 +86,25 @@ Future<List<Series>?> _showSeriesDialog(
     }
   }
 
-  Future<void> updateSeriesWeights(TrainingProgram program, int weekIndex,
-      int workoutIndex, int exerciseIndex) async {
-    final exercise = program
-        .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
-    final exerciseId = exercise.exerciseId;
-    final athleteId = program.athleteId;
-    if (exerciseId != null) {
-      final latestMaxWeight =
-          await getLatestMaxWeight(usersService, athleteId, exerciseId);
-      if (latestMaxWeight != null) {
-        for (final series in exercise.series) {
-          _calculateWeight(series, exercise.type, latestMaxWeight);
-        }
+Future<void> updateSeriesWeights(TrainingProgram program, int weekIndex,
+    int workoutIndex, int exerciseIndex) async {
+  final exercise = program
+      .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+  final exerciseId = exercise.exerciseId;
+  final athleteId = program.athleteId;
+  if (exerciseId != null) {
+    final latestMaxWeight =
+        await getLatestMaxWeight(usersService, athleteId, exerciseId);
+    if (latestMaxWeight != null) {
+      for (final series in exercise.series) {
+        _calculateWeight(series, exercise.type, latestMaxWeight);
       }
     }
   }
+
+  // Aggiungi questa riga per notificare i listener delle modifiche
+  notifyListeners();
+}
 
   void _calculateWeight(
       Series series, String? exerciseType, num? latestMaxWeight) {

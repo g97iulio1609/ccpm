@@ -84,15 +84,18 @@ class ExerciseController extends ChangeNotifier {
   }
 
   Future<void> updateExercise(
-      TrainingProgram program, String exerciseId, String exerciseType) async {
-    Exercise? changedExercise = _findExerciseById(program, exerciseId);
-    if (changedExercise != null) {
-      changedExercise.type = exerciseType; // Set the exercise type
-      final newMaxWeight = await getLatestMaxWeight(
-          _usersService, program.athleteId, exerciseId);
-      _updateExerciseWeights(changedExercise, newMaxWeight!.toDouble());
-    }
+    TrainingProgram program, String exerciseId, String exerciseType) async {
+  Exercise? changedExercise = _findExerciseById(program, exerciseId);
+  if (changedExercise != null) {
+    changedExercise.type = exerciseType; // Set the exercise type
+    final newMaxWeight = await getLatestMaxWeight(
+        _usersService, program.athleteId, exerciseId);
+    _updateExerciseWeights(changedExercise, newMaxWeight!.toDouble());
+
+    // Aggiungi questa riga per notificare il controller delle modifiche
+    _seriesController.notifyListeners();
   }
+}
 
   Exercise? _findExerciseById(TrainingProgram program, String exerciseId) {
     for (final week in program.weeks) {
@@ -107,17 +110,17 @@ class ExerciseController extends ChangeNotifier {
     return null;
   }
 
-  void _updateExerciseWeights(Exercise exercise, num newMaxWeight) {
-    final exerciseType = exercise.type;
-    if (exerciseType != null) {
-      _updateSeriesWeights(exercise.series, newMaxWeight, exerciseType);
-      if (exercise.weekProgressions != null &&
-          exercise.weekProgressions.isNotEmpty) {
-        _updateWeekProgressionWeights(
-            exercise.weekProgressions, newMaxWeight, exerciseType);
-      }
+void _updateExerciseWeights(Exercise exercise, num newMaxWeight) {
+  final exerciseType = exercise.type;
+  if (exerciseType != null) {
+    _updateSeriesWeights(exercise.series, newMaxWeight, exerciseType);
+    if (exercise.weekProgressions != null &&
+        exercise.weekProgressions.isNotEmpty) {
+      _updateWeekProgressionWeights(
+          exercise.weekProgressions, newMaxWeight, exerciseType);
     }
   }
+}
 
   void _updateSeriesWeights(
       List<Series>? series, num maxWeight, String exerciseType) {
