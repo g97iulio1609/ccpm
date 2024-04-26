@@ -5,7 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'auth/auth_screen.dart';
 import 'home_screen.dart';
-import 'exerciseManager/exercise_list.dart';
+import 'exerciseManager/exercises_Manager.dart';
 import 'maxRMDashboard.dart';
 import 'trainingBuilder/training_program.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -24,6 +24,7 @@ import 'Viewer/week_details.dart';
 import 'Viewer/workout_details.dart';
 import 'Viewer/exercise_details.dart';
 import 'Viewer/timer.dart';
+import 'app_services.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
@@ -60,7 +61,95 @@ void main() async {
             AndroidFlutterLocalNotificationsPlugin>();
     await androidPlugin?.requestExactAlarmsPermission();
   }
-  runApp(const ProviderScope(child: MyApp()));
+
+  await AppServices().initialize();
+
+  final bool isVersionSupported = await AppServices().isAppVersionSupported();
+  //debugPrint('Controllo della versione passato: $isVersionSupported');
+
+  if (isVersionSupported) {
+    //debugPrint('La versione corrente è supportata. Avvio dell\'app...');
+    runApp(const ProviderScope(child: MyApp()));
+  } else {
+    //debugPrint('La versione corrente non è supportata. Mostra la schermata di aggiornamento...');
+    runApp(const UnsupportedVersionApp());
+  }
+}
+
+class UnsupportedVersionApp extends StatelessWidget {
+  const UnsupportedVersionApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF2196F3),
+          brightness: Brightness.dark,
+        ),
+      ),
+      home: Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.update,
+                  size: 80,
+                  color: Colors.white,
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'App Update Required',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Please update the app to the latest version to continue using it.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () async {
+                    await AppServices().checkForUpdate();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF2196F3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
+                  child: const Text(
+                    'Update',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class MyApp extends ConsumerWidget {
@@ -68,22 +157,22 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ColorScheme lightColorScheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xFF2196F3),
-      primary: const Color.fromARGB(255, 171, 198, 221),
-      secondary: const Color(0xFFFF9800),
-      tertiary: const Color(0xFF4CAF50),
-      error: const Color(0xFFF44336),
-      background: const Color(0xFFF5F5F5),
-      surface: const Color(0xFFFFFFFF),
-      onPrimary: Colors.white,
-      onSecondary: Colors.white,
-      onTertiary: Colors.white,
-      onError: Colors.white,
-      onBackground: Colors.black,
-      onSurface: Colors.black,
-      brightness: Brightness.light,
-    );
+    // final ColorScheme lightColorScheme = ColorScheme.fromSeed(
+    //   seedColor: const Color(0xFF2196F3),
+    //   primary: const Color.fromARGB(255, 171, 198, 221),
+    //   secondary: const Color(0xFFFF9800),
+    //   tertiary: const Color(0xFF4CAF50),
+    //   error: const Color(0xFFF44336),
+    //   background: const Color(0xFFF5F5F5),
+    //   surface: const Color(0xFFFFFFFF),
+    //   onPrimary: Colors.white,
+    //   onSecondary: Colors.white,
+    //   onTertiary: Colors.white,
+    //   onError: Colors.white,
+    //   onBackground: Colors.black,
+    //   onSurface: Colors.black,
+    //   brightness: Brightness.light,
+    // );
 
     final ColorScheme darkColorScheme = ColorScheme.fromSeed(
       seedColor: const Color(0xFF2196F3),
@@ -102,12 +191,12 @@ class MyApp extends ConsumerWidget {
       brightness: Brightness.dark,
     );
 
-    final ThemeData lightTheme = ThemeData(
-      useMaterial3: true,
-      colorScheme: lightColorScheme,
-      textTheme: GoogleFonts.robotoTextTheme(),
-      visualDensity: VisualDensity.adaptivePlatformDensity,
-    );
+    // final ThemeData lightTheme = ThemeData(
+    //   useMaterial3: true,
+    //   colorScheme: lightColorScheme,
+    //   textTheme: GoogleFonts.robotoTextTheme(),
+    //   visualDensity: VisualDensity.adaptivePlatformDensity,
+    // );
 
     final ThemeData darkTheme = ThemeData(
       useMaterial3: true,
@@ -119,107 +208,165 @@ class MyApp extends ConsumerWidget {
       visualDensity: VisualDensity.adaptivePlatformDensity,
     );
 
-final GoRouter router = GoRouter(
-  routes: [
-    ShellRoute(
-      builder: (context, state, child) => HomeScreen(child: child),
+    final GoRouter router = GoRouter(
       routes: [
-        GoRoute(
-          path: '/',
-          builder: (context, state) => const AuthWrapper(),
-        ),
-        GoRoute(
-          path: '/programs_screen',
-          builder: (context, state) {
-            final userRole = ref.read(userRoleProvider);
-            final userId = FirebaseAuth.instance.currentUser?.uid;
-            if (userRole == 'admin') {
-              return const ProgramsScreen();
-            } else {
-              return userId != null
-                  ? UserProgramsScreen(userId: userId)
-                  : const SizedBox();
-            }
-          },
+        ShellRoute(
+          builder: (context, state, child) => HomeScreen(child: child),
           routes: [
             GoRoute(
-              path: 'user_programs/:userId',
-              builder: (context, state) =>
-                  UserProgramsScreen(userId: state.pathParameters['userId']!),
+              path: '/',
+              builder: (context, state) => const AuthWrapper(),
+            ),
+            GoRoute(
+              path: '/programs_screen',
+              builder: (context, state) {
+                final userRole = ref.read(userRoleProvider);
+                final userId = FirebaseAuth.instance.currentUser?.uid;
+                if (userRole == 'admin') {
+                  return const ProgramsScreen();
+                } else {
+                  return userId != null
+                      ? UserProgramsScreen(userId: userId)
+                      : const SizedBox();
+                }
+              },
               routes: [
                 GoRoute(
-                  path: 'training_viewer/:programId',
-                  builder: (context, state) => TrainingViewer(
-                    programId: state.pathParameters['programId']!,
-                    userId: state.pathParameters['userId']!,
-                  ),
+                  path: 'user_programs/:userId',
+                  builder: (context, state) => UserProgramsScreen(
+                      userId: state.pathParameters['userId']!),
                   routes: [
                     GoRoute(
-                      path: 'week_details/:weekId',
-                      builder: (context, state) => WeekDetails(
+                      path: 'training_viewer/:programId',
+                      builder: (context, state) => TrainingViewer(
                         programId: state.pathParameters['programId']!,
-                        weekId: state.pathParameters['weekId']!,
                         userId: state.pathParameters['userId']!,
                       ),
                       routes: [
                         GoRoute(
-                          path: 'workout_details/:workoutId',
-                          builder: (context, state) => WorkoutDetails(
+                          path: 'week_details/:weekId',
+                          builder: (context, state) => WeekDetails(
                             programId: state.pathParameters['programId']!,
                             weekId: state.pathParameters['weekId']!,
-                            workoutId: state.pathParameters['workoutId']!,
                             userId: state.pathParameters['userId']!,
                           ),
                           routes: [
                             GoRoute(
-                              path: 'exercise_details/:exerciseId',
-                              builder: (context, state) {
-                                final extra =
-                                    state.extra as Map<String, dynamic>?;
-                                return ExerciseDetails(
-                                  programId: Uri.decodeComponent(
-                                      state.pathParameters['programId']!),
-                                  weekId: Uri.decodeComponent(
-                                      state.pathParameters['weekId']!),
-                                  workoutId: Uri.decodeComponent(
-                                      state.pathParameters['workoutId']!),
-                                  exerciseId: Uri.decodeComponent(
-                                      state.pathParameters['exerciseId']!),
-                                  superSetExercises: extra?['superSetExercises'] != null
-                                      ? List<Map<String, dynamic>>.from(
-                                          extra?['superSetExercises'])
-                                      : [],
-                                  superSetExerciseIndex:
-                                      extra?['superSetExerciseIndex'] ?? 0,
-                                  seriesList: List<Map<String, dynamic>>.from(
-                                      extra?['seriesList'] ?? []),
-                                  startIndex: extra?['startIndex'] ?? 0,
-                                  userId: state.pathParameters['userId']!,
-                                );
-                              },
+                              path: 'workout_details/:workoutId',
+                              builder: (context, state) => WorkoutDetails(
+                                programId: state.pathParameters['programId']!,
+                                weekId: state.pathParameters['weekId']!,
+                                workoutId: state.pathParameters['workoutId']!,
+                                userId: state.pathParameters['userId']!,
+                              ),
                               routes: [
-                          GoRoute(
-  path: 'timer',
-  builder: (context, state) {
-    final extra = state.extra as Map<String, dynamic>?;
-    return TimerPage(
-      programId: Uri.decodeComponent(state.pathParameters['programId']!),
-      weekId: Uri.decodeComponent(state.pathParameters['weekId']!),
-      workoutId: Uri.decodeComponent(state.pathParameters['workoutId']!),
-      exerciseId: Uri.decodeComponent(state.pathParameters['exerciseId']!),
-      currentSeriesIndex: int.parse(state.uri.queryParameters['currentSeriesIndex']!),
-      superSetExerciseIndex: int.parse(state.uri.queryParameters['superSetExerciseIndex']!),
-      totalSeries: int.parse(state.uri.queryParameters['totalSeries']!),
-      restTime: int.parse(state.uri.queryParameters['restTime']!),
-      isEmomMode: state.uri.queryParameters['isEmomMode'] == 'true',
-      userId: state.pathParameters['userId']!,
-      seriesList: extra?['seriesList'] != null
-          ? List<Map<String, dynamic>>.from(extra?['seriesList'])
-          : [],
-    );
-  },
-),
+                                GoRoute(
+                                  path: 'exercise_details/:exerciseId',
+                                  builder: (context, state) {
+                                    final extra =
+                                        state.extra as Map<String, dynamic>?;
+                                    return ExerciseDetails(
+                                      programId: Uri.decodeComponent(
+                                          state.pathParameters['programId']!),
+                                      weekId: Uri.decodeComponent(
+                                          state.pathParameters['weekId']!),
+                                      workoutId: Uri.decodeComponent(
+                                          state.pathParameters['workoutId']!),
+                                      exerciseId: Uri.decodeComponent(
+                                          state.pathParameters['exerciseId']!),
+                                      superSetExercises:
+                                          extra?['superSetExercises'] != null
+                                              ? List<Map<String, dynamic>>.from(
+                                                  extra?['superSetExercises'])
+                                              : [],
+                                      superSetExerciseIndex:
+                                          extra?['superSetExerciseIndex'] ?? 0,
+                                      seriesList:
+                                          List<Map<String, dynamic>>.from(
+                                              extra?['seriesList'] ?? []),
+                                      startIndex: extra?['startIndex'] ?? 0,
+                                      userId: state.pathParameters['userId']!,
+                                    );
+                                  },
+                                  routes: [
+                                    GoRoute(
+                                      path: 'timer',
+                                      builder: (context, state) {
+                                        final extra = state.extra
+                                            as Map<String, dynamic>?;
+                                        return TimerPage(
+                                          programId: Uri.decodeComponent(state
+                                              .pathParameters['programId']!),
+                                          weekId: Uri.decodeComponent(
+                                              state.pathParameters['weekId']!),
+                                          workoutId: Uri.decodeComponent(state
+                                              .pathParameters['workoutId']!),
+                                          exerciseId: Uri.decodeComponent(state
+                                              .pathParameters['exerciseId']!),
+                                          currentSeriesIndex: int.parse(
+                                              state.uri.queryParameters[
+                                                  'currentSeriesIndex']!),
+                                          superSetExerciseIndex: int.parse(
+                                              state.uri.queryParameters[
+                                                  'superSetExerciseIndex']!),
+                                          totalSeries: int.parse(state.uri
+                                              .queryParameters['totalSeries']!),
+                                          restTime: int.parse(state.uri
+                                              .queryParameters['restTime']!),
+                                          isEmomMode: state.uri.queryParameters[
+                                                  'isEmomMode'] ==
+                                              'true',
+                                          userId:
+                                              state.pathParameters['userId']!,
+                                          seriesList: extra?['seriesList'] !=
+                                                  null
+                                              ? List<Map<String, dynamic>>.from(
+                                                  extra?['seriesList'])
+                                              : [],
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
                               ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    GoRoute(
+                      path: 'training_program',
+                      builder: (context, state) => TrainingProgramPage(
+                        userId: state.pathParameters['userId']!,
+                      ),
+                      routes: [
+                        GoRoute(
+                          path: ':programId',
+                          builder: (context, state) => TrainingProgramPage(
+                            programId: state.pathParameters['programId'],
+                            userId: state.pathParameters['userId']!,
+                            weekIndex: null,
+                          ),
+                        ),
+                        GoRoute(
+                          path: ':programId/week/:weekIndex',
+                          builder: (context, state) => TrainingProgramPage(
+                            programId: state.pathParameters['programId']!,
+                            userId: state.pathParameters['userId']!,
+                            weekIndex:
+                                int.parse(state.pathParameters['weekIndex']!),
+                          ),
+                          routes: [
+                            GoRoute(
+                              path: 'workout/:workoutIndex',
+                              builder: (context, state) => TrainingProgramPage(
+                                programId: state.pathParameters['programId']!,
+                                userId: state.pathParameters['userId']!,
+                                weekIndex: int.parse(
+                                    state.pathParameters['weekIndex']!),
+                                workoutIndex: int.parse(
+                                    state.pathParameters['workoutIndex']!),
+                              ),
                             ),
                           ],
                         ),
@@ -227,90 +374,51 @@ final GoRouter router = GoRouter(
                     ),
                   ],
                 ),
+              ],
+            ),
+            GoRoute(
+              path: '/exercises_list',
+              builder: (context, state) => const ExercisesList(),
+            ),
+            GoRoute(
+              path: '/maxrmdashboard',
+              builder: (context, state) => const MaxRMDashboard(),
+            ),
+            GoRoute(
+              path: '/users_dashboard',
+              builder: (context, state) => const UsersDashboard(),
+              routes: [
                 GoRoute(
-                  path: 'training_program',
-                  builder: (context, state) => TrainingProgramPage(
-                    userId: state.pathParameters['userId']!,
-                  ),
-                  routes: [
-                    GoRoute(
-                      path: ':programId',
-                      builder: (context, state) => TrainingProgramPage(
-                        programId: state.pathParameters['programId'],
-                        userId: state.pathParameters['userId']!,
-                        weekIndex: null,
-                      ),
-                    ),
-                    GoRoute(
-                      path: ':programId/week/:weekIndex',
-                      builder: (context, state) => TrainingProgramPage(
-                        programId: state.pathParameters['programId']!,
-                        userId: state.pathParameters['userId']!,
-                        weekIndex: int.parse(state.pathParameters['weekIndex']!),
-                      ),
-                      routes: [
-                        GoRoute(
-                          path: 'workout/:workoutIndex',
-                          builder: (context, state) => TrainingProgramPage(
-                            programId: state.pathParameters['programId']!,
-                            userId: state.pathParameters['userId']!,
-                            weekIndex: int.parse(
-                                state.pathParameters['weekIndex']!),
-                            workoutIndex:
-                                int.parse(state.pathParameters['workoutIndex']!),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                  path: 'user_profile/:userId',
+                  builder: (context, state) =>
+                      UserProfile(userId: state.pathParameters['userId']!),
                 ),
               ],
             ),
-          ],
-        ),
-        GoRoute(
-          path: '/exercises_list',
-          builder: (context, state) => const ExercisesList(),
-        ),
-        GoRoute(
-          path: '/maxrmdashboard',
-          builder: (context, state) => const MaxRMDashboard(),
-        ),
-        GoRoute(
-          path: '/users_dashboard',
-          builder: (context, state) => const UsersDashboard(),
-          routes: [
             GoRoute(
-              path: 'user_profile/:userId',
+              path: '/user_profile/:userId',
               builder: (context, state) =>
                   UserProfile(userId: state.pathParameters['userId']!),
             ),
+            GoRoute(
+              path: '/user_profile',
+              builder: (context, state) {
+                final userId = FirebaseAuth.instance.currentUser?.uid;
+                return userId != null
+                    ? UserProfile(userId: userId)
+                    : const SizedBox();
+              },
+            ),
           ],
-        ),
-        GoRoute(
-          path: '/user_profile/:userId',
-          builder: (context, state) =>
-              UserProfile(userId: state.pathParameters['userId']!),
-        ),
-        GoRoute(
-          path: '/user_profile',
-          builder: (context, state) {
-            final userId = FirebaseAuth.instance.currentUser?.uid;
-            return userId != null
-                ? UserProfile(userId: userId)
-                : const SizedBox();
-          },
-        ),
+        )
       ],
-    )
-  ],
-);
+    );
     return MaterialApp.router(
       routerConfig: router,
       title: 'AlphanessOne',
-      theme: lightTheme,
+      // theme: lightTheme,
       darkTheme: darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: ThemeMode.dark, // Imposta la modalità dark come default
     );
   }
 }

@@ -1,4 +1,3 @@
-// form_fields.dart
 import 'package:flutter/material.dart';
 
 class UsernameField extends StatelessWidget {
@@ -13,8 +12,27 @@ class UsernameField extends StatelessWidget {
       validator: (value) => (value == null || value.isEmpty || value.length < 4)
           ? 'Please enter at least 4 characters'
           : null,
-      decoration: const InputDecoration(
-          labelText: 'Username', border: OutlineInputBorder()),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: const Color(0xFF1E1E1E),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: BorderSide.none,
+        ),
+        labelText: 'Username',
+        labelStyle: const TextStyle(
+          color: Color(0xFFB3B3B3),
+        ),
+      ),
+      style: const TextStyle(color: Colors.white),
       onSaved: (value) => userName.value = value ?? '',
     );
   }
@@ -31,10 +49,28 @@ class GenderField extends StatelessWidget {
       key: const ValueKey('gender'),
       value: userGender.value,
       onChanged: (value) => userGender.value = value ?? '',
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: const Color(0xFF1E1E1E),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: BorderSide.none,
+        ),
         labelText: 'Gender',
-        border: OutlineInputBorder(),
+        labelStyle: const TextStyle(
+          color: Color(0xFFB3B3B3),
+        ),
       ),
+      dropdownColor: const Color(0xFF121212),
+      style: const TextStyle(color: Colors.white),
       items: const [
         DropdownMenuItem(
           value: '',
@@ -66,13 +102,31 @@ class EmailField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextFormField(
       key: const ValueKey('email'),
-      validator: (value) =>
-          (value == null || value.isEmpty || !value.contains('@'))
-              ? 'Please enter a valid email address'
-              : null,
+      validator: (value) => (value == null || value.isEmpty || !value.contains('@'))
+          ? 'Please enter a valid email address'
+          : null,
       keyboardType: TextInputType.emailAddress,
-      decoration: const InputDecoration(
-          labelText: 'Email address', border: OutlineInputBorder()),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: const Color(0xFF1E1E1E),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: BorderSide.none,
+        ),
+        labelText: 'Email address',
+        labelStyle: const TextStyle(
+          color: Color(0xFFB3B3B3),
+        ),
+      ),
+      style: const TextStyle(color: Colors.white),
       onSaved: (value) => userEmail.value = value ?? '',
     );
   }
@@ -90,8 +144,27 @@ class PasswordField extends StatelessWidget {
       validator: (value) => (value == null || value.isEmpty || value.length < 7)
           ? 'Password must be at least 7 characters long'
           : null,
-      decoration: const InputDecoration(
-          labelText: 'Password', border: OutlineInputBorder()),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: const Color(0xFF1E1E1E),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: BorderSide.none,
+        ),
+        labelText: 'Password',
+        labelStyle: const TextStyle(
+          color: Color(0xFFB3B3B3),
+        ),
+      ),
+      style: const TextStyle(color: Colors.white),
       obscureText: true,
       onSaved: (value) => userPassword.value = value ?? '',
     );

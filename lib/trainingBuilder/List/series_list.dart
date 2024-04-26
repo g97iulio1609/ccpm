@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'training_model.dart';
-import 'controller/training_program_controller.dart';
-import 'utility_functions.dart';
-import '../users_services.dart';
-import 'reorder_dialog.dart';
+import '../training_model.dart';
+import '../controller/training_program_controller.dart';
+import '../utility_functions.dart';
+import '../../users_services.dart';
+import '../reorder_dialog.dart';
 
 final expansionStateProvider = StateNotifierProvider.autoDispose<
     ExpansionStateNotifier, Map<String, bool>>((ref) {
@@ -29,6 +29,7 @@ class TrainingProgramSeriesList extends ConsumerWidget {
   final int weekIndex;
   final int workoutIndex;
   final int exerciseIndex;
+  final String exerciseType;
 
   const TrainingProgramSeriesList({
     required this.controller,
@@ -36,6 +37,7 @@ class TrainingProgramSeriesList extends ConsumerWidget {
     required this.weekIndex,
     required this.workoutIndex,
     required this.exerciseIndex,
+    required this.exerciseType,
     super.key,
   });
 
@@ -115,7 +117,7 @@ class TrainingProgramSeriesList extends ConsumerWidget {
           _buildSeriesCard(context, seriesGroup[i], groupIndex, i, () {
             seriesGroup.removeAt(i);
             controller.notifyListeners();
-          }),
+          }, exerciseType),
       ],
     );
   }
@@ -189,7 +191,10 @@ class TrainingProgramSeriesList extends ConsumerWidget {
   }
 
   Widget _buildSeriesCard(BuildContext context, Series series,
-      [int? groupIndex, int? seriesIndex, VoidCallback? onRemove]) {
+      [int? groupIndex,
+      int? seriesIndex,
+      VoidCallback? onRemove,
+      String? exerciseType]) {
     return ListTile(
       title: Text(
         '${series.reps} reps x ${series.weight} kg',
@@ -200,8 +205,8 @@ class TrainingProgramSeriesList extends ConsumerWidget {
         itemBuilder: (context) => [
           PopupMenuItem(
             child: const Text('Edit'),
-            onTap: () => controller.editSeries(
-                weekIndex, workoutIndex, exerciseIndex, series, context),
+            onTap: () => controller.editSeries(weekIndex, workoutIndex,
+                exerciseIndex, series, context, exerciseType ?? ''),
           ),
           PopupMenuItem(
             child: const Text('Delete'),

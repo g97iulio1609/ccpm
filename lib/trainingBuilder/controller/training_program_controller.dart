@@ -13,7 +13,6 @@ import 'series_controller.dart';
 import 'super_set_controller.dart';
 import 'progression_controller.dart';
 
-
 final firestoreServiceProvider =
     Provider<FirestoreService>((ref) => FirestoreService());
 
@@ -29,6 +28,21 @@ class TrainingProgramController extends ChangeNotifier {
   final user_services.UsersService _usersService;
   final TrainingProgramStateNotifier _programStateNotifier;
   static int superSetCounter = 0;
+
+  set athleteId(String value) {
+    _program.athleteId = value;
+    _athleteIdController.text = value;
+    notifyListeners();
+  }
+
+  Future<String> get athleteName async {
+    if (_program.athleteId.isNotEmpty) {
+      final user = await _usersService.getUserById(_program.athleteId);
+      return user?.name ?? '';
+    } else {
+      return '';
+    }
+  }
 
   final TrainingProgramRepository _repository;
   final WeekController _weekController;
@@ -121,8 +135,10 @@ class TrainingProgramController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addExercise(int weekIndex, int workoutIndex, BuildContext context) async {
-    await _exerciseController.addExercise(_program, weekIndex, workoutIndex, context);
+  Future<void> addExercise(
+      int weekIndex, int workoutIndex, BuildContext context) async {
+    await _exerciseController.addExercise(
+        _program, weekIndex, workoutIndex, context);
     notifyListeners();
   }
 
@@ -139,10 +155,10 @@ class TrainingProgramController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateExercise(String exerciseId) async {
-    await _exerciseController.updateExercise(_program, exerciseId);
-    notifyListeners();
-  }
+Future<void> updateExercise(Exercise exercise) async {
+  await _exerciseController.updateExercise(_program, exercise.exerciseId!, exercise.type);
+  notifyListeners();
+}
 
   void createSuperSet(int weekIndex, int workoutIndex) {
     _superSetController.createSuperSet(_program, weekIndex, workoutIndex);
@@ -170,19 +186,14 @@ class TrainingProgramController extends ChangeNotifier {
   }
 
   Future<void> addSeries(int weekIndex, int workoutIndex, int exerciseIndex,
-      BuildContext context) async {
-    await _seriesController.addSeries(
-        _program, weekIndex, workoutIndex, exerciseIndex, context);
+      String exerciseType, BuildContext context) async {
+    await _seriesController.addSeries(_program, weekIndex, workoutIndex,
+        exerciseIndex,  context);
     notifyListeners();
   }
 
-  Future<void> editSeries(
-    int weekIndex,
-    int workoutIndex,
-    int exerciseIndex,
-    Series currentSeries,
-    BuildContext context,
-  ) async {
+  Future<void> editSeries(int weekIndex, int workoutIndex, int exerciseIndex,
+      Series currentSeries, BuildContext context, String exerciseType) async {
     await _seriesController.editSeries(_program, weekIndex, workoutIndex,
         exerciseIndex, currentSeries, context);
     notifyListeners();
@@ -219,39 +230,50 @@ class TrainingProgramController extends ChangeNotifier {
     notifyListeners();
   }
 
-Future<void> applyWeekProgressions(int exerciseIndex, List<WeekProgression> weekProgressions, BuildContext context) async {
-  final exercise = _program.weeks.expand((week) => week.workouts).expand((workout) => workout.exercises).elementAt(exerciseIndex);
-  
-  for (int weekIndex = 0; weekIndex < _program.weeks.length; weekIndex++) {
-    final progression = weekIndex < weekProgressions.length ? weekProgressions[weekIndex] : weekProgressions.last;
-    final series = List.generate(progression.sets, (index) => Series(
-      serieId: generateRandomId(16).toString(),
-      reps: progression.reps,
-      sets: 1,
-      intensity: progression.intensity,
-      rpe: progression.rpe,
-      weight: progression.weight,
-      order: index + 1,
-      done: false,
-      reps_done: 0,
-      weight_done: 0.0,
-    ));
-    
-    _program.weeks[weekIndex].workouts.forEach((workout) {
-      final exerciseIndex = workout.exercises.indexWhere((e) => e.id == exercise.id);
-      if (exerciseIndex != -1) {
-        workout.exercises[exerciseIndex] = workout.exercises[exerciseIndex].copyWith(series: series);
-      }
-    });
-  }
+  Future<void> applyWeekProgressions(int exerciseIndex,
+      List<WeekProgression> weekProgressions, BuildContext context) async {
+    final exercise = _program.weeks
+        .expand((week) => week.workouts)
+        .expand((workout) => workout.exercises)
+        .elementAt(exerciseIndex);
 
-  notifyListeners();
-}
+    for (int weekIndex = 0; weekIndex < _program.weeks.length; weekIndex++) {
+      final progression = weekIndex < weekProgressions.length
+          ? weekProgressions[weekIndex]
+          : weekProgressions.last;
+      final series = List.generate(
+          progression.sets,
+          (index) => Series(
+                serieId: generateRandomId(16).toString(),
+                reps: progression.reps,
+                sets: 1,
+                intensity: progression.intensity,
+                rpe: progression.rpe,
+                weight: progression.weight,
+                order: index + 1,
+                done: false,
+                reps_done: 0,
+                weight_done: 0.0,
+              ));
+
+      _program.weeks[weekIndex].workouts.forEach((workout) {
+        final exerciseIndex =
+            workout.exercises.indexWhere((e) => e.id == exercise.id);
+        if (exerciseIndex != -1) {
+          workout.exercises[exerciseIndex] =
+              workout.exercises[exerciseIndex].copyWith(series: series);
+        }
+      });
+    }
+
+    notifyListeners();
+  }
 
   Future<void> updateExerciseProgressions(Exercise exercise,
       List<WeekProgression> updatedProgressions, BuildContext context) async {
     final progressionController = ProgressionController(this);
-    await progressionController.updateExerciseProgressions(exercise, updatedProgressions, context);
+    await progressionController.updateExerciseProgressions(
+        exercise, updatedProgressions, context);
     notifyListeners();
   }
 
@@ -325,77 +347,77 @@ Future<void> applyWeekProgressions(int exerciseIndex, List<WeekProgression> week
     notifyListeners();
   }
 
-Future<void> duplicateProgram(
-    String programId, String newProgramName, BuildContext context) async {
-  try {
-    // Fetch the existing program
-    TrainingProgram? existingProgram =
-        await _repository.fetchTrainingProgram(programId);
+  Future<void> duplicateProgram(
+      String programId, String newProgramName, BuildContext context) async {
+    try {
+      // Fetch the existing program
+      TrainingProgram? existingProgram =
+          await _repository.fetchTrainingProgram(programId);
 
-    // Check if the existing program was found
-    if (existingProgram == null) {
-      _showErrorSnackBar(context, 'Programma esistente non trovato');
-      return;
-    }
+      // Check if the existing program was found
+      if (existingProgram == null) {
+        _showErrorSnackBar(context, 'Programma esistente non trovato');
+        return;
+      }
 
-    debugPrint('Existing Program: ${existingProgram.toMap()}');
+      debugPrint('Existing Program: ${existingProgram.toMap()}');
 
-    // Create a new program with the new name and copy the existing program data
-    TrainingProgram newProgram = existingProgram.copyWith(
-      id: generateRandomId(16).toString(),
-      name: newProgramName,
-    );
-
-    debugPrint('New Program (Before ID Generation): ${newProgram.toMap()}');
-
-    // Generate new IDs for weeks, workouts, exercises, series, and supersets
-    newProgram.weeks = newProgram.weeks.map((week) {
-      debugPrint('Week: ${week.toMap()}');
-      return week.copyWith(
+      // Create a new program with the new name and copy the existing program data
+      TrainingProgram newProgram = existingProgram.copyWith(
         id: generateRandomId(16).toString(),
-        workouts: week.workouts.map((workout) {
-          debugPrint('Workout: ${workout.toMap()}');
-          return workout.copyWith(
-            id: generateRandomId(16).toString(),
-            exercises: workout.exercises.map((exercise) {
-              debugPrint('Exercise: ${exercise.toMap()}');
-              return exercise.copyWith(
-                id: generateRandomId(16).toString(),
-                series: exercise.series.map((series) {
-                  debugPrint('Series: ${series.toMap()}');
-                  return series.copyWith(
-                    serieId: generateRandomId(16).toString(),
-                    reps_done: 0,
-                    weight_done: 0.0,
-                    done: false,
-                  );
-                }).toList(),
-              );
-            }).toList(),
-            superSets: workout.superSets.map((superSet) {
-              debugPrint('SuperSet: ${superSet.toMap()}');
-              return SuperSet(
-                id: generateRandomId(16).toString(),
-                name: superSet.name,
-                exerciseIds: superSet.exerciseIds,
-              );
-            }).toList(),
-          );
-        }).toList(),
+        name: newProgramName,
       );
-    }).toList();
 
-    debugPrint('New Program (After ID Generation): ${newProgram.toMap()}');
+      debugPrint('New Program (Before ID Generation): ${newProgram.toMap()}');
 
-    // Save the new program
-    await _repository.addOrUpdateTrainingProgram(newProgram);
+      // Generate new IDs for weeks, workouts, exercises, series, and supersets
+      newProgram.weeks = newProgram.weeks.map((week) {
+        debugPrint('Week: ${week.toMap()}');
+        return week.copyWith(
+          id: generateRandomId(16).toString(),
+          workouts: week.workouts.map((workout) {
+            debugPrint('Workout: ${workout.toMap()}');
+            return workout.copyWith(
+              id: generateRandomId(16).toString(),
+              exercises: workout.exercises.map((exercise) {
+                debugPrint('Exercise: ${exercise.toMap()}');
+                return exercise.copyWith(
+                  id: generateRandomId(16).toString(),
+                  series: exercise.series.map((series) {
+                    debugPrint('Series: ${series.toMap()}');
+                    return series.copyWith(
+                      serieId: generateRandomId(16).toString(),
+                      reps_done: 0,
+                      weight_done: 0.0,
+                      done: false,
+                    );
+                  }).toList(),
+                );
+              }).toList(),
+              superSets: workout.superSets.map((superSet) {
+                debugPrint('SuperSet: ${superSet.toMap()}');
+                return SuperSet(
+                  id: generateRandomId(16).toString(),
+                  name: superSet.name,
+                  exerciseIds: superSet.exerciseIds,
+                );
+              }).toList(),
+            );
+          }).toList(),
+        );
+      }).toList();
 
-    // Show a success message
-    _showSuccessSnackBar(context, 'Programma duplicato con successo');
-  } catch (error) {
-    debugPrint('Error: $error');
-    _showErrorSnackBar(
-        context, 'Errore durante la duplicazione del programma: $error');
+      debugPrint('New Program (After ID Generation): ${newProgram.toMap()}');
+
+      // Save the new program
+      await _repository.addOrUpdateTrainingProgram(newProgram);
+
+      // Show a success message
+      _showSuccessSnackBar(context, 'Programma duplicato con successo');
+    } catch (error) {
+      debugPrint('Error: $error');
+      _showErrorSnackBar(
+          context, 'Errore durante la duplicazione del programma: $error');
+    }
   }
-}
 }

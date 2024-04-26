@@ -25,14 +25,18 @@ class WorkoutController {
     if (workout.id != null) {
       program.trackToDeleteWorkouts.add(workout.id!);
     }
-    workout.exercises.forEach((exercise) => _removeExerciseAndRelatedData(program, exercise));
+    for (var exercise in workout.exercises) {
+      _removeExerciseAndRelatedData(program, exercise);
+    }
   }
 
   void _removeExerciseAndRelatedData(TrainingProgram program, Exercise exercise) {
     if (exercise.id != null) {
       program.trackToDeleteExercises.add(exercise.id!);
     }
-    exercise.series.forEach((series) => _removeSeriesData(program, series));
+    for (var series in exercise.series) {
+      _removeSeriesData(program, series);
+    }
   }
 
   void _removeSeriesData(TrainingProgram program, Series series) {

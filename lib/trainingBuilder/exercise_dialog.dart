@@ -1,7 +1,7 @@
 import 'package:alphanessone/exerciseManager/exercise_model.dart';
 import 'package:alphanessone/users_services.dart';
-import 'package:alphanessone/trainingBuilder/set_progression.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../exerciseManager/exercises_services.dart';
 import 'training_model.dart';
@@ -23,11 +23,12 @@ class ExerciseDialog extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.watch(trainingProgramControllerProvider);
-    final nameController = TextEditingController(text: exercise?.name ?? '');
+    final exerciseNameController = TextEditingController(text: exercise?.name ?? '');
     final variantController = TextEditingController(text: exercise?.variant ?? '');
     String selectedExerciseId = exercise?.exerciseId ?? '';
+        String selectedExerciseType = exercise?.type ?? '';
+
     final exercisesService = ref.watch(exercisesServiceProvider);
-    List<ExerciseModel> exercises = [];
 
     return AlertDialog(
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -41,115 +42,53 @@ class ExerciseDialog extends ConsumerWidget {
       content: SingleChildScrollView(
         child: ListBody(
           children: [
-            StreamBuilder<List<ExerciseModel>>(
-              stream: exercisesService.getExercises(),
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  exercises = snapshot.data!;
-                  return RawAutocomplete<String>(
-                    textEditingController: nameController,
-                    focusNode: FocusNode(),
-                    optionsBuilder: (textEditingValue) {
-                      final options = exercises
-                          .where((exercise) =>
-                          exercise.name.toLowerCase().startsWith(textEditingValue.text.toLowerCase()))
-                          .map((exercise) => exercise.name)
-                          .toList();
-                      options.add("Add New Exercise");
-                      return options;
-                    },
-                    onSelected: (selection) async {
-                      if (selection == "Add New Exercise") {
-                        final newExercise = await showDialog<ExerciseModel>(
-                          context: context,
-                          builder: (context) => AddExerciseDialog(exercisesService: exercisesService),
-                        );
-                        if (newExercise != null) {
-                          nameController.text = newExercise.name;
-                          selectedExerciseId = newExercise.id;
-                        }
-                      } else {
-                        nameController.text = selection;
-                        selectedExerciseId = exercises.firstWhere((exercise) => exercise.name == selection).id;
-                      }
-                    },
-                    fieldViewBuilder: (BuildContext context, TextEditingController textEditingController,
-                        FocusNode focusNode, VoidCallback onFieldSubmitted) {
-                      return TextFormField(
-                        controller: textEditingController,
-                        focusNode: focusNode,
-                        decoration: InputDecoration(
-                          labelText: 'Exercise',
-                          labelStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(
-                              color: Theme.of(context).colorScheme.outline,
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(
-                              color: Theme.of(context).colorScheme.outline,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(
-                              color: Theme.of(context).colorScheme.primary,
-                              width: 2,
-                            ),
-                          ),
-                          filled: true,
-                          fillColor: Theme.of(context).colorScheme.surface,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        ),
-                      );
-                    },
-                    optionsViewBuilder: (BuildContext context, AutocompleteOnSelected<String> onSelected,
-                        Iterable<String> options) {
-                      return Material(
-                        elevation: 4,
-                        child: Container(
-                          constraints: BoxConstraints(
-                            maxHeight: MediaQuery.of(context).size.height * 0.3,
-                            maxWidth: MediaQuery.of(context).size.width * 0.8,
-                          ),
-                          child: ListView.builder(
-                            padding: EdgeInsets.zero,
-                            shrinkWrap: true,
-                            itemCount: options.length,
-                            itemBuilder: (BuildContext context, int index) {
-                              final String option = options.elementAt(index);
-                              return InkWell(
-                                onTap: () {
-                                  onSelected(option);
-                                },
-                                child: Container(
-                                  color: Theme.of(context).colorScheme.surface,
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                  child: Text(
-                                    option,
-                                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                      color: Theme.of(context).colorScheme.onSurface,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      );
-                    },
+            TypeAheadField<ExerciseModel>(
+              suggestionsCallback: (search) async {
+                final exercises = await exercisesService.getExercises().first;
+                final suggestions = exercises
+                    .where((exercise) => exercise.name.toLowerCase().contains(search.toLowerCase()))
+                    .toList();
+                suggestions.add(ExerciseModel(id: '', name: 'Add New Exercise', type: '', muscleGroup: ''));
+                return suggestions;
+              },
+              itemBuilder: (context, suggestion) {
+                return ListTile(
+                  title: Text(suggestion.name),
+                );
+              },
+              onSelected: (suggestion) async {
+                if (suggestion.name == 'Add New Exercise') {
+                  final newExercise = await showDialog<ExerciseModel>(
+                    context: context,
+                    builder: (context) => AddExerciseDialog(exercisesService: exercisesService),
                   );
-                } else if (snapshot.hasError) {
-                  return Text('Failed to load exercises: ${snapshot.error}');
+                  if (newExercise != null) {
+                    exerciseNameController.text = newExercise.name;
+                    selectedExerciseId = newExercise.id;
+                                        selectedExerciseType = newExercise.type;
+
+                  }
                 } else {
-                  return const CircularProgressIndicator();
+                  exerciseNameController.text = suggestion.name;
+                  selectedExerciseId = suggestion.id;
+                  selectedExerciseType=suggestion.type;
+
                 }
               },
+              emptyBuilder: (context) => const SizedBox.shrink(),
+              hideWithKeyboard: true,
+              hideOnSelect: true,
+              retainOnLoading: false,
+              offset: const Offset(0, 8),
+              decorationBuilder: (context, suggestionsBox) {
+                return Material(
+                  elevation: 4,
+                  color: Theme.of(context).colorScheme.surface,
+                  child: suggestionsBox,
+                );
+              },
+              controller: exerciseNameController,
+              focusNode: FocusNode(),
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -184,7 +123,6 @@ class ExerciseDialog extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 16),
-          
           ],
         ),
       ),
@@ -200,9 +138,9 @@ class ExerciseDialog extends ConsumerWidget {
           onPressed: () {
             final newExercise = Exercise(
               id: exercise?.id ?? '',
-              exerciseId: selectedExerciseId.isNotEmpty ? selectedExerciseId : exercise?.exerciseId ?? '',
-              name: nameController.text,
-              type: exercise?.type ?? exercises.firstWhere((e) => e.id == selectedExerciseId).type,
+              exerciseId: selectedExerciseId,
+              name: exerciseNameController.text,
+              type: selectedExerciseType,
               variant: variantController.text,
               order: exercise?.order ?? 0,
               series: exercise?.series ?? [],

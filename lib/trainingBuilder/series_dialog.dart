@@ -12,20 +12,23 @@ class SeriesDialog extends StatefulWidget {
   final String exerciseId;
   final int weekIndex;
   final Exercise exercise;
+  final String exerciseType;
+
   final Series? currentSeries;
   final num latestMaxWeight;
   final ValueNotifier<double> weightNotifier;
 
   const SeriesDialog({
-    super.key,
     required this.usersService,
     required this.athleteId,
     required this.exerciseId,
+    required this.exerciseType,
     required this.weekIndex,
     required this.exercise,
     this.currentSeries,
     required this.latestMaxWeight,
     required this.weightNotifier,
+    super.key,
   });
 
   @override
@@ -190,12 +193,12 @@ class _SeriesDialogState extends State<SeriesDialog> {
     );
   }
 
-  void _updateWeight(double intensity) {
-    final calculatedWeight =
-        calculateWeightFromIntensity(widget.latestMaxWeight, intensity);
-    widget.weightNotifier.value = calculatedWeight;
-    _weightController.text = calculatedWeight.toStringAsFixed(2);
-  }
+ void _updateWeight(double intensity) {
+  final calculatedWeight = calculateWeightFromIntensity(widget.latestMaxWeight, intensity);
+  final roundedWeight = roundWeight(calculatedWeight, widget.exerciseType);
+  widget.weightNotifier.value = roundedWeight;
+  _weightController.text = roundedWeight.toStringAsFixed(2);
+}
 
   void _updateIntensity(double weight) {
     final calculatedIntensity =
@@ -203,24 +206,24 @@ class _SeriesDialogState extends State<SeriesDialog> {
     _intensityController.text = calculatedIntensity.toStringAsFixed(2);
   }
 
-  void _updateWeightFromRPE() {
-    final reps = int.tryParse(_repsController.text) ?? 0;
-    final rpe = double.tryParse(_rpeController.text) ?? 0;
-    final percentage = getRPEPercentage(rpe, reps);
-    final calculatedWeight = widget.latestMaxWeight * percentage;
-    widget.weightNotifier.value = calculatedWeight;
-    _weightController.text = calculatedWeight.toStringAsFixed(2);
-  }
+void _updateWeightFromRPE() {
+  final reps = int.tryParse(_repsController.text) ?? 0;
+  final rpe = double.tryParse(_rpeController.text) ?? 0;
+  final percentage = getRPEPercentage(rpe, reps);
+  final calculatedWeight = widget.latestMaxWeight * percentage;
+  final roundedWeight = roundWeight(calculatedWeight, widget.exerciseType);
+  widget.weightNotifier.value = roundedWeight;
+  _weightController.text = roundedWeight.toStringAsFixed(2);
+}
 
-  void _updateRPE() {
-    final reps = int.tryParse(_repsController.text) ?? 0;
-    final weight = double.tryParse(_weightController.text) ?? 0;
-    final calculatedRPE = calculateRPE(weight, widget.latestMaxWeight, reps);
-    if (calculatedRPE != null) {
-      _rpeController.text = calculatedRPE.toStringAsFixed(1);
-      final intensity =
-          calculateIntensityFromWeight(weight, widget.latestMaxWeight);
-      _intensityController.text = intensity.toStringAsFixed(2);
-    }
+ void _updateRPE() {
+  final reps = int.tryParse(_repsController.text) ?? 0;
+  final weight = double.tryParse(_weightController.text) ?? 0;
+  final calculatedRPE = calculateRPE(weight, widget.latestMaxWeight, reps);
+  if (calculatedRPE != null) {
+    _rpeController.text = calculatedRPE.toStringAsFixed(1);
+    final intensity = calculateIntensityFromWeight(weight, widget.latestMaxWeight);
+    _intensityController.text = intensity.toStringAsFixed(2);
   }
+}
 }

@@ -1,11 +1,11 @@
+import 'package:alphanessone/users_services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/scheduler.dart';
-
-import '../users_services.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'auth_service.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class SubmitButton extends ConsumerStatefulWidget {
   const SubmitButton({
@@ -39,12 +39,17 @@ class _SubmitButtonState extends ConsumerState<SubmitButton> {
     return ElevatedButton(
       onPressed: () => _submit(context, userRole),
       style: ElevatedButton.styleFrom(
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        foregroundColor: Colors.white,
+        backgroundColor: Colors.blue,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8.0),
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
       ),
-      child: Text(widget.isLogin.value ? 'Login' : 'Sign Up'),
+      child: Text(
+        widget.isLogin.value ? 'Login' : 'Sign Up',
+        style: const TextStyle(fontSize: 16),
+      ),
     );
   }
 
@@ -115,9 +120,14 @@ class ToggleAuthModeButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TextButton(
-      child: Text(
-          isLogin.value ? 'Create new account' : 'I already have an account'),
       onPressed: () => isLogin.value = !isLogin.value,
+      child: Text(
+        isLogin.value ? 'Not a Member? Create an Account' : 'I already have an account',
+        style: const TextStyle(
+          color: Colors.blue,
+          fontSize: 16,
+        ),
+      ),
     );
   }
 }

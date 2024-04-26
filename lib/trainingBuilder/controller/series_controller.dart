@@ -4,35 +4,46 @@ import '../training_model.dart';
 import 'package:alphanessone/users_services.dart';
 import '../utility_functions.dart';
 
-class SeriesController {
+class SeriesController extends ChangeNotifier {
   final UsersService usersService;
   final ValueNotifier<double> weightNotifier;
 
   SeriesController(this.usersService, this.weightNotifier);
 
-Future<void> addSeries(TrainingProgram program, int weekIndex,
+   void notifyListeners() {
+    super.notifyListeners();
+  }
+
+  Future<void> addSeries(TrainingProgram program, int weekIndex,
     int workoutIndex, int exerciseIndex, BuildContext context) async {
   final exercise = program
       .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
 
-  // Ottieni il peso massimo più recente
-  final latestMaxWeight =
-      await getLatestMaxWeight(usersService, program.athleteId, exercise.exerciseId ?? '');
+    // Ottieni il peso massimo più recente
+    final latestMaxWeight = await getLatestMaxWeight(
+        usersService, program.athleteId, exercise.exerciseId ?? '');
 
-  // Converti latestMaxWeight in double o utilizza un valore predefinito
-  final num maxWeight = latestMaxWeight ?? 100.0;
+    // Converti latestMaxWeight in double o utilizza un valore predefinito
+    final num maxWeight = latestMaxWeight ?? 100.0;
 
-  final seriesList = await _showSeriesDialog(context, exercise, weekIndex, null, maxWeight);
-  if (seriesList != null) {
-    exercise.series.addAll(seriesList);
-    // Aggiorna i pesi delle serie dopo averle aggiunte
-    await updateSeriesWeights(program, weekIndex, workoutIndex, exerciseIndex);
+  final seriesList = await _showSeriesDialog(context, exercise, weekIndex, null, exercise.type, maxWeight);
+
+    if (seriesList != null) {
+      exercise.series.addAll(seriesList);
+      // Aggiorna i pesi delle serie dopo averle aggiunte
+      await updateSeriesWeights(
+          program, weekIndex, workoutIndex, exerciseIndex);
+    }
   }
-}
 
 Future<List<Series>?> _showSeriesDialog(
-    BuildContext context, Exercise exercise, int weekIndex,
-    [Series? currentSeries, num? latestMaxWeight]) async {
+  BuildContext context,
+  Exercise exercise,
+  int weekIndex, [
+  Series? currentSeries,
+  String? exerciseType,
+  num? latestMaxWeight,
+]) async {
   return await showDialog<List<Series>>(
     context: context,
     builder: (context) => SeriesDialog(
@@ -44,11 +55,12 @@ Future<List<Series>?> _showSeriesDialog(
       currentSeries: currentSeries,
       latestMaxWeight: latestMaxWeight ?? 0,
       weightNotifier: weightNotifier,
+      exerciseType: exerciseType ?? '',
     ),
   );
 }
 
-  Future<void> editSeries(
+ Future<void> editSeries(
     TrainingProgram program,
     int weekIndex,
     int workoutIndex,
@@ -59,7 +71,7 @@ Future<List<Series>?> _showSeriesDialog(
     final exercise = program
         .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     final updatedSeriesList =
-        await _showSeriesDialog(context, exercise, weekIndex, currentSeries);
+        await _showSeriesDialog(context, exercise, weekIndex, currentSeries, exercise.type);
     if (updatedSeriesList != null) {
       final groupIndex = exercise.series.indexWhere(
         (series) => series.serieId == currentSeries.serieId,
@@ -69,11 +81,12 @@ Future<List<Series>?> _showSeriesDialog(
           .series
           .replaceRange(seriesIndex, seriesIndex + 1, updatedSeriesList);
       // Aggiorna i pesi delle serie dopo averle modificate
-      await updateSeriesWeights(program, weekIndex, workoutIndex, exerciseIndex);
+      await updateSeriesWeights(
+          program, weekIndex, workoutIndex, exerciseIndex);
     }
   }
 
- Future<void> updateSeriesWeights(TrainingProgram program, int weekIndex,
+Future<void> updateSeriesWeights(TrainingProgram program, int weekIndex,
     int workoutIndex, int exerciseIndex) async {
   final exercise = program
       .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
@@ -88,18 +101,21 @@ Future<List<Series>?> _showSeriesDialog(
       }
     }
   }
+
+  // Aggiungi questa riga per notificare i listener delle modifiche
+  notifyListeners();
 }
 
-  void _calculateWeight(Series series, String? exerciseType, num? latestMaxWeight) {
-
-
+  void _calculateWeight(
+      Series series, String? exerciseType, num? latestMaxWeight) {
     double calculatedWeight = 0;
 
     if (latestMaxWeight != null) {
       if (series.intensity.isNotEmpty) {
         final intensity = double.tryParse(series.intensity) ?? 0;
         if (intensity > 0) {
-          calculatedWeight = calculateWeightFromIntensity(latestMaxWeight.toDouble(), intensity);
+          calculatedWeight = calculateWeightFromIntensity(
+              latestMaxWeight.toDouble(), intensity);
           series.weight = roundWeight(calculatedWeight, exerciseType);
           updateWeightNotifier(series.weight);
         }
@@ -112,12 +128,14 @@ Future<List<Series>?> _showSeriesDialog(
           updateWeightNotifier(series.weight);
         }
       } else {
-        series.intensity = calculateIntensityFromWeight(series.weight, latestMaxWeight.toDouble()).toStringAsFixed(2);
-        final rpe = calculateRPE(series.weight, latestMaxWeight.toDouble(), series.reps);
+        series.intensity = calculateIntensityFromWeight(
+                series.weight, latestMaxWeight.toDouble())
+            .toStringAsFixed(2);
+        final rpe = calculateRPE(
+            series.weight, latestMaxWeight.toDouble(), series.reps);
         series.rpe = rpe != null ? rpe.toStringAsFixed(1) : '';
       }
-    } else {
-    }
+    } else {}
   }
 
   void updateWeightNotifier(double weight) {
