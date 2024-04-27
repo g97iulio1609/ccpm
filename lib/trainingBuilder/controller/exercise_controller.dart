@@ -85,12 +85,17 @@ class ExerciseController extends ChangeNotifier {
 
 Future<void> updateExercise(
   TrainingProgram program, String exerciseId, String exerciseType) async {
-  Exercise? changedExercise = _findExerciseById(program, exerciseId);
-  if (changedExercise != null) {
-    changedExercise.type = exerciseType; // Set the exercise type
-    final newMaxWeight = await getLatestMaxWeight(
-        _usersService, program.athleteId, exerciseId);
-    _updateExerciseWeights(changedExercise, newMaxWeight!.toDouble(), exerciseType);
+  final newMaxWeight = await getLatestMaxWeight(
+      _usersService, program.athleteId, exerciseId);
+
+  for (final week in program.weeks) {
+    for (final workout in week.workouts) {
+      for (final exercise in workout.exercises) {
+        if (exercise.exerciseId == exerciseId) {
+          _updateExerciseWeights(exercise, newMaxWeight!.toDouble(), exerciseType);
+        }
+      }
+    }
   }
 }
 
