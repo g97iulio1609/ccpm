@@ -246,22 +246,19 @@ class Exercise {
   })  : series = series ?? [],
         weekProgressions = weekProgressions ?? [];
 
-  factory Exercise.fromMap(Map<String, dynamic> map) {
-    return Exercise(
-      name: map['name'],
-      type: map['type'],
-      id: map['id'],
-      exerciseId: map['exerciseId'],
-      superSetId: map['superSetId'], // Aggiungi questa riga
-      variant: map['variant'],
-      order: map['order'],
-      series:
-          List<Series>.from(map['series']?.map((x) => Series.fromMap(x)) ?? []),
-      weekProgressions: List<WeekProgression>.from(
-          map['weekProgressions']?.map((x) => WeekProgression.fromMap(x)) ??
-              []),
-    );
-  }
+factory Exercise.fromMap(Map<String, dynamic> map) {
+  return Exercise(
+    name: map['name'] ?? '',
+    type: map['type'] ?? '',
+    id: map['id'],
+    exerciseId: map['exerciseId'],
+    superSetId: map['superSetId'],
+    variant: map['variant'] ?? '',
+    order: map['order'] ?? 0,
+    series: List<Series>.from(map['series']?.map((x) => Series.fromMap(x)) ?? []),
+    weekProgressions: List<WeekProgression>.from(map['weekProgressions']?.map((x) => WeekProgression.fromMap(x)) ?? []),
+  );
+}
 
   Exercise copyWith({
     String? id,
@@ -287,24 +284,20 @@ class Exercise {
     );
   }
 
-  factory Exercise.fromFirestore(DocumentSnapshot doc) {
-    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-    return Exercise(
-      id: doc.id,
-      exerciseId: data['exerciseId'] ?? '',
-      superSetId: data['superSetId'], // Aggiungi questa riga
-      name: data['name'] ?? '',
-      type: data['type'] ?? '',
-      variant: data['variant'] ?? '',
-      order: data['order']?.toInt() ?? 0,
-      series: (data['series'] as List<dynamic>? ?? [])
-          .map((doc) => Series.fromFirestore(doc))
-          .toList(),
-      weekProgressions: (data['weekProgressions'] as List<dynamic>? ?? [])
-          .map((doc) => WeekProgression.fromMap(doc))
-          .toList(),
-    );
-  }
+factory Exercise.fromFirestore(DocumentSnapshot doc) {
+  Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+  return Exercise(
+    id: doc.id,
+    exerciseId: data['exerciseId'] ?? '',
+    superSetId: data['superSetId'],
+    name: data['name'] ?? '',
+    type: data['type'] ?? '',
+    variant: data['variant'] ?? '',
+    order: data['order']?.toInt() ?? 0,
+    series: (data['series'] as List<dynamic>? ?? []).map((doc) => Series.fromFirestore(doc)).toList(),
+    weekProgressions: (data['weekProgressions'] as List<dynamic>? ?? []).map((doc) => WeekProgression.fromMap(doc)).toList(),
+  );
+}
 
   Map<String, dynamic> toMap() {
     return {
