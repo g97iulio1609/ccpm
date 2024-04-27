@@ -1,12 +1,13 @@
 import 'dart:math';
 
 import 'package:alphanessone/users_services.dart';
+import 'package:flutter/material.dart';
 
 double roundWeight(double weight, String? exerciseType) {
   // Imposta un valore predefinito per exerciseType se è null o una stringa vuota
   final effectiveExerciseType =
       exerciseType?.isNotEmpty == true ? exerciseType : 'Default';
-
+debugPrint("weight $weight exerciseType $exerciseType ");
   switch (effectiveExerciseType) {
     case 'Manubri':
       // Arrotonda al numero pari più vicino
