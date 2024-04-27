@@ -15,9 +15,9 @@ class TrainingGalleryScreen extends HookConsumerWidget {
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
     final usersService = ref.read(usersServiceProvider);
 
-    Future<void> setCurrentProgram(String programId, String authorId) async {
+    Future<void> setCurrentProgram(String programId, String programName) async {
       final controller = ref.read(trainingProgramControllerProvider);
-      await controller.duplicateProgram(programId, authorId, context);
+      await controller.duplicateProgram(programId, programName, context);
     }
 
     Future<String> getAuthorName(String authorId) async {
@@ -34,6 +34,7 @@ class TrainingGalleryScreen extends HookConsumerWidget {
     }
 
     return Scaffold(
+    
       body: Column(
         children: [
           Expanded(
@@ -41,7 +42,9 @@ class TrainingGalleryScreen extends HookConsumerWidget {
               stream: getPublicProgramsStream(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
-                  return const Text('Si è verificato un errore');
+                  return const Center(
+                    child: Text('Si è verificato un errore'),
+                  );
                 }
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -54,8 +57,7 @@ class TrainingGalleryScreen extends HookConsumerWidget {
                   itemCount: documents.length,
                   itemBuilder: (context, index) {
                     final doc = documents[index];
-                    final isHidden = doc['hide'] ?? false;
-                    final controller = ref.read(trainingProgramControllerProvider);
+                    final programName = doc['name'] ?? 'Nome programma non disponibile';
                     final authorId = doc['athleteId'] ?? '';
 
                     return FutureBuilder<String>(
@@ -66,39 +68,73 @@ class TrainingGalleryScreen extends HookConsumerWidget {
                             : 'Autore sconosciuto';
 
                         return Card(
-                          elevation: 2,
+                          elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12.0),
                           ),
+                          color: Theme.of(context).colorScheme.surface,
                           child: Padding(
                             padding: const EdgeInsets.all(16.0),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  doc['name'] ?? 'Nome programma non disponibile',
-                                  style: Theme.of(context).textTheme.titleLarge,
+                                  programName,
+                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    color: Theme.of(context).colorScheme.onSurface,
+                                  ),
                                 ),
                                 const SizedBox(height: 8.0),
                                 Text(
                                   'Autore: $athleteName',
-                                  style: Theme.of(context).textTheme.titleMedium,
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  ),
                                 ),
                                 const SizedBox(height: 16.0),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
-                                    if (userRole == 'client_premium')
+                                    if (userRole == 'client_premium' || userRole == 'admin')
                                       ElevatedButton(
-                                        onPressed: () =>
-                                            setCurrentProgram(doc.id, authorId),
+                                        onPressed: () async {
+                                          final bool? result = await showDialog<bool>(
+                                            context: context,
+                                            builder: (BuildContext context) {
+                                              return SetCurrentProgramDialog(programId: doc.id);
+                                            },
+                                          );
+                                          if (result == true) {
+                                            await setCurrentProgram(doc.id, programName);
+                                          }
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Theme.of(context).colorScheme.primary,
+                                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(8.0),
+                                          ),
+                                        ),
                                         child: const Text('Imposta come Corrente'),
                                       ),
                                     const SizedBox(width: 8.0),
-                                    ElevatedButton(
+                                    OutlinedButton(
                                       onPressed: () => context.go(
                                           '/programs_screen/training_viewer/${doc.id}'),
-                                      child: const Text('Visualizza'),
+                                      style: OutlinedButton.styleFrom(
+                                        side: BorderSide(
+                                          color: Theme.of(context).colorScheme.primary,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8.0),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        'Visualizza',
+                                        style: TextStyle(
+                                          color: Theme.of(context).colorScheme.primary,
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -118,7 +154,6 @@ class TrainingGalleryScreen extends HookConsumerWidget {
     );
   }
 }
-
 
 class SetCurrentProgramDialog extends StatelessWidget {
   final String programId;
