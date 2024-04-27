@@ -156,7 +156,7 @@ class TrainingProgramController extends ChangeNotifier {
   }
 
 Future<void> updateExercise(Exercise exercise) async {
-  await _exerciseController.updateExercise(_program, exercise.exerciseId!, exercise.type);
+  await _exerciseController.updateExercise(program, exercise.exerciseId!, exercise.type!);
   notifyListeners();
 }
 

@@ -481,36 +481,39 @@ Widget _buildExerciseSeries(
   }
 
   Future<void> _saveMaxRM(
-    ExerciseRecord? record,
-    String athleteId,
-    Exercise exercise,
-    TextEditingController maxWeightController,
-    TextEditingController repetitionsController,
-    UsersService usersService,
-    DateFormat dateFormat,
-  ) async {
-    final maxWeight = int.tryParse(maxWeightController.text) ?? 0;
-    final repetitions = int.tryParse(repetitionsController.text) ?? 0;
+  ExerciseRecord? record,
+  String athleteId,
+  Exercise exercise,
+  TextEditingController maxWeightController,
+  TextEditingController repetitionsController,
+  UsersService usersService,
+  DateFormat dateFormat,
+) async {
+  final maxWeight = int.tryParse(maxWeightController.text) ?? 0;
+  final repetitions = int.tryParse(repetitionsController.text) ?? 0;
 
-    if (record != null) {
-      await usersService.updateExerciseRecord(
-        userId: athleteId,
-        exerciseId: exercise.exerciseId!,
-        recordId: record.id,
-        maxWeight: maxWeight,
-        repetitions: repetitions,
-      );
-    } else {
-      await usersService.addExerciseRecord(
-        userId: athleteId,
-        exerciseId: exercise.exerciseId!,
-        exerciseName: exercise.name,
-        maxWeight: maxWeight,
-        repetitions: repetitions,
-        date: dateFormat.format(DateTime.now()),
-      );
-    }
+  if (record != null) {
+    await usersService.updateExerciseRecord(
+      userId: athleteId,
+      exerciseId: exercise.exerciseId!,
+      recordId: record.id,
+      maxWeight: maxWeight,
+      repetitions: repetitions,
+    );
+  } else {
+    await usersService.addExerciseRecord(
+      userId: athleteId,
+      exerciseId: exercise.exerciseId!,
+      exerciseName: exercise.name,
+      maxWeight: maxWeight,
+      repetitions: repetitions,
+      date: dateFormat.format(DateTime.now()),
+    );
   }
+
+  // Aggiorna i pesi delle serie dopo aver salvato il nuovo record
+  await controller.updateExercise(exercise);
+}
 
   void _showReorderExercisesDialog(
       BuildContext context, int weekIndex, int workoutIndex) {
