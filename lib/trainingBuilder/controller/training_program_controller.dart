@@ -1,3 +1,4 @@
+import 'package:alphanessone/exerciseManager/exercises_services.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -16,11 +17,12 @@ import 'progression_controller.dart';
 final firestoreServiceProvider =
     Provider<FirestoreService>((ref) => FirestoreService());
 
-final trainingProgramControllerProvider = ChangeNotifierProvider((ref) {
+final trainingProgramControllerProvider =
+    ChangeNotifierProvider<TrainingProgramController>((ref) {
   final service = ref.watch(firestoreServiceProvider);
   final usersService = ref.watch(user_services.usersServiceProvider);
   final programStateNotifier = ref.watch(trainingProgramStateProvider.notifier);
-  return TrainingProgramController(service, usersService, programStateNotifier);
+  return TrainingProgramController(service, usersService, programStateNotifier, ref);
 });
 
 class TrainingProgramController extends ChangeNotifier {
@@ -50,10 +52,14 @@ class TrainingProgramController extends ChangeNotifier {
   late final SeriesController _seriesController;
   late final ExerciseController _exerciseController;
   final SuperSetController _superSetController;
+  final Ref ref;
 
   TrainingProgramController(
-      this._service, this._usersService, this._programStateNotifier)
-      : _repository = TrainingProgramRepository(_service),
+    this._service,
+    this._usersService,
+    this._programStateNotifier,
+    this.ref,
+  )   : _repository = TrainingProgramRepository(_service),
         _weekController = WeekController(),
         _workoutController = WorkoutController(),
         _superSetController = SuperSetController() {
@@ -95,6 +101,23 @@ class TrainingProgramController extends ChangeNotifier {
       _program = await _repository.fetchTrainingProgram(programId);
       _updateProgram();
       _superSetController.loadSuperSets(_program);
+
+      // Itera su tutti gli esercizi e "seleziona" automaticamente l'esercizio corrispondente
+      final exercisesService = ref.read(exercisesServiceProvider);
+
+      for (final week in _program.weeks) {
+        for (final workout in week.workouts) {
+          for (final exercise in workout.exercises) {
+            final exerciseModel = await exercisesService
+                .getExerciseById(exercise.exerciseId ?? '');
+            if (exerciseModel != null) {
+              exercise.type = exerciseModel.type;
+            }
+          }
+        }
+      }
+
+      notifyListeners();
     } catch (error) {
       // Handle error
     }
@@ -256,14 +279,14 @@ Future<void> updateExercise(Exercise exercise) async {
                 weight_done: 0.0,
               ));
 
-      _program.weeks[weekIndex].workouts.forEach((workout) {
+      for (var workout in _program.weeks[weekIndex].workouts) {
         final exerciseIndex =
             workout.exercises.indexWhere((e) => e.id == exercise.id);
         if (exerciseIndex != -1) {
           workout.exercises[exerciseIndex] =
               workout.exercises[exerciseIndex].copyWith(series: series);
         }
-      });
+      }
     }
 
     notifyListeners();
@@ -353,12 +376,6 @@ Future<void> updateExercise(Exercise exercise) async {
       // Fetch the existing program
       TrainingProgram? existingProgram =
           await _repository.fetchTrainingProgram(programId);
-
-      // Check if the existing program was found
-      if (existingProgram == null) {
-        _showErrorSnackBar(context, 'Programma esistente non trovato');
-        return;
-      }
 
       debugPrint('Existing Program: ${existingProgram.toMap()}');
 
