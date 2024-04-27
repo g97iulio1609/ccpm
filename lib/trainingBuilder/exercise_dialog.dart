@@ -146,8 +146,7 @@ class ExerciseDialog extends ConsumerWidget {
               series: exercise?.series ?? [],
               weekProgressions: exercise?.weekProgressions ?? [],
             );
-            debugPrint('selectedExerciseType: $selectedExerciseType?');
-                        debugPrint('newExercise.type: ${newExercise.type}');
+      
 
             Navigator.pop(context, newExercise);
           },

@@ -57,7 +57,6 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     bool isDarkMode,
     ColorScheme colorScheme,
   ) {
-        debugPrint('exercise from _buildExerciseCard: ${exercise.type}');
 
     final superSets = controller
         .program.weeks[weekIndex].workouts[workoutIndex].superSets
@@ -164,7 +163,6 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     bool isDarkMode,
     ColorScheme colorScheme,
   ) {
-    debugPrint('exercise from _buildExerciseHeader: ${exercise.type}');
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -212,7 +210,6 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     bool isDarkMode,
     ColorScheme colorScheme,
   ) {
-        debugPrint('exercise type from _buildExercisePopupMenu: exercise name ${exercise.name} and type: ${exercise.type}');
 
     return PopupMenuButton(
       color: isDarkMode ? colorScheme.surface : colorScheme.background,
@@ -370,7 +367,6 @@ Widget _buildExerciseSeries(
     bool isDarkMode,
     ColorScheme colorScheme,
   ) async {
-  debugPrint('_addOrUpdateMaxRM, exerciseId: ${exercise.exerciseId}, name: ${exercise.name}, type: ${exercise.type}');
 
     final record = await usersService.getLatestExerciseRecord(
         userId: athleteId, exerciseId: exercise.exerciseId!);
@@ -497,7 +493,6 @@ Widget _buildExerciseSeries(
   UsersService usersService,
   DateFormat dateFormat,
 ) async {
-    debugPrint('_saveMaxRM, exerciseId: ${exercise.exerciseId}, name: ${exercise.name}, type: ${exercise.type}');
 
   final maxWeight = int.tryParse(maxWeightController.text) ?? 0;
   final repetitions = int.tryParse(repetitionsController.text) ?? 0;
