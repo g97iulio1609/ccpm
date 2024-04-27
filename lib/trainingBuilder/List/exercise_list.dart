@@ -358,78 +358,80 @@ Widget _buildExerciseSeries(
     );
   }
 
-  Future<void> _addOrUpdateMaxRM(
-    Exercise exercise,
-    BuildContext context,
-    UsersService usersService,
-    String athleteId,
-    DateFormat dateFormat,
-    bool isDarkMode,
-    ColorScheme colorScheme,
-  ) async {
+Future<void> _addOrUpdateMaxRM(
+  Exercise exercise,
+  BuildContext context,
+  UsersService usersService,
+  String athleteId,
+  DateFormat dateFormat,
+  bool isDarkMode,
+  ColorScheme colorScheme,
+) async {
+  final record = await usersService.getLatestExerciseRecord(
+    userId: athleteId,
+    exerciseId: exercise.exerciseId!,
+  );
 
-    final record = await usersService.getLatestExerciseRecord(
-        userId: athleteId, exerciseId: exercise.exerciseId!);
+  final maxWeightController = TextEditingController(text: record?.maxWeight.toString() ?? '');
+  final repetitionsController = TextEditingController(text: record?.repetitions.toString() ?? '');
 
-    final maxWeightController =
-        TextEditingController(text: record?.maxWeight.toString() ?? '');
-    final repetitionsController =
-        TextEditingController(text: record?.repetitions.toString() ?? '');
+repetitionsController.addListener(() {
+  var repetitions = int.tryParse(repetitionsController.text) ?? 0;
+  if (repetitions > 1) {
+    final maxWeight = double.tryParse(maxWeightController.text) ?? 0;
+    final calculatedMaxWeight = roundWeight(maxWeight / (1.0278 - (0.0278 * repetitions)),exercise.type);
+    maxWeightController.text = calculatedMaxWeight.toString();
+    repetitionsController.text = '1'; // Imposta le ripetizioni a 1 dopo aver calcolato il massimale
+  }
+});
 
-    await showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor:
-              isDarkMode ? colorScheme.surface : colorScheme.background,
-          title: Text(
-            'Aggiorna Max RM',
-            style: TextStyle(
-              color:
-                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+  await showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        backgroundColor: isDarkMode ? colorScheme.surface : colorScheme.background,
+        title: Text(
+          'Aggiorna Max RM',
+          style: TextStyle(
+            color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+          ),
+        ),
+        content: _buildMaxRMInputFields(maxWeightController, repetitionsController, isDarkMode, colorScheme),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Annulla',
+              style: TextStyle(
+                color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+              ),
             ),
           ),
-          content: _buildMaxRMInputFields(maxWeightController,
-              repetitionsController, isDarkMode, colorScheme),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(
-                'Annulla',
-                style: TextStyle(
-                  color: isDarkMode
-                      ? colorScheme.onSurface
-                      : colorScheme.onBackground,
-                ),
-              ),
+          ElevatedButton(
+            onPressed: () async {
+              await _saveMaxRM(
+                record,
+                athleteId,
+                exercise,
+                maxWeightController,
+                repetitionsController,
+                usersService,
+                dateFormat,
+                exercise.type,
+              );
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isDarkMode ? colorScheme.primary : colorScheme.secondary,
+              foregroundColor: isDarkMode ? colorScheme.onPrimary : colorScheme.onSecondary,
             ),
-            ElevatedButton(
-              onPressed: () async {
-                await _saveMaxRM(
-                  record,
-                  athleteId,
-                  exercise,
-                  maxWeightController,
-                  repetitionsController,
-                  usersService,
-                  dateFormat,
-                );
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    isDarkMode ? colorScheme.primary : colorScheme.secondary,
-                foregroundColor: isDarkMode
-                    ? colorScheme.onPrimary
-                    : colorScheme.onSecondary,
-              ),
-              child: const Text('Salva'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+            child: const Text('Salva'),
+          ),
+        ],
+      );
+    },
+  );
+}
 
   Widget _buildMaxRMInputFields(
     TextEditingController maxWeightController,
@@ -484,7 +486,7 @@ Widget _buildExerciseSeries(
     );
   }
 
-  Future<void> _saveMaxRM(
+Future<void> _saveMaxRM(
   ExerciseRecord? record,
   String athleteId,
   Exercise exercise,
@@ -492,31 +494,32 @@ Widget _buildExerciseSeries(
   TextEditingController repetitionsController,
   UsersService usersService,
   DateFormat dateFormat,
+  String exerciseType,
 ) async {
+  final maxWeight = double.tryParse(maxWeightController.text) ?? 0;
 
-  final maxWeight = int.tryParse(maxWeightController.text) ?? 0;
-  final repetitions = int.tryParse(repetitionsController.text) ?? 0;
+  // Approssima il peso utilizzando la funzione roundWeight
+  final roundedMaxWeight = roundWeight(maxWeight, exercise.type);
 
   if (record != null) {
     await usersService.updateExerciseRecord(
       userId: athleteId,
       exerciseId: exercise.exerciseId!,
       recordId: record.id,
-      maxWeight: maxWeight,
-      repetitions: repetitions,
+      maxWeight: roundedMaxWeight.round(),
+      repetitions: 1,
     );
   } else {
     await usersService.addExerciseRecord(
       userId: athleteId,
       exerciseId: exercise.exerciseId!,
       exerciseName: exercise.name,
-      maxWeight: maxWeight,
-      repetitions: repetitions,
+      maxWeight: roundedMaxWeight.round(),
+      repetitions: 1,
       date: dateFormat.format(DateTime.now()),
     );
   }
 
-  // Aggiorna i pesi delle serie dopo aver salvato il nuovo record
   await controller.updateExercise(exercise);
 }
 
