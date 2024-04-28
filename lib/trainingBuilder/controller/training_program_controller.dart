@@ -370,6 +370,21 @@ Future<void> updateExercise(Exercise exercise) async {
     notifyListeners();
   }
 
+  Future<void> updateProgramWeights(TrainingProgram program) async {
+  for (final week in program.weeks) {
+    for (final workout in week.workouts) {
+      for (final exercise in workout.exercises) {
+        debugPrint("program: $program ,  exercise.exerciseId: ${ exercise.exerciseId} , exercise.type: ${  exercise.type} " );
+        await _exerciseController.updateNewProgramExercises(
+          program,
+          exercise.exerciseId!,
+          exercise.type!,
+        );
+      }
+    }
+  }
+}
+
 Future<String?> duplicateProgram(
     String programId, String newProgramName, BuildContext context, {String? currentUserId}) async {
   try {
@@ -421,8 +436,13 @@ Future<String?> duplicateProgram(
       );
     }).toList();
 
+
+        await updateProgramWeights(newProgram);
+
+
     // Save the new program
     await _repository.addOrUpdateTrainingProgram(newProgram);
+
 
     // Show a success message
     _showSuccessSnackBar(context, 'Programma duplicato con successo');

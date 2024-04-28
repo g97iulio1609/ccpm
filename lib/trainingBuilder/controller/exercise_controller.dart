@@ -99,6 +99,17 @@ Future<void> updateExercise(
   }
 }
 
+Future<void> updateNewProgramExercises(
+  TrainingProgram program, String exerciseId, String exerciseType) async {
+  final newMaxWeight = await getLatestMaxWeight(
+      _usersService, program.athleteId, exerciseId);
+
+  final exercise = _findExerciseById(program, exerciseId);
+  if (exercise != null) {
+    _updateExerciseWeights(exercise, newMaxWeight!.toDouble(), exerciseType);
+  }
+}
+
   Exercise? _findExerciseById(TrainingProgram program, String exerciseId) {
     for (final week in program.weeks) {
       for (final workout in week.workouts) {
@@ -113,6 +124,7 @@ Future<void> updateExercise(
   }
 
 void _updateExerciseWeights(Exercise exercise, num newMaxWeight, String exerciseType) {
+  debugPrint("from _updateExerciseWeights: exercise.id ${exercise.id} newMaxWeight: ${newMaxWeight} exerciseType:${exerciseType}");
   _updateSeriesWeights(exercise.series, newMaxWeight, exerciseType);
   if (exercise.weekProgressions != null &&
       exercise.weekProgressions.isNotEmpty) {
@@ -124,9 +136,13 @@ void _updateExerciseWeights(Exercise exercise, num newMaxWeight, String exercise
   void _updateSeriesWeights(
       List<Series>? series, num maxWeight, String exerciseType) {
     if (series != null) {
+        debugPrint("from _updateSeriesWeights: maxWeight ${maxWeight} exerciseType: ${exerciseType}");
+
       for (final item in series) {
         final intensity =
             item.intensity.isNotEmpty ? double.tryParse(item.intensity) : null;
+               debugPrint("from _updateSeriesWeights: intensity ${intensity}");
+
         if (intensity != null) {
           final calculatedWeight =
               calculateWeightFromIntensity(maxWeight, intensity);
