@@ -126,8 +126,7 @@ class ExerciseController extends ChangeNotifier {
 
   void _updateExerciseWeights(
       Exercise exercise, num newMaxWeight, String exerciseType) {
-    debugPrint(
-        "from _updateExerciseWeights: exercise.id ${exercise.id} newMaxWeight: ${newMaxWeight} exerciseType:${exerciseType}");
+
     _updateSeriesWeights(exercise.series, newMaxWeight, exerciseType);
     if (exercise.weekProgressions != null &&
         exercise.weekProgressions.isNotEmpty) {
@@ -139,19 +138,16 @@ class ExerciseController extends ChangeNotifier {
   void _updateSeriesWeights(
       List<Series>? series, num maxWeight, String exerciseType) {
     if (series != null) {
-      debugPrint(
-          "from _updateSeriesWeights: maxWeight ${maxWeight} exerciseType: ${exerciseType}");
+
 
       for (final item in series) {
         final intensity =
             item.intensity.isNotEmpty ? double.tryParse(item.intensity) : null;
-        debugPrint("from _updateSeriesWeights: intensity ${intensity}");
 
         if (intensity != null) {
           final calculatedWeight =
               calculateWeightFromIntensity(maxWeight, intensity);
-          debugPrint(
-              "from _updateSeriesWeights: calculateWeightFromIntensity ${calculatedWeight}");
+
 
           item.weight = roundWeight(calculatedWeight, exerciseType);
         }

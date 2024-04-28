@@ -374,7 +374,6 @@ Future<void> updateExercise(Exercise exercise) async {
   for (final week in program.weeks) {
     for (final workout in week.workouts) {
       for (final exercise in workout.exercises) {
-        debugPrint("program: $program ,  exercise.exerciseId: ${ exercise.exerciseId} , exercise.type: ${  exercise.type} " );
         await _exerciseController.updateNewProgramExercises(
           program,
           exercise.exerciseId!,
