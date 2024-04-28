@@ -1,7 +1,9 @@
 import 'dart:math';
 import 'package:alphanessone/users_services.dart';
+import 'package:flutter/foundation.dart';
 
 double roundWeight(double weight, String? exerciseType) {
+debugPrint('from roundWeight weight: $weight exerciseType: $exerciseType');
   // Imposta un valore predefinito per exerciseType se è null o una stringa vuota
   final effectiveExerciseType =
       exerciseType?.isNotEmpty == true ? exerciseType : 'Default';

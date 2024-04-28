@@ -436,13 +436,29 @@ Future<String?> duplicateProgram(
       );
     }).toList();
 
+    // Itera su tutti gli esercizi e "seleziona" automaticamente l'esercizio corrispondente
+    final exercisesService = ref.read(exercisesServiceProvider);
 
-        await updateProgramWeights(newProgram);
+    for (final week in newProgram.weeks) {
+      for (final workout in week.workouts) {
+        for (final exercise in workout.exercises) {
+          final exerciseModel = await exercisesService.getExerciseById(exercise.exerciseId ?? '');
+          if (exerciseModel != null) {
+            exercise.type = exerciseModel.type;
+          }
 
+          // Aggiorna i pesi per ogni esercizio
+          await _exerciseController.updateNewProgramExercises(
+            newProgram,
+            exercise.exerciseId!,
+            exercise.type!,
+          );
+        }
+      }
+    }
 
     // Save the new program
     await _repository.addOrUpdateTrainingProgram(newProgram);
-
 
     // Show a success message
     _showSuccessSnackBar(context, 'Programma duplicato con successo');

@@ -83,32 +83,33 @@ class ExerciseController extends ChangeNotifier {
     }
   }
 
-Future<void> updateExercise(
-  TrainingProgram program, String exerciseId, String exerciseType) async {
-  final newMaxWeight = await getLatestMaxWeight(
-      _usersService, program.athleteId, exerciseId);
+  Future<void> updateExercise(
+      TrainingProgram program, String exerciseId, String exerciseType) async {
+    final newMaxWeight =
+        await getLatestMaxWeight(_usersService, program.athleteId, exerciseId);
 
-  for (final week in program.weeks) {
-    for (final workout in week.workouts) {
-      for (final exercise in workout.exercises) {
-        if (exercise.exerciseId == exerciseId) {
-          _updateExerciseWeights(exercise, newMaxWeight!.toDouble(), exerciseType);
+    for (final week in program.weeks) {
+      for (final workout in week.workouts) {
+        for (final exercise in workout.exercises) {
+          if (exercise.exerciseId == exerciseId) {
+            _updateExerciseWeights(
+                exercise, newMaxWeight!.toDouble(), exerciseType);
+          }
         }
       }
     }
   }
-}
 
-Future<void> updateNewProgramExercises(
-  TrainingProgram program, String exerciseId, String exerciseType) async {
-  final newMaxWeight = await getLatestMaxWeight(
-      _usersService, program.athleteId, exerciseId);
+  Future<void> updateNewProgramExercises(
+      TrainingProgram program, String exerciseId, String exerciseType) async {
+    final newMaxWeight =
+        await getLatestMaxWeight(_usersService, program.athleteId, exerciseId);
 
-  final exercise = _findExerciseById(program, exerciseId);
-  if (exercise != null) {
-    _updateExerciseWeights(exercise, newMaxWeight!.toDouble(), exerciseType);
+    final exercise = _findExerciseById(program, exerciseId);
+    if (exercise != null) {
+      _updateExerciseWeights(exercise, newMaxWeight!.toDouble(), exerciseType);
+    }
   }
-}
 
   Exercise? _findExerciseById(TrainingProgram program, String exerciseId) {
     for (final week in program.weeks) {
@@ -123,29 +124,35 @@ Future<void> updateNewProgramExercises(
     return null;
   }
 
-void _updateExerciseWeights(Exercise exercise, num newMaxWeight, String exerciseType) {
-  debugPrint("from _updateExerciseWeights: exercise.id ${exercise.id} newMaxWeight: ${newMaxWeight} exerciseType:${exerciseType}");
-  _updateSeriesWeights(exercise.series, newMaxWeight, exerciseType);
-  if (exercise.weekProgressions != null &&
-      exercise.weekProgressions.isNotEmpty) {
-    _updateWeekProgressionWeights(
-        exercise.weekProgressions, newMaxWeight, exerciseType);
+  void _updateExerciseWeights(
+      Exercise exercise, num newMaxWeight, String exerciseType) {
+    debugPrint(
+        "from _updateExerciseWeights: exercise.id ${exercise.id} newMaxWeight: ${newMaxWeight} exerciseType:${exerciseType}");
+    _updateSeriesWeights(exercise.series, newMaxWeight, exerciseType);
+    if (exercise.weekProgressions != null &&
+        exercise.weekProgressions.isNotEmpty) {
+      _updateWeekProgressionWeights(
+          exercise.weekProgressions, newMaxWeight, exerciseType);
+    }
   }
-}
 
   void _updateSeriesWeights(
       List<Series>? series, num maxWeight, String exerciseType) {
     if (series != null) {
-        debugPrint("from _updateSeriesWeights: maxWeight ${maxWeight} exerciseType: ${exerciseType}");
+      debugPrint(
+          "from _updateSeriesWeights: maxWeight ${maxWeight} exerciseType: ${exerciseType}");
 
       for (final item in series) {
         final intensity =
             item.intensity.isNotEmpty ? double.tryParse(item.intensity) : null;
-               debugPrint("from _updateSeriesWeights: intensity ${intensity}");
+        debugPrint("from _updateSeriesWeights: intensity ${intensity}");
 
         if (intensity != null) {
           final calculatedWeight =
               calculateWeightFromIntensity(maxWeight, intensity);
+          debugPrint(
+              "from _updateSeriesWeights: calculateWeightFromIntensity ${calculatedWeight}");
+
           item.weight = roundWeight(calculatedWeight, exerciseType);
         }
       }
