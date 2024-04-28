@@ -370,62 +370,105 @@ Future<void> updateExercise(Exercise exercise) async {
     notifyListeners();
   }
 
-  Future<void> duplicateProgram(
-      String programId, String newProgramName, BuildContext context) async {
-    try {
-      // Fetch the existing program
-      TrainingProgram? existingProgram =
-          await _repository.fetchTrainingProgram(programId);
-
-
-      // Create a new program with the new name and copy the existing program data
-      TrainingProgram newProgram = existingProgram.copyWith(
-        id: generateRandomId(16).toString(),
-        name: newProgramName,
-      );
-
-
-      // Generate new IDs for weeks, workouts, exercises, series, and supersets
-      newProgram.weeks = newProgram.weeks.map((week) {
-        return week.copyWith(
-          id: generateRandomId(16).toString(),
-          workouts: week.workouts.map((workout) {
-            return workout.copyWith(
-              id: generateRandomId(16).toString(),
-              exercises: workout.exercises.map((exercise) {
-                return exercise.copyWith(
-                  id: generateRandomId(16).toString(),
-                  series: exercise.series.map((series) {
-                    return series.copyWith(
-                      serieId: generateRandomId(16).toString(),
-                      reps_done: 0,
-                      weight_done: 0.0,
-                      done: false,
-                    );
-                  }).toList(),
-                );
-              }).toList(),
-              superSets: workout.superSets.map((superSet) {
-                return SuperSet(
-                  id: generateRandomId(16).toString(),
-                  name: superSet.name,
-                  exerciseIds: superSet.exerciseIds,
-                );
-              }).toList(),
-            );
-          }).toList(),
+  Future<void> updateProgramWeights(TrainingProgram program) async {
+  for (final week in program.weeks) {
+    for (final workout in week.workouts) {
+      for (final exercise in workout.exercises) {
+        await _exerciseController.updateNewProgramExercises(
+          program,
+          exercise.exerciseId!,
+          exercise.type!,
         );
-      }).toList();
-
-
-      // Save the new program
-      await _repository.addOrUpdateTrainingProgram(newProgram);
-
-      // Show a success message
-      _showSuccessSnackBar(context, 'Programma duplicato con successo');
-    } catch (error) {
-      _showErrorSnackBar(
-          context, 'Errore durante la duplicazione del programma: $error');
+      }
     }
   }
+}
+
+Future<String?> duplicateProgram(
+    String programId, String newProgramName, BuildContext context, {String? currentUserId}) async {
+  try {
+    // Fetch the existing program
+    TrainingProgram? existingProgram =
+        await _repository.fetchTrainingProgram(programId);
+
+    if (existingProgram == null) {
+      _showErrorSnackBar(context, 'Programma esistente non trovato');
+      return null;
+    }
+
+    // Create a new program with the new name and copy the existing program data
+    TrainingProgram newProgram = existingProgram.copyWith(
+      id: generateRandomId(16).toString(),
+      name: newProgramName,
+      athleteId: currentUserId ?? existingProgram.athleteId, // Set the athleteId to the current user's ID if provided, otherwise keep the original value
+    );
+
+    // Generate new IDs for weeks, workouts, exercises, series, and supersets
+    newProgram.weeks = newProgram.weeks.map((week) {
+      return week.copyWith(
+        id: generateRandomId(16).toString(),
+        workouts: week.workouts.map((workout) {
+          return workout.copyWith(
+            id: generateRandomId(16).toString(),
+            exercises: workout.exercises.map((exercise) {
+              return exercise.copyWith(
+                id: generateRandomId(16).toString(),
+                series: exercise.series.map((series) {
+                  return series.copyWith(
+                    serieId: generateRandomId(16).toString(),
+                    reps_done: 0,
+                    weight_done: 0.0,
+                    done: false,
+                  );
+                }).toList(),
+              );
+            }).toList(),
+            superSets: workout.superSets.map((superSet) {
+              return SuperSet(
+                id: generateRandomId(16).toString(),
+                name: superSet.name,
+                exerciseIds: superSet.exerciseIds,
+              );
+            }).toList(),
+          );
+        }).toList(),
+      );
+    }).toList();
+
+    // Itera su tutti gli esercizi e "seleziona" automaticamente l'esercizio corrispondente
+    final exercisesService = ref.read(exercisesServiceProvider);
+
+    for (final week in newProgram.weeks) {
+      for (final workout in week.workouts) {
+        for (final exercise in workout.exercises) {
+          final exerciseModel = await exercisesService.getExerciseById(exercise.exerciseId ?? '');
+          if (exerciseModel != null) {
+            exercise.type = exerciseModel.type;
+          }
+
+          // Aggiorna i pesi per ogni esercizio
+          await _exerciseController.updateNewProgramExercises(
+            newProgram,
+            exercise.exerciseId!,
+            exercise.type!,
+          );
+        }
+      }
+    }
+
+    // Save the new program
+    await _repository.addOrUpdateTrainingProgram(newProgram);
+
+    // Show a success message
+    _showSuccessSnackBar(context, 'Programma duplicato con successo');
+
+    // Return the ID of the duplicated program
+    return newProgram.id;
+  } catch (error) {
+    _showErrorSnackBar(
+        context, 'Errore durante la duplicazione del programma: $error');
+    return null;
+  }
+}
+
 }
