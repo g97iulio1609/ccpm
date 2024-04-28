@@ -17,7 +17,11 @@ class TrainingGalleryScreen extends HookConsumerWidget {
 
     Future<void> setCurrentProgram(String programId, String programName) async {
       final controller = ref.read(trainingProgramControllerProvider);
-      await controller.duplicateProgram(programId, programName, context);
+      await controller.duplicateProgram(programId, programName, context, currentUserId: currentUserId).then((newProgramId) async {
+        if (newProgramId != null && currentUserId != null) {
+          await usersService.updateUser(currentUserId, {'currentProgram': newProgramId});
+        }
+      });
     }
 
     Future<String> getAuthorName(String authorId) async {
@@ -34,7 +38,7 @@ class TrainingGalleryScreen extends HookConsumerWidget {
     }
 
     return Scaffold(
-    
+  
       body: Column(
         children: [
           Expanded(
@@ -104,7 +108,7 @@ class TrainingGalleryScreen extends HookConsumerWidget {
                                               return SetCurrentProgramDialog(programId: doc.id);
                                             },
                                           );
-                                          if (result == true) {
+                                          if (result == true && currentUserId != null) {
                                             await setCurrentProgram(doc.id, programName);
                                           }
                                         },
