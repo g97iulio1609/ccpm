@@ -102,15 +102,35 @@ class MaxRMDashboard extends HookConsumerWidget {
       child: child,
     );
   },
+  offset: const Offset(0, 8),
+  constraints: const BoxConstraints(maxHeight: 200),
   controller: userNameController,
   focusNode: FocusNode(),
-  builder: (context, suggestionsController, focusNode) {
+  builder: (context, controller, focusNode) {
     return TextField(
-      controller: userNameController,
+      controller: controller,
       focusNode: focusNode,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         labelText: 'User Name',
-        border: OutlineInputBorder(),
+        labelStyle: TextStyle(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.outline,
+          ),
+        ),
+        filled: true,
+        fillColor: Theme.of(context).colorScheme.surface,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        prefixIcon: Icon(
+          Icons.person,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
       ),
     );
   },
@@ -145,26 +165,47 @@ class MaxRMDashboard extends HookConsumerWidget {
   decorationBuilder: (context, child) {
     return Material(
       elevation: 4,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(12),
       child: child,
     );
   },
+  offset: const Offset(0, 8),
+  constraints: const BoxConstraints(maxHeight: 200),
   controller: exerciseNameController,
   focusNode: FocusNode(),
-  builder: (context, suggestionsController, focusNode) {
+  builder: (context, controller, focusNode) {
     return TextField(
-      controller: exerciseNameController,
+      controller: controller,
       focusNode: focusNode,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         labelText: 'Exercise Name',
-        border: OutlineInputBorder(),
+        labelStyle: TextStyle(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.outline,
+          ),
+        ),
+        filled: true,
+        fillColor: Theme.of(context).colorScheme.surface,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        prefixIcon: Icon(
+          Icons.fitness_center,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
       ),
     );
   },
 );
                 },
                 loading: () => const CircularProgressIndicator(),
-                error: (error, stack) => Text("Error loading exercises: $error"),
+                error: (error, stack) =>
+                    Text("Error loading exercises: $error"),
               ),
             ),
             Padding(
@@ -228,12 +269,16 @@ class MaxRMDashboard extends HookConsumerWidget {
               child: Center(
                 child: ElevatedButton(
                   onPressed: () {
-                    final int repetitions = int.tryParse(repetitionsController.text) ?? 0;
+                    final int repetitions =
+                        int.tryParse(repetitionsController.text) ?? 0;
                     int maxWeight = int.tryParse(maxWeightController.text) ?? 0;
                     if (repetitions > 1) {
-                      maxWeight = (maxWeight / (1.0278 - (0.0278 * repetitions))).round();
+                      maxWeight =
+                          (maxWeight / (1.0278 - (0.0278 * repetitions)))
+                              .round();
                     }
-                    final ExerciseModel? selectedExercise = selectedExerciseController.value;
+                    final ExerciseModel? selectedExercise =
+                        selectedExerciseController.value;
                     if (selectedExercise != null && maxWeight > 0) {
                       addRecord(
                         exerciseId: selectedExercise.id,
@@ -262,7 +307,8 @@ class MaxRMDashboard extends HookConsumerWidget {
               ),
             ),
             if (usersService.getCurrentUserRole() == 'admin')
-              _buildAllExercisesMaxRMs(ref, selectedUserController.value?.id ?? ''),
+              _buildAllExercisesMaxRMs(
+                  ref, selectedUserController.value?.id ?? ''),
             if (usersService.getCurrentUserRole() != 'admin' && user != null)
               _buildAllExercisesMaxRMs(ref, user.uid),
           ],
@@ -379,7 +425,9 @@ class MaxRMDashboard extends HookConsumerWidget {
                                     userId,
                                     usersService,
                                   ),
-                                  color: Theme.of(context).colorScheme.onBackground,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onBackground,
                                 ),
                                 IconButton(
                                   icon: const Icon(Icons.delete),
@@ -390,7 +438,9 @@ class MaxRMDashboard extends HookConsumerWidget {
                                     userId,
                                     usersService,
                                   ),
-                                  color: Theme.of(context).colorScheme.onBackground,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onBackground,
                                 ),
                               ],
                             ),
@@ -573,4 +623,3 @@ class MaxRMDashboard extends HookConsumerWidget {
     );
   }
 }
- 
