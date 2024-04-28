@@ -1,11 +1,12 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
 import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
 import 'package:alphanessone/trainingBuilder/athlete_selection_dialog.dart';
 import 'package:alphanessone/trainingBuilder/List/week_list.dart';
 import 'package:alphanessone/trainingBuilder/List/workout_list.dart';
 import 'package:alphanessone/trainingBuilder/List/exercise_list.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'training_program_state_provider.dart';
 import '../users_services.dart';
 
@@ -19,7 +20,7 @@ class TrainingProgramPage extends HookConsumerWidget {
     super.key,
     this.programId,
     required this.userId,
-    this.weekIndex,
+    this.weekIndex, 
     this.workoutIndex,
   });
 
@@ -38,6 +39,7 @@ class TrainingProgramPage extends HookConsumerWidget {
     }, [programId]);
 
     return Scaffold(
+      backgroundColor: Colors.black,
       body: program != null
           ? weekIndex != null
               ? workoutIndex != null
@@ -50,93 +52,184 @@ class TrainingProgramPage extends HookConsumerWidget {
                       controller: controller,
                       weekIndex: weekIndex!,
                     )
-              : Form(
-                  key: formKey,
-                  child: Column(
-                    children: [
-                      Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              TextFormField(
-                                controller: controller.nameController,
-                                decoration: const InputDecoration(labelText: 'Program Name'),
-                                validator: (value) =>
-                                    value?.isEmpty ?? true ? 'Please enter a program name' : null,
-                              ),
-                              const SizedBox(height: 16),
-                              TextFormField(
-                                controller: controller.descriptionController,
-                                decoration: const InputDecoration(labelText: 'Description'),
-                                validator: (value) =>
-                                    value?.isEmpty ?? true ? 'Please enter a description' : null,
-                              ),
-                              const SizedBox(height: 16),
-                              if (userRole == 'admin')
-                                ElevatedButton(
-                                  onPressed: () => _showAthleteSelectionDialog(context, ref, controller),
-                                  child: const Text('Select Athlete'),
-                                ),
-                              if (userRole == 'admin') const SizedBox(height: 16),
-                              TextFormField(
-                                controller: controller.mesocycleNumberController,
-                                decoration: const InputDecoration(labelText: 'Mesocycle Number'),
-                                keyboardType: TextInputType.number,
-                                validator: (value) =>
-                                    value?.isEmpty ?? true ? 'Please enter a mesocycle number' : null,
-                              ),
-                              const SizedBox(height: 16),
-                              SwitchListTile(
-                                title: const Text('Hide Program'),
-                                value: controller.program.hide,
-                                onChanged: (value) {
-                                  controller.updateHideProgram(value);
-                                },
-                              ),
-                              const SizedBox(height: 16),
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  TrainingProgramWeekList(
-                                    programId: programId ?? '',
-                                    userId: userId,
-                                    controller: controller,
-                                  ),
-                                  const SizedBox(height: 8),
-                                ],
-                              ),
-                            ],
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Form(
+                    key: formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: 48),
+                        const Text(
+                          'Crea Programma',
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(16.0).copyWith(bottom: 32),
-                        child: Row(
+                        const SizedBox(height: 32),
+                        TextFormField(
+                          controller: controller.nameController,
+                          decoration: InputDecoration(
+                            labelText: 'Nome Programma',
+                            labelStyle: const TextStyle(color: Colors.white),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: const BorderSide(color: Colors.white),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white.withOpacity(0.1),
+                          ),
+                          style: const TextStyle(color: Colors.white),
+                          validator: (value) => value?.isEmpty ?? true ? 'Inserisci un nome per il programma' : null,
+                        ),
+                        const SizedBox(height: 24),
+                        TextFormField(
+                          controller: controller.descriptionController,
+                          maxLines: 3,
+                          decoration: InputDecoration(
+                            labelText: 'Descrizione',  
+                            labelStyle: const TextStyle(color: Colors.white),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: const BorderSide(color: Colors.white),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white.withOpacity(0.1),
+                          ),
+                          style: const TextStyle(color: Colors.white),
+                          validator: (value) => value?.isEmpty ?? true ? 'Inserisci una descrizione' : null,
+                        ),
+                        const SizedBox(height: 24),
+                        if (userRole == 'admin')
+                          ElevatedButton.icon(
+                            onPressed: () => _showAthleteSelectionDialog(context, ref, controller),
+                            icon: const Icon(Icons.person_add),
+                            label: const Text(
+                              'Seleziona Atleta',
+                              style: TextStyle(fontSize: 18),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.black, backgroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ), 
+                          ),
+                        if (userRole == 'admin') const SizedBox(height: 24),
+                        TextFormField(  
+                          controller: controller.mesocycleNumberController,
+                          decoration: InputDecoration(
+                            labelText: 'Numero Mesociclo',
+                            labelStyle: const TextStyle(color: Colors.white),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: const BorderSide(color: Colors.white),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white.withOpacity(0.1),
+                          ),
+                          style: const TextStyle(color: Colors.white), 
+                          keyboardType: TextInputType.number,
+                          validator: (value) => value?.isEmpty ?? true ? 'Inserisci un numero di mesociclo' : null,
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            const Text(
+                              'Nascondi Programma',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const Spacer(),
+                            Switch(
+                              value: controller.program.hide,
+                              onChanged: (value) => controller.updateHideProgram(value),
+                              activeColor: Colors.white,
+                              inactiveTrackColor: Colors.white.withOpacity(0.3),
+                            ), 
+                          ],
+                        ),
+                        const SizedBox(height: 32),
+                        const Text(
+                          'Settimane del Programma',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,  
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TrainingProgramWeekList(
+                          programId: programId ?? '',
+                          userId: userId,
+                          controller: controller,
+                        ),
+                        const SizedBox(height: 32),
+                        Row(
                           children: [
                             Expanded(
-                              child: ElevatedButton(
+                              child: ElevatedButton.icon(
                                 onPressed: controller.addWeek,
-                                child: const Text('Aggiungi Settimana'),
+                                icon: const Icon(Icons.add),
+                                label: const Text(
+                                  'Aggiungi Settimana',
+                                  style: TextStyle(fontSize: 18),
+                                ),  
+                                style: ElevatedButton.styleFrom(
+                                  foregroundColor: Colors.white, backgroundColor: Colors.white.withOpacity(0.1),
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
                               ),
                             ),
                             const SizedBox(width: 16),
                             Expanded(
-                              child: ElevatedButton(
-                                onPressed: () => controller.submitProgram(context),
-                                child: const Text('Salva Programma'),
+                              child: ElevatedButton.icon(
+                                onPressed: () => controller.submitProgram(context),  
+                                icon: const Icon(Icons.save),
+                                label: const Text(
+                                  'Salva Programma',
+                                  style: TextStyle(fontSize: 18),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  foregroundColor: Colors.black, backgroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),  
+                                  ),
+                                ),
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    ],
-                  ),
+                        const SizedBox(height: 48),
+                      ],
+                    ),
+                  ),  
                 )
           : const Center(
-              child: CircularProgressIndicator(),
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
             ),
     );
   }
@@ -144,7 +237,7 @@ class TrainingProgramPage extends HookConsumerWidget {
   void _showAthleteSelectionDialog(BuildContext context, WidgetRef ref, TrainingProgramController controller) {
     showDialog(
       context: context,
-      builder: (context) => AthleteSelectionDialog(controller: controller),
+      builder: (context) => AthleteSelectionDialog(controller: controller),  
     );
   }
 }

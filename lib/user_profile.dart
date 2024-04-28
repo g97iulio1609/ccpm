@@ -25,6 +25,7 @@ class UserProfileState extends ConsumerState<UserProfile> {
   String? _snackBarMessage;
   Color? _snackBarColor;
   final _debouncer = Debouncer(milliseconds: 1000);
+  String? _selectedGender;
 
   @override
   void initState() {
@@ -41,6 +42,7 @@ class UserProfileState extends ConsumerState<UserProfile> {
         _controllers[key] = TextEditingController(text: value.toString());
       }
     });
+    _selectedGender = userProfileData?['gender'];
     if (mounted) {
       setState(() {});
     }
@@ -50,9 +52,9 @@ class UserProfileState extends ConsumerState<UserProfile> {
     String uid = widget.userId ?? FirebaseAuth.instance.currentUser!.uid;
     try {
       await ref.read(usersServiceProvider).updateUser(uid, {field: value});
-      updateSnackBar('Salvataggio riuscito!', Colors.green);
+      updateSnackBar('Profilo salvato con successo!', Colors.green);
     } catch (e) {
-      updateSnackBar('Errore di salvataggio!', Colors.red);
+      updateSnackBar('Errore durante il salvataggio del profilo!', Colors.red);
     }
   }
 
@@ -74,7 +76,7 @@ class UserProfileState extends ConsumerState<UserProfile> {
     } else if (status.isDenied) {
       updateSnackBar('Accesso alla galleria negato dall\'utente.', Colors.red);
     } else {
-      updateSnackBar('Accesso alla galleria negato per altre restrizioni.', Colors.red);
+      updateSnackBar('Accesso alla galleria negato a causa di altre restrizioni.', Colors.red);
     }
   }
 
@@ -94,11 +96,49 @@ class UserProfileState extends ConsumerState<UserProfile> {
         await ref.read(usersServiceProvider).updateUser(uid, {'photoURL': downloadURL});
         updateSnackBar('Immagine del profilo caricata con successo!', Colors.green);
       } else {
-        updateSnackBar('Formato di immagine non supportato. Scegli un file JPG, PNG o JPEG.', Colors.red);
+        updateSnackBar('Formato immagine non supportato. Scegli un file JPG, PNG o JPEG.', Colors.red);
       }
     } else {
       updateSnackBar('Nessuna immagine selezionata.', Colors.red);
     }
+  }
+
+  Future<void> deleteUser() async {
+    String uid = widget.userId ?? FirebaseAuth.instance.currentUser!.uid;
+    try {
+      await ref.read(usersServiceProvider).deleteUser(uid);
+      updateSnackBar('Utente eliminato con successo!', Colors.green);
+      // Naviga verso un'altra schermata o esegui le azioni necessarie dopo aver eliminato l'utente
+    } catch (e) {
+      updateSnackBar('Errore durante l\'eliminazione dell\'utente!', Colors.red);
+    }
+  }
+
+  void showDeleteConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Conferma eliminazione'),
+          content: const Text('Sei sicuro di voler eliminare questo utente?'),
+          actions: [
+            TextButton(
+              child: const Text('Annulla'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Elimina'),
+              onPressed: () {
+                deleteUser();
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -119,33 +159,51 @@ class UserProfileState extends ConsumerState<UserProfile> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Center(
+                        Center(
               child: GestureDetector(
                 onTap: requestGalleryPermission,
                 child: CircleAvatar(
                   backgroundImage: hasValidPhotoURL ? NetworkImage(userPhotoURL) : null,
-                  radius: 60,
-                  backgroundColor: Colors.grey[700],
+                  radius: 80,
+                  backgroundColor: Colors.grey[800],
                   foregroundColor: Colors.white,
                   child: !hasValidPhotoURL
                       ? const Icon(
                           Icons.person,
-                          size: 60,
+                          size: 80,
                           color: Colors.white,
                         )
                       : null,
                 ),
               ),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 40),
             ..._controllers.keys
-                .where((field) => field != 'photoURL')
+                .where((field) => field != 'photoURL' && field != 'gender')
                 .map((field) => buildEditableField(field, _controllers[field]!))
-                .toList(),
+                ,
+            const SizedBox(height: 24),
+            buildGenderDropdown(),
+            const SizedBox(height: 40),
+            ElevatedButton.icon(
+              onPressed: showDeleteConfirmationDialog,
+              icon: const Icon(Icons.delete),
+              label: const Text(
+                'Elimina Utente',
+                style: TextStyle(fontSize: 18),
+              ),
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white, backgroundColor: Colors.red,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -155,23 +213,29 @@ class UserProfileState extends ConsumerState<UserProfile> {
   Widget buildEditableField(String field, TextEditingController controller) {
     String label = field[0].toUpperCase() + field.substring(1);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
-      child: TextField(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: TextFormField(
         controller: controller,
         style: const TextStyle(
           color: Colors.white,
+          fontSize: 18,
         ),
         decoration: InputDecoration(
           labelText: label,
           labelStyle: const TextStyle(
             color: Colors.white70,
+            fontSize: 18,
           ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: Colors.grey),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Colors.white),
           ),
           filled: true,
-          fillColor: Colors.grey[800],
+          fillColor: Colors.white.withOpacity(0.1),
         ),
         onChanged: (value) {
           _debouncer.run(() => saveProfile(field, value));
@@ -179,6 +243,54 @@ class UserProfileState extends ConsumerState<UserProfile> {
       ),
     );
   }
+
+ Widget buildGenderDropdown() {
+  return DropdownButtonFormField<String>(
+    value: _selectedGender,
+    onChanged: (value) {
+      setState(() {
+        _selectedGender = value;
+        saveProfile('gender', value!);
+      });
+    },
+    decoration: InputDecoration(
+      labelText: 'Genere',
+      labelStyle: const TextStyle(
+        color: Colors.white70,
+        fontSize: 18,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Colors.white),
+      ),
+      filled: true,
+      fillColor: Colors.white.withOpacity(0.1),
+    ),
+    dropdownColor: Colors.grey[900],
+    style: const TextStyle(
+      color: Colors.white,
+      fontSize: 18,
+    ),
+    items: const [
+      DropdownMenuItem(
+        value: 'Uomo',
+        child: Text('Uomo'),
+      ),
+      DropdownMenuItem(
+        value: 'Donna',
+        child: Text('Donna'),
+      ),
+      DropdownMenuItem(
+        value: 'Altro',
+        child: Text('Altro'),
+      ),
+    ],
+  );
+}
 
   @override
   void dispose() {

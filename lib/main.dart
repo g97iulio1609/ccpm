@@ -1,3 +1,4 @@
+import 'package:alphanessone/training_gallery.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -103,7 +104,7 @@ class UnsupportedVersionApp extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 const Text(
-                  'App Update Required',
+                  "L'App Deve Essere Aggiornata",
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -112,7 +113,7 @@ class UnsupportedVersionApp extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'Please update the app to the latest version to continue using it.',
+                  "Aggiorna L'applicazione all'ultima versione per continaure ad usarla",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 16,
@@ -136,7 +137,7 @@ class UnsupportedVersionApp extends StatelessWidget {
                     ),
                   ),
                   child: const Text(
-                    'Update',
+                    'Aggiorna',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -208,64 +209,91 @@ class MyApp extends ConsumerWidget {
       visualDensity: VisualDensity.adaptivePlatformDensity,
     );
 
-    final GoRouter router = GoRouter(
+  final GoRouter router = GoRouter(
+  routes: [
+    ShellRoute(
+      builder: (context, state, child) => HomeScreen(child: child),
       routes: [
-        ShellRoute(
-          builder: (context, state, child) => HomeScreen(child: child),
+        GoRoute(
+          path: '/',
+          builder: (context, state) => const AuthWrapper(),
+        ),
+        GoRoute(
+          path: '/programs_screen',
+          builder: (context, state) {
+            final userRole = ref.read(userRoleProvider);
+            final userId = FirebaseAuth.instance.currentUser?.uid;
+            if (userRole == 'admin') {
+              return const ProgramsScreen();
+            } else {
+              return userId != null
+                  ? UserProgramsScreen(userId: userId)
+                  : const SizedBox();
+            }
+          },
           routes: [
             GoRoute(
-              path: '/',
-              builder: (context, state) => const AuthWrapper(),
-            ),
-            GoRoute(
-              path: '/programs_screen',
-              builder: (context, state) {
-                final userRole = ref.read(userRoleProvider);
-                final userId = FirebaseAuth.instance.currentUser?.uid;
-                if (userRole == 'admin') {
-                  return const ProgramsScreen();
-                } else {
-                  return userId != null
-                      ? UserProgramsScreen(userId: userId)
-                      : const SizedBox();
-                }
-              },
+              path: 'user_programs/:userId',
+              builder: (context, state) =>
+                  UserProgramsScreen(userId: state.pathParameters['userId']!),
               routes: [
                 GoRoute(
-                  path: 'user_programs/:userId',
-                  builder: (context, state) => UserProgramsScreen(
-                      userId: state.pathParameters['userId']!),
+                  path: 'training_viewer/:programId',
+                  builder: (context, state) => TrainingViewer(
+                    programId: state.pathParameters['programId']!,
+                    userId: state.pathParameters['userId']!,
+                  ),
                   routes: [
                     GoRoute(
-                      path: 'training_viewer/:programId',
-                      builder: (context, state) => TrainingViewer(
+                      path: 'week_details/:weekId',
+                      builder: (context, state) => WeekDetails(
                         programId: state.pathParameters['programId']!,
+                        weekId: state.pathParameters['weekId']!,
                         userId: state.pathParameters['userId']!,
                       ),
                       routes: [
                         GoRoute(
-                          path: 'week_details/:weekId',
-                          builder: (context, state) => WeekDetails(
+                          path: 'workout_details/:workoutId',
+                          builder: (context, state) => WorkoutDetails(
                             programId: state.pathParameters['programId']!,
                             weekId: state.pathParameters['weekId']!,
+                            workoutId: state.pathParameters['workoutId']!,
                             userId: state.pathParameters['userId']!,
                           ),
                           routes: [
                             GoRoute(
-                              path: 'workout_details/:workoutId',
-                              builder: (context, state) => WorkoutDetails(
-                                programId: state.pathParameters['programId']!,
-                                weekId: state.pathParameters['weekId']!,
-                                workoutId: state.pathParameters['workoutId']!,
-                                userId: state.pathParameters['userId']!,
-                              ),
+                              path: 'exercise_details/:exerciseId',
+                              builder: (context, state) {
+                                final extra = state.extra as Map<String, dynamic>?;
+                                return ExerciseDetails(
+                                  programId: Uri.decodeComponent(
+                                      state.pathParameters['programId']!),
+                                  weekId: Uri.decodeComponent(
+                                      state.pathParameters['weekId']!),
+                                  workoutId: Uri.decodeComponent(
+                                      state.pathParameters['workoutId']!),
+                                  exerciseId: Uri.decodeComponent(
+                                      state.pathParameters['exerciseId']!),
+                                  superSetExercises:
+                                      extra?['superSetExercises'] != null
+                                          ? List<Map<String, dynamic>>.from(
+                                              extra?['superSetExercises'])
+                                          : [],
+                                  superSetExerciseIndex:
+                                      extra?['superSetExerciseIndex'] ?? 0,
+                                  seriesList:
+                                      List<Map<String, dynamic>>.from(
+                                          extra?['seriesList'] ?? []),
+                                  startIndex: extra?['startIndex'] ?? 0,
+                                  userId: state.pathParameters['userId']!,
+                                );
+                              },
                               routes: [
                                 GoRoute(
-                                  path: 'exercise_details/:exerciseId',
+                                  path: 'timer',
                                   builder: (context, state) {
-                                    final extra =
-                                        state.extra as Map<String, dynamic>?;
-                                    return ExerciseDetails(
+                                    final extra = state.extra as Map<String, dynamic>?;
+                                    return TimerPage(
                                       programId: Uri.decodeComponent(
                                           state.pathParameters['programId']!),
                                       weekId: Uri.decodeComponent(
@@ -274,59 +302,23 @@ class MyApp extends ConsumerWidget {
                                           state.pathParameters['workoutId']!),
                                       exerciseId: Uri.decodeComponent(
                                           state.pathParameters['exerciseId']!),
-                                      superSetExercises:
-                                          extra?['superSetExercises'] != null
-                                              ? List<Map<String, dynamic>>.from(
-                                                  extra?['superSetExercises'])
-                                              : [],
-                                      superSetExerciseIndex:
-                                          extra?['superSetExerciseIndex'] ?? 0,
-                                      seriesList:
-                                          List<Map<String, dynamic>>.from(
-                                              extra?['seriesList'] ?? []),
-                                      startIndex: extra?['startIndex'] ?? 0,
+                                      currentSeriesIndex: int.parse(state.uri
+                                          .queryParameters['currentSeriesIndex']!),
+                                      superSetExerciseIndex: int.parse(state
+                                          .uri.queryParameters['superSetExerciseIndex']!),
+                                      totalSeries: int.parse(
+                                          state.uri.queryParameters['totalSeries']!),
+                                      restTime: int.parse(
+                                          state.uri.queryParameters['restTime']!),
+                                      isEmomMode: state.uri.queryParameters['isEmomMode'] ==
+                                          'true',
                                       userId: state.pathParameters['userId']!,
+                                      seriesList: extra?['seriesList'] != null
+                                          ? List<Map<String, dynamic>>.from(
+                                              extra?['seriesList'])
+                                          : [],
                                     );
                                   },
-                                  routes: [
-                                    GoRoute(
-                                      path: 'timer',
-                                      builder: (context, state) {
-                                        final extra = state.extra
-                                            as Map<String, dynamic>?;
-                                        return TimerPage(
-                                          programId: Uri.decodeComponent(state
-                                              .pathParameters['programId']!),
-                                          weekId: Uri.decodeComponent(
-                                              state.pathParameters['weekId']!),
-                                          workoutId: Uri.decodeComponent(state
-                                              .pathParameters['workoutId']!),
-                                          exerciseId: Uri.decodeComponent(state
-                                              .pathParameters['exerciseId']!),
-                                          currentSeriesIndex: int.parse(
-                                              state.uri.queryParameters[
-                                                  'currentSeriesIndex']!),
-                                          superSetExerciseIndex: int.parse(
-                                              state.uri.queryParameters[
-                                                  'superSetExerciseIndex']!),
-                                          totalSeries: int.parse(state.uri
-                                              .queryParameters['totalSeries']!),
-                                          restTime: int.parse(state.uri
-                                              .queryParameters['restTime']!),
-                                          isEmomMode: state.uri.queryParameters[
-                                                  'isEmomMode'] ==
-                                              'true',
-                                          userId:
-                                              state.pathParameters['userId']!,
-                                          seriesList: extra?['seriesList'] !=
-                                                  null
-                                              ? List<Map<String, dynamic>>.from(
-                                                  extra?['seriesList'])
-                                              : [],
-                                        );
-                                      },
-                                    ),
-                                  ],
                                 ),
                               ],
                             ),
@@ -334,41 +326,38 @@ class MyApp extends ConsumerWidget {
                         ),
                       ],
                     ),
+                  ],
+                ),
+                GoRoute(
+                  path: 'training_program',
+                  builder: (context, state) => TrainingProgramPage(
+                    userId: state.pathParameters['userId']!,
+                  ),
+                  routes: [
                     GoRoute(
-                      path: 'training_program',
+                      path: ':programId',
                       builder: (context, state) => TrainingProgramPage(
+                        programId: state.pathParameters['programId'],
                         userId: state.pathParameters['userId']!,
+                        weekIndex: null,
+                      ),
+                    ),
+                    GoRoute(
+                      path: ':programId/week/:weekIndex',
+                      builder: (context, state) => TrainingProgramPage(
+                        programId: state.pathParameters['programId']!,
+                        userId: state.pathParameters['userId']!,
+                        weekIndex: int.parse(state.pathParameters['weekIndex']!),
                       ),
                       routes: [
                         GoRoute(
-                          path: ':programId',
-                          builder: (context, state) => TrainingProgramPage(
-                            programId: state.pathParameters['programId'],
-                            userId: state.pathParameters['userId']!,
-                            weekIndex: null,
-                          ),
-                        ),
-                        GoRoute(
-                          path: ':programId/week/:weekIndex',
+                          path: 'workout/:workoutIndex',
                           builder: (context, state) => TrainingProgramPage(
                             programId: state.pathParameters['programId']!,
                             userId: state.pathParameters['userId']!,
-                            weekIndex:
-                                int.parse(state.pathParameters['weekIndex']!),
+                            weekIndex: int.parse(state.pathParameters['weekIndex']!),
+                            workoutIndex: int.parse(state.pathParameters['workoutIndex']!),
                           ),
-                          routes: [
-                            GoRoute(
-                              path: 'workout/:workoutIndex',
-                              builder: (context, state) => TrainingProgramPage(
-                                programId: state.pathParameters['programId']!,
-                                userId: state.pathParameters['userId']!,
-                                weekIndex: int.parse(
-                                    state.pathParameters['weekIndex']!),
-                                workoutIndex: int.parse(
-                                    state.pathParameters['workoutIndex']!),
-                              ),
-                            ),
-                          ],
                         ),
                       ],
                     ),
@@ -376,43 +365,49 @@ class MyApp extends ConsumerWidget {
                 ),
               ],
             ),
+          ],
+        ),
+        GoRoute(
+          path: '/training_gallery',
+          builder: (context, state) => const TrainingGalleryScreen(),
+        ),
+        GoRoute(
+          path: '/exercises_list',
+          builder: (context, state) => const ExercisesList(),
+        ),
+        GoRoute(
+          path: '/maxrmdashboard',
+          builder: (context, state) => const MaxRMDashboard(),
+        ),
+        GoRoute(
+          path: '/users_dashboard',
+          builder: (context, state) => const UsersDashboard(),
+          routes: [
             GoRoute(
-              path: '/exercises_list',
-              builder: (context, state) => const ExercisesList(),
-            ),
-            GoRoute(
-              path: '/maxrmdashboard',
-              builder: (context, state) => const MaxRMDashboard(),
-            ),
-            GoRoute(
-              path: '/users_dashboard',
-              builder: (context, state) => const UsersDashboard(),
-              routes: [
-                GoRoute(
-                  path: 'user_profile/:userId',
-                  builder: (context, state) =>
-                      UserProfile(userId: state.pathParameters['userId']!),
-                ),
-              ],
-            ),
-            GoRoute(
-              path: '/user_profile/:userId',
+              path: 'user_profile/:userId',
               builder: (context, state) =>
                   UserProfile(userId: state.pathParameters['userId']!),
             ),
-            GoRoute(
-              path: '/user_profile',
-              builder: (context, state) {
-                final userId = FirebaseAuth.instance.currentUser?.uid;
-                return userId != null
-                    ? UserProfile(userId: userId)
-                    : const SizedBox();
-              },
-            ),
           ],
-        )
+        ),
+        GoRoute(
+          path: '/user_profile/:userId',
+          builder: (context, state) =>
+              UserProfile(userId: state.pathParameters['userId']!),
+        ),
+        GoRoute(
+          path: '/user_profile',
+          builder: (context, state) {
+            final userId = FirebaseAuth.instance.currentUser?.uid;
+            return userId != null
+                ? UserProfile(userId: userId)
+                : const SizedBox();
+          },
+        ),
       ],
-    );
+    )
+  ],
+);
     return MaterialApp.router(
       routerConfig: router,
       title: 'AlphanessOne',

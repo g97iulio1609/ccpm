@@ -17,6 +17,13 @@ class ExercisesService {
     });
   }
 
+Future<ExerciseModel?> getExerciseById(String id) async {
+  final exercises = await getExercises().first;
+  return exercises.firstWhere(
+    (exercise) => exercise.id == id,
+  );
+}
+
   Future<void> addExercise(String name, String muscleGroup, String type) async {
     await _firestore.collection('exercises').add({
       'name': name,

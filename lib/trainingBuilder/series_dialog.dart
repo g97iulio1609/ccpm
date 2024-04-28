@@ -70,7 +70,7 @@ class _SeriesDialogState extends State<SeriesDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.currentSeries != null ? 'Edit Series' : 'Add Series'),
+      title: Text(widget.currentSeries != null ? 'Modifica Serie' : 'Aggiungi Serie'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -100,7 +100,7 @@ class _SeriesDialogState extends State<SeriesDialog> {
                   );
                 }),
               ],
-              decoration: const InputDecoration(labelText: 'Intensity (%)'),
+              decoration: const InputDecoration(labelText: 'Intensità (%)'),
               onChanged: (value) {
                 final intensity = double.tryParse(value) ?? 0;
                 _updateWeight(intensity);
@@ -137,7 +137,7 @@ class _SeriesDialogState extends State<SeriesDialog> {
                   );
                 }),
               ],
-              decoration: const InputDecoration(labelText: 'Weight (kg)'),
+              decoration: const InputDecoration(labelText: 'Peso (kg)'),
               onChanged: (value) {
                 final newWeight = double.tryParse(value) ?? 0;
                 widget.weightNotifier.value = newWeight;
@@ -151,7 +151,7 @@ class _SeriesDialogState extends State<SeriesDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: const Text('Annulla'),
         ),
         TextButton(
           onPressed: () {
@@ -187,7 +187,7 @@ class _SeriesDialogState extends State<SeriesDialog> {
               Navigator.pop(context, series);
             }
           },
-          child: Text(widget.currentSeries != null ? 'Save' : 'Add'),
+          child: Text(widget.currentSeries != null ? 'Salva' : 'Aggiungi'),
         ),
       ],
     );
