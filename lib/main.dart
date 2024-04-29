@@ -1,3 +1,4 @@
+import 'package:alphanessone/measurements.dart';
 import 'package:alphanessone/training_gallery.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -5,7 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'auth/auth_screen.dart';
-import 'home_screen_new.dart';
+import 'UI/home_screen.dart';
 import 'exerciseManager/exercises_Manager.dart';
 import 'maxRMDashboard.dart';
 import 'trainingBuilder/training_program.dart';
@@ -367,10 +368,20 @@ class MyApp extends ConsumerWidget {
             ),
           ],
         ),
+       
         GoRoute(
           path: '/training_gallery',
           builder: (context, state) => const TrainingGalleryScreen(),
         ),
+        GoRoute(
+      path: '/measurements',
+      builder: (context, state) {
+        final userId = FirebaseAuth.instance.currentUser?.uid;
+        return userId != null
+            ? MeasurementsPage(userId: userId)
+            : const SizedBox();
+      },
+    ),
         GoRoute(
           path: '/exercises_list',
           builder: (context, state) => const ExercisesList(),

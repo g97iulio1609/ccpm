@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'drawer.dart';
 import 'appBar_custom.dart';
-import 'users_services.dart';
+import '../users_services.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key, required this.child});
@@ -46,7 +46,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final isLargeScreen = MediaQuery.of(context).size.width > 600;
     final userRole = ref.watch(userRoleProvider);
     final user = FirebaseAuth.instance.currentUser;
-    final controller = ref.watch(trainingProgramControllerProvider);
+    final controller = ref.watch(trainingProgramControllerProvider.notifier);
 
     return Scaffold(
       key: _scaffoldKey,

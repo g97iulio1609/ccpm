@@ -33,10 +33,10 @@ class AuthForm extends HookConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Row(
+          const Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const GoogleSignInButtonWrapper(),
+              GoogleSignInButtonWrapper(),
             ],
           ),
           const SizedBox(height: 16),
