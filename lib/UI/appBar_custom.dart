@@ -39,6 +39,8 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
         return 'Volume Allenamento';
       case '/user_programs':
         return 'Programmi Utente';
+          case '/measurements':
+        return 'Misurazioni Antropometriche';
       default:
         break;
     }

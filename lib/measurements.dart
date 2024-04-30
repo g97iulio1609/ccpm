@@ -1,10 +1,11 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'users_services.dart';
 import 'measurements_provider.dart';
 import 'measurements_chart.dart';
+import 'package:fl_chart/fl_chart.dart';
+
 
 class MeasurementsPage extends ConsumerStatefulWidget {
   final String userId;
@@ -62,7 +63,7 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
     final selectedMeasurements = ref.watch(selectedMeasurementsProvider);
 
     return Scaffold(
-   
+     
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -135,179 +136,35 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
     );
   }
 
-Widget _buildMeasurementsChart(UsersService usersService, MeasurementsState selectedDates,
-    Set<String> selectedMeasurements) {
-  return StreamBuilder<List<MeasurementModel>>(
-    stream: usersService.getMeasurements(userId: widget.userId),
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const CircularProgressIndicator();
-      } else if (snapshot.hasError) {
-        return Text('Errore: ${snapshot.error}');
-      } else if (snapshot.hasData) {
-        final measurements = snapshot.data!;
-        final measurementData = _convertMeasurementsToData(measurements);
+  Widget _buildMeasurementsChart(UsersService usersService, MeasurementsState selectedDates,
+      Set<String> selectedMeasurements) {
+    return StreamBuilder<List<MeasurementModel>>(
+      stream: usersService.getMeasurements(userId: widget.userId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const CircularProgressIndicator();
+        } else if (snapshot.hasError) {
+          return Text('Errore: ${snapshot.error}');
+        } else if (snapshot.hasData) {
+          final measurements = snapshot.data!;
+          final measurementData = _convertMeasurementsToData(measurements);
 
-        return SizedBox(
-          height: 300,
-          child: LineChart(
-            LineChartData(
-              lineBarsData: measurementData.entries
-                  .where((entry) => selectedMeasurements.contains(entry.key))
-                  .map((entry) {
-                final color = _getColorForMeasurement(entry.key);
-                return LineChartBarData(
-                  spots: entry.value,
-                  isCurved: true,
-                  color: color,
-                  barWidth: 5,
-                  isStrokeCapRound: true,
-                  dotData: FlDotData(
-                    show: true,
-                    getDotPainter: (spot, percent, barData, index) {
-                      return FlDotCirclePainter(
-                        radius: 5,
-                        color: color,
-                        strokeWidth: 2,
-                        strokeColor: Colors.white,
-                      );
-                    },
-                  ),
-                  belowBarData: BarAreaData(
-                    show: true,
-                    color: color.withOpacity(0.2),
-                  ),
-                );
-              }).toList(),
-              minX: measurementData.values.first.first.x,
-              maxX: measurementData.values.first.last.x,
-              minY: measurementData.values
-                  .expand((spots) => spots)
-                  .map((spot) => spot.y)
-                  .reduce((a, b) => a < b ? a : b),
-              maxY: measurementData.values
-                  .expand((spots) => spots)
-                  .map((spot) => spot.y)
-                  .reduce((a, b) => a > b ? a : b),
-              titlesData: FlTitlesData(
-                leftTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    getTitlesWidget: (value, meta) {
-                      return Text(value.toStringAsFixed(1));
-                    },
-                    reservedSize: 40,
-                  ),
-                ),
-                topTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 30,
-                    interval:
-                        (measurementData.values.first.last.x - measurementData.values.first.first.x) /
-                            5,
-                    getTitlesWidget: (value, meta) {
-                      final dateTime = DateTime.fromMillisecondsSinceEpoch(value.toInt());
-                      final formattedDate = DateFormat('MMM dd').format(dateTime);
-                      return Text(formattedDate, style: const TextStyle(fontSize: 12));
-                    },
-                  ),
-                ),
-                rightTitles: AxisTitles(),
-                bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 30,
-                    interval: 1,
-                    getTitlesWidget: (value, meta) {
-                      final dateTime = DateTime.fromMillisecondsSinceEpoch(value.toInt());
-                      final formattedDate = DateFormat('MMM dd').format(dateTime);
-                      final matchingSpots = measurementData.values
-                          .expand((spots) => spots)
-                          .where((spot) => spot.x == value);
-                      return matchingSpots.isNotEmpty
-                          ? SideTitleWidget(
-                              axisSide: meta.axisSide,
-                              child: Text(formattedDate, style: const TextStyle(fontSize: 12)),
-                            )
-                          : const SideTitleWidget(
-                              axisSide: AxisSide.bottom,
-                              child: Text(''),
-                            );
-                    },
-                  ),
-                ),
-              ),
-              gridData: FlGridData(
-                show: true,
-                drawVerticalLine: false,
-                getDrawingHorizontalLine: (value) {
-                  return FlLine(
-                    color: Colors.grey.withOpacity(0.5),
-                    strokeWidth: 1,
-                  );
-                },
-              ),
-              borderData: FlBorderData(
-                show: true,
-                border: Border.all(
-                  color: Colors.grey,
-                  width: 1,
-                ),
-              ),
-              lineTouchData: LineTouchData(
-                enabled: true,
-                touchTooltipData: LineTouchTooltipData(
-                  getTooltipItems: (touchedSpots) {
-                    return touchedSpots.map((touchedSpot) {
-                      final date = DateTime.fromMillisecondsSinceEpoch(touchedSpot.x.toInt());
-                      final formattedDate = DateFormat('MMM dd').format(date);
-                      final value = touchedSpot.y.toStringAsFixed(2);
-                      final measurementName = _getMeasurementName(touchedSpot.barIndex, selectedMeasurements);
-                      return LineTooltipItem(
-                        '$measurementName\n$formattedDate: $value',
-                        const TextStyle(color: Colors.white),
-                      );
-                    }).toList();
-                  },
-                ),
-              ),
+          return SizedBox(
+            height: 300,
+            child: MeasurementsChart(
+              measurementData: measurementData,
+              startDate: selectedDates.startDate,
+              endDate: selectedDates.endDate,
+              selectedMeasurements: selectedMeasurements,
             ),
-          ),
-        );
-      } else {
-        return const Text('Nessuna misurazione disponibile.');
-      }
-    },
-  );
-}
-
-Color _getColorForMeasurement(String measurement) {
-  switch (measurement) {
-    case 'weight':
-      return Colors.blue;
-    case 'bodyFatPercentage':
-      return Colors.green;
-    case 'waistCircumference':
-      return Colors.red;
-    case 'hipCircumference':
-      return Colors.orange;
-    case 'chestCircumference':
-      return Colors.purple;
-    case 'bicepsCircumference':
-      return Colors.teal;
-    default:
-      return Colors.black;
+          );
+        } else {
+          return const Text('Nessuna misurazione disponibile.');
+        }
+      },
+    );
   }
-}
 
-String _getMeasurementName(int barIndex, Set<String> selectedMeasurements) {
-  final selectedMeasurementsList = selectedMeasurements.toList();
-  if (barIndex >= 0 && barIndex < selectedMeasurementsList.length) {
-    return selectedMeasurementsList[barIndex];
-  }
-  return '';
-}
   Widget _buildMeasurementChips(Set<String> selectedMeasurements) {
     return Wrap(
       spacing: 8,

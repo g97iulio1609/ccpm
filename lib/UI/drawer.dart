@@ -51,6 +51,8 @@ class CustomDrawer extends ConsumerWidget {
         return userRole == 'admin' ? '/users_dashboard' : null;
       case 'Volume Allenamento':
         return '/volume_dashboard';
+           case 'Misurazioni':
+        return '/measurements';
       default:
         return null;
     }
@@ -72,6 +74,8 @@ class CustomDrawer extends ConsumerWidget {
         return Icons.supervised_user_circle;
       case 'Volume Allenamento':
         return Icons.bar_chart;
+        case 'Misurazioni':
+        return Icons.trending_up;
       default:
         return Icons.menu;
     }
@@ -84,6 +88,7 @@ class CustomDrawer extends ConsumerWidget {
       'Massimali',
       'Profilo Utente',
       'Gestione Utenti',
+      'Misurazioni'
     ];
   }
 
