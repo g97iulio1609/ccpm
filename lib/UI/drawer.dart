@@ -101,11 +101,7 @@ class CustomDrawer extends ConsumerWidget {
   }
 
   List<String> _getClientMenuItems() {
-    return [
-      'I Miei Allenamenti',
-      'Massimali',
-      'Profilo Utente',
-    ];
+    return ['I Miei Allenamenti', 'Massimali', 'Profilo Utente', 'Misurazioni'];
   }
 
   Future<String?> getCurrentProgramId(WidgetRef ref) async {
@@ -165,8 +161,10 @@ class CustomDrawer extends ConsumerWidget {
                           itemCount: workouts.length,
                           itemBuilder: (context, index) {
                             final workoutDoc = workouts[index];
-                            final currentRoute = GoRouterState.of(context).uri.toString();
-                            final route = '/programs_screen/user_programs/${FirebaseAuth.instance.currentUser?.uid}/training_viewer/$programId/week_details/${weekDoc.id}/workout_details/${workoutDoc.id}';
+                            final currentRoute =
+                                GoRouterState.of(context).uri.toString();
+                            final route =
+                                '/programs_screen/user_programs/${FirebaseAuth.instance.currentUser?.uid}/training_viewer/$programId/week_details/${weekDoc.id}/workout_details/${workoutDoc.id}';
 
                             return ListTile(
                               title: Text(
@@ -240,9 +238,10 @@ class CustomDrawer extends ConsumerWidget {
                 children: [
                   ...menuItems.map(
                     (menuItem) {
-                      final route = _getRouteForMenuItem(
-                          menuItem, userRole, FirebaseAuth.instance.currentUser?.uid);
-                      final currentRoute = GoRouterState.of(context).uri.toString();
+                      final route = _getRouteForMenuItem(menuItem, userRole,
+                          FirebaseAuth.instance.currentUser?.uid);
+                      final currentRoute =
+                          GoRouterState.of(context).uri.toString();
                       final isSelected = route == currentRoute;
 
                       return ListTile(
