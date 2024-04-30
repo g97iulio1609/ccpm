@@ -1,410 +1,681 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'users_services.dart';
+import 'measurements_provider.dart';
+import 'measurements_chart.dart';
 
-class MeasurementsPage extends ConsumerWidget {
+class MeasurementsPage extends ConsumerStatefulWidget {
   final String userId;
 
   const MeasurementsPage({super.key, required this.userId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MeasurementsPage> createState() => _MeasurementsPageState();
+}
+
+class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
+  final _formKey = GlobalKey<FormState>();
+  final _dateController = TextEditingController();
+  final _weightController = TextEditingController();
+  final _heightController = TextEditingController();
+  final _bodyFatController = TextEditingController();
+  final _waistController = TextEditingController();
+  final _hipController = TextEditingController();
+  final _chestController = TextEditingController();
+  final _bicepsController = TextEditingController();
+
+  String? _editMeasurementId;
+  bool _showAddMeasurementForm = false;
+
+  @override
+  void dispose() {
+    _dateController.dispose();
+    _weightController.dispose();
+    _heightController.dispose();
+    _bodyFatController.dispose();
+    _waistController.dispose();
+    _hipController.dispose();
+    _chestController.dispose();
+    _bicepsController.dispose();
+    super.dispose();
+  }
+
+  void _resetForm() {
+    _formKey.currentState?.reset();
+    _dateController.clear();
+    _weightController.clear();
+    _heightController.clear();
+    _bodyFatController.clear();
+    _waistController.clear();
+    _hipController.clear();
+    _chestController.clear();
+    _bicepsController.clear();
+    _editMeasurementId = null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final usersService = ref.watch(usersServiceProvider);
-    final weightController = TextEditingController();
-    final heightController = TextEditingController();
-    final bodyFatPercentageController = TextEditingController();
-    final waistCircumferenceController = TextEditingController();
-    final hipCircumferenceController = TextEditingController();
-    final chestCircumferenceController = TextEditingController();
-    final bicepsCircumferenceController = TextEditingController();
-    final dateController = TextEditingController(
-        text: DateFormat('yyyy-MM-dd').format(DateTime.now()));
-    String? editMeasurementId;
+    final selectedDates = ref.watch(measurementsStateNotifierProvider);
+    final selectedMeasurements = ref.watch(selectedMeasurementsProvider);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Misurazioni',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: StreamBuilder<List<MeasurementModel>>(
-                stream: usersService.getMeasurements(userId: userId),
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    final measurements = snapshot.data!;
-                    if (measurements.isNotEmpty) {
-                      return ListView.builder(
-                        itemCount: measurements.length,
-                        itemBuilder: (context, index) {
-                          final measurement = measurements[index];
-                          return ListTile(
-                            title: Text(
-                              DateFormat('yyyy-MM-dd').format(measurement.date),
-                            ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.edit),
-                                  onPressed: () {
-                                    weightController.text =
-                                        measurement.weight.toStringAsFixed(2);
-                                    heightController.text =
-                                        measurement.height.toStringAsFixed(2);
-                                    bodyFatPercentageController.text =
-                                        measurement.bodyFatPercentage
-                                            .toStringAsFixed(2);
-                                    waistCircumferenceController.text =
-                                        measurement.waistCircumference
-                                            .toStringAsFixed(2);
-                                    hipCircumferenceController.text =
-                                        measurement.hipCircumference
-                                            .toStringAsFixed(2);
-                                    chestCircumferenceController.text =
-                                        measurement.chestCircumference
-                                            .toStringAsFixed(2);
-                                    bicepsCircumferenceController.text =
-                                        measurement.bicepsCircumference
-                                            .toStringAsFixed(2);
-                                    dateController.text =
-                                        DateFormat('yyyy-MM-dd')
-                                            .format(measurement.date);
-                                    editMeasurementId = measurement.id;
-                                  },
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete),
-                                  onPressed: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) => AlertDialog(
-                                        title:
-                                            const Text('Elimina misurazione'),
-                                        content: const Text(
-                                            'Sei sicuro di voler eliminare questa misurazione?'),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.of(context).pop(),
-                                            child: const Text('Annulla'),
-                                          ),
-                                          TextButton(
-                                            onPressed: () {
-                                              usersService.deleteMeasurement(
-                                                userId: userId,
-                                                measurementId: measurement.id,
-                                              );
-                                              Navigator.of(context).pop();
-                                            },
-                                            child: const Text('Elimina'),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      );
-                    } else {
-                      return const Center(
-                        child: Text('Non sono disponibili misurazioni'),
-                      );
-                    }
-                  } else if (snapshot.hasError) {
-                    return Center(child: Text('Errore: ${snapshot.error}'));
-                  } else {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                },
+   
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Grafici delle Misurazioni',
+                style: Theme.of(context).textTheme.titleLarge,
               ),
-            ),
-            const SizedBox(height: 32),
-            Text(
-              'Aggiungi/Modifica Misurazione',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: dateController,
-              decoration: InputDecoration(
-                labelText: 'Data (yyyy-MM-dd)',
-                border: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
+              const SizedBox(height: 16),
+              _buildDateRangePicker(context, selectedDates),
+              const SizedBox(height: 16),
+              _buildMeasurementsChart(usersService, selectedDates, selectedMeasurements),
+              const SizedBox(height: 32),
+              _buildMeasurementChips(selectedMeasurements),
+              const SizedBox(height: 32),
+              Text(
+                'Misurazioni Esistenti',
+                style: Theme.of(context).textTheme.titleLarge,
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: weightController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'Peso (kg)',
-                border: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: heightController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'Altezza (cm)',
-                border: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: bodyFatPercentageController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'Percentuale di Massa Grassa',
-                border: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: waistCircumferenceController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'Circonferenza Vita (cm)',
-                border: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: hipCircumferenceController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'Circonferenza Fianchi (cm)',
-                border: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: chestCircumferenceController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'Circonferenza Torace (cm)',
-                border: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: bicepsCircumferenceController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'Circonferenza Bicipiti (cm)',
-                border: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () async {
-                final weight = double.tryParse(weightController.text) ?? 0.0;
-                final height = double.tryParse(heightController.text) ?? 0.0;
-                final bodyFatPercentage =
-                    double.tryParse(bodyFatPercentageController.text) ?? 0.0;
-                final waistCircumference =
-                    double.tryParse(waistCircumferenceController.text) ?? 0.0;
-                final hipCircumference =
-                    double.tryParse(hipCircumferenceController.text) ?? 0.0;
-                final chestCircumference =
-                    double.tryParse(chestCircumferenceController.text) ?? 0.0;
-                final bicepsCircumference =
-                    double.tryParse(bicepsCircumferenceController.text) ?? 0.0;
-                final dateString = dateController.text;
-
-                final bmi = weight / (height / 100 * height / 100);
-                final date = DateFormat('yyyy-MM-dd').parse(dateString);
-
-                String? updatedMeasurementId;
-
-                if (editMeasurementId != null) {
-                  // Modifica la misurazione esistente
-                  await usersService.updateMeasurement(
-                    userId: userId,
-                    measurementId: editMeasurementId!,
-                    date: date,
-                    weight: weight,
-                    height: height,
-                    bmi: bmi,
-                    bodyFatPercentage: bodyFatPercentage,
-                    waistCircumference: waistCircumference,
-                    hipCircumference: hipCircumference,
-                    chestCircumference: chestCircumference,
-                    bicepsCircumference: bicepsCircumference,
-                  );
-                  updatedMeasurementId = editMeasurementId;
-                } else {
-                  // Aggiungi una nuova misurazione
-                  updatedMeasurementId = await usersService.addMeasurement(
-                    userId: userId,
-                    date: date,
-                    weight: weight,
-                    height: height,
-                    bmi: bmi,
-                    bodyFatPercentage: bodyFatPercentage,
-                    waistCircumference: waistCircumference,
-                    hipCircumference: hipCircumference,
-                    chestCircumference: chestCircumference,
-                    bicepsCircumference: bicepsCircumference,
-                  );
-                }
-
-                // Resetta i campi di input dopo l'aggiunta/modifica della misurazione
-                weightController.clear();
-                heightController.clear();
-                bodyFatPercentageController.clear();
-                waistCircumferenceController.clear();
-                hipCircumferenceController.clear();
-                chestCircumferenceController.clear();
-                bicepsCircumferenceController.clear();
-                dateController.text =
-                    DateFormat('yyyy-MM-dd').format(DateTime.now());
-                editMeasurementId = updatedMeasurementId;
-              },
-              child: const Text('Salva Misurazione'),
-            ),
-            const SizedBox(height: 32),
-            Text(
-              'Progresso Peso',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: StreamBuilder<List<MeasurementModel>>(
-                stream: usersService.getMeasurements(userId: userId),
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    final measurements = snapshot.data!;
-                    if (measurements.isNotEmpty) {
-                      return AspectRatio(
-                        aspectRatio: 1.23,
-                        child: LineChart(
-                          LineChartData(
-                            lineBarsData: [
-                              LineChartBarData(
-                                spots: measurements
-                                    .map((m) => FlSpot(
-                                          m.date.millisecondsSinceEpoch
-                                              .toDouble(),
-                                          m.weight,
-                                        ))
-                                    .toList(),
-                                isCurved: true,
-                                barWidth: 4,
-                                color: Theme.of(context).colorScheme.primary,
-                                belowBarData: BarAreaData(
-                                  show: true,
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .primary
-                                      .withOpacity(0.2),
-                                ),
-                                dotData: const FlDotData(show: false),
-                              ),
-                            ],
-                            minY: measurements
-                                .map((m) => m.weight)
-                                .reduce((a, b) => a < b ? a : b),
-                            maxY: measurements
-                                .map((m) => m.weight)
-                                .reduce((a, b) => a > b ? a : b),
-                            titlesData: FlTitlesData(
-                              leftTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  getTitlesWidget: (value, meta) {
-                                    return Text(value.toStringAsFixed(1));
-                                  },
-                                ),
-                              ),
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  getTitlesWidget: (value, meta) {
-                                    final date =
-                                        DateTime.fromMillisecondsSinceEpoch(
-                                            value.toInt());
-                                    return Text(
-                                        DateFormat('MMM d').format(date));
-                                  },
-                                ),
-                              ),
-                            ),
-                            gridData: FlGridData(
-                              show: true,
-                              drawVerticalLine: false,
-                              getDrawingHorizontalLine: (value) => FlLine(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onBackground
-                                    .withOpacity(0.2),
-                                strokeWidth: 1,
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    } else {
-                      return const Center(
-                        child: Text('Non sono disponibili misurazioni'),
-                      );
-                    }
-                  } else if (snapshot.hasError) {
-                    return Center(child: Text('Errore: ${snapshot.error}'));
-                  } else {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                },
-              ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              _buildMeasurementsList(usersService),
+              const SizedBox(height: 32),
+              _buildAddMeasurementExpansionPanel(),
+            ],
+          ),
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          setState(() {
+            _showAddMeasurementForm = true;
+          });
+        },
+        child: const Icon(Icons.add),
+      ),
     );
+  }
+
+  Widget _buildDateRangePicker(BuildContext context, MeasurementsState selectedDates) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          'Seleziona periodo:',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        ElevatedButton.icon(
+          onPressed: () async {
+            final dateRange = await showDateRangePicker(
+              context: context,
+              firstDate: DateTime(2023),
+              lastDate: DateTime(2025),
+              initialDateRange: DateTimeRange(
+                start: selectedDates.startDate ?? DateTime.now(),
+                end: selectedDates.endDate ?? DateTime.now(),
+              ),
+            );
+            if (dateRange != null) {
+              ref
+                  .read(measurementsStateNotifierProvider.notifier)
+                  .setSelectedDates(dateRange.start, dateRange.end);
+            }
+          },
+          icon: const Icon(Icons.date_range),
+          label: const Text('Seleziona'),
+        ),
+      ],
+    );
+  }
+
+Widget _buildMeasurementsChart(UsersService usersService, MeasurementsState selectedDates,
+    Set<String> selectedMeasurements) {
+  return StreamBuilder<List<MeasurementModel>>(
+    stream: usersService.getMeasurements(userId: widget.userId),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const CircularProgressIndicator();
+      } else if (snapshot.hasError) {
+        return Text('Errore: ${snapshot.error}');
+      } else if (snapshot.hasData) {
+        final measurements = snapshot.data!;
+        final measurementData = _convertMeasurementsToData(measurements);
+
+        return SizedBox(
+          height: 300,
+          child: LineChart(
+            LineChartData(
+              lineBarsData: measurementData.entries
+                  .where((entry) => selectedMeasurements.contains(entry.key))
+                  .map((entry) {
+                final color = _getColorForMeasurement(entry.key);
+                return LineChartBarData(
+                  spots: entry.value,
+                  isCurved: true,
+                  color: color,
+                  barWidth: 5,
+                  isStrokeCapRound: true,
+                  dotData: FlDotData(
+                    show: true,
+                    getDotPainter: (spot, percent, barData, index) {
+                      return FlDotCirclePainter(
+                        radius: 5,
+                        color: color,
+                        strokeWidth: 2,
+                        strokeColor: Colors.white,
+                      );
+                    },
+                  ),
+                  belowBarData: BarAreaData(
+                    show: true,
+                    color: color.withOpacity(0.2),
+                  ),
+                );
+              }).toList(),
+              minX: measurementData.values.first.first.x,
+              maxX: measurementData.values.first.last.x,
+              minY: measurementData.values
+                  .expand((spots) => spots)
+                  .map((spot) => spot.y)
+                  .reduce((a, b) => a < b ? a : b),
+              maxY: measurementData.values
+                  .expand((spots) => spots)
+                  .map((spot) => spot.y)
+                  .reduce((a, b) => a > b ? a : b),
+              titlesData: FlTitlesData(
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    getTitlesWidget: (value, meta) {
+                      return Text(value.toStringAsFixed(1));
+                    },
+                    reservedSize: 40,
+                  ),
+                ),
+                topTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 30,
+                    interval:
+                        (measurementData.values.first.last.x - measurementData.values.first.first.x) /
+                            5,
+                    getTitlesWidget: (value, meta) {
+                      final dateTime = DateTime.fromMillisecondsSinceEpoch(value.toInt());
+                      final formattedDate = DateFormat('MMM dd').format(dateTime);
+                      return Text(formattedDate, style: const TextStyle(fontSize: 12));
+                    },
+                  ),
+                ),
+                rightTitles: AxisTitles(),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 30,
+                    interval: 1,
+                    getTitlesWidget: (value, meta) {
+                      final dateTime = DateTime.fromMillisecondsSinceEpoch(value.toInt());
+                      final formattedDate = DateFormat('MMM dd').format(dateTime);
+                      final matchingSpots = measurementData.values
+                          .expand((spots) => spots)
+                          .where((spot) => spot.x == value);
+                      return matchingSpots.isNotEmpty
+                          ? SideTitleWidget(
+                              axisSide: meta.axisSide,
+                              child: Text(formattedDate, style: const TextStyle(fontSize: 12)),
+                            )
+                          : const SideTitleWidget(
+                              axisSide: AxisSide.bottom,
+                              child: Text(''),
+                            );
+                    },
+                  ),
+                ),
+              ),
+              gridData: FlGridData(
+                show: true,
+                drawVerticalLine: false,
+                getDrawingHorizontalLine: (value) {
+                  return FlLine(
+                    color: Colors.grey.withOpacity(0.5),
+                    strokeWidth: 1,
+                  );
+                },
+              ),
+              borderData: FlBorderData(
+                show: true,
+                border: Border.all(
+                  color: Colors.grey,
+                  width: 1,
+                ),
+              ),
+              lineTouchData: LineTouchData(
+                enabled: true,
+                touchTooltipData: LineTouchTooltipData(
+                  getTooltipItems: (touchedSpots) {
+                    return touchedSpots.map((touchedSpot) {
+                      final date = DateTime.fromMillisecondsSinceEpoch(touchedSpot.x.toInt());
+                      final formattedDate = DateFormat('MMM dd').format(date);
+                      final value = touchedSpot.y.toStringAsFixed(2);
+                      final measurementName = _getMeasurementName(touchedSpot.barIndex, selectedMeasurements);
+                      return LineTooltipItem(
+                        '$measurementName\n$formattedDate: $value',
+                        const TextStyle(color: Colors.white),
+                      );
+                    }).toList();
+                  },
+                ),
+              ),
+            ),
+          ),
+        );
+      } else {
+        return const Text('Nessuna misurazione disponibile.');
+      }
+    },
+  );
+}
+
+Color _getColorForMeasurement(String measurement) {
+  switch (measurement) {
+    case 'weight':
+      return Colors.blue;
+    case 'bodyFatPercentage':
+      return Colors.green;
+    case 'waistCircumference':
+      return Colors.red;
+    case 'hipCircumference':
+      return Colors.orange;
+    case 'chestCircumference':
+      return Colors.purple;
+    case 'bicepsCircumference':
+      return Colors.teal;
+    default:
+      return Colors.black;
+  }
+}
+
+String _getMeasurementName(int barIndex, Set<String> selectedMeasurements) {
+  final selectedMeasurementsList = selectedMeasurements.toList();
+  if (barIndex >= 0 && barIndex < selectedMeasurementsList.length) {
+    return selectedMeasurementsList[barIndex];
+  }
+  return '';
+}
+  Widget _buildMeasurementChips(Set<String> selectedMeasurements) {
+    return Wrap(
+      spacing: 8,
+      children: [
+        FilterChip(
+          label: const Text('Peso'),
+          selected: selectedMeasurements.contains('weight'),
+          onSelected: (selected) {
+            ref.read(selectedMeasurementsProvider.notifier).toggleSelectedMeasurement('weight');
+          },
+        ),
+        FilterChip(
+          label: const Text('Massa Grassa'),
+          selected: selectedMeasurements.contains('bodyFatPercentage'),
+          onSelected: (selected) {
+            ref
+                .read(selectedMeasurementsProvider.notifier)
+                .toggleSelectedMeasurement('bodyFatPercentage');
+          },
+        ),
+        FilterChip(
+          label: const Text('Circonferenza Vita'),
+          selected: selectedMeasurements.contains('waistCircumference'),
+          onSelected: (selected) {
+            ref
+                .read(selectedMeasurementsProvider.notifier)
+                .toggleSelectedMeasurement('waistCircumference');
+          },
+        ),
+        FilterChip(
+          label: const Text('Circonferenza Fianchi'),
+          selected: selectedMeasurements.contains('hipCircumference'),
+          onSelected: (selected) {
+            ref
+                .read(selectedMeasurementsProvider.notifier)
+                .toggleSelectedMeasurement('hipCircumference');
+          },
+        ),
+        FilterChip(
+          label: const Text('Circonferenza Torace'),
+          selected: selectedMeasurements.contains('chestCircumference'),
+          onSelected: (selected) {
+            ref
+                .read(selectedMeasurementsProvider.notifier)
+                .toggleSelectedMeasurement('chestCircumference');
+          },
+        ),
+        FilterChip(
+          label: const Text('Circonferenza Bicipiti'),
+          selected: selectedMeasurements.contains('bicepsCircumference'),
+          onSelected: (selected) {
+            ref
+                .read(selectedMeasurementsProvider.notifier)
+                .toggleSelectedMeasurement('bicepsCircumference');
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMeasurementsList(UsersService usersService) {
+    return StreamBuilder<List<MeasurementModel>>(
+      stream: usersService.getMeasurements(userId: widget.userId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const CircularProgressIndicator();
+        } else if (snapshot.hasError) {
+          return Text('Errore: ${snapshot.error}');
+        } else if (snapshot.hasData) {
+          final measurements = snapshot.data!;
+
+          return ListView(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            children: [
+              DataTable(
+                columns: const [
+                  DataColumn(label: Text('Data')),
+                  DataColumn(label: Text('Peso')),
+                  DataColumn(label: Text('Azioni')),
+                ],
+                rows: measurements.map((measurement) {
+                  return DataRow(
+                    cells: [
+                      DataCell(Text(DateFormat('dd/MM/yyyy').format(measurement.date))),
+                      DataCell(Text('${measurement.weight} kg')),
+                      DataCell(
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit),
+                              onPressed: () => _showEditMeasurementDialog(measurement),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete),
+                              onPressed: () => _showDeleteConfirmationDialog(measurement),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                }).toList(),
+              ),
+            ],
+          );
+        } else {
+          return const Text('Nessuna misurazione disponibile.');
+        }
+      },
+    );
+  }
+
+  Widget _buildAddMeasurementExpansionPanel() {
+    return ExpansionPanelList(
+      expansionCallback: (index, isExpanded) {
+        setState(() {
+          _showAddMeasurementForm = !isExpanded;
+        });
+      },
+      children: [
+        ExpansionPanel(
+          headerBuilder: (context, isExpanded) {
+            return const ListTile(
+              title: Text('Aggiungi Misurazione'),
+            );
+          },
+          body: Form(
+            key: _formKey,
+            child: ListView(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16),
+              children: [
+                TextFormField(
+                  controller: _dateController,
+                  decoration: const InputDecoration(
+                    labelText: 'Data',
+                    hintText: 'gg/mm/aaaa',
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Inserisci una data';
+                    }
+                    return null;
+                  },
+                ),
+                TextFormField(
+                  controller: _weightController,
+                  decoration: const InputDecoration(
+                    labelText: 'Peso (kg)',
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Inserisci un peso';
+                    }
+                    return null;
+                  },
+                ),
+                TextFormField(
+                  controller: _heightController,
+                  decoration: const InputDecoration(
+                    labelText: 'Altezza (cm)',
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Inserisci un\'altezza';
+                    }
+                    return null;
+                  },
+                ),
+                TextFormField(
+                  controller: _bodyFatController,
+                  decoration: const InputDecoration(
+                    labelText: 'Massa Grassa (%)',
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Inserisci una percentuale di massa grassa';
+                    }
+                    return null;
+                  },
+                ),
+                TextFormField(
+                  controller: _waistController,
+                  decoration: const InputDecoration(
+                    labelText: 'Circonferenza Vita (cm)',
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Inserisci una circonferenza vita';
+                    }
+                    return null;
+                  },
+                ),
+                TextFormField(
+                  controller: _hipController,
+                  decoration: const InputDecoration(
+                    labelText: 'Circonferenza Fianchi (cm)',
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Inserisci una circonferenza fianchi';
+                    }
+                    return null;
+                  },
+                ),
+                TextFormField(
+                  controller: _chestController,
+                  decoration: const InputDecoration(
+                    labelText: 'Circonferenza Torace (cm)',
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Inserisci una circonferenza torace';
+                    }
+                    return null;
+                  },
+                ),
+                TextFormField(
+                  controller: _bicepsController,
+                  decoration: const InputDecoration(
+                    labelText: 'Circonferenza Bicipiti (cm)',
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Inserisci una circonferenza bicipiti';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(onPressed: () async {
+                    if (_formKey.currentState!.validate()) {
+                      final usersService = ref.read(usersServiceProvider);
+                      final date = DateFormat('dd/MM/yyyy').parse(_dateController.text);
+                      final weight = double.parse(_weightController.text);
+                      final height = double.parse(_heightController.text);
+                      final bodyFat = double.parse(_bodyFatController.text);
+                      final waist = double.parse(_waistController.text);
+                      final hip = double.parse(_hipController.text);
+                      final chest = double.parse(_chestController.text);
+                      final biceps = double.parse(_bicepsController.text);
+
+                      final bmi = weight / ((height / 100) * (height / 100));
+
+                      if (_editMeasurementId == null) {
+                        await usersService.addMeasurement(
+                          userId: widget.userId,
+                          date: date,
+                          weight: weight,
+                          height: height,
+                          bmi: bmi,
+                          bodyFatPercentage: bodyFat,
+                          waistCircumference: waist,
+                          hipCircumference: hip,
+                          chestCircumference: chest,
+                          bicepsCircumference: biceps,
+                        );
+                      } else {
+                        await usersService.updateMeasurement(
+                          userId: widget.userId,
+                          measurementId: _editMeasurementId!,
+                          date: date,
+                          weight: weight,
+                          height: height,
+                          bmi: bmi,
+                          bodyFatPercentage: bodyFat,
+                          waistCircumference: waist,
+                          hipCircumference: hip,
+                          chestCircumference: chest,
+                          bicepsCircumference: biceps,
+                        );
+                      }
+
+                      setState(() {
+                        _showAddMeasurementForm = false;
+                      });
+                      _resetForm();
+                    }
+                  },
+                  child: Text(_editMeasurementId == null ? 'Aggiungi' : 'Aggiorna'),
+                ),
+              ],
+            ),
+          ),
+          isExpanded: _showAddMeasurementForm,
+        ),
+      ],
+    );
+  }
+
+  void _showEditMeasurementDialog(MeasurementModel measurement) {
+    _dateController.text = DateFormat('dd/MM/yyyy').format(measurement.date);
+    _weightController.text = measurement.weight.toString();
+    _heightController.text = measurement.height.toString();
+    _bodyFatController.text = measurement.bodyFatPercentage.toString();
+    _waistController.text = measurement.waistCircumference.toString();
+    _hipController.text = measurement.hipCircumference.toString();
+    _chestController.text = measurement.chestCircumference.toString();
+    _bicepsController.text = measurement.bicepsCircumference.toString();
+    _editMeasurementId = measurement.id;
+
+    setState(() {
+      _showAddMeasurementForm = true;
+    });
+  }
+
+  void _showDeleteConfirmationDialog(MeasurementModel measurement) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Conferma Eliminazione'),
+          content: const Text('Sei sicuro di voler eliminare questa misurazione?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Annulla'),
+            ),
+            TextButton(
+              onPressed: () {
+                final usersService = ref.read(usersServiceProvider);
+                usersService.deleteMeasurement(
+                  userId: widget.userId,
+                  measurementId: measurement.id,
+                );
+                Navigator.of(context).pop();
+              },
+              child: const Text('Elimina'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Map<String, List<FlSpot>> _convertMeasurementsToData(List<MeasurementModel> measurements) {
+    final measurementData = {
+      'weight': measurements
+          .map((m) => FlSpot(m.date.millisecondsSinceEpoch.toDouble(), m.weight))
+          .toList(),
+      'bodyFatPercentage': measurements
+          .map((m) => FlSpot(m.date.millisecondsSinceEpoch.toDouble(), m.bodyFatPercentage))
+          .toList(),
+      'waistCircumference': measurements
+          .map((m) => FlSpot(m.date.millisecondsSinceEpoch.toDouble(), m.waistCircumference))
+          .toList(),
+      'hipCircumference': measurements
+          .map((m) => FlSpot(m.date.millisecondsSinceEpoch.toDouble(), m.hipCircumference))
+          .toList(),
+      'chestCircumference': measurements
+          .map((m) => FlSpot(m.date.millisecondsSinceEpoch.toDouble(), m.chestCircumference))
+          .toList(),
+      'bicepsCircumference': measurements
+          .map((m) => FlSpot(m.date.millisecondsSinceEpoch.toDouble(), m.bicepsCircumference))
+          .toList(),
+    };
+    return measurementData;
   }
 }
