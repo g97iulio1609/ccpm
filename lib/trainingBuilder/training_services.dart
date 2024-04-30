@@ -199,6 +199,7 @@ class FirestoreService {
           'athleteId': program.athleteId,
           'mesocycleNumber': program.mesocycleNumber,
           'hide': program.hide,
+          'status':program.status
         },
         SetOptions(merge: true));
 

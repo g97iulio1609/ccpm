@@ -17,8 +17,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
   @override
   void initState() {
     super.initState();
@@ -37,10 +35,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  void _openDrawer() {
-    _scaffoldKey.currentState?.openDrawer();
-  }
-
   @override
   Widget build(BuildContext context) {
     final isLargeScreen = MediaQuery.of(context).size.width > 600;
@@ -49,11 +43,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final controller = ref.watch(trainingProgramControllerProvider.notifier);
 
     return Scaffold(
-      key: _scaffoldKey,
       appBar: user != null
           ? CustomAppBar(
               userRole: userRole,
-              scaffoldKey: _scaffoldKey,
               controller: controller,
               isLargeScreen: isLargeScreen,
             )

@@ -23,10 +23,12 @@ class CustomDrawer extends ConsumerWidget {
   void _navigateTo(BuildContext context, String menuItem) {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     final String? route = _getRouteForMenuItem(menuItem, userRole, userId);
-    if (route != null) {
+    final currentRoute = GoRouterState.of(context).uri.toString();
+
+    if (route != null && route != currentRoute) {
       context.go(route);
       if (!isLargeScreen) {
-        Navigator.of(context).pop(); // Chiude il drawer su mobile
+        Navigator.of(context).pop();
       }
     }
   }
@@ -163,6 +165,9 @@ class CustomDrawer extends ConsumerWidget {
                           itemCount: workouts.length,
                           itemBuilder: (context, index) {
                             final workoutDoc = workouts[index];
+                            final currentRoute = GoRouterState.of(context).uri.toString();
+                            final route = '/programs_screen/user_programs/${FirebaseAuth.instance.currentUser?.uid}/training_viewer/$programId/week_details/${weekDoc.id}/workout_details/${workoutDoc.id}';
+
                             return ListTile(
                               title: Text(
                                 'Allenamento ${workoutDoc['order']}',
@@ -173,15 +178,14 @@ class CustomDrawer extends ConsumerWidget {
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              onTap: () {
-                                context.go(
-                                  '/programs_screen/user_programs/${FirebaseAuth.instance.currentUser?.uid}/training_viewer/$programId/week_details/${weekDoc.id}/workout_details/${workoutDoc.id}',
-                                );
-                                if (!isLargeScreen) {
-                                  Navigator.of(context)
-                                      .pop(); // Chiude il drawer su mobile
-                                }
-                              },
+                              onTap: route != currentRoute
+                                  ? () {
+                                      context.go(route);
+                                      if (!isLargeScreen) {
+                                        Navigator.of(context).pop();
+                                      }
+                                    }
+                                  : null,
                             );
                           },
                         );
@@ -235,30 +239,34 @@ class CustomDrawer extends ConsumerWidget {
                 padding: EdgeInsets.zero,
                 children: [
                   ...menuItems.map(
-                    (menuItem) => ListTile(
-                      leading: Icon(
-                        _getIconForMenuItem(menuItem),
-                        color: isDarkMode ? Colors.white : Colors.grey[700],
-                      ),
-                      title: Text(
-                        menuItem,
-                        style: TextStyle(
-                          color: isDarkMode ? Colors.white : Colors.grey[800],
-                          fontWeight: FontWeight.w500,
+                    (menuItem) {
+                      final route = _getRouteForMenuItem(
+                          menuItem, userRole, FirebaseAuth.instance.currentUser?.uid);
+                      final currentRoute = GoRouterState.of(context).uri.toString();
+                      final isSelected = route == currentRoute;
+
+                      return ListTile(
+                        leading: Icon(
+                          _getIconForMenuItem(menuItem),
+                          color: isDarkMode ? Colors.white : Colors.grey[700],
                         ),
-                      ),
-                      onTap: () {
-                        _navigateTo(context, menuItem);
-                        if (!isLargeScreen) {
-                          Navigator.of(context)
-                              .pop(); // Chiude il drawer su mobile
-                        }
-                      },
-                      hoverColor:
-                          isDarkMode ? Colors.grey[800] : Colors.grey[200],
-                      selectedTileColor:
-                          isDarkMode ? Colors.grey[700] : Colors.grey[300],
-                    ),
+                        title: Text(
+                          menuItem,
+                          style: TextStyle(
+                            color: isDarkMode ? Colors.white : Colors.grey[800],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        onTap: !isSelected
+                            ? () => _navigateTo(context, menuItem)
+                            : null,
+                        hoverColor:
+                            isDarkMode ? Colors.grey[800] : Colors.grey[200],
+                        selectedTileColor:
+                            isDarkMode ? Colors.grey[700] : Colors.grey[300],
+                        selected: isSelected,
+                      );
+                    },
                   ),
                   FutureBuilder<String?>(
                     future: getCurrentProgramId(ref),
@@ -302,7 +310,7 @@ class CustomDrawer extends ConsumerWidget {
                   onTap: () {
                     _navigateTo(context, 'Profilo Utente');
                     if (!isLargeScreen) {
-                      Navigator.of(context).pop(); // Chiude il drawer su mobile
+                      Navigator.of(context).pop();
                     }
                   },
                   hoverColor: isDarkMode ? Colors.grey[800] : Colors.grey[200],

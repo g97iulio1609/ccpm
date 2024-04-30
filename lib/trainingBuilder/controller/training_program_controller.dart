@@ -129,11 +129,19 @@ class TrainingProgramController extends ChangeNotifier {
     _athleteIdController.text = _program.athleteId;
     _mesocycleNumberController.text = _program.mesocycleNumber.toString();
     _program.hide = _program.hide;
+        _program.status = _program.status;
+
     _programStateNotifier.updateProgram(_program);
   }
 
   void updateHideProgram(bool value) {
     _program.hide = value;
+    _programStateNotifier.updateProgram(_program);
+    notifyListeners();
+  }
+
+  void updateProgramStatus(String status) {
+    _program.status = status;
     _programStateNotifier.updateProgram(_program);
     notifyListeners();
   }

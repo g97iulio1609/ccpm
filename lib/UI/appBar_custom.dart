@@ -8,16 +8,13 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
   const CustomAppBar({
     super.key,
     required this.userRole,
-    required this.scaffoldKey,
     required this.controller,
     required this.isLargeScreen,
   });
 
   final String userRole;
-  final GlobalKey<ScaffoldState> scaffoldKey;
   final TrainingProgramController controller;
   final bool isLargeScreen;
-  
 
   String _getTitleForRoute(BuildContext context) {
     final String currentPath = GoRouterState.of(context).uri.toString();
@@ -39,9 +36,9 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
         return 'Volume Allenamento';
       case '/user_programs':
         return 'Programmi Utente';
-          case '/measurements':
+      case '/measurements':
         return 'Misurazioni Antropometriche';
-        case '/training_gallery':
+      case '/training_gallery':
         return 'Galleria Allenamenti';
       default:
         break;
@@ -83,7 +80,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
             currentRoute.contains('/week/'));
   }
 
-void _showAddUserDialog(BuildContext context, WidgetRef ref) {
+  void _showAddUserDialog(BuildContext context, WidgetRef ref) {
     final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController();
     final emailController = TextEditingController();
@@ -167,6 +164,7 @@ void _showAddUserDialog(BuildContext context, WidgetRef ref) {
       },
     );
   }
+  
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentRoute = GoRouterState.of(context).uri.toString();
@@ -207,7 +205,7 @@ void _showAddUserDialog(BuildContext context, WidgetRef ref) {
                     child: IconButton(
                       iconSize: 24,
                       icon: const Icon(Icons.menu),
-                      onPressed: () => scaffoldKey.currentState?.openDrawer(),
+                      onPressed: () => Scaffold.of(context).openDrawer(),
                     ),
                   ),
               ],

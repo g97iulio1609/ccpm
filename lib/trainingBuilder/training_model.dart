@@ -7,6 +7,8 @@ class TrainingProgram {
   String athleteId;
   int mesocycleNumber;
   bool hide;
+    String status; // Aggiungi questa riga
+
   List<Week> weeks;
   List<String> trackToDeleteWeeks = [];
   List<String> trackToDeleteWorkouts = [];
@@ -20,6 +22,7 @@ class TrainingProgram {
     this.athleteId = '',
     this.mesocycleNumber = 0,
     this.hide = false,
+    this.status='private',
     List<Week>? weeks,
   }) : weeks = weeks ?? [];
 
@@ -28,6 +31,8 @@ class TrainingProgram {
     String? name,
     String? description,
     String? athleteId,
+      String? status,
+
     int? mesocycleNumber,
     List<Week>? weeks,
   }) {
@@ -36,6 +41,8 @@ class TrainingProgram {
       name: name ?? this.name,
       description: description ?? this.description,
       athleteId: athleteId ?? this.athleteId,
+          status: status ?? this.status,
+
       mesocycleNumber: mesocycleNumber ?? this.mesocycleNumber,
       weeks: weeks ?? this.weeks,
     );
@@ -47,6 +54,8 @@ class TrainingProgram {
       name: map['name'],
       description: map['description'],
       athleteId: map['athleteId'],
+          status: map['status'] ?? 'private',
+
       mesocycleNumber: map['mesocycleNumber'],
       weeks: List<Week>.from(map['weeks']?.map((x) => Week.fromMap(x)) ?? []),
     );
@@ -59,6 +68,8 @@ class TrainingProgram {
       name: data['name'],
       description: data['description'],
       athleteId: data['athleteId'],
+          status: data['status'] ?? 'private',
+
       mesocycleNumber: data['mesocycleNumber'],
       weeks: (data['weeks'] as List<dynamic>? ?? [])
           .map((week) => Week.fromFirestore(week))
@@ -72,6 +83,8 @@ class TrainingProgram {
       'name': name,
       'description': description,
       'athleteId': athleteId,
+          'status': status,
+
       'mesocycleNumber': mesocycleNumber,
       'weeks': weeks.map((x) => x.toMap()).toList(),
     };
