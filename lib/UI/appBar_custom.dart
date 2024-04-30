@@ -24,7 +24,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
 
     switch (currentPath) {
       case '/programs_screen':
-        return 'Allenamenti';
+        return 'I Miei Allenamenti';
       case '/exercises_list':
         return 'Esercizi';
       case '/maxrmdashboard':
@@ -41,6 +41,8 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
         return 'Programmi Utente';
           case '/measurements':
         return 'Misurazioni Antropometriche';
+        case '/training_gallery':
+        return 'Galleria Allenamenti';
       default:
         break;
     }

@@ -31,14 +31,17 @@ class CustomDrawer extends ConsumerWidget {
     }
   }
 
-  String? _getRouteForMenuItem(String menuItem, String userRole, String? userId) {
+  String? _getRouteForMenuItem(
+      String menuItem, String userRole, String? userId) {
     switch (menuItem) {
-      case 'Allenamenti':
+      case 'I Miei Allenamenti':
         return userRole == 'admin'
             ? '/programs_screen'
             : userId != null
                 ? '/programs_screen/user_programs/$userId'
                 : null;
+      case 'Galleria Allenamenti':
+        return '/training_gallery';
       case 'Esercizi':
         return '/exercises_list';
       case 'Massimali':
@@ -51,7 +54,7 @@ class CustomDrawer extends ConsumerWidget {
         return userRole == 'admin' ? '/users_dashboard' : null;
       case 'Volume Allenamento':
         return '/volume_dashboard';
-           case 'Misurazioni':
+      case 'Misurazioni':
         return '/measurements';
       default:
         return null;
@@ -60,7 +63,9 @@ class CustomDrawer extends ConsumerWidget {
 
   IconData _getIconForMenuItem(String menuItem) {
     switch (menuItem) {
-      case 'Allenamenti':
+      case 'I Miei Allenamenti':
+        return Icons.fitness_center;
+      case 'Galleria Allenamenti':
         return Icons.fitness_center;
       case 'Esercizi':
         return Icons.sports;
@@ -74,7 +79,7 @@ class CustomDrawer extends ConsumerWidget {
         return Icons.supervised_user_circle;
       case 'Volume Allenamento':
         return Icons.bar_chart;
-        case 'Misurazioni':
+      case 'Misurazioni':
         return Icons.trending_up;
       default:
         return Icons.menu;
@@ -83,7 +88,8 @@ class CustomDrawer extends ConsumerWidget {
 
   List<String> _getAdminMenuItems() {
     return [
-      'Allenamenti',
+      'I Miei Allenamenti',
+      'Galleria Allenamenti',
       'Esercizi',
       'Massimali',
       'Profilo Utente',
@@ -94,7 +100,7 @@ class CustomDrawer extends ConsumerWidget {
 
   List<String> _getClientMenuItems() {
     return [
-      'Allenamenti',
+      'I Miei Allenamenti',
       'Massimali',
       'Profilo Utente',
     ];
@@ -103,13 +109,17 @@ class CustomDrawer extends ConsumerWidget {
   Future<String?> getCurrentProgramId(WidgetRef ref) async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId != null) {
-      final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
       return userDoc.data()?['currentProgram'] as String?;
     }
     return null;
   }
 
-  Widget _buildWeekLinks(BuildContext context, String programId, bool isDarkMode) {
+  Widget _buildWeekLinks(
+      BuildContext context, String programId, bool isDarkMode) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('weeks')
@@ -157,7 +167,9 @@ class CustomDrawer extends ConsumerWidget {
                               title: Text(
                                 'Allenamento ${workoutDoc['order']}',
                                 style: TextStyle(
-                                  color: isDarkMode ? Colors.white : Colors.grey[800],
+                                  color: isDarkMode
+                                      ? Colors.white
+                                      : Colors.grey[800],
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -166,7 +178,8 @@ class CustomDrawer extends ConsumerWidget {
                                   '/programs_screen/user_programs/${FirebaseAuth.instance.currentUser?.uid}/training_viewer/$programId/week_details/${weekDoc.id}/workout_details/${workoutDoc.id}',
                                 );
                                 if (!isLargeScreen) {
-                                  Navigator.of(context).pop(); // Chiude il drawer su mobile
+                                  Navigator.of(context)
+                                      .pop(); // Chiude il drawer su mobile
                                 }
                               },
                             );
@@ -190,8 +203,10 @@ class CustomDrawer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final List<String> menuItems = userRole == 'admin' ? _getAdminMenuItems() : _getClientMenuItems();
-    final isTrainingProgramRoute = GoRouterState.of(context).uri.toString().contains('/training_program/');
+    final List<String> menuItems =
+        userRole == 'admin' ? _getAdminMenuItems() : _getClientMenuItems();
+    final isTrainingProgramRoute =
+        GoRouterState.of(context).uri.toString().contains('/training_program/');
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
 
@@ -208,7 +223,8 @@ class CustomDrawer extends ConsumerWidget {
                   Text('Menù', style: theme.textTheme.titleLarge),
                   if (!isLargeScreen)
                     IconButton(
-                      icon: Icon(Icons.close, color: isDarkMode ? Colors.white : Colors.black),
+                      icon: Icon(Icons.close,
+                          color: isDarkMode ? Colors.white : Colors.black),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                 ],
@@ -234,11 +250,14 @@ class CustomDrawer extends ConsumerWidget {
                       onTap: () {
                         _navigateTo(context, menuItem);
                         if (!isLargeScreen) {
-                          Navigator.of(context).pop(); // Chiude il drawer su mobile
+                          Navigator.of(context)
+                              .pop(); // Chiude il drawer su mobile
                         }
                       },
-                      hoverColor: isDarkMode ? Colors.grey[800] : Colors.grey[200],
-                      selectedTileColor: isDarkMode ? Colors.grey[700] : Colors.grey[300],
+                      hoverColor:
+                          isDarkMode ? Colors.grey[800] : Colors.grey[200],
+                      selectedTileColor:
+                          isDarkMode ? Colors.grey[700] : Colors.grey[300],
                     ),
                   ),
                   FutureBuilder<String?>(
@@ -266,7 +285,8 @@ class CustomDrawer extends ConsumerWidget {
                 final displayName = user?.displayName ?? userName;
                 return ListTile(
                   leading: CircleAvatar(
-                    backgroundColor: isDarkMode ? Colors.grey[700] : Colors.grey[300],
+                    backgroundColor:
+                        isDarkMode ? Colors.grey[700] : Colors.grey[300],
                     child: Icon(
                       Icons.person,
                       color: isDarkMode ? Colors.white : Colors.grey[800],
@@ -286,7 +306,8 @@ class CustomDrawer extends ConsumerWidget {
                     }
                   },
                   hoverColor: isDarkMode ? Colors.grey[800] : Colors.grey[200],
-                  selectedTileColor: isDarkMode ? Colors.grey[700] : Colors.grey[300],
+                  selectedTileColor:
+                      isDarkMode ? Colors.grey[700] : Colors.grey[300],
                 );
               },
             ),
@@ -304,7 +325,8 @@ class CustomDrawer extends ConsumerWidget {
               ),
               onTap: onLogout,
               hoverColor: isDarkMode ? Colors.grey[800] : Colors.grey[200],
-              selectedTileColor: isDarkMode ? Colors.grey[700] : Colors.grey[300],
+              selectedTileColor:
+                  isDarkMode ? Colors.grey[700] : Colors.grey[300],
             ),
           ],
         ),

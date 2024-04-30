@@ -114,6 +114,7 @@ class _MeasurementsChartState extends State<MeasurementsChart> {
               ),
             ),
           ),
+          
           borderData: FlBorderData(
             show: true,
             border: Border.all(

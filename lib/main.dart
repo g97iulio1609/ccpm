@@ -1,4 +1,4 @@
-import 'package:alphanessone/measurements.dart';
+import 'package:alphanessone/measurements/measurements.dart';
 import 'package:alphanessone/training_gallery.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
