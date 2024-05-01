@@ -204,11 +204,18 @@ class TrainingProgramSeriesList extends ConsumerWidget {
       subtitle: Text('RPE: ${series.rpe}, Intensity: ${series.intensity}'),
       trailing: PopupMenuButton(
         itemBuilder: (context) => [
-          PopupMenuItem(
-            child: const Text('Modifica'),
-            onTap: () => controller.editSeries(weekIndex, workoutIndex,
-                exerciseIndex, series, context, exerciseType ?? ''),
-          ),
+        PopupMenuItem(
+  child: const Text('Modifica'),
+  onTap: () => controller.editSeries(
+    weekIndex,
+    workoutIndex,
+    exerciseIndex,
+    series,
+    context,
+    exerciseType ?? '',
+    series.weight, // Passa series.weight come latestMaxWeight
+  ),
+),
           PopupMenuItem(
             child: const Text('Elimina'),
             onTap: () {

@@ -30,29 +30,29 @@ class SeriesController extends ChangeNotifier {
     }
   }
 
-  Future<List<Series>?> _showSeriesDialog(
-    BuildContext context,
-    Exercise exercise,
-    int weekIndex, [
-    Series? currentSeries,
-    String? exerciseType,
-    num? latestMaxWeight,
-  ]) async {
-    return await showDialog<List<Series>>(
-      context: context,
-      builder: (context) => SeriesDialog(
-        usersService: usersService,
-        athleteId: exercise.exerciseId ?? '',
-        exerciseId: exercise.exerciseId ?? '',
-        weekIndex: weekIndex,
-        exercise: exercise,
-        currentSeries: currentSeries,
-        latestMaxWeight: latestMaxWeight ?? 0,
-        weightNotifier: weightNotifier,
-        exerciseType: exerciseType ?? '',
-      ),
-    );
-  }
+Future<List<Series>?> _showSeriesDialog(
+  BuildContext context,
+  Exercise exercise,
+  int weekIndex, [
+  Series? currentSeries,
+  String? exerciseType,
+  num? latestMaxWeight,
+]) async {
+  return await showDialog<List<Series>>(
+    context: context,
+    builder: (context) => SeriesDialog(
+      usersService: usersService,
+      athleteId: exercise.exerciseId ?? '',
+      exerciseId: exercise.exerciseId ?? '',
+      weekIndex: weekIndex,
+      exercise: exercise,
+      currentSeries: currentSeries,
+      latestMaxWeight: latestMaxWeight ?? 0,
+      weightNotifier: weightNotifier,
+      exerciseType: exerciseType ?? '',
+    ),
+  );
+}
 
   Future<void> editSeries(
     TrainingProgram program,
@@ -61,11 +61,13 @@ class SeriesController extends ChangeNotifier {
     int exerciseIndex,
     Series currentSeries,
     BuildContext context,
+      num latestMaxWeight, // Aggiungi il parametro latestMaxWeight
+
   ) async {
     final exercise = program
         .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     final updatedSeriesList = await _showSeriesDialog(
-        context, exercise, weekIndex, currentSeries, exercise.type);
+        context, exercise, weekIndex, currentSeries, exercise.type, latestMaxWeight,);
     if (updatedSeriesList != null) {
       final seriesIndex = exercise.series.indexOf(currentSeries);
       program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex]

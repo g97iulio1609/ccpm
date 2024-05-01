@@ -33,6 +33,8 @@ class SeriesDialog extends StatefulWidget {
 }
 
 class _SeriesDialogState extends State<SeriesDialog> {
+    late num latestMaxWeight;
+
   late TextEditingController _repsController;
   late TextEditingController _setsController;
   late TextEditingController _intensityController;
@@ -42,6 +44,8 @@ class _SeriesDialogState extends State<SeriesDialog> {
   @override
   void initState() {
     super.initState();
+        latestMaxWeight = widget.latestMaxWeight;
+
     _repsController = TextEditingController(
         text: widget.currentSeries?.reps.toString() ?? '');
     _setsController = TextEditingController(
