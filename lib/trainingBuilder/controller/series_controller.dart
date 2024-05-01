@@ -60,7 +60,7 @@ Future<List<Series>?> _showSeriesDialog(
   );
 }
 
- Future<void> editSeries(
+Future<void> editSeries(
     TrainingProgram program,
     int weekIndex,
     int workoutIndex,
@@ -73,13 +73,17 @@ Future<List<Series>?> _showSeriesDialog(
     final updatedSeriesList =
         await _showSeriesDialog(context, exercise, weekIndex, currentSeries, exercise.type);
     if (updatedSeriesList != null) {
-      final groupIndex = exercise.series.indexWhere(
-        (series) => series.serieId == currentSeries.serieId,
-      );
       final seriesIndex = exercise.series.indexOf(currentSeries);
       program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex]
           .series
           .replaceRange(seriesIndex, seriesIndex + 1, updatedSeriesList);
+
+      // Calcola il peso per la serie modificata
+      final latestMaxWeight = await getLatestMaxWeight(usersService, program.athleteId, exercise.exerciseId ?? '');
+      if (latestMaxWeight != null) {
+        _calculateWeight(updatedSeriesList.first, exercise.type, latestMaxWeight);
+      }
+
       // Aggiorna i pesi delle serie dopo averle modificate
       await updateSeriesWeights(
           program, weekIndex, workoutIndex, exerciseIndex);
