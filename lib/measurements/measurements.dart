@@ -6,6 +6,33 @@ import 'measurements_provider.dart';
 import 'measurements_chart.dart';
 import 'package:fl_chart/fl_chart.dart';
 
+class ResponsiveText extends StatelessWidget {
+  final String text;
+
+  const ResponsiveText(this.text, {Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 600) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                text,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+            ],
+          );
+        } else {
+          return Text(text);
+        }
+      },
+    );
+  }
+}
 
 class MeasurementsPage extends ConsumerStatefulWidget {
   final String userId;
@@ -56,54 +83,79 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
     _editMeasurementId = null;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final usersService = ref.watch(usersServiceProvider);
-    final selectedDates = ref.watch(measurementsStateNotifierProvider);
-    final selectedMeasurements = ref.watch(selectedMeasurementsProvider);
+@override
+Widget build(BuildContext context) {
+  final usersService = ref.watch(usersServiceProvider);
+  final selectedDates = ref.watch(measurementsStateNotifierProvider);
+  final selectedMeasurements = ref.watch(selectedMeasurementsProvider);
 
-    return Scaffold(
-     
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Grafici delle Misurazioni',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 16),
-              _buildDateRangePicker(context, selectedDates),
-              const SizedBox(height: 16),
-              _buildMeasurementsChart(usersService, selectedDates, selectedMeasurements),
-              const SizedBox(height: 32),
-              _buildMeasurementChips(selectedMeasurements),
-              const SizedBox(height: 32),
-              Text(
-                'Misurazioni Esistenti',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 16),
-              _buildMeasurementsList(usersService),
-              const SizedBox(height: 32),
-              _buildAddMeasurementExpansionPanel(),
-            ],
-          ),
+  return Scaffold(
+    body: SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Grafici delle Misurazioni',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16),
+            StreamBuilder<List<MeasurementModel>>(
+              stream: usersService.getMeasurements(userId: widget.userId),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  final measurements = snapshot.data!;
+                  if (measurements.length >= 2) {
+                    return Column(
+                      children: [
+                        _buildDateRangePicker(context, selectedDates),
+                        const SizedBox(height: 16),
+                        _buildMeasurementsChart(usersService, selectedDates, selectedMeasurements),
+                        const SizedBox(height: 32),
+                        _buildMeasurementChips(selectedMeasurements),
+                        const SizedBox(height: 32),
+                      ],
+                    );
+                  } else {
+                    return const SizedBox.shrink();
+                  }
+                } else if (snapshot.hasError) {
+                  return Text('Errore: ${snapshot.error}');
+                } else {
+                  return const CircularProgressIndicator();
+                }
+              },
+            ),
+            Text(
+              'Tabella delle Misurazioni',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16),
+            _buildMeasurementsTable(usersService),
+            const SizedBox(height: 32),
+            Text(
+              'Misurazioni Esistenti',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16),
+            _buildMeasurementsList(usersService),
+            const SizedBox(height: 32),
+            _buildAddMeasurementExpansionPanel(),
+          ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          setState(() {
-            _showAddMeasurementForm = true;
-          });
-        },
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
-
+    ),
+    floatingActionButton: FloatingActionButton(
+      onPressed: () {
+        setState(() {
+          _showAddMeasurementForm = true;
+        });
+      },
+      child: const Icon(Icons.add),
+    ),
+  );
+}
   Widget _buildDateRangePicker(BuildContext context, MeasurementsState selectedDates) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -136,38 +188,42 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
     );
   }
 
-  Widget _buildMeasurementsChart(UsersService usersService, MeasurementsState selectedDates,
-      Set<String> selectedMeasurements) {
-    return StreamBuilder<List<MeasurementModel>>(
-      stream: usersService.getMeasurements(userId: widget.userId),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const CircularProgressIndicator();
-        } else if (snapshot.hasError) {
-          return Text('Errore: ${snapshot.error}');
-        } else if (snapshot.hasData) {
-          final measurements = snapshot.data!;
-          final measurementData = _convertMeasurementsToData(measurements);
-
-          return SizedBox(
-            height: 300,
-            child: MeasurementsChart(
-              measurementData: measurementData,
-              startDate: selectedDates.startDate,
-              endDate: selectedDates.endDate,
-              selectedMeasurements: selectedMeasurements,
-            ),
-          );
-        } else {
-          return const Text('Nessuna misurazione disponibile.');
+Widget _buildMeasurementsChart(UsersService usersService, MeasurementsState selectedDates,
+    Set<String> selectedMeasurements) {
+  return StreamBuilder<List<MeasurementModel>>(
+    stream: usersService.getMeasurements(userId: widget.userId),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const CircularProgressIndicator();
+      } else if (snapshot.hasError) {
+        return Text('Errore: ${snapshot.error}');
+      } else if (snapshot.hasData) {
+        final measurements = snapshot.data!;
+        if (measurements.length < 2) {
+          return const Text('Per visualizzare il grafico sono necessari almeno 2 misurazioni antropometriche');
         }
-      },
-    );
-  }
+        final measurementData = _convertMeasurementsToData(measurements);
 
-  Widget _buildMeasurementChips(Set<String> selectedMeasurements) {
-    return Wrap(
-      spacing: 8,
+        return SizedBox(
+          height: 300,
+          child: MeasurementsChart(
+            measurementData: measurementData,
+            startDate: selectedDates.startDate,
+            endDate: selectedDates.endDate,
+            selectedMeasurements: selectedMeasurements,
+          ),
+        );
+      } else {
+        return const Text('Nessuna misurazione disponibile.');
+      }
+    },
+  );
+}
+
+Widget _buildMeasurementChips(Set<String> selectedMeasurements) {
+  return SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    child: Row(
       children: [
         FilterChip(
           label: const Text('Peso'),
@@ -176,6 +232,7 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
             ref.read(selectedMeasurementsProvider.notifier).toggleSelectedMeasurement('weight');
           },
         ),
+        const SizedBox(width: 8),
         FilterChip(
           label: const Text('Massa Grassa'),
           selected: selectedMeasurements.contains('bodyFatPercentage'),
@@ -185,6 +242,7 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
                 .toggleSelectedMeasurement('bodyFatPercentage');
           },
         ),
+        const SizedBox(width: 8),
         FilterChip(
           label: const Text('Circonferenza Vita'),
           selected: selectedMeasurements.contains('waistCircumference'),
@@ -194,6 +252,7 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
                 .toggleSelectedMeasurement('waistCircumference');
           },
         ),
+        const SizedBox(width: 8),
         FilterChip(
           label: const Text('Circonferenza Fianchi'),
           selected: selectedMeasurements.contains('hipCircumference'),
@@ -203,6 +262,7 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
                 .toggleSelectedMeasurement('hipCircumference');
           },
         ),
+        const SizedBox(width: 8),
         FilterChip(
           label: const Text('Circonferenza Torace'),
           selected: selectedMeasurements.contains('chestCircumference'),
@@ -212,6 +272,7 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
                 .toggleSelectedMeasurement('chestCircumference');
           },
         ),
+        const SizedBox(width: 8),
         FilterChip(
           label: const Text('Circonferenza Bicipiti'),
           selected: selectedMeasurements.contains('bicepsCircumference'),
@@ -222,8 +283,117 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
           },
         ),
       ],
-    );
+    ),
+  );
+}
+Widget _buildMeasurementsTable(UsersService usersService) {
+  return StreamBuilder<List<MeasurementModel>>(
+    stream: usersService.getMeasurements(userId: widget.userId),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const CircularProgressIndicator();
+      } else if (snapshot.hasError) {
+        return Text('Errore: ${snapshot.error}');
+      } else if (snapshot.hasData) {
+        final measurements = snapshot.data!;
+
+        return LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            if (constraints.maxWidth < 600) {
+              return _buildMobileMeasurementsTable(measurements);
+            } else {
+              return _buildDesktopMeasurementsTable(measurements);
+            }
+          },
+        );
+      } else {
+        return const Text('Nessuna misurazione disponibile.');
+      }
+    },
+  );
+}
+
+Widget _buildDesktopMeasurementsTable(List<MeasurementModel> measurements) {
+  return DataTable(
+    columns: const [
+      DataColumn(label: Text('Data')),
+      DataColumn(label: Text('Peso')),
+      DataColumn(label: Text('Massa Grassa')),
+      DataColumn(label: Text('Circonferenza Vita')),
+      DataColumn(label: Text('Circonferenza Fianchi')),
+      DataColumn(label: Text('Circonferenza Torace')),
+      DataColumn(label: Text('Circonferenza Bicipiti')),
+    ],
+    rows: measurements.map((measurement) {
+      return DataRow(
+        cells: [
+          DataCell(Text(DateFormat('dd/MM/yyyy').format(measurement.date))),
+          DataCell(Text('${measurement.weight.toStringAsFixed(2)} kg')),
+          DataCell(Text('${measurement.bodyFatPercentage.toStringAsFixed(2)}%')),
+          DataCell(Text('${measurement.waistCircumference.toStringAsFixed(2)} cm')),
+          DataCell(Text('${measurement.hipCircumference.toStringAsFixed(2)} cm')),
+          DataCell(Text('${measurement.chestCircumference.toStringAsFixed(2)} cm')),
+          DataCell(Text('${measurement.bicepsCircumference.toStringAsFixed(2)} cm')),
+        ],
+      );
+    }).toList(),
+  );
+}
+
+Widget _buildMobileMeasurementsTable(List<MeasurementModel> measurements) {
+  return ListView.builder(
+    shrinkWrap: true,
+    physics: const NeverScrollableScrollPhysics(),
+    itemCount: measurements.length,
+    itemBuilder: (context, index) {
+      final currentMeasurement = measurements[index];
+      final previousMeasurement = index < measurements.length - 1 ? measurements[index + 1] : null;
+
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Data: ${DateFormat('dd/MM/yyyy').format(currentMeasurement.date)}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              _buildMeasurementRow('Peso:', '${currentMeasurement.weight.toStringAsFixed(2)} kg', previousMeasurement?.weight),
+              _buildMeasurementRow('Massa Grassa:', '${currentMeasurement.bodyFatPercentage.toStringAsFixed(2)}%', previousMeasurement?.bodyFatPercentage),
+              _buildMeasurementRow('Circonferenza Vita:', '${currentMeasurement.waistCircumference.toStringAsFixed(2)} cm', previousMeasurement?.waistCircumference),
+              _buildMeasurementRow('Circonferenza Fianchi:', '${currentMeasurement.hipCircumference.toStringAsFixed(2)} cm', previousMeasurement?.hipCircumference),
+              _buildMeasurementRow('Circonferenza Torace:', '${currentMeasurement.chestCircumference.toStringAsFixed(2)} cm', previousMeasurement?.chestCircumference),
+              _buildMeasurementRow('Circonferenza Bicipiti:', '${currentMeasurement.bicepsCircumference.toStringAsFixed(2)} cm', previousMeasurement?.bicepsCircumference),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+Widget _buildMeasurementRow(String label, String value, double? previousValue) {
+  double? delta;
+  if (previousValue != null) {
+    final currentValue = double.tryParse(value.split(' ')[0]);
+    if (currentValue != null) {
+      delta = currentValue - previousValue;
+    }
   }
+  final sign = delta != null && delta >= 0 ? '+' : '';
+
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Text(label),
+      Text('$value${delta != null ? ' ($sign${delta.toStringAsFixed(2)})' : ''}'),
+    ],
+  );
+}
+
+
 
   Widget _buildMeasurementsList(UsersService usersService) {
     return StreamBuilder<List<MeasurementModel>>(
