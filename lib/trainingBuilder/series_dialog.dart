@@ -15,7 +15,7 @@ class SeriesDialog extends StatefulWidget {
   final num latestMaxWeight;
   final ValueNotifier<double> weightNotifier;
 
-  const SeriesDialog({
+   SeriesDialog({
     required this.usersService,
     required this.athleteId,
     required this.exerciseId,
@@ -26,14 +26,16 @@ class SeriesDialog extends StatefulWidget {
     required this.latestMaxWeight,
     required this.weightNotifier,
     super.key,
-  });
+  }) {
+    debugPrint('SeriesDialog - latestMaxWeight: $latestMaxWeight');
+  }
 
   @override
   _SeriesDialogState createState() => _SeriesDialogState();
 }
 
 class _SeriesDialogState extends State<SeriesDialog> {
-    late num latestMaxWeight;
+  late num latestMaxWeight;
 
   late TextEditingController _repsController;
   late TextEditingController _setsController;
@@ -44,7 +46,7 @@ class _SeriesDialogState extends State<SeriesDialog> {
   @override
   void initState() {
     super.initState();
-        latestMaxWeight = widget.latestMaxWeight;
+    latestMaxWeight = widget.latestMaxWeight;
 
     _repsController = TextEditingController(
         text: widget.currentSeries?.reps.toString() ?? '');
@@ -68,10 +70,11 @@ class _SeriesDialogState extends State<SeriesDialog> {
     super.dispose();
   }
 
- @override
+  @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.currentSeries != null ? 'Modifica Serie' : 'Aggiungi Serie'),
+      title: Text(
+          widget.currentSeries != null ? 'Modifica Serie' : 'Aggiungi Serie'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -158,18 +161,19 @@ class _SeriesDialogState extends State<SeriesDialog> {
               onChanged: (value) {
                 final newWeight = double.tryParse(value) ?? 0;
                 widget.weightNotifier.value = newWeight;
-           SeriesUtils().updateIntensityFromWeight(
-      _weightController,
-      _intensityController,
-      latestMaxWeight.toDouble(), // Passa il valore corretto di latestMaxWeight
-    );
+                SeriesUtils().updateIntensityFromWeight(
+                  _weightController,
+                  _intensityController,
+                  latestMaxWeight
+                      .toDouble(), // Passa il valore corretto di latestMaxWeight
+                );
                 SeriesUtils.updateRPE(
-                    _repsController,
-                    _weightController,
-                    _rpeController,
-                    _intensityController,
-                        latestMaxWeight, // Passa il valore corretto di latestMaxWeight
-);
+                  _repsController,
+                  _weightController,
+                  _rpeController,
+                  _intensityController,
+                  latestMaxWeight, // Passa il valore corretto di latestMaxWeight
+                );
               },
             ),
           ],

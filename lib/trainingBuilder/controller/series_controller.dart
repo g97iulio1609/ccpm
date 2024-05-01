@@ -33,11 +33,11 @@ class SeriesController extends ChangeNotifier {
 Future<List<Series>?> _showSeriesDialog(
   BuildContext context,
   Exercise exercise,
-  int weekIndex, [
+  int weekIndex,
   Series? currentSeries,
   String? exerciseType,
   num? latestMaxWeight,
-]) async {
+) async {
   return await showDialog<List<Series>>(
     context: context,
     builder: (context) => SeriesDialog(
@@ -54,31 +54,52 @@ Future<List<Series>?> _showSeriesDialog(
   );
 }
 
-  Future<void> editSeries(
-    TrainingProgram program,
-    int weekIndex,
-    int workoutIndex,
-    int exerciseIndex,
-    Series currentSeries,
-    BuildContext context,
-      num latestMaxWeight, // Aggiungi il parametro latestMaxWeight
+Future<void> editSeries(
+  TrainingProgram program,
+  int weekIndex,
+  int workoutIndex,
+  int exerciseIndex,
+  Series currentSeries,
+  BuildContext context,
+  latestMaxWeight
+) async {
+  final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+  final exerciseId = exercise.exerciseId;
+  final athleteId = program.athleteId;
 
-  ) async {
-    final exercise = program
-        .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
-    final updatedSeriesList = await _showSeriesDialog(
-        context, exercise, weekIndex, currentSeries, exercise.type, latestMaxWeight,);
-    if (updatedSeriesList != null) {
-      final seriesIndex = exercise.series.indexOf(currentSeries);
-      program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex]
-          .series
-          .replaceRange(seriesIndex, seriesIndex + 1, updatedSeriesList);
+  // Ottieni il latestMaxWeight corretto per l'esercizio
+  final latestMaxWeight = await SeriesUtils.getLatestMaxWeight(
+    usersService,
+    athleteId,
+    exerciseId ?? '',
+  );
+  debugPrint('editSeries - latestMaxWeight: $latestMaxWeight');
 
-      await SeriesUtils.updateSeriesWeights(
-          program, weekIndex, workoutIndex, exerciseIndex, usersService);
-      notifyListeners();
-    }
+  final updatedSeriesList = await _showSeriesDialog(
+    context,
+    exercise,
+    weekIndex,
+    currentSeries,
+    exercise.type,
+    latestMaxWeight,
+  );
+
+  if (updatedSeriesList != null) {
+    final seriesIndex = exercise.series.indexOf(currentSeries);
+    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex]
+        .series
+        .replaceRange(seriesIndex, seriesIndex + 1, updatedSeriesList);
+
+    await SeriesUtils.updateSeriesWeights(
+      program,
+      weekIndex,
+      workoutIndex,
+      exerciseIndex,
+      usersService,
+    );
+    notifyListeners();
   }
+}
 
   void removeSeries(
     TrainingProgram program,

@@ -295,19 +295,19 @@ class SeriesUtils {
     return latestMaxWeight;
   }
 
-  static void updateWeightFromIntensity(
-      TextEditingController weightController,
-      TextEditingController intensityController,
-      String exerciseType,
-      num latestMaxWeight,
-      ValueNotifier<double> weightNotifier) {
-    final intensity = double.tryParse(intensityController.text) ?? 0;
-    final calculatedWeight =
-        calculateWeightFromIntensity(latestMaxWeight.toDouble(), intensity);
-    final roundedWeight = roundWeight(calculatedWeight, exerciseType);
-    weightController.text = roundedWeight.toStringAsFixed(2);
-    weightNotifier.value = roundedWeight;
-  }
+static void updateWeightFromIntensity(
+  TextEditingController weightController,
+  TextEditingController intensityController,
+  String exerciseType,
+  num latestMaxWeight, // Utilizza il parametro latestMaxWeight corretto
+  ValueNotifier<double> weightNotifier,
+) {
+  final intensity = double.tryParse(intensityController.text) ?? 0;
+  final calculatedWeight = calculateWeightFromIntensity(latestMaxWeight.toDouble(), intensity);
+  final roundedWeight = roundWeight(calculatedWeight, exerciseType);
+  weightController.text = roundedWeight.toStringAsFixed(2);
+  weightNotifier.value = roundedWeight;
+}
 
 void updateIntensityFromWeight(
   TextEditingController weightController,
@@ -388,6 +388,7 @@ void updateIntensityFromWeight(
       Series series, String? exerciseType, num? latestMaxWeight) {
     double calculatedWeight = 0;
 
+debugPrint('from _calculateWeight latestMaxWeight $latestMaxWeight');
     if (latestMaxWeight != null) {
       if (series.intensity.isNotEmpty) {
         final intensity = double.tryParse(series.intensity) ?? 0;

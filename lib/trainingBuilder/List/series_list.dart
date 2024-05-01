@@ -196,7 +196,21 @@ Widget _buildSeriesCard(BuildContext context, Series series,
     int? seriesIndex,
     VoidCallback? onRemove,
     String? exerciseType]) {
-  final latestMaxWeight = series.weight; // Ottieni il valore di latestMaxWeight dalla serie specifica
+  final exercise = controller.program.weeks[weekIndex].workouts[workoutIndex]
+      .exercises[exerciseIndex];
+  final exerciseId = exercise.exerciseId;
+  final athleteId = controller.program.athleteId;
+
+  // Ottieni il latestMaxWeight corretto per l'esercizio
+  late num latestMaxWeight;
+  SeriesUtils.getLatestMaxWeight(
+    usersService,
+    athleteId,
+    exerciseId ?? '',
+  ).then((maxWeight) {
+    latestMaxWeight = maxWeight;
+    debugPrint('_buildSeriesCard - latestMaxWeight: $latestMaxWeight');
+  });
 
   return ListTile(
     title: Text(
@@ -208,15 +222,18 @@ Widget _buildSeriesCard(BuildContext context, Series series,
       itemBuilder: (context) => [
         PopupMenuItem(
           child: const Text('Modifica'),
-          onTap: () => controller.editSeries(
-            weekIndex,
-            workoutIndex,
-            exerciseIndex,
-            series,
-            context,
-            exerciseType ?? '',
-            latestMaxWeight, // Passa il valore corretto di latestMaxWeight
-          ),
+          onTap: () {
+            debugPrint('Modifica serie tapped');
+            controller.editSeries(
+              weekIndex,
+              workoutIndex,
+              exerciseIndex,
+              series,
+              context,
+              exerciseType ?? '',
+              latestMaxWeight, // Passa il latestMaxWeight corretto
+            );
+          },
         ),
         PopupMenuItem(
           child: const Text('Elimina'),
@@ -255,161 +272,173 @@ Widget _buildSeriesCard(BuildContext context, Series series,
     );
   }
 
-  void _showEditAllSeriesDialog(
-      BuildContext context, List<Series> seriesGroup) async {
-    final series = seriesGroup.first;
-    final repsController = TextEditingController(text: series.reps.toString());
-    final setsController =
-        TextEditingController(text: seriesGroup.length.toString());
-    final intensityController = TextEditingController(text: series.intensity);
-    final rpeController = TextEditingController(text: series.rpe);
-    final weightController =
-        TextEditingController(text: series.weight.toString());
+void _showEditAllSeriesDialog(
+    BuildContext context, List<Series> seriesGroup) async {
+  final series = seriesGroup.first;
+  final exercise =
+      controller.program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+  final exerciseId = exercise.exerciseId;
+  final athleteId = controller.program.athleteId;
 
-    FocusNode weightFocusNode = FocusNode();
-    FocusNode intensityFocusNode = FocusNode();
+  // Ottieni il latestMaxWeight corretto per l'esercizio
+  late double? latestMaxWeight;
+  await SeriesUtils.getLatestMaxWeight(
+    usersService,
+    athleteId,
+    exerciseId ?? '',
+  ).then((maxWeight) {
+    latestMaxWeight = maxWeight as double?;
+    debugPrint('_showEditAllSeriesDialog - latestMaxWeight: $latestMaxWeight');
+  });
 
-    final result = await showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            title: const Text('Modifica Tutte Le Serie'),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: repsController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Reps'),
-                    onChanged: (_) {
-                      SeriesUtils.updateRPE(
-                        repsController,
-                        weightController,
-                        rpeController,
-                        intensityController,
-                        series.weight,
+  final repsController = TextEditingController(text: series.reps.toString());
+  final setsController =
+      TextEditingController(text: seriesGroup.length.toString());
+  final intensityController = TextEditingController(text: series.intensity);
+  final rpeController = TextEditingController(text: series.rpe);
+  final weightController =
+      TextEditingController(text: series.weight.toString());
+
+  FocusNode weightFocusNode = FocusNode();
+  FocusNode intensityFocusNode = FocusNode();
+
+  final result = await showDialog(
+    context: context,
+    builder: (context) => StatefulBuilder(
+      builder: (context, setState) {
+        return AlertDialog(
+          title: const Text('Modifica Tutte Le Serie'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: repsController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Reps'),
+                  onChanged: (_) {
+                    SeriesUtils.updateRPE(
+                      repsController,
+                      weightController,
+                      rpeController,
+                      intensityController,
+                      latestMaxWeight as num, // Passa il latestMaxWeight corretto
+                    );
+                  },
+                ),
+                TextField(
+                  controller: setsController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Sets'),
+                ),
+                TextField(
+                  controller: intensityController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
+                    TextInputFormatter.withFunction((oldValue, newValue) {
+                      final text = newValue.text.replaceAll(',', '.');
+                      return newValue.copyWith(
+                        text: text,
+                        selection:
+                            TextSelection.collapsed(offset: text.length),
                       );
-                    },
-                  ),
-                  TextField(
-                    controller: setsController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Sets'),
-                  ),
-                  TextField(
-                    controller: intensityController,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                          RegExp(r'^\d+[\.,]?\d*')),
-                      TextInputFormatter.withFunction((oldValue, newValue) {
-                        final text = newValue.text.replaceAll(',', '.');
-                        return newValue.copyWith(
-                          text: text,
-                          selection:
-                              TextSelection.collapsed(offset: text.length),
-                        );
-                      }),
-                    ],
-                    focusNode: intensityFocusNode,
-                    decoration:
-                        const InputDecoration(labelText: 'Intensità (%)'),
-                    onChanged: (_) {
-                      if (intensityFocusNode.hasFocus) {
-                        SeriesUtils.updateWeightFromIntensity(
-                          weightController,
-                          intensityController,
-                          exerciseType,
-                          series.weight,
-                          ValueNotifier<double>(0.0),
-                        );
-                      }
-                    },
-                  ),
-                  TextField(
-                    controller: rpeController,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                          RegExp(r'^\d+[\.,]?\d*')),
-                      TextInputFormatter.withFunction((oldValue, newValue) {
-                        final text = newValue.text.replaceAll(',', '.');
-                        return newValue.copyWith(
-                          text: text,
-                          selection:
-                              TextSelection.collapsed(offset: text.length),
-                        );
-                      }),
-                    ],
-                    decoration: const InputDecoration(labelText: 'RPE'),
-                    onChanged: (_) {
-                      SeriesUtils.updateWeightFromRPE(
-                        repsController,
+                    }),
+                  ],
+                  focusNode: intensityFocusNode,
+                  decoration: const InputDecoration(labelText: 'Intensità (%)'),
+                  onChanged: (_) {
+                    if (intensityFocusNode.hasFocus) {
+                      SeriesUtils.updateWeightFromIntensity(
                         weightController,
-                        rpeController,
                         intensityController,
-                        exerciseType,
-                        series.weight,
+                        exercise.type,
+                        latestMaxWeight as num, // Passa il latestMaxWeight corretto
                         ValueNotifier<double>(0.0),
                       );
-                    },
-                  ),
-                  TextField(
-                    controller: weightController,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                          RegExp(r'^\d+[\.,]?\d*')),
-                      TextInputFormatter.withFunction((oldValue, newValue) {
-                        final text = newValue.text.replaceAll(',', '.');
-                        return newValue.copyWith(
-                          text: text,
-                          selection:
-                              TextSelection.collapsed(offset: text.length),
-                        );
-                      }),
-                    ],
-                    focusNode: weightFocusNode,
-                    decoration: const InputDecoration(labelText: 'Peso (kg)'),
-                    onChanged: (_) {
-                      if (weightFocusNode.hasFocus) {
-                        SeriesUtils().updateIntensityFromWeight(
-                          weightController,
-                          intensityController,
-                          series.weight,
-                        );
-                      }
-                      SeriesUtils.updateRPE(
-                        repsController,
-                        weightController,
-                        rpeController,
-                        intensityController,
-                        series.weight,
+                    }
+                  },
+                ),
+                TextField(
+                  controller: rpeController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
+                    TextInputFormatter.withFunction((oldValue, newValue) {
+                      final text = newValue.text.replaceAll(',', '.');
+                      return newValue.copyWith(
+                        text: text,
+                        selection:
+                            TextSelection.collapsed(offset: text.length),
                       );
-                    },
-                  ),
-                ],
-              ),
+                    }),
+                  ],
+                  decoration: const InputDecoration(labelText: 'RPE'),
+                  onChanged: (_) {
+                    SeriesUtils.updateWeightFromRPE(
+                      repsController,
+                      weightController,
+                      rpeController,
+                      intensityController,
+                      exercise.type,
+                      latestMaxWeight as num, // Passa il latestMaxWeight corretto
+                      ValueNotifier<double>(0.0),
+                    );
+                  },
+                ),
+                TextField(
+                  controller: weightController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
+                    TextInputFormatter.withFunction((oldValue, newValue) {
+                      final text = newValue.text.replaceAll(',', '.');
+                      return newValue.copyWith(
+                        text: text,
+                        selection:
+                            TextSelection.collapsed(offset: text.length),
+                      );
+                    }),
+                  ],
+                  focusNode: weightFocusNode,
+                  decoration: const InputDecoration(labelText: 'Peso (kg)'),
+                  onChanged: (_) {
+                    if (weightFocusNode.hasFocus) {
+                      SeriesUtils().updateIntensityFromWeight(
+                        weightController,
+                        intensityController,
+                        latestMaxWeight!, // Passa il latestMaxWeight corretto
+                      );
+                    }
+                    SeriesUtils.updateRPE(
+                      repsController,
+                      weightController,
+                      rpeController,
+                      intensityController,
+                      latestMaxWeight as num, // Passa il latestMaxWeight corretto
+                    );
+                  },
+                ),
+              ],
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Annulla'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Salva'),
-              ),
-            ],
-          );
-        },
-      ),
-    );
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Annulla'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Salva'),
+            ),
+          ],
+        );
+      },
+    ),
+  );
 
     weightFocusNode.dispose();
     intensityFocusNode.dispose();
