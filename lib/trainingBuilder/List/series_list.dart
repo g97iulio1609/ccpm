@@ -6,6 +6,7 @@ import '../controller/training_program_controller.dart';
 import '../utility_functions.dart';
 import '../../users_services.dart';
 import '../reorder_dialog.dart';
+import '../series_utils.dart';
 
 final expansionStateProvider = StateNotifierProvider.autoDispose<
     ExpansionStateNotifier, Map<String, bool>>((ref) {
@@ -274,8 +275,13 @@ class TrainingProgramSeriesList extends ConsumerWidget {
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(labelText: 'Reps'),
                     onChanged: (_) {
-                      _updateRPE(repsController, weightController,
-                          rpeController, intensityController, setState);
+                      SeriesUtils.updateRPE(
+                        repsController,
+                        weightController,
+                        rpeController,
+                        intensityController,
+                        series.weight,
+                      );
                     },
                   ),
                   TextField(
@@ -304,8 +310,13 @@ class TrainingProgramSeriesList extends ConsumerWidget {
                         const InputDecoration(labelText: 'Intensità (%)'),
                     onChanged: (_) {
                       if (intensityFocusNode.hasFocus) {
-                        _updateWeight(
-                            weightController, intensityController, setState);
+                        SeriesUtils.updateWeightFromIntensity(
+                          weightController,
+                          intensityController,
+                          exerciseType,
+                          series.weight,
+                          ValueNotifier<double>(0.0),
+                        );
                       }
                     },
                   ),
@@ -327,12 +338,15 @@ class TrainingProgramSeriesList extends ConsumerWidget {
                     ],
                     decoration: const InputDecoration(labelText: 'RPE'),
                     onChanged: (_) {
-                      _updateWeightAndIntensity(
-                          repsController,
-                          weightController,
-                          rpeController,
-                          intensityController,
-                          setState);
+                      SeriesUtils.updateWeightFromRPE(
+                        repsController,
+                        weightController,
+                        rpeController,
+                        intensityController,
+                        exerciseType,
+                        series.weight,
+                        ValueNotifier<double>(0.0),
+                      );
                     },
                   ),
                   TextField(
@@ -355,11 +369,19 @@ class TrainingProgramSeriesList extends ConsumerWidget {
                     decoration: const InputDecoration(labelText: 'Peso (kg)'),
                     onChanged: (_) {
                       if (weightFocusNode.hasFocus) {
-                        _updateIntensity(
-                            weightController, intensityController, setState);
+                        SeriesUtils().updateIntensityFromWeight(
+                          weightController,
+                          intensityController,
+                          series.weight,
+                        );
                       }
-                      _updateRPE(repsController, weightController,
-                          rpeController, intensityController, setState);
+                      SeriesUtils.updateRPE(
+                        repsController,
+                        weightController,
+                        rpeController,
+                        intensityController,
+                        series.weight,
+                      );
                     },
                   ),
                 ],
@@ -411,7 +433,7 @@ class TrainingProgramSeriesList extends ConsumerWidget {
             sets: 1,
             intensity: intensity,
             rpe: rpe,
-            weight: weight,
+            weight:weight,
             order: series.order + i,
             done: false,
             reps_done: 0,
@@ -427,110 +449,6 @@ class TrainingProgramSeriesList extends ConsumerWidget {
       }
 
       controller.notifyListeners();
-    }
-  }
-
-  void _updateWeight(TextEditingController weightController,
-      TextEditingController intensityController, StateSetter setState) async {
-    final intensity = double.tryParse(intensityController.text) ?? 0;
-    final latestMaxWeight = await getLatestMaxWeight(
-        usersService,
-        controller.athleteIdController.text,
-        controller.program.weeks[weekIndex].workouts[workoutIndex]
-            .exercises[exerciseIndex].exerciseId!);
-    final calculatedWeight = calculateWeightFromIntensity(
-        latestMaxWeight?.toDouble() ?? 0, intensity);
-    final roundedWeight = roundWeight(
-        calculatedWeight,
-        controller.program.weeks[weekIndex].workouts[workoutIndex]
-            .exercises[exerciseIndex].type);
-    setState(() {
-      weightController.text = roundedWeight.toStringAsFixed(2);
-    });
-  }
-
-  void _updateIntensity(TextEditingController weightController,
-      TextEditingController intensityController, StateSetter setState) async {
-    final weight = double.tryParse(weightController.text) ?? 0;
-    final latestMaxWeight = await getLatestMaxWeight(
-        usersService,
-        controller.athleteIdController.text,
-        controller.program.weeks[weekIndex].workouts[workoutIndex]
-            .exercises[exerciseIndex].exerciseId!);
-
-    if (weight > 0 && latestMaxWeight != null && latestMaxWeight > 0) {
-      final calculatedIntensity =
-          calculateIntensityFromWeight(weight, latestMaxWeight.toDouble());
-      setState(() {
-        intensityController.text = calculatedIntensity.toStringAsFixed(2);
-      });
-    } else {
-      setState(() {
-        intensityController.clear();
-      });
-    }
-  }
-
-  void _updateWeightAndIntensity(
-    TextEditingController repsController,
-    TextEditingController weightController,
-    TextEditingController rpeController,
-    TextEditingController intensityController,
-    StateSetter setState,
-  ) async {
-    final rpeText = rpeController.text;
-    if (rpeText.isNotEmpty) {
-      final rpe = double.parse(rpeText);
-      final reps = int.tryParse(repsController.text) ?? 0;
-      final latestMaxWeight = await getLatestMaxWeight(
-          usersService,
-          controller.athleteIdController.text,
-          controller.program.weeks[weekIndex].workouts[workoutIndex]
-              .exercises[exerciseIndex].exerciseId!);
-      final percentage = getRPEPercentage(rpe, reps);
-      final calculatedWeight = (latestMaxWeight?.toDouble() ?? 0) * percentage;
-      final roundedWeight = roundWeight(
-          calculatedWeight,
-          controller.program.weeks[weekIndex].workouts[workoutIndex]
-              .exercises[exerciseIndex].type);
-
-      setState(() {
-        weightController.text = roundedWeight.toStringAsFixed(2);
-        final calculatedIntensity = calculateIntensityFromWeight(
-            roundedWeight, latestMaxWeight?.toDouble() ?? 0);
-        intensityController.text = calculatedIntensity.toStringAsFixed(2);
-      });
-    }
-  }
-
-  void _updateRPE(
-    TextEditingController repsController,
-    TextEditingController weightController,
-    TextEditingController rpeController,
-    TextEditingController intensityController,
-    StateSetter setState,
-  ) async {
-    final weight = double.tryParse(weightController.text) ?? 0;
-    final reps = int.tryParse(repsController.text) ?? 0;
-    final latestMaxWeight = await getLatestMaxWeight(
-        usersService,
-        controller.athleteIdController.text,
-        controller.program.weeks[weekIndex].workouts[workoutIndex]
-            .exercises[exerciseIndex].exerciseId!);
-    final calculatedRPE =
-        calculateRPE(weight, latestMaxWeight?.toDouble() ?? 0, reps);
-
-    if (calculatedRPE != null) {
-      setState(() {
-        rpeController.text = calculatedRPE.toStringAsFixed(1);
-        final percentage = getRPEPercentage(calculatedRPE, reps);
-        intensityController.text = (percentage * 100).toStringAsFixed(2);
-      });
-    } else {
-      setState(() {
-        rpeController.clear();
-        intensityController.clear();
-      });
     }
   }
 }

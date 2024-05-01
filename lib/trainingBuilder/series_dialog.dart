@@ -1,7 +1,5 @@
-import 'package:alphanessone/trainingBuilder/utility_functions.dart';
-
+import 'package:alphanessone/trainingBuilder/series_utils.dart';
 import 'package:alphanessone/trainingBuilder/training_model.dart';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../users_services.dart';
@@ -13,7 +11,6 @@ class SeriesDialog extends StatefulWidget {
   final int weekIndex;
   final Exercise exercise;
   final String exerciseType;
-
   final Series? currentSeries;
   final num latestMaxWeight;
   final ValueNotifier<double> weightNotifier;
@@ -67,7 +64,7 @@ class _SeriesDialogState extends State<SeriesDialog> {
     super.dispose();
   }
 
-  @override
+ @override
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(widget.currentSeries != null ? 'Modifica Serie' : 'Aggiungi Serie'),
@@ -79,7 +76,12 @@ class _SeriesDialogState extends State<SeriesDialog> {
               controller: _repsController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(labelText: 'Reps'),
-              onChanged: (_) => _updateRPE(),
+              onChanged: (_) => SeriesUtils.updateRPE(
+                  _repsController,
+                  _weightController,
+                  _rpeController,
+                  _intensityController,
+                  widget.latestMaxWeight),
             ),
             TextField(
               controller: _setsController,
@@ -102,8 +104,12 @@ class _SeriesDialogState extends State<SeriesDialog> {
               ],
               decoration: const InputDecoration(labelText: 'Intensità (%)'),
               onChanged: (value) {
-                final intensity = double.tryParse(value) ?? 0;
-                _updateWeight(intensity);
+                SeriesUtils.updateWeightFromIntensity(
+                    _weightController,
+                    _intensityController,
+                    widget.exerciseType,
+                    widget.latestMaxWeight,
+                    widget.weightNotifier);
               },
             ),
             TextField(
@@ -121,7 +127,14 @@ class _SeriesDialogState extends State<SeriesDialog> {
                 }),
               ],
               decoration: const InputDecoration(labelText: 'RPE'),
-              onChanged: (_) => _updateWeightFromRPE(),
+              onChanged: (_) => SeriesUtils.updateWeightFromRPE(
+                  _repsController,
+                  _weightController,
+                  _rpeController,
+                  _intensityController,
+                  widget.exerciseType,
+                  widget.latestMaxWeight,
+                  widget.weightNotifier),
             ),
             TextField(
               controller: _weightController,
@@ -141,8 +154,14 @@ class _SeriesDialogState extends State<SeriesDialog> {
               onChanged: (value) {
                 final newWeight = double.tryParse(value) ?? 0;
                 widget.weightNotifier.value = newWeight;
-                _updateIntensity(newWeight);
-                _updateRPE();
+                SeriesUtils().updateIntensityFromWeight(_weightController,
+                    _intensityController, widget.latestMaxWeight);
+                SeriesUtils.updateRPE(
+                    _repsController,
+                    _weightController,
+                    _rpeController,
+                    _intensityController,
+                    widget.latestMaxWeight);
               },
             ),
           ],
@@ -172,7 +191,7 @@ class _SeriesDialogState extends State<SeriesDialog> {
               final series = List.generate(
                 sets,
                 (index) => Series(
-                  serieId: generateRandomId(16).toString(),
+                  serieId: '',
                   reps: reps,
                   sets: 1,
                   intensity: intensity,
@@ -192,38 +211,4 @@ class _SeriesDialogState extends State<SeriesDialog> {
       ],
     );
   }
-
- void _updateWeight(double intensity) {
-  final calculatedWeight = calculateWeightFromIntensity(widget.latestMaxWeight, intensity);
-  final roundedWeight = roundWeight(calculatedWeight, widget.exerciseType);
-  widget.weightNotifier.value = roundedWeight;
-  _weightController.text = roundedWeight.toStringAsFixed(2);
-}
-
-  void _updateIntensity(double weight) {
-    final calculatedIntensity =
-        calculateIntensityFromWeight(weight, widget.latestMaxWeight);
-    _intensityController.text = calculatedIntensity.toStringAsFixed(2);
-  }
-
-void _updateWeightFromRPE() {
-  final reps = int.tryParse(_repsController.text) ?? 0;
-  final rpe = double.tryParse(_rpeController.text) ?? 0;
-  final percentage = getRPEPercentage(rpe, reps);
-  final calculatedWeight = widget.latestMaxWeight * percentage;
-  final roundedWeight = roundWeight(calculatedWeight, widget.exerciseType);
-  widget.weightNotifier.value = roundedWeight;
-  _weightController.text = roundedWeight.toStringAsFixed(2);
-}
-
- void _updateRPE() {
-  final reps = int.tryParse(_repsController.text) ?? 0;
-  final weight = double.tryParse(_weightController.text) ?? 0;
-  final calculatedRPE = calculateRPE(weight, widget.latestMaxWeight, reps);
-  if (calculatedRPE != null) {
-    _rpeController.text = calculatedRPE.toStringAsFixed(1);
-    final intensity = calculateIntensityFromWeight(weight, widget.latestMaxWeight);
-    _intensityController.text = intensity.toStringAsFixed(2);
-  }
-}
 }

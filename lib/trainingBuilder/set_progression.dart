@@ -1,3 +1,4 @@
+import 'package:alphanessone/trainingBuilder/series_utils.dart';
 import 'package:alphanessone/trainingBuilder/training_model.dart';
 import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
 import 'package:alphanessone/trainingBuilder/controller/progression_controller.dart';
@@ -124,7 +125,7 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
       final currentProgression = weekProgressions[weekIndex];
 
       if (rpe.isNotEmpty && !_weightFocusNodes[weekIndex].hasFocus) {
-        final rpePercentage = getRPEPercentage(double.parse(rpe), reps);
+        final rpePercentage = SeriesUtils.getRPEPercentage(double.parse(rpe), reps);
         final calculatedWeight = widget.latestMaxWeight.toDouble() * rpePercentage;
         currentProgression.weight = roundWeight(calculatedWeight, widget.exercise?.type);
         _weightControllers[weekIndex].text = currentProgression.weight.toString();
