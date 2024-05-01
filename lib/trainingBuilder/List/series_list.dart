@@ -191,46 +191,48 @@ class TrainingProgramSeriesList extends ConsumerWidget {
     controller.notifyListeners();
   }
 
-  Widget _buildSeriesCard(BuildContext context, Series series,
-      [int? groupIndex,
-      int? seriesIndex,
-      VoidCallback? onRemove,
-      String? exerciseType]) {
-    return ListTile(
-      title: Text(
-        '${series.reps} reps x ${series.weight} kg',
-        style: Theme.of(context).textTheme.bodyLarge,
-      ),
-      subtitle: Text('RPE: ${series.rpe}, Intensity: ${series.intensity}'),
-      trailing: PopupMenuButton(
-        itemBuilder: (context) => [
+Widget _buildSeriesCard(BuildContext context, Series series,
+    [int? groupIndex,
+    int? seriesIndex,
+    VoidCallback? onRemove,
+    String? exerciseType]) {
+  final latestMaxWeight = series.weight; // Ottieni il valore di latestMaxWeight dalla serie specifica
+
+  return ListTile(
+    title: Text(
+      '${series.reps} reps x ${series.weight} kg',
+      style: Theme.of(context).textTheme.bodyLarge,
+    ),
+    subtitle: Text('RPE: ${series.rpe}, Intensity: ${series.intensity}'),
+    trailing: PopupMenuButton(
+      itemBuilder: (context) => [
         PopupMenuItem(
-  child: const Text('Modifica'),
-  onTap: () => controller.editSeries(
-    weekIndex,
-    workoutIndex,
-    exerciseIndex,
-    series,
-    context,
-    exerciseType ?? '',
-    series.weight, // Passa series.weight come latestMaxWeight
-  ),
-),
-          PopupMenuItem(
-            child: const Text('Elimina'),
-            onTap: () {
-              if (onRemove != null) {
-                onRemove();
-              } else {
-                controller.removeSeries(weekIndex, workoutIndex, exerciseIndex,
-                    groupIndex ?? 0, seriesIndex ?? 0);
-              }
-            },
+          child: const Text('Modifica'),
+          onTap: () => controller.editSeries(
+            weekIndex,
+            workoutIndex,
+            exerciseIndex,
+            series,
+            context,
+            exerciseType ?? '',
+            latestMaxWeight, // Passa il valore corretto di latestMaxWeight
           ),
-        ],
-      ),
-    );
-  }
+        ),
+        PopupMenuItem(
+          child: const Text('Elimina'),
+          onTap: () {
+            if (onRemove != null) {
+              onRemove();
+            } else {
+              controller.removeSeries(weekIndex, workoutIndex, exerciseIndex,
+                  groupIndex ?? 0, seriesIndex ?? 0);
+            }
+          },
+        ),
+      ],
+    ),
+  );
+}
 
   void _showReorderSeriesDialog(BuildContext context, List<Series> series) {
     final seriesNames = series.map((s) {
