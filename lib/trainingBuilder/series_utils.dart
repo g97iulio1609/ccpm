@@ -388,7 +388,6 @@ void updateIntensityFromWeight(
       Series series, String? exerciseType, num? latestMaxWeight) {
     double calculatedWeight = 0;
 
-debugPrint('from _calculateWeight latestMaxWeight $latestMaxWeight');
     if (latestMaxWeight != null) {
       if (series.intensity.isNotEmpty) {
         final intensity = double.tryParse(series.intensity) ?? 0;

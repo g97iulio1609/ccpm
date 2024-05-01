@@ -73,7 +73,6 @@ Future<void> editSeries(
     athleteId,
     exerciseId ?? '',
   );
-  debugPrint('editSeries - latestMaxWeight: $latestMaxWeight');
 
   final updatedSeriesList = await _showSeriesDialog(
     context,

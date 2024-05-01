@@ -209,7 +209,6 @@ Widget _buildSeriesCard(BuildContext context, Series series,
     exerciseId ?? '',
   ).then((maxWeight) {
     latestMaxWeight = maxWeight;
-    debugPrint('_buildSeriesCard - latestMaxWeight: $latestMaxWeight');
   });
 
   return ListTile(
@@ -223,7 +222,6 @@ Widget _buildSeriesCard(BuildContext context, Series series,
         PopupMenuItem(
           child: const Text('Modifica'),
           onTap: () {
-            debugPrint('Modifica serie tapped');
             controller.editSeries(
               weekIndex,
               workoutIndex,
@@ -288,7 +286,6 @@ void _showEditAllSeriesDialog(
     exerciseId ?? '',
   ).then((maxWeight) {
     latestMaxWeight = maxWeight as double?;
-    debugPrint('_showEditAllSeriesDialog - latestMaxWeight: $latestMaxWeight');
   });
 
   final repsController = TextEditingController(text: series.reps.toString());
