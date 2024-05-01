@@ -158,14 +158,18 @@ class _SeriesDialogState extends State<SeriesDialog> {
               onChanged: (value) {
                 final newWeight = double.tryParse(value) ?? 0;
                 widget.weightNotifier.value = newWeight;
-                SeriesUtils().updateIntensityFromWeight(_weightController,
-                    _intensityController, widget.latestMaxWeight);
+           SeriesUtils().updateIntensityFromWeight(
+      _weightController,
+      _intensityController,
+      latestMaxWeight.toDouble(), // Passa il valore corretto di latestMaxWeight
+    );
                 SeriesUtils.updateRPE(
                     _repsController,
                     _weightController,
                     _rpeController,
                     _intensityController,
-                    widget.latestMaxWeight);
+                        latestMaxWeight, // Passa il valore corretto di latestMaxWeight
+);
               },
             ),
           ],

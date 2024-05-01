@@ -309,17 +309,19 @@ class SeriesUtils {
     weightNotifier.value = roundedWeight;
   }
 
-  void updateIntensityFromWeight(TextEditingController weightController,
-      TextEditingController intensityController, num latestMaxWeight) {
-    final weight = double.tryParse(weightController.text) ?? 0;
-    if (weight > 0 && latestMaxWeight.toDouble() > 0) {
-      final calculatedIntensity =
-          calculateIntensityFromWeight(weight, latestMaxWeight.toDouble());
-      intensityController.text = calculatedIntensity.toStringAsFixed(2);
-    } else {
-      intensityController.clear();
-    }
+void updateIntensityFromWeight(
+  TextEditingController weightController,
+  TextEditingController intensityController,
+  double latestMaxWeight, // Utilizza il parametro latestMaxWeight
+) {
+  final weight = double.tryParse(weightController.text) ?? 0;
+  if (weight > 0 && latestMaxWeight > 0) {
+    final calculatedIntensity = calculateIntensityFromWeight(weight, latestMaxWeight);
+    intensityController.text = calculatedIntensity.toStringAsFixed(2);
+  } else {
+    intensityController.clear();
   }
+}
 
   static void updateWeightFromRPE(
       TextEditingController repsController,
