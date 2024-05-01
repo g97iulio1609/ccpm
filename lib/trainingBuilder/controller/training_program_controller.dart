@@ -225,7 +225,6 @@ Future<void> updateExercise(Exercise exercise) async {
 
 Future<void> editSeries(int weekIndex, int workoutIndex, int exerciseIndex,
     Series currentSeries, BuildContext context, String exerciseType, num latestMaxWeight) async {
-  debugPrint('editSeries called');
   await _seriesController.editSeries(_program, weekIndex, workoutIndex,
       exerciseIndex, currentSeries, context,latestMaxWeight);
   notifyListeners();

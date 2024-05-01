@@ -15,7 +15,7 @@ class SeriesDialog extends StatefulWidget {
   final num latestMaxWeight;
   final ValueNotifier<double> weightNotifier;
 
-   SeriesDialog({
+   const SeriesDialog({
     required this.usersService,
     required this.athleteId,
     required this.exerciseId,
@@ -26,9 +26,7 @@ class SeriesDialog extends StatefulWidget {
     required this.latestMaxWeight,
     required this.weightNotifier,
     super.key,
-  }) {
-    debugPrint('SeriesDialog - latestMaxWeight: $latestMaxWeight');
-  }
+  });
 
   @override
   _SeriesDialogState createState() => _SeriesDialogState();
