@@ -1,4 +1,5 @@
 import 'package:alphanessone/measurements/measurements.dart';
+import 'package:alphanessone/tdee.dart';
 import 'package:alphanessone/training_gallery.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -382,6 +383,15 @@ class MyApp extends ConsumerWidget {
             : const SizedBox();
       },
     ),
+    GoRoute(
+  path: '/tdee',
+  builder: (context, state) {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    return userId != null
+        ? TDEEScreen(userId: userId)
+        : const SizedBox();
+  },
+),
         GoRoute(
           path: '/exercises_list',
           builder: (context, state) => const ExercisesList(),

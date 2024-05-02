@@ -281,13 +281,13 @@ class TrainingProgramSeriesList extends ConsumerWidget {
     FocusNode intensityFocusNode = FocusNode();
 
     // Ottieni il latestMaxWeight corretto per l'esercizio
-    late double? latestMaxWeight;
+    late num? latestMaxWeight;
     await SeriesUtils.getLatestMaxWeight(
       usersService,
       athleteId,
       exerciseId ?? '',
     ).then((maxWeight) {
-      latestMaxWeight = maxWeight as double?;
+      latestMaxWeight = maxWeight ;
     });
 
     final repsController = TextEditingController(text: series.reps.toString());
