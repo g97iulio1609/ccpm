@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import './training_model.dart';
 
 class SeriesUtils {
-  static double calculateWeightFromIntensity(double maxWeight, double intensity) {
+  static double calculateWeightFromIntensity(
+      double maxWeight, double intensity) {
     return maxWeight * (intensity / 100);
   }
 
@@ -122,7 +123,7 @@ class SeriesUtils {
     return rpeTable[rpe.toInt()]?[reps] ?? 1.0;
   }
 
- static double roundWeight(double weight, String? exerciseType) {
+  static double roundWeight(double weight, String? exerciseType) {
     // Imposta un valore predefinito per exerciseType se è null o una stringa vuota
     final effectiveExerciseType =
         exerciseType?.isNotEmpty == true ? exerciseType : 'Default';
@@ -295,33 +296,35 @@ class SeriesUtils {
     return latestMaxWeight;
   }
 
-static void updateWeightFromIntensity(
-  TextEditingController weightController,
-  TextEditingController intensityController,
-  String exerciseType,
-  num latestMaxWeight, // Utilizza il parametro latestMaxWeight corretto
-  ValueNotifier<double> weightNotifier,
-) {
-  final intensity = double.tryParse(intensityController.text) ?? 0;
-  final calculatedWeight = calculateWeightFromIntensity(latestMaxWeight.toDouble(), intensity);
-  final roundedWeight = roundWeight(calculatedWeight, exerciseType);
-  weightController.text = roundedWeight.toStringAsFixed(2);
-  weightNotifier.value = roundedWeight;
-}
-
-void updateIntensityFromWeight(
-  TextEditingController weightController,
-  TextEditingController intensityController,
-  double latestMaxWeight, // Utilizza il parametro latestMaxWeight
-) {
-  final weight = double.tryParse(weightController.text) ?? 0;
-  if (weight > 0 && latestMaxWeight > 0) {
-    final calculatedIntensity = calculateIntensityFromWeight(weight, latestMaxWeight);
-    intensityController.text = calculatedIntensity.toStringAsFixed(2);
-  } else {
-    intensityController.clear();
+  static void updateWeightFromIntensity(
+    TextEditingController weightController,
+    TextEditingController intensityController,
+    String exerciseType,
+    num latestMaxWeight, // Utilizza il parametro latestMaxWeight corretto
+    ValueNotifier<double> weightNotifier,
+  ) {
+    final intensity = double.tryParse(intensityController.text) ?? 0;
+    final calculatedWeight =
+        calculateWeightFromIntensity(latestMaxWeight.toDouble(), intensity);
+    final roundedWeight = roundWeight(calculatedWeight, exerciseType);
+    weightController.text = roundedWeight.toStringAsFixed(2);
+    weightNotifier.value = roundedWeight;
   }
-}
+
+  void updateIntensityFromWeight(
+    TextEditingController weightController,
+    TextEditingController intensityController,
+    double latestMaxWeight, // Utilizza il parametro latestMaxWeight
+  ) {
+    final weight = double.tryParse(weightController.text) ?? 0;
+    if (weight > 0 && latestMaxWeight > 0) {
+      final calculatedIntensity =
+          calculateIntensityFromWeight(weight, latestMaxWeight);
+      intensityController.text = calculatedIntensity.toStringAsFixed(2);
+    } else {
+      intensityController.clear();
+    }
+  }
 
   static void updateWeightFromRPE(
       TextEditingController repsController,
@@ -367,8 +370,12 @@ void updateIntensityFromWeight(
     }
   }
 
-  static Future<void> updateSeriesWeights(TrainingProgram program, int weekIndex,
-      int workoutIndex, int exerciseIndex, UsersService usersService) async {
+  static Future<void> updateSeriesWeights(
+      TrainingProgram program,
+      int weekIndex,
+      int workoutIndex,
+      int exerciseIndex,
+      UsersService usersService) async {
     final exercise = program
         .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     final exerciseId = exercise.exerciseId;
