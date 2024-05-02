@@ -365,8 +365,8 @@ class SeriesUtils {
           calculateIntensityFromWeight(weight, latestMaxWeight.toDouble());
       intensityController.text = intensity.toStringAsFixed(2);
     } else {
-      rpeController.clear();
-      intensityController.clear();
+    //  rpeController.clear();
+  //    intensityController.clear();
     }
   }
 
