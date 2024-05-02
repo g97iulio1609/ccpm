@@ -6,34 +6,6 @@ import 'measurements_provider.dart';
 import 'measurements_chart.dart';
 import 'package:fl_chart/fl_chart.dart';
 
-class ResponsiveText extends StatelessWidget {
-  final String text;
-
-  const ResponsiveText(this.text, {Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth < 600) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                text,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 4),
-            ],
-          );
-        } else {
-          return Text(text);
-        }
-      },
-    );
-  }
-}
-
 class MeasurementsPage extends ConsumerStatefulWidget {
   final String userId;
 
@@ -43,7 +15,8 @@ class MeasurementsPage extends ConsumerStatefulWidget {
   ConsumerState<MeasurementsPage> createState() => _MeasurementsPageState();
 }
 
-class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
+class _MeasurementsPageState extends ConsumerState<MeasurementsPage> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
   final _formKey = GlobalKey<FormState>();
   final _dateController = TextEditingController();
   final _weightController = TextEditingController();
@@ -55,7 +28,12 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
   final _bicepsController = TextEditingController();
 
   String? _editMeasurementId;
-  bool _showAddMeasurementForm = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
 
   @override
   void dispose() {
@@ -67,6 +45,7 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
     _hipController.dispose();
     _chestController.dispose();
     _bicepsController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -83,555 +62,555 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
     _editMeasurementId = null;
   }
 
-@override
+  @override
 Widget build(BuildContext context) {
   final usersService = ref.watch(usersServiceProvider);
   final selectedDates = ref.watch(measurementsStateNotifierProvider);
   final selectedMeasurements = ref.watch(selectedMeasurementsProvider);
 
   return Scaffold(
-    body: SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    backgroundColor: Colors.black,
+    body: DefaultTabController(
+      length: 3,
+      child: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) {
+          return [
+            SliverAppBar(
+              toolbarHeight: 0,
+              pinned: true,
+              backgroundColor: Colors.black,
+              bottom: TabBar(
+                controller: _tabController,
+                tabs: const [
+                  Tab(text: 'Misurazioni'),
+                  Tab(text: 'Grafici'),
+                  Tab(text: 'Nuova'),
+                ],
+              ),
+            ),
+          ];
+        },
+        body: TabBarView(
+          controller: _tabController,
           children: [
-            Text(
-              'Grafici delle Misurazioni',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 16),
-            StreamBuilder<List<MeasurementModel>>(
-              stream: usersService.getMeasurements(userId: widget.userId),
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  final measurements = snapshot.data!;
-                  if (measurements.length >= 2) {
-                    return Column(
-                      children: [
-                        _buildDateRangePicker(context, selectedDates),
-                        const SizedBox(height: 16),
-                        _buildMeasurementsChart(usersService, selectedDates, selectedMeasurements),
-                        const SizedBox(height: 32),
-                        _buildMeasurementChips(selectedMeasurements),
-                        const SizedBox(height: 32),
-                      ],
-                    );
-                  } else {
-                    return const SizedBox.shrink();
-                  }
-                } else if (snapshot.hasError) {
-                  return Text('Errore: ${snapshot.error}');
-                } else {
-                  return const CircularProgressIndicator();
-                }
-              },
-            ),
-            Text(
-              'Tabella delle Misurazioni',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 16),
-            _buildMeasurementsTable(usersService),
-            const SizedBox(height: 32),
-            Text(
-              'Misurazioni Esistenti',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 16),
-            _buildMeasurementsList(usersService),
-            const SizedBox(height: 32),
-            _buildAddMeasurementExpansionPanel(),
+             _buildTableSection(usersService),
+            _buildChartSection(usersService, selectedDates, selectedMeasurements),
+            _buildAddMeasurementSection(),
           ],
         ),
       ),
     ),
-    floatingActionButton: FloatingActionButton(
-      onPressed: () {
-        setState(() {
-          _showAddMeasurementForm = true;
-        });
-      },
-      child: const Icon(Icons.add),
-    ),
-  );
-}
-  Widget _buildDateRangePicker(BuildContext context, MeasurementsState selectedDates) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          'Seleziona periodo:',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        ElevatedButton.icon(
-          onPressed: () async {
-            final dateRange = await showDateRangePicker(
-              context: context,
-              firstDate: DateTime(2023),
-              lastDate: DateTime(2025),
-              initialDateRange: DateTimeRange(
-                start: selectedDates.startDate ?? DateTime.now(),
-                end: selectedDates.endDate ?? DateTime.now(),
-              ),
-            );
-            if (dateRange != null) {
-              ref
-                  .read(measurementsStateNotifierProvider.notifier)
-                  .setSelectedDates(dateRange.start, dateRange.end);
-            }
-          },
-          icon: const Icon(Icons.date_range),
-          label: const Text('Seleziona'),
-        ),
-      ],
-    );
-  }
-
-Widget _buildMeasurementsChart(UsersService usersService, MeasurementsState selectedDates,
-    Set<String> selectedMeasurements) {
-  return StreamBuilder<List<MeasurementModel>>(
-    stream: usersService.getMeasurements(userId: widget.userId),
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const CircularProgressIndicator();
-      } else if (snapshot.hasError) {
-        return Text('Errore: ${snapshot.error}');
-      } else if (snapshot.hasData) {
-        final measurements = snapshot.data!;
-        if (measurements.length < 2) {
-          return const Text('Per visualizzare il grafico sono necessari almeno 2 misurazioni antropometriche');
-        }
-        final measurementData = _convertMeasurementsToData(measurements);
-
-        return SizedBox(
-          height: 300,
-          child: MeasurementsChart(
-            measurementData: measurementData,
-            startDate: selectedDates.startDate,
-            endDate: selectedDates.endDate,
-            selectedMeasurements: selectedMeasurements,
-          ),
-        );
-      } else {
-        return const Text('Nessuna misurazione disponibile.');
-      }
-    },
   );
 }
 
-Widget _buildMeasurementChips(Set<String> selectedMeasurements) {
-  return SingleChildScrollView(
-    scrollDirection: Axis.horizontal,
-    child: Row(
-      children: [
-        FilterChip(
-          label: const Text('Peso'),
-          selected: selectedMeasurements.contains('weight'),
-          onSelected: (selected) {
-            ref.read(selectedMeasurementsProvider.notifier).toggleSelectedMeasurement('weight');
-          },
-        ),
-        const SizedBox(width: 8),
-        FilterChip(
-          label: const Text('Massa Grassa'),
-          selected: selectedMeasurements.contains('bodyFatPercentage'),
-          onSelected: (selected) {
-            ref
-                .read(selectedMeasurementsProvider.notifier)
-                .toggleSelectedMeasurement('bodyFatPercentage');
-          },
-        ),
-        const SizedBox(width: 8),
-        FilterChip(
-          label: const Text('Circonferenza Vita'),
-          selected: selectedMeasurements.contains('waistCircumference'),
-          onSelected: (selected) {
-            ref
-                .read(selectedMeasurementsProvider.notifier)
-                .toggleSelectedMeasurement('waistCircumference');
-          },
-        ),
-        const SizedBox(width: 8),
-        FilterChip(
-          label: const Text('Circonferenza Fianchi'),
-          selected: selectedMeasurements.contains('hipCircumference'),
-          onSelected: (selected) {
-            ref
-                .read(selectedMeasurementsProvider.notifier)
-                .toggleSelectedMeasurement('hipCircumference');
-          },
-        ),
-        const SizedBox(width: 8),
-        FilterChip(
-          label: const Text('Circonferenza Torace'),
-          selected: selectedMeasurements.contains('chestCircumference'),
-          onSelected: (selected) {
-            ref
-                .read(selectedMeasurementsProvider.notifier)
-                .toggleSelectedMeasurement('chestCircumference');
-          },
-        ),
-        const SizedBox(width: 8),
-        FilterChip(
-          label: const Text('Circonferenza Bicipiti'),
-          selected: selectedMeasurements.contains('bicepsCircumference'),
-          onSelected: (selected) {
-            ref
-                .read(selectedMeasurementsProvider.notifier)
-                .toggleSelectedMeasurement('bicepsCircumference');
-          },
-        ),
-      ],
-    ),
-  );
-}
-Widget _buildMeasurementsTable(UsersService usersService) {
-  return StreamBuilder<List<MeasurementModel>>(
-    stream: usersService.getMeasurements(userId: widget.userId),
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const CircularProgressIndicator();
-      } else if (snapshot.hasError) {
-        return Text('Errore: ${snapshot.error}');
-      } else if (snapshot.hasData) {
-        final measurements = snapshot.data!;
-
-        return LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints constraints) {
-            if (constraints.maxWidth < 600) {
-              return _buildMobileMeasurementsTable(measurements);
-            } else {
-              return _buildDesktopMeasurementsTable(measurements);
-            }
-          },
-        );
-      } else {
-        return const Text('Nessuna misurazione disponibile.');
-      }
-    },
-  );
-}
-
-Widget _buildDesktopMeasurementsTable(List<MeasurementModel> measurements) {
-  return DataTable(
-    columns: const [
-      DataColumn(label: Text('Data')),
-      DataColumn(label: Text('Peso')),
-      DataColumn(label: Text('Massa Grassa')),
-      DataColumn(label: Text('Circonferenza Vita')),
-      DataColumn(label: Text('Circonferenza Fianchi')),
-      DataColumn(label: Text('Circonferenza Torace')),
-      DataColumn(label: Text('Circonferenza Bicipiti')),
-    ],
-    rows: measurements.map((measurement) {
-      return DataRow(
-        cells: [
-          DataCell(Text(DateFormat('dd/MM/yyyy').format(measurement.date))),
-          DataCell(Text('${measurement.weight.toStringAsFixed(2)} kg')),
-          DataCell(Text('${measurement.bodyFatPercentage.toStringAsFixed(2)}%')),
-          DataCell(Text('${measurement.waistCircumference.toStringAsFixed(2)} cm')),
-          DataCell(Text('${measurement.hipCircumference.toStringAsFixed(2)} cm')),
-          DataCell(Text('${measurement.chestCircumference.toStringAsFixed(2)} cm')),
-          DataCell(Text('${measurement.bicepsCircumference.toStringAsFixed(2)} cm')),
-        ],
-      );
-    }).toList(),
-  );
-}
-
-Widget _buildMobileMeasurementsTable(List<MeasurementModel> measurements) {
-  return ListView.builder(
-    shrinkWrap: true,
-    physics: const NeverScrollableScrollPhysics(),
-    itemCount: measurements.length,
-    itemBuilder: (context, index) {
-      final currentMeasurement = measurements[index];
-      final previousMeasurement = index < measurements.length - 1 ? measurements[index + 1] : null;
-
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Data: ${DateFormat('dd/MM/yyyy').format(currentMeasurement.date)}',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 4),
-              _buildMeasurementRow('Peso:', '${currentMeasurement.weight.toStringAsFixed(2)} kg', previousMeasurement?.weight),
-              _buildMeasurementRow('Massa Grassa:', '${currentMeasurement.bodyFatPercentage.toStringAsFixed(2)}%', previousMeasurement?.bodyFatPercentage),
-              _buildMeasurementRow('Circonferenza Vita:', '${currentMeasurement.waistCircumference.toStringAsFixed(2)} cm', previousMeasurement?.waistCircumference),
-              _buildMeasurementRow('Circonferenza Fianchi:', '${currentMeasurement.hipCircumference.toStringAsFixed(2)} cm', previousMeasurement?.hipCircumference),
-              _buildMeasurementRow('Circonferenza Torace:', '${currentMeasurement.chestCircumference.toStringAsFixed(2)} cm', previousMeasurement?.chestCircumference),
-              _buildMeasurementRow('Circonferenza Bicipiti:', '${currentMeasurement.bicepsCircumference.toStringAsFixed(2)} cm', previousMeasurement?.bicepsCircumference),
-            ],
-          ),
-        ),
-      );
-    },
-  );
-}
-
-Widget _buildMeasurementRow(String label, String value, double? previousValue) {
-  double? delta;
-  if (previousValue != null) {
-    final currentValue = double.tryParse(value.split(' ')[0]);
-    if (currentValue != null) {
-      delta = currentValue - previousValue;
-    }
-  }
-  final sign = delta != null && delta >= 0 ? '+' : '';
-
-  return Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-      Text(label),
-      Text('$value${delta != null ? ' ($sign${delta.toStringAsFixed(2)})' : ''}'),
-    ],
-  );
-}
-
-
-
-  Widget _buildMeasurementsList(UsersService usersService) {
+  Widget _buildChartSection(UsersService usersService, MeasurementsState selectedDates, Set<String> selectedMeasurements) {
     return StreamBuilder<List<MeasurementModel>>(
       stream: usersService.getMeasurements(userId: widget.userId),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const CircularProgressIndicator();
+          return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasError) {
-          return Text('Errore: ${snapshot.error}');
+          return Center(child: Text('Errore: ${snapshot.error}'));
         } else if (snapshot.hasData) {
           final measurements = snapshot.data!;
+          if (measurements.length < 2) {
+            return const Center(child: Text('Per visualizzare il grafico sono necessari almeno 2 misurazioni antropometriche'));
+          }
+          final measurementData = _convertMeasurementsToData(measurements);
 
-          return ListView(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
+          return Column(
             children: [
-              DataTable(
-                columns: const [
-                  DataColumn(label: Text('Data')),
-                  DataColumn(label: Text('Peso')),
-                  DataColumn(label: Text('Azioni')),
-                ],
-                rows: measurements.map((measurement) {
-                  return DataRow(
-                    cells: [
-                      DataCell(Text(DateFormat('dd/MM/yyyy').format(measurement.date))),
-                      DataCell(Text('${measurement.weight} kg')),
-                      DataCell(
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit),
-                              onPressed: () => _showEditMeasurementDialog(measurement),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete),
-                              onPressed: () => _showDeleteConfirmationDialog(measurement),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  );
-                }).toList(),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Seleziona periodo:',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        final dateRange = await showDateRangePicker(
+                          context: context,
+                          firstDate: DateTime(2023),
+                          lastDate: DateTime(2025),
+                          initialDateRange: DateTimeRange(
+                            start: selectedDates.startDate ?? DateTime.now(),
+                            end: selectedDates.endDate ?? DateTime.now(),
+                          ),
+                        );
+                        if (dateRange != null) {
+                          ref.read(measurementsStateNotifierProvider.notifier).setSelectedDates(dateRange.start, dateRange.end);
+                        }
+                      },
+                      icon: const Icon(Icons.date_range),
+                      label: const Text('Seleziona'),
+                    ),
+                  ],
+                ),
               ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: MeasurementsChart(
+                    measurementData: measurementData,
+                    startDate: selectedDates.startDate,
+                    endDate: selectedDates.endDate,
+                    selectedMeasurements: selectedMeasurements,
+                  ),
+                ),
+              ),
+              _buildMeasurementChips(selectedMeasurements),
             ],
           );
         } else {
-          return const Text('Nessuna misurazione disponibile.');
+          return const Center(child: Text('Nessuna misurazione disponibile.', style: TextStyle(color: Colors.white)));
         }
       },
     );
   }
 
-  Widget _buildAddMeasurementExpansionPanel() {
-    return ExpansionPanelList(
-      expansionCallback: (index, isExpanded) {
-        setState(() {
-          _showAddMeasurementForm = !isExpanded;
-        });
+  Widget _buildTableSection(UsersService usersService) {
+    return StreamBuilder<List<MeasurementModel>>(
+      stream: usersService.getMeasurements(userId: widget.userId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text('Errore: ${snapshot.error}', style: const TextStyle(color: Colors.white)));
+        } else if (snapshot.hasData) {
+          final measurements = snapshot.data!;
+
+          return LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              if (constraints.maxWidth < 600) {
+                return _buildMobileMeasurementsTable(measurements);
+              } else {
+                return _buildDesktopMeasurementsTable(measurements);
+              }
+            },
+          );
+        } else {
+          return const Center(child: Text('Nessuna misurazione disponibile.', style: TextStyle(color: Colors.white)));
+        }
       },
-      children: [
-        ExpansionPanel(
-          headerBuilder: (context, isExpanded) {
-            return const ListTile(
-              title: Text('Aggiungi Misurazione'),
-            );
-          },
-          body: Form(
-            key: _formKey,
-            child: ListView(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(16),
+    );
+  }
+
+  Widget _buildDesktopMeasurementsTable(List<MeasurementModel> measurements) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: DataTable(
+        columns: const [
+          DataColumn(label: Text('Data', style: TextStyle(color: Colors.white))),
+          DataColumn(label: Text('Peso', style: TextStyle(color: Colors.white))),
+          DataColumn(label: Text('Massa Grassa', style: TextStyle(color: Colors.white))),
+          DataColumn(label: Text('Circonferenza Vita', style: TextStyle(color: Colors.white))),
+          DataColumn(label: Text('Circonferenza Fianchi', style: TextStyle(color: Colors.white))),
+          DataColumn(label: Text('Circonferenza Torace', style: TextStyle(color: Colors.white))),
+          DataColumn(label: Text('Circonferenza Bicipiti', style: TextStyle(color: Colors.white))),
+          DataColumn(label: Text('Azioni', style: TextStyle(color: Colors.white))),
+        ],
+        rows: measurements.map((measurement) {
+          return DataRow(
+            cells: [
+              DataCell(Text(DateFormat('dd/MM/yyyy').format(measurement.date), style: const TextStyle(color: Colors.white))),
+              DataCell(Text('${measurement.weight.toStringAsFixed(2)} kg', style: const TextStyle(color: Colors.white))),
+              DataCell(Text('${measurement.bodyFatPercentage.toStringAsFixed(2)}%', style: const TextStyle(color: Colors.white))),
+              DataCell(Text('${measurement.waistCircumference.toStringAsFixed(2)} cm', style: const TextStyle(color: Colors.white))),
+              DataCell(Text('${measurement.hipCircumference.toStringAsFixed(2)} cm', style: const TextStyle(color: Colors.white))),
+              DataCell(Text('${measurement.chestCircumference.toStringAsFixed(2)} cm', style: const TextStyle(color: Colors.white))),
+              DataCell(Text('${measurement.bicepsCircumference.toStringAsFixed(2)} cm', style: const TextStyle(color: Colors.white))),
+              DataCell(
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.white),
+                      onPressed: () => _showEditMeasurementDialog(measurement),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.white),
+                      onPressed: () => _showDeleteConfirmationDialog(measurement),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildMobileMeasurementsTable(List<MeasurementModel> measurements) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16.0),
+      itemCount: measurements.length,
+      itemBuilder: (context, index) {
+        final currentMeasurement = measurements[index];
+        final previousMeasurement = index < measurements.length - 1 ? measurements[index + 1] : null;
+
+        return Card(
+          color: Colors.grey[900],
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextFormField(
-                  controller: _dateController,
-                  decoration: const InputDecoration(
-                    labelText: 'Data',
-                    hintText: 'gg/mm/aaaa',
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Inserisci una data';
-                    }
-                    return null;
-                  },
+                Text(
+                  'Data: ${DateFormat('dd/MM/yyyy').format(currentMeasurement.date)}',
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
                 ),
-                TextFormField(
-                  controller: _weightController,
-                  decoration: const InputDecoration(
-                    labelText: 'Peso (kg)',
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Inserisci un peso';
-                    }
-                    return null;
-                  },
-                ),
-                TextFormField(
-                  controller: _heightController,
-                  decoration: const InputDecoration(
-                    labelText: 'Altezza (cm)',
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Inserisci un\'altezza';
-                    }
-                    return null;
-                  },
-                ),
-                TextFormField(
-                  controller: _bodyFatController,
-                  decoration: const InputDecoration(
-                    labelText: 'Massa Grassa (%)',
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Inserisci una percentuale di massa grassa';
-                    }
-                    return null;
-                  },
-                ),
-                TextFormField(
-                  controller: _waistController,
-                  decoration: const InputDecoration(
-                    labelText: 'Circonferenza Vita (cm)',
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Inserisci una circonferenza vita';
-                    }
-                    return null;
-                  },
-                ),
-                TextFormField(
-                  controller: _hipController,
-                  decoration: const InputDecoration(
-                    labelText: 'Circonferenza Fianchi (cm)',
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Inserisci una circonferenza fianchi';
-                    }
-                    return null;
-                  },
-                ),
-                TextFormField(
-                  controller: _chestController,
-                  decoration: const InputDecoration(
-                    labelText: 'Circonferenza Torace (cm)',
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Inserisci una circonferenza torace';
-                    }
-                    return null;
-                  },
-                ),
-                TextFormField(
-                  controller: _bicepsController,
-                  decoration: const InputDecoration(
-                    labelText: 'Circonferenza Bicipiti (cm)',
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Inserisci una circonferenza bicipiti';
-                    }
-                    return null;
-                  },
-                ),
+                const SizedBox(height: 8),
+                _buildMeasurementRow('Peso:', '${currentMeasurement.weight.toStringAsFixed(2)} kg', previousMeasurement?.weight),
+                _buildMeasurementRow('Massa Grassa:', '${currentMeasurement.bodyFatPercentage.toStringAsFixed(2)}%', previousMeasurement?.bodyFatPercentage),
+                _buildMeasurementRow('Circonferenza Vita:', '${currentMeasurement.waistCircumference.toStringAsFixed(2)} cm', previousMeasurement?.waistCircumference),
+                _buildMeasurementRow('Circonferenza Fianchi:', '${currentMeasurement.hipCircumference.toStringAsFixed(2)} cm', previousMeasurement?.hipCircumference),
+                _buildMeasurementRow('Circonferenza Torace:', '${currentMeasurement.chestCircumference.toStringAsFixed(2)} cm', previousMeasurement?.chestCircumference),
+                _buildMeasurementRow('Circonferenza Bicipiti:', '${currentMeasurement.bicepsCircumference.toStringAsFixed(2)} cm', previousMeasurement?.bicepsCircumference),
                 const SizedBox(height: 16),
-                ElevatedButton(onPressed: () async {
-                    if (_formKey.currentState!.validate()) {
-                      final usersService = ref.read(usersServiceProvider);
-                      final date = DateFormat('dd/MM/yyyy').parse(_dateController.text);
-                      final weight = double.parse(_weightController.text);
-                      final height = double.parse(_heightController.text);
-                      final bodyFat = double.parse(_bodyFatController.text);
-                      final waist = double.parse(_waistController.text);
-                      final hip = double.parse(_hipController.text);
-                      final chest = double.parse(_chestController.text);
-                      final biceps = double.parse(_bicepsController.text);
-
-                      final bmi = weight / ((height / 100) * (height / 100));
-
-                      if (_editMeasurementId == null) {
-                        await usersService.addMeasurement(
-                          userId: widget.userId,
-                          date: date,
-                          weight: weight,
-                          height: height,
-                          bmi: bmi,
-                          bodyFatPercentage: bodyFat,
-                          waistCircumference: waist,
-                          hipCircumference: hip,
-                          chestCircumference: chest,
-                          bicepsCircumference: biceps,
-                        );
-                      } else {
-                        await usersService.updateMeasurement(
-                          userId: widget.userId,
-                          measurementId: _editMeasurementId!,
-                          date: date,
-                          weight: weight,
-                          height: height,
-                          bmi: bmi,
-                          bodyFatPercentage: bodyFat,
-                          waistCircumference: waist,
-                          hipCircumference: hip,
-                          chestCircumference: chest,
-                          bicepsCircumference: biceps,
-                        );
-                      }
-
-                      setState(() {
-                        _showAddMeasurementForm = false;
-                      });
-                      _resetForm();
-                    }
-                  },
-                  child: Text(_editMeasurementId == null ? 'Aggiungi' : 'Aggiorna'),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.white),
+                      onPressed: () => _showEditMeasurementDialog(currentMeasurement),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.white),
+                      onPressed: () => _showDeleteConfirmationDialog(currentMeasurement),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          isExpanded: _showAddMeasurementForm,
-        ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMeasurementRow(String label, String value, double? previousValue) {
+    double? delta;
+    if (previousValue != null) {
+      final currentValue = double.tryParse(value.split(' ')[0]);
+      if (currentValue != null) {
+        delta = currentValue - previousValue;
+      }
+    }
+    final sign = delta != null && delta >= 0 ? '+' : '';
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(color: Colors.white)),
+        Text('$value${delta != null ? ' ($sign${delta.toStringAsFixed(2)})' : ''}', style: const TextStyle(color: Colors.white)),
       ],
+    );
+  }
+
+  Widget _buildMeasurementChips(Set<String> selectedMeasurements) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            FilterChip(
+              label: const Text('Peso'),
+              selected: selectedMeasurements.contains('weight'),
+              onSelected: (selected) {
+                ref.read(selectedMeasurementsProvider.notifier).toggleSelectedMeasurement('weight');
+              },
+            ),
+            const SizedBox(width: 8),
+            FilterChip(
+              label: const Text('Massa Grassa'),
+              selected: selectedMeasurements.contains('bodyFatPercentage'),
+              onSelected: (selected) {
+                ref.read(selectedMeasurementsProvider.notifier).toggleSelectedMeasurement('bodyFatPercentage');
+              },
+            ),
+            const SizedBox(width: 8),
+            FilterChip(
+              label: const Text('Circonferenza Vita'),
+              selected: selectedMeasurements.contains('waistCircumference'),
+              onSelected: (selected) {
+                ref.read(selectedMeasurementsProvider.notifier).toggleSelectedMeasurement('waistCircumference');
+              },
+            ),
+            const SizedBox(width: 8),
+            FilterChip(
+              label: const Text('Circonferenza Fianchi'),
+              selected: selectedMeasurements.contains('hipCircumference'),
+              onSelected: (selected) {
+                ref.read(selectedMeasurementsProvider.notifier).toggleSelectedMeasurement('hipCircumference');
+              },
+            ),
+            const SizedBox(width: 8),
+            FilterChip(
+              label: const Text('Circonferenza Torace'),
+              selected: selectedMeasurements.contains('chestCircumference'),
+              onSelected: (selected) {
+                ref.read(selectedMeasurementsProvider.notifier).toggleSelectedMeasurement('chestCircumference');
+              },
+            ),
+            const SizedBox(width: 8),
+            FilterChip(
+              label:const Text('Circonferenza Bicipiti'),
+              selected: selectedMeasurements.contains('bicepsCircumference'),
+              onSelected: (selected) {
+                ref.read(selectedMeasurementsProvider.notifier).toggleSelectedMeasurement('bicepsCircumference');
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddMeasurementSection() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Form(
+        key: _formKey,
+        child: ListView(
+          children: [
+            TextFormField(
+              controller: _dateController,
+              decoration: const InputDecoration(
+                labelText: 'Data',
+                hintText: 'gg/mm/aaaa',
+                labelStyle: TextStyle(color: Colors.white),
+                hintStyle: TextStyle(color: Colors.white70),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white70),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white),
+                ),
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Inserisci una data';
+                }
+                return null;
+              },
+              style: const TextStyle(color: Colors.white),
+              cursorColor: Colors.white,
+            ),
+            TextFormField(
+              controller: _weightController,
+              decoration: const InputDecoration(
+                labelText: 'Peso (kg)',
+                labelStyle: TextStyle(color: Colors.white),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white70),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white),
+                ),
+              ),
+              keyboardType: TextInputType.number,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Inserisci un peso';
+                }
+                return null;
+              },
+              style: const TextStyle(color: Colors.white),
+              cursorColor: Colors.white,
+            ),
+            TextFormField(
+              controller: _heightController,
+              decoration: const InputDecoration(
+                labelText: 'Altezza (cm)',
+                labelStyle: TextStyle(color: Colors.white),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white70),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white),
+                ),
+              ),
+              keyboardType: TextInputType.number,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Inserisci un\'altezza';
+                }
+                return null;
+              },
+              style: const TextStyle(color: Colors.white),
+              cursorColor: Colors.white,
+            ),
+            TextFormField(
+              controller: _bodyFatController,
+              decoration: const InputDecoration(
+                labelText: 'Massa Grassa (%)',
+                labelStyle: TextStyle(color: Colors.white),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white70),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white),
+                ),
+              ),
+              keyboardType: TextInputType.number,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Inserisci una percentuale di massa grassa';
+                }
+                return null;
+              },
+              style: const TextStyle(color: Colors.white),
+              cursorColor: Colors.white,
+            ),
+            TextFormField(
+              controller: _waistController,
+              decoration: const InputDecoration(
+                labelText: 'Circonferenza Vita (cm)',
+                labelStyle: TextStyle(color: Colors.white),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white70),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white),
+                ),
+              ),
+              keyboardType: TextInputType.number,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Inserisci una circonferenza vita';
+                }
+                return null;
+              },
+              style: const TextStyle(color: Colors.white),
+              cursorColor: Colors.white,
+            ),
+            TextFormField(
+              controller: _hipController,
+              decoration: const InputDecoration(
+                labelText: 'Circonferenza Fianchi (cm)',
+                labelStyle: TextStyle(color: Colors.white),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white70),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white),
+                ),
+              ),
+              keyboardType: TextInputType.number,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Inserisci una circonferenza fianchi';
+                }
+                return null;
+              },
+              style: const TextStyle(color: Colors.white),
+              cursorColor: Colors.white,
+            ),
+            TextFormField(
+              controller: _chestController,
+              decoration: const InputDecoration(
+                labelText: 'Circonferenza Torace (cm)',
+                labelStyle: TextStyle(color: Colors.white),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white70),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white),
+                ),
+              ),
+              keyboardType: TextInputType.number,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Inserisci una circonferenza torace';
+                }
+                return null;
+              },
+              style: const TextStyle(color: Colors.white),
+              cursorColor: Colors.white,
+            ),
+            TextFormField(
+              controller: _bicepsController,
+              decoration: const InputDecoration(
+                labelText: 'Circonferenza Bicipiti (cm)',
+                labelStyle: TextStyle(color: Colors.white),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white70),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white),
+                ),
+              ),
+              keyboardType: TextInputType.number,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Inserisci una circonferenza bicipiti';
+                }
+                return null;
+              },
+              style: const TextStyle(color: Colors.white),
+              cursorColor: Colors.white,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () async {
+                if (_formKey.currentState!.validate()) {
+                  final usersService = ref.read(usersServiceProvider);
+                  final date = DateFormat('dd/MM/yyyy').parse(_dateController.text);
+                  final weight = double.parse(_weightController.text);
+                  final height = double.parse(_heightController.text);
+                  final bodyFat = double.parse(_bodyFatController.text);
+                  final waist = double.parse(_waistController.text);
+                  final hip = double.parse(_hipController.text);
+                  final chest = double.parse(_chestController.text);
+                  final biceps = double.parse(_bicepsController.text);
+
+                  final bmi = weight / ((height / 100) * (height / 100));
+
+                  if (_editMeasurementId == null) {
+                    await usersService.addMeasurement(
+                      userId: widget.userId,
+                      date: date,
+                      weight: weight,
+                      height: height,
+                      bmi: bmi,
+                      bodyFatPercentage: bodyFat,
+                      waistCircumference: waist,
+                      hipCircumference: hip,
+                      chestCircumference: chest,
+                      bicepsCircumference: biceps,
+                    );
+                  } else {
+                    await usersService.updateMeasurement(
+                      userId: widget.userId,
+                      measurementId: _editMeasurementId!,
+                      date: date,
+                      weight: weight,
+                      height: height,
+                      bmi: bmi,
+                      bodyFatPercentage: bodyFat,
+                      waistCircumference: waist,
+                      hipCircumference: hip,
+                      chestCircumference: chest,
+                      bicepsCircumference: biceps,
+                    );
+                  }
+
+                  _resetForm();
+                }
+              },
+              child: Text(_editMeasurementId == null ? 'Aggiungi' : 'Aggiorna', style: const TextStyle(color: Colors.black)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -646,9 +625,7 @@ Widget _buildMeasurementRow(String label, String value, double? previousValue) {
     _bicepsController.text = measurement.bicepsCircumference.toString();
     _editMeasurementId = measurement.id;
 
-    setState(() {
-      _showAddMeasurementForm = true;
-    });
+    _tabController.animateTo(2);
   }
 
   void _showDeleteConfirmationDialog(MeasurementModel measurement) {
@@ -656,14 +633,15 @@ Widget _buildMeasurementRow(String label, String value, double? previousValue) {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Conferma Eliminazione'),
-          content: const Text('Sei sicuro di voler eliminare questa misurazione?'),
+          backgroundColor: Colors.grey[900],
+          title: const Text('Conferma Eliminazione', style: TextStyle(color: Colors.white)),
+          content: const Text('Sei sicuro di voler eliminare questa misurazione?', style: TextStyle(color: Colors.white)),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: const Text('Annulla'),
+              child: const Text('Annulla', style: TextStyle(color: Colors.white)),
             ),
             TextButton(
               onPressed: () {
@@ -674,7 +652,7 @@ Widget _buildMeasurementRow(String label, String value, double? previousValue) {
                 );
                 Navigator.of(context).pop();
               },
-              child: const Text('Elimina'),
+              child: const Text('Elimina', style: TextStyle(color: Colors.white)),
             ),
           ],
         );
