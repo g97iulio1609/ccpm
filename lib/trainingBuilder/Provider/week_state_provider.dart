@@ -1,7 +1,9 @@
+// week_state_provider.dart
 import 'package:alphanessone/trainingBuilder/training_model.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:alphanessone/trainingBuilder/Provider/training_program_state_provider.dart';
 
 final weekStateProvider = StateNotifierProvider<WeekStateNotifier, List<Week>>((ref) {
   return WeekStateNotifier(ref);
@@ -9,12 +11,12 @@ final weekStateProvider = StateNotifierProvider<WeekStateNotifier, List<Week>>((
 
 class WeekStateNotifier extends StateNotifier<List<Week>> {
   final Ref _ref;
-  final List<String> _trackToDeleteWeeks = [];
-  final List<String> _trackToDeleteWorkouts = [];
-  final List<String> _trackToDeleteExercises = [];
-  final List<String> _trackToDeleteSeries = [];
 
   WeekStateNotifier(this._ref) : super([]);
+
+  void init(List<Week> initialWeeks) {
+    state = initialWeeks;
+  }
 
   void addWeek() {
     final newWeek = Week(
@@ -30,6 +32,7 @@ class WeekStateNotifier extends StateNotifier<List<Week>> {
     );
 
     state = [...state, newWeek];
+    _ref.read(trainingProgramStateProvider.notifier).updateWeeks(state);
   }
 
   void removeWeek(int index) {
@@ -40,36 +43,7 @@ class WeekStateNotifier extends StateNotifier<List<Week>> {
   }
 
   void _removeWeekAndRelatedData(Week week) {
-    if (week.id != null) {
-      _trackToDeleteWeeks.add(week.id!);
-    }
-    for (var workout in week.workouts) {
-      _removeWorkoutAndRelatedData(workout);
-    }
-  }
-
-  void _removeWorkoutAndRelatedData(Workout workout) {
-    if (workout.id != null) {
-      _trackToDeleteWorkouts.add(workout.id!);
-    }
-    for (var exercise in workout.exercises) {
-      _removeExerciseAndRelatedData(exercise);
-    }
-  }
-
-  void _removeExerciseAndRelatedData(Exercise exercise) {
-    if (exercise.id != null) {
-      _trackToDeleteExercises.add(exercise.id!);
-    }
-    for (var series in exercise.series) {
-      _removeSeriesData(series);
-    }
-  }
-
-  void _removeSeriesData(Series series) {
-    if (series.serieId != null) {
-      _trackToDeleteSeries.add(series.serieId!);
-    }
+    // Rimuovi i dati correlati a week
   }
 
   void _updateWeekNumbers(int startIndex) {
@@ -94,8 +68,6 @@ class WeekStateNotifier extends StateNotifier<List<Week>> {
       final copiedWeek = _copyWeek(sourceWeek);
 
       if (destinationWeekIndex < state.length) {
-        final destinationWeek = state[destinationWeekIndex];
-        _trackToDeleteWeeks.add(destinationWeek.id!);
         state[destinationWeekIndex] = copiedWeek;
       } else {
         copiedWeek.number = state.length + 1;
@@ -181,4 +153,4 @@ class WeekStateNotifier extends StateNotifier<List<Week>> {
       },
     );
   }
-}
+} 

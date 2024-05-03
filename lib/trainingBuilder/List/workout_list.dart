@@ -1,11 +1,14 @@
+import 'package:alphanessone/trainingBuilder/Provider/workout_state_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import '../training_model.dart';
 import '../controller/training_program_controller.dart';
 import '../reorder_dialog.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:alphanessone/trainingBuilder/Provider/training_program_state_provider.dart';
 
-class TrainingProgramWorkoutListPage extends StatefulWidget {
+class TrainingProgramWorkoutListPage extends ConsumerWidget {
   final TrainingProgramController controller;
   final int weekIndex;
 
@@ -16,16 +19,9 @@ class TrainingProgramWorkoutListPage extends StatefulWidget {
   });
 
   @override
-  State<TrainingProgramWorkoutListPage> createState() =>
-      _TrainingProgramWorkoutListPageState();
-}
-
-class _TrainingProgramWorkoutListPageState
-    extends State<TrainingProgramWorkoutListPage> {
-  @override
-  Widget build(BuildContext context) {
-    final week = widget.controller.program.weeks[widget.weekIndex];
-    final workouts = week.workouts;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final workouts = ref.watch(workoutStateProvider);
+    final program = ref.watch(trainingProgramStateProvider.notifier).state;
 
     return Scaffold(
       body: Column(
@@ -35,14 +31,16 @@ class _TrainingProgramWorkoutListPageState
               children: workouts.asMap().entries.map((entry) {
                 final index = entry.key;
                 final workout = entry.value;
-                return _buildWorkoutSlidable(context, workout, index);
+                return _buildWorkoutSlidable(context, workout, index, ref, program);
               }).toList(),
             ),
           ),
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: ElevatedButton(
-              onPressed: () => widget.controller.addWorkout(widget.weekIndex),
+              onPressed: () {
+                ref.read(workoutStateProvider.notifier).addWorkout(weekIndex);
+              },
               child: const Text('Aggiungi Allenamento'),
             ),
           ),
@@ -51,14 +49,14 @@ class _TrainingProgramWorkoutListPageState
     );
   }
 
-  Widget _buildWorkoutSlidable(BuildContext context, Workout workout, int index) {
+  Widget _buildWorkoutSlidable(BuildContext context, Workout workout, int index, WidgetRef ref, TrainingProgram program) {
     return Slidable(
       endActionPane: ActionPane(
         motion: const ScrollMotion(),
         children: [
           SlidableAction(
             onPressed: (context) {
-              widget.controller.removeWorkout(widget.weekIndex, workout.order);
+              ref.read(workoutStateProvider.notifier).removeWorkout(index, program, weekIndex);
             },
             backgroundColor: Colors.red,
             foregroundColor: Colors.white,
@@ -72,7 +70,7 @@ class _TrainingProgramWorkoutListPageState
         children: [
           SlidableAction(
             onPressed: (context) {
-              widget.controller.addWorkout(widget.weekIndex);
+              ref.read(workoutStateProvider.notifier).addWorkout(weekIndex);
             },
             backgroundColor: Theme.of(context).colorScheme.primary,
             foregroundColor: Colors.white,
@@ -81,11 +79,11 @@ class _TrainingProgramWorkoutListPageState
           ),
         ],
       ),
-      child: _buildWorkoutCard(context, workout, index),
+      child: _buildWorkoutCard(context, workout, index, ref, program),
     );
   }
 
-  Widget _buildWorkoutCard(BuildContext context, Workout workout, int index) {
+  Widget _buildWorkoutCard(BuildContext context, Workout workout, int index, WidgetRef ref, TrainingProgram program) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       shape: RoundedRectangleBorder(
@@ -94,7 +92,7 @@ class _TrainingProgramWorkoutListPageState
       child: InkWell(
         onTap: () {
           context.go(
-              '/programs_screen/user_programs/${widget.controller.program.athleteId}/training_program/${widget.controller.program.id}/week/${widget.weekIndex}/workout/$index');
+              '/programs_screen/user_programs/${controller.program.athleteId}/training_program/${controller.program.id}/week/$weekIndex/workout/$index');
         },
         borderRadius: BorderRadius.circular(16),
         child: Padding(
@@ -134,21 +132,27 @@ class _TrainingProgramWorkoutListPageState
                 itemBuilder: (context) => [
                   PopupMenuItem(
                     child: const Text('Copia Allenamento'),
-                    onTap: () => widget.controller.copyWorkout(
-                        widget.weekIndex, index, context),
+                    onTap: () {
+                      ref.read(workoutStateProvider.notifier).copyWorkout(index, context, program, weekIndex);
+                    },
                   ),
                   PopupMenuItem(
                     child: const Text('Elimina Allenamento'),
-                    onTap: () =>
-                        widget.controller.removeWorkout(widget.weekIndex, workout.order),
+                    onTap: () {
+                      ref.read(workoutStateProvider.notifier).removeWorkout(index, program, weekIndex);
+                    },
                   ),
                   PopupMenuItem(
                     child: const Text('Riordina Allenamenti'),
-                    onTap: () => _showReorderWorkoutsDialog(context),
+                    onTap: () {
+                      _showReorderWorkoutsDialog(context, ref, weekIndex);
+                    },
                   ),
                   PopupMenuItem(
                     child: const Text('Aggiungi Allenamento'),
-                    onTap: () => widget.controller.addWorkout(widget.weekIndex),
+                    onTap: () {
+                      ref.read(workoutStateProvider.notifier).addWorkout(weekIndex);
+                    },
                   ),
                 ],
               ),
@@ -159,18 +163,15 @@ class _TrainingProgramWorkoutListPageState
     );
   }
 
-  void _showReorderWorkoutsDialog(BuildContext context) {
-    final workoutNames = widget.controller.program.weeks[widget.weekIndex]
-        .workouts
-        .map((workout) => 'Allenamento ${workout.order}')
-        .toList();
-
+  void _showReorderWorkoutsDialog(BuildContext context, WidgetRef ref, int weekIndex) {
+    final workoutNames = ref.watch(workoutStateProvider).map((workout) => 'Allenamento ${workout.order}').toList();
     showDialog(
       context: context,
       builder: (context) => ReorderDialog(
         items: workoutNames,
-        onReorder: (oldIndex, newIndex) => widget.controller
-            .reorderWorkouts(widget.weekIndex, oldIndex, newIndex),
+        onReorder: (oldIndex, newIndex) {
+          ref.read(workoutStateProvider.notifier).reorderWorkouts(oldIndex, newIndex, weekIndex);
+        },
       ),
     );
   }

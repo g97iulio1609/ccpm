@@ -51,10 +51,10 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Calculate TDEE'),
+        title: const Text('Calculate TDEE'),
         actions: [
           IconButton(
-            icon: Icon(Icons.save),
+            icon: const Icon(Icons.save),
             onPressed: _calculateTDEE,
           ),
         ],
@@ -62,12 +62,12 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
       body: Form(
         key: _formKey,
         child: Padding(
-          padding: EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               TextFormField(
-                decoration: InputDecoration(labelText: 'Age'),
+                decoration: const InputDecoration(labelText: 'Age'),
                 keyboardType: TextInputType.number,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -78,7 +78,7 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
                 onSaved: (value) => _age = int.parse(value!),
               ),
               TextFormField(
-                decoration: InputDecoration(labelText: 'Height (cm)'),
+                decoration: const InputDecoration(labelText: 'Height (cm)'),
                 keyboardType: TextInputType.number,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -89,7 +89,7 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
                 onSaved: (value) => _height = int.parse(value!),
               ),
               TextFormField(
-                decoration: InputDecoration(labelText: 'Weight (kg)'),
+                decoration: const InputDecoration(labelText: 'Weight (kg)'),
                 keyboardType: TextInputType.number,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -100,7 +100,7 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
                 onSaved: (value) => _weight = int.parse(value!),
               ),
               DropdownButtonFormField(
-                decoration: InputDecoration(labelText: 'Gender'),
+                decoration: const InputDecoration(labelText: 'Gender'),
                 items: ['male', 'female'].map((gender) {
                   return DropdownMenuItem(
                     value: gender,
@@ -120,7 +120,7 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
                 },
               ),
               DropdownButtonFormField(
-                decoration: InputDecoration(labelText: 'Activity Level'),
+                decoration: const InputDecoration(labelText: 'Activity Level'),
                 items: {
                   'Sedentary': 1.2,
                   'Lightly Active': 1.375,

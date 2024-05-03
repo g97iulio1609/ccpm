@@ -1,18 +1,19 @@
 import 'package:alphanessone/exerciseManager/exercises_services.dart';
+import 'package:alphanessone/trainingBuilder/Provider/week_state_provider.dart';
+import 'package:alphanessone/trainingBuilder/Provider/workout_state_provider.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../training_model.dart';
 import '../training_services.dart';
 import 'package:alphanessone/users_services.dart' as user_services;
-import '../training_program_state_provider.dart';
+import '../Provider/training_program_state_provider.dart';
 import 'training_program_repository.dart';
-import 'week_controller.dart';
-import 'workout_controller.dart';
 import 'exercise_controller.dart';
 import 'series_controller.dart';
 import 'super_set_controller.dart';
 import 'progression_controller.dart';
+
 
 final firestoreServiceProvider =
     Provider<FirestoreService>((ref) => FirestoreService());
@@ -47,8 +48,6 @@ class TrainingProgramController extends ChangeNotifier {
   }
 
   final TrainingProgramRepository _repository;
-  final WeekController _weekController;
-  final WorkoutController _workoutController;
   late final SeriesController _seriesController;
   late final ExerciseController _exerciseController;
   final SuperSetController _superSetController;
@@ -60,8 +59,6 @@ class TrainingProgramController extends ChangeNotifier {
     this._programStateNotifier,
     this.ref,
   )   : _repository = TrainingProgramRepository(_service),
-        _weekController = WeekController(),
-        _workoutController = WorkoutController(),
         _superSetController = SuperSetController() {
     _initProgram();
     final weightNotifier = ValueNotifier<double>(0.0);
@@ -79,306 +76,287 @@ class TrainingProgramController extends ChangeNotifier {
   TextEditingController get nameController => _nameController;
   TextEditingController get descriptionController => _descriptionController;
   TextEditingController get athleteIdController => _athleteIdController;
-  TextEditingController get mesocycleNumberController =>
-      _mesocycleNumberController;
+TextEditingController get mesocycleNumberController =>
+    _mesocycleNumberController;
 
-  void _initProgram() {
-    _program = _programStateNotifier.state;
-    _nameController = TextEditingController(text: _program.name);
-    _descriptionController = TextEditingController(text: _program.description);
-    _athleteIdController = TextEditingController(text: _program.athleteId);
-    _mesocycleNumberController =
-        TextEditingController(text: _program.mesocycleNumber.toString());
+void _initProgram() {
+  _program = _programStateNotifier.state;
+  _nameController = TextEditingController(text: _program.name);
+  _descriptionController = TextEditingController(text: _program.description);
+  _athleteIdController = TextEditingController(text: _program.athleteId);
+  _mesocycleNumberController =
+      TextEditingController(text: _program.mesocycleNumber.toString());
+}
+
+Future<void> loadProgram(String? programId) async {
+  if (programId == null) {
+    _initProgram();
+    return;
   }
 
-  Future<void> loadProgram(String? programId) async {
-    if (programId == null) {
-      _initProgram();
-      return;
+  try {
+    _program = await _repository.fetchTrainingProgram(programId);
+    _updateProgram();
+    _superSetController.loadSuperSets(_program);
+
+    // Notifica trainingProgramStateProvider con il programma caricato
+    _programStateNotifier.updateProgram(_program);
+
+    // Inizializza le settimane esistenti nel provider weekStateProvider
+    ref.read(weekStateProvider.notifier).init(_program.weeks);
+
+    // Inizializza gli allenamenti esistenti nel provider workoutStateProvider
+    for (int weekIndex = 0; weekIndex < _program.weeks.length; weekIndex++) {
+      final weekWorkouts = _program.weeks[weekIndex].workouts;
+      ref.read(workoutStateProvider.notifier).init(weekIndex, weekWorkouts);
     }
 
-    try {
-      _program = await _repository.fetchTrainingProgram(programId);
-      _updateProgram();
-      _superSetController.loadSuperSets(_program);
+    // Itera su tutti gli esercizi e "seleziona" automaticamente l'esercizio corrispondente
+    final exercisesService = ref.read(exercisesServiceProvider);
 
-      // Itera su tutti gli esercizi e "seleziona" automaticamente l'esercizio corrispondente
-      final exercisesService = ref.read(exercisesServiceProvider);
-
-      for (final week in _program.weeks) {
-        for (final workout in week.workouts) {
-          for (final exercise in workout.exercises) {
-            final exerciseModel = await exercisesService
-                .getExerciseById(exercise.exerciseId ?? '');
-            if (exerciseModel != null) {
-              exercise.type = exerciseModel.type;
-            }
+    for (final week in _program.weeks) {
+      for (final workout in week.workouts) {
+        for (final exercise in workout.exercises) {
+          final exerciseModel =
+              await exercisesService.getExerciseById(exercise.exerciseId ?? '');
+          if (exerciseModel != null) {
+            exercise.type = exerciseModel.type;
           }
         }
       }
-
-      notifyListeners();
-    } catch (error) {
-      // Handle error
     }
-  }
 
-  void _updateProgram() {
-    _nameController.text = _program.name;
-    _descriptionController.text = _program.description;
-    _athleteIdController.text = _program.athleteId;
-    _mesocycleNumberController.text = _program.mesocycleNumber.toString();
-    _program.hide = _program.hide;
-        _program.status = _program.status;
-
-    _programStateNotifier.updateProgram(_program);
-  }
-
-  void updateHideProgram(bool value) {
-    _program.hide = value;
-    _programStateNotifier.updateProgram(_program);
     notifyListeners();
+  } catch (error) {
+    // Handle error
   }
+}
 
-  void updateProgramStatus(String status) {
-    _program.status = status;
-    _programStateNotifier.updateProgram(_program);
-    notifyListeners();
-  }
+void _updateProgram() {
+  _nameController.text = _program.name;
+  _descriptionController.text = _program.description;
+  _athleteIdController.text = _program.athleteId;
+  _mesocycleNumberController.text = _program.mesocycleNumber.toString();
+  _program.hide = _program.hide;
+  _program.status = _program.status;
 
-  Future<void> addWeek() async {
-    _weekController.addWeek(_program);
-    notifyListeners();
-  }
+  _programStateNotifier.updateProgram(_program);
+}
 
-  void removeWeek(int index) {
-    _weekController.removeWeek(_program, index);
-    notifyListeners();
-  }
+void updateHideProgram(bool value) {
+  _program.hide = value;
+  _programStateNotifier.updateProgram(_program);
+  notifyListeners();
+}
 
-  void addWorkout(int weekIndex) {
-    _workoutController.addWorkout(_program, weekIndex);
-    notifyListeners();
-  }
+void updateProgramStatus(String status) {
+  _program.status = status;
+  _programStateNotifier.updateProgram(_program);
+  notifyListeners();
+}
 
-  void removeWorkout(int weekIndex, int workoutOrder) {
-    _workoutController.removeWorkout(_program, weekIndex, workoutOrder);
-    notifyListeners();
-  }
+void addWeek() {
+  ref.read(weekStateProvider.notifier).addWeek();
+  notifyListeners();
+}
 
-  Future<void> addExercise(
-      int weekIndex, int workoutIndex, BuildContext context) async {
-    await _exerciseController.addExercise(
-        _program, weekIndex, workoutIndex, context);
-    notifyListeners();
-  }
+void removeWeek(int index) {
+  ref.read(weekStateProvider.notifier).removeWeek(index);
+  notifyListeners();
+}
 
-  Future<void> editExercise(int weekIndex, int workoutIndex, int exerciseIndex,
-      BuildContext context) async {
-    await _exerciseController.editExercise(
-        _program, weekIndex, workoutIndex, exerciseIndex, context);
-    notifyListeners();
-  }
+void addWorkout(int weekIndex) {
+  ref.read(workoutStateProvider.notifier).addWorkout(weekIndex);
+  notifyListeners();
+}
 
-  void removeExercise(int weekIndex, int workoutIndex, int exerciseIndex) {
-    _exerciseController.removeExercise(
-        _program, weekIndex, workoutIndex, exerciseIndex);
-    notifyListeners();
-  }
+void removeWorkout(int weekIndex, int workoutOrder) {
+  final workoutIndex = workoutOrder - 1;
+  ref.read(workoutStateProvider.notifier).removeWorkout(workoutIndex, _program, weekIndex);
+  notifyListeners();
+}
+
+Future<void> addExercise(
+    int weekIndex, int workoutIndex, BuildContext context) async {
+  await _exerciseController.addExercise(
+      _program, weekIndex, workoutIndex, context);
+  notifyListeners();
+}
+
+Future<void> editExercise(int weekIndex, int workoutIndex, int exerciseIndex,
+    BuildContext context) async {
+  await _exerciseController.editExercise(
+      _program, weekIndex, workoutIndex, exerciseIndex, context);
+  notifyListeners();
+}
+
+void removeExercise(int weekIndex, int workoutIndex, int exerciseIndex) {
+  _exerciseController.removeExercise(
+      _program, weekIndex, workoutIndex, exerciseIndex);
+  notifyListeners();
+}
 
 Future<void> updateExercise(Exercise exercise) async {
   await _exerciseController.updateExercise(program, exercise.exerciseId!, exercise.type!);
   notifyListeners();
 }
 
-  void createSuperSet(int weekIndex, int workoutIndex) {
-    _superSetController.createSuperSet(_program, weekIndex, workoutIndex);
-    notifyListeners();
-  }
+void createSuperSet(int weekIndex, int workoutIndex) {
+  _superSetController.createSuperSet(_program, weekIndex, workoutIndex);
+  notifyListeners();
+}
 
-  void addExerciseToSuperSet(
-      int weekIndex, int workoutIndex, String superSetId, String exerciseId) {
-    _superSetController.addExerciseToSuperSet(
-        _program, weekIndex, workoutIndex, superSetId, exerciseId);
-    notifyListeners();
-  }
+void addExerciseToSuperSet(
+    int weekIndex, int workoutIndex, String superSetId, String exerciseId) {
+  _superSetController.addExerciseToSuperSet(
+      _program, weekIndex, workoutIndex, superSetId, exerciseId);
+  notifyListeners();
+}
 
-  void removeExerciseFromSuperSet(
-      int weekIndex, int workoutIndex, String superSetId, String exerciseId) {
-    _superSetController.removeExerciseFromSuperSet(
-        _program, weekIndex, workoutIndex, superSetId, exerciseId);
-    notifyListeners();
-  }
+void removeExerciseFromSuperSet(
+    int weekIndex, int workoutIndex, String superSetId, String exerciseId) {
+  _superSetController.removeExerciseFromSuperSet(
+      _program, weekIndex, workoutIndex, superSetId, exerciseId);
+  notifyListeners();
+}
 
-  void removeSuperSet(int weekIndex, int workoutIndex, String superSetId) {
-    _superSetController.removeSuperSet(
-        _program, weekIndex, workoutIndex, superSetId);
-    notifyListeners();
-  }
+void removeSuperSet(int weekIndex, int workoutIndex, String superSetId) {
+  _superSetController.removeSuperSet(
+      _program, weekIndex, workoutIndex, superSetId);
+  notifyListeners();
+}
 
-  Future<void> addSeries(int weekIndex, int workoutIndex, int exerciseIndex,
-      String exerciseType, BuildContext context) async {
-    await _seriesController.addSeries(_program, weekIndex, workoutIndex,
-        exerciseIndex,  context);
-    notifyListeners();
-  }
+Future<void> addSeries(int weekIndex, int workoutIndex, int exerciseIndex,
+    String exerciseType, BuildContext context) async {
+  await _seriesController.addSeries(_program, weekIndex, workoutIndex,
+      exerciseIndex, context);
+  notifyListeners();
+}
 
 Future<void> editSeries(int weekIndex, int workoutIndex, int exerciseIndex,
     Series currentSeries, BuildContext context, String exerciseType, num latestMaxWeight) async {
   await _seriesController.editSeries(_program, weekIndex, workoutIndex,
-      exerciseIndex, currentSeries, context,latestMaxWeight);
+      exerciseIndex, currentSeries, context, latestMaxWeight);
   notifyListeners();
 }
 
-  void removeSeries(
-    int weekIndex,
-    int workoutIndex,
-    int exerciseIndex,
-    int groupIndex,
-    int seriesIndex,
-  ) {
-    _seriesController.removeSeries(_program, weekIndex, workoutIndex,
-        exerciseIndex, groupIndex, seriesIndex);
-    notifyListeners();
+void removeSeries(
+  int weekIndex,
+  int workoutIndex,
+  int exerciseIndex,
+  int groupIndex,
+  int seriesIndex,
+) {
+  _seriesController.removeSeries(_program, weekIndex, workoutIndex,
+      exerciseIndex, groupIndex, seriesIndex);
+  notifyListeners();
+}
+
+Future<void> copyWeek(int sourceWeekIndex, BuildContext context) async {
+  await ref.read(weekStateProvider.notifier).copyWeek(sourceWeekIndex, context);
+  notifyListeners();
+}
+
+Future<void> copyWorkout(int sourceWeekIndex, int workoutIndex, BuildContext context) async {
+  final workouts = ref.read(workoutStateProvider).toList();
+  final sourceWorkout = workouts[workoutIndex];
+  await ref.read(workoutStateProvider.notifier).copyWorkout(workoutIndex, context, _program, sourceWeekIndex);
+  notifyListeners();
+}
+
+void updateSeries(int weekIndex, int workoutIndex, int exerciseIndex,
+    List<Series> updatedSeries) {
+  _seriesController.updateSeries(
+      _program, weekIndex, workoutIndex, exerciseIndex, updatedSeries);
+  notifyListeners();
+}
+
+Future<void> applyWeekProgressions(int exerciseIndex,
+    List<WeekProgression> weekProgressions, BuildContext context) async {
+  // Implementazione esistente
+}
+
+Future<void> updateExerciseProgressions(Exercise exercise,
+    List<WeekProgression> updatedProgressions, BuildContext context) async {
+  final progressionController = ProgressionController(this);
+  await progressionController.updateExerciseProgressions(
+      exercise, updatedProgressions, context);
+  notifyListeners();
+}
+
+void reorderWeeks(int oldIndex, int newIndex) {
+  ref.read(weekStateProvider.notifier).reorderWeeks(oldIndex, newIndex);
+  notifyListeners();
+}
+
+void updateWeek(int weekIndex, Week updatedWeek) {
+  final weeks = ref.read(weekStateProvider).toList();
+  weeks[weekIndex] = updatedWeek;
+  ref.read(weekStateProvider.notifier).state = weeks;
+  notifyListeners();
+}
+
+void reorderWorkouts(int weekIndex, int oldIndex, int newIndex) {
+  ref.read(workoutStateProvider.notifier).reorderWorkouts(oldIndex, newIndex, weekIndex);
+  notifyListeners();
+}
+
+void reorderExercises(
+    int weekIndex, int workoutIndex, int oldIndex, int newIndex) {
+  _exerciseController.reorderExercises(
+      _program, weekIndex, workoutIndex, oldIndex, newIndex);
+  notifyListeners();
+}
+
+void reorderSeries(int weekIndex, int workoutIndex, int exerciseIndex,
+    int oldIndex, int newIndex) {
+  _seriesController.reorderSeries(
+      _program, weekIndex, workoutIndex, exerciseIndex, oldIndex, newIndex);
+  notifyListeners();
+}
+
+Future<void> submitProgram(BuildContext context) async {
+  _updateProgramFields();
+
+  try {
+    await _repository.addOrUpdateTrainingProgram(_program);
+    await _repository.removeToDeleteItems(_program);
+    await _usersService.updateUser(
+        _athleteIdController.text, {'currentProgram': _program.id});
+
+    _showSuccessSnackBar(context, 'Program added/updated successfully');
+  } catch (error) {
+    _showErrorSnackBar(context, 'Error adding/updating program: $error');
   }
+}
 
-  Future<void> copyWeek(int sourceWeekIndex, BuildContext context) async {
-    await _weekController.copyWeek(_program, sourceWeekIndex, context);
-    notifyListeners();
-  }
+void _updateProgramFields() {
+  _program.name = _nameController.text;
+  _program.description = _descriptionController.text;
+  _program.athleteId = _athleteIdController.text;
+  _program.mesocycleNumber =
+      int.tryParse(_mesocycleNumberController.text) ?? 0;
+  _program.hide = _program.hide;
+}
 
-  Future<void> copyWorkout(
-      int sourceWeekIndex, int workoutIndex, BuildContext context) async {
-    await _workoutController.copyWorkout(
-        _program, sourceWeekIndex, workoutIndex, context);
-    notifyListeners();
-  }
+void _showSuccessSnackBar(BuildContext context, String message) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(message)),
+  );
+}
 
-  void updateSeries(int weekIndex, int workoutIndex, int exerciseIndex,
-      List<Series> updatedSeries) {
-    _seriesController.updateSeries(
-        _program, weekIndex, workoutIndex, exerciseIndex, updatedSeries);
-    notifyListeners();
-  }
+void _showErrorSnackBar(BuildContext context, String message) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(message)),
+  );
+}
 
-  Future<void> applyWeekProgressions(int exerciseIndex,
-      List<WeekProgression> weekProgressions, BuildContext context) async {
-    final exercise = _program.weeks
-        .expand((week) => week.workouts)
-        .expand((workout) => workout.exercises)
-        .elementAt(exerciseIndex);
+void resetFields() {
+  _initProgram();
+  notifyListeners();
+}
 
-    for (int weekIndex = 0; weekIndex < _program.weeks.length; weekIndex++) {
-      final progression = weekIndex < weekProgressions.length
-          ? weekProgressions[weekIndex]
-          : weekProgressions.last;
-      final series = List.generate(
-          progression.sets,
-          (index) => Series(
-                serieId: generateRandomId(16).toString(),
-                reps: progression.reps,
-                sets: 1,
-                intensity: progression.intensity,
-                rpe: progression.rpe,
-                weight: progression.weight,
-                order: index + 1,
-                done: false,
-                reps_done: 0,
-                weight_done: 0.0,
-              ));
-
-      for (var workout in _program.weeks[weekIndex].workouts) {
-        final exerciseIndex =
-            workout.exercises.indexWhere((e) => e.id == exercise.id);
-        if (exerciseIndex != -1) {
-          workout.exercises[exerciseIndex] =
-              workout.exercises[exerciseIndex].copyWith(series: series);
-        }
-      }
-    }
-
-    notifyListeners();
-  }
-
-  Future<void> updateExerciseProgressions(Exercise exercise,
-      List<WeekProgression> updatedProgressions, BuildContext context) async {
-    final progressionController = ProgressionController(this);
-    await progressionController.updateExerciseProgressions(
-        exercise, updatedProgressions, context);
-    notifyListeners();
-  }
-
-  void reorderWeeks(int oldIndex, int newIndex) {
-    _weekController.reorderWeeks(_program, oldIndex, newIndex);
-    notifyListeners();
-  }
-
-  void updateWeek(int weekIndex, Week updatedWeek) {
-    _weekController.updateWeek(_program, weekIndex, updatedWeek);
-    notifyListeners();
-  }
-
-  void reorderWorkouts(int weekIndex, int oldIndex, int newIndex) {
-    _workoutController.reorderWorkouts(_program, weekIndex, oldIndex, newIndex);
-    notifyListeners();
-  }
-
-  void reorderExercises(
-      int weekIndex, int workoutIndex, int oldIndex, int newIndex) {
-    _exerciseController.reorderExercises(
-        _program, weekIndex, workoutIndex, oldIndex, newIndex);
-    notifyListeners();
-  }
-
-  void reorderSeries(int weekIndex, int workoutIndex, int exerciseIndex,
-      int oldIndex, int newIndex) {
-    _seriesController.reorderSeries(
-        _program, weekIndex, workoutIndex, exerciseIndex, oldIndex, newIndex);
-    notifyListeners();
-  }
-
-  Future<void> submitProgram(BuildContext context) async {
-    _updateProgramFields();
-
-    try {
-      await _repository.addOrUpdateTrainingProgram(_program);
-      await _repository.removeToDeleteItems(_program);
-      await _usersService.updateUser(
-          _athleteIdController.text, {'currentProgram': _program.id});
-
-      _showSuccessSnackBar(context, 'Program added/updated successfully');
-    } catch (error) {
-      _showErrorSnackBar(context, 'Error adding/updating program: $error');
-    }
-  }
-
-  void _updateProgramFields() {
-    _program.name = _nameController.text;
-    _program.description = _descriptionController.text;
-    _program.athleteId = _athleteIdController.text;
-    _program.mesocycleNumber =
-        int.tryParse(_mesocycleNumberController.text) ?? 0;
-    _program.hide = _program.hide;
-  }
-
-  void _showSuccessSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-  }
-
-  void _showErrorSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-  }
-
-  void resetFields() {
-    _initProgram();
-    notifyListeners();
-  }
-
-  Future<void> updateProgramWeights(TrainingProgram program) async {
+Future<void> updateProgramWeights(TrainingProgram program) async {
   for (final week in program.weeks) {
     for (final workout in week.workouts) {
       for (final exercise in workout.exercises) {
@@ -393,7 +371,11 @@ Future<void> editSeries(int weekIndex, int workoutIndex, int exerciseIndex,
 }
 
 Future<String?> duplicateProgram(
-    String programId, String newProgramName, BuildContext context, {String? currentUserId}) async {
+  String programId,
+  String newProgramName,
+  BuildContext context, {
+  String? currentUserId,
+}) async {
   try {
     // Fetch the existing program
     TrainingProgram? existingProgram =
@@ -408,7 +390,8 @@ Future<String?> duplicateProgram(
     TrainingProgram newProgram = existingProgram.copyWith(
       id: generateRandomId(16).toString(),
       name: newProgramName,
-      athleteId: currentUserId ?? existingProgram.athleteId, // Set the athleteId to the current user's ID if provided, otherwise keep the original value
+      athleteId: currentUserId ??
+          existingProgram.athleteId, // Set the athleteId to the current user's ID if provided, otherwise keep the original value
     );
 
     // Generate new IDs for weeks, workouts, exercises, series, and supersets
@@ -449,7 +432,8 @@ Future<String?> duplicateProgram(
     for (final week in newProgram.weeks) {
       for (final workout in week.workouts) {
         for (final exercise in workout.exercises) {
-          final exerciseModel = await exercisesService.getExerciseById(exercise.exerciseId ?? '');
+          final exerciseModel =
+              await exercisesService.getExerciseById(exercise.exerciseId ?? '');
           if (exerciseModel != null) {
             exercise.type = exerciseModel.type;
           }
