@@ -145,7 +145,7 @@ class SeriesUtils {
     }
   }
 
-  static double calculateIntensityFromWeight(double weight, double maxWeight) {
+  static num calculateIntensityFromWeight(num weight, num maxWeight) {
     if (maxWeight == 0) return 0;
     return (weight / maxWeight) * 100;
   }
@@ -312,7 +312,7 @@ static void updateWeightFromIntensity(
 void updateIntensityFromWeight(
   TextEditingController weightController,
   TextEditingController intensityController,
-  double latestMaxWeight, // Utilizza il parametro latestMaxWeight
+  num latestMaxWeight, // Utilizza il parametro latestMaxWeight
 ) {
   final weight = double.tryParse(weightController.text) ?? 0;
   if (weight > 0 && latestMaxWeight > 0) {
