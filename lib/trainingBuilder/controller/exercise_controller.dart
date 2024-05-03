@@ -93,7 +93,7 @@ class ExerciseController extends ChangeNotifier {
         for (final exercise in workout.exercises) {
           if (exercise.exerciseId == exerciseId) {
             _updateExerciseWeights(
-                exercise, newMaxWeight!.toDouble(), exerciseType);
+                exercise, newMaxWeight.toDouble(), exerciseType);
           }
         }
       }
@@ -107,7 +107,7 @@ class ExerciseController extends ChangeNotifier {
 
     final exercise = _findExerciseById(program, exerciseId);
     if (exercise != null) {
-      _updateExerciseWeights(exercise, newMaxWeight!.toDouble(), exerciseType);
+      _updateExerciseWeights(exercise, newMaxWeight.toDouble(), exerciseType);
     }
   }
 
@@ -126,7 +126,6 @@ class ExerciseController extends ChangeNotifier {
 
   void _updateExerciseWeights(
       Exercise exercise, num newMaxWeight, String exerciseType) {
-
     _updateSeriesWeights(exercise.series, newMaxWeight, exerciseType);
     if (exercise.weekProgressions != null &&
         exercise.weekProgressions.isNotEmpty) {
@@ -138,8 +137,6 @@ class ExerciseController extends ChangeNotifier {
   void _updateSeriesWeights(
       List<Series>? series, num maxWeight, String exerciseType) {
     if (series != null) {
-
-
       for (final item in series) {
         final intensity =
             item.intensity.isNotEmpty ? double.tryParse(item.intensity) : null;
@@ -147,7 +144,6 @@ class ExerciseController extends ChangeNotifier {
         if (intensity != null) {
           final calculatedWeight =
               calculateWeightFromIntensity(maxWeight, intensity);
-
 
           item.weight = roundWeight(calculatedWeight, exerciseType);
         }
@@ -210,5 +206,67 @@ class ExerciseController extends ChangeNotifier {
     program.weeks[weekIndex].workouts[workoutIndex].exercises
         .insert(newIndex, exercise);
     _updateExerciseOrders(program, weekIndex, workoutIndex, newIndex);
+  }
+
+  void duplicateExercise(
+    TrainingProgram program,
+    int weekIndex,
+    int workoutIndex,
+    int exerciseIndex,
+  ) {
+    final sourceExercise =
+        program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+    final duplicatedExercise = _copyExercise(sourceExercise);
+
+    // Aggiorna l'ordine del nuovo esercizio
+    duplicatedExercise.order =
+        program.weeks[weekIndex].workouts[workoutIndex].exercises.length + 1;
+
+    // Aggiungi il nuovo esercizio alla stessa posizione
+    program.weeks[weekIndex].workouts[workoutIndex].exercises.add(duplicatedExercise);
+  }
+
+  Exercise _copyExercise(Exercise sourceExercise) {
+    final copiedSeries = sourceExercise.series.map((series) => _copySeries(series)).toList();
+
+    return sourceExercise.copyWith(
+      id: generateRandomId(16).toString(),
+      exerciseId: sourceExercise.exerciseId,
+      series: copiedSeries,
+    );
+  }
+
+  Series _copySeries(Series sourceSeries) {
+    return sourceSeries.copyWith(
+      serieId: generateRandomId(16).toString(),
+      done: false,
+      reps_done: 0,
+      weight_done: 0.0,
+    );
+  }
+
+  void moveExercise(
+    TrainingProgram program,
+    int sourceWeekIndex,
+    int sourceWorkoutIndex,
+    int sourceExerciseIndex,
+    int destinationWeekIndex,
+    int destinationWorkoutIndex,
+  ) {
+    final exercise = program.weeks[sourceWeekIndex].workouts[sourceWorkoutIndex]
+        .exercises[sourceExerciseIndex];
+
+    // Rimuovi l'esercizio dalla posizione originale
+    program.weeks[sourceWeekIndex].workouts[sourceWorkoutIndex].exercises
+        .removeAt(sourceExerciseIndex);
+
+    // Aggiorna l'ordine dell'esercizio spostato
+    exercise.order =
+        program.weeks[destinationWeekIndex].workouts[destinationWorkoutIndex].exercises.length +
+            1;
+
+    // Aggiungi l'esercizio alla nuova posizione
+    program.weeks[destinationWeekIndex].workouts[destinationWorkoutIndex].exercises
+        .add(exercise);
   }
 }

@@ -330,6 +330,36 @@ Future<void> editSeries(int weekIndex, int workoutIndex, int exerciseIndex,
     notifyListeners();
   }
 
+
+  Future<void> duplicateExercise(
+    int weekIndex, int workoutIndex, int exerciseIndex) async {
+  _exerciseController.duplicateExercise(
+    _program,
+    weekIndex,
+    workoutIndex,
+    exerciseIndex,
+  );
+  notifyListeners();
+}
+
+Future<void> moveExercise(
+    int sourceWeekIndex,
+    int sourceWorkoutIndex,
+    int sourceExerciseIndex,
+    int destinationWeekIndex,
+    int destinationWorkoutIndex,
+) async {
+  _exerciseController.moveExercise(
+    _program,
+    sourceWeekIndex,
+    sourceWorkoutIndex,
+    sourceExerciseIndex,
+    destinationWeekIndex,
+    destinationWorkoutIndex,
+  );
+  notifyListeners();
+}
+
   void reorderSeries(int weekIndex, int workoutIndex, int exerciseIndex,
       int oldIndex, int newIndex) {
     _seriesController.reorderSeries(

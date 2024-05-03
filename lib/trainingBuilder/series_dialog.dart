@@ -15,7 +15,7 @@ class SeriesDialog extends StatefulWidget {
   final num latestMaxWeight;
   final ValueNotifier<double> weightNotifier;
 
-  const SeriesDialog({
+   const SeriesDialog({
     required this.usersService,
     required this.athleteId,
     required this.exerciseId,
@@ -40,7 +40,6 @@ class _SeriesDialogState extends State<SeriesDialog> {
   late TextEditingController _intensityController;
   late TextEditingController _rpeController;
   late TextEditingController _weightController;
-  FocusNode weightFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -66,8 +65,6 @@ class _SeriesDialogState extends State<SeriesDialog> {
     _intensityController.dispose();
     _rpeController.dispose();
     _weightController.dispose();
-    weightFocusNode.dispose();
-
     super.dispose();
   }
 
@@ -160,16 +157,21 @@ class _SeriesDialogState extends State<SeriesDialog> {
               ],
               decoration: const InputDecoration(labelText: 'Peso (kg)'),
               onChanged: (value) {
-                setState(() {
-                  final newWeight = double.tryParse(value) ?? 0;
-                  widget.weightNotifier.value = newWeight;
-                  SeriesUtils().updateIntensityFromWeight(
-                    _weightController,
-                    _intensityController,
-                    latestMaxWeight
-                        .toDouble(), // Passa il valore corretto di latestMaxWeight
-                  );
-                });
+                final newWeight = double.tryParse(value) ?? 0;
+                widget.weightNotifier.value = newWeight;
+                SeriesUtils().updateIntensityFromWeight(
+                  _weightController,
+                  _intensityController,
+                  latestMaxWeight
+                      .toDouble(), // Passa il valore corretto di latestMaxWeight
+                );
+                SeriesUtils.updateRPE(
+                  _repsController,
+                  _weightController,
+                  _rpeController,
+                  _intensityController,
+                  latestMaxWeight, // Passa il valore corretto di latestMaxWeight
+                );
               },
             ),
           ],
