@@ -32,13 +32,12 @@ class TrainingGalleryScreen extends HookConsumerWidget {
     Stream<QuerySnapshot> getPublicProgramsStream() {
       final query = FirebaseFirestore.instance
           .collection('programs')
-          .where('hide', isEqualTo: false);
+          .where('status', isEqualTo: 'public');
 
       return query.snapshots();
     }
 
     return Scaffold(
-  
       body: Column(
         children: [
           Expanded(
@@ -54,7 +53,13 @@ class TrainingGalleryScreen extends HookConsumerWidget {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                final documents = snapshot.data!.docs;
+                final documents = snapshot.data?.docs ?? [];
+
+                if (documents.isEmpty) {
+                  return const Center(
+                    child: Text('Nessun Programma di Allenamento disponibile'),
+                  );
+                }
 
                 return ListView.builder(
                   padding: const EdgeInsets.all(16.0),

@@ -370,7 +370,7 @@ class MaxRMDashboard extends HookConsumerWidget {
                       borderRadius: BorderRadius.circular(12),
                       onTap: () => showEditDialog(
                         context,
-                        record!,
+                        record,
                         exercise,
                         userId,
                         usersService,

@@ -20,7 +20,7 @@ class TrainingProgramPage extends HookConsumerWidget {
     super.key,
     this.programId,
     required this.userId,
-    this.weekIndex, 
+    this.weekIndex,
     this.workoutIndex,
   });
 
@@ -93,7 +93,7 @@ class TrainingProgramPage extends HookConsumerWidget {
                           controller: controller.descriptionController,
                           maxLines: 3,
                           decoration: InputDecoration(
-                            labelText: 'Descrizione',  
+                            labelText: 'Descrizione',
                             labelStyle: const TextStyle(color: Colors.white),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
@@ -119,15 +119,16 @@ class TrainingProgramPage extends HookConsumerWidget {
                               style: TextStyle(fontSize: 18),
                             ),
                             style: ElevatedButton.styleFrom(
-                              foregroundColor: Colors.black, backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
+                              backgroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),
-                            ), 
+                            ),
                           ),
                         if (userRole == 'admin') const SizedBox(height: 24),
-                        TextFormField(  
+                        TextFormField(
                           controller: controller.mesocycleNumberController,
                           decoration: InputDecoration(
                             labelText: 'Numero Mesociclo',
@@ -143,7 +144,7 @@ class TrainingProgramPage extends HookConsumerWidget {
                             filled: true,
                             fillColor: Colors.white.withOpacity(0.1),
                           ),
-                          style: const TextStyle(color: Colors.white), 
+                          style: const TextStyle(color: Colors.white),
                           keyboardType: TextInputType.number,
                           validator: (value) => value?.isEmpty ?? true ? 'Inserisci un numero di mesociclo' : null,
                         ),
@@ -163,7 +164,26 @@ class TrainingProgramPage extends HookConsumerWidget {
                               onChanged: (value) => controller.updateHideProgram(value),
                               activeColor: Colors.white,
                               inactiveTrackColor: Colors.white.withOpacity(0.3),
-                            ), 
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            const Text(
+                              'Programma Pubblico',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const Spacer(),
+                            Switch(
+                              value: controller.program.status == 'public',
+                              onChanged: (value) => controller.updateProgramStatus(value ? 'public' : 'private'),
+                              activeColor: Colors.white,
+                              inactiveTrackColor: Colors.white.withOpacity(0.3),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 32),
@@ -172,7 +192,7 @@ class TrainingProgramPage extends HookConsumerWidget {
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,  
+                            color: Colors.white,
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -191,9 +211,10 @@ class TrainingProgramPage extends HookConsumerWidget {
                                 label: const Text(
                                   'Aggiungi Settimana',
                                   style: TextStyle(fontSize: 18),
-                                ),  
+                                ),
                                 style: ElevatedButton.styleFrom(
-                                  foregroundColor: Colors.white, backgroundColor: Colors.white.withOpacity(0.1),
+                                  foregroundColor: Colors.white,
+                                  backgroundColor: Colors.white.withOpacity(0.1),
                                   padding: const EdgeInsets.symmetric(vertical: 16),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
@@ -204,17 +225,18 @@ class TrainingProgramPage extends HookConsumerWidget {
                             const SizedBox(width: 16),
                             Expanded(
                               child: ElevatedButton.icon(
-                                onPressed: () => controller.submitProgram(context),  
+                                onPressed: () => controller.submitProgram(context),
                                 icon: const Icon(Icons.save),
                                 label: const Text(
                                   'Salva Programma',
                                   style: TextStyle(fontSize: 18),
                                 ),
                                 style: ElevatedButton.styleFrom(
-                                  foregroundColor: Colors.black, backgroundColor: Colors.white,
+                                  foregroundColor: Colors.black,
+                                  backgroundColor: Colors.white,
                                   padding: const EdgeInsets.symmetric(vertical: 16),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),  
+                                    borderRadius: BorderRadius.circular(16),
                                   ),
                                 ),
                               ),
@@ -224,7 +246,7 @@ class TrainingProgramPage extends HookConsumerWidget {
                         const SizedBox(height: 48),
                       ],
                     ),
-                  ),  
+                  ),
                 )
           : const Center(
               child: CircularProgressIndicator(
@@ -237,7 +259,7 @@ class TrainingProgramPage extends HookConsumerWidget {
   void _showAthleteSelectionDialog(BuildContext context, WidgetRef ref, TrainingProgramController controller) {
     showDialog(
       context: context,
-      builder: (context) => AthleteSelectionDialog(controller: controller),  
+      builder: (context) => AthleteSelectionDialog(controller: controller),
     );
   }
 }

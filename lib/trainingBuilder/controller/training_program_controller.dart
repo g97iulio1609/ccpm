@@ -129,11 +129,19 @@ class TrainingProgramController extends ChangeNotifier {
     _athleteIdController.text = _program.athleteId;
     _mesocycleNumberController.text = _program.mesocycleNumber.toString();
     _program.hide = _program.hide;
+        _program.status = _program.status;
+
     _programStateNotifier.updateProgram(_program);
   }
 
   void updateHideProgram(bool value) {
     _program.hide = value;
+    _programStateNotifier.updateProgram(_program);
+    notifyListeners();
+  }
+
+  void updateProgramStatus(String status) {
+    _program.status = status;
     _programStateNotifier.updateProgram(_program);
     notifyListeners();
   }
@@ -215,12 +223,12 @@ Future<void> updateExercise(Exercise exercise) async {
     notifyListeners();
   }
 
-  Future<void> editSeries(int weekIndex, int workoutIndex, int exerciseIndex,
-      Series currentSeries, BuildContext context, String exerciseType) async {
-    await _seriesController.editSeries(_program, weekIndex, workoutIndex,
-        exerciseIndex, currentSeries, context);
-    notifyListeners();
-  }
+Future<void> editSeries(int weekIndex, int workoutIndex, int exerciseIndex,
+    Series currentSeries, BuildContext context, String exerciseType, num latestMaxWeight) async {
+  await _seriesController.editSeries(_program, weekIndex, workoutIndex,
+      exerciseIndex, currentSeries, context,latestMaxWeight);
+  notifyListeners();
+}
 
   void removeSeries(
     int weekIndex,
@@ -321,6 +329,36 @@ Future<void> updateExercise(Exercise exercise) async {
         _program, weekIndex, workoutIndex, oldIndex, newIndex);
     notifyListeners();
   }
+
+
+  Future<void> duplicateExercise(
+    int weekIndex, int workoutIndex, int exerciseIndex) async {
+  _exerciseController.duplicateExercise(
+    _program,
+    weekIndex,
+    workoutIndex,
+    exerciseIndex,
+  );
+  notifyListeners();
+}
+
+Future<void> moveExercise(
+    int sourceWeekIndex,
+    int sourceWorkoutIndex,
+    int sourceExerciseIndex,
+    int destinationWeekIndex,
+    int destinationWorkoutIndex,
+) async {
+  _exerciseController.moveExercise(
+    _program,
+    sourceWeekIndex,
+    sourceWorkoutIndex,
+    sourceExerciseIndex,
+    destinationWeekIndex,
+    destinationWorkoutIndex,
+  );
+  notifyListeners();
+}
 
   void reorderSeries(int weekIndex, int workoutIndex, int exerciseIndex,
       int oldIndex, int newIndex) {

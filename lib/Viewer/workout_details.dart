@@ -1,10 +1,12 @@
-// workout_details.dart
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class WorkoutDetails extends StatefulWidget {
+final workoutIdProvider = StateProvider<String?>((ref) => null);
+
+class WorkoutDetails extends ConsumerStatefulWidget {
   final String programId;
   final String userId;
   final String weekId;
@@ -19,17 +21,31 @@ class WorkoutDetails extends StatefulWidget {
   });
 
   @override
-  _WorkoutDetailsState createState() => _WorkoutDetailsState();
+  ConsumerState<WorkoutDetails> createState() => _WorkoutDetailsState();
 }
 
-class _WorkoutDetailsState extends State<WorkoutDetails> {
+class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   bool loading = true;
   List<Map<String, dynamic>> exercises = [];
 
   @override
   void initState() {
     super.initState();
-    fetchExercises();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(workoutIdProvider.notifier).state = widget.workoutId;
+      fetchExercises();
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant WorkoutDetails oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.workoutId != oldWidget.workoutId) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(workoutIdProvider.notifier).state = widget.workoutId;
+        fetchExercises();
+      });
+    }
   }
 
   Future<void> fetchExercises() async {
@@ -64,7 +80,6 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
       loading = false;
     });
 
-    // Avvia l'ascolto dei cambiamenti delle serie per ogni esercizio
     for (final exercise in exercises) {
       final seriesQuery = FirebaseFirestore.instance
           .collection('series')
@@ -88,6 +103,7 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
     final groupedExercises = groupExercisesBySuperSet();
 
     return Scaffold(
+    
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
@@ -308,53 +324,53 @@ class _WorkoutDetailsState extends State<WorkoutDetails> {
   }
 
   Widget buildSuperSetStartButton(List<Map<String, dynamic>> superSetExercises,
-    bool isDarkMode, ColorScheme colorScheme) {
-  final allSeriesCompleted = superSetExercises.every((exercise) =>
-      exercise['series'].every((series) => series['done'] == true));
+      bool isDarkMode, ColorScheme colorScheme) {
+    final allSeriesCompleted = superSetExercises.every((exercise) =>
+        exercise['series'].every((series) => series['done'] == true));
 
-  if (allSeriesCompleted) {
-    return const SizedBox.shrink();
-  }
+    if (allSeriesCompleted) {
+      return const SizedBox.shrink();
+    }
 
-  final firstNotDoneExerciseIndex = superSetExercises.indexWhere((exercise) =>
-      exercise['series'].any((series) => series['done'] != true));
+    final firstNotDoneExerciseIndex = superSetExercises.indexWhere((exercise) =>
+        exercise['series'].any((series) => series['done'] != true));
 
-  return GestureDetector(
-    onTap: () {
-      final exercise = superSetExercises[firstNotDoneExerciseIndex];
-      final firstNotDoneSeriesIndex =
-          exercise['series'].indexWhere((series) => series['done'] != true);
+    return GestureDetector(
+      onTap: () {
+        final exercise = superSetExercises[firstNotDoneExerciseIndex];
+        final firstNotDoneSeriesIndex =
+            exercise['series'].indexWhere((series) => series['done'] != true);
 
-      context.go(
-        '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${exercise['id']}',
-        extra: {
-          'exerciseName': exercise['name'],
-          'exerciseVariant': exercise['variant'],
-          'seriesList': exercise['series'],
-          'startIndex': firstNotDoneSeriesIndex,
-          'superSetExercises': superSetExercises,
-        },
-      );
-    },
-    child: Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-      decoration: BoxDecoration(
-        color: isDarkMode ? colorScheme.primary : colorScheme.secondary,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        'START',
-        style: TextStyle(
-          color: isDarkMode ? colorScheme.onPrimary : colorScheme.onSecondary,
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
+        context.go(
+          '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${exercise['id']}',
+          extra: {
+            'exerciseName': exercise['name'],
+            'exerciseVariant': exercise['variant'],
+            'seriesList': exercise['series'],
+            'startIndex': firstNotDoneSeriesIndex,
+            'superSetExercises': superSetExercises,
+          },
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+        decoration: BoxDecoration(
+          color: isDarkMode ? colorScheme.primary : colorScheme.secondary,
+          borderRadius: BorderRadius.circular(8),
         ),
-        textAlign: TextAlign.center,
+        child: Text(
+          'START',
+          style: TextStyle(
+            color: isDarkMode ? colorScheme.onPrimary : colorScheme.onSecondary,
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+          textAlign: TextAlign.center,
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget buildSeriesHeaderRow(
       bool isDarkMode, ColorScheme colorScheme, TextTheme textTheme) {
