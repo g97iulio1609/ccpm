@@ -1,3 +1,5 @@
+import 'package:alphanessone/users_services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -5,9 +7,18 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'exercise_model.dart';
 import 'exercises_services.dart';
 
+final authProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
 final muscleGroupsProvider = StreamProvider((ref) {
   return FirebaseFirestore.instance.collection('muscleGroups').snapshots().map(
       (snapshot) => snapshot.docs.map((doc) => doc['name'].toString()).toList());
+});
+
+final userServiceProvider = Provider<UsersService>((ref) {
+  return UsersService(ref, FirebaseFirestore.instance, FirebaseAuth.instance);
+});
+final usersStreamProvider = StreamProvider<List<UserModel>>((ref) {
+  final service = ref.watch(userServiceProvider);
+  return service.getUsers();
 });
 
 final exerciseTypesProvider = StreamProvider((ref) {
@@ -28,6 +39,13 @@ class ExercisesList extends HookConsumerWidget {
     final selectedExerciseType = useState<String?>(null);
     final TextEditingController nameController = useTextEditingController();
     final editingExerciseId = useState<String?>(null);
+    final auth = ref.watch(authProvider);
+    final usersService = ref.watch(userServiceProvider);
+    final currentUserId = auth.currentUser?.uid;
+    final currentUserRole = usersService.getCurrentUserRole();
+
+    ExerciseModel? exerciseToEdit;
+    ExerciseModel? exerciseToDelete;
 
     void addOrEditExercise() {
       final data = {
@@ -37,12 +55,21 @@ class ExercisesList extends HookConsumerWidget {
       };
 
       if (editingExerciseId.value != null) {
-        exercisesService.updateExercise(
-          editingExerciseId.value!,
-          data['name']!,
-          data['muscleGroup']!,
-          data['type']!,
-        );
+        if (currentUserRole == 'admin' || (exerciseToEdit?.userId == currentUserId)) {
+          exercisesService.updateExercise(
+            editingExerciseId.value!,
+            data['name']!,
+            data['muscleGroup']!,
+            data['type']!,
+          );
+        } else {
+          exercisesService.addExercise(
+            data['name']!,
+            data['muscleGroup']!,
+            data['type']!,
+            currentUserId ?? '',
+          );
+        }
       } else if (nameController.text.trim().isNotEmpty &&
           selectedMuscleGroup.value != null &&
           selectedExerciseType.value != null) {
@@ -50,6 +77,7 @@ class ExercisesList extends HookConsumerWidget {
           data['name']!,
           data['muscleGroup']!,
           data['type']!,
+          currentUserId ?? '',
         );
       }
 
@@ -57,9 +85,12 @@ class ExercisesList extends HookConsumerWidget {
       selectedMuscleGroup.value = null;
       selectedExerciseType.value = null;
       editingExerciseId.value = null;
+      exerciseToEdit = null;
+      exerciseToDelete = null;
     }
 
     Future<void> editExercise(ExerciseModel exercise) async {
+      exerciseToEdit = exercise;
       nameController.text = exercise.name;
       selectedMuscleGroup.value = exercise.muscleGroup;
       selectedExerciseType.value = exercise.type;
@@ -67,7 +98,13 @@ class ExercisesList extends HookConsumerWidget {
     }
 
     Future<void> deleteExercise(String id) async {
-      await exercisesService.deleteExercise(id);
+      if (currentUserRole == 'admin' || (exerciseToDelete?.userId == currentUserId)) {
+        await exercisesService.deleteExercise(id);
+      }
+    }
+
+    Future<void> approveExercise(String id) async {
+      await exercisesService.approveExercise(id);
     }
 
     return Scaffold(
@@ -195,55 +232,65 @@ class ExercisesList extends HookConsumerWidget {
               style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
             ),
             const SizedBox(height: 24),
-            Expanded(
-              child: StreamBuilder<List<ExerciseModel>>(
-                stream: exercisesService.getExercises(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    final exercises = snapshot.data!;
-                    final filteredExercises = exercises.where((exercise) =>
-                        exercise.name
-                            .toLowerCase()
-                            .contains(searchText.value.toLowerCase())).toList();
+     Expanded(
+  child: StreamBuilder<List<ExerciseModel>>(
+    stream: exercisesService.getExercises(),
+    builder: (context, snapshot) {
+      if (snapshot.hasData) {
+        final exercises = snapshot.data!;
+        final filteredExercises = exercises.where((exercise) =>
+            (exercise.status == 'approved' ||
+                (exercise.status == 'pending' &&
+                    (exercise.userId == currentUserId || currentUserRole == 'admin'))) &&
+            exercise.name
+                .toLowerCase()
+                .contains(searchText.value.toLowerCase())).toList();
 
-                    if (filteredExercises.isEmpty) {
-                      return Center(
-                        child: Text(
-                          'No exercises found.',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                        ),
-                      );
-                    }
+        if (filteredExercises.isEmpty) {
+          return Center(
+            child: Text(
+              'No exercises found.',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+          );
+        }
 
-                    return ListView.builder(
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: filteredExercises.length,
-                      itemBuilder: (context, index) {
-                        final exercise = filteredExercises[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: ExerciseCard(
-                            exercise: exercise,
-                            onEdit: () => editExercise(exercise),
-                            onDelete: () => deleteExercise(exercise.id),
-                          ),
-                        );
-                      },
-                    );
-                  } else if (snapshot.hasError) {
-                    return Center(
-                      child: Text(
-                        'Error: ${snapshot.error}',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                    );
-                  } else {
-                    return const Center(
-                      child: CircularProgressIndicator(),
+        return ListView.builder(
+          physics: const BouncingScrollPhysics(),
+          itemCount: filteredExercises.length,
+          itemBuilder: (context, index) {
+            final exercise = filteredExercises[index];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: ExerciseCard(
+                exercise: exercise,
+                isAdmin: currentUserRole == 'admin',
+                canEdit: currentUserRole == 'admin' || exercise.userId == currentUserId,
+                canDelete: currentUserRole == 'admin' || exercise.userId == currentUserId,
+                onEdit: () => editExercise(exercise),
+                onDelete: () {
+                  exerciseToDelete = exercise;
+                  deleteExercise(exercise.id);
+                },
+                onApprove: () => approveExercise(exercise.id),
+              ),
+            );
+          },
+        );
+      } else if (snapshot.hasError) {
+        return Center(
+          child: Text(
+            'Error: ${snapshot.error}',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+        );
+      } else {
+        return const Center(
+          child: CircularProgressIndicator(),
                     );
                   }
                 },
@@ -260,17 +307,26 @@ class ExerciseCard extends StatelessWidget {
   const ExerciseCard({
     super.key,
     required this.exercise,
+    required this.isAdmin,
+    required this.canEdit,
+    required this.canDelete,
     required this.onEdit,
     required this.onDelete,
+    required this.onApprove,
   });
 
   final ExerciseModel exercise;
+  final bool isAdmin;
+  final bool canEdit;
+  final bool canDelete;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onApprove;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isPending = exercise.status == 'pending';
 
     return Card(
       elevation: 0,
@@ -279,7 +335,7 @@ class ExerciseCard extends StatelessWidget {
       ),
       color: colorScheme.surface,
       child: InkWell(
-        onTap: onEdit,
+        onTap: canEdit ? onEdit : null,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -305,19 +361,36 @@ class ExerciseCard extends StatelessWidget {
                         color: colorScheme.onSurfaceVariant,
                       ),
                     ),
+                    if (isPending)
+                      const Text(
+                        'Pending Approval',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.orange,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                   ],
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.edit),
-                onPressed: onEdit,
-                color: colorScheme.onBackground,
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: onDelete,
-                color: colorScheme.onBackground,
-              ),
+              if (isAdmin && isPending)
+                IconButton(
+                  icon: const Icon(Icons.check),
+                  onPressed: onApprove,
+                  color: Colors.green,
+                ),
+              if (canEdit && !isPending)
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: onEdit,
+                  color: colorScheme.onBackground,
+                ),
+              if (canDelete && !isPending)
+                IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed: onDelete,
+                  color: colorScheme.onBackground,
+                ),
             ],
           ),
         ),

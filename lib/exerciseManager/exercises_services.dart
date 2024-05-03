@@ -17,18 +17,20 @@ class ExercisesService {
     });
   }
 
-Future<ExerciseModel?> getExerciseById(String id) async {
-  final exercises = await getExercises().first;
-  return exercises.firstWhere(
-    (exercise) => exercise.id == id,
-  );
-}
+  Future<ExerciseModel?> getExerciseById(String id) async {
+    final exercises = await getExercises().first;
+    return exercises.firstWhere(
+      (exercise) => exercise.id == id,
+    );
+  }
 
-  Future<void> addExercise(String name, String muscleGroup, String type) async {
+  Future<void> addExercise(String name, String muscleGroup, String type, String userId) async {
     await _firestore.collection('exercises').add({
       'name': name,
       'muscleGroup': muscleGroup,
       'type': type,
+      'status': 'pending',
+      'userId': userId,
     });
   }
 
@@ -51,5 +53,11 @@ Future<ExerciseModel?> getExerciseById(String id) async {
         .limit(1)
         .get();
     return ExerciseModel.fromFirestore(snapshot.docs.first);
+  }
+
+  Future<void> approveExercise(String id) async {
+    await _firestore.collection('exercises').doc(id).update({
+      'status': 'approved',
+    });
   }
 }
