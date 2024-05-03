@@ -7,7 +7,7 @@ import 'package:alphanessone/trainingBuilder/athlete_selection_dialog.dart';
 import 'package:alphanessone/trainingBuilder/List/week_list.dart';
 import 'package:alphanessone/trainingBuilder/List/workout_list.dart';
 import 'package:alphanessone/trainingBuilder/List/exercise_list.dart';
-import 'Provider/training_program_state_provider.dart';
+import 'training_program_state_provider.dart';
 import '../users_services.dart';
 
 class TrainingProgramPage extends HookConsumerWidget {

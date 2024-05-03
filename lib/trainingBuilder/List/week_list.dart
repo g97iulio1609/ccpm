@@ -1,12 +1,10 @@
-// week_list.dart
-import 'package:alphanessone/trainingBuilder/Provider/week_state_provider.dart';
 import 'package:alphanessone/trainingBuilder/training_model.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import '../controller/training_program_controller.dart';
-import '../Provider/training_program_state_provider.dart';
+import '../training_program_state_provider.dart';
 import '../reorder_dialog.dart';
 
 class TrainingProgramWeekList extends ConsumerWidget {
@@ -24,7 +22,7 @@ class TrainingProgramWeekList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final program = ref.watch(trainingProgramStateProvider);
-    final weeks = ref.watch(weekStateProvider);
+    final weeks = program.weeks;
 
     return ListView.builder(
       shrinkWrap: true,
@@ -32,19 +30,19 @@ class TrainingProgramWeekList extends ConsumerWidget {
       itemCount: weeks.length,
       itemBuilder: (context, index) {
         final week = weeks[index];
-        return _buildWeekSlidable(context, week, index, ref);
+        return _buildWeekSlidable(context, week, index);
       },
     );
   }
 
-  Widget _buildWeekSlidable(BuildContext context, Week week, int index, WidgetRef ref) {
+  Widget _buildWeekSlidable(BuildContext context, Week week, int index) {
     return Slidable(
       endActionPane: ActionPane(
         motion: const ScrollMotion(),
         children: [
           SlidableAction(
             onPressed: (context) {
-              ref.read(weekStateProvider.notifier).removeWeek(index);
+              controller.removeWeek(index);
             },
             backgroundColor: Colors.red,
             foregroundColor: Colors.white,
@@ -58,7 +56,7 @@ class TrainingProgramWeekList extends ConsumerWidget {
         children: [
           SlidableAction(
             onPressed: (context) {
-              ref.read(weekStateProvider.notifier).addWeek();
+              controller.addWeek();
             },
             backgroundColor: Theme.of(context).colorScheme.primary,
             foregroundColor: Colors.white,
@@ -67,11 +65,11 @@ class TrainingProgramWeekList extends ConsumerWidget {
           ),
         ],
       ),
-      child: _buildWeekCard(context, week, index, ref),
+      child: _buildWeekCard(context, week, index),
     );
   }
 
-  Widget _buildWeekCard(BuildContext context, Week week, int index, WidgetRef ref) {
+  Widget _buildWeekCard(BuildContext context, Week week, int index) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       shape: RoundedRectangleBorder(
@@ -119,19 +117,19 @@ class TrainingProgramWeekList extends ConsumerWidget {
                 itemBuilder: (context) => [
                   PopupMenuItem(
                     child: const Text('Copia Settimana'),
-                    onTap: () => ref.read(weekStateProvider.notifier).copyWeek(index, context),
+                    onTap: () => controller.copyWeek(index, context),
                   ),
                   PopupMenuItem(
                     child: const Text('Elimina Settimana'),
-                    onTap: () => ref.read(weekStateProvider.notifier).removeWeek(index),
+                    onTap: () => controller.removeWeek(index),
                   ),
                   PopupMenuItem(
                     child: const Text('Riordina Settimane'),
-                    onTap: () => _showReorderWeeksDialog(context, ref),
+                    onTap: () => _showReorderWeeksDialog(context),
                   ),
                   PopupMenuItem(
                     child: const Text('Aggiungi Settimana'),
-                    onTap: () => ref.read(weekStateProvider.notifier).addWeek(),
+                    onTap: () => controller.addWeek(),
                   ),
                 ],
               ),
@@ -142,15 +140,14 @@ class TrainingProgramWeekList extends ConsumerWidget {
     );
   }
 
-  void _showReorderWeeksDialog(BuildContext context, WidgetRef ref) {
-    final weekNames = ref.watch(weekStateProvider).map((week) => 'Settimana ${week.number}').toList();
+  void _showReorderWeeksDialog(BuildContext context) {
+    final weekNames =
+        controller.program.weeks.map((week) => 'Settimana ${week.number}').toList();
     showDialog(
       context: context,
       builder: (context) => ReorderDialog(
         items: weekNames,
-        onReorder: (oldIndex, newIndex) {
-          ref.read(weekStateProvider.notifier).reorderWeeks(oldIndex, newIndex);
-        },
+        onReorder: controller.reorderWeeks,
       ),
     );
   }

@@ -1,14 +1,11 @@
-import 'package:alphanessone/trainingBuilder/Provider/workout_state_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import '../training_model.dart';
 import '../controller/training_program_controller.dart';
 import '../reorder_dialog.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:alphanessone/trainingBuilder/Provider/training_program_state_provider.dart';
 
-class TrainingProgramWorkoutListPage extends ConsumerWidget {
+class TrainingProgramWorkoutListPage extends StatefulWidget {
   final TrainingProgramController controller;
   final int weekIndex;
 
@@ -19,9 +16,16 @@ class TrainingProgramWorkoutListPage extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final workouts = ref.watch(workoutStateProvider);
-    final program = ref.watch(trainingProgramStateProvider.notifier).state;
+  State<TrainingProgramWorkoutListPage> createState() =>
+      _TrainingProgramWorkoutListPageState();
+}
+
+class _TrainingProgramWorkoutListPageState
+    extends State<TrainingProgramWorkoutListPage> {
+  @override
+  Widget build(BuildContext context) {
+    final week = widget.controller.program.weeks[widget.weekIndex];
+    final workouts = week.workouts;
 
     return Scaffold(
       body: Column(
@@ -31,16 +35,14 @@ class TrainingProgramWorkoutListPage extends ConsumerWidget {
               children: workouts.asMap().entries.map((entry) {
                 final index = entry.key;
                 final workout = entry.value;
-                return _buildWorkoutSlidable(context, workout, index, ref, program);
+                return _buildWorkoutSlidable(context, workout, index);
               }).toList(),
             ),
           ),
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: ElevatedButton(
-              onPressed: () {
-                ref.read(workoutStateProvider.notifier).addWorkout(weekIndex);
-              },
+              onPressed: () => widget.controller.addWorkout(widget.weekIndex),
               child: const Text('Aggiungi Allenamento'),
             ),
           ),
@@ -49,14 +51,14 @@ class TrainingProgramWorkoutListPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildWorkoutSlidable(BuildContext context, Workout workout, int index, WidgetRef ref, TrainingProgram program) {
+  Widget _buildWorkoutSlidable(BuildContext context, Workout workout, int index) {
     return Slidable(
       endActionPane: ActionPane(
         motion: const ScrollMotion(),
         children: [
           SlidableAction(
             onPressed: (context) {
-              ref.read(workoutStateProvider.notifier).removeWorkout(index, program, weekIndex);
+              widget.controller.removeWorkout(widget.weekIndex, workout.order);
             },
             backgroundColor: Colors.red,
             foregroundColor: Colors.white,
@@ -70,7 +72,7 @@ class TrainingProgramWorkoutListPage extends ConsumerWidget {
         children: [
           SlidableAction(
             onPressed: (context) {
-              ref.read(workoutStateProvider.notifier).addWorkout(weekIndex);
+              widget.controller.addWorkout(widget.weekIndex);
             },
             backgroundColor: Theme.of(context).colorScheme.primary,
             foregroundColor: Colors.white,
@@ -79,11 +81,11 @@ class TrainingProgramWorkoutListPage extends ConsumerWidget {
           ),
         ],
       ),
-      child: _buildWorkoutCard(context, workout, index, ref, program),
+      child: _buildWorkoutCard(context, workout, index),
     );
   }
 
-  Widget _buildWorkoutCard(BuildContext context, Workout workout, int index, WidgetRef ref, TrainingProgram program) {
+  Widget _buildWorkoutCard(BuildContext context, Workout workout, int index) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       shape: RoundedRectangleBorder(
@@ -92,7 +94,7 @@ class TrainingProgramWorkoutListPage extends ConsumerWidget {
       child: InkWell(
         onTap: () {
           context.go(
-              '/programs_screen/user_programs/${controller.program.athleteId}/training_program/${controller.program.id}/week/$weekIndex/workout/$index');
+              '/programs_screen/user_programs/${widget.controller.program.athleteId}/training_program/${widget.controller.program.id}/week/${widget.weekIndex}/workout/$index');
         },
         borderRadius: BorderRadius.circular(16),
         child: Padding(
@@ -132,27 +134,21 @@ class TrainingProgramWorkoutListPage extends ConsumerWidget {
                 itemBuilder: (context) => [
                   PopupMenuItem(
                     child: const Text('Copia Allenamento'),
-                    onTap: () {
-                      ref.read(workoutStateProvider.notifier).copyWorkout(index, context, program, weekIndex);
-                    },
+                    onTap: () => widget.controller.copyWorkout(
+                        widget.weekIndex, index, context),
                   ),
                   PopupMenuItem(
                     child: const Text('Elimina Allenamento'),
-                    onTap: () {
-                      ref.read(workoutStateProvider.notifier).removeWorkout(index, program, weekIndex);
-                    },
+                    onTap: () =>
+                        widget.controller.removeWorkout(widget.weekIndex, workout.order),
                   ),
                   PopupMenuItem(
                     child: const Text('Riordina Allenamenti'),
-                    onTap: () {
-                      _showReorderWorkoutsDialog(context, ref, weekIndex);
-                    },
+                    onTap: () => _showReorderWorkoutsDialog(context),
                   ),
                   PopupMenuItem(
                     child: const Text('Aggiungi Allenamento'),
-                    onTap: () {
-                      ref.read(workoutStateProvider.notifier).addWorkout(weekIndex);
-                    },
+                    onTap: () => widget.controller.addWorkout(widget.weekIndex),
                   ),
                 ],
               ),
@@ -163,15 +159,18 @@ class TrainingProgramWorkoutListPage extends ConsumerWidget {
     );
   }
 
-  void _showReorderWorkoutsDialog(BuildContext context, WidgetRef ref, int weekIndex) {
-    final workoutNames = ref.watch(workoutStateProvider).map((workout) => 'Allenamento ${workout.order}').toList();
+  void _showReorderWorkoutsDialog(BuildContext context) {
+    final workoutNames = widget.controller.program.weeks[widget.weekIndex]
+        .workouts
+        .map((workout) => 'Allenamento ${workout.order}')
+        .toList();
+
     showDialog(
       context: context,
       builder: (context) => ReorderDialog(
         items: workoutNames,
-        onReorder: (oldIndex, newIndex) {
-          ref.read(workoutStateProvider.notifier).reorderWorkouts(oldIndex, newIndex, weekIndex);
-        },
+        onReorder: (oldIndex, newIndex) => widget.controller
+            .reorderWorkouts(widget.weekIndex, oldIndex, newIndex),
       ),
     );
   }
