@@ -101,7 +101,7 @@ class CustomDrawer extends ConsumerWidget {
   }
 
   List<String> _getClientMenuItems() {
-    return ['I Miei Allenamenti',
+    return ['I Miei Allenamenti','Esercizi',
  'Massimali', 'Profilo Utente', 'Misurazioni'];
   }
 
