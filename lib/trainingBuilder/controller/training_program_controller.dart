@@ -267,11 +267,13 @@ Future<void> applyWeekProgressions(int exerciseIndex,
       .expand((week) => week.workouts)
       .expand((workout) => workout.exercises)
       .elementAt(exerciseIndex);
+  debugPrint('Applying week progressions for exercise: ${exercise.name}');
 
   for (int weekIndex = 0; weekIndex < _program.weeks.length; weekIndex++) {
     final progressions = weekIndex < weekProgressions.length
         ? weekProgressions[weekIndex]
         : weekProgressions.last;
+    debugPrint('Applying progressions for week $weekIndex: $progressions');
 
     for (int sessionIndex = 0; sessionIndex < progressions.length; sessionIndex++) {
       final progression = progressions[sessionIndex];
@@ -289,6 +291,8 @@ Future<void> applyWeekProgressions(int exerciseIndex,
                 reps_done: 0,
                 weight_done: 0.0,
               ));
+            
+      debugPrint('Generated series for week $weekIndex, session $sessionIndex: $series');
 
       final workout = _program.weeks[weekIndex].workouts[sessionIndex];
       final exerciseIndex =
@@ -296,9 +300,12 @@ Future<void> applyWeekProgressions(int exerciseIndex,
       if (exerciseIndex != -1) {
         workout.exercises[exerciseIndex] =
             workout.exercises[exerciseIndex].copyWith(series: series);
+                    debugPrint('Applied series to exercise in week $weekIndex, session $sessionIndex, exercise index $exerciseIndex');
+
       }
     }
   }
+  debugPrint('Finished applying week progressions');
 
   notifyListeners();
 }

@@ -16,7 +16,10 @@ class ProgressionController extends ChangeNotifier {
 
   TrainingProgram get program => _trainingProgramController.program;
 
+
 Future<void> updateExerciseProgressions(Exercise exercise, List<List<WeekProgression>> updatedProgressions, BuildContext context) async {
+  debugPrint('Updating exercise progressions for exercise: ${exercise.name}');
+
   for (int weekIndex = 0; weekIndex < program.weeks.length; weekIndex++) {
     final week = program.weeks[weekIndex];
     for (int workoutIndex = 0; workoutIndex < week.workouts.length; workoutIndex++) {
@@ -24,47 +27,54 @@ Future<void> updateExerciseProgressions(Exercise exercise, List<List<WeekProgres
       final exerciseIndex = workout.exercises.indexWhere((e) => e.exerciseId == exercise.exerciseId);
       if (exerciseIndex != -1) {
         final currentExercise = workout.exercises[exerciseIndex];
-        
-        // Update the weekProgressions property of the exercise
+        debugPrint('Found exercise in week $weekIndex, workout $workoutIndex, exercise index $exerciseIndex');
+
+        // Assicurati che la lista weekProgressions dell'esercizio corrente sia inizializzata
+        if (currentExercise.weekProgressions.length <= weekIndex) {
+          currentExercise.weekProgressions = List.generate(program.weeks.length, (_) => []);
+        }
+
+        // Aggiorna la proprietà weekProgressions dell'esercizio
         if (weekIndex < updatedProgressions.length) {
           currentExercise.weekProgressions[weekIndex] = updatedProgressions[weekIndex];
+          debugPrint('Updated weekProgressions for week $weekIndex: ${updatedProgressions[weekIndex]}');
         }
-        
-        // Update the series of the exercise based on the current session's progression
+
+        // Aggiorna le serie dell'esercizio in base alla progressione della sessione corrente
         final sessionIndex = workoutIndex;
-        final progression = weekIndex < updatedProgressions.length && sessionIndex < updatedProgressions[weekIndex].length
-            ? updatedProgressions[weekIndex][sessionIndex]
-            : WeekProgression(
-                weekNumber: weekIndex + 1,
-                sessionNumber: sessionIndex + 1,
-                reps: 0,
-                sets: 0,
-                intensity: '',
-                rpe: '',
-                weight: 0.0,
-              );
-        
-        currentExercise.series.clear();
-        for (int i = 0; i < progression.sets; i++) {
-          final newSeries = Series(
-            serieId: generateRandomId(16).toString(),
-            reps: progression.reps,
-            sets: 1,
-            intensity: progression.intensity,
-            rpe: progression.rpe,
-            weight: progression.weight,
-            order: i + 1,
-            done: false,
-            reps_done: 0,
-            weight_done: 0.0,
-          );
-          currentExercise.series.add(newSeries);
+        final exerciseProgressions = currentExercise.weekProgressions[weekIndex];
+        if (sessionIndex < exerciseProgressions.length) {
+          final progression = exerciseProgressions[sessionIndex];
+          debugPrint('Applying progression for week $weekIndex, session $sessionIndex: $progression');
+
+          currentExercise.series.clear();
+          for (int i = 0; i < progression.sets; i++) {
+            final newSeries = Series(
+              serieId: generateRandomId(16).toString(),
+              reps: progression.reps,
+              sets: 1,
+              intensity: progression.intensity,
+              rpe: progression.rpe,
+              weight: progression.weight,
+              order: i + 1,
+              done: false,
+              reps_done: 0,
+              weight_done: 0.0,
+            );
+            currentExercise.series.add(newSeries);
+            debugPrint('Updated series for exercise: ${currentExercise.series}');
+          }
+        } else {
+          debugPrint('Indice di sessione non valido per week $weekIndex, session $sessionIndex');
         }
       }
     }
   }
+  debugPrint('Finished updating exercise progressions');
+
   notifyListeners();
 }
+
 
 List<List<WeekProgression>> buildWeekProgressions(List<Week> weeks, Exercise exercise) {
   final progressions = List.generate(weeks.length, (weekIndex) {

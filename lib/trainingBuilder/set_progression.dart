@@ -20,7 +20,8 @@ class SetProgressionScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<SetProgressionScreen> createState() => _SetProgressionScreenState();
+  ConsumerState<SetProgressionScreen> createState() =>
+      _SetProgressionScreenState();
 }
 
 class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
@@ -46,21 +47,27 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
         (weekIndex) => List.generate(
             weekProgressions[weekIndex].length,
             (sessionIndex) => TextEditingController(
-                text: weekProgressions[weekIndex][sessionIndex].reps.toString())));
+                text: weekProgressions[weekIndex][sessionIndex]
+                    .reps
+                    .toString())));
 
     _setsControllers = List.generate(
         weekProgressions.length,
         (weekIndex) => List.generate(
             weekProgressions[weekIndex].length,
             (sessionIndex) => TextEditingController(
-                text: weekProgressions[weekIndex][sessionIndex].sets.toString())));
+                text: weekProgressions[weekIndex][sessionIndex]
+                    .sets
+                    .toString())));
 
     _weightControllers = List.generate(
         weekProgressions.length,
         (weekIndex) => List.generate(
             weekProgressions[weekIndex].length,
             (sessionIndex) => TextEditingController(
-                text: weekProgressions[weekIndex][sessionIndex].weight.toString())));
+                text: weekProgressions[weekIndex][sessionIndex]
+                    .weight
+                    .toString())));
 
     _intensityControllers = List.generate(
         weekProgressions.length,
@@ -142,11 +149,12 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
 
-    List<List<WeekProgression>> weekProgressions = progressionController.buildWeekProgressions(
-        programController.program.weeks, widget.exercise!);
+    List<List<WeekProgression>> weekProgressions =
+        progressionController.buildWeekProgressions(
+            programController.program.weeks, widget.exercise!);
 
-    void updateProgression(int weekIndex, int sessionIndex, int reps, int sets, String intensity,
-        String rpe, double weight) {
+    void updateProgression(int weekIndex, int sessionIndex, int reps, int sets,
+        String intensity, String rpe, double weight) {
       final currentProgression = weekProgressions[weekIndex][sessionIndex];
 
       currentProgression.reps = reps;
@@ -156,36 +164,49 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
       currentProgression.weight = weight;
     }
 
-    void updateWeightFromIntensity(int weekIndex, int sessionIndex, String intensity) {
+    void updateWeightFromIntensity(
+        int weekIndex, int sessionIndex, String intensity) {
       final currentProgression = weekProgressions[weekIndex][sessionIndex];
 
-      if (intensity.isNotEmpty && !_weightFocusNodes[weekIndex][sessionIndex].hasFocus) {
+      if (intensity.isNotEmpty &&
+          !_weightFocusNodes[weekIndex][sessionIndex].hasFocus) {
         final calculatedWeight = calculateWeightFromIntensity(
             widget.latestMaxWeight.toDouble(), double.parse(intensity));
-        currentProgression.weight = roundWeight(calculatedWeight, widget.exercise?.type);
-        _weightControllers[weekIndex][sessionIndex].text = currentProgression.weight.toString();
+        currentProgression.weight =
+            roundWeight(calculatedWeight, widget.exercise?.type);
+        _weightControllers[weekIndex][sessionIndex].text =
+            currentProgression.weight.toString();
       }
     }
 
-    void updateWeightFromRPE(int weekIndex, int sessionIndex, String rpe, int reps) {
+    void updateWeightFromRPE(
+        int weekIndex, int sessionIndex, String rpe, int reps) {
       final currentProgression = weekProgressions[weekIndex][sessionIndex];
 
-      if (rpe.isNotEmpty && !_weightFocusNodes[weekIndex][sessionIndex].hasFocus) {
-        final rpePercentage = SeriesUtils.getRPEPercentage(double.parse(rpe), reps);
-        final calculatedWeight = widget.latestMaxWeight.toDouble() * rpePercentage;
-        currentProgression.weight = roundWeight(calculatedWeight, widget.exercise?.type);
-        _weightControllers[weekIndex][sessionIndex].text = currentProgression.weight.toString();
+      if (rpe.isNotEmpty &&
+          !_weightFocusNodes[weekIndex][sessionIndex].hasFocus) {
+        final rpePercentage =
+            SeriesUtils.getRPEPercentage(double.parse(rpe), reps);
+        final calculatedWeight =
+            widget.latestMaxWeight.toDouble() * rpePercentage;
+        currentProgression.weight =
+            roundWeight(calculatedWeight, widget.exercise?.type);
+        _weightControllers[weekIndex][sessionIndex].text =
+            currentProgression.weight.toString();
       }
     }
 
-    void updateIntensityFromWeight(int weekIndex, int sessionIndex, double weight) {
+    void updateIntensityFromWeight(
+        int weekIndex, int sessionIndex, double weight) {
       final currentProgression = weekProgressions[weekIndex][sessionIndex];
 
-      if (weight != 0 && !_intensityFocusNodes[weekIndex][sessionIndex].hasFocus) {
+      if (weight != 0 &&
+          !_intensityFocusNodes[weekIndex][sessionIndex].hasFocus) {
         currentProgression.intensity = calculateIntensityFromWeight(
                 weight, widget.latestMaxWeight.toDouble())
             .toStringAsFixed(2);
-        _intensityControllers[weekIndex][sessionIndex].text = currentProgression.intensity;
+        _intensityControllers[weekIndex][sessionIndex].text =
+            currentProgression.intensity;
       }
     }
 
@@ -207,12 +228,14 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
           keyboardType: keyboardType,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: isDarkMode ? colorScheme.onBackground : colorScheme.onSurface,
+            color:
+                isDarkMode ? colorScheme.onBackground : colorScheme.onSurface,
           ),
           decoration: InputDecoration(
             labelText: labelText,
             labelStyle: TextStyle(
-              color: isDarkMode ? colorScheme.onBackground : colorScheme.onSurface,
+              color:
+                  isDarkMode ? colorScheme.onBackground : colorScheme.onSurface,
             ),
             filled: true,
             fillColor: isDarkMode ? colorScheme.surface : Colors.white,
@@ -227,8 +250,8 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
     }
 
     return Scaffold(
-      backgroundColor: isDarkMode ? colorScheme.background : colorScheme.surface,
-    
+      backgroundColor:
+          isDarkMode ? colorScheme.background : colorScheme.surface,
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -246,7 +269,9 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: isDarkMode ? colorScheme.onBackground : colorScheme.onSurface,
+                          color: isDarkMode
+                              ? colorScheme.onBackground
+                              : colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -266,15 +291,19 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
-                                    color: isDarkMode ? colorScheme.onBackground : colorScheme.onSurface,
+                                    color: isDarkMode
+                                        ? colorScheme.onBackground
+                                        : colorScheme.onSurface,
                                   ),
                                 ),
                                 const SizedBox(height: 8),
                                 Row(
                                   children: [
                                     buildTextField(
-                                      controller: _repsControllers[weekIndex][sessionIndex],
-                                      focusNode: _repsFocusNodes[weekIndex][sessionIndex],
+                                      controller: _repsControllers[weekIndex]
+                                          [sessionIndex],
+                                      focusNode: _repsFocusNodes[weekIndex]
+                                          [sessionIndex],
                                       labelText: 'Reps',
                                       keyboardType: TextInputType.number,
                                       onChanged: (value) => updateProgression(
@@ -291,8 +320,10 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
                                     ),
                                     const SizedBox(width: 8),
                                     buildTextField(
-                                      controller: _setsControllers[weekIndex][sessionIndex],
-                                      focusNode: _setsFocusNodes[weekIndex][sessionIndex],
+                                      controller: _setsControllers[weekIndex]
+                                          [sessionIndex],
+                                      focusNode: _setsFocusNodes[weekIndex]
+                                          [sessionIndex],
                                       labelText: 'Sets',
                                       keyboardType: TextInputType.number,
                                       onChanged: (value) => updateProgression(
@@ -309,8 +340,11 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
                                     ),
                                     const SizedBox(width: 8),
                                     buildTextField(
-                                      controller: _intensityControllers[weekIndex][sessionIndex],
-                                      focusNode: _intensityFocusNodes[weekIndex][sessionIndex],
+                                      controller:
+                                          _intensityControllers[weekIndex]
+                                              [sessionIndex],
+                                      focusNode: _intensityFocusNodes[weekIndex]
+                                          [sessionIndex],
                                       labelText: '1RM%',
                                       onChanged: (value) {
                                         updateProgression(
@@ -322,7 +356,8 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
                                           progression.rpe,
                                           progression.weight,
                                         );
-                                        updateWeightFromIntensity(weekIndex, sessionIndex, value);
+                                        updateWeightFromIntensity(
+                                            weekIndex, sessionIndex, value);
                                       },
                                       isDarkMode: isDarkMode,
                                       colorScheme: colorScheme,
@@ -341,19 +376,28 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
                                           value,
                                           progression.weight,
                                         );
-                                        updateWeightFromRPE(weekIndex, sessionIndex, value, progression.reps);
+                                        updateWeightFromRPE(
+                                            weekIndex,
+                                            sessionIndex,
+                                            value,
+                                            progression.reps);
                                       },
                                       isDarkMode: isDarkMode,
                                       colorScheme: colorScheme,
                                     ),
                                     const SizedBox(width: 8),
                                     buildTextField(
-                                      controller: _weightControllers[weekIndex][sessionIndex],
-                                      focusNode: _weightFocusNodes[weekIndex][sessionIndex],
+                                      controller: _weightControllers[weekIndex]
+                                          [sessionIndex],
+                                      focusNode: _weightFocusNodes[weekIndex]
+                                          [sessionIndex],
                                       labelText: 'Weight',
-                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                      keyboardType:
+                                          const TextInputType.numberWithOptions(
+                                              decimal: true),
                                       onChanged: (value) {
-                                        final weight = double.tryParse(value) ?? 0;
+                                        final weight =
+                                            double.tryParse(value) ?? 0;
                                         updateProgression(
                                           weekIndex,
                                           sessionIndex,
@@ -363,7 +407,8 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
                                           progression.rpe,
                                           weight,
                                         );
-                                        updateIntensityFromWeight(weekIndex, sessionIndex, weight);
+                                        updateIntensityFromWeight(
+                                            weekIndex, sessionIndex, weight);
                                       },
                                       isDarkMode: isDarkMode,
                                       colorScheme: colorScheme,
@@ -380,36 +425,40 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
                 },
               ),
             ),
-ElevatedButton(
-  onPressed: () async {
-    await progressionController.updateExerciseProgressions(
-        widget.exercise!, weekProgressions, context);
-    await programController.applyWeekProgressions(
-        programController.program.weeks
-            .expand((week) => week.workouts)
-            .expand((workout) => workout.exercises)
-            .toList()
-            .indexOf(widget.exercise!),
-        weekProgressions,
-        context);
-    Navigator.pop(context);
-  },
-style: ElevatedButton.styleFrom(
-backgroundColor: isDarkMode ? colorScheme.primary : colorScheme.secondary,
-foregroundColor: isDarkMode ? colorScheme.onPrimary : colorScheme.onSecondary,
-padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-shape: RoundedRectangleBorder(
-borderRadius: BorderRadius.circular(8),
-),
-),
-child: const Text(
-'Save',
-style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-),
-),
-],
-),
-),
-);
-}
+            ElevatedButton(
+              onPressed: () async {
+                await progressionController.updateExerciseProgressions(
+                    widget.exercise!, weekProgressions, context);
+                await programController.applyWeekProgressions(
+                    programController.program.weeks
+                        .expand((week) => week.workouts)
+                        .expand((workout) => workout.exercises)
+                        .toList()
+                        .indexOf(widget.exercise!),
+                    weekProgressions,
+                    context);
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    isDarkMode ? colorScheme.primary : colorScheme.secondary,
+                foregroundColor: isDarkMode
+                    ? colorScheme.onPrimary
+                    : colorScheme.onSecondary,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Save',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
