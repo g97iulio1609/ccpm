@@ -7,7 +7,7 @@ class TrainingProgram {
   String athleteId;
   int mesocycleNumber;
   bool hide;
-    String status; // Aggiungi questa riga
+  String status;
 
   List<Week> weeks;
   List<String> trackToDeleteWeeks = [];
@@ -22,7 +22,7 @@ class TrainingProgram {
     this.athleteId = '',
     this.mesocycleNumber = 0,
     this.hide = false,
-    this.status='private',
+    this.status = 'private',
     List<Week>? weeks,
   }) : weeks = weeks ?? [];
 
@@ -31,8 +31,7 @@ class TrainingProgram {
     String? name,
     String? description,
     String? athleteId,
-      String? status,
-
+    String? status,
     int? mesocycleNumber,
     List<Week>? weeks,
   }) {
@@ -41,10 +40,9 @@ class TrainingProgram {
       name: name ?? this.name,
       description: description ?? this.description,
       athleteId: athleteId ?? this.athleteId,
-          status: status ?? this.status,
-
+      status: status ?? this.status,
       mesocycleNumber: mesocycleNumber ?? this.mesocycleNumber,
-      weeks: weeks ?? this.weeks,
+      weeks: weeks ?? this.weeks.map((week) => week.copyWith()).toList(),
     );
   }
 
@@ -54,8 +52,7 @@ class TrainingProgram {
       name: map['name'],
       description: map['description'],
       athleteId: map['athleteId'],
-          status: map['status'] ?? 'private',
-
+      status: map['status'] ?? 'private',
       mesocycleNumber: map['mesocycleNumber'],
       weeks: List<Week>.from(map['weeks']?.map((x) => Week.fromMap(x)) ?? []),
     );
@@ -68,8 +65,7 @@ class TrainingProgram {
       name: data['name'],
       description: data['description'],
       athleteId: data['athleteId'],
-          status: data['status'] ?? 'private',
-
+      status: data['status'] ?? 'private',
       mesocycleNumber: data['mesocycleNumber'],
       weeks: (data['weeks'] as List<dynamic>? ?? [])
           .map((week) => Week.fromFirestore(week))
@@ -83,8 +79,7 @@ class TrainingProgram {
       'name': name,
       'description': description,
       'athleteId': athleteId,
-          'status': status,
-
+      'status': status,
       'mesocycleNumber': mesocycleNumber,
       'weeks': weeks.map((x) => x.toMap()).toList(),
     };
@@ -110,7 +105,7 @@ class Week {
     return Week(
       id: id ?? this.id,
       number: number ?? this.number,
-      workouts: workouts ?? this.workouts,
+      workouts: workouts ?? this.workouts.map((workout) => workout.copyWith()).toList(),
     );
   }
 
@@ -165,8 +160,8 @@ class Workout {
     return Workout(
       id: id ?? this.id,
       order: order ?? this.order,
-      exercises: exercises ?? this.exercises,
-      superSets: superSets ?? this.superSets,
+      exercises: exercises ?? this.exercises.map((exercise) => exercise.copyWith()).toList(),
+      superSets: superSets ?? this.superSets.map((superSet) => SuperSet.fromMap(superSet.toMap())).toList(),
     );
   }
 
@@ -209,7 +204,6 @@ class Workout {
 class SuperSet {
   String id;
   String? name;
-
   List<String> exerciseIds;
 
   SuperSet({
@@ -242,9 +236,9 @@ class Exercise {
   String variant;
   int order;
   String? exerciseId;
-  String? superSetId; 
+  String? superSetId;
   List<Series> series;
-  List<WeekProgression> weekProgressions;
+  List<List<WeekProgression>> weekProgressions;
 
   Exercise({
     this.id,
@@ -255,23 +249,23 @@ class Exercise {
     this.exerciseId,
     this.superSetId,
     List<Series>? series,
-    List<WeekProgression>? weekProgressions,
+    List<List<WeekProgression>>? weekProgressions,
   })  : series = series ?? [],
         weekProgressions = weekProgressions ?? [];
 
-factory Exercise.fromMap(Map<String, dynamic> map) {
-  return Exercise(
-    name: map['name'] ?? '',
-    type: map['type'] ?? '',
-    id: map['id'],
-    exerciseId: map['exerciseId'],
-    superSetId: map['superSetId'],
-    variant: map['variant'] ?? '',
-    order: map['order'] ?? 0,
-    series: List<Series>.from(map['series']?.map((x) => Series.fromMap(x)) ?? []),
-    weekProgressions: List<WeekProgression>.from(map['weekProgressions']?.map((x) => WeekProgression.fromMap(x)) ?? []),
-  );
-}
+  factory Exercise.fromMap(Map<String, dynamic> map) {
+    return Exercise(
+      name: map['name'] ?? '',
+      type: map['type'] ?? '',
+      id: map['id'],
+      exerciseId: map['exerciseId'],
+      superSetId: map['superSetId'],
+      variant: map['variant'] ?? '',
+      order: map['order'] ?? 0,
+      series: List<Series>.from(map['series']?.map((x) => Series.fromMap(x)) ?? []),
+      weekProgressions: List<List<WeekProgression>>.from(map['weekProgressions']?.map((x) => List<WeekProgression>.from(x.map((y) => WeekProgression.fromMap(y)))) ?? []),
+    );
+  }
 
   Exercise copyWith({
     String? id,
@@ -282,7 +276,7 @@ factory Exercise.fromMap(Map<String, dynamic> map) {
     String? variant,
     int? order,
     List<Series>? series,
-    List<WeekProgression>? weekProgressions,
+    List<List<WeekProgression>>? weekProgressions,
   }) {
     return Exercise(
       id: id ?? this.id,
@@ -292,43 +286,44 @@ factory Exercise.fromMap(Map<String, dynamic> map) {
       type: type ?? this.type,
       variant: variant ?? this.variant,
       order: order ?? this.order,
-      series: series ?? this.series,
-      weekProgressions: weekProgressions ?? this.weekProgressions,
+      series: series ?? this.series.map((series) => series.copyWith()).toList(),
+      weekProgressions: weekProgressions ?? this.weekProgressions.map((weekProgression) => weekProgression.map((progression) => progression.copyWith()).toList()).toList(),
     );
   }
 
-factory Exercise.fromFirestore(DocumentSnapshot doc) {
-  Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-  return Exercise(
-    id: doc.id,
-    exerciseId: data['exerciseId'] ?? '',
-    superSetId: data['superSetId'],
-    name: data['name'] ?? '',
-    type: data['type'] ?? '',
-    variant: data['variant'] ?? '',
-    order: data['order']?.toInt() ?? 0,
-    series: (data['series'] as List<dynamic>? ?? []).map((doc) => Series.fromFirestore(doc)).toList(),
-    weekProgressions: (data['weekProgressions'] as List<dynamic>? ?? []).map((doc) => WeekProgression.fromMap(doc)).toList(),
-  );
-}
+  factory Exercise.fromFirestore(DocumentSnapshot doc) {
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    return Exercise(
+      id: doc.id,
+      exerciseId: data['exerciseId'] ?? '',
+      superSetId: data['superSetId'],
+      name: data['name'] ?? '',
+      type: data['type'] ?? '',
+      variant: data['variant'] ?? '',
+      order: data['order']?.toInt() ?? 0,
+      series: (data['series'] as List<dynamic>? ?? []).map((doc) => Series.fromFirestore(doc)).toList(),
+      weekProgressions: (data['weekProgressions'] as List<dynamic>? ?? []).map((weekProgression) => (weekProgression as List<dynamic>).map((progression) => WeekProgression.fromMap(progression)).toList()).toList(),
+    );
+  }
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'exerciseId': exerciseId,
-      'superSetId': superSetId, 
+      'superSetId': superSetId,
       'name': name,
       'type': type,
       'variant': variant,
       'order': order,
       'series': series.map((x) => x.toMap()).toList(),
-      'weekProgressions': weekProgressions.map((x) => x.toMap()).toList(),
+      'weekProgressions': weekProgressions.map((x) => x.map((y) => y.toMap()).toList()).toList(),
     };
   }
 }
 
 class WeekProgression {
   int weekNumber;
+  int sessionNumber;
   int reps;
   int sets;
   String intensity;
@@ -337,6 +332,7 @@ class WeekProgression {
 
   WeekProgression({
     required this.weekNumber,
+    required this.sessionNumber,
     required this.reps,
     required this.sets,
     required this.intensity,
@@ -347,6 +343,7 @@ class WeekProgression {
   factory WeekProgression.fromMap(Map<String, dynamic> map) {
     return WeekProgression(
       weekNumber: map['weekNumber'],
+      sessionNumber: map['sessionNumber'],
       reps: map['reps'],
       sets: map['sets'],
       intensity: map['intensity'],
@@ -357,6 +354,7 @@ class WeekProgression {
 
   WeekProgression copyWith({
     int? weekNumber,
+    int? sessionNumber,
     int? reps,
     int? sets,
     String? intensity,
@@ -365,6 +363,7 @@ class WeekProgression {
   }) {
     return WeekProgression(
       weekNumber: weekNumber ?? this.weekNumber,
+      sessionNumber: sessionNumber ?? this.sessionNumber,
       reps: reps ?? this.reps,
       sets: sets ?? this.sets,
       intensity: intensity ?? this.intensity,
@@ -376,6 +375,7 @@ class WeekProgression {
   Map<String, dynamic> toMap() {
     return {
       'weekNumber': weekNumber,
+      'sessionNumber': sessionNumber,
       'reps': reps,
       'sets': sets,
       'intensity': intensity,
@@ -462,44 +462,41 @@ class Series {
       reps: int.tryParse(data['reps']?.toString() ?? '0') ?? 0,
       sets: int.tryParse(data['sets']?.toString() ?? '0') ?? 0,
       intensity: data['intensity'] ?? '',
-      rpe: data['rpe'] ?? '',
-      weight: data['weight']?.toDouble() ?? 0.0,
-      order: int.tryParse(data['order']?.toString() ?? '0') ?? 0,
-      done: data['done'] ?? false,
-      reps_done: int.tryParse(data['reps_done']?.toString() ?? '0') ?? 0,
-      weight_done: data['weight_done']?.toDouble() ?? 0.0,
-    );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'serieId': serieId,
-      'reps': reps,
-      'sets': sets,
-      'intensity': intensity,
-      'rpe': rpe,
-      'weight': weight,
-      'order': order,
-      'done': done,
-      'reps_done': reps_done,
-      'weight_done': weight_done,
-    };
-  }
-
-  Map<String, dynamic> toFirestore() {
-    return {
-      'reps': reps,
-      'sets': sets,
-      'intensity': intensity,
-      'rpe': rpe,
-      'weight': weight,
-      'id': id,
-      'serieId': serieId,
-      'order': order,
-      'done': done,
-      'reps_done': reps_done,
-      'weight_done': weight_done,
-    };
-  }
+      rpe: data['rpe'] ?? '',weight: data['weight']?.toDouble() ?? 0.0,
+order: int.tryParse(data['order']?.toString() ?? '0') ?? 0,
+done: data['done'] ?? false,
+reps_done: int.tryParse(data['reps_done']?.toString() ?? '0') ?? 0,
+weight_done: data['weight_done']?.toDouble() ?? 0.0,
+);
+}
+Map<String, dynamic> toMap() {
+return {
+'id': id,
+'serieId': serieId,
+'reps': reps,
+'sets': sets,
+'intensity': intensity,
+'rpe': rpe,
+'weight': weight,
+'order': order,
+'done': done,
+'reps_done': reps_done,
+'weight_done': weight_done,
+};
+}
+Map<String, dynamic> toFirestore() {
+return {
+'reps': reps,
+'sets': sets,
+'intensity': intensity,
+'rpe': rpe,
+'weight': weight,
+'id': id,
+'serieId': serieId,
+'order': order,
+'done': done,
+'reps_done': reps_done,
+'weight_done': weight_done,
+};
+}
 }

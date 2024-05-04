@@ -16,11 +16,7 @@ class ProgressionController extends ChangeNotifier {
 
   TrainingProgram get program => _trainingProgramController.program;
 
-
-
-Future<void> updateExerciseProgressions(Exercise exercise, List<WeekProgression> updatedProgressions, BuildContext context) async {
-
-
+Future<void> updateExerciseProgressions(Exercise exercise, List<List<WeekProgression>> updatedProgressions, BuildContext context) async {
   for (int weekIndex = 0; weekIndex < program.weeks.length; weekIndex++) {
     final week = program.weeks[weekIndex];
     for (int workoutIndex = 0; workoutIndex < week.workouts.length; workoutIndex++) {
@@ -28,10 +24,26 @@ Future<void> updateExerciseProgressions(Exercise exercise, List<WeekProgression>
       final exerciseIndex = workout.exercises.indexWhere((e) => e.exerciseId == exercise.exerciseId);
       if (exerciseIndex != -1) {
         final currentExercise = workout.exercises[exerciseIndex];
-        currentExercise.weekProgressions = updatedProgressions;
         
-        // Aggiorna le serie dell'esercizio in base alla progressione della settimana corrente
-        final progression = weekIndex < updatedProgressions.length ? updatedProgressions[weekIndex] : updatedProgressions.last;
+        // Update the weekProgressions property of the exercise
+        if (weekIndex < updatedProgressions.length) {
+          currentExercise.weekProgressions[weekIndex] = updatedProgressions[weekIndex];
+        }
+        
+        // Update the series of the exercise based on the current session's progression
+        final sessionIndex = workoutIndex;
+        final progression = weekIndex < updatedProgressions.length && sessionIndex < updatedProgressions[weekIndex].length
+            ? updatedProgressions[weekIndex][sessionIndex]
+            : WeekProgression(
+                weekNumber: weekIndex + 1,
+                sessionNumber: sessionIndex + 1,
+                reps: 0,
+                sets: 0,
+                intensity: '',
+                rpe: '',
+                weight: 0.0,
+              );
+        
         currentExercise.series.clear();
         for (int i = 0; i < progression.sets; i++) {
           final newSeries = Series(
@@ -51,46 +63,42 @@ Future<void> updateExerciseProgressions(Exercise exercise, List<WeekProgression>
       }
     }
   }
-
   notifyListeners();
 }
 
-List<WeekProgression> buildWeekProgressions(List<Week> weeks, Exercise exercise) {
+List<List<WeekProgression>> buildWeekProgressions(List<Week> weeks, Exercise exercise) {
   final progressions = List.generate(weeks.length, (weekIndex) {
-    final existingProgression = exercise.weekProgressions.length > weekIndex
-        ? exercise.weekProgressions[weekIndex]
-        : null;
-
-    if (existingProgression != null) {
-      return existingProgression;
-    } else {
-      final week = weeks[weekIndex];
-      final workout = week.workouts.firstWhere(
-        (w) => w.exercises.any((e) => e.exerciseId == exercise.exerciseId),
-        orElse: () => Workout(order: 0, exercises: []),
-      );
-      final exerciseInWeek = workout.exercises.firstWhere(
+    final week = weeks[weekIndex];
+    final workouts = week.workouts;
+    final exerciseProgressions = List.generate(workouts.length, (workoutIndex) {
+      final workout = workouts[workoutIndex];
+      final exerciseInWorkout = workout.exercises.firstWhere(
         (e) => e.exerciseId == exercise.exerciseId,
-        orElse: () => Exercise(name: '', type:'',variant: '', order: 0),
+        orElse: () => Exercise(name: '', type: '', variant: '', order: 0),
       );
 
-      final firstSeries = exerciseInWeek.series.isNotEmpty ? exerciseInWeek.series.first : null;
+      final existingProgressions = exerciseInWorkout.weekProgressions;
+      if (existingProgressions.isNotEmpty && existingProgressions.length > weekIndex && existingProgressions[weekIndex].isNotEmpty) {
+        return existingProgressions[weekIndex][0];
+      } else {
+        final firstSeries = exerciseInWorkout.series.isNotEmpty ? exerciseInWorkout.series.first : null;
 
-      return WeekProgression(
-        weekNumber: weekIndex + 1,
-        reps: firstSeries?.reps ?? 0,
-        sets: exerciseInWeek.series.length,
-        intensity: firstSeries?.intensity ?? '',
-        rpe: firstSeries?.rpe ?? '',
-        weight: firstSeries?.weight ?? 0.0,
-      );
-    }
+        return WeekProgression(
+          weekNumber: weekIndex + 1,
+          sessionNumber: workoutIndex + 1,
+          reps: firstSeries?.reps ?? 0,
+          sets: exerciseInWorkout.series.length,
+          intensity: firstSeries?.intensity ?? '',
+          rpe: firstSeries?.rpe ?? '',
+          weight: firstSeries?.weight ?? 0.0,
+        );
+      }
+    });
+
+    return exerciseProgressions;
   });
 
-
   return progressions;
-}
-
 }
 
 Future<void> addSeriesToProgression(TrainingProgram program, int weekIndex,
@@ -110,4 +118,4 @@ Future<void> addSeriesToProgression(TrainingProgram program, int weekIndex,
     weight_done: 0.0,
   );
   exercise.series.add(newSeries);
-}
+}}

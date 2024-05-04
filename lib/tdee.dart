@@ -33,7 +33,6 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
     final tdeeData = await usersService.getTDEEData(widget.userId);
 
     if (tdeeData != null) {
-      debugPrint('tdeeData $tdeeData');
       setState(() {
         _birthDate = DateTime.parse(tdeeData['birthDate']);
         _height = tdeeData['height'];

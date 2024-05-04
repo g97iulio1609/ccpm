@@ -124,15 +124,20 @@ class ExerciseController extends ChangeNotifier {
     return null;
   }
 
-  void _updateExerciseWeights(
-      Exercise exercise, num newMaxWeight, String exerciseType) {
-    _updateSeriesWeights(exercise.series, newMaxWeight, exerciseType);
-    if (exercise.weekProgressions != null &&
-        exercise.weekProgressions.isNotEmpty) {
-      _updateWeekProgressionWeights(
-          exercise.weekProgressions, newMaxWeight, exerciseType);
-    }
+void _updateExerciseWeights(
+    Exercise exercise,
+    num newMaxWeight,
+    String exerciseType,
+) {
+  _updateSeriesWeights(exercise.series, newMaxWeight, exerciseType);
+  if (exercise.weekProgressions != null && exercise.weekProgressions.isNotEmpty) {
+    _updateWeekProgressionWeights(
+      exercise.weekProgressions,
+      newMaxWeight,
+      exerciseType,
+    );
   }
+}
 
   void _updateSeriesWeights(
       List<Series>? series, num maxWeight, String exerciseType) {
@@ -151,20 +156,23 @@ class ExerciseController extends ChangeNotifier {
     }
   }
 
-  void _updateWeekProgressionWeights(
-      List<WeekProgression>? progressions, num maxWeight, String exerciseType) {
-    if (progressions != null && progressions.isNotEmpty) {
-      for (final item in progressions) {
-        final intensity =
-            item.intensity.isNotEmpty ? double.tryParse(item.intensity) : null;
+void _updateWeekProgressionWeights(
+    List<List<WeekProgression>>? progressions,
+    num maxWeight,
+    String exerciseType,
+) {
+  if (progressions != null && progressions.isNotEmpty) {
+    for (final weekProgressions in progressions) {
+      for (final item in weekProgressions) {
+        final intensity = item.intensity.isNotEmpty ? double.tryParse(item.intensity) : null;
         if (intensity != null) {
-          final calculatedWeight =
-              calculateWeightFromIntensity(maxWeight, intensity);
+          final calculatedWeight = calculateWeightFromIntensity(maxWeight, intensity);
           item.weight = roundWeight(calculatedWeight, exerciseType);
         }
       }
     }
   }
+}
 
   void _updateExerciseOrders(TrainingProgram program, int weekIndex,
       int workoutIndex, int startIndex) {

@@ -261,17 +261,20 @@ Future<void> editSeries(int weekIndex, int workoutIndex, int exerciseIndex,
     notifyListeners();
   }
 
-  Future<void> applyWeekProgressions(int exerciseIndex,
-      List<WeekProgression> weekProgressions, BuildContext context) async {
-    final exercise = _program.weeks
-        .expand((week) => week.workouts)
-        .expand((workout) => workout.exercises)
-        .elementAt(exerciseIndex);
+Future<void> applyWeekProgressions(int exerciseIndex,
+    List<List<WeekProgression>> weekProgressions, BuildContext context) async {
+  final exercise = _program.weeks
+      .expand((week) => week.workouts)
+      .expand((workout) => workout.exercises)
+      .elementAt(exerciseIndex);
 
-    for (int weekIndex = 0; weekIndex < _program.weeks.length; weekIndex++) {
-      final progression = weekIndex < weekProgressions.length
-          ? weekProgressions[weekIndex]
-          : weekProgressions.last;
+  for (int weekIndex = 0; weekIndex < _program.weeks.length; weekIndex++) {
+    final progressions = weekIndex < weekProgressions.length
+        ? weekProgressions[weekIndex]
+        : weekProgressions.last;
+
+    for (int sessionIndex = 0; sessionIndex < progressions.length; sessionIndex++) {
+      final progression = progressions[sessionIndex];
       final series = List.generate(
           progression.sets,
           (index) => Series(
@@ -287,26 +290,28 @@ Future<void> editSeries(int weekIndex, int workoutIndex, int exerciseIndex,
                 weight_done: 0.0,
               ));
 
-      for (var workout in _program.weeks[weekIndex].workouts) {
-        final exerciseIndex =
-            workout.exercises.indexWhere((e) => e.id == exercise.id);
-        if (exerciseIndex != -1) {
-          workout.exercises[exerciseIndex] =
-              workout.exercises[exerciseIndex].copyWith(series: series);
-        }
+      final workout = _program.weeks[weekIndex].workouts[sessionIndex];
+      final exerciseIndex =
+          workout.exercises.indexWhere((e) => e.id == exercise.id);
+      if (exerciseIndex != -1) {
+        workout.exercises[exerciseIndex] =
+            workout.exercises[exerciseIndex].copyWith(series: series);
       }
     }
-
-    notifyListeners();
   }
 
-  Future<void> updateExerciseProgressions(Exercise exercise,
-      List<WeekProgression> updatedProgressions, BuildContext context) async {
-    final progressionController = ProgressionController(this);
-    await progressionController.updateExerciseProgressions(
-        exercise, updatedProgressions, context);
-    notifyListeners();
-  }
+  notifyListeners();
+}
+
+Future<void> updateExerciseProgressions(Exercise exercise, List<List<WeekProgression>> updatedProgressions, BuildContext context) async {
+  final progressionController = ProgressionController(this);
+  await progressionController.updateExerciseProgressions(
+    exercise,
+    updatedProgressions,
+    context
+  );
+  notifyListeners();
+}
 
   void reorderWeeks(int oldIndex, int newIndex) {
     _weekController.reorderWeeks(_program, oldIndex, newIndex);
