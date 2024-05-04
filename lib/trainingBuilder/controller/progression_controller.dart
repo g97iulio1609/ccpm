@@ -88,8 +88,18 @@ List<List<WeekProgression>> buildWeekProgressions(List<Week> weeks, Exercise exe
       );
 
       final existingProgressions = exerciseInWorkout.weekProgressions;
-      if (existingProgressions.isNotEmpty && existingProgressions.length > weekIndex && existingProgressions[weekIndex].isNotEmpty) {
-        return existingProgressions[weekIndex][0];
+      if (existingProgressions.isNotEmpty && existingProgressions.length > weekIndex) {
+        return existingProgressions[weekIndex].isNotEmpty
+            ? existingProgressions[weekIndex][workoutIndex]
+            : WeekProgression(
+                weekNumber: weekIndex + 1,
+                sessionNumber: workoutIndex + 1,
+                reps: exerciseInWorkout.series.isNotEmpty ? exerciseInWorkout.series.first.reps : 0,
+                sets: exerciseInWorkout.series.length,
+                intensity: exerciseInWorkout.series.isNotEmpty ? exerciseInWorkout.series.first.intensity : '',
+                rpe: exerciseInWorkout.series.isNotEmpty ? exerciseInWorkout.series.first.rpe : '',
+                weight: exerciseInWorkout.series.isNotEmpty ? exerciseInWorkout.series.first.weight : 0.0,
+              );
       } else {
         final firstSeries = exerciseInWorkout.series.isNotEmpty ? exerciseInWorkout.series.first : null;
 
