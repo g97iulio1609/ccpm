@@ -318,6 +318,7 @@ void updateIntensityFromWeight(
   if (weight > 0 && latestMaxWeight > 0) {
     final calculatedIntensity = calculateIntensityFromWeight(weight, latestMaxWeight);
     intensityController.text = calculatedIntensity.toStringAsFixed(2);
+    debugPrint('weight: $weight calculatedIntensity: $calculatedIntensity  intensityController.text: ${intensityController.text}'  );
   } else {
     intensityController.clear();
   }
@@ -362,8 +363,8 @@ void updateIntensityFromWeight(
           calculateIntensityFromWeight(weight, latestMaxWeight.toDouble());
       intensityController.text = intensity.toStringAsFixed(2);
     } else {
-      rpeController.clear();
-      intensityController.clear();
+     rpeController.clear();
+    //  intensityController.clear();
     }
   }
 

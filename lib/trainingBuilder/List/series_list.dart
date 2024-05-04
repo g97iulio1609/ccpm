@@ -410,13 +410,7 @@ void _showEditAllSeriesDialog(
                         latestMaxWeight!, // Passa il latestMaxWeight corretto
                       );
                     }
-                    SeriesUtils.updateRPE(
-                      repsController,
-                      weightController,
-                      rpeController,
-                      intensityController,
-                      latestMaxWeight, // Passa il latestMaxWeight corretto
-                    );
+                   
                   },
                 ),
               ],
