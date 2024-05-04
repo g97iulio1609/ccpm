@@ -319,7 +319,7 @@ void _showEditAllSeriesDialog(
                       weightController,
                       rpeController,
                       intensityController,
-                      latestMaxWeight as num, // Passa il latestMaxWeight corretto
+                      latestMaxWeight, // Passa il latestMaxWeight corretto
                     );
                   },
                 ),
@@ -351,7 +351,7 @@ void _showEditAllSeriesDialog(
                         weightController,
                         intensityController,
                         exercise.type,
-                        latestMaxWeight as num, // Passa il latestMaxWeight corretto
+                        latestMaxWeight, // Passa il latestMaxWeight corretto
                         ValueNotifier<double>(0.0),
                       );
                     }
@@ -380,7 +380,7 @@ void _showEditAllSeriesDialog(
                       rpeController,
                       intensityController,
                       exercise.type,
-                      latestMaxWeight as num, // Passa il latestMaxWeight corretto
+                      latestMaxWeight, // Passa il latestMaxWeight corretto
                       ValueNotifier<double>(0.0),
                     );
                   },
@@ -415,7 +415,7 @@ void _showEditAllSeriesDialog(
                       weightController,
                       rpeController,
                       intensityController,
-                      latestMaxWeight as num, // Passa il latestMaxWeight corretto
+                      latestMaxWeight, // Passa il latestMaxWeight corretto
                     );
                   },
                 ),

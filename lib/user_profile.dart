@@ -275,7 +275,7 @@ Widget buildGenderDropdown() {
       color: Colors.white,
       fontSize: 18,
     ),
-    items: <String>['Uomo', 'Donna', 'Altro']
+    items: <String>['male', 'female', 'other']
         .map<DropdownMenuItem<String>>((String value) {
       return DropdownMenuItem<String>(
         value: value,

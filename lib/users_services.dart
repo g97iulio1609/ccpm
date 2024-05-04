@@ -408,6 +408,28 @@ String getCurrentUserId() {
     }
   }
 
+
+  Future<Map<String, dynamic>?> getTDEEData(String userId) async {
+  final userDoc = await _firestore.collection('users').doc(userId).get();
+  if (userDoc.exists) {
+    final userData = userDoc.data() as Map<String, dynamic>;
+    return {
+      'birthDate': userData['birthDate'],
+      'height': userData['height'],
+      'weight': userData['weight'],
+      'gender': userData['gender'],
+      'activityLevel': userData['activityLevel'],
+      'tdee': userData['tdee'],
+    };
+  }
+  return null;
+}
+
+Future<void> updateTDEEData(String userId, Map<String, dynamic> tdeeData) async {
+  await _firestore.collection('users').doc(userId).update(tdeeData);
+}
+
+
   Future<void> _updateCurrentProgramWeights(
       String userId, String exerciseId, num newMaxWeight) async {
     //debugPrint('Updating current program weights for user: $userId, exercise: $exerciseId');
