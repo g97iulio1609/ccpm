@@ -224,6 +224,10 @@ class UsersService {
     return ref.read(userRoleProvider);
   }
 
+String getCurrentUserId() {
+  return _auth.currentUser?.uid ?? '';
+}
+
   Future<void> setUserRole(String userId) async {
     try {
       final DocumentSnapshot userDoc =

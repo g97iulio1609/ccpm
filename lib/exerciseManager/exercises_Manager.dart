@@ -1,25 +1,15 @@
 import 'package:alphanessone/users_services.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'exercise_model.dart';
 import 'exercises_services.dart';
 
-final authProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
 final muscleGroupsProvider = StreamProvider((ref) {
   return FirebaseFirestore.instance.collection('muscleGroups').snapshots().map(
       (snapshot) =>
           snapshot.docs.map((doc) => doc['name'].toString()).toList());
-});
-
-final userServiceProvider = Provider<UsersService>((ref) {
-  return UsersService(ref, FirebaseFirestore.instance, FirebaseAuth.instance);
-});
-final usersStreamProvider = StreamProvider<List<UserModel>>((ref) {
-  final service = ref.watch(userServiceProvider);
-  return service.getUsers();
 });
 
 final exerciseTypesProvider = StreamProvider((ref) {
@@ -41,10 +31,6 @@ class ExercisesList extends HookConsumerWidget {
     final selectedExerciseType = useState<String?>(null);
     final TextEditingController nameController = useTextEditingController();
     final editingExerciseId = useState<String?>(null);
-    final auth = ref.watch(authProvider);
-    final usersService = ref.watch(userServiceProvider);
-    final currentUserId = auth.currentUser?.uid;
-    final currentUserRole = usersService.getCurrentUserRole();
 
     ExerciseModel? exerciseToEdit;
     ExerciseModel? exerciseToDelete;
@@ -56,6 +42,9 @@ class ExercisesList extends HookConsumerWidget {
         'type': selectedExerciseType.value
       };
 
+      final currentUserRole = ref.read(userRoleProvider);
+      final currentUserId = ref.read(userNameProvider.notifier).state;
+
       if (editingExerciseId.value != null) {
         if (currentUserRole == 'admin' ||
             (exerciseToEdit?.userId == currentUserId)) {
@@ -65,13 +54,6 @@ class ExercisesList extends HookConsumerWidget {
             data['muscleGroup']!,
             data['type']!,
           );
-        } else {
-          exercisesService.addExercise(
-            data['name']!,
-            data['muscleGroup']!,
-            data['type']!,
-            currentUserId ?? '',
-          );
         }
       } else if (nameController.text.trim().isNotEmpty &&
           selectedMuscleGroup.value != null &&
@@ -80,7 +62,7 @@ class ExercisesList extends HookConsumerWidget {
           data['name']!,
           data['muscleGroup']!,
           data['type']!,
-          currentUserId ?? '',
+          currentUserId,
         );
       }
 
@@ -101,6 +83,9 @@ class ExercisesList extends HookConsumerWidget {
     }
 
     Future<void> deleteExercise(String id) async {
+      final currentUserRole = ref.read(userRoleProvider);
+      final currentUserId = ref.read(userNameProvider.notifier).state;
+
       if (currentUserRole == 'admin' ||
           (exerciseToDelete?.userId == currentUserId)) {
         await exercisesService.deleteExercise(id);
@@ -108,11 +93,19 @@ class ExercisesList extends HookConsumerWidget {
     }
 
     Future<void> approveExercise(String id) async {
-      await exercisesService.approveExercise(id);
+      final currentUserRole = ref.read(userRoleProvider);
+
+      if (currentUserRole == 'admin') {
+        await exercisesService.approveExercise(id);
+      }
     }
 
     Future<void> rejectExercise(String id) async {
-      await exercisesService.deleteExercise(id);
+      final currentUserRole = ref.read(userRoleProvider);
+
+      if (currentUserRole == 'admin') {
+        await exercisesService.deleteExercise(id);
+      }
     }
 
     return Scaffold(
@@ -259,8 +252,9 @@ class ExercisesList extends HookConsumerWidget {
                         .where(
                           (exercise) =>
                               exercise.status == 'pending' &&
-                              (exercise.userId == currentUserId ||
-                                  currentUserRole == 'admin'),
+                              (exercise.userId ==
+                                      ref.read(userNameProvider.notifier).state ||
+                                  ref.read(userRoleProvider) == 'admin'),
                         )
                         .toList();
                     final approvedExercises = exercises
@@ -298,11 +292,13 @@ class ExercisesList extends HookConsumerWidget {
                           padding: const EdgeInsets.only(bottom: 16),
                           child: ExerciseCard(
                             exercise: exercise,
-                            isAdmin: currentUserRole == 'admin',
-                            canEdit: currentUserRole == 'admin' ||
-                                exercise.userId == currentUserId,
-                            canDelete: currentUserRole == 'admin' ||
-                                exercise.userId == currentUserId,
+                            isAdmin: ref.read(userRoleProvider) == 'admin',
+                            canEdit: ref.read(userRoleProvider) == 'admin' ||
+                                exercise.userId ==
+                                    ref.read(userNameProvider.notifier).state,
+                            canDelete: ref.read(userRoleProvider) == 'admin' ||
+                                exercise.userId ==
+                                    ref.read(userNameProvider.notifier).state,
                             onEdit: () => editExercise(exercise),
                             onDelete: () {
                               exerciseToDelete = exercise;
