@@ -261,8 +261,7 @@ Future<void> editSeries(int weekIndex, int workoutIndex, int exerciseIndex,
     notifyListeners();
   }
 
-Future<void> applyWeekProgressions(int exerciseIndex,
-    List<List<WeekProgression>> weekProgressions, BuildContext context) async {
+Future<void> applyWeekProgressions(int exerciseIndex, List<List<WeekProgression>> weekProgressions, BuildContext context) async {
   final exercise = _program.weeks
       .expand((week) => week.workouts)
       .expand((workout) => workout.exercises)
@@ -277,31 +276,15 @@ Future<void> applyWeekProgressions(int exerciseIndex,
 
     for (int sessionIndex = 0; sessionIndex < progressions.length; sessionIndex++) {
       final progression = progressions[sessionIndex];
-      final series = List.generate(
-          progression.sets,
-          (index) => Series(
-                serieId: generateRandomId(16).toString(),
-                reps: progression.reps,
-                sets: 1,
-                intensity: progression.intensity,
-                rpe: progression.rpe,
-                weight: progression.weight,
-                order: index + 1,
-                done: false,
-                reps_done: 0,
-                weight_done: 0.0,
-              ));
-            
+      final series = progression.series; // Accedi direttamente alla lista di serie
+
       debugPrint('Generated series for week $weekIndex, session $sessionIndex: $series');
 
       final workout = _program.weeks[weekIndex].workouts[sessionIndex];
-      final exerciseIndex =
-          workout.exercises.indexWhere((e) => e.id == exercise.id);
+      final exerciseIndex = workout.exercises.indexWhere((e) => e.id == exercise.id);
       if (exerciseIndex != -1) {
-        workout.exercises[exerciseIndex] =
-            workout.exercises[exerciseIndex].copyWith(series: series);
-                    debugPrint('Applied series to exercise in week $weekIndex, session $sessionIndex, exercise index $exerciseIndex');
-
+        workout.exercises[exerciseIndex] = workout.exercises[exerciseIndex].copyWith(series: series);
+        debugPrint('Applied series to exercise in week $weekIndex, session $sessionIndex, exercise index $exerciseIndex');
       }
     }
   }
@@ -309,7 +292,6 @@ Future<void> applyWeekProgressions(int exerciseIndex,
 
   notifyListeners();
 }
-
 Future<void> updateExerciseProgressions(Exercise exercise, List<List<WeekProgression>> updatedProgressions, BuildContext context) async {
   final progressionController = ProgressionController(this);
   await progressionController.updateExerciseProgressions(

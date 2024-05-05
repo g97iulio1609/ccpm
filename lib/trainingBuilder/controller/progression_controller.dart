@@ -47,23 +47,7 @@ Future<void> updateExerciseProgressions(Exercise exercise, List<List<WeekProgres
           final progression = exerciseProgressions[sessionIndex];
           debugPrint('Applying progression for week $weekIndex, session $sessionIndex: $progression');
 
-          currentExercise.series.clear();
-          for (int i = 0; i < progression.sets; i++) {
-            final newSeries = Series(
-              serieId: generateRandomId(16).toString(),
-              reps: progression.reps,
-              sets: 1,
-              intensity: progression.intensity,
-              rpe: progression.rpe,
-              weight: progression.weight,
-              order: i + 1,
-              done: false,
-              reps_done: 0,
-              weight_done: 0.0,
-            );
-            currentExercise.series.add(newSeries);
-            debugPrint('Updated series for exercise: ${currentExercise.series}');
-          }
+          currentExercise.series = progression.series;
         } else {
           debugPrint('Indice di sessione non valido per week $weekIndex, session $sessionIndex');
         }
@@ -74,7 +58,6 @@ Future<void> updateExerciseProgressions(Exercise exercise, List<List<WeekProgres
 
   notifyListeners();
 }
-
 
 List<List<WeekProgression>> buildWeekProgressions(List<Week> weeks, Exercise exercise) {
   final progressions = List.generate(weeks.length, (weekIndex) {
@@ -94,23 +77,13 @@ List<List<WeekProgression>> buildWeekProgressions(List<Week> weeks, Exercise exe
             : WeekProgression(
                 weekNumber: weekIndex + 1,
                 sessionNumber: workoutIndex + 1,
-                reps: exerciseInWorkout.series.isNotEmpty ? exerciseInWorkout.series.first.reps : 0,
-                sets: exerciseInWorkout.series.length,
-                intensity: exerciseInWorkout.series.isNotEmpty ? exerciseInWorkout.series.first.intensity : '',
-                rpe: exerciseInWorkout.series.isNotEmpty ? exerciseInWorkout.series.first.rpe : '',
-                weight: exerciseInWorkout.series.isNotEmpty ? exerciseInWorkout.series.first.weight : 0.0,
+                series: exerciseInWorkout.series,
               );
       } else {
-        final firstSeries = exerciseInWorkout.series.isNotEmpty ? exerciseInWorkout.series.first : null;
-
         return WeekProgression(
           weekNumber: weekIndex + 1,
           sessionNumber: workoutIndex + 1,
-          reps: firstSeries?.reps ?? 0,
-          sets: exerciseInWorkout.series.length,
-          intensity: firstSeries?.intensity ?? '',
-          rpe: firstSeries?.rpe ?? '',
-          weight: firstSeries?.weight ?? 0.0,
+          series: exerciseInWorkout.series,
         );
       }
     });

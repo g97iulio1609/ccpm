@@ -163,11 +163,14 @@ void _updateWeekProgressionWeights(
 ) {
   if (progressions != null && progressions.isNotEmpty) {
     for (final weekProgressions in progressions) {
-      for (final item in weekProgressions) {
-        final intensity = item.intensity.isNotEmpty ? double.tryParse(item.intensity) : null;
-        if (intensity != null) {
-          final calculatedWeight = calculateWeightFromIntensity(maxWeight, intensity);
-          item.weight = roundWeight(calculatedWeight, exerciseType);
+      for (final progression in weekProgressions) {
+        for (int seriesIndex = 0; seriesIndex < progression.series.length; seriesIndex++) {
+          final series = progression.series[seriesIndex];
+          final intensity = series.intensity.isNotEmpty ? double.tryParse(series.intensity) : null;
+          if (intensity != null) {
+            final calculatedWeight = calculateWeightFromIntensity(maxWeight, intensity);
+            progression.series[seriesIndex] = series.copyWith(weight: roundWeight(calculatedWeight, exerciseType));
+          }
         }
       }
     }
