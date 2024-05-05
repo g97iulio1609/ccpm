@@ -252,6 +252,9 @@ void updateWeightFromIntensity(int weekIndex, int sessionIndex, int seriesIndex,
   }
 
   _intensityControllers[weekIndex][sessionIndex][seriesIndex].text = intensity;
+  
+  // Aggiungi questa riga per impostare la selezione del testo alla fine
+  _intensityControllers[weekIndex][sessionIndex][seriesIndex].selection = TextSelection.collapsed(offset: intensity.length);
 }
 
 void updateWeightFromRPE(
