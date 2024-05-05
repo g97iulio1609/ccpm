@@ -234,16 +234,25 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
     super.dispose();
   }
 
-  void updateWeightFromIntensity(
-      int weekIndex, int sessionIndex, int seriesIndex, String intensity) {
-    SeriesUtils.updateWeightFromIntensity(
-      _weightControllers[weekIndex][sessionIndex][seriesIndex],
-      _intensityControllers[weekIndex][sessionIndex][seriesIndex],
-      widget.exercise?.type ?? '',
-      widget.latestMaxWeight,
-      ValueNotifier<double>(0.0),
-    );
+void updateWeightFromIntensity(int weekIndex, int sessionIndex, int seriesIndex, String intensity) {
+  final programController = ref.read(trainingProgramControllerProvider);
+  final progressionController = ref.read(progressionControllerProvider);
+  final weekProgressions = progressionController.buildWeekProgressions(
+      programController.program.weeks, widget.exercise!);
+
+  final currentProgression = weekProgressions[weekIndex][sessionIndex].series[seriesIndex];
+
+  if (intensity.isNotEmpty) {
+    final calculatedWeight = SeriesUtils.calculateWeightFromIntensity(widget.latestMaxWeight.toDouble(), double.parse(intensity));
+    currentProgression.weight = SeriesUtils.roundWeight(calculatedWeight, widget.exercise?.type);
+    _weightControllers[weekIndex][sessionIndex][seriesIndex].text = currentProgression.weight.toStringAsFixed(2);
+  } else {
+    currentProgression.weight = 0.0;
+    _weightControllers[weekIndex][sessionIndex][seriesIndex].clear();
   }
+
+  _intensityControllers[weekIndex][sessionIndex][seriesIndex].text = intensity;
+}
 
 void updateWeightFromRPE(
     int weekIndex, int sessionIndex, int seriesIndex, String rpe, int reps) {

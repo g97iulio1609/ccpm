@@ -58,7 +58,6 @@ Future<void> updateExerciseProgressions(Exercise exercise, List<List<WeekProgres
 
   notifyListeners();
 }
-
 List<List<WeekProgression>> buildWeekProgressions(List<Week> weeks, Exercise exercise) {
   final progressions = List.generate(weeks.length, (weekIndex) {
     final week = weeks[weekIndex];
