@@ -260,32 +260,35 @@ Future<void> editSeries(int weekIndex, int workoutIndex, int exerciseIndex,
         _program, weekIndex, workoutIndex, exerciseIndex, updatedSeries);
     notifyListeners();
   }
-Future<void> applyWeekProgressions(
-  int exerciseIndex,
-  List<List<WeekProgression>> weekProgressions,
-  BuildContext context,
-) async {
-  final exercise = program.weeks
+
+Future<void> applyWeekProgressions(int exerciseIndex, List<List<WeekProgression>> weekProgressions, BuildContext context) async {
+  final exercise = _program.weeks
       .expand((week) => week.workouts)
       .expand((workout) => workout.exercises)
-      .toList()[exerciseIndex];
+      .elementAt(exerciseIndex);
+  debugPrint('Applying week progressions for exercise: ${exercise.name}');
 
-  exercise.weekProgressions = weekProgressions;
+  for (int weekIndex = 0; weekIndex < _program.weeks.length; weekIndex++) {
+    final progressions = weekIndex < weekProgressions.length
+        ? weekProgressions[weekIndex]
+        : weekProgressions.last;
+    debugPrint('Applying progressions for week $weekIndex: $progressions');
 
-  for (int weekIndex = 0; weekIndex < program.weeks.length; weekIndex++) {
-    final week = program.weeks[weekIndex];
-    for (int workoutIndex = 0; workoutIndex < week.workouts.length; workoutIndex++) {
-      final workout = week.workouts[workoutIndex];
-      final exerciseInWorkout = workout.exercises.firstWhere(
-        (e) => e.exerciseId == exercise.exerciseId,
-        orElse: () => Exercise(name: '', type: '', variant: '', order: 0),
-      );
+    for (int sessionIndex = 0; sessionIndex < progressions.length; sessionIndex++) {
+      final progression = progressions[sessionIndex];
+      final series = progression.series; // Accedi direttamente alla lista di serie
 
-      if (exerciseInWorkout.name.isNotEmpty) {
-        exerciseInWorkout.series = weekProgressions[weekIndex][workoutIndex].series;
+      debugPrint('Generated series for week $weekIndex, session $sessionIndex: $series');
+
+      final workout = _program.weeks[weekIndex].workouts[sessionIndex];
+      final exerciseIndex = workout.exercises.indexWhere((e) => e.id == exercise.id);
+      if (exerciseIndex != -1) {
+        workout.exercises[exerciseIndex] = workout.exercises[exerciseIndex].copyWith(series: series);
+        debugPrint('Applied series to exercise in week $weekIndex, session $sessionIndex, exercise index $exerciseIndex');
       }
     }
   }
+  debugPrint('Finished applying week progressions');
 
   notifyListeners();
 }

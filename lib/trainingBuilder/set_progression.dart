@@ -4,8 +4,58 @@ import 'package:alphanessone/trainingBuilder/controller/training_program_control
 import 'package:alphanessone/trainingBuilder/controller/progression_controller.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+final controllerProvider = StateNotifierProvider.autoDispose<ControllerNotifier, List<List<TextEditingController>>>((ref) {
+  return ControllerNotifier([]);
+});
+
+class ControllerNotifier extends StateNotifier<List<List<TextEditingController>>> {
+  ControllerNotifier(super.state);
+
+  void initialize(int count) {
+    final controllers = List.generate(
+      count,
+      (index) => List.generate(
+        5,
+        (seriesIndex) => TextEditingController(),
+      ),
+    );
+    state = [...controllers];
+  }
+
+  @override
+  void dispose() {
+    for (final controllerList in state) {
+      for (final controller in controllerList) {
+        controller.dispose();
+      }
+    }
+    super.dispose();
+  }
+}
+
+final focusNodesProvider = StateNotifierProvider.autoDispose<FocusNodesNotifier, List<FocusNode>>((ref) {
+  return FocusNodesNotifier([]);
+});
+
+class FocusNodesNotifier extends StateNotifier<List<FocusNode>> {
+  FocusNodesNotifier(super.state);
+
+  void initialize(int count) {
+    final focusNodes = List<FocusNode>.generate(count, (_) => FocusNode());
+    state = [...focusNodes];
+  }
+
+  @override
+  void dispose() {
+    for (final focusNode in state) {
+      focusNode.dispose();
+    }
+    super.dispose();
+  }
+}
 
 class SetProgressionScreen extends ConsumerStatefulWidget {
   final String exerciseId;
@@ -20,399 +70,196 @@ class SetProgressionScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<SetProgressionScreen> createState() =>
-      _SetProgressionScreenState();
+  ConsumerState<SetProgressionScreen> createState() => _SetProgressionScreenState();
 }
 
 class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
-  List<List<List<TextEditingController>>> _repsControllers = [];
-  List<List<List<TextEditingController>>> _setsControllers = [];
-  List<List<List<TextEditingController>>> _weightControllers = [];
-  List<List<List<TextEditingController>>> _intensityControllers = [];
-  List<List<List<TextEditingController>>> _rpeControllers = [];
-  List<List<List<FocusNode>>> _repsFocusNodes = [];
-  List<List<List<FocusNode>>> _setsFocusNodes = [];
-  List<List<List<FocusNode>>> _weightFocusNodes = [];
-  List<List<List<FocusNode>>> _intensityFocusNodes = [];
-
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final programController = ref.read(trainingProgramControllerProvider);
+      final progressionController = ref.read(progressionControllerProvider);
+      final weekProgressions = progressionController.buildWeekProgressions(programController.program.weeks, widget.exercise!);
+
+      final controllerCount = weekProgressions.expand((week) => week.expand((session) => session.series)).length;
+      ref.read(controllerProvider.notifier).initialize(controllerCount);
+      ref.read(focusNodesProvider.notifier).initialize(controllerCount);
+
+      int controllerIndex = 0;
+      for (final weekProgression in weekProgressions) {
+        for (final sessionProgression in weekProgression) {
+          for (final series in sessionProgression.series) {
+            ref.read(controllerProvider.notifier).state[controllerIndex][0].text = series.reps.toString();
+            ref.read(controllerProvider.notifier).state[controllerIndex][1].text = series.sets.toString();
+            ref.read(controllerProvider.notifier).state[controllerIndex][2].text = series.weight.toString();
+            ref.read(controllerProvider.notifier).state[controllerIndex][3].text = series.intensity;
+            ref.read(controllerProvider.notifier).state[controllerIndex][4].text = series.rpe;
+            controllerIndex++;
+          }
+        }
+      }
+    });
+  }
+
+  List<List<dynamic>> _groupSeries(List<Series> series) {
+    final groupedSeries = <List<dynamic>>[];
+    List<Series> currentGroup = [];
+
+    for (int i = 0; i < series.length; i++) {
+      final currentSeries = series[i];
+      if (i == 0 || currentSeries.reps != series[i - 1].reps || currentSeries.weight != series[i - 1].weight) {
+        if (currentGroup.isNotEmpty) {
+          groupedSeries.add(currentGroup);
+          currentGroup = [];
+        }
+        currentGroup.add(currentSeries);
+      } else {
+        currentGroup.add(currentSeries);
+      }
+    }
+
+    if (currentGroup.isNotEmpty) {
+      groupedSeries.add(currentGroup);
+    }
+
+    return groupedSeries;
+  }
+
+  void _updateWeightFromIntensity(int index, String intensity) {
     final programController = ref.read(trainingProgramControllerProvider);
     final progressionController = ref.read(progressionControllerProvider);
-    final weekProgressions = progressionController.buildWeekProgressions(
-        programController.program.weeks, widget.exercise!);
+    final weekProgressions = progressionController.buildWeekProgressions(programController.program.weeks, widget.exercise!);
 
-    _repsControllers = List.generate(
-      weekProgressions.length,
-      (weekIndex) => List.generate(
-        weekProgressions[weekIndex].length,
-        (sessionIndex) => List.generate(
-          weekProgressions[weekIndex][sessionIndex].series.length,
-          (seriesIndex) => TextEditingController(
-            text: weekProgressions[weekIndex][sessionIndex]
-                .series[seriesIndex]
-                .reps
-                .toString(),
-          ),
-        ),
-      ),
-    );
+    final groupedSeries = _groupSeries(weekProgressions.expand((week) => week.expand((session) => session.series)).toList());
 
-    _setsControllers = List.generate(
-      weekProgressions.length,
-      (weekIndex) => List.generate(
-        weekProgressions[weekIndex].length,
-        (sessionIndex) => List.generate(
-          weekProgressions[weekIndex][sessionIndex].series.length,
-          (seriesIndex) => TextEditingController(
-            text: weekProgressions[weekIndex][sessionIndex]
-                .series[seriesIndex]
-                .sets
-                .toString(),
-          ),
-        ),
-      ),
-    );
-
-    _weightControllers = List.generate(
-      weekProgressions.length,
-      (weekIndex) => List.generate(
-        weekProgressions[weekIndex].length,
-        (sessionIndex) => List.generate(
-          weekProgressions[weekIndex][sessionIndex].series.length,
-          (seriesIndex) => TextEditingController(
-            text: weekProgressions[weekIndex][sessionIndex]
-                .series[seriesIndex]
-                .weight
-                .toString(),
-          ),
-        ),
-      ),
-    );
-
-    _intensityControllers = List.generate(
-      weekProgressions.length,
-      (weekIndex) => List.generate(
-        weekProgressions[weekIndex].length,
-        (sessionIndex) => List.generate(
-          weekProgressions[weekIndex][sessionIndex].series.length,
-          (seriesIndex) => TextEditingController(
-            text: weekProgressions[weekIndex][sessionIndex]
-                .series[seriesIndex]
-                .intensity,
-          ),
-        ),
-      ),
-    );
-
-    _rpeControllers = List.generate(
-      weekProgressions.length,
-      (weekIndex) => List.generate(
-        weekProgressions[weekIndex].length,
-        (sessionIndex) => List.generate(
-          weekProgressions[weekIndex][sessionIndex].series.length,
-          (seriesIndex) => TextEditingController(
-            text: weekProgressions[weekIndex][sessionIndex]
-                .series[seriesIndex]
-                .rpe,
-          ),
-        ),
-      ),
-    );
-
-    _repsFocusNodes = List.generate(
-      weekProgressions.length,
-      (weekIndex) => List.generate(
-        weekProgressions[weekIndex].length,
-        (sessionIndex) => List.generate(
-          weekProgressions[weekIndex][sessionIndex].series.length,
-          (seriesIndex) => FocusNode(),
-        ),
-      ),
-    );
-
-    _setsFocusNodes = List.generate(
-      weekProgressions.length,
-      (weekIndex) => List.generate(
-        weekProgressions[weekIndex].length,
-        (sessionIndex) => List.generate(
-          weekProgressions[weekIndex][sessionIndex].series.length,
-          (seriesIndex) => FocusNode(),
-        ),
-      ),
-    );
-
-    _weightFocusNodes = List.generate(
-      weekProgressions.length,
-      (weekIndex) => List.generate(
-        weekProgressions[weekIndex].length,
-        (sessionIndex) => List.generate(
-          weekProgressions[weekIndex][sessionIndex].series.length,
-          (seriesIndex) => FocusNode(),
-        ),
-      ),
-    );
-
-    _intensityFocusNodes = List.generate(
-      weekProgressions.length,
-      (weekIndex) => List.generate(
-        weekProgressions[weekIndex].length,
-        (sessionIndex) => List.generate(
-          weekProgressions[weekIndex][sessionIndex].series.length,
-          (seriesIndex) => FocusNode(),
-        ),
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    for (var weekControllers in _repsControllers) {
-      for (var sessionControllers in weekControllers) {
-        for (var controller in sessionControllers) {
-          controller.dispose();
-        }
-      }
-    }
-    for (var weekControllers in _setsControllers) {
-      for (var sessionControllers in weekControllers) {
-        for (var controller in sessionControllers) {
-          controller.dispose();
-        }
-      }
-    }
-    for (var weekControllers in _weightControllers) {
-      for (var sessionControllers in weekControllers) {
-        for (var controller in sessionControllers) {
-          controller.dispose();
-        }
-      }
-    }
-    for (var weekControllers in _intensityControllers) {
-      for (var sessionControllers in weekControllers) {
-        for (var controller in sessionControllers) {
-          controller.dispose();
-        }
-      }
-    }
-    for (var weekControllers in _rpeControllers) {
-      for (var sessionControllers in weekControllers) {
-        for (var controller in sessionControllers) {
-          controller.dispose();
-        }
-      }
-    }
-    for (var weekFocusNodes in _repsFocusNodes) {
-      for (var sessionFocusNodes in weekFocusNodes) {
-        for (var focusNode in sessionFocusNodes) {
-          focusNode.dispose();
-        }
-      }
-    }
-    for (var weekFocusNodes in _setsFocusNodes) {
-      for (var sessionFocusNodes in weekFocusNodes) {
-        for (var focusNode in sessionFocusNodes) {
-          focusNode.dispose();
-        }
-      }
-    }
-    for (var weekFocusNodes in _weightFocusNodes) {
-      for (var sessionFocusNodes in weekFocusNodes) {
-        for (var focusNode in sessionFocusNodes) {
-          focusNode.dispose();
-        }
-      }
-    }
-    for (var weekFocusNodes in _intensityFocusNodes) {
-      for (var sessionFocusNodes in weekFocusNodes) {
-        for (var focusNode in sessionFocusNodes) {
-          focusNode.dispose();
-        }
-      }
-    }
-    super.dispose();
-  }
-
-List<List<dynamic>> _groupSeries(List<Series> series) {
-  final groupedSeries = <List<dynamic>>[];
-  List<Series> currentGroup = [];
-
-  for (int i = 0; i < series.length; i++) {
-    final currentSeries = series[i];
-    if (i == 0 || currentSeries.reps != series[i - 1].reps || currentSeries.weight != series[i - 1].weight) {
-      if (currentGroup.isNotEmpty) {
-        groupedSeries.add(currentGroup);
-        currentGroup = [];
-      }
-      currentGroup.add(currentSeries);
-    } else {
-      currentGroup.add(currentSeries);
-    }
-  }
-
-  if (currentGroup.isNotEmpty) {
-    groupedSeries.add(currentGroup);
-  }
-
-  return groupedSeries;
-}
-
-  void updateWeightFromIntensity(int weekIndex, int sessionIndex,
-      int groupIndex, String intensity) {
-    final programController = ref.read(trainingProgramControllerProvider);
-    final progressionController = ref.read(progressionControllerProvider);
-    final weekProgressions = progressionController.buildWeekProgressions(
-        programController.program.weeks, widget.exercise!);
-
-    final seriesGroup =
-        _groupSeries(weekProgressions[weekIndex][sessionIndex].series);
-
-    for (final currentProgression in seriesGroup[groupIndex]) {
+    for (final currentProgression in groupedSeries[index]) {
       if (intensity.isNotEmpty) {
-        final calculatedWeight = SeriesUtils.calculateWeightFromIntensity(
-            widget.latestMaxWeight.toDouble(), double.parse(intensity));
-        currentProgression.weight =
-            SeriesUtils.roundWeight(calculatedWeight, widget.exercise?.type);
+        final calculatedWeight = SeriesUtils.calculateWeightFromIntensity(widget.latestMaxWeight.toDouble(), double.parse(intensity));
+        currentProgression.weight = SeriesUtils.roundWeight(calculatedWeight, widget.exercise?.type);
       } else {
         currentProgression.weight = 0.0;
       }
       currentProgression.intensity = intensity;
+
+      _updateSeriesInProgressions(weekProgressions, currentProgression);
     }
 
-    _weightControllers[weekIndex][sessionIndex][groupIndex].text =
-        seriesGroup[groupIndex].first.weight.toStringAsFixed(2);
-    _intensityControllers[weekIndex][sessionIndex][groupIndex].text = intensity;
-    _intensityControllers[weekIndex][sessionIndex][groupIndex].selection =
-        TextSelection.collapsed(offset: intensity.length);
+    final intensityControllerIndex = index * 5 + 3;
+    ref.read(controllerProvider.notifier).state[index][intensityControllerIndex].text = intensity;
+    ref.read(controllerProvider.notifier).state[index][intensityControllerIndex].selection = TextSelection.collapsed(offset: intensity.length);
+
+    final weightControllerIndex = index * 5 + 2;
+    ref.read(controllerProvider.notifier).state[index][weightControllerIndex].text = groupedSeries[index].first.weight.toStringAsFixed(2);
   }
 
-  void updateWeightFromRPE(int weekIndex, int sessionIndex, int groupIndex,
-      String rpe, int reps) {
+  void _updateWeightFromRPE(int index, String rpe, int reps) {
     final programController = ref.read(trainingProgramControllerProvider);
     final progressionController = ref.read(progressionControllerProvider);
-    final weekProgressions = progressionController.buildWeekProgressions(
-        programController.program.weeks, widget.exercise!);
+    final weekProgressions = progressionController.buildWeekProgressions(programController.program.weeks, widget.exercise!);
 
-    final seriesGroup =
-        _groupSeries(weekProgressions[weekIndex][sessionIndex].series);
+    final groupedSeries = _groupSeries(weekProgressions.expand((week) => week.expand((session) => session.series)).toList());
 
-    for (final currentProgression in seriesGroup[groupIndex]) {
+    for (final currentProgression in groupedSeries[index]) {
       SeriesUtils.updateWeightFromRPE(
-        _repsControllers[weekIndex][sessionIndex][groupIndex],
-        _weightControllers[weekIndex][sessionIndex][groupIndex],
-        _rpeControllers[weekIndex][sessionIndex][groupIndex],
-        _intensityControllers[weekIndex][sessionIndex][groupIndex],
+        ref.read(controllerProvider.notifier).state[index][index * 5],
+        ref.read(controllerProvider.notifier).state[index][index * 5 + 2],
+        ref.read(controllerProvider.notifier).state[index][index * 5 + 4],
+        ref.read(controllerProvider.notifier).state[index][index * 5 + 3],
         widget.exercise?.type ?? '',
         widget.latestMaxWeight,
         ValueNotifier<double>(0.0),
       );
+
+      _updateSeriesInProgressions(weekProgressions, currentProgression);
     }
   }
 
-  void updateIntensityFromWeight(
-      int weekIndex, int sessionIndex, int groupIndex, double weight) {
+  void _updateIntensityFromWeight(int index, double weight) {
     final programController = ref.read(trainingProgramControllerProvider);
     final progressionController = ref.read(progressionControllerProvider);
-    final weekProgressions = progressionController.buildWeekProgressions(
-        programController.program.weeks, widget.exercise!);
+    final weekProgressions = progressionController.buildWeekProgressions(programController.program.weeks, widget.exercise!);
 
-    final seriesGroup =
-        _groupSeries(weekProgressions[weekIndex][sessionIndex].series);
+    final groupedSeries = _groupSeries(weekProgressions.expand((week) => week.expand((session) => session.series)).toList());
+    final focusNodes = ref.read(focusNodesProvider);
 
-    for (final currentProgression in seriesGroup[groupIndex]) {
-      if (weight != 0 &&
-          !_intensityFocusNodes[weekIndex][sessionIndex][groupIndex].hasFocus) {
-        currentProgression.intensity = SeriesUtils.calculateIntensityFromWeight(
-                weight, widget.latestMaxWeight.toDouble())
-            .toStringAsFixed(2);
-        _intensityControllers[weekIndex][sessionIndex][groupIndex].text =
-            currentProgression.intensity;
+    for (final currentProgression in groupedSeries[index]) {
+      if (weight != 0 && !focusNodes[index * 4 + 3].hasFocus) {
+        currentProgression.intensity = SeriesUtils.calculateIntensityFromWeight(weight, widget.latestMaxWeight.toDouble()).toStringAsFixed(2);
+        final intensityControllerIndex = index * 5 + 3;
+        ref.read(controllerProvider.notifier).state[index][intensityControllerIndex].text = currentProgression.intensity;
+      }
+
+      _updateSeriesInProgressions(weekProgressions, currentProgression);
+    }
+  }
+
+  void _updateProgression(int index, int reps, String intensity, String rpe, double weight) {
+    final programController = ref.read(trainingProgramControllerProvider);
+    final progressionController = ref.read(progressionControllerProvider);
+    final weekProgressions = progressionController.buildWeekProgressions(programController.program.weeks, widget.exercise!);
+
+    final groupedSeries = _groupSeries(weekProgressions.expand((week) => week.expand((session) => session.series)).toList());
+
+    final seriesInGroup = groupedSeries[index] as List<Series>;
+    final sets = seriesInGroup.length;
+
+    for (final currentProgression in seriesInGroup) {
+      currentProgression.reps = reps;
+      currentProgression.sets = sets;
+      currentProgression.intensity = intensity;
+      currentProgression.rpe = rpe;
+      currentProgression.weight = weight;
+
+      _updateSeriesInProgressions(weekProgressions, currentProgression);
+    }
+  }
+
+  void _updateSeriesInProgressions(List<List<WeekProgression>> weekProgressions, Series updatedSeries) {
+    for (int weekIndex = 0; weekIndex < weekProgressions.length; weekIndex++) {
+      for (int sessionIndex = 0; sessionIndex < weekProgressions[weekIndex].length; sessionIndex++) {
+        final sessionProgression = weekProgressions[weekIndex][sessionIndex];
+        final seriesIndex = sessionProgression.series.indexWhere((s) => s.serieId == updatedSeries.serieId);
+        if (seriesIndex != -1) {
+          weekProgressions[weekIndex][sessionIndex].series[seriesIndex] = updatedSeries;
+        }
       }
     }
   }
-
-void updateProgression(int weekIndex, int sessionIndex, int groupIndex,
-    int reps, String intensity, String rpe, double weight) {
-  debugPrint('updateProgression: weekIndex=$weekIndex, sessionIndex=$sessionIndex, groupIndex=$groupIndex');
-
-  final programController = ref.read(trainingProgramControllerProvider);
-  final progressionController = ref.read(progressionControllerProvider);
-  final weekProgressions = progressionController.buildWeekProgressions(
-      programController.program.weeks, widget.exercise!);
-
-  debugPrint('Progressioni delle settimane: $weekProgressions');
-
-  final seriesGroup =
-      _groupSeries(weekProgressions[weekIndex][sessionIndex].series);
-
-  debugPrint('Gruppo di serie: $seriesGroup');
-
-  final seriesInGroup = seriesGroup[groupIndex] as List<Series>;
-  final sets = seriesInGroup.length;
-
-  debugPrint('Serie nel gruppo: $seriesInGroup');
-  debugPrint('Numero di set: $sets');
-
-  for (final currentProgression in seriesInGroup) {
-    debugPrint('Serie corrente: $currentProgression');
-    currentProgression.reps = reps;
-    currentProgression.sets = sets;
-    currentProgression.intensity = intensity;
-    currentProgression.rpe = rpe;
-    currentProgression.weight = weight;
-    debugPrint('Serie aggiornata: $currentProgression');
-  }
-}
 
   @override
   Widget build(BuildContext context) {
     final programController = ref.watch(trainingProgramControllerProvider);
     final progressionController = ref.watch(progressionControllerProvider);
+    final controllers = ref.watch(controllerProvider);
+    final focusNodes = ref.watch(focusNodesProvider);
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
 
-    List<List<WeekProgression>> weekProgressions =
-        progressionController.buildWeekProgressions(
-            programController.program.weeks, widget.exercise!);
-
-    List<List<List<List<dynamic>>>> groupedWeekProgressions = List.generate(
-      weekProgressions.length,
-      (weekIndex) => List.generate(
-        weekProgressions[weekIndex].length,
-        (sessionIndex) =>
-            _groupSeries(weekProgressions[weekIndex][sessionIndex].series),
-      ),
-    );
+    final weekProgressions = progressionController.buildWeekProgressions(programController.program.weeks, widget.exercise!);
+    final series = weekProgressions.expand((week) => week.expand((session) => session.series)).toList();
+    final groupedSeries = _groupSeries(series);
 
     Widget buildTextField({
-      TextEditingController? controller,
-      FocusNode? focusNode,
-      String? labelText,
-      TextInputType keyboardType = TextInputType.text,
+      required int index,
+      required String labelText,
+      required TextInputType keyboardType,
       required Function(String) onChanged,
-      required bool isDarkMode,
-      required ColorScheme colorScheme,
-      int? groupIndex,
-      int? weekIndex,
-      int? sessionIndex,
-      Series? series,
     }) {
+      final controller = controllers[index ~/ 5][index % 5];
       return Expanded(
         child: TextFormField(
           controller: controller,
-          focusNode: focusNode,
+          focusNode: focusNodes[index ~/ 5],
           keyboardType: keyboardType,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color:
-                isDarkMode ? colorScheme.onBackground : colorScheme.onSurface,
+            color: isDarkMode ? colorScheme.onBackground : colorScheme.onSurface,
           ),
           decoration: InputDecoration(
             labelText: labelText,
             labelStyle: TextStyle(
-              color:
-                  isDarkMode ? colorScheme.onBackground : colorScheme.onSurface,
+              color: isDarkMode ? colorScheme.onBackground : colorScheme.onSurface,
             ),
             filled: true,
             fillColor: isDarkMode ? colorScheme.surface : Colors.white,
@@ -421,223 +268,95 @@ void updateProgression(int weekIndex, int sessionIndex, int groupIndex,
               borderSide: BorderSide.none,
             ),
           ),
-          onChanged: (value) {
-            if (labelText == 'Sets' &&
-                groupIndex != null &&
-                weekIndex != null &&
-                sessionIndex != null &&
-                series != null) {
-              updateProgression(
-                weekIndex,
-                sessionIndex,
-                groupIndex,
-                series.reps,
-                series.intensity,
-                series.rpe,
-                series.weight,
-              );
-            } else {
-              onChanged(value);
-            }
-          },
+          onChanged: onChanged,
         ),
       );
     }
 
     return Scaffold(
-      backgroundColor:
-          isDarkMode ?colorScheme.background : colorScheme.surface,
+      backgroundColor: isDarkMode ? colorScheme.background : colorScheme.surface,
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             Expanded(
               child: ListView.builder(
-                itemCount: weekProgressions.length,
-                itemBuilder: (context, weekIndex) {
-                  final weekProgression = weekProgressions[weekIndex];
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                itemCount: groupedSeries.length,
+                itemBuilder: (context, index) {
+                  final series = groupedSeries[index];
+                  final reps = series.first.reps;
+                  final sets = series.length;
+                  final intensity = series.first.intensity;
+                  final rpe = series.first.rpe;
+                  final weight = series.first.weight;
+                  return Row(
                     children: [
-                      Text(
-                        'Week ${weekIndex + 1}',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: isDarkMode
-                              ? colorScheme.onBackground
-                              : colorScheme.onSurface,
+                      buildTextField(
+                        index: index * 5,
+                        labelText: 'Reps',
+                        keyboardType: TextInputType.number,
+                        onChanged: (value) => _updateProgression(
+                          index,
+                          int.tryParse(value) ?? 0,
+                          intensity,
+                          rpe,
+                          weight,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: weekProgression.length,
-                        itemBuilder: (context, sessionIndex) {
-                          final progression = weekProgression[sessionIndex];
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Session ${sessionIndex + 1}',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: isDarkMode
-                                        ? colorScheme.onBackground
-                                        : colorScheme.onSurface,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                ListView.builder(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  itemCount: groupedWeekProgressions[weekIndex]
-                                          [sessionIndex]
-                                      .length,
-                                  itemBuilder: (context, groupIndex) {
-                                    final seriesGroup =
-                                        groupedWeekProgressions[weekIndex]
-                                            [sessionIndex][groupIndex];
-                                    final series = seriesGroup.first;
-                                    final sets = seriesGroup.length;
-                                    return Row(
-                                      children: [
-                                        buildTextField(
-                                          controller:
-                                              _repsControllers[weekIndex]
-                                                  [sessionIndex][groupIndex],
-                                          focusNode: _repsFocusNodes[weekIndex]
-                                              [sessionIndex][groupIndex],
-                                          labelText: 'Reps',
-                                          keyboardType: TextInputType.number,
-                                          onChanged: (value) =>
-                                              updateProgression(
-                                            weekIndex,
-                                            sessionIndex,
-                                            groupIndex,
-                                            int.tryParse(value) ?? 0,
-                                            series.intensity,
-                                            series.rpe,
-                                            series.weight,
-                                          ),
-                                          isDarkMode: isDarkMode,
-                                          colorScheme: colorScheme,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        buildTextField(
-                                          controller:
-                                              _setsControllers[weekIndex]
-                                                  [sessionIndex][groupIndex],
-                                          focusNode: _setsFocusNodes[weekIndex]
-                                              [sessionIndex][groupIndex],
-                                          labelText: 'Sets',
-                                          keyboardType: TextInputType.number,
-                                          onChanged: (value) {},
-                                          isDarkMode: isDarkMode,
-                                          colorScheme: colorScheme,
-                                          groupIndex: groupIndex,
-                                          weekIndex: weekIndex,
-                                          sessionIndex: sessionIndex,
-                                          series: series,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        buildTextField(
-                                          controller:
-                                              _intensityControllers[weekIndex]
-                                                  [sessionIndex][groupIndex],
-                                          focusNode:
-                                              _intensityFocusNodes[weekIndex]
-                                                  [sessionIndex][groupIndex],
-                                          labelText: '1RM%',
-                                          onChanged: (value) {
-                                            updateProgression(
-                                              weekIndex,
-                                              sessionIndex,
-                                              groupIndex,
-                                              series.reps,
-                                              value,
-                                              series.rpe,
-                                              series.weight,
-                                            );
-                                            updateWeightFromIntensity(
-                                              weekIndex,
-                                              sessionIndex,
-                                              groupIndex,
-                                              value,
-                                            );
-                                          },
-                                          isDarkMode: isDarkMode,
-                                          colorScheme: colorScheme,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        buildTextField(
-                                          controller: _rpeControllers[weekIndex]
-                                              [sessionIndex][groupIndex],
-                                          labelText: 'RPE',
-                                          onChanged: (value) {
-                                            updateProgression(
-                                              weekIndex,
-                                              sessionIndex,
-                                              groupIndex,
-                                              series.reps,
-                                              series.intensity,
-                                              value,
-                                              series.weight,
-                                            );
-                                            updateWeightFromRPE(
-                                              weekIndex,
-                                              sessionIndex,
-                                              groupIndex,
-                                              value,
-                                              series.reps,
-                                            );
-                                          },
-                                          isDarkMode: isDarkMode,
-                                          colorScheme: colorScheme,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        buildTextField(
-                                          controller:
-                                              _weightControllers[weekIndex]
-                                                  [sessionIndex][groupIndex],
-                                          focusNode: _weightFocusNodes[weekIndex]
-                                              [sessionIndex][groupIndex],
-                                          labelText: 'Weight',
-                                          keyboardType: const TextInputType
-                                              .numberWithOptions(decimal: true),
-                                          onChanged: (value) {
-                                            final weight =
-                                                double.tryParse(value) ?? 0;
-                                            updateProgression(
-                                              weekIndex,
-                                              sessionIndex,
-                                              groupIndex,
-                                              series.reps,
-                                              series.intensity,
-                                              series.rpe,
-                                              weight,
-                                            );
-                                            updateIntensityFromWeight(
-                                              weekIndex,
-                                              sessionIndex,
-                                              groupIndex,
-                                              weight,
-                                            );
-                                          },
-                                          isDarkMode: isDarkMode,
-                                          colorScheme: colorScheme,
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                ),
-                              ],
-                            ),
+                      const SizedBox(width: 8),
+                      buildTextField(
+                        index: index * 5 + 1,
+                        labelText: 'Sets',
+                        keyboardType: TextInputType.number,
+                        onChanged: (value) {},
+                      ),
+                      const SizedBox(width: 8),
+                      buildTextField(
+                        index: index * 5 + 3,
+                        labelText: '1RM%',
+                        keyboardType: TextInputType.number,
+                        onChanged: (value) {
+                          _updateProgression(
+                            index,
+                            reps,
+                            value,
+                            rpe,
+                            weight,
                           );
+                          _updateWeightFromIntensity(index, value);
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      buildTextField(
+                        index: index * 5 + 4,
+                        labelText: 'RPE',
+                        keyboardType: TextInputType.number,
+                        onChanged: (value) {
+                          _updateProgression(
+                            index,
+                            reps,
+                            intensity,
+                            value,
+                            weight,
+                          );
+                          _updateWeightFromRPE(index, value, reps);
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      buildTextField(
+                        index: index * 5 + 2,
+                        labelText: 'Weight',
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        onChanged: (value) {
+                          final weight = double.tryParse(value) ?? 0;
+                          _updateProgression(
+                            index,
+                            reps,
+                            intensity,
+                            rpe,
+                            weight,
+                          );
+                          _updateIntensityFromWeight(index, weight);
                         },
                       ),
                     ],
@@ -647,8 +366,13 @@ void updateProgression(int weekIndex, int sessionIndex, int groupIndex,
             ),
             ElevatedButton(
               onPressed: () async {
-                await progressionController.updateExerciseProgressions(
-                    widget.exercise!, weekProgressions, context);
+                final programController = ref.read(trainingProgramControllerProvider);
+                final progressionController = ref.read(progressionControllerProvider);
+                final weekProgressions = progressionController.buildWeekProgressions(programController.program.weeks, widget.exercise!);
+
+                _updateProgressionsFromFields(weekProgressions);
+
+                await progressionController.updateExerciseProgressions(widget.exercise!, weekProgressions, context);
                 await programController.applyWeekProgressions(
                   programController.program.weeks
                       .expand((week) => week.workouts)
@@ -661,13 +385,9 @@ void updateProgression(int weekIndex, int sessionIndex, int groupIndex,
                 Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    isDarkMode ? colorScheme.primary : colorScheme.secondary,
-                foregroundColor: isDarkMode
-                    ? colorScheme.onPrimary
-                    : colorScheme.onSecondary,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                backgroundColor: isDarkMode ? colorScheme.primary : colorScheme.secondary,
+                foregroundColor: isDarkMode ? colorScheme.onPrimary : colorScheme.onSecondary,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -681,5 +401,23 @@ void updateProgression(int weekIndex, int sessionIndex, int groupIndex,
         ),
       ),
     );
+  }
+
+  void _updateProgressionsFromFields(List<List<WeekProgression>> weekProgressions) {
+    final controllers = ref.read(controllerProvider);
+    int progressionIndex = 0;
+
+    for (final weekProgression in weekProgressions) {
+      for (final sessionProgression in weekProgression) {
+        for (final series in sessionProgression.series) {
+          series.reps = int.parse(controllers[progressionIndex][0].text);
+          series.sets = int.parse(controllers[progressionIndex][1].text);
+          series.weight = double.parse(controllers[progressionIndex][2].text);
+          series.intensity = controllers[progressionIndex][3].text;
+          series.rpe = controllers[progressionIndex][4].text;
+          progressionIndex++;
+        }
+      }
+    }
   }
 }
