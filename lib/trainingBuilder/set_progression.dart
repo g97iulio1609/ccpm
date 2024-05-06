@@ -236,17 +236,25 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
 
 List<List<dynamic>> _groupSeries(List<Series> series) {
   final groupedSeries = <List<dynamic>>[];
+  List<Series> currentGroup = [];
+
   for (int i = 0; i < series.length; i++) {
     final currentSeries = series[i];
-    if (i == 0 ||
-        currentSeries.reps != series[i - 1].reps ||
-        currentSeries.intensity != series[i - 1].intensity ||
-        currentSeries.weight != series[i - 1].weight) {
-      groupedSeries.add([currentSeries]);
+    if (i == 0 || currentSeries.reps != series[i - 1].reps || currentSeries.weight != series[i - 1].weight) {
+      if (currentGroup.isNotEmpty) {
+        groupedSeries.add(currentGroup);
+        currentGroup = [];
+      }
+      currentGroup.add(currentSeries);
     } else {
-      groupedSeries.last.add(currentSeries);
+      currentGroup.add(currentSeries);
     }
   }
+
+  if (currentGroup.isNotEmpty) {
+    groupedSeries.add(currentGroup);
+  }
+
   return groupedSeries;
 }
 
@@ -259,23 +267,22 @@ List<List<dynamic>> _groupSeries(List<Series> series) {
 
     final seriesGroup =
         _groupSeries(weekProgressions[weekIndex][sessionIndex].series);
-    final currentProgression = seriesGroup[groupIndex].first;
 
-    if (intensity.isNotEmpty) {
-      final calculatedWeight = SeriesUtils.calculateWeightFromIntensity(
-          widget.latestMaxWeight.toDouble(), double.parse(intensity));
-      currentProgression.weight =
-          SeriesUtils.roundWeight(calculatedWeight, widget.exercise?.type);
-      _weightControllers[weekIndex][sessionIndex][groupIndex].text =
-          currentProgression.weight.toStringAsFixed(2);
-    } else {
-      currentProgression.weight = 0.0;
-      _weightControllers[weekIndex][sessionIndex][groupIndex].clear();
+    for (final currentProgression in seriesGroup[groupIndex]) {
+      if (intensity.isNotEmpty) {
+        final calculatedWeight = SeriesUtils.calculateWeightFromIntensity(
+            widget.latestMaxWeight.toDouble(), double.parse(intensity));
+        currentProgression.weight =
+            SeriesUtils.roundWeight(calculatedWeight, widget.exercise?.type);
+      } else {
+        currentProgression.weight = 0.0;
+      }
+      currentProgression.intensity = intensity;
     }
 
+    _weightControllers[weekIndex][sessionIndex][groupIndex].text =
+        seriesGroup[groupIndex].first.weight.toStringAsFixed(2);
     _intensityControllers[weekIndex][sessionIndex][groupIndex].text = intensity;
-
-    // Aggiungi questa riga per impostare la selezione del testo alla fine
     _intensityControllers[weekIndex][sessionIndex][groupIndex].selection =
         TextSelection.collapsed(offset: intensity.length);
   }
@@ -289,17 +296,18 @@ List<List<dynamic>> _groupSeries(List<Series> series) {
 
     final seriesGroup =
         _groupSeries(weekProgressions[weekIndex][sessionIndex].series);
-    final currentProgression = seriesGroup[groupIndex].first;
 
-    SeriesUtils.updateWeightFromRPE(
-      _repsControllers[weekIndex][sessionIndex][groupIndex],
-      _weightControllers[weekIndex][sessionIndex][groupIndex],
-      _rpeControllers[weekIndex][sessionIndex][groupIndex],
-      _intensityControllers[weekIndex][sessionIndex][groupIndex],
-      widget.exercise?.type ?? '',
-      widget.latestMaxWeight,
-      ValueNotifier<double>(0.0),
-    );
+    for (final currentProgression in seriesGroup[groupIndex]) {
+      SeriesUtils.updateWeightFromRPE(
+        _repsControllers[weekIndex][sessionIndex][groupIndex],
+        _weightControllers[weekIndex][sessionIndex][groupIndex],
+        _rpeControllers[weekIndex][sessionIndex][groupIndex],
+        _intensityControllers[weekIndex][sessionIndex][groupIndex],
+        widget.exercise?.type ?? '',
+        widget.latestMaxWeight,
+        ValueNotifier<double>(0.0),
+      );
+    }
   }
 
   void updateIntensityFromWeight(
@@ -311,17 +319,51 @@ List<List<dynamic>> _groupSeries(List<Series> series) {
 
     final seriesGroup =
         _groupSeries(weekProgressions[weekIndex][sessionIndex].series);
-    final currentProgression = seriesGroup[groupIndex].first;
 
-    if (weight != 0 &&
-        !_intensityFocusNodes[weekIndex][sessionIndex][groupIndex].hasFocus) {
-      currentProgression.intensity = SeriesUtils.calculateIntensityFromWeight(
-              weight, widget.latestMaxWeight.toDouble())
-          .toStringAsFixed(2);
-      _intensityControllers[weekIndex][sessionIndex][groupIndex].text =
-          currentProgression.intensity;
+    for (final currentProgression in seriesGroup[groupIndex]) {
+      if (weight != 0 &&
+          !_intensityFocusNodes[weekIndex][sessionIndex][groupIndex].hasFocus) {
+        currentProgression.intensity = SeriesUtils.calculateIntensityFromWeight(
+                weight, widget.latestMaxWeight.toDouble())
+            .toStringAsFixed(2);
+        _intensityControllers[weekIndex][sessionIndex][groupIndex].text =
+            currentProgression.intensity;
+      }
     }
   }
+
+void updateProgression(int weekIndex, int sessionIndex, int groupIndex,
+    int reps, String intensity, String rpe, double weight) {
+  debugPrint('updateProgression: weekIndex=$weekIndex, sessionIndex=$sessionIndex, groupIndex=$groupIndex');
+
+  final programController = ref.read(trainingProgramControllerProvider);
+  final progressionController = ref.read(progressionControllerProvider);
+  final weekProgressions = progressionController.buildWeekProgressions(
+      programController.program.weeks, widget.exercise!);
+
+  debugPrint('Progressioni delle settimane: $weekProgressions');
+
+  final seriesGroup =
+      _groupSeries(weekProgressions[weekIndex][sessionIndex].series);
+
+  debugPrint('Gruppo di serie: $seriesGroup');
+
+  final seriesInGroup = seriesGroup[groupIndex] as List<Series>;
+  final sets = seriesInGroup.length;
+
+  debugPrint('Serie nel gruppo: $seriesInGroup');
+  debugPrint('Numero di set: $sets');
+
+  for (final currentProgression in seriesInGroup) {
+    debugPrint('Serie corrente: $currentProgression');
+    currentProgression.reps = reps;
+    currentProgression.sets = sets;
+    currentProgression.intensity = intensity;
+    currentProgression.rpe = rpe;
+    currentProgression.weight = weight;
+    debugPrint('Serie aggiornata: $currentProgression');
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -343,34 +385,23 @@ List<List<dynamic>> _groupSeries(List<Series> series) {
       ),
     );
 
-    void updateProgression(int weekIndex, int sessionIndex, int groupIndex,
-        int reps, int sets, String intensity, String rpe, double weight) {
-      final seriesGroup =
-          _groupSeries(weekProgressions[weekIndex][sessionIndex].series);
-      final currentProgression = seriesGroup[groupIndex].first;
-
-      currentProgression.reps = reps;
-      currentProgression.sets = sets;
-      currentProgression.intensity = intensity;
-      currentProgression.rpe = rpe;
-      currentProgression.weight = weight;
-    }
-
     Widget buildTextField({
       TextEditingController? controller,
       FocusNode? focusNode,
-      String? initialValue,
       String? labelText,
       TextInputType keyboardType = TextInputType.text,
       required Function(String) onChanged,
       required bool isDarkMode,
       required ColorScheme colorScheme,
+      int? groupIndex,
+      int? weekIndex,
+      int? sessionIndex,
+      Series? series,
     }) {
       return Expanded(
         child: TextFormField(
           controller: controller,
           focusNode: focusNode,
-          initialValue: initialValue,
           keyboardType: keyboardType,
           textAlign: TextAlign.center,
           style: TextStyle(
@@ -390,14 +421,32 @@ List<List<dynamic>> _groupSeries(List<Series> series) {
               borderSide: BorderSide.none,
             ),
           ),
-          onChanged: onChanged,
+          onChanged: (value) {
+            if (labelText == 'Sets' &&
+                groupIndex != null &&
+                weekIndex != null &&
+                sessionIndex != null &&
+                series != null) {
+              updateProgression(
+                weekIndex,
+                sessionIndex,
+                groupIndex,
+                series.reps,
+                series.intensity,
+                series.rpe,
+                series.weight,
+              );
+            } else {
+              onChanged(value);
+            }
+          },
         ),
       );
     }
 
     return Scaffold(
       backgroundColor:
-          isDarkMode ? colorScheme.background : colorScheme.surface,
+          isDarkMode ?colorScheme.background : colorScheme.surface,
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -418,7 +467,8 @@ List<List<dynamic>> _groupSeries(List<Series> series) {
                           color: isDarkMode
                               ? colorScheme.onBackground
                               : colorScheme.onSurface,
-                        ),),
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       ListView.builder(
                         shrinkWrap: true,
@@ -445,24 +495,31 @@ List<List<dynamic>> _groupSeries(List<Series> series) {
                                 ListView.builder(
                                   shrinkWrap: true,
                                   physics: const NeverScrollableScrollPhysics(),
-                                  itemCount: groupedWeekProgressions[weekIndex][sessionIndex].length,
+                                  itemCount: groupedWeekProgressions[weekIndex]
+                                          [sessionIndex]
+                                      .length,
                                   itemBuilder: (context, groupIndex) {
-                                    final seriesGroup = groupedWeekProgressions[weekIndex][sessionIndex][groupIndex];
+                                    final seriesGroup =
+                                        groupedWeekProgressions[weekIndex]
+                                            [sessionIndex][groupIndex];
                                     final series = seriesGroup.first;
                                     final sets = seriesGroup.length;
                                     return Row(
                                       children: [
                                         buildTextField(
-                                          controller: _repsControllers[weekIndex][sessionIndex][groupIndex],
-                                          focusNode: _repsFocusNodes[weekIndex][sessionIndex][groupIndex],
+                                          controller:
+                                              _repsControllers[weekIndex]
+                                                  [sessionIndex][groupIndex],
+                                          focusNode: _repsFocusNodes[weekIndex]
+                                              [sessionIndex][groupIndex],
                                           labelText: 'Reps',
                                           keyboardType: TextInputType.number,
-                                          onChanged: (value) => updateProgression(
+                                          onChanged: (value) =>
+                                              updateProgression(
                                             weekIndex,
                                             sessionIndex,
                                             groupIndex,
                                             int.tryParse(value) ?? 0,
-                                            sets,
                                             series.intensity,
                                             series.rpe,
                                             series.weight,
@@ -472,27 +529,29 @@ List<List<dynamic>> _groupSeries(List<Series> series) {
                                         ),
                                         const SizedBox(width: 8),
                                         buildTextField(
-                                          controller: _setsControllers[weekIndex][sessionIndex][groupIndex],
-                                          focusNode: _setsFocusNodes[weekIndex][sessionIndex][groupIndex],
+                                          controller:
+                                              _setsControllers[weekIndex]
+                                                  [sessionIndex][groupIndex],
+                                          focusNode: _setsFocusNodes[weekIndex]
+                                              [sessionIndex][groupIndex],
                                           labelText: 'Sets',
                                           keyboardType: TextInputType.number,
-                                          onChanged: (value) => updateProgression(
-                                            weekIndex,
-                                            sessionIndex,
-                                            groupIndex,
-                                            series.reps,
-                                            int.tryParse(value) ?? 0,
-                                            series.intensity,
-                                            series.rpe,
-                                            series.weight,
-                                          ),
+                                          onChanged: (value) {},
                                           isDarkMode: isDarkMode,
                                           colorScheme: colorScheme,
+                                          groupIndex: groupIndex,
+                                          weekIndex: weekIndex,
+                                          sessionIndex: sessionIndex,
+                                          series: series,
                                         ),
                                         const SizedBox(width: 8),
                                         buildTextField(
-                                          controller: _intensityControllers[weekIndex][sessionIndex][groupIndex],
-                                          focusNode: _intensityFocusNodes[weekIndex][sessionIndex][groupIndex],
+                                          controller:
+                                              _intensityControllers[weekIndex]
+                                                  [sessionIndex][groupIndex],
+                                          focusNode:
+                                              _intensityFocusNodes[weekIndex]
+                                                  [sessionIndex][groupIndex],
                                           labelText: '1RM%',
                                           onChanged: (value) {
                                             updateProgression(
@@ -500,7 +559,6 @@ List<List<dynamic>> _groupSeries(List<Series> series) {
                                               sessionIndex,
                                               groupIndex,
                                               series.reps,
-                                              sets,
                                               value,
                                               series.rpe,
                                               series.weight,
@@ -517,7 +575,8 @@ List<List<dynamic>> _groupSeries(List<Series> series) {
                                         ),
                                         const SizedBox(width: 8),
                                         buildTextField(
-                                          controller: _rpeControllers[weekIndex][sessionIndex][groupIndex],
+                                          controller: _rpeControllers[weekIndex]
+                                              [sessionIndex][groupIndex],
                                           labelText: 'RPE',
                                           onChanged: (value) {
                                             updateProgression(
@@ -525,7 +584,6 @@ List<List<dynamic>> _groupSeries(List<Series> series) {
                                               sessionIndex,
                                               groupIndex,
                                               series.reps,
-                                              sets,
                                               series.intensity,
                                               value,
                                               series.weight,
@@ -543,18 +601,22 @@ List<List<dynamic>> _groupSeries(List<Series> series) {
                                         ),
                                         const SizedBox(width: 8),
                                         buildTextField(
-                                          controller: _weightControllers[weekIndex][sessionIndex][groupIndex],
-                                          focusNode: _weightFocusNodes[weekIndex][sessionIndex][groupIndex],
+                                          controller:
+                                              _weightControllers[weekIndex]
+                                                  [sessionIndex][groupIndex],
+                                          focusNode: _weightFocusNodes[weekIndex]
+                                              [sessionIndex][groupIndex],
                                           labelText: 'Weight',
-                                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                          keyboardType: const TextInputType
+                                              .numberWithOptions(decimal: true),
                                           onChanged: (value) {
-                                            final weight = double.tryParse(value) ?? 0;
+                                            final weight =
+                                                double.tryParse(value) ?? 0;
                                             updateProgression(
                                               weekIndex,
                                               sessionIndex,
                                               groupIndex,
                                               series.reps,
-                                              sets,
                                               series.intensity,
                                               series.rpe,
                                               weight,

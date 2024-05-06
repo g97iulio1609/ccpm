@@ -58,12 +58,15 @@ Future<void> updateExerciseProgressions(Exercise exercise, List<List<WeekProgres
 
   notifyListeners();
 }
+
 List<List<WeekProgression>> buildWeekProgressions(List<Week> weeks, Exercise exercise) {
   final progressions = List.generate(weeks.length, (weekIndex) {
     final week = weeks[weekIndex];
     final workouts = week.workouts;
+    debugPrint('Week ${weekIndex + 1}:');
     final exerciseProgressions = List.generate(workouts.length, (workoutIndex) {
       final workout = workouts[workoutIndex];
+      debugPrint('  Workout ${workoutIndex + 1}:');
       final exerciseInWorkout = workout.exercises.firstWhere(
         (e) => e.exerciseId == exercise.exerciseId,
         orElse: () => Exercise(name: '', type: '', variant: '', order: 0),
@@ -71,26 +74,87 @@ List<List<WeekProgression>> buildWeekProgressions(List<Week> weeks, Exercise exe
 
       final existingProgressions = exerciseInWorkout.weekProgressions;
       if (existingProgressions.isNotEmpty && existingProgressions.length > weekIndex) {
-        return existingProgressions[weekIndex].isNotEmpty
-            ? existingProgressions[weekIndex][workoutIndex]
-            : WeekProgression(
-                weekNumber: weekIndex + 1,
-                sessionNumber: workoutIndex + 1,
-                series: exerciseInWorkout.series,
+        if (existingProgressions[weekIndex].isNotEmpty) {
+          debugPrint('    Progressione esistente trovata per la sessione ${workoutIndex + 1}');
+          return existingProgressions[weekIndex][workoutIndex];
+        } else {
+          debugPrint('    Nessuna progressione esistente trovata per la sessione ${workoutIndex + 1}');
+          final groupedSeries = _groupSeries(exerciseInWorkout.series);
+          return WeekProgression(
+            weekNumber: weekIndex + 1,
+            sessionNumber: workoutIndex + 1,
+            series: groupedSeries.map((group) {
+              final series = group.first;
+              return Series(
+                serieId: series.serieId,
+                reps: series.reps,
+                sets: group.length,
+                intensity: series.intensity,
+                rpe: series.rpe,
+                weight: series.weight,
+                order: series.order,
+                done: series.done,
+                reps_done: series.reps_done,
+                weight_done: series.weight_done,
               );
+            }).toList(),
+          );
+        }
       } else {
+        debugPrint('    Nessuna progressione esistente trovata per la sessione ${workoutIndex + 1}');
+        final groupedSeries = _groupSeries(exerciseInWorkout.series);
         return WeekProgression(
           weekNumber: weekIndex + 1,
           sessionNumber: workoutIndex + 1,
-          series: exerciseInWorkout.series,
+          series: groupedSeries.map((group) {
+            final series = group.first;
+            return Series(
+              serieId: series.serieId,
+              reps: series.reps,
+              sets: group.length,
+              intensity: series.intensity,
+              rpe: series.rpe,
+              weight: series.weight,
+              order: series.order,
+              done: series.done,
+              reps_done: series.reps_done,
+              weight_done: series.weight_done,
+            );
+          }).toList(),
         );
       }
     });
 
+    debugPrint('  Progressioni per la settimana ${weekIndex + 1}: $exerciseProgressions');
     return exerciseProgressions;
   });
 
+  debugPrint('Progressioni finali: $progressions');
   return progressions;
+}
+
+List<List<dynamic>> _groupSeries(List<Series> series) {
+  final groupedSeries = <List<dynamic>>[];
+  List<Series> currentGroup = [];
+
+  for (int i = 0; i < series.length; i++) {
+    final currentSeries = series[i];
+    if (i == 0 || currentSeries.reps != series[i - 1].reps || currentSeries.weight != series[i - 1].weight) {
+      if (currentGroup.isNotEmpty) {
+        groupedSeries.add(currentGroup);
+        currentGroup = [];
+      }
+      currentGroup.add(currentSeries);
+    } else {
+      currentGroup.add(currentSeries);
+    }
+  }
+
+  if (currentGroup.isNotEmpty) {
+    groupedSeries.add(currentGroup);
+  }
+
+  return groupedSeries;
 }
 
 Future<void> addSeriesToProgression(TrainingProgram program, int weekIndex,
