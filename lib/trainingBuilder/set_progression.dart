@@ -232,38 +232,39 @@ Widget build(BuildContext context) {
   final series = weekProgressions.expand((week) => week.expand((session) => session.series)).toList();
   final groupedSeries = _groupSeries(series);
 
-  Widget buildTextField({
-    required int index,
-    required String labelText,
-    required TextInputType keyboardType,
-    required Function(String) onChanged,
-  }) {
-    final controller = controllers[index ~/ 5][index % 5];
-    return Expanded(
-      child: TextFormField(
-        controller: controller,
-        focusNode: focusNodes[index ~/ 5],
-        keyboardType: keyboardType,
-        textAlign: TextAlign.center,
-        style: TextStyle(
+Widget buildTextField({
+  required int index,
+  required String labelText,
+  required TextInputType keyboardType,
+  required Function(String) onChanged,
+}) {
+  final controller = controllers[index ~/ 5][index % 5];
+  final focusNode = FocusNode();
+  return Expanded(
+    child: TextFormField(
+      controller: controller,
+      focusNode: focusNode,
+      keyboardType: keyboardType,
+      textAlign: TextAlign.center,
+      style: TextStyle(
+        color: isDarkMode ? colorScheme.onBackground : colorScheme.onSurface,
+      ),
+      decoration: InputDecoration(
+        labelText: labelText,
+        labelStyle: TextStyle(
           color: isDarkMode ? colorScheme.onBackground : colorScheme.onSurface,
         ),
-        decoration: InputDecoration(
-          labelText: labelText,
-          labelStyle: TextStyle(
-            color: isDarkMode ? colorScheme.onBackground : colorScheme.onSurface,
-          ),
-          filled: true,
-          fillColor: isDarkMode ? colorScheme.surface : Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide.none,
-          ),
+        filled: true,
+        fillColor: isDarkMode ? colorScheme.surface : Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide.none,
         ),
-        onChanged: onChanged,
       ),
-    );
-  }
+      onChanged: onChanged,
+    ),
+  );
+}
 
   return Scaffold(
     backgroundColor: isDarkMode ? colorScheme.background : colorScheme.surface,
