@@ -266,7 +266,7 @@ Widget buildTextField({
   );
 }
 
-  return Scaffold(
+ return Scaffold(
     backgroundColor: isDarkMode ? colorScheme.background : colorScheme.surface,
     body: Padding(
       padding: const EdgeInsets.all(16),
@@ -289,7 +289,7 @@ Widget buildTextField({
                 for (int i = 0; i < weekProgressions.length; i++) {
                   for (int j = 0; j < weekProgressions[i].length; j++) {
                     final progression = weekProgressions[i][j];
-                    if (progression.series.contains(series.first)) {
+                    if (progression.series.any((s) => series.contains(s))) {
                       currentProgression = progression;
                       weekIndex = i;
                       sessionIndex = j;
@@ -301,26 +301,31 @@ Widget buildTextField({
                   }
                 }
 
+                final previousProgression = seriesIndex > 0 ? groupedSeries[seriesIndex - 1].first : null;
+                final previousWeekIndex = previousProgression != null ? weekProgressions.indexWhere((week) => week.any((progression) => progression.series.contains(previousProgression))) : -1;
+                final previousSessionIndex = previousProgression != null && previousWeekIndex != -1 ? weekProgressions[previousWeekIndex].indexWhere((progression) => progression.series.contains(previousProgression)) : -1;
+
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (seriesIndex == 0 || currentProgression?.weekNumber != weekProgressions[weekIndex][sessionIndex - 1].weekNumber)
+                    if (seriesIndex == 0 || (previousWeekIndex != -1 && weekIndex != previousWeekIndex))
                       Text(
-                        'Week ${currentProgression?.weekNumber}',
+                        'Week ${weekIndex + 1}',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: isDarkMode ? colorScheme.onBackground : colorScheme.onSurface,
                         ),
                       ),
-                    if (seriesIndex == 0 || currentProgression?.sessionNumber != weekProgressions[weekIndex][sessionIndex - 1].sessionNumber)
+                    if (seriesIndex == 0 || (previousSessionIndex != -1 && sessionIndex != previousSessionIndex))
                       Text(
-                        'Session ${currentProgression?.sessionNumber}',
+                        'Session ${sessionIndex + 1}',
                         style: TextStyle(
                           fontSize: 16,
                           color: isDarkMode ? colorScheme.onBackground : colorScheme.onSurface,
                         ),
                       ),
+                  
                     Row(
                       children: [
                         buildTextField(
@@ -517,86 +522,59 @@ Widget buildTextField({
     programController.notifyListeners();
   }
 
-  List<List<WeekProgression>> buildWeekProgressions(List<Week> weeks, Exercise exercise) {
-    final progressions = List.generate(weeks.length, (weekIndex) {
-      final week = weeks[weekIndex];
-      final workouts = week.workouts;
-      debugPrint('Week ${weekIndex + 1}:');
-      final exerciseProgressions = workouts.map((workout) {
-        debugPrint('  Workout ${workout.order}:');
-        final exerciseInWorkout = workout.exercises.firstWhere(
-          (e) => e.exerciseId == exercise.exerciseId,
-          orElse: () => Exercise(name: '', type: '', variant: '', order: 0),
+List<List<WeekProgression>> buildWeekProgressions(List<Week> weeks, Exercise exercise) {
+  final progressions = List.generate(weeks.length, (weekIndex) {
+    final week = weeks[weekIndex];
+    final workouts = week.workouts;
+    debugPrint('Week ${weekIndex + 1}:');
+    final exerciseProgressions = workouts.map((workout) {
+      debugPrint('  Workout ${workout.order}:');
+      final exerciseInWorkout = workout.exercises.firstWhere(
+        (e) => e.exerciseId == exercise.exerciseId,
+        orElse: () => Exercise(name: '', type: '', variant: '', order: 0),
+      );
+
+      final existingProgressions = exerciseInWorkout.weekProgressions;
+      WeekProgression? sessionProgression;
+      if (existingProgressions.isNotEmpty && existingProgressions.length > weekIndex) {
+        sessionProgression = existingProgressions[weekIndex].firstWhere(
+          (progression) => progression.sessionNumber == workout.order,
         );
+      }
 
-        final existingProgressions = exerciseInWorkout.weekProgressions;
-        if (existingProgressions.isNotEmpty && existingProgressions.length > weekIndex) {
-          final sessionProgression = existingProgressions[weekIndex].firstWhere(
-            (progression) => progression.sessionNumber == workout.order,
-            orElse: () => WeekProgression(
-              weekNumber: weekIndex + 1,
-              sessionNumber: workout.order,
-              series: [],
-            ),
-          );
-          if (sessionProgression.series.isNotEmpty) {
-            debugPrint('    Progressione esistente trovata per la sessione ${workout.order}');
-            return sessionProgression;
-          } else {
-            debugPrint('    Nessuna progressione esistente trovata per la sessione ${workout.order}');
-            final groupedSeries = _groupSeries(exerciseInWorkout.series);
-            return WeekProgression(
-              weekNumber: weekIndex + 1,
-              sessionNumber: workout.order,
-              series: groupedSeries.map((group) {
-                final series = group.first;
-                return Series(
-                  serieId: series.serieId,
-                  reps: series.reps,
-                  sets: group.length,
-                  intensity: series.intensity,
-                  rpe: series.rpe,
-                  weight: series.weight,
-                  order: series.order,
-                  done: series.done,
-                  reps_done: series.reps_done,
-                  weight_done: series.weight_done,
-                );
-              }).toList(),
+      if (sessionProgression != null && sessionProgression.series.isNotEmpty) {
+        debugPrint('    Progressione esistente trovata per la sessione ${workout.order}');
+        return sessionProgression;
+      } else {
+        debugPrint('    Nessuna progressione esistente trovata per la sessione ${workout.order}');
+        final groupedSeries = _groupSeries(exerciseInWorkout.series);
+        return WeekProgression(
+          weekNumber: weekIndex + 1,
+          sessionNumber: workout.order,
+          series: groupedSeries.map((group) {
+            final series = group.first;
+            return Series(
+              serieId: series.serieId,
+              reps: series.reps,
+              sets: group.length,
+              intensity: series.intensity,
+              rpe: series.rpe,
+              weight: series.weight,
+              order: series.order,
+              done: series.done,
+              reps_done: series.reps_done,
+              weight_done: series.weight_done,
             );
-          }
-        } else {
-          debugPrint('    Nessuna progressione esistente trovata per la sessione ${workout.order}');
-          final groupedSeries = _groupSeries(exerciseInWorkout.series);
-          return WeekProgression(
-            weekNumber: weekIndex + 1,
-            sessionNumber: workout.order,
-            series: groupedSeries.map((group) {
-              final series = group.first;
-              return Series(
-                serieId: series.serieId,
-                reps: series.reps,
-                sets: group.length,
-                intensity: series.intensity,
-                rpe: series.rpe,
-                weight: series.weight,
-                order: series.order,
-                done: series.done,
-                reps_done: series.reps_done,
-                weight_done: series.weight_done,
-              );
-            }).toList(),
-          );
-        }
-      }).toList();
+          }).toList(),
+        );
+      }
+    }).toList();
 
-      debugPrint('  Progressioni per la settimana ${weekIndex + 1}: $exerciseProgressions');
-      return exerciseProgressions;
-    });
+    debugPrint('  Progressioni per la settimana ${weekIndex + 1}: $exerciseProgressions');
+    return exerciseProgressions;
+  });
 
-    debugPrint('Progressioni finali: $progressions');
-    return progressions;
-  }
-
-
+  debugPrint('Progressioni finali: $progressions');
+  return progressions;
+}
 }
