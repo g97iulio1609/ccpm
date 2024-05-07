@@ -220,24 +220,24 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final programController = ref.watch(trainingProgramControllerProvider);
-    final controllers = ref.watch(controllerProvider);
-    final focusNodes = ref.watch(focusNodesProvider);
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final colorScheme = Theme.of(context).colorScheme;
+ @override
+Widget build(BuildContext context) {
+  final programController = ref.watch(trainingProgramControllerProvider);
+  final controllers = ref.watch(controllerProvider);
+  final focusNodes = ref.watch(focusNodesProvider);
+  final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+  final colorScheme = Theme.of(context).colorScheme;
 
-    final weekProgressions = buildWeekProgressions(programController.program.weeks, widget.exercise!);
-    final series = weekProgressions.expand((week) => week.expand((session) => session.series)).toList();
-    final groupedSeries = _groupSeries(series);
+  final weekProgressions = buildWeekProgressions(programController.program.weeks, widget.exercise!);
+  final series = weekProgressions.expand((week) => week.expand((session) => session.series)).toList();
+  final groupedSeries = _groupSeries(series);
 
-    Widget buildTextField({
-      required int index,
-      required String labelText,
-      required TextInputType keyboardType,
-      required Function(String) onChanged,
-    }) {
+  Widget buildTextField({
+    required int index,
+    required String labelText,
+    required TextInputType keyboardType,
+    required Function(String) onChanged,
+  }) {
       final controller = controllers[index ~/ 5][index % 5];
       return Expanded(
         child: TextFormField(
@@ -556,21 +556,5 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
     return progressions;
   }
 
-  Future<void> addSeriesToProgression(TrainingProgram program, int weekIndex, int workoutIndex, int exerciseIndex) async {
-    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
-    final newSeriesOrder = exercise.series.length + 1;
-    final newSeries = Series(
-      serieId: generateRandomId(16).toString(),
-      reps: 0,
-      sets: 1,
-      intensity: '',
-      rpe: '',
-      weight: 0.0,
-      order: newSeriesOrder,
-      done: false,
-      reps_done: 0,
-      weight_done: 0.0,
-    );
-    exercise.series.add(newSeries);
-  }
+
 }
