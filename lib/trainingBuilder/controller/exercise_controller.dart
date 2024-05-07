@@ -11,21 +11,21 @@ class ExerciseController extends ChangeNotifier {
 
   ExerciseController(this._usersService, this._seriesController);
 
-  Future<void> addExercise(TrainingProgram program, int weekIndex,
-      int workoutIndex, BuildContext context) async {
-    final exercise =
-        await _showExerciseDialog(context, null, program.athleteId);
-    if (exercise != null) {
-      exercise.id = null;
-      exercise.order =
-          program.weeks[weekIndex].workouts[workoutIndex].exercises.length + 1;
-      exercise.weekProgressions = []; // Initialize weekProgressions
-      program.weeks[weekIndex].workouts[workoutIndex].exercises.add(exercise);
-      notifyListeners();
-      await updateExercise(program, exercise.exerciseId!,
-          exercise.type); // Pass exercise.type here
-    }
+Future<void> addExercise(TrainingProgram program, int weekIndex,
+    int workoutIndex, BuildContext context) async {
+  final exercise =
+      await _showExerciseDialog(context, null, program.athleteId);
+  if (exercise != null) {
+    exercise.id = null;
+    exercise.order =
+        program.weeks[weekIndex].workouts[workoutIndex].exercises.length + 1;
+    exercise.weekProgressions = List.generate(program.weeks.length, (_) => []); // Inizializza weekProgressions con le settimane del programma
+    program.weeks[weekIndex].workouts[workoutIndex].exercises.add(exercise);
+    notifyListeners();
+    await updateExercise(program, exercise.exerciseId!,
+        exercise.type); // Pass exercise.type here
   }
+}
 
   Future<Exercise?> _showExerciseDialog(
       BuildContext context, Exercise? exercise, String athleteId) async {

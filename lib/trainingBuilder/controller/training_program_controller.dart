@@ -12,7 +12,6 @@ import 'workout_controller.dart';
 import 'exercise_controller.dart';
 import 'series_controller.dart';
 import 'super_set_controller.dart';
-import 'progression_controller.dart';
 
 final firestoreServiceProvider =
     Provider<FirestoreService>((ref) => FirestoreService());
@@ -47,27 +46,28 @@ class TrainingProgramController extends ChangeNotifier {
   }
 
   final TrainingProgramRepository _repository;
-  final WeekController _weekController;
+  final  WeekController _weekController;
   final WorkoutController _workoutController;
   late final SeriesController _seriesController;
   late final ExerciseController _exerciseController;
+
   final SuperSetController _superSetController;
   final Ref ref;
 
-  TrainingProgramController(
-    this._service,
-    this._usersService,
-    this._programStateNotifier,
-    this.ref,
-  )   : _repository = TrainingProgramRepository(_service),
-        _weekController = WeekController(),
-        _workoutController = WorkoutController(),
-        _superSetController = SuperSetController() {
-    _initProgram();
-    final weightNotifier = ValueNotifier<double>(0.0);
-    _seriesController = SeriesController(_usersService, weightNotifier);
-    _exerciseController = ExerciseController(_usersService, _seriesController);
-  }
+TrainingProgramController(
+  this._service,
+  this._usersService,
+  this._programStateNotifier,
+  this.ref,
+)   : _repository = TrainingProgramRepository(_service),
+      _weekController = WeekController(),
+      _workoutController = WorkoutController(),
+      _superSetController = SuperSetController() {
+  _initProgram();
+  final weightNotifier = ValueNotifier<double>(0.0);
+  _seriesController = SeriesController(_usersService, weightNotifier);
+  _exerciseController = ExerciseController(_usersService, _seriesController);
+}
 
   late TrainingProgram _program;
   late TextEditingController _nameController;
@@ -261,45 +261,83 @@ Future<void> editSeries(int weekIndex, int workoutIndex, int exerciseIndex,
     notifyListeners();
   }
 
-Future<void> applyWeekProgressions(int exerciseIndex, List<List<WeekProgression>> weekProgressions, BuildContext context) async {
-  final exercise = _program.weeks
-      .expand((week) => week.workouts)
-      .expand((workout) => workout.exercises)
-      .elementAt(exerciseIndex);
-  debugPrint('Applying week progressions for exercise: ${exercise.name}');
 
-  for (int weekIndex = 0; weekIndex < _program.weeks.length; weekIndex++) {
-    final progressions = weekIndex < weekProgressions.length
-        ? weekProgressions[weekIndex]
-        : weekProgressions.last;
-    debugPrint('Applying progressions for week $weekIndex: $progressions');
 
-    for (int sessionIndex = 0; sessionIndex < progressions.length; sessionIndex++) {
-      final progression = progressions[sessionIndex];
-      final series = progression.series; // Accedi direttamente alla lista di serie
 
-      debugPrint('Generated series for week $weekIndex, session $sessionIndex: $series');
-
-      final workout = _program.weeks[weekIndex].workouts[sessionIndex];
-      final exerciseIndex = workout.exercises.indexWhere((e) => e.id == exercise.id);
-      if (exerciseIndex != -1) {
-        workout.exercises[exerciseIndex] = workout.exercises[exerciseIndex].copyWith(series: series);
-        debugPrint('Applied series to exercise in week $weekIndex, session $sessionIndex, exercise index $exerciseIndex');
-      }
-    }
-  }
-  debugPrint('Finished applying week progressions');
-
+Future<void> applyWeekProgressions(
+    int exerciseIndex,
+    List<List<WeekProgression>> progressions,
+    BuildContext context,
+) async {
+  await updateExerciseProgressions(
+    program.weeks
+        .expand((week) => week.workouts)
+        .expand((workout) => workout.exercises)
+        .toList()[exerciseIndex],
+    progressions,
+    context,
+  );
   notifyListeners();
 }
 
 Future<void> updateExerciseProgressions(Exercise exercise, List<List<WeekProgression>> updatedProgressions, BuildContext context) async {
-  final progressionController = ProgressionController(this);
-  await progressionController.updateExerciseProgressions(
-    exercise,
-    updatedProgressions,
-    context
-  );
+  debugPrint('Updating exercise progressions for exercise: ${exercise.name}');
+
+  for (int weekIndex = 0; weekIndex < program.weeks.length; weekIndex++) {
+    final week = program.weeks[weekIndex];
+    debugPrint('Processing week ${weekIndex + 1}');
+    for (int workoutIndex = 0; workoutIndex < week.workouts.length; workoutIndex++) {
+      final workout = week.workouts[workoutIndex];
+      final exerciseIndex = workout.exercises.indexWhere((e) => e.exerciseId == exercise.exerciseId);
+      if (exerciseIndex != -1) {
+        final currentExercise = workout.exercises[exerciseIndex];
+        debugPrint('Found exercise in week ${weekIndex + 1}, workout ${workoutIndex + 1}, exercise index $exerciseIndex');
+
+        // Assicurati che la lista weekProgressions dell'esercizio corrente sia inizializzata
+        if (currentExercise.weekProgressions.length <= weekIndex) {
+          currentExercise.weekProgressions = List.generate(program.weeks.length, (_) => []);
+        }
+
+        // Aggiorna la proprietà weekProgressions dell'esercizio
+        if (weekIndex < updatedProgressions.length) {
+          currentExercise.weekProgressions[weekIndex] = updatedProgressions[weekIndex];
+          debugPrint('Updated weekProgressions for week ${weekIndex + 1}: ${updatedProgressions[weekIndex]}');
+        }
+
+        // Aggiorna le serie dell'esercizio in base alla progressione della sessione corrente
+        final sessionIndex = workoutIndex;
+        final exerciseProgressions = currentExercise.weekProgressions[weekIndex];
+        if (sessionIndex < exerciseProgressions.length) {
+          final progression = exerciseProgressions[sessionIndex];
+          debugPrint('Applying progression for week ${weekIndex + 1}, session ${sessionIndex + 1}: $progression');
+
+          // Utilizza i valori inseriti nella schermata SetProgressionScreen
+          currentExercise.series = List.generate(progression.series.length, (index) {
+            final series = progression.series[index];
+            final newSeries = Series(
+              serieId: generateRandomId(16).toString(),
+              reps: series.reps,
+              sets: series.sets,
+              intensity: series.intensity,
+              rpe: series.rpe,
+              weight: series.weight,
+              order: index + 1,
+              done: false,
+              reps_done: 0,
+              weight_done: 0.0,
+            );
+            debugPrint('Generated series: reps=${newSeries.reps}, sets=${newSeries.sets}, intensity=${newSeries.intensity}, rpe=${newSeries.rpe}, weight=${newSeries.weight}');
+            return newSeries;
+          });
+          debugPrint('Updated exercise series: ${currentExercise.series}');
+        } else {
+          debugPrint('Invalid session index for week ${weekIndex + 1}, session ${sessionIndex + 1}');
+        }
+      }
+    }
+  }
+  debugPrint('Finished updating exercise progressions');
+
   notifyListeners();
 }
 
