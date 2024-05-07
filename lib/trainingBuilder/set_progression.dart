@@ -238,124 +238,165 @@ Widget build(BuildContext context) {
     required TextInputType keyboardType,
     required Function(String) onChanged,
   }) {
-      final controller = controllers[index ~/ 5][index % 5];
-      return Expanded(
-        child: TextFormField(
-          controller: controller,
-          focusNode: focusNodes[index ~/ 5],
-          keyboardType: keyboardType,
-          textAlign: TextAlign.center,
-          style: TextStyle(
+    final controller = controllers[index ~/ 5][index % 5];
+    return Expanded(
+      child: TextFormField(
+        controller: controller,
+        focusNode: focusNodes[index ~/ 5],
+        keyboardType: keyboardType,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: isDarkMode ? colorScheme.onBackground : colorScheme.onSurface,
+        ),
+        decoration: InputDecoration(
+          labelText: labelText,
+          labelStyle: TextStyle(
             color: isDarkMode ? colorScheme.onBackground : colorScheme.onSurface,
           ),
-          decoration: InputDecoration(
-            labelText: labelText,
-            labelStyle: TextStyle(
-              color: isDarkMode ? colorScheme.onBackground : colorScheme.onSurface,
-            ),
-            filled: true,
-            fillColor: isDarkMode ? colorScheme.surface : Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide.none,
-            ),
+          filled: true,
+          fillColor: isDarkMode ? colorScheme.surface : Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide.none,
           ),
-          onChanged: onChanged,
         ),
-      );
-    }
+        onChanged: onChanged,
+      ),
+    );
+  }
 
-    return Scaffold(
-      backgroundColor: isDarkMode ? colorScheme.background : colorScheme.surface,
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                itemCount: groupedSeries.length,
-                itemBuilder: (context, index) {
-                  final series = groupedSeries[index];
-                  final reps = series.first.reps;
-                  final sets = series.length;
-                  final intensity = series.first.intensity;
-                  final rpe = series.first.rpe;
-                  final weight = series.first.weight;
-                  return Row(
-                    children: [
-                      buildTextField(
-                        index: index * 5,
-                        labelText: 'Reps',
-                        keyboardType: TextInputType.number,
-                        onChanged: (value) => _updateProgression(
-                          index,
-                          int.tryParse(value) ?? 0,
-                          intensity,
-                          rpe,
-                          weight,
+  return Scaffold(
+    backgroundColor: isDarkMode ? colorScheme.background : colorScheme.surface,
+    body: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              itemCount: groupedSeries.length,
+              itemBuilder: (context, seriesIndex) {
+                final series = groupedSeries[seriesIndex];
+                final reps = series.first.reps;
+                final sets = series.length;
+                final intensity = series.first.intensity;
+                final rpe = series.first.rpe;
+                final weight = series.first.weight;
+
+                WeekProgression? currentProgression;
+                int weekIndex = 0;
+                int sessionIndex = 0;
+                for (int i = 0; i < weekProgressions.length; i++) {
+                  for (int j = 0; j < weekProgressions[i].length; j++) {
+                    final progression = weekProgressions[i][j];
+                    if (progression.series.contains(series.first)) {
+                      currentProgression = progression;
+                      weekIndex = i;
+                      sessionIndex = j;
+                      break;
+                    }
+                  }
+                  if (currentProgression != null) {
+                    break;
+                  }
+                }
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (seriesIndex == 0 || currentProgression?.weekNumber != weekProgressions[weekIndex][sessionIndex - 1].weekNumber)
+                      Text(
+                        'Week ${currentProgression?.weekNumber}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: isDarkMode ? colorScheme.onBackground : colorScheme.onSurface,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      buildTextField(
-                        index: index * 5 + 1,
-                        labelText: 'Sets',
-                        keyboardType: TextInputType.number,
-                        onChanged: (value) {},
+                    if (seriesIndex == 0 || currentProgression?.sessionNumber != weekProgressions[weekIndex][sessionIndex - 1].sessionNumber)
+                      Text(
+                        'Session ${currentProgression?.sessionNumber}',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: isDarkMode ? colorScheme.onBackground : colorScheme.onSurface,
+                        ),
                       ),
-                      const SizedBox(width: 8),
-                      buildTextField(
-                        index: index * 5 + 3,
-                        labelText: '1RM%',
-                        keyboardType: TextInputType.number,
-                        onChanged: (value) {
-                          _updateProgression(
-                            index,
-                            reps,
-                            value,
-                            rpe,
-                            weight,
-                          );
-                          _updateWeightFromIntensity(index, value);
-                        },
-                      ),
-                      const SizedBox(width: 8),
-                      buildTextField(
-                        index: index * 5 + 4,
-                        labelText: 'RPE',
-                        keyboardType: TextInputType.number,
-                        onChanged: (value) {
-                          _updateProgression(
-                            index,
-                            reps,
-                            intensity,
-                            value,
-                            weight,
-                          );
-                          _updateWeightFromRPE(index, value, reps);
-                        },
-                      ),
-                      const SizedBox(width: 8),
-                      buildTextField(
-                        index: index * 5 + 2,
-                        labelText: 'Weight',
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        onChanged: (value) {
-                          final weight = double.tryParse(value) ?? 0;
-                          _updateProgression(
-                            index,
-                            reps,
+                    Row(
+                      children: [
+                        buildTextField(
+                          index: seriesIndex * 5,
+                          labelText: 'Reps',
+                          keyboardType: TextInputType.number,
+                          onChanged: (value) => _updateProgression(
+                            seriesIndex,
+                            int.tryParse(value) ?? 0,
                             intensity,
                             rpe,
                             weight,
-                          );
-                          _updateIntensityFromWeight(index, weight);
-                        },
-                      ),
-                    ],
-                  );
-                },
-              ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        buildTextField(
+                          index: seriesIndex * 5 + 1,
+                          labelText: 'Sets',
+                          keyboardType: TextInputType.number,
+                          onChanged: (value) {},
+                        ),
+                        const SizedBox(width: 8),
+                        buildTextField(
+                          index: seriesIndex * 5 + 3,
+                          labelText: '1RM%',
+                          keyboardType: TextInputType.number,
+                          onChanged: (value) {
+                            _updateProgression(
+                              seriesIndex,
+                              reps,
+                              value,
+                              rpe,
+                              weight,
+                            );
+                            _updateWeightFromIntensity(seriesIndex, value);
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        buildTextField(
+                          index: seriesIndex * 5 + 4,
+                          labelText: 'RPE',
+                          keyboardType: TextInputType.number,
+                          onChanged: (value) {
+                            _updateProgression(
+                              seriesIndex,
+                              reps,
+                              intensity,
+                              value,
+                              weight,
+                            );
+                            _updateWeightFromRPE(seriesIndex, value, reps);
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        buildTextField(
+                          index: seriesIndex * 5 + 2,
+                          labelText: 'Weight',
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          onChanged: (value) {
+                            final weight = double.tryParse(value) ?? 0;
+                            _updateProgression(
+                              seriesIndex,
+                              reps,
+                              intensity,
+                              rpe,
+                              weight,
+                            );
+                            _updateIntensityFromWeight(seriesIndex, weight);
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+              },
             ),
+          ),
             ElevatedButton(
               onPressed: () async {
                 final programController = ref.read(trainingProgramControllerProvider);
