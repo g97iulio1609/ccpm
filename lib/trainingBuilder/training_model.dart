@@ -330,6 +330,7 @@ class WeekProgression {
     required this.weekNumber,
     required this.sessionNumber,
     required this.series,
+    
   });
 
   factory WeekProgression.fromMap(Map<String, dynamic> map) {
