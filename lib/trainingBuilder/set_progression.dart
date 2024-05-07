@@ -470,19 +470,16 @@ void initState() {
   }
 
   Future<void> updateExerciseProgressions(Exercise exercise, List<List<WeekProgression>> updatedProgressions, BuildContext context) async {
-    debugPrint('Updating exercise progressions for exercise: ${exercise.name}');
 
     final programController = ref.read(trainingProgramControllerProvider);
 
     for (int weekIndex = 0; weekIndex < programController.program.weeks.length; weekIndex++) {
       final week = programController.program.weeks[weekIndex];
-      debugPrint('Processing week ${weekIndex + 1}');
       for (int workoutIndex = 0; workoutIndex < week.workouts.length; workoutIndex++) {
         final workout = week.workouts[workoutIndex];
         final exerciseIndex = workout.exercises.indexWhere((e) => e.exerciseId == exercise.exerciseId);
         if (exerciseIndex != -1) {
           final currentExercise = workout.exercises[exerciseIndex];
-          debugPrint('Found exercise in week ${weekIndex + 1}, workout ${workoutIndex + 1}, exercise index $exerciseIndex');
 
           // Ensure the exercise's weekProgressions list is initialized
           if (currentExercise.weekProgressions.length <= weekIndex) {
@@ -492,7 +489,6 @@ void initState() {
           // Update the exercise's weekProgressions property
           if (weekIndex < updatedProgressions.length) {
             currentExercise.weekProgressions[weekIndex] = updatedProgressions[weekIndex];
-            debugPrint('Updated weekProgressions for week ${weekIndex + 1}: ${updatedProgressions[weekIndex]}');
           }
 
           // Update the exercise's series based on the current session's progression
@@ -500,7 +496,6 @@ void initState() {
           final exerciseProgressions = currentExercise.weekProgressions[weekIndex];
           if (sessionIndex < exerciseProgressions.length) {
             final progression = exerciseProgressions[sessionIndex];
-            debugPrint('Applying progression for week ${weekIndex + 1}, session ${sessionIndex + 1}: $progression');
 
             currentExercise.series = progression.series.map((series) {
               return Series(
@@ -516,23 +511,18 @@ void initState() {
                 weight_done: 0.0,
               );
             }).toList();
-            debugPrint('Updated exercise series: ${currentExercise.series}');
           } else {
-            debugPrint('Invalid session index for week ${weekIndex + 1}, session ${sessionIndex + 1}');
           }
         }
       }
     }
-    debugPrint('Finished updating exercise progressions');
   }
 
   List<List<WeekProgression>> buildWeekProgressions(List<Week> weeks, Exercise exercise) {
     final progressions = List.generate(weeks.length, (weekIndex) {
       final week = weeks[weekIndex];
       final workouts = week.workouts;
-      debugPrint('Week ${weekIndex + 1}:');
       final exerciseProgressions = workouts.map((workout) {
-        debugPrint('  Workout ${workout.order}:');
         final exerciseInWorkout = workout.exercises.firstWhere(
           (e) => e.exerciseId == exercise.exerciseId,
           orElse: () => Exercise(name: '', type: '', variant: '', order: 0),
@@ -547,10 +537,8 @@ void initState() {
         }
 
         if (sessionProgression != null && sessionProgression.series.isNotEmpty) {
-          debugPrint('    Existing progression found for session ${workout.order}');
           return sessionProgression;
         } else {
-          debugPrint('    No existing progression found for session ${workout.order}');
           final groupedSeries = _groupSeries(exerciseInWorkout.series);
           return WeekProgression(
             weekNumber: weekIndex + 1,
@@ -574,11 +562,9 @@ void initState() {
         }
       }).toList();
 
-      debugPrint('  Progressions for week ${weekIndex + 1}: $exerciseProgressions');
       return exerciseProgressions;
     });
 
-    debugPrint('Final progressions: $progressions');
     return progressions;
   }
 }
