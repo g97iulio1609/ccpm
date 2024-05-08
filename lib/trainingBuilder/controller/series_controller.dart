@@ -22,12 +22,10 @@ Future<void> addSeries(TrainingProgram program, int weekIndex,
   final seriesList = await _showSeriesDialog(
       context, exercise, weekIndex, null, exercise.type, maxWeight);
 
-  debugPrint(' CALLING ADDSERIES Series list after _showSeriesDialog: $seriesList');
 
   if (seriesList != null) {
     for (final series in seriesList) {
-      debugPrint('Adding series: $series');
-      debugPrint('Series sets value: ${series.sets}');
+
       exercise.series.add(series);
     }
     await SeriesUtils.updateSeriesWeights(
@@ -73,8 +71,7 @@ Future<void> editSeries(
   final exerciseId = exercise.exerciseId;
   final athleteId = program.athleteId;
 
-  debugPrint('Calling EDIT SERIES Editing series: $currentSeries');
-  debugPrint('Current series sets value: ${currentSeries.sets}');
+
 
   final updatedSeriesList = await _showSeriesDialog(
     context,
@@ -85,14 +82,12 @@ Future<void> editSeries(
     latestMaxWeight,
   );
 
-  debugPrint('Updated series list after _showSeriesDialog: $updatedSeriesList');
 
   if (updatedSeriesList != null) {
     final seriesIndex = exercise.series.indexOf(currentSeries);
     for (int i = 0; i < updatedSeriesList.length; i++) {
       final updatedSeries = updatedSeriesList[i];
-      debugPrint('Updating series at index $i: $updatedSeries');
-      debugPrint('Updated series sets value: ${updatedSeries.sets}');
+
       program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex]
           .series[seriesIndex + i] = updatedSeries;
     }

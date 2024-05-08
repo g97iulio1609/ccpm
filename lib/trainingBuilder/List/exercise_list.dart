@@ -324,7 +324,6 @@ Widget _buildExerciseSeries(
   Exercise exercise,
   UsersService usersService,
 ) {
-  debugPrint('Building series for exercise: ${exercise.name}');
   return TrainingProgramSeriesList(
     controller: controller,
     usersService: usersService,
@@ -866,8 +865,7 @@ Future<void> _showSetProgressionScreen(
   bool isDarkMode,
   ColorScheme colorScheme,
 ) async {
-  debugPrint('Showing set progression screen for exercise: ${exercise.name}');
-  debugPrint('Latest max weight: $latestMaxWeight');
+
 
   final updatedExercise = await Navigator.push(
     context,
@@ -880,10 +878,8 @@ Future<void> _showSetProgressionScreen(
     ),
   );
   if (updatedExercise != null) {
-    debugPrint('exerciseList Updated exercise after set progression: $updatedExercise');
     for (final series in updatedExercise.series) {
-      debugPrint('from exerciseList Series: $series');
-      debugPrint('Series exerciseList sets value: ${series.sets}');
+
     }
     controller.updateExercise(updatedExercise);
   }

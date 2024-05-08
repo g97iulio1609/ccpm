@@ -189,7 +189,6 @@ void _updateWeekProgressionWeights(
 
   Future<void> addSeriesToProgression(TrainingProgram program, int weekIndex,
       int workoutIndex, int exerciseIndex, BuildContext context) async {
-      debugPrint("Calling ExerciseController");
     final exercise = program
         .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     final newSeriesOrder = exercise.series.length + 1;

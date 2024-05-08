@@ -218,7 +218,6 @@ Future<void> updateExercise(Exercise exercise) async {
 
   Future<void> addSeries(int weekIndex, int workoutIndex, int exerciseIndex,
       String exerciseType, BuildContext context) async {
-        debugPrint("Calling Addseries from trainingprogramcontroller");
     await _seriesController.addSeries(_program, weekIndex, workoutIndex,
         exerciseIndex,  context);
     notifyListeners();
@@ -226,7 +225,6 @@ Future<void> updateExercise(Exercise exercise) async {
 
 Future<void> editSeries(int weekIndex, int workoutIndex, int exerciseIndex,
     Series currentSeries, BuildContext context, String exerciseType, num latestMaxWeight) async {
-              debugPrint("Calling EditSeries from trainingprogramcontroller");
 
   await _seriesController.editSeries(_program, weekIndex, workoutIndex,
       exerciseIndex, currentSeries, context,latestMaxWeight);

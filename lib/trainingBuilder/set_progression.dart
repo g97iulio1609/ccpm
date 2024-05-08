@@ -99,29 +99,32 @@ void initState() {
   });
 }
 
-  List<List<dynamic>> _groupSeries(List<Series> series) {
-    final groupedSeries = <List<dynamic>>[];
-    List<Series> currentGroup = [];
+List<List<Series>> _groupSeries(List<Series> series) {
+  final groupedSeries = <List<Series>>[];
+  List<Series> currentGroup = [];
 
-    for (int i = 0; i < series.length; i++) {
-      final currentSeries = series[i];
-      if (i == 0 || currentSeries.reps != series[i - 1].reps || currentSeries.weight != series[i - 1].weight) {
-        if (currentGroup.isNotEmpty) {
-          groupedSeries.add(currentGroup);
-          currentGroup = [];
-        }
-        currentGroup.add(currentSeries);
-      } else {
-        currentGroup.add(currentSeries);
+  for (int i = 0; i < series.length; i++) {
+    final currentSeries = series[i];
+
+    if (i == 0 ||
+        currentSeries.reps != series[i - 1].reps ||
+        currentSeries.weight != series[i - 1].weight) {
+      if (currentGroup.isNotEmpty) {
+        groupedSeries.add(currentGroup);
+        currentGroup = [];
       }
+      currentGroup.add(currentSeries);
+    } else {
+      currentGroup.add(currentSeries);
     }
-
-    if (currentGroup.isNotEmpty) {
-      groupedSeries.add(currentGroup);
-    }
-
-    return groupedSeries;
   }
+
+  if (currentGroup.isNotEmpty) {
+    groupedSeries.add(currentGroup);
+  }
+
+  return groupedSeries;
+}
 
   void _updateWeightFromIntensity(int controllerIndex, String intensity) {
     final programController = ref.read(trainingProgramControllerProvider);
@@ -547,53 +550,74 @@ void _updateProgressionsFromFields(List<List<WeekProgression>> weekProgressions)
     }
   }
 
-  List<List<WeekProgression>> buildWeekProgressions(List<Week> weeks, Exercise exercise) {
-    final progressions = List.generate(weeks.length, (weekIndex) {
-      final week = weeks[weekIndex];
-      final workouts = week.workouts;
-      final exerciseProgressions = workouts.map((workout) {
-        final exerciseInWorkout = workout.exercises.firstWhere(
-          (e) => e.exerciseId == exercise.exerciseId,
-          orElse: () => Exercise(name: '', type: '', variant: '', order: 0),
+
+List<List<WeekProgression>> buildWeekProgressions(List<Week> weeks, Exercise exercise) {
+  final progressions = List.generate(weeks.length, (weekIndex) {
+    final week = weeks[weekIndex];
+    final workouts = week.workouts;
+    final exerciseProgressions = workouts.map((workout) {
+      final exerciseInWorkout = workout.exercises.firstWhere(
+        (e) => e.exerciseId == exercise.exerciseId,
+        orElse: () => Exercise(name: '', type: '', variant: '', order: 0),
+      );
+
+      final existingProgressions = exerciseInWorkout.weekProgressions;
+      WeekProgression? sessionProgression;
+      if (existingProgressions.isNotEmpty && existingProgressions.length > weekIndex) {
+        sessionProgression = existingProgressions[weekIndex].firstWhere(
+          (progression) => progression.sessionNumber == workout.order,
+       //   orElse: () => null,
         );
+      }
 
-        final existingProgressions = exerciseInWorkout.weekProgressions;
-        WeekProgression? sessionProgression;
-        if (existingProgressions.isNotEmpty && existingProgressions.length > weekIndex) {
-          sessionProgression = existingProgressions[weekIndex].firstWhere(
-            (progression) => progression.sessionNumber == workout.order,
-          );
-        }
+      if (sessionProgression != null && sessionProgression.series.isNotEmpty) {
+        final groupedSeries = _groupSeries(sessionProgression.series);
+        return WeekProgression(
+          weekNumber: weekIndex + 1,
+          sessionNumber: workout.order,
+          series: groupedSeries.map((group) {
+            final series = group.first;
+            return Series(
+              serieId: series.serieId,
+              reps: series.reps,
+              sets: group.length,
+              intensity: series.intensity,
+              rpe: series.rpe,
+              weight: series.weight,
+              order: series.order,
+              done: series.done,
+              reps_done: series.reps_done,
+              weight_done: series.weight_done,
+            );
+          }).toList(),
+        );
+      } else {
+        final groupedSeries = _groupSeries(exerciseInWorkout.series);
+        return WeekProgression(
+          weekNumber: weekIndex + 1,
+          sessionNumber: workout.order,
+          series: groupedSeries.map((group) {
+            final series = group.first;
+            return Series(
+              serieId: series.serieId,
+              reps: series.reps,
+              sets: group.length,
+              intensity: series.intensity,
+              rpe: series.rpe,
+              weight: series.weight,
+              order: series.order,
+              done: series.done,
+              reps_done: series.reps_done,
+              weight_done: series.weight_done,
+            );
+          }).toList(),
+        );
+      }
+    }).toList();
 
-        if (sessionProgression != null && sessionProgression.series.isNotEmpty) {
-          return sessionProgression;
-        } else {
-          final groupedSeries = _groupSeries(exerciseInWorkout.series);
-          return WeekProgression(
-            weekNumber: weekIndex + 1,
-            sessionNumber: workout.order,
-            series: groupedSeries.map((group) {
-              final series = group.first;
-              return Series(
-                serieId: series.serieId,
-                reps: series.reps,
-                sets: group.length,
-                intensity: series.intensity,
-                rpe: series.rpe,
-                weight: series.weight,
-                order: series.order,
-                done: series.done,
-                reps_done: series.reps_done,
-                weight_done: series.weight_done,
-              );
-            }).toList(),
-          );
-        }
-      }).toList();
+    return exerciseProgressions;
+  });
 
-      return exerciseProgressions;
-    });
-
-    return progressions;
-  }
+  return progressions;
+}
 }
