@@ -10,25 +10,31 @@ class SeriesController extends ChangeNotifier {
 
   SeriesController(this.usersService, this.weightNotifier);
 
-  Future<void> addSeries(TrainingProgram program, int weekIndex,
-      int workoutIndex, int exerciseIndex, BuildContext context) async {
-    final exercise = program
-        .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
-    final latestMaxWeight = await SeriesUtils.getLatestMaxWeight(
-        usersService, program.athleteId, exercise.exerciseId ?? '');
+Future<void> addSeries(TrainingProgram program, int weekIndex,
+    int workoutIndex, int exerciseIndex, BuildContext context) async {
+  final exercise = program
+      .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+  final latestMaxWeight = await SeriesUtils.getLatestMaxWeight(
+      usersService, program.athleteId, exercise.exerciseId ?? '');
 
-    final num maxWeight = latestMaxWeight ?? 100.0;
+  final num maxWeight = latestMaxWeight ?? 100.0;
 
-    final seriesList = await _showSeriesDialog(
-        context, exercise, weekIndex, null, exercise.type, maxWeight);
+  final seriesList = await _showSeriesDialog(
+      context, exercise, weekIndex, null, exercise.type, maxWeight);
 
-    if (seriesList != null) {
-      exercise.series.addAll(seriesList);
-      await SeriesUtils.updateSeriesWeights(
-          program, weekIndex, workoutIndex, exerciseIndex, usersService);
-      notifyListeners();
+  debugPrint(' CALLING ADDSERIES Series list after _showSeriesDialog: $seriesList');
+
+  if (seriesList != null) {
+    for (final series in seriesList) {
+      debugPrint('Adding series: $series');
+      debugPrint('Series sets value: ${series.sets}');
+      exercise.series.add(series);
     }
+    await SeriesUtils.updateSeriesWeights(
+        program, weekIndex, workoutIndex, exerciseIndex, usersService);
+    notifyListeners();
   }
+}
 
 Future<List<Series>?> _showSeriesDialog(
   BuildContext context,
@@ -61,18 +67,14 @@ Future<void> editSeries(
   int exerciseIndex,
   Series currentSeries,
   BuildContext context,
-  latestMaxWeight
+  num latestMaxWeight,
 ) async {
   final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
   final exerciseId = exercise.exerciseId;
   final athleteId = program.athleteId;
 
-  // Ottieni il latestMaxWeight corretto per l'esercizio
-  final latestMaxWeight = await SeriesUtils.getLatestMaxWeight(
-    usersService,
-    athleteId,
-    exerciseId ?? '',
-  );
+  debugPrint('Calling EDIT SERIES Editing series: $currentSeries');
+  debugPrint('Current series sets value: ${currentSeries.sets}');
 
   final updatedSeriesList = await _showSeriesDialog(
     context,
@@ -83,11 +85,17 @@ Future<void> editSeries(
     latestMaxWeight,
   );
 
+  debugPrint('Updated series list after _showSeriesDialog: $updatedSeriesList');
+
   if (updatedSeriesList != null) {
     final seriesIndex = exercise.series.indexOf(currentSeries);
-    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex]
-        .series
-        .replaceRange(seriesIndex, seriesIndex + 1, updatedSeriesList);
+    for (int i = 0; i < updatedSeriesList.length; i++) {
+      final updatedSeries = updatedSeriesList[i];
+      debugPrint('Updating series at index $i: $updatedSeries');
+      debugPrint('Updated series sets value: ${updatedSeries.sets}');
+      program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex]
+          .series[seriesIndex + i] = updatedSeries;
+    }
 
     await SeriesUtils.updateSeriesWeights(
       program,
@@ -99,7 +107,6 @@ Future<void> editSeries(
     notifyListeners();
   }
 }
-
   void removeSeries(
     TrainingProgram program,
     int weekIndex,
