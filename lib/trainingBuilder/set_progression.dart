@@ -566,7 +566,7 @@ List<List<WeekProgression>> buildWeekProgressions(List<Week> weeks, Exercise exe
       if (existingProgressions.isNotEmpty && existingProgressions.length > weekIndex) {
         sessionProgression = existingProgressions[weekIndex].firstWhere(
           (progression) => progression.sessionNumber == workout.order,
-       //   orElse: () => null,
+orElse: () => WeekProgression(weekNumber: weekIndex + 1, sessionNumber: workout.order, series: []),
         );
       }
 
@@ -620,4 +620,5 @@ List<List<WeekProgression>> buildWeekProgressions(List<Week> weeks, Exercise exe
 
   return progressions;
 }
+
 }
