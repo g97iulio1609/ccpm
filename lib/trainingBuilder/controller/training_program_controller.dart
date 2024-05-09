@@ -22,6 +22,7 @@ final trainingProgramControllerProvider =
   final usersService = ref.watch(user_services.usersServiceProvider);
   final programStateNotifier = ref.watch(trainingProgramStateProvider.notifier);
   return TrainingProgramController(service, usersService, programStateNotifier, ref);
+
 });
 
 class TrainingProgramController extends ChangeNotifier {
@@ -90,6 +91,8 @@ TrainingProgramController(
     _mesocycleNumberController =
         TextEditingController(text: _program.mesocycleNumber.toString());
   }
+SeriesController get seriesController => _seriesController;
+
 
   Future<void> loadProgram(String? programId) async {
     if (programId == null) {

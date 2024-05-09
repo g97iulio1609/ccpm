@@ -99,7 +99,7 @@ void initState() {
   });
 }
 
-List<List<Series>> _groupSeries(List<Series> series) {
+List<List<Series>> groupSeries(List<Series> series) {
   final groupedSeries = <List<Series>>[];
   List<Series> currentGroup = [];
 
@@ -126,12 +126,12 @@ List<List<Series>> _groupSeries(List<Series> series) {
   return groupedSeries;
 }
 
-  void _updateWeightFromIntensity(int controllerIndex, String intensity) {
+  void updateWeightFromIntensity(int controllerIndex, String intensity) {
     final programController = ref.read(trainingProgramControllerProvider);
     final weekProgressions = buildWeekProgressions(programController.program.weeks, widget.exercise!);
 
     final seriesIndex = controllerIndex ~/ 5;
-    final groupedSeries = _groupSeries(weekProgressions.expand((week) => week.expand((session) => session.series)).toList());
+    final groupedSeries = groupSeries(weekProgressions.expand((week) => week.expand((session) => session.series)).toList());
 
     for (final currentProgression in groupedSeries[seriesIndex]) {
       if (intensity.isNotEmpty) {
@@ -142,7 +142,7 @@ List<List<Series>> _groupSeries(List<Series> series) {
       }
       currentProgression.intensity = intensity;
 
-      _updateSeriesInProgressions(weekProgressions, currentProgression);
+      updateSeriesInProgressions(weekProgressions, currentProgression);
     }
 
     final weightControllerIndex = controllerIndex + 2;
@@ -154,7 +154,7 @@ List<List<Series>> _groupSeries(List<Series> series) {
     final weekProgressions = buildWeekProgressions(programController.program.weeks, widget.exercise!);
 
     final seriesIndex = controllerIndex ~/ 5;
-    final groupedSeries = _groupSeries(weekProgressions.expand((week) => week.expand((session) => session.series)).toList());
+    final groupedSeries = groupSeries(weekProgressions.expand((week) => week.expand((session) => session.series)).toList());
 
     for (final currentProgression in groupedSeries[seriesIndex]) {
       SeriesUtils.updateWeightFromRPE(
@@ -167,16 +167,16 @@ List<List<Series>> _groupSeries(List<Series> series) {
         ValueNotifier<double>(0.0),
       );
 
-      _updateSeriesInProgressions(weekProgressions, currentProgression);
+      updateSeriesInProgressions(weekProgressions, currentProgression);
     }
   }
 
-  void _updateIntensityFromWeight(int controllerIndex, double weight) {
+  void updateIntensityFromWeight(int controllerIndex, double weight) {
     final programController = ref.read(trainingProgramControllerProvider);
     final weekProgressions = buildWeekProgressions(programController.program.weeks, widget.exercise!);
 
     final seriesIndex = controllerIndex ~/ 5;
-    final groupedSeries = _groupSeries(weekProgressions.expand((week) => week.expand((session) => session.series)).toList());
+    final groupedSeries = groupSeries(weekProgressions.expand((week) => week.expand((session) => session.series)).toList());
     final focusNodes = ref.read(focusNodesProvider);
 
     for (final currentProgression in groupedSeries[seriesIndex]) {
@@ -186,16 +186,16 @@ List<List<Series>> _groupSeries(List<Series> series) {
         ref.read(controllerProvider.notifier).state[seriesIndex][intensityControllerIndex % 5].text = currentProgression.intensity;
       }
 
-      _updateSeriesInProgressions(weekProgressions, currentProgression);
+      updateSeriesInProgressions(weekProgressions, currentProgression);
     }
   }
 
-  void _updateProgression(int controllerIndex, int reps, String intensity, String rpe, double weight) {
+  void updateProgression(int controllerIndex, int reps, String intensity, String rpe, double weight) {
     final programController = ref.read(trainingProgramControllerProvider);
     final weekProgressions = buildWeekProgressions(programController.program.weeks, widget.exercise!);
 
     final seriesIndex = controllerIndex ~/ 5;
-    final groupedSeries = _groupSeries(weekProgressions.expand((week) => week.expand((session) => session.series)).toList());
+    final groupedSeries = groupSeries(weekProgressions.expand((week) => week.expand((session) => session.series)).toList());
 
     final seriesInGroup = groupedSeries[seriesIndex] as List<Series>;
     final sets = seriesInGroup.length;
@@ -207,11 +207,11 @@ List<List<Series>> _groupSeries(List<Series> series) {
       currentProgression.rpe = rpe;
       currentProgression.weight = weight;
 
-      _updateSeriesInProgressions(weekProgressions, currentProgression);
+      updateSeriesInProgressions(weekProgressions, currentProgression);
     }
   }
 
-  void _updateSeriesInProgressions(List<List<WeekProgression>> weekProgressions, Series updatedSeries) {
+  void updateSeriesInProgressions(List<List<WeekProgression>> weekProgressions, Series updatedSeries) {
     for (int weekIndex = 0; weekIndex < weekProgressions.length; weekIndex++) {
       for (int sessionIndex = 0; sessionIndex < weekProgressions[weekIndex].length; sessionIndex++) {
         final sessionProgression = weekProgressions[weekIndex][sessionIndex];
@@ -232,7 +232,7 @@ List<List<Series>> _groupSeries(List<Series> series) {
     final colorScheme = Theme.of(context).colorScheme;
 
     final weekProgressions = buildWeekProgressions(programController.program.weeks, widget.exercise!);
-    final groupedSeries = _groupSeries(weekProgressions.expand((week) => week.expand((session) => session.series)).toList());
+    final groupedSeries = groupSeries(weekProgressions.expand((week) => week.expand((session) => session.series)).toList());
 
     Widget buildTextField({
       required int index,
@@ -333,7 +333,7 @@ List<List<Series>> _groupSeries(List<Series> series) {
                             index: seriesIndex * 5,
                             labelText: 'Reps',
                             keyboardType: TextInputType.number,
-                            onChanged: (value) => _updateProgression(
+                            onChanged: (value) => updateProgression(
                               seriesIndex * 5,
                               int.tryParse(value) ?? 0,
                               intensity,
@@ -354,14 +354,14 @@ List<List<Series>> _groupSeries(List<Series> series) {
                             labelText: '1RM%',
                             keyboardType: TextInputType.number,
                             onChanged: (value) {
-                              _updateProgression(
+                              updateProgression(
                                 seriesIndex * 5 + 2,
                                 reps,
                                 value,
                                 rpe,
                                 weight,
                               );
-                              _updateWeightFromIntensity(seriesIndex * 5 + 2, value);
+                              updateWeightFromIntensity(seriesIndex * 5 + 2, value);
                             },
                           ),
                           const SizedBox(width: 8),
@@ -370,7 +370,7 @@ List<List<Series>> _groupSeries(List<Series> series) {
                             labelText: 'RPE',
                             keyboardType: TextInputType.number,
                             onChanged: (value) {
-                              _updateProgression(
+                              updateProgression(
                                 seriesIndex * 5 + 3,
                                 reps,
                                 intensity,
@@ -387,14 +387,14 @@ List<List<Series>> _groupSeries(List<Series> series) {
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             onChanged: (value) {
                               final weight = double.tryParse(value) ?? 0;
-                              _updateProgression(
+                              updateProgression(
                                 seriesIndex * 5 + 4,
                                 reps,
                                 intensity,
                                 rpe,
                                 weight,
                               );
-                              _updateIntensityFromWeight(seriesIndex * 5 + 4, weight);
+                              updateIntensityFromWeight(seriesIndex * 5 + 4, weight);
                             },
                           ),
                         ],
@@ -409,7 +409,7 @@ List<List<Series>> _groupSeries(List<Series> series) {
                 final programController = ref.read(trainingProgramControllerProvider);
                 final weekProgressions = buildWeekProgressions(programController.program.weeks, widget.exercise!);
 
-                _updateProgressionsFromFields(weekProgressions);
+                updateProgressionsFromFields(weekProgressions);
 
                 await applyWeekProgressions(
                   programController.program.weeks
@@ -441,21 +441,43 @@ List<List<Series>> _groupSeries(List<Series> series) {
     );
   }
 
-void _updateProgressionsFromFields(List<List<WeekProgression>> weekProgressions) {
+void updateProgressionsFromFields(List<List<WeekProgression>> weekProgressions) {
   final controllers = ref.read(controllerProvider);
+  final programController = ref.read(trainingProgramControllerProvider);
   int progressionIndex = 0;
 
-  for (final weekProgression in weekProgressions) {
-    for (final sessionProgression in weekProgression) {
+  for (int weekIndex = 0; weekIndex < weekProgressions.length; weekIndex++) {
+    final weekProgression = weekProgressions[weekIndex];
+    for (int sessionIndex = 0; sessionIndex < weekProgression.length; sessionIndex++) {
+      final sessionProgression = weekProgression[sessionIndex];
       final series = sessionProgression.series;
+
+      if (progressionIndex >= controllers.length) {
+        break; // Esci dal ciclo se progressionIndex supera la lunghezza di controllers
+      }
+
       final sets = int.parse(controllers[progressionIndex][1].text);
       final reps = int.parse(controllers[progressionIndex][0].text);
       final intensity = controllers[progressionIndex][2].text;
       final rpe = controllers[progressionIndex][3].text;
       final weight = double.parse(controllers[progressionIndex][4].text);
 
-      // Aggiorna il numero di serie in base al valore del campo "Sets"
-      while (series.length < sets) {
+      // Rimuovi tutte le serie esistenti
+      final exerciseIndex = programController.program.weeks
+          .expand((week) => week.workouts)
+          .expand((workout) => workout.exercises)
+          .toList()
+          .indexOf(widget.exercise!);
+      programController.seriesController.removeAllSeriesForExercise(
+        programController.program,
+        weekIndex,
+        sessionIndex,
+        exerciseIndex,
+      );
+
+      // Aggiungi le nuove serie in base al valore del campo "Sets"
+      series.clear(); // Cancella tutte le serie esistenti
+      for (int i = 0; i < sets; i++) {
         final newSeries = Series(
           serieId: generateRandomId(16).toString(),
           reps: reps,
@@ -463,31 +485,22 @@ void _updateProgressionsFromFields(List<List<WeekProgression>> weekProgressions)
           intensity: intensity,
           rpe: rpe,
           weight: weight,
-          order: series.length + 1,
+          order: i + 1,
           done: false,
           reps_done: 0,
           weight_done: 0.0,
         );
         series.add(newSeries);
       }
-      while (series.length > sets) {
-        series.removeLast();
-      }
 
-      // Aggiorna le proprietà delle serie
-      for (final s in series) {
-        s.reps = reps;
-        s.sets = 1;
-        s.intensity = intensity;
-        s.rpe = rpe;
-        s.weight = weight;
-      }
+      // Aggiorna il valore di "sets" nel controller corrispondente
+      controllers[progressionIndex][1].text = sets.toString();
 
-      progressionIndex++;
+      progressionIndex += sets; // Aggiorna l'indice in base al numero di serie aggiunte
     }
   }
 }
-
+  
   Future<void> applyWeekProgressions(
     int exerciseIndex,
     List<List<WeekProgression>> progressions,
@@ -571,7 +584,7 @@ orElse: () => WeekProgression(weekNumber: weekIndex + 1, sessionNumber: workout.
       }
 
       if (sessionProgression != null && sessionProgression.series.isNotEmpty) {
-        final groupedSeries = _groupSeries(sessionProgression.series);
+        final groupedSeries = groupSeries(sessionProgression.series);
         return WeekProgression(
           weekNumber: weekIndex + 1,
           sessionNumber: workout.order,
@@ -592,7 +605,7 @@ orElse: () => WeekProgression(weekNumber: weekIndex + 1, sessionNumber: workout.
           }).toList(),
         );
       } else {
-        final groupedSeries = _groupSeries(exerciseInWorkout.series);
+        final groupedSeries = groupSeries(exerciseInWorkout.series);
         return WeekProgression(
           weekNumber: weekIndex + 1,
           sessionNumber: workout.order,

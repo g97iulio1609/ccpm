@@ -102,6 +102,18 @@ Future<void> editSeries(
     notifyListeners();
   }
 }
+
+void removeAllSeriesForExercise(
+    TrainingProgram program, int weekIndex, int workoutIndex, int exerciseIndex) {
+  final exercise =
+      program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+  for (final series in exercise.series) {
+    removeSeriesData(program, series);
+  }
+  exercise.series.clear();
+  notifyListeners();
+}
+
   void removeSeries(
     TrainingProgram program,
     int weekIndex,
@@ -113,16 +125,18 @@ Future<void> editSeries(
     final exercise = program
         .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     final series = exercise.series[groupIndex * 1 + seriesIndex];
-    _removeSeriesData(program, series);
+    removeSeriesData(program, series);
     exercise.series.removeAt(groupIndex * 1 + seriesIndex);
     _updateSeriesOrders(program, weekIndex, workoutIndex, exerciseIndex,
         groupIndex * 1 + seriesIndex);
     notifyListeners();
   }
 
-  void _removeSeriesData(TrainingProgram program, Series series) {
+  void removeSeriesData(TrainingProgram program, Series series) {
     if (series.serieId != null) {
       program.trackToDeleteSeries.add(series.serieId!);
+          notifyListeners();
+
     }
   }
 
