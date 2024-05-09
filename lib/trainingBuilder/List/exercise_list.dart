@@ -334,52 +334,63 @@ Widget _buildExerciseSeries(
   );
 }
 
-  Widget _buildAddSeriesButton(
-    BuildContext context,
-    Exercise exercise,
-    bool isDarkMode,
-    ColorScheme colorScheme,
-  ) {
-    return ElevatedButton(
-      onPressed: () => controller.addSeries(weekIndex, workoutIndex,
-          exercise.order - 1, exercise.type ?? '', context),
+Widget _buildAddSeriesButton(
+  BuildContext context,
+  Exercise exercise,
+  bool isDarkMode,
+  ColorScheme colorScheme,
+) {
+  return ElevatedButton(
+    onPressed: () => controller.addSeries(weekIndex, workoutIndex,
+        exercise.order - 1, exercise.type ?? '', context),
+    style: ElevatedButton.styleFrom(
+      backgroundColor:
+          colorScheme.primary, // Usa il colore primario come sfondo
+      foregroundColor:
+          Colors.black, // Usa il colore nero per il testo
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+    ),
+    child: Text(
+      'Aggiungi Nuova Serie',
+      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: Colors.black, // Imposta esplicitamente il colore del testo a nero
+          ),
+    ),
+  );
+}
+
+Widget _buildAddExerciseButton(
+  BuildContext context,
+  bool isDarkMode,
+  ColorScheme colorScheme,
+) {
+  return Padding(
+    padding: const EdgeInsets.all(16.0),
+    child: ElevatedButton(
+      onPressed: () =>
+          controller.addExercise(weekIndex, workoutIndex, context),
       style: ElevatedButton.styleFrom(
         backgroundColor:
-            isDarkMode ? colorScheme.primary : colorScheme.secondary,
+            colorScheme.primary, // Usa il colore primario come sfondo
         foregroundColor:
-            isDarkMode ? colorScheme.onPrimary : colorScheme.onSecondary,
+            Colors.black, // Usa il colore nero per il testo
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
       ),
-      child: const Text('Aggiungi Nuova Serie'),
-    );
-  }
-
-  Widget _buildAddExerciseButton(
-    BuildContext context,
-    bool isDarkMode,
-    ColorScheme colorScheme,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: ElevatedButton(
-        onPressed: () =>
-            controller.addExercise(weekIndex, workoutIndex, context),
-        style: ElevatedButton.styleFrom(
-          backgroundColor:
-              isDarkMode ? colorScheme.primary : colorScheme.secondary,
-          foregroundColor:
-              isDarkMode ? colorScheme.onPrimary : colorScheme.onSecondary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-        child: const Text('Aggiungi Esercizio'),
+      child: Text(
+        'Aggiungi Esercizio',
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Colors.black, // Imposta esplicitamente il colore del testo a nero
+            ),
       ),
-    );
-  }
-
+    ),
+  );
+}
 
   // exercise_list.dart
 
