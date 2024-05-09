@@ -462,23 +462,19 @@ List<List<Series>> groupSeries(List<Series> series) {
 void updateProgressionsFromFields(List<List<WeekProgression>> weekProgressions) {
   final controllers = ref.read(controllerProvider);
   final programController = ref.read(trainingProgramControllerProvider);
-  int progressionIndex = 0;
 
+  int controllerIndex = 0;
   for (int weekIndex = 0; weekIndex < weekProgressions.length; weekIndex++) {
     final weekProgression = weekProgressions[weekIndex];
     for (int sessionIndex = 0; sessionIndex < weekProgression.length; sessionIndex++) {
       final sessionProgression = weekProgression[sessionIndex];
       final series = sessionProgression.series;
 
-      if (progressionIndex >= controllers.length) {
-        break; // Esci dal ciclo se progressionIndex supera la lunghezza di controllers
-      }
-
-      final sets = int.parse(controllers[progressionIndex][1].text);
-      final reps = int.parse(controllers[progressionIndex][0].text);
-      final intensity = controllers[progressionIndex][2].text;
-      final rpe = controllers[progressionIndex][3].text;
-      final weight = double.parse(controllers[progressionIndex][4].text);
+      final sets = int.parse(controllers[controllerIndex][1].text);
+      final reps = int.parse(controllers[controllerIndex][0].text);
+      final intensity = controllers[controllerIndex][2].text;
+      final rpe = controllers[controllerIndex][3].text;
+      final weight = double.parse(controllers[controllerIndex][4].text);
 
       // Rimuovi tutte le serie esistenti
       final exerciseIndex = programController.program.weeks
@@ -493,8 +489,7 @@ void updateProgressionsFromFields(List<List<WeekProgression>> weekProgressions) 
         exerciseIndex,
       );
 
-      // Aggiungi le nuove serie in base al valore del campo "Sets"
-      series.clear(); // Cancella tutte le serie esistenti
+      series.clear();
       for (int i = 0; i < sets; i++) {
         final newSeries = Series(
           serieId: generateRandomId(16).toString(),
@@ -511,14 +506,16 @@ void updateProgressionsFromFields(List<List<WeekProgression>> weekProgressions) 
         series.add(newSeries);
       }
 
-      // Aggiorna il valore di "sets" nel controller corrispondente
-      controllers[progressionIndex][1].text = sets.toString();
-
-      progressionIndex++; // Incrementa l'indice di una sola unità
+      controllerIndex++;
+      if (controllerIndex >= controllers.length) {
+        break; // Esci dal ciclo se controllerIndex supera la lunghezza di controllers
+      }
+    }
+    if (controllerIndex >= controllers.length) {
+      break; // Esci dal ciclo se controllerIndex supera la lunghezza di controllers
     }
   }
 }
-
   Future<void> applyWeekProgressions(
     int exerciseIndex,
     List<List<WeekProgression>> progressions,

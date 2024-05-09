@@ -164,7 +164,7 @@ class MyApp extends ConsumerWidget {
 
    final ColorScheme darkColorScheme = ColorScheme.fromSeed(
   seedColor: const Color(0xFF1976D2),
-  primary: const Color(0xFF90CAF9),
+  primary: const Color(0xFFFFD700),
   secondary: const Color(0xFFFF9800),
   tertiary: const Color(0xFF4CAF50),
   error: const Color(0xFFF44336),
