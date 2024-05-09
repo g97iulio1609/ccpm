@@ -1,5 +1,6 @@
 import 'package:alphanessone/measurements/measurements.dart';
-import 'package:alphanessone/tdee.dart';
+import 'package:alphanessone/nutrition/macros_selector.dart';
+import 'package:alphanessone/nutrition/tdee.dart';
 import 'package:alphanessone/training_gallery.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -366,6 +367,15 @@ final ThemeData darkTheme = ThemeData(
                 final userId = FirebaseAuth.instance.currentUser?.uid;
                 return userId != null
                     ? TDEEScreen(userId: userId)
+                    : const SizedBox();
+              },
+            ),
+              GoRoute(
+              path: '/macros_selector',
+              builder: (context, state) {
+                final userId = FirebaseAuth.instance.currentUser?.uid;
+                return userId != null
+                    ? MacrosSelector(userId: userId)
                     : const SizedBox();
               },
             ),
