@@ -445,6 +445,8 @@ void _showEditAllSeriesDialog(
       for (int i = 0; i < seriesGroup.length; i++) {
         final s = seriesGroup[i];
         s.reps = reps;
+              s.sets = sets; // Assicurati che il valore "sets" sia impostato correttamente
+
         s.intensity = intensity;
         s.rpe = rpe;
         s.weight = weight;

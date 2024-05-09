@@ -324,51 +324,32 @@ class Exercise {
 class WeekProgression {
   int weekNumber;
   int sessionNumber;
-  int reps;
-  int sets;
-  String intensity;
-  String rpe;
-  double weight;
+  List<Series> series;
 
   WeekProgression({
     required this.weekNumber,
     required this.sessionNumber,
-    required this.reps,
-    required this.sets,
-    required this.intensity,
-    required this.rpe,
-    required this.weight,
+    required this.series,
+    
   });
 
   factory WeekProgression.fromMap(Map<String, dynamic> map) {
     return WeekProgression(
       weekNumber: map['weekNumber'],
       sessionNumber: map['sessionNumber'],
-      reps: map['reps'],
-      sets: map['sets'],
-      intensity: map['intensity'],
-      rpe: map['rpe'],
-      weight: map['weight'].toDouble(),
+      series: List<Series>.from(map['series']?.map((x) => Series.fromMap(x)) ?? []),
     );
   }
 
   WeekProgression copyWith({
     int? weekNumber,
     int? sessionNumber,
-    int? reps,
-    int? sets,
-    String? intensity,
-    String? rpe,
-    double? weight,
+    List<Series>? series,
   }) {
     return WeekProgression(
       weekNumber: weekNumber ?? this.weekNumber,
       sessionNumber: sessionNumber ?? this.sessionNumber,
-      reps: reps ?? this.reps,
-      sets: sets ?? this.sets,
-      intensity: intensity ?? this.intensity,
-      rpe: rpe ?? this.rpe,
-      weight: weight ?? this.weight,
+      series: series ?? this.series.map((series) => series.copyWith()).toList(),
     );
   }
 
@@ -376,11 +357,7 @@ class WeekProgression {
     return {
       'weekNumber': weekNumber,
       'sessionNumber': sessionNumber,
-      'reps': reps,
-      'sets': sets,
-      'intensity': intensity,
-      'rpe': rpe,
-      'weight': weight,
+      'series': series.map((x) => x.toMap()).toList(),
     };
   }
 }
@@ -462,41 +439,43 @@ class Series {
       reps: int.tryParse(data['reps']?.toString() ?? '0') ?? 0,
       sets: int.tryParse(data['sets']?.toString() ?? '0') ?? 0,
       intensity: data['intensity'] ?? '',
-      rpe: data['rpe'] ?? '',weight: data['weight']?.toDouble() ?? 0.0,
-order: int.tryParse(data['order']?.toString() ?? '0') ?? 0,
-done: data['done'] ?? false,
-reps_done: int.tryParse(data['reps_done']?.toString() ?? '0') ?? 0,
-weight_done: data['weight_done']?.toDouble() ?? 0.0,
-);
-}
-Map<String, dynamic> toMap() {
-return {
-'id': id,
-'serieId': serieId,
-'reps': reps,
-'sets': sets,
-'intensity': intensity,
-'rpe': rpe,
-'weight': weight,
-'order': order,
-'done': done,
-'reps_done': reps_done,
-'weight_done': weight_done,
-};
-}
-Map<String, dynamic> toFirestore() {
-return {
-'reps': reps,
-'sets': sets,
-'intensity': intensity,
-'rpe': rpe,
-'weight': weight,
-'id': id,
-'serieId': serieId,
-'order': order,
-'done': done,
-'reps_done': reps_done,
-'weight_done': weight_done,
-};
-}
+      rpe: data['rpe'] ?? '',
+      weight: data['weight']?.toDouble() ?? 0.0,
+      order: int.tryParse(data['order']?.toString() ?? '0') ?? 0,
+      done: data['done'] ?? false,
+      reps_done: int.tryParse(data['reps_done']?.toString() ?? '0') ?? 0,
+      weight_done: data['weight_done']?.toDouble() ?? 0.0,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,'serieId': serieId,
+      'reps': reps,
+      'sets': sets,
+      'intensity': intensity,
+      'rpe': rpe,
+      'weight': weight,
+      'order': order,
+      'done': done,
+      'reps_done': reps_done,
+      'weight_done': weight_done,
+    };
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'reps': reps,
+      'sets': sets,
+      'intensity': intensity,
+      'rpe': rpe,
+      'weight': weight,
+      'id': id,
+      'serieId': serieId,
+      'order': order,
+      'done': done,
+      'reps_done': reps_done,
+      'weight_done': weight_done,
+    };
+  }
 }

@@ -1,5 +1,6 @@
 import 'package:alphanessone/measurements/measurements.dart';
-import 'package:alphanessone/tdee.dart';
+import 'package:alphanessone/nutrition/macros_selector.dart';
+import 'package:alphanessone/nutrition/tdee.dart';
 import 'package:alphanessone/training_gallery.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -160,56 +161,34 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // final ColorScheme lightColorScheme = ColorScheme.fromSeed(
-    //   seedColor: const Color(0xFF2196F3),
-    //   primary: const Color.fromARGB(255, 171, 198, 221),
-    //   secondary: const Color(0xFFFF9800),
-    //   tertiary: const Color(0xFF4CAF50),
-    //   error: const Color(0xFFF44336),
-    //   background: const Color(0xFFF5F5F5),
-    //   surface: const Color(0xFFFFFFFF),
-    //   onPrimary: Colors.white,
-    //   onSecondary: Colors.white,
-    //   onTertiary: Colors.white,
-    //   onError: Colors.white,
-    //   onBackground: Colors.black,
-    //   onSurface: Colors.black,
-    //   brightness: Brightness.light,
-    // );
+   
 
-    final ColorScheme darkColorScheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xFF2196F3),
-      primary: const Color(0xFF90CAF9),
-      secondary: const Color(0xFFFFCC80),
-      tertiary: const Color(0xFF81C784),
-      error: const Color(0xFFEF9A9A),
-      background: const Color(0xFF121212),
-      surface: const Color(0xFF1F1F1F),
-      onPrimary: Colors.black,
-      onSecondary: Colors.black,
-      onTertiary: Colors.black,
-      onError: Colors.black,
-      onBackground: Colors.white,
-      onSurface: Colors.white,
-      brightness: Brightness.dark,
-    );
+   final ColorScheme darkColorScheme = ColorScheme.fromSeed(
+  seedColor: const Color(0xFF1976D2),
+  primary: const Color(0xFFFFD700),
+  secondary: const Color(0xFFFF9800),
+  tertiary: const Color(0xFF4CAF50),
+  error: const Color(0xFFF44336),
+  background: const Color(0xFF121212),
+  surface: const Color(0xFF1E1E1E),
+  onPrimary: Colors.black,
+  onSecondary: Colors.black,
+  onTertiary: Colors.black,
+  onError: Colors.white,
+  onBackground: Colors.white,
+  onSurface: Colors.white,
+  brightness: Brightness.dark,
+);
 
-    // final ThemeData lightTheme = ThemeData(
-    //   useMaterial3: true,
-    //   colorScheme: lightColorScheme,
-    //   textTheme: GoogleFonts.robotoTextTheme(),
-    //   visualDensity: VisualDensity.adaptivePlatformDensity,
-    // );
-
-    final ThemeData darkTheme = ThemeData(
-      useMaterial3: true,
-      colorScheme: darkColorScheme,
-      textTheme: GoogleFonts.robotoTextTheme().apply(
-        bodyColor: Colors.white,
-        displayColor: Colors.white,
-      ),
-      visualDensity: VisualDensity.adaptivePlatformDensity,
-    );
+final ThemeData darkTheme = ThemeData(
+  useMaterial3: true,
+  colorScheme: darkColorScheme,
+  textTheme: GoogleFonts.robotoTextTheme().apply(
+    bodyColor: Colors.white,
+    displayColor: Colors.white,
+  ),
+  visualDensity: VisualDensity.adaptivePlatformDensity,
+);
 
   final GoRouter router = GoRouter(
       routes: [
@@ -388,6 +367,15 @@ class MyApp extends ConsumerWidget {
                 final userId = FirebaseAuth.instance.currentUser?.uid;
                 return userId != null
                     ? TDEEScreen(userId: userId)
+                    : const SizedBox();
+              },
+            ),
+              GoRoute(
+              path: '/macros_selector',
+              builder: (context, state) {
+                final userId = FirebaseAuth.instance.currentUser?.uid;
+                return userId != null
+                    ? MacrosSelector(userId: userId)
                     : const SizedBox();
               },
             ),
