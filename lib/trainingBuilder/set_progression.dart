@@ -243,27 +243,40 @@ List<List<Series>> groupSeries(List<Series> series) {
       final controller = controllers[index ~/ 5][index % 5];
       final focusNode = FocusNode();
       return Expanded(
-        child: TextFormField(
-          controller: controller,
-          focusNode: focusNode,
-          keyboardType: keyboardType,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: isDarkMode ? colorScheme.onBackground : colorScheme.onSurface,
-          ),
-          decoration: InputDecoration(
-            labelText: labelText,
-            labelStyle: TextStyle(
-              color: isDarkMode ? colorScheme.onBackground : colorScheme.onSurface,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: TextFormField(
+            controller: controller,
+            focusNode: focusNode,
+            keyboardType: keyboardType,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
             ),
-            filled: true,
-            fillColor: isDarkMode ? colorScheme.surface : Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide.none,
+            decoration: InputDecoration(
+              labelText: labelText,
+              labelStyle: const TextStyle(
+                color: Colors.white,
+              ),
+              filled: true,
+              fillColor: isDarkMode ? colorScheme.surface : Colors.white,
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: isDarkMode ? colorScheme.onSurface.withOpacity(0.12) : colorScheme.onSurface.withOpacity(0.12),
+                  width: 1,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: isDarkMode ? colorScheme.primary : colorScheme.primary,
+                  width: 2,
+                ),
+              ),
             ),
+            onChanged: onChanged,
           ),
-          onChanged: onChanged,
         ),
       );
     }
@@ -311,20 +324,27 @@ List<List<Series>> groupSeries(List<Series> series) {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (seriesIndex == 0 || (previousWeekIndex != -1 && weekIndex != previousWeekIndex))
-                        Text(
-                          'Week ${weekIndex + 1}',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: isDarkMode ? colorScheme.onBackground : colorScheme.onSurface,
+                        Padding(
+                          padding: const EdgeInsets.only(top: 24, bottom: 8),
+                          child: Text(
+                            'Week ${weekIndex + 1}',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: isDarkMode ? colorScheme.onBackground : colorScheme.onSurface,
+                            ),
                           ),
                         ),
                       if (seriesIndex == 0 || (previousSessionIndex != -1 && sessionIndex != previousSessionIndex))
-                        Text(
-                          'Session ${sessionIndex + 1}',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: isDarkMode ? colorScheme.onBackground : colorScheme.onSurface,
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16, bottom: 24),
+                          child: Text(
+                            'Session ${sessionIndex + 1}',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: isDarkMode ? colorScheme.onBackground : colorScheme.onSurface,
+                            ),
                           ),
                         ),
                       Row(
@@ -341,14 +361,12 @@ List<List<Series>> groupSeries(List<Series> series) {
                               weight,
                             ),
                           ),
-                          const SizedBox(width: 8),
                           buildTextField(
                             index: seriesIndex * 5 + 1,
                             labelText: 'Sets',
                             keyboardType: TextInputType.number,
                             onChanged: (value) {},
                           ),
-                          const SizedBox(width: 8),
                           buildTextField(
                             index: seriesIndex * 5 + 2,
                             labelText: '1RM%',
@@ -364,7 +382,6 @@ List<List<Series>> groupSeries(List<Series> series) {
                               updateWeightFromIntensity(seriesIndex * 5 + 2, value);
                             },
                           ),
-                          const SizedBox(width: 8),
                           buildTextField(
                             index: seriesIndex * 5 + 3,
                             labelText: 'RPE',
@@ -380,7 +397,6 @@ List<List<Series>> groupSeries(List<Series> series) {
                               _updateWeightFromRPE(seriesIndex * 5 + 3, value, reps);
                             },
                           ),
-                          const SizedBox(width: 8),
                           buildTextField(
                             index: seriesIndex * 5 + 4,
                             labelText: 'Weight',
@@ -399,11 +415,13 @@ List<List<Series>> groupSeries(List<Series> series) {
                           ),
                         ],
                       ),
+                      const SizedBox(height: 24),
                     ],
                   );
                 },
               ),
             ),
+            const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () async {
                 final programController = ref.read(trainingProgramControllerProvider);
@@ -423,11 +441,11 @@ List<List<Series>> groupSeries(List<Series> series) {
                 Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: isDarkMode ? colorScheme.primary : colorScheme.secondary,
-                foregroundColor: isDarkMode ? colorScheme.onPrimary : colorScheme.onSecondary,
+                backgroundColor: isDarkMode ? colorScheme.primary : colorScheme.primary,
+                foregroundColor: isDarkMode ? colorScheme.onPrimary : Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
               child: const Text(
