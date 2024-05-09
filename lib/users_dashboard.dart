@@ -40,12 +40,14 @@ class UsersDashboard extends ConsumerWidget {
                   return ListView.separated(
                     physics: const BouncingScrollPhysics(),
                     itemCount: users.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 16),
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 16),
                     itemBuilder: (context, index) {
                       final user = users[index];
                       return UserCard(
                         user: user,
-                        onTap: () => context.go('/user_profile/${user.id}'),
+                        onTap: () => context.go('/users_dashboard/user_profile',
+                            extra: user.id),
                         onDelete: () => usersService.deleteUser(user.id),
                       );
                     },
@@ -56,7 +58,6 @@ class UsersDashboard extends ConsumerWidget {
           ],
         ),
       ),
- 
     );
   }
 

@@ -7,6 +7,7 @@ import '../exerciseManager/exercises_services.dart';
 import 'training_model.dart';
 import 'controller/training_program_controller.dart';
 import 'add_exercise_dialog.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Importa firebase_auth
 
 class ExerciseDialog extends ConsumerWidget {
   final UsersService usersService;
@@ -29,6 +30,7 @@ class ExerciseDialog extends ConsumerWidget {
     String selectedExerciseType = exercise?.type ?? '';
 
     final exercisesService = ref.watch(exercisesServiceProvider);
+    final userId = FirebaseAuth.instance.currentUser?.uid; // Ottieni l'ID dell'utente corrente
 
     return AlertDialog(
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -60,7 +62,9 @@ class ExerciseDialog extends ConsumerWidget {
                 if (suggestion.name == 'Crea Esercizio') {
                   final newExercise = await showDialog<ExerciseModel>(
                     context: context,
-                    builder: (context) => AddExerciseDialog(exercisesService: exercisesService),
+                    builder: (context) => userId != null // Verifica se userId è null
+                        ? AddExerciseDialog(exercisesService: exercisesService, userId: userId) // Passa userId
+                        : const SizedBox.shrink(), // Renderizza un widget vuoto se userId è null
                   );
                   if (newExercise != null) {
                     exerciseNameController.text = newExercise.name;

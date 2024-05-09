@@ -10,25 +10,29 @@ class SeriesController extends ChangeNotifier {
 
   SeriesController(this.usersService, this.weightNotifier);
 
-  Future<void> addSeries(TrainingProgram program, int weekIndex,
-      int workoutIndex, int exerciseIndex, BuildContext context) async {
-    final exercise = program
-        .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
-    final latestMaxWeight = await SeriesUtils.getLatestMaxWeight(
-        usersService, program.athleteId, exercise.exerciseId ?? '');
+Future<void> addSeries(TrainingProgram program, int weekIndex,
+    int workoutIndex, int exerciseIndex, BuildContext context) async {
+  final exercise = program
+      .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+  final latestMaxWeight = await SeriesUtils.getLatestMaxWeight(
+      usersService, program.athleteId, exercise.exerciseId ?? '');
 
-    final num maxWeight = latestMaxWeight ?? 100.0;
+  final num maxWeight = latestMaxWeight ?? 100.0;
 
-    final seriesList = await _showSeriesDialog(
-        context, exercise, weekIndex, null, exercise.type, maxWeight);
+  final seriesList = await _showSeriesDialog(
+      context, exercise, weekIndex, null, exercise.type, maxWeight);
 
-    if (seriesList != null) {
-      exercise.series.addAll(seriesList);
-      await SeriesUtils.updateSeriesWeights(
-          program, weekIndex, workoutIndex, exerciseIndex, usersService);
-      notifyListeners();
+
+  if (seriesList != null) {
+    for (final series in seriesList) {
+
+      exercise.series.add(series);
     }
+    await SeriesUtils.updateSeriesWeights(
+        program, weekIndex, workoutIndex, exerciseIndex, usersService);
+    notifyListeners();
   }
+}
 
 Future<List<Series>?> _showSeriesDialog(
   BuildContext context,
@@ -61,18 +65,13 @@ Future<void> editSeries(
   int exerciseIndex,
   Series currentSeries,
   BuildContext context,
-  latestMaxWeight
+  num latestMaxWeight,
 ) async {
   final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
   final exerciseId = exercise.exerciseId;
   final athleteId = program.athleteId;
 
-  // Ottieni il latestMaxWeight corretto per l'esercizio
-  final latestMaxWeight = await SeriesUtils.getLatestMaxWeight(
-    usersService,
-    athleteId,
-    exerciseId ?? '',
-  );
+
 
   final updatedSeriesList = await _showSeriesDialog(
     context,
@@ -83,11 +82,15 @@ Future<void> editSeries(
     latestMaxWeight,
   );
 
+
   if (updatedSeriesList != null) {
     final seriesIndex = exercise.series.indexOf(currentSeries);
-    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex]
-        .series
-        .replaceRange(seriesIndex, seriesIndex + 1, updatedSeriesList);
+    for (int i = 0; i < updatedSeriesList.length; i++) {
+      final updatedSeries = updatedSeriesList[i];
+
+      program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex]
+          .series[seriesIndex + i] = updatedSeries;
+    }
 
     await SeriesUtils.updateSeriesWeights(
       program,
@@ -98,6 +101,17 @@ Future<void> editSeries(
     );
     notifyListeners();
   }
+}
+
+void removeAllSeriesForExercise(
+    TrainingProgram program, int weekIndex, int workoutIndex, int exerciseIndex) {
+  final exercise =
+      program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+  for (final series in exercise.series) {
+    removeSeriesData(program, series);
+  }
+  exercise.series.clear();
+  notifyListeners();
 }
 
   void removeSeries(
@@ -111,16 +125,18 @@ Future<void> editSeries(
     final exercise = program
         .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     final series = exercise.series[groupIndex * 1 + seriesIndex];
-    _removeSeriesData(program, series);
+    removeSeriesData(program, series);
     exercise.series.removeAt(groupIndex * 1 + seriesIndex);
     _updateSeriesOrders(program, weekIndex, workoutIndex, exerciseIndex,
         groupIndex * 1 + seriesIndex);
     notifyListeners();
   }
 
-  void _removeSeriesData(TrainingProgram program, Series series) {
+  void removeSeriesData(TrainingProgram program, Series series) {
     if (series.serieId != null) {
       program.trackToDeleteSeries.add(series.serieId!);
+          notifyListeners();
+
     }
   }
 

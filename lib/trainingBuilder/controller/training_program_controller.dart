@@ -12,7 +12,6 @@ import 'workout_controller.dart';
 import 'exercise_controller.dart';
 import 'series_controller.dart';
 import 'super_set_controller.dart';
-import 'progression_controller.dart';
 
 final firestoreServiceProvider =
     Provider<FirestoreService>((ref) => FirestoreService());
@@ -23,6 +22,7 @@ final trainingProgramControllerProvider =
   final usersService = ref.watch(user_services.usersServiceProvider);
   final programStateNotifier = ref.watch(trainingProgramStateProvider.notifier);
   return TrainingProgramController(service, usersService, programStateNotifier, ref);
+
 });
 
 class TrainingProgramController extends ChangeNotifier {
@@ -47,27 +47,28 @@ class TrainingProgramController extends ChangeNotifier {
   }
 
   final TrainingProgramRepository _repository;
-  final WeekController _weekController;
+  final  WeekController _weekController;
   final WorkoutController _workoutController;
   late final SeriesController _seriesController;
   late final ExerciseController _exerciseController;
+
   final SuperSetController _superSetController;
   final Ref ref;
 
-  TrainingProgramController(
-    this._service,
-    this._usersService,
-    this._programStateNotifier,
-    this.ref,
-  )   : _repository = TrainingProgramRepository(_service),
-        _weekController = WeekController(),
-        _workoutController = WorkoutController(),
-        _superSetController = SuperSetController() {
-    _initProgram();
-    final weightNotifier = ValueNotifier<double>(0.0);
-    _seriesController = SeriesController(_usersService, weightNotifier);
-    _exerciseController = ExerciseController(_usersService, _seriesController);
-  }
+TrainingProgramController(
+  this._service,
+  this._usersService,
+  this._programStateNotifier,
+  this.ref,
+)   : _repository = TrainingProgramRepository(_service),
+      _weekController = WeekController(),
+      _workoutController = WorkoutController(),
+      _superSetController = SuperSetController() {
+  _initProgram();
+  final weightNotifier = ValueNotifier<double>(0.0);
+  _seriesController = SeriesController(_usersService, weightNotifier);
+  _exerciseController = ExerciseController(_usersService, _seriesController);
+}
 
   late TrainingProgram _program;
   late TextEditingController _nameController;
@@ -90,6 +91,8 @@ class TrainingProgramController extends ChangeNotifier {
     _mesocycleNumberController =
         TextEditingController(text: _program.mesocycleNumber.toString());
   }
+SeriesController get seriesController => _seriesController;
+
 
   Future<void> loadProgram(String? programId) async {
     if (programId == null) {
@@ -225,6 +228,7 @@ Future<void> updateExercise(Exercise exercise) async {
 
 Future<void> editSeries(int weekIndex, int workoutIndex, int exerciseIndex,
     Series currentSeries, BuildContext context, String exerciseType, num latestMaxWeight) async {
+
   await _seriesController.editSeries(_program, weekIndex, workoutIndex,
       exerciseIndex, currentSeries, context,latestMaxWeight);
   notifyListeners();
@@ -261,52 +265,7 @@ Future<void> editSeries(int weekIndex, int workoutIndex, int exerciseIndex,
     notifyListeners();
   }
 
-  Future<void> applyWeekProgressions(int exerciseIndex,
-      List<WeekProgression> weekProgressions, BuildContext context) async {
-    final exercise = _program.weeks
-        .expand((week) => week.workouts)
-        .expand((workout) => workout.exercises)
-        .elementAt(exerciseIndex);
 
-    for (int weekIndex = 0; weekIndex < _program.weeks.length; weekIndex++) {
-      final progression = weekIndex < weekProgressions.length
-          ? weekProgressions[weekIndex]
-          : weekProgressions.last;
-      final series = List.generate(
-          progression.sets,
-          (index) => Series(
-                serieId: generateRandomId(16).toString(),
-                reps: progression.reps,
-                sets: 1,
-                intensity: progression.intensity,
-                rpe: progression.rpe,
-                weight: progression.weight,
-                order: index + 1,
-                done: false,
-                reps_done: 0,
-                weight_done: 0.0,
-              ));
-
-      for (var workout in _program.weeks[weekIndex].workouts) {
-        final exerciseIndex =
-            workout.exercises.indexWhere((e) => e.id == exercise.id);
-        if (exerciseIndex != -1) {
-          workout.exercises[exerciseIndex] =
-              workout.exercises[exerciseIndex].copyWith(series: series);
-        }
-      }
-    }
-
-    notifyListeners();
-  }
-
-  Future<void> updateExerciseProgressions(Exercise exercise,
-      List<WeekProgression> updatedProgressions, BuildContext context) async {
-    final progressionController = ProgressionController(this);
-    await progressionController.updateExerciseProgressions(
-        exercise, updatedProgressions, context);
-    notifyListeners();
-  }
 
   void reorderWeeks(int oldIndex, int newIndex) {
     _weekController.reorderWeeks(_program, oldIndex, newIndex);

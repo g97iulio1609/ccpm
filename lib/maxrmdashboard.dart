@@ -30,17 +30,13 @@ class MaxRMDashboard extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final FirebaseAuth auth = ref.watch(authProvider);
-    final User? user = auth.currentUser;
     final exercisesAsyncValue = ref.watch(exercisesStreamProvider);
     final usersAsyncValue = ref.watch(usersStreamProvider);
     final usersService = ref.watch(userServiceProvider);
     final selectedExerciseController = useState<ExerciseModel?>(null);
-    final selectedUserController = useState<UserModel?>(null);
     final exerciseNameController = useTextEditingController();
     final maxWeightController = useTextEditingController();
     final repetitionsController = useTextEditingController();
-    final userNameController = useTextEditingController();
     final dateFormat = DateFormat('yyyy-MM-dd');
 
     Future<void> addRecord({
@@ -49,21 +45,15 @@ class MaxRMDashboard extends HookConsumerWidget {
       required int maxWeight,
       required int repetitions,
     }) async {
-      String userId = user?.uid ?? '';
-      if (usersService.getCurrentUserRole() == 'admin' &&
-          selectedUserController.value != null) {
-        userId = selectedUserController.value!.id;
-      }
-      if (userId.isNotEmpty) {
-        await usersService.addExerciseRecord(
-          userId: userId,
-          exerciseId: exerciseId,
-          exerciseName: exerciseName,
-          maxWeight: maxWeight,
-          repetitions: repetitions,
-          date: dateFormat.format(DateTime.now()),
-        );
-      }
+      String userId = usersService.getCurrentUserId();
+      await usersService.addExerciseRecord(
+        userId: userId,
+        exerciseId: exerciseId,
+        exerciseName: exerciseName,
+        maxWeight: maxWeight,
+        repetitions: repetitions,
+        date: dateFormat.format(DateTime.now()),
+      );
     }
 
     return Scaffold(
@@ -72,136 +62,73 @@ class MaxRMDashboard extends HookConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (usersService.getCurrentUserRole() == 'admin')
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: usersAsyncValue.when(
-                  data: (users) {
-                    return TypeAheadField<UserModel>(
-  suggestionsCallback: (search) async {
-    return users.where((user) =>
-        user.name.toLowerCase().contains(search.toLowerCase())).toList();
-  },
-  itemBuilder: (context, suggestion) {
-    return ListTile(
-      title: Text(suggestion.name),
-    );
-  },
-  onSelected: (suggestion) {
-    selectedUserController.value = suggestion;
-    userNameController.text = suggestion.name;
-  },
-  emptyBuilder: (context) => const SizedBox.shrink(),
-  hideWithKeyboard: true,
-  hideOnSelect: true,
-  retainOnLoading: false,
-  decorationBuilder: (context, child) {
-    return Material(
-      elevation: 4,
-      borderRadius: BorderRadius.circular(12),
-      child: child,
-    );
-  },
-  offset: const Offset(0, 8),
-  constraints: const BoxConstraints(maxHeight: 200),
-  controller: userNameController,
-  focusNode: FocusNode(),
-  builder: (context, controller, focusNode) {
-    return TextField(
-      controller: controller,
-      focusNode: focusNode,
-      decoration: InputDecoration(
-        labelText: 'User Name',
-        labelStyle: TextStyle(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: Theme.of(context).colorScheme.outline,
-          ),
-        ),
-        filled: true,
-        fillColor: Theme.of(context).colorScheme.surface,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
-        ),
-        prefixIcon: Icon(
-          Icons.person,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
-      ),
-    );
-  },
-);
-                  },
-                  loading: () => const CircularProgressIndicator(),
-                  error: (error, stack) => Text("Error loading users: $error"),
-                ),
-              ),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: exercisesAsyncValue.when(
                 data: (exercises) {
                   return TypeAheadField<ExerciseModel>(
-  suggestionsCallback: (search) async {
-    return exercises.where((exercise) =>
-        exercise.name.toLowerCase().contains(search.toLowerCase())).toList();
-  },
-  itemBuilder: (context, suggestion) {
-    return ListTile(
-      title: Text(suggestion.name),
-    );
-  },
-  onSelected: (suggestion) {
-    selectedExerciseController.value = suggestion;
-    exerciseNameController.text = suggestion.name;
-  },
-  emptyBuilder: (context) => const SizedBox.shrink(),
-  hideWithKeyboard: true,
-  hideOnSelect: true,
-  retainOnLoading: false,
-  decorationBuilder: (context, child) {
-    return Material(
-      elevation: 4,
-      borderRadius: BorderRadius.circular(12),
-      child: child,
-    );
-  },
-  offset: const Offset(0, 8),
-  constraints: const BoxConstraints(maxHeight: 200),
-  controller: exerciseNameController,
-  focusNode: FocusNode(),
-  builder: (context, controller, focusNode) {
-    return TextField(
-      controller: controller,
-      focusNode: focusNode,
-      decoration: InputDecoration(
-        labelText: 'Exercise Name',
-        labelStyle: TextStyle(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: Theme.of(context).colorScheme.outline,
-          ),
-        ),
-        filled: true,
-        fillColor: Theme.of(context).colorScheme.surface,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
-        ),
-        prefixIcon: Icon(
-          Icons.fitness_center,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
-      ),
-    );
-  },
-);
+                    suggestionsCallback: (search) async {
+                      return exercises
+                          .where((exercise) => exercise.name
+                              .toLowerCase()
+                              .contains(search.toLowerCase()))
+                          .toList();
+                    },
+                    itemBuilder: (context, suggestion) {
+                      return ListTile(
+                        title: Text(suggestion.name),
+                      );
+                    },
+                    onSelected: (suggestion) {
+                      selectedExerciseController.value = suggestion;
+                      exerciseNameController.text = suggestion.name;
+                    },
+                    emptyBuilder: (context) => const SizedBox.shrink(),
+                    hideWithKeyboard: true,
+                    hideOnSelect: true,
+                    retainOnLoading: false,
+                    decorationBuilder: (context, child) {
+                      return Material(
+                        elevation: 4,
+                        borderRadius: BorderRadius.circular(12),
+                        child: child,
+                      );
+                    },
+                    offset: const Offset(0, 8),
+                    constraints: const BoxConstraints(maxHeight: 200),
+                    controller: exerciseNameController,
+                    focusNode: FocusNode(),
+                    builder: (context, controller, focusNode) {
+                      return TextField(
+                        controller: controller,
+                        focusNode: focusNode,
+                        decoration: InputDecoration(
+                          labelText: 'Exercise Name',
+                          labelStyle: TextStyle(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: Theme.of(context).colorScheme.outline,
+                            ),
+                          ),
+                          filled: true,
+                          fillColor: Theme.of(context).colorScheme.surface,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                          prefixIcon: Icon(
+                            Icons.fitness_center,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      );
+                    },
+                  );
                 },
                 loading: () => const CircularProgressIndicator(),
                 error: (error, stack) =>
@@ -306,37 +233,31 @@ class MaxRMDashboard extends HookConsumerWidget {
                 ),
               ),
             ),
-            if (usersService.getCurrentUserRole() == 'admin')
-              _buildAllExercisesMaxRMs(
-                  ref, selectedUserController.value?.id ?? ''),
-            if (usersService.getCurrentUserRole() != 'admin' && user != null)
-              _buildAllExercisesMaxRMs(ref, user.uid),
+            _buildAllExercisesMaxRMs(ref),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildAllExercisesMaxRMs(WidgetRef ref, String userId) {
-    final exercisesAsyncValue = ref.watch(exercisesStreamProvider);
+  Widget _buildAllExercisesMaxRMs(WidgetRef ref) {
     final usersService = ref.watch(userServiceProvider);
+    final exercisesAsyncValue = ref.watch(exercisesStreamProvider);
+    final userId = usersService.getCurrentUserId();
 
     return exercisesAsyncValue.when(
       data: (exercises) {
-        List<Stream<ExerciseRecord?>> exerciseRecordStreams = [];
-        if (userId.isNotEmpty) {
-          exerciseRecordStreams = exercises.map((exercise) {
-            return usersService
-                .getExerciseRecords(
-                  userId: userId,
-                  exerciseId: exercise.id,
-                )
-                .map((records) => records.isNotEmpty
-                    ? records
-                        .reduce((a, b) => a.date.compareTo(b.date) > 0 ? a : b)
-                    : null);
-          }).toList();
-        }
+        List<Stream<ExerciseRecord?>> exerciseRecordStreams =
+            exercises.map((exercise) {
+          return usersService
+              .getExerciseRecords(
+                userId: userId,
+                exerciseId: exercise.id,
+              )
+              .map((records) => records.isNotEmpty
+                  ? records.reduce((a, b) => a.date.compareTo(b.date) > 0 ? a : b)
+                  : null);
+        }).toList();
 
         return StreamBuilder<List<ExerciseRecord?>>(
           stream: CombineLatestStream.list(exerciseRecordStreams),
@@ -372,7 +293,6 @@ class MaxRMDashboard extends HookConsumerWidget {
                         context,
                         record,
                         exercise,
-                        userId,
                         usersService,
                       ),
                       child: Padding(
@@ -422,7 +342,6 @@ class MaxRMDashboard extends HookConsumerWidget {
                                     context,
                                     record,
                                     exercise,
-                                    userId,
                                     usersService,
                                   ),
                                   color: Theme.of(context)
@@ -435,7 +354,6 @@ class MaxRMDashboard extends HookConsumerWidget {
                                     context,
                                     record,
                                     exercise,
-                                    userId,
                                     usersService,
                                   ),
                                   color: Theme.of(context)
@@ -471,7 +389,6 @@ class MaxRMDashboard extends HookConsumerWidget {
     BuildContext context,
     ExerciseRecord record,
     ExerciseModel exercise,
-    String userId,
     UsersService usersService,
   ) {
     TextEditingController maxWeightController =
@@ -541,15 +458,13 @@ class MaxRMDashboard extends HookConsumerWidget {
                           .round();
                   newRepetitions = 1;
                 }
-                if (userId.isNotEmpty) {
-                  usersService.updateExerciseRecord(
-                    userId: userId,
-                    exerciseId: exercise.id,
-                    recordId: record.id,
-                    maxWeight: newMaxWeight,
-                    repetitions: newRepetitions,
-                  );
-                }
+                usersService.updateExerciseRecord(
+                  userId: usersService.getCurrentUserId(),
+                  exerciseId: exercise.id,
+                  recordId: record.id,
+                  maxWeight: newMaxWeight,
+                  repetitions: newRepetitions,
+                );
                 Navigator.of(context).pop();
               },
               child: Text(
@@ -569,7 +484,6 @@ class MaxRMDashboard extends HookConsumerWidget {
     BuildContext context,
     ExerciseRecord record,
     ExerciseModel exercise,
-    String userId,
     UsersService usersService,
   ) {
     showDialog(
@@ -601,13 +515,11 @@ class MaxRMDashboard extends HookConsumerWidget {
             ),
             TextButton(
               onPressed: () {
-                if (userId.isNotEmpty) {
-                  usersService.deleteExerciseRecord(
-                    userId: userId,
-                    exerciseId: exercise.id,
-                    recordId: record.id,
-                  );
-                }
+                usersService.deleteExerciseRecord(
+                  userId: usersService.getCurrentUserId(),
+                  exerciseId: exercise.id,
+                  recordId: record.id,
+                );
                 Navigator.of(context).pop();
               },
               child: Text(

@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import '../exerciseManager/exercises_services.dart';
-import '../exerciseManager/exercises_Manager.dart';
+import '../exerciseManager/exercises_manager.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AddExerciseDialog extends HookConsumerWidget {
   final ExercisesService exercisesService;
+  final String userId;
 
-  const AddExerciseDialog({required this.exercisesService, super.key});
+  const AddExerciseDialog({required this.exercisesService, required this.userId, super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -111,6 +113,7 @@ class AddExerciseDialog extends HookConsumerWidget {
                 nameController.text.trim(),
                 muscleGroupController.text.trim(),
                 typeController.text.trim(),
+                userId, // Passa l'ID dell'utente corrente
               );
               Navigator.pop(context);
             }

@@ -145,7 +145,7 @@ class SeriesUtils {
     }
   }
 
-  static double calculateIntensityFromWeight(double weight, double maxWeight) {
+  static num calculateIntensityFromWeight(num weight, num maxWeight) {
     if (maxWeight == 0) return 0;
     return (weight / maxWeight) * 100;
   }
@@ -312,12 +312,13 @@ static void updateWeightFromIntensity(
 void updateIntensityFromWeight(
   TextEditingController weightController,
   TextEditingController intensityController,
-  double latestMaxWeight, // Utilizza il parametro latestMaxWeight
+  num latestMaxWeight, // Utilizza il parametro latestMaxWeight
 ) {
   final weight = double.tryParse(weightController.text) ?? 0;
   if (weight > 0 && latestMaxWeight > 0) {
     final calculatedIntensity = calculateIntensityFromWeight(weight, latestMaxWeight);
     intensityController.text = calculatedIntensity.toStringAsFixed(2);
+    debugPrint('weight: $weight calculatedIntensity: $calculatedIntensity  intensityController.text: ${intensityController.text}'  );
   } else {
     intensityController.clear();
   }
@@ -362,8 +363,8 @@ void updateIntensityFromWeight(
           calculateIntensityFromWeight(weight, latestMaxWeight.toDouble());
       intensityController.text = intensity.toStringAsFixed(2);
     } else {
-      rpeController.clear();
-      intensityController.clear();
+     rpeController.clear();
+    //  intensityController.clear();
     }
   }
 

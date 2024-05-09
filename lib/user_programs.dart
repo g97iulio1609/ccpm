@@ -242,7 +242,7 @@ Stream<QuerySnapshot> getProgramsStream() {
 class AddProgramDialog extends StatefulWidget {
   final String? userId;
 
-  const AddProgramDialog({Key? key, this.userId}) : super(key: key);
+  const AddProgramDialog({super.key, this.userId});
 
   @override
   _AddProgramDialogState createState() => _AddProgramDialogState();

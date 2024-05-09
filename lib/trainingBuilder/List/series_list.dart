@@ -279,13 +279,13 @@ void _showEditAllSeriesDialog(
   final athleteId = controller.program.athleteId;
 
   // Ottieni il latestMaxWeight corretto per l'esercizio
-  late double? latestMaxWeight;
+  late num latestMaxWeight;
   await SeriesUtils.getLatestMaxWeight(
     usersService,
     athleteId,
     exerciseId ?? '',
   ).then((maxWeight) {
-    latestMaxWeight = maxWeight as double?;
+    latestMaxWeight = maxWeight;
   });
 
   final repsController = TextEditingController(text: series.reps.toString());
@@ -319,7 +319,7 @@ void _showEditAllSeriesDialog(
                       weightController,
                       rpeController,
                       intensityController,
-                      latestMaxWeight as num, // Passa il latestMaxWeight corretto
+                      latestMaxWeight, // Passa il latestMaxWeight corretto
                     );
                   },
                 ),
@@ -351,7 +351,7 @@ void _showEditAllSeriesDialog(
                         weightController,
                         intensityController,
                         exercise.type,
-                        latestMaxWeight as num, // Passa il latestMaxWeight corretto
+                        latestMaxWeight, // Passa il latestMaxWeight corretto
                         ValueNotifier<double>(0.0),
                       );
                     }
@@ -380,7 +380,7 @@ void _showEditAllSeriesDialog(
                       rpeController,
                       intensityController,
                       exercise.type,
-                      latestMaxWeight as num, // Passa il latestMaxWeight corretto
+                      latestMaxWeight, // Passa il latestMaxWeight corretto
                       ValueNotifier<double>(0.0),
                     );
                   },
@@ -410,13 +410,7 @@ void _showEditAllSeriesDialog(
                         latestMaxWeight!, // Passa il latestMaxWeight corretto
                       );
                     }
-                    SeriesUtils.updateRPE(
-                      repsController,
-                      weightController,
-                      rpeController,
-                      intensityController,
-                      latestMaxWeight as num, // Passa il latestMaxWeight corretto
-                    );
+                   
                   },
                 ),
               ],
@@ -451,6 +445,8 @@ void _showEditAllSeriesDialog(
       for (int i = 0; i < seriesGroup.length; i++) {
         final s = seriesGroup[i];
         s.reps = reps;
+              s.sets = sets; // Assicurati che il valore "sets" sia impostato correttamente
+
         s.intensity = intensity;
         s.rpe = rpe;
         s.weight = weight;

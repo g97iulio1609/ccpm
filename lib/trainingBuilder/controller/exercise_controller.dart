@@ -11,21 +11,21 @@ class ExerciseController extends ChangeNotifier {
 
   ExerciseController(this._usersService, this._seriesController);
 
-  Future<void> addExercise(TrainingProgram program, int weekIndex,
-      int workoutIndex, BuildContext context) async {
-    final exercise =
-        await _showExerciseDialog(context, null, program.athleteId);
-    if (exercise != null) {
-      exercise.id = null;
-      exercise.order =
-          program.weeks[weekIndex].workouts[workoutIndex].exercises.length + 1;
-      exercise.weekProgressions = []; // Initialize weekProgressions
-      program.weeks[weekIndex].workouts[workoutIndex].exercises.add(exercise);
-      notifyListeners();
-      await updateExercise(program, exercise.exerciseId!,
-          exercise.type); // Pass exercise.type here
-    }
+Future<void> addExercise(TrainingProgram program, int weekIndex,
+    int workoutIndex, BuildContext context) async {
+  final exercise =
+      await _showExerciseDialog(context, null, program.athleteId);
+  if (exercise != null) {
+    exercise.id = null;
+    exercise.order =
+        program.weeks[weekIndex].workouts[workoutIndex].exercises.length + 1;
+    exercise.weekProgressions = List.generate(program.weeks.length, (_) => []); // Inizializza weekProgressions con le settimane del programma
+    program.weeks[weekIndex].workouts[workoutIndex].exercises.add(exercise);
+    notifyListeners();
+    await updateExercise(program, exercise.exerciseId!,
+        exercise.type); // Pass exercise.type here
   }
+}
 
   Future<Exercise?> _showExerciseDialog(
       BuildContext context, Exercise? exercise, String athleteId) async {
@@ -124,15 +124,20 @@ class ExerciseController extends ChangeNotifier {
     return null;
   }
 
-  void _updateExerciseWeights(
-      Exercise exercise, num newMaxWeight, String exerciseType) {
-    _updateSeriesWeights(exercise.series, newMaxWeight, exerciseType);
-    if (exercise.weekProgressions != null &&
-        exercise.weekProgressions.isNotEmpty) {
-      _updateWeekProgressionWeights(
-          exercise.weekProgressions, newMaxWeight, exerciseType);
-    }
+void _updateExerciseWeights(
+    Exercise exercise,
+    num newMaxWeight,
+    String exerciseType,
+) {
+  _updateSeriesWeights(exercise.series, newMaxWeight, exerciseType);
+  if (exercise.weekProgressions != null && exercise.weekProgressions.isNotEmpty) {
+    _updateWeekProgressionWeights(
+      exercise.weekProgressions,
+      newMaxWeight,
+      exerciseType,
+    );
   }
+}
 
   void _updateSeriesWeights(
       List<Series>? series, num maxWeight, String exerciseType) {
@@ -151,20 +156,26 @@ class ExerciseController extends ChangeNotifier {
     }
   }
 
-  void _updateWeekProgressionWeights(
-      List<WeekProgression>? progressions, num maxWeight, String exerciseType) {
-    if (progressions != null && progressions.isNotEmpty) {
-      for (final item in progressions) {
-        final intensity =
-            item.intensity.isNotEmpty ? double.tryParse(item.intensity) : null;
-        if (intensity != null) {
-          final calculatedWeight =
-              calculateWeightFromIntensity(maxWeight, intensity);
-          item.weight = roundWeight(calculatedWeight, exerciseType);
+void _updateWeekProgressionWeights(
+    List<List<WeekProgression>>? progressions,
+    num maxWeight,
+    String exerciseType,
+) {
+  if (progressions != null && progressions.isNotEmpty) {
+    for (final weekProgressions in progressions) {
+      for (final progression in weekProgressions) {
+        for (int seriesIndex = 0; seriesIndex < progression.series.length; seriesIndex++) {
+          final series = progression.series[seriesIndex];
+          final intensity = series.intensity.isNotEmpty ? double.tryParse(series.intensity) : null;
+          if (intensity != null) {
+            final calculatedWeight = calculateWeightFromIntensity(maxWeight, intensity);
+            progression.series[seriesIndex] = series.copyWith(weight: roundWeight(calculatedWeight, exerciseType));
+          }
         }
       }
     }
   }
+}
 
   void _updateExerciseOrders(TrainingProgram program, int weekIndex,
       int workoutIndex, int startIndex) {

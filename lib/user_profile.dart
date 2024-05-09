@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:path/path.dart' as path;
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -34,7 +33,7 @@ class UserProfileState extends ConsumerState<UserProfile> {
   }
 
   Future<void> fetchUserProfile() async {
-    String uid = widget.userId ?? FirebaseAuth.instance.currentUser!.uid;
+    String uid = widget.userId ?? ref.read(usersServiceProvider).getCurrentUserId();
     DocumentSnapshot userData = await FirebaseFirestore.instance.collection('users').doc(uid).get();
     final userProfileData = userData.data() as Map<String, dynamic>?;
     userProfileData?.forEach((key, value) {
@@ -49,7 +48,7 @@ class UserProfileState extends ConsumerState<UserProfile> {
   }
 
   Future<void> saveProfile(String field, String value) async {
-    String uid = widget.userId ?? FirebaseAuth.instance.currentUser!.uid;
+    String uid = widget.userId ?? ref.read(usersServiceProvider).getCurrentUserId();
     try {
       await ref.read(usersServiceProvider).updateUser(uid, {field: value});
       updateSnackBar('Profilo salvato con successo!', Colors.green);
@@ -89,7 +88,7 @@ class UserProfileState extends ConsumerState<UserProfile> {
       final fileExtension = path.extension(file.path).toLowerCase();
 
       if (fileExtension == '.jpg' || fileExtension == '.png' || fileExtension == '.jpeg') {
-        String uid = widget.userId ?? FirebaseAuth.instance.currentUser!.uid;
+        String uid = widget.userId ?? ref.read(usersServiceProvider).getCurrentUserId();
         final storageRef = FirebaseStorage.instance.ref().child('user_profile_pictures/$uid$fileExtension');
         await storageRef.putFile(file);
         final downloadURL = await storageRef.getDownloadURL();
@@ -104,7 +103,7 @@ class UserProfileState extends ConsumerState<UserProfile> {
   }
 
   Future<void> deleteUser() async {
-    String uid = widget.userId ?? FirebaseAuth.instance.currentUser!.uid;
+    String uid = widget.userId ?? ref.read(usersServiceProvider).getCurrentUserId();
     try {
       await ref.read(usersServiceProvider).deleteUser(uid);
       updateSnackBar('Utente eliminato con successo!', Colors.green);
@@ -163,7 +162,7 @@ class UserProfileState extends ConsumerState<UserProfile> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-                        Center(
+            Center(
               child: GestureDetector(
                 onTap: requestGalleryPermission,
                 child: CircleAvatar(
@@ -189,21 +188,22 @@ class UserProfileState extends ConsumerState<UserProfile> {
             const SizedBox(height: 24),
             buildGenderDropdown(),
             const SizedBox(height: 40),
-            ElevatedButton.icon(
-              onPressed: showDeleteConfirmationDialog,
-              icon: const Icon(Icons.delete),
-              label: const Text(
-                'Elimina Utente',
-                style: TextStyle(fontSize: 18),
-              ),
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.white, backgroundColor: Colors.red,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+            if (ref.read(usersServiceProvider).getCurrentUserRole() == 'admin' || widget.userId != null)
+              ElevatedButton.icon(
+                onPressed: showDeleteConfirmationDialog,
+                icon: const Icon(Icons.delete),
+                label: const Text(
+                  'Elimina Utente',
+                  style: TextStyle(fontSize: 18),
+                ),
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white, backgroundColor: Colors.red,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
               ),
-            ),
           ],
         ),
       ),
@@ -244,7 +244,7 @@ class UserProfileState extends ConsumerState<UserProfile> {
     );
   }
 
- Widget buildGenderDropdown() {
+Widget buildGenderDropdown() {
   return DropdownButtonFormField<String>(
     value: _selectedGender,
     onChanged: (value) {
@@ -275,20 +275,26 @@ class UserProfileState extends ConsumerState<UserProfile> {
       color: Colors.white,
       fontSize: 18,
     ),
-    items: const [
-      DropdownMenuItem(
-        value: 'Uomo',
-        child: Text('Uomo'),
+    items: <String>['male', 'female', 'other']
+        .map<DropdownMenuItem<String>>((String value) {
+      return DropdownMenuItem<String>(
+        value: value,
+        child: Text(value),
+      );
+    }).toList(),
+    hint: const Text(
+      'Seleziona il genere',
+      style: TextStyle(
+        color: Colors.white70,
+        fontSize: 18,
       ),
-      DropdownMenuItem(
-        value: 'Donna',
-        child: Text('Donna'),
-      ),
-      DropdownMenuItem(
-        value: 'Altro',
-        child: Text('Altro'),
-      ),
-    ],
+    ),
+    validator: (value) {
+      if (value == null) {
+        return 'Per favore seleziona un genere';
+      }
+      return null;
+    },
   );
 }
 
