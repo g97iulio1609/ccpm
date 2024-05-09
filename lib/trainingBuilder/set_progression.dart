@@ -496,11 +496,11 @@ void updateProgressionsFromFields(List<List<WeekProgression>> weekProgressions) 
       // Aggiorna il valore di "sets" nel controller corrispondente
       controllers[progressionIndex][1].text = sets.toString();
 
-      progressionIndex += sets; // Aggiorna l'indice in base al numero di serie aggiunte
+      progressionIndex++; // Incrementa l'indice di una sola unità
     }
   }
 }
-  
+
   Future<void> applyWeekProgressions(
     int exerciseIndex,
     List<List<WeekProgression>> progressions,
