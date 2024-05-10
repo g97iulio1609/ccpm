@@ -56,6 +56,10 @@ class CustomDrawer extends ConsumerWidget {
         return userRole == 'admin' ? '/users_dashboard' : null;
       case 'Volume Allenamento':
         return '/volume_dashboard';
+      case 'Fabbisogno Calorico':
+        return '/tdee';
+      case 'Calcolatore Macronutrienti':
+        return '/macros_selector';
       case 'Misurazioni':
         return '/measurements';
       default:
@@ -81,6 +85,10 @@ class CustomDrawer extends ConsumerWidget {
         return Icons.supervised_user_circle;
       case 'Volume Allenamento':
         return Icons.bar_chart;
+      case 'Fabbisogno Calorico':
+        return Icons.local_dining;
+      case 'Calcolatore Macronutrienti':
+        return Icons.calculate;
       case 'Misurazioni':
         return Icons.trending_up;
       default:
@@ -96,13 +104,22 @@ class CustomDrawer extends ConsumerWidget {
       'Massimali',
       'Profilo Utente',
       'Gestione Utenti',
+      'Fabbisogno Calorico',
+      'Calcolatore Macronutrienti',
       'Misurazioni'
     ];
   }
 
   List<String> _getClientMenuItems() {
-    return ['I Miei Allenamenti','Esercizi',
- 'Massimali', 'Profilo Utente', 'Misurazioni'];
+    return [
+      'I Miei Allenamenti',
+      'Esercizi',
+      'Massimali',
+      'Profilo Utente',
+      'Fabbisogno Calorico',
+      'Calcolatore Macronutrienti',
+      'Misurazioni'
+    ];
   }
 
   Future<String?> getCurrentProgramId(WidgetRef ref) async {
