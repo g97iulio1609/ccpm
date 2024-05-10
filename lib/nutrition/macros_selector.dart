@@ -49,11 +49,11 @@ class _MacrosSelectorState extends ConsumerState<MacrosSelector> {
     'protein': TextEditingController(),
     'fat': TextEditingController(),
   };
-  
-  final _percentageControllers = {
-    'carbs': TextEditingController(),
-    'protein': TextEditingController(), 
-    'fat': TextEditingController(),
+
+  final _percentageValueNotifiers = {
+    'carbs': ValueNotifier<double>(0.0),
+    'protein': ValueNotifier<double>(0.0),
+    'fat': ValueNotifier<double>(0.0),
   };
 
   @override
@@ -65,6 +65,7 @@ class _MacrosSelectorState extends ConsumerState<MacrosSelector> {
   @override
   void dispose() {
     _disposeControllers();
+    _disposeValueNotifiers();
     super.dispose();
   }
 
@@ -75,8 +76,11 @@ class _MacrosSelectorState extends ConsumerState<MacrosSelector> {
     for (var controller in _gramsPerKgControllers.values) {
       controller.dispose();
     }
-    for (var controller in _percentageControllers.values) {
-      controller.dispose();
+  }
+
+  void _disposeValueNotifiers() {
+    for (var notifier in _percentageValueNotifiers.values) {
+      notifier.dispose();
     }
   }
 
@@ -90,28 +94,42 @@ class _MacrosSelectorState extends ConsumerState<MacrosSelector> {
         _weight = tdeeData['weight']!.toDouble();
       });
 
-final macroPercentages = {
-  'carbs': 50.0,
-  'protein': 20.0, 
-  'fat': 30.0,
-};
+      final macroPercentages = {
+        'carbs': 50.0,
+        'protein': 20.0,
+        'fat': 30.0,
+      };
       ref.read(macrosProvider.notifier).updateMacrosFromPercentages(_tdee, macroPercentages);
       _updateInputFields();
+
+      final macros = ref.read(macrosProvider);
+      for (final macro in macros.keys) {
+        final percentage = macros[macro]! / (_tdee / 100);
+        _percentageValueNotifiers[macro]?.value = percentage;
+      }
     }
   }
 
   void _updateInputFields() {
     final macros = ref.read(macrosProvider);
     for (final macro in macros.keys) {
-      final grams = macros[macro]!; 
+      final grams = macros[macro]!;
       final gramsPerKg = grams / _weight;
-      final calories = MacrosCalculator.calculateCaloriesFromGrams(macro, grams);
-      final percentage = calories / _tdee * 100;
-      
+
       _gramsControllers[macro]?.text = grams.toStringAsFixed(2);
       _gramsPerKgControllers[macro]?.text = gramsPerKg.toStringAsFixed(2);
-      _percentageControllers[macro]?.text = percentage.toStringAsFixed(0);
     }
+  }
+
+  void _updateMacroPercentages() {
+    final macroPercentages = {
+      'carbs': _percentageValueNotifiers['carbs']?.value ?? 0,
+      'protein': _percentageValueNotifiers['protein']?.value ?? 0,
+      'fat': _percentageValueNotifiers['fat']?.value ?? 0,
+    };
+    final macros = MacrosCalculator.calculateMacrosFromPercentages(_tdee, macroPercentages);
+    ref.read(macrosProvider.notifier).state = macros;
+    _updateInputFields();
   }
 
   @override
@@ -128,7 +146,7 @@ final macroPercentages = {
             style: textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
             ),
-            textAlign: TextAlign.center,  
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
           _buildMacroSection(
@@ -137,16 +155,14 @@ final macroPercentages = {
             'Carbohydrates',
             _gramsControllers['carbs'],
             _gramsPerKgControllers['carbs'],
-            _percentageControllers['carbs'],
           ),
           const SizedBox(height: 16),
           _buildMacroSection(
             context,
-            ref,  
+            ref,
             'Protein',
             _gramsControllers['protein'],
-            _gramsPerKgControllers['protein'], 
-            _percentageControllers['protein'],
+            _gramsPerKgControllers['protein'],
           ),
           const SizedBox(height: 16),
           _buildMacroSection(
@@ -155,7 +171,6 @@ final macroPercentages = {
             'Fat',
             _gramsControllers['fat'],
             _gramsPerKgControllers['fat'],
-            _percentageControllers['fat'],  
           ),
           const SizedBox(height: 32),
           Text(
@@ -172,155 +187,116 @@ final macroPercentages = {
     );
   }
 
-Widget _buildMacroSection(
-  BuildContext context,
-  WidgetRef ref,
-  String macroName,
-  TextEditingController? gramsController,
-  TextEditingController? gramsPerKgController,
-  TextEditingController? percentageController,
-) {
-  final textTheme = Theme.of(context).textTheme;
-  final macroKey = macroName.toLowerCase() == 'carbohydrates' ? 'carbs' : macroName.toLowerCase();
+  Widget _buildMacroSection(
+    BuildContext context,
+    WidgetRef ref,
+    String macroName,
+    TextEditingController? gramsController,
+    TextEditingController? gramsPerKgController,
+  ) {
+    final textTheme = Theme.of(context).textTheme;
+    final macroKey = macroName.toLowerCase() == 'carbohydrates' ? 'carbs' : macroName.toLowerCase();
 
-  return Card(
-    elevation: 2,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(16),
-    ),
-    child: Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            macroName,
-            style: textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              macroName,
+              style: textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          _buildTextField(
-            controller: percentageController,
-            labelText: 'Percentage',
-            hintText: 'Enter percentage',
-            onChanged: (value) {
-              final percentage = double.tryParse(value) ?? 0.0;
-              final macroPercentages = {macroKey: percentage};
-              ref.read(macrosProvider.notifier).updateMacrosFromPercentages(_tdee, macroPercentages);
-              _updateInputFields();
-            },
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildTextField(
-                  controller: gramsController,
-                  labelText: 'Grams',
-                  hintText: 'Enter grams',
-                  onChanged: (value) {
-                    final grams = double.tryParse(value) ?? 0.0;
-                    final macroGrams = {macroKey: grams};
-                    ref.read(macrosProvider.notifier).updateMacrosFromGrams(_tdee, macroGrams);
-                    _updateInputFields();
+            const SizedBox(height: 16),
+            ValueListenableBuilder<double>(
+              valueListenable: _percentageValueNotifiers[macroKey]!,
+              builder: (context, value, child) {
+                return Slider(
+                  value: value,
+                  min: 0,
+                  max: 100,
+                  divisions: 100,
+                  label: '${value.toStringAsFixed(0)}%',
+                  onChanged: (newValue) {
+                    _percentageValueNotifiers[macroKey]?.value = newValue;
+                    _updateMacroPercentages();
                   },
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildTextField(
+                    controller: gramsController,
+                    labelText: 'Grams',
+                    hintText: 'Enter grams',
+                    onChanged: (value) {
+                      final grams = double.tryParse(value) ?? 0.0;
+                      final macroGrams = {macroKey: grams};
+                      ref.read(macrosProvider.notifier).updateMacrosFromGrams(_tdee, macroGrams);
+                      _updateInputFields();
+                    },
+                  ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildTextField(
-                  controller: gramsPerKgController,
-                  labelText: 'Grams per kg',
-                  hintText: 'Enter grams per kg',
-                  onChanged: (value) {
-                    final gramsPerKg = double.tryParse(value) ?? 0.0;
-                    final macroGramsPerKg = {macroKey: gramsPerKg};
-                    ref.read(macrosProvider.notifier).updateMacrosFromGramsPerKg(_tdee, _weight, macroGramsPerKg);
-                    _updateInputFields();
-                  },
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildTextField(
+                    controller: gramsPerKgController,
+                    labelText: 'Grams per kg',
+                    hintText: 'Enter grams per kg',
+                    onChanged: (value) {
+                      final gramsPerKg = double.tryParse(value) ?? 0.0;
+                      final macroGramsPerKg = {macroKey: gramsPerKg};
+                      ref.read(macrosProvider.notifier).updateMacrosFromGramsPerKg(_tdee, _weight, macroGramsPerKg);
+                      _updateInputFields();
+                    },
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
-Widget _buildTextField({
-  required TextEditingController? controller,
-  required String labelText,
-  required String hintText,
-  required ValueChanged<String> onChanged,
-  bool isPercentage = false,
-}) {
-  return TextFormField(
-    controller: controller,
-    decoration: InputDecoration(
-      labelText: labelText,
-      hintText: hintText,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController? controller,
+    required String labelText,
+    required String hintText,
+    required ValueChanged<String> onChanged,
+    bool isPercentage = false,
+  }) {
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: labelText,
+        hintText: hintText,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
       ),
-    ),
-    keyboardType: TextInputType.number,
-    inputFormatters: [
-      FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-    ],
-    onChanged: (value) {
-      onChanged(value);
-      if (isPercentage) {
-        _updateMacroPercentages();
-      } else {
-        _updateMacrosFromGrams();
-      }
-    },
-  );
-}
-
-void _updateMacroPercentages() {
-  final macroPercentages = {
-    'carbs': double.tryParse(_percentageControllers['carbs']?.text ?? '') ?? 0.0,
-    'protein': double.tryParse(_percentageControllers['protein']?.text ?? '') ?? 0.0,
-    'fat': double.tryParse(_percentageControllers['fat']?.text ?? '') ?? 0.0,
-  };
-  final macros = MacrosCalculator.calculateMacrosFromPercentages(_tdee, macroPercentages);
-  ref.read(macrosProvider.notifier).state = macros;
-  _updateInputFields();
-}
-
-void _updateMacrosFromGrams() {
-  final macroGrams = {
-    'carbs': double.tryParse(_gramsControllers['carbs']?.text ?? '') ?? 0.0,
-    'protein': double.tryParse(_gramsControllers['protein']?.text ?? '') ?? 0.0,
-    'fat': double.tryParse(_gramsControllers['fat']?.text ?? '') ?? 0.0,
-  };
-  final macroPercentages = MacrosCalculator.calculatePercentagesFromGrams(_tdee, macroGrams);
-  final macros = MacrosCalculator.calculateMacrosFromPercentages(_tdee, macroPercentages);
-  ref.read(macrosProvider.notifier).state = macros;
-  _updateInputFields();
-}
-
-
-void _updateMacrosFromGramsPerKg() {
-  final macroGramsPerKg = {
-    'carbs': double.tryParse(_gramsPerKgControllers['carbs']?.text ?? '') ?? 0.0,
-    'protein': double.tryParse(_gramsPerKgControllers['protein']?.text ?? '') ?? 0.0,
-    'fat': double.tryParse(_gramsPerKgControllers['fat']?.text ?? '') ?? 0.0,
-  };
-  final macroPercentages = MacrosCalculator.calculatePercentagesFromGramsPerKg(_tdee, _weight, macroGramsPerKg);
-  final macros = MacrosCalculator.calculateMacrosFromPercentages(_tdee, macroPercentages);
-  ref.read(macrosProvider.notifier).state = macros;
-  _updateInputFields();
-}
-
+      keyboardType: TextInputType.number,
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+      ],
+      onChanged: onChanged,
+    );
+  }
 
   Widget _buildMacroBreakdown(BuildContext context) {
     final macros = ref.watch(macrosProvider);
 
     return Card(
-      elevation: 2, 
+      elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
