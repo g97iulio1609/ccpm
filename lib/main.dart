@@ -1,4 +1,6 @@
 import 'package:alphanessone/measurements/measurements.dart';
+import 'package:alphanessone/nutrition/daily_food_tracker.dart';
+import 'package:alphanessone/nutrition/food_management.dart';
 import 'package:alphanessone/nutrition/macros_selector.dart';
 import 'package:alphanessone/nutrition/tdee.dart';
 import 'package:alphanessone/training_gallery.dart';
@@ -378,6 +380,14 @@ final ThemeData darkTheme = ThemeData(
                     ? MacrosSelector(userId: userId)
                     : const SizedBox();
               },
+            ),
+             GoRoute(
+              path: '/food_tracker',
+              builder: (context, state) => const DailyFoodTracker(),
+            ),
+             GoRoute(
+              path: '/food_management',
+              builder: (context, state) => const FoodManagement(),
             ),
             GoRoute(
               path: '/exercises_list',
