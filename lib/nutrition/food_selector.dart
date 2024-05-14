@@ -9,17 +9,16 @@ import 'autotype.dart';
 class FoodSelector extends ConsumerStatefulWidget {
   final meals.Meal meal;
 
-  const FoodSelector({required this.meal, Key? key}) : super(key: key);
+  const FoodSelector({required this.meal, super.key});
 
   @override
   _FoodSelectorState createState() => _FoodSelectorState();
 }
 
 class _FoodSelectorState extends ConsumerState<FoodSelector> {
-  final TextEditingController _quantityController = TextEditingController(text: '100');
   final TextEditingController _searchController = TextEditingController();
-  final FocusNode _focusNode = FocusNode();
-  String? _selectedFoodId;
+  final TextEditingController _quantityController = TextEditingController(text: '100');
+  String _selectedFoodId = '';
   double _quantity = 100.0;
   String _unit = 'g'; // Default unit
 
@@ -31,7 +30,7 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
-            onPressed: _selectedFoodId != null ? _saveFood : null,
+            onPressed: _selectedFoodId.isNotEmpty ? _saveFood : null,
           ),
         ],
       ),
@@ -41,14 +40,14 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
           children: [
             AutoTypeField(
               controller: _searchController,
-              focusNode: _focusNode,
+              focusNode: FocusNode(),
               onSelected: (macros.Food food) {
                 setState(() {
-                  _selectedFoodId = food.id;
+                  _selectedFoodId = food.id!;
                 });
               },
             ),
-            if (_selectedFoodId != null)
+            if (_selectedFoodId.isNotEmpty)
               _buildSelectedFoodDetails(context),
           ],
         ),
@@ -60,7 +59,7 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
     final macrosService = ref.watch(macrosServiceProvider);
 
     return FutureBuilder<macros.Food?>(
-      future: macrosService.getFoodById(_selectedFoodId!),
+      future: macrosService.getFoodById(_selectedFoodId),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           final food = snapshot.data!;
@@ -70,7 +69,7 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
               const Divider(),
               Text(
                 food.name,
-                style: Theme.of(context).textTheme.headline6,
+                style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 8),
               Row(
@@ -107,7 +106,7 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
                 ],
               ),
               const SizedBox(height: 16),
-              Text('Macro Nutrients:'),
+              const Text('Macro Nutrients:'),
               Text('Protein: ${food.protein}g'),
               Text('Carbohydrates: ${food.carbs}g'),
               Text('Fat: ${food.fat}g'),
@@ -123,44 +122,65 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
     );
   }
 
-  void _saveFood() async {
+  Future<void> _saveFood() async {
     try {
       final mealsService = ref.read(mealsServiceProvider);
       final macrosService = ref.read(macrosServiceProvider);
 
-      if (_selectedFoodId == null) {
-        throw Exception("Selected food ID is null");
+      debugPrint('Selected food ID: $_selectedFoodId');
+      final food = await macrosService.getFoodById(_selectedFoodId);
+      debugPrint('Retrieved food: ${food?.toJson()}');
+
+      if (food != null) {
+        final adjustedFood = macros.Food(
+          id: food.id,
+          name: food.name,
+          kcal: food.kcal * _quantity / 100,
+          carbs: food.carbs * _quantity / 100,
+          fat: food.fat * _quantity / 100,
+          protein: food.protein * _quantity / 100,
+          quantity: _quantity,
+          quantityUnit: _unit,
+          portion: _unit,
+          sugar: food.sugar ?? 0.0,
+          fiber: food.fiber ?? 0.0,
+          saturatedFat: food.saturatedFat ?? 0.0,
+          polyunsaturatedFat: food.polyunsaturatedFat ?? 0.0,
+          monounsaturatedFat: food.monounsaturatedFat ?? 0.0,
+          transFat: food.transFat ?? 0.0,
+          cholesterol: food.cholesterol ?? 0.0,
+          sodium: food.sodium ?? 0.0,
+          potassium: food.potassium ?? 0.0,
+          vitaminA: food.vitaminA ?? 0.0,
+          vitaminC: food.vitaminC ?? 0.0,
+          calcium: food.calcium ?? 0.0,
+          iron: food.iron ?? 0.0,
+        );
+
+        debugPrint('Saving food: ${adjustedFood.toJson()}');
+
+        // Check if meal exists, if not create it
+        var meal = await mealsService.getMealById(widget.meal.id!);
+        if (meal == null) {
+          meal = meals.Meal(
+            userId: widget.meal.userId,
+            date: widget.meal.date,
+            mealType: widget.meal.mealType,
+            foodIds: [],
+          );
+          await mealsService.addMeal(meal);
+          debugPrint('Created new meal: ${meal.toMap()}');
+        }
+
+        await mealsService.addFoodToMeal(
+          mealId: meal.id!,
+          food: adjustedFood,
+        );
+
+        Navigator.of(context).pop();
       }
-
-      final food = await macrosService.getFoodById(_selectedFoodId!);
-      if (food == null) {
-        throw Exception("Selected food is null");
-      }
-
-      final adjustedFood = macros.Food(
-        id: food.id,
-        name: food.name,
-        kcal: food.kcal * _quantity / 100,
-        carbs: food.carbs * _quantity / 100,
-        fat: food.fat * _quantity / 100,
-        protein: food.protein * _quantity / 100,
-        quantity: _quantity,
-        portion: _unit,
-      );
-
-      debugPrint('Saving food: ${adjustedFood.toJson()}');
-
-      await mealsService.addFoodToMeal(
-        mealId: widget.meal.id!,
-        food: adjustedFood,
-      );
-
-      Navigator.of(context).pop();
     } catch (e) {
       debugPrint('Error saving food: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
     }
   }
 }

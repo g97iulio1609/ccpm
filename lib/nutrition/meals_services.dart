@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rxdart/rxdart.dart';
 import 'meals_model.dart' as meals;
@@ -70,10 +71,17 @@ class MealsService {
     await _firestore.collection('meals').doc(mealId).delete();
   }
 
-  Future<void> addFoodToMeal({
-    required String mealId,
-    required macros.Food food,
-  }) async {
+Future<void> addFoodToMeal({
+  required String mealId,
+  required macros.Food food,
+}) async {
+  try {
+    debugPrint('Called addFoodToMeal && mealId is $mealId ');
+    debugPrint('Attempting to add food to meal. Food ID: ${food.id}');
+    if (food.id == null) {
+      throw Exception('Food ID is null');
+    }
+
     final mealDoc = await _firestore.collection('meals').doc(mealId).get();
     if (mealDoc.exists) {
       final meal = meals.Meal.fromFirestore(mealDoc);
@@ -82,9 +90,19 @@ class MealsService {
       meal.totalCarbs += food.carbs;
       meal.totalFat += food.fat;
       meal.totalProtein += food.protein;
+
+      debugPrint('Updating meal: ${meal.toMap()}');
       await updateMeal(mealId, meal);
+    } else {
+      throw Exception('Meal document does not exist');
     }
+  } catch (e) {
+    debugPrint('Error adding food to meal: $e');
+    throw e; // Re-throw the error to be caught by the caller
   }
+}
+
+
 
   Future<void> removeFoodFromMeal({
     required String mealId,
