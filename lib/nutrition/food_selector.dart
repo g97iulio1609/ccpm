@@ -4,6 +4,7 @@ import 'macros_model.dart' as macros;
 import 'meals_model.dart' as meals;
 import 'meals_services.dart';
 import 'macros_services.dart';
+import 'autotype.dart';
 
 class FoodSelector extends ConsumerStatefulWidget {
   final meals.Meal meal;
@@ -15,23 +16,22 @@ class FoodSelector extends ConsumerStatefulWidget {
 }
 
 class _FoodSelectorState extends ConsumerState<FoodSelector> {
-  final TextEditingController _searchController = TextEditingController();
   final TextEditingController _quantityController = TextEditingController(text: '100');
-  String _selectedFoodId = '';
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
+  String? _selectedFoodId;
   double _quantity = 100.0;
   String _unit = 'g'; // Default unit
 
   @override
   Widget build(BuildContext context) {
-    final macrosService = ref.watch(macrosServiceProvider);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Add Entry'),
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
-            onPressed: _selectedFoodId.isNotEmpty ? _saveFood : null,
+            onPressed: _selectedFoodId != null ? _saveFood : null,
           ),
         ],
       ),
@@ -39,56 +39,16 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            TextField(
+            AutoTypeField(
               controller: _searchController,
-              decoration: const InputDecoration(
-                labelText: 'Search Food',
-                prefixIcon: Icon(Icons.search),
-              ),
-              onChanged: (query) {
+              focusNode: _focusNode,
+              onSelected: (macros.Food food) {
                 setState(() {
-                  // Trigger search functionality
+                  _selectedFoodId = food.id;
                 });
               },
             ),
-            Expanded(
-              child: StreamBuilder<List<macros.Food>>(
-                stream: macrosService.searchFoods(_searchController.text),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  } else if (snapshot.hasData) {
-                    final foods = snapshot.data!;
-                    return ListView.builder(
-                      itemCount: foods.length,
-                      itemBuilder: (context, index) {
-                        final food = foods[index];
-                        return ListTile(
-                          title: Text(food.name),
-                          onTap: () {
-                            setState(() {
-                              _selectedFoodId = food.id!;
-                            });
-                          },
-                          selected: _selectedFoodId == food.id,
-                        );
-                      },
-                    );
-                  } else if (snapshot.hasError) {
-                    return Center(
-                      child: Text('Error: ${snapshot.error}'),
-                    );
-                  } else {
-                    return const Center(
-                      child: Text('No foods found.'),
-                    );
-                  }
-                },
-              ),
-            ),
-            if (_selectedFoodId.isNotEmpty)
+            if (_selectedFoodId != null)
               _buildSelectedFoodDetails(context),
           ],
         ),
@@ -100,11 +60,9 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
     final macrosService = ref.watch(macrosServiceProvider);
 
     return FutureBuilder<macros.Food?>(
-      future: macrosService.getFoodById(_selectedFoodId),
+      future: macrosService.getFoodById(_selectedFoodId!),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const CircularProgressIndicator();
-        } else if (snapshot.hasData) {
+        if (snapshot.hasData) {
           final food = snapshot.data!;
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,11 +124,19 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
   }
 
   void _saveFood() async {
-    final mealsService = ref.read(mealsServiceProvider);
-    final macrosService = ref.read(macrosServiceProvider);
+    try {
+      final mealsService = ref.read(mealsServiceProvider);
+      final macrosService = ref.read(macrosServiceProvider);
 
-    final food = await macrosService.getFoodById(_selectedFoodId);
-    if (food != null) {
+      if (_selectedFoodId == null) {
+        throw Exception("Selected food ID is null");
+      }
+
+      final food = await macrosService.getFoodById(_selectedFoodId!);
+      if (food == null) {
+        throw Exception("Selected food is null");
+      }
+
       final adjustedFood = macros.Food(
         id: food.id,
         name: food.name,
@@ -181,11 +147,18 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
         quantity: _quantity,
         portion: _unit,
       );
+
       await mealsService.addFoodToMeal(
         mealId: widget.meal.id!,
         food: adjustedFood,
       );
+
       Navigator.of(context).pop();
+    } catch (e) {
+      debugPrint('Error saving food: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
     }
   }
 }

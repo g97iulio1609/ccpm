@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rxdart/rxdart.dart';
 import 'macros_model.dart';
@@ -12,6 +13,7 @@ class MacrosService {
   final ProviderRef ref;
   final FirebaseFirestore _firestore;
   final _foodsStreamController = BehaviorSubject<List<Food>>.seeded([]);
+  final _searchResultsStreamController = BehaviorSubject<List<Food>>.seeded([]);
   String _searchQuery = '';
   StreamSubscription? _foodsChangesSubscription;
 
@@ -43,16 +45,18 @@ class MacrosService {
   void setSearchQuery(String query) {
     _searchQuery = query;
     final foods = _foodsStreamController.valueOrNull ?? [];
-    _foodsStreamController.add(_filterFoods(foods));
+    _searchResultsStreamController.add(_filterFoods(foods));
   }
 
   Stream<List<Food>> searchFoods(String query) {
     setSearchQuery(query);
-    return _foodsStreamController.stream;
+    return _searchResultsStreamController.stream;
   }
 
   Stream<List<Food>> getFoods() {
-    return _foodsStreamController.stream;
+    return _foodsStreamController.stream.doOnData((foods) {
+      debugPrint('Emitted foods: $foods');
+    });
   }
 
   Future<Food?> getFoodById(String foodId) async {
