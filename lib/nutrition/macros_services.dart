@@ -65,7 +65,9 @@ class MacrosService {
   }
 
   Future<void> addFood(Food food) async {
-    await _firestore.collection('foods').add(food.toMap());
+    final foodRef = _firestore.collection('foods').doc();
+    food.id = foodRef.id;
+    await foodRef.set(food.toMap());
   }
 
   Future<void> updateFood(String foodId, Food updatedFood) async {
