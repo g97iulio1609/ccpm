@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'macros_model.dart';
 import 'macros_services.dart';
 import 'food_management.dart';
+import 'food_list.dart';
 
 class DailyFoodTracker extends ConsumerStatefulWidget {
   const DailyFoodTracker({super.key});
@@ -32,143 +33,6 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
         _targetCalories = tdeeData['tdee'].round();
       });
     }
-  }
-
-  void _showAddFoodDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        String description = '';
-        int numberOfServings = 1;
-        double servingSize = 0;
-        bool cooked = false;
-        String notes = '';
-
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Cancel'),
-                  Text('Add Entry'),
-                  Text('Save'),
-                ],
-              ),
-              content: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('DESCRIPTION'),
-                    TextField(
-                      decoration: const InputDecoration(
-                        hintText: 'Chicken Breast',
-                      ),
-                      onChanged: (value) {
-                        description = value;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    const Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('MACRO NUTRIENTS'),
-                              SizedBox(height: 8),
-                              Text('Protein'),
-                              Text('25'),
-                              SizedBox(height: 8),
-                              Text('Carbohydrates'),
-                              Text('0'),
-                              SizedBox(height: 8),
-                              Text('Fat'),
-                              Text('5'),
-                            ],
-                          ),
-                        ),
-                        SizedBox(width: 16),
-                        Text('0 CALORIES'),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    const Text('SERVING INFORMATION'),
-                    Row(
-                      children: [
-                        const Text('Number of Servings'),
-                        const Spacer(),
-                        IconButton(
-                          icon: const Icon(Icons.remove),
-                          onPressed: () {
-                            setState(() {
-                              if (numberOfServings > 1) {
-                                numberOfServings--;
-                              }
-                            });
-                          },
-                        ),
-                        const Text('1'),
-                        IconButton(
-                          icon: const Icon(Icons.add),
-                          onPressed: () {
-                            setState(() {
-                              numberOfServings++;
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        const Text('Serving Size'),
-                        const Spacer(),
-                        SizedBox(
-                          width: 100,
-                          child: TextField(
-                            decoration: const InputDecoration(
-                              hintText: '85 g',
-                            ),
-                            keyboardType: TextInputType.number,
-                            onChanged: (value) {
-                              servingSize = double.tryParse(value) ?? 0;
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        const Text('Cooked'),
-                        const Spacer(),
-                        Switch(
-                          value: cooked,
-                          onChanged: (value) {
-                            setState(() {
-                              cooked = value;
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    const Text('NOTES'),
-                    TextField(
-                      decoration: const InputDecoration(
-                        hintText: 'Start typing...',
-                      ),
-                      onChanged: (value) {
-                        notes = value;
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
   }
 
   void _navigateToAddFood(BuildContext context) {
@@ -261,40 +125,7 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
             ),
           ),
           Expanded(
-            child: StreamBuilder<List<Food>>(
-              stream: macrosService.getUserFoods(userId: userId),
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  final foods = snapshot.data!;
-                  _consumedCalories = foods.fold(0, (sum, food) => sum + food.kcal);
-                  return ListView.builder(
-                    itemCount: foods.length,
-                    itemBuilder: (context, index) {
-                      final food = foods[index];
-                      return ListTile(
-                        leading: const Icon(Icons.fastfood, color: Colors.white),
-                        title: Text(food.name, style: const TextStyle(color: Colors.white)),
-                        subtitle: Text('${food.quantity} ${food.quantityUnit}', style: const TextStyle(color: Colors.white)),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.white),
-                          onPressed: () {
-                            // TODO: Delete the food entry
-                          },
-                        ),
-                      );
-                    },
-                  );
-                } else if (snapshot.hasError) {
-                  return Center(
-                    child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.white)),
-                  );
-                } else {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                }
-              },
-            ),
+            child: FoodList(selectedDate: _selectedDate),
           ),
           Container(
             color: Colors.black,

@@ -2,6 +2,8 @@ import 'package:alphanessone/users_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'macros_model.dart';
+import 'meals_model.dart';
+import 'meals_services.dart';
 import 'macros_services.dart';
 
 class FoodList extends ConsumerWidget {
@@ -11,25 +13,23 @@ class FoodList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final macrosService = ref.watch(macrosServiceProvider);
+    final mealsService = ref.watch(mealsServiceProvider);
     final userService = ref.watch(usersServiceProvider);
     final userId = userService.getCurrentUserId();
 
-    return StreamBuilder<List<Food>>(
-      stream: macrosService.getUserFoodsByDate(userId: userId, date: selectedDate),
+    return StreamBuilder<List<Meal>>(
+      stream: mealsService.getUserMealsByDate(userId: userId, date: selectedDate),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
-          final foods = snapshot.data!;
-          final meals = _organizeFoodsByMeal(foods);
-
+          final meals = snapshot.data!;
           return ListView(
             children: [
-              _buildMealSection(context, 'Breakfast', meals['Breakfast'] ?? []),
-              _buildMealSection(context, 'Lunch', meals['Lunch'] ?? []),
-              _buildMealSection(context, 'Dinner', meals['Dinner'] ?? []),
-              for (int i = 0; i < meals['Snacks']!.length; i++)
-                _buildMealSection(context, 'Snack ${i + 1}', meals['Snacks']![i]),
-              _buildAddSnackButton(context, meals['Snacks']!.length),
+              _buildMealSection(context, ref, 'Breakfast', meals.firstWhere((meal) => meal.mealType == 'Breakfast', orElse: () => Meal.emptyMeal(userId, selectedDate, 'Breakfast'))),
+              _buildMealSection(context, ref, 'Lunch', meals.firstWhere((meal) => meal.mealType == 'Lunch', orElse: () => Meal.emptyMeal(userId, selectedDate, 'Lunch'))),
+              _buildMealSection(context, ref, 'Dinner', meals.firstWhere((meal) => meal.mealType == 'Dinner', orElse: () => Meal.emptyMeal(userId, selectedDate, 'Dinner'))),
+              for (int i = 0; i < _getSnackMeals(meals).length; i++)
+                _buildMealSection(context, ref, 'Snack ${i + 1}', _getSnackMeals(meals)[i]),
+              _buildAddSnackButton(context, _getSnackMeals(meals).length),
             ],
           );
         } else if (snapshot.hasError) {
@@ -45,39 +45,13 @@ class FoodList extends ConsumerWidget {
     );
   }
 
-  Map<String, List<Food>> _organizeFoodsByMeal(List<Food> foods) {
-    final meals = {'Breakfast': [], 'Lunch': [], 'Dinner': [], 'Snacks': <List<Food>>[]};
-
-    for (var food in foods) {
-      switch (food.mealType) {
-        case 'Breakfast':
-          meals['Breakfast']!.add(food);
-          break;
-        case 'Lunch':
-          meals['Lunch']!.add(food);
-          break;
-        case 'Dinner':
-          meals['Dinner']!.add(food);
-          break;
-        case 'Snack':
-          if (meals['Snacks']!.isEmpty) {
-            meals['Snacks']!.add([]);
-          }
-          meals['Snacks']![0].add(food);
-          break;
-        default:
-          if (meals['Snacks']!.isEmpty) {
-            meals['Snacks']!.add([]);
-          }
-          meals['Snacks']![0].add(food);
-          break;
-      }
-    }
-
-    return meals;
+  List<Meal> _getSnackMeals(List<Meal> meals) {
+    return meals.where((meal) => meal.mealType.startsWith('Snack')).toList();
   }
 
-  Widget _buildMealSection(BuildContext context, String mealName, List<Food> foods) {
+  Widget _buildMealSection(BuildContext context, WidgetRef ref, String mealName, Meal meal) {
+    final macrosService = ref.watch(macrosServiceProvider);
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Card(
@@ -87,13 +61,39 @@ class FoodList extends ConsumerWidget {
             mealName,
             style: const TextStyle(color: Colors.white),
           ),
-          children: foods.map((food) => _buildFoodItem(context, food)).toList(),
+          children: [
+            for (String foodId in meal.foodIds)
+              FutureBuilder<Food?>(
+                future: macrosService.getFoodById(foodId),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    final food = snapshot.data!;
+                    return _buildFoodItem(context, ref, meal, food);
+                  } else if (snapshot.hasError) {
+                    return ListTile(
+                      title: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.white)),
+                    );
+                  } else {
+                    return const ListTile(
+                      title: CircularProgressIndicator(),
+                    );
+                  }
+                },
+              ),
+            ListTile(
+              title: const Text('Add Food', style: TextStyle(color: Colors.orange)),
+              onTap: () {
+                // TODO: Implement Add Food functionality
+              },
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildFoodItem(BuildContext context, Food food) {
+  Widget _buildFoodItem(BuildContext context, WidgetRef ref, Meal meal, Food food) {
+    final mealsService = ref.read(mealsServiceProvider);
     return ListTile(
       leading: const Icon(Icons.fastfood, color: Colors.white),
       title: Text(food.name, style: const TextStyle(color: Colors.white)),
@@ -101,7 +101,7 @@ class FoodList extends ConsumerWidget {
       trailing: IconButton(
         icon: const Icon(Icons.delete, color: Colors.white),
         onPressed: () {
-          // TODO: Delete the food entry
+          mealsService.removeFoodFromMeal(mealId: meal.id!, food: food);
         },
       ),
     );
@@ -112,9 +112,9 @@ class FoodList extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
       child: ElevatedButton(
         onPressed: () {
-          // TODO: Add new snack entry logic
+          // TODO: Implement Add Snack functionality
         },
-        style: ElevatedButton.styleFrom(primary: Colors.orange),
+        style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
         child: Text('Add Snack ${currentSnacksCount + 1}'),
       ),
     );
