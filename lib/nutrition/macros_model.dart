@@ -10,7 +10,7 @@ class Food {
   double kcal;
   double quantity;
   String quantityUnit;
-  double portion;
+  String portion;
   double? sugar;
   double? fiber;
   double? saturatedFat;
@@ -63,7 +63,7 @@ class Food {
     double? kcal,
     double? quantity,
     String? quantityUnit,
-    double? portion,
+    String? portion,
     double? sugar,
     double? fiber,
     double? saturatedFat,
@@ -114,7 +114,7 @@ class Food {
       kcal: map['kcal']?.toDouble() ?? 0.0,
       quantity: map['quantity']?.toDouble() ?? 0.0,
       quantityUnit: map['quantityUnit'] ?? 'g',
-      portion: map['portion']?.toDouble() ?? 0.0,
+      portion: map['portion'] ?? 'g',
       sugar: map['sugar']?.toDouble(),
       fiber: map['fiber']?.toDouble(),
       saturatedFat: map['saturatedFat']?.toDouble(),
@@ -142,7 +142,7 @@ class Food {
       kcal: data['kcal']?.toDouble() ?? 0.0,
       quantity: data['quantity']?.toDouble() ?? 0.0,
       quantityUnit: data['quantityUnit'] ?? 'g',
-      portion: data['portion']?.toDouble() ?? 0.0,
+      portion: data['portion'] ?? 'g',
       sugar: data['sugar']?.toDouble(),
       fiber: data['fiber']?.toDouble(),
       saturatedFat: data['saturatedFat']?.toDouble(),

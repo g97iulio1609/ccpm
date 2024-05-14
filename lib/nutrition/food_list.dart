@@ -1,10 +1,11 @@
 import 'package:alphanessone/users_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'macros_model.dart';
-import 'meals_model.dart';
+import 'macros_model.dart' as macros;
+import 'meals_model.dart' as meals;
 import 'meals_services.dart';
 import 'macros_services.dart';
+import 'food_selector.dart';
 
 class FoodList extends ConsumerWidget {
   final DateTime selectedDate;
@@ -17,19 +18,19 @@ class FoodList extends ConsumerWidget {
     final userService = ref.watch(usersServiceProvider);
     final userId = userService.getCurrentUserId();
 
-    return StreamBuilder<List<Meal>>(
+    return StreamBuilder<List<meals.Meal>>(
       stream: mealsService.getUserMealsByDate(userId: userId, date: selectedDate),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
-          final meals = snapshot.data!;
+          final mealsList = snapshot.data!;
           return ListView(
             children: [
-              _buildMealSection(context, ref, 'Breakfast', meals.firstWhere((meal) => meal.mealType == 'Breakfast', orElse: () => Meal.emptyMeal(userId, selectedDate, 'Breakfast'))),
-              _buildMealSection(context, ref, 'Lunch', meals.firstWhere((meal) => meal.mealType == 'Lunch', orElse: () => Meal.emptyMeal(userId, selectedDate, 'Lunch'))),
-              _buildMealSection(context, ref, 'Dinner', meals.firstWhere((meal) => meal.mealType == 'Dinner', orElse: () => Meal.emptyMeal(userId, selectedDate, 'Dinner'))),
-              for (int i = 0; i < _getSnackMeals(meals).length; i++)
-                _buildMealSection(context, ref, 'Snack ${i + 1}', _getSnackMeals(meals)[i]),
-              _buildAddSnackButton(context, _getSnackMeals(meals).length),
+              _buildMealSection(context, ref, 'Breakfast', mealsList.firstWhere((meal) => meal.mealType == 'Breakfast', orElse: () => meals.Meal.emptyMeal(userId, selectedDate, 'Breakfast'))),
+              _buildMealSection(context, ref, 'Lunch', mealsList.firstWhere((meal) => meal.mealType == 'Lunch', orElse: () => meals.Meal.emptyMeal(userId, selectedDate, 'Lunch'))),
+              _buildMealSection(context, ref, 'Dinner', mealsList.firstWhere((meal) => meal.mealType == 'Dinner', orElse: () => meals.Meal.emptyMeal(userId, selectedDate, 'Dinner'))),
+              for (int i = 0; i < _getSnackMeals(mealsList).length; i++)
+                _buildMealSection(context, ref, 'Snack ${i + 1}', _getSnackMeals(mealsList)[i]),
+              _buildAddSnackButton(context, _getSnackMeals(mealsList).length),
             ],
           );
         } else if (snapshot.hasError) {
@@ -45,11 +46,11 @@ class FoodList extends ConsumerWidget {
     );
   }
 
-  List<Meal> _getSnackMeals(List<Meal> meals) {
-    return meals.where((meal) => meal.mealType.startsWith('Snack')).toList();
+  List<meals.Meal> _getSnackMeals(List<meals.Meal> mealsList) {
+    return mealsList.where((meal) => meal.mealType.startsWith('Snack')).toList();
   }
 
-  Widget _buildMealSection(BuildContext context, WidgetRef ref, String mealName, Meal meal) {
+  Widget _buildMealSection(BuildContext context, WidgetRef ref, String mealName, meals.Meal meal) {
     final macrosService = ref.watch(macrosServiceProvider);
 
     return Padding(
@@ -63,7 +64,7 @@ class FoodList extends ConsumerWidget {
           ),
           children: [
             for (String foodId in meal.foodIds)
-              FutureBuilder<Food?>(
+              FutureBuilder<macros.Food?>(
                 future: macrosService.getFoodById(foodId),
                 builder: (context, snapshot) {
                   if (snapshot.hasData) {
@@ -83,7 +84,12 @@ class FoodList extends ConsumerWidget {
             ListTile(
               title: const Text('Add Food', style: TextStyle(color: Colors.orange)),
               onTap: () {
-                // TODO: Implement Add Food functionality
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => FoodSelector(meal: meal),
+                  ),
+                );
               },
             ),
           ],
@@ -92,7 +98,7 @@ class FoodList extends ConsumerWidget {
     );
   }
 
-  Widget _buildFoodItem(BuildContext context, WidgetRef ref, Meal meal, Food food) {
+  Widget _buildFoodItem(BuildContext context, WidgetRef ref, meals.Meal meal, macros.Food food) {
     final mealsService = ref.read(mealsServiceProvider);
     return ListTile(
       leading: const Icon(Icons.fastfood, color: Colors.white),

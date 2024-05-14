@@ -27,7 +27,7 @@ class FoodManagement extends HookConsumerWidget {
         protein: double.tryParse(proteinController.text) ?? 0,
         kcal: double.tryParse(caloriesController.text) ?? 0,
         quantity: numberOfServingsController.value.toDouble(),
-        portion: double.tryParse(servingSizeController.text) ?? 0,
+        portion: servingSizeController.text,
       );
 
       final macrosService = ref.read(macrosServiceProvider);
@@ -63,7 +63,7 @@ class FoodManagement extends HookConsumerWidget {
             TextField(
               controller: descriptionController,
               decoration: const InputDecoration(
-                labelText: 'Bananas',
+                labelText: 'Name',
               ),
             ),
             const SizedBox(height: 16),
@@ -106,7 +106,7 @@ class FoodManagement extends HookConsumerWidget {
             TextField(
               controller: servingSizeController,
               decoration: const InputDecoration(
-                labelText: 'Serving Size',
+                labelText: 'Serving Size (g, ml, oz)',
               ),
               keyboardType: TextInputType.number,
             ),

@@ -11,7 +11,7 @@ final macrosServiceProvider = Provider<MacrosService>((ref) {
 class MacrosService {
   final ProviderRef ref;
   final FirebaseFirestore _firestore;
-  final _foodsStreamController = BehaviorSubject<List<Food>>();
+  final _foodsStreamController = BehaviorSubject<List<Food>>.seeded([]);
   String _searchQuery = '';
   StreamSubscription? _foodsChangesSubscription;
 
@@ -40,10 +40,15 @@ class MacrosService {
     }
   }
 
-  void searchFoods(String query) {
+  void setSearchQuery(String query) {
     _searchQuery = query;
-    final foods = _foodsStreamController.value;
+    final foods = _foodsStreamController.valueOrNull ?? [];
     _foodsStreamController.add(_filterFoods(foods));
+  }
+
+  Stream<List<Food>> searchFoods(String query) {
+    setSearchQuery(query);
+    return _foodsStreamController.stream;
   }
 
   Stream<List<Food>> getFoods() {

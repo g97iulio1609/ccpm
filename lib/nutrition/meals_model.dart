@@ -80,3 +80,130 @@ class Meal {
     );
   }
 }
+
+class DailyStats {
+  String? id;
+  String userId;
+  DateTime date;
+  double totalCalories;
+  double totalCarbs;
+  double totalFat;
+  double totalProtein;
+
+  DailyStats({
+    this.id,
+    required this.userId,
+    required this.date,
+    this.totalCalories = 0,
+    this.totalCarbs = 0,
+    this.totalFat = 0,
+    this.totalProtein = 0,
+  });
+
+  factory DailyStats.fromJson(String source) => DailyStats.fromMap(json.decode(source));
+
+  String toJson() => json.encode(toMap());
+
+  factory DailyStats.fromMap(Map<String, dynamic> map) {
+    return DailyStats(
+      id: map['id'],
+      userId: map['userId'],
+      date: (map['date'] as Timestamp).toDate(),
+      totalCalories: map['totalCalories']?.toDouble() ?? 0.0,
+      totalCarbs: map['totalCarbs']?.toDouble() ?? 0.0,
+      totalFat: map['totalFat']?.toDouble() ?? 0.0,
+      totalProtein: map['totalProtein']?.toDouble() ?? 0.0,
+    );
+  }
+
+  factory DailyStats.fromFirestore(DocumentSnapshot doc) {
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    return DailyStats(
+      id: doc.id,
+      userId: data['userId'],
+      date: (data['date'] as Timestamp).toDate(),
+      totalCalories: data['totalCalories']?.toDouble() ?? 0.0,
+      totalCarbs: data['totalCarbs']?.toDouble() ?? 0.0,
+      totalFat: data['totalFat']?.toDouble() ?? 0.0,
+      totalProtein: data['totalProtein']?.toDouble() ?? 0.0,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'userId': userId,
+      'date': Timestamp.fromDate(date),
+      'totalCalories': totalCalories,
+      'totalCarbs': totalCarbs,
+      'totalFat': totalFat,
+      'totalProtein': totalProtein,
+    };
+  }
+}
+
+class Food {
+  String? id;
+  String name;
+  double kcal;
+  double carbs;
+  double fat;
+  double protein;
+  double quantity;
+  String portion;
+
+  Food({
+    this.id,
+    required this.name,
+    required this.kcal,
+    required this.carbs,
+    required this.fat,
+    required this.protein,
+    this.quantity = 100,
+    this.portion = 'g',
+  });
+
+  factory Food.fromJson(String source) => Food.fromMap(json.decode(source));
+
+  String toJson() => json.encode(toMap());
+
+  factory Food.fromMap(Map<String, dynamic> map) {
+    return Food(
+      id: map['id'],
+      name: map['name'],
+      kcal: map['kcal']?.toDouble() ?? 0.0,
+      carbs: map['carbs']?.toDouble() ?? 0.0,
+      fat: map['fat']?.toDouble() ?? 0.0,
+      protein: map['protein']?.toDouble() ?? 0.0,
+      quantity: map['quantity']?.toDouble() ?? 100,
+      portion: map['portion'] ?? 'g',
+    );
+  }
+
+  factory Food.fromFirestore(DocumentSnapshot doc) {
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    return Food(
+      id: doc.id,
+      name: data['name'],
+      kcal: data['kcal']?.toDouble() ?? 0.0,
+      carbs: data['carbs']?.toDouble() ?? 0.0,
+      fat: data['fat']?.toDouble() ?? 0.0,
+      protein: data['protein']?.toDouble() ?? 0.0,
+      quantity: data['quantity']?.toDouble() ?? 100,
+      portion: data['portion'] ?? 'g',
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'kcal': kcal,
+      'carbs': carbs,
+      'fat': fat,
+      'protein': protein,
+      'quantity': quantity,
+      'portion': portion,
+    };
+  }
+}
