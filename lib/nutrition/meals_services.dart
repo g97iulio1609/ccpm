@@ -59,9 +59,7 @@ class MealsService {
   }
 
   Future<void> addMeal(meals.Meal meal) async {
-    final mealRef = _firestore.collection('meals').doc();
-    meal.id = mealRef.id;
-    await mealRef.set(meal.toMap());
+    await _firestore.collection('meals').add(meal.toMap());
   }
 
   Future<void> updateMeal(String mealId, meals.Meal updatedMeal) async {
@@ -123,9 +121,7 @@ class MealsService {
   }
 
   Future<void> addDailyStats(meals.DailyStats stats) async {
-    final statsRef = _firestore.collection('dailyStats').doc();
-    stats.id = statsRef.id;
-    await statsRef.set(stats.toMap());
+    await _firestore.collection('dailyStats').add(stats.toMap());
   }
 
   Future<void> updateDailyStats(String statsId, meals.DailyStats updatedStats) async {
@@ -146,9 +142,7 @@ class MealsService {
   }
 
   Future<void> addFood(macros.Food food) async {
-    final foodRef = _firestore.collection('foods').doc();
-    food.id = foodRef.id;
-    await foodRef.set(food.toMap());
+    await _firestore.collection('foods').add(food.toMap());
   }
 
   Future<void> updateFood(String foodId, macros.Food updatedFood) async {

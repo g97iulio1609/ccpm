@@ -11,19 +11,19 @@ class Food {
   double quantity;
   String quantityUnit;
   String portion;
-  double? sugar;
-  double? fiber;
-  double? saturatedFat;
-  double? polyunsaturatedFat;
-  double? monounsaturatedFat;
-  double? transFat;
-  double? cholesterol;
-  double? sodium;
-  double? potassium;
-  double? vitaminA;
-  double? vitaminC;
-  double? calcium;
-  double? iron;
+  double sugar;
+  double fiber;
+  double saturatedFat;
+  double polyunsaturatedFat;
+  double monounsaturatedFat;
+  double transFat;
+  double cholesterol;
+  double sodium;
+  double potassium;
+  double vitaminA;
+  double vitaminC;
+  double calcium;
+  double iron;
 
   Food({
     this.id,
@@ -35,19 +35,19 @@ class Food {
     required this.quantity,
     this.quantityUnit = 'g',
     required this.portion,
-    this.sugar,
-    this.fiber,
-    this.saturatedFat,
-    this.polyunsaturatedFat,
-    this.monounsaturatedFat,
-    this.transFat,
-    this.cholesterol,
-    this.sodium,
-    this.potassium,
-    this.vitaminA,
-    this.vitaminC,
-    this.calcium,
-    this.iron,
+    this.sugar = 0.0,
+    this.fiber = 0.0,
+    this.saturatedFat = 0.0,
+    this.polyunsaturatedFat = 0.0,
+    this.monounsaturatedFat = 0.0,
+    this.transFat = 0.0,
+    this.cholesterol = 0.0,
+    this.sodium = 0.0,
+    this.potassium = 0.0,
+    this.vitaminA = 0.0,
+    this.vitaminC = 0.0,
+    this.calcium = 0.0,
+    this.iron = 0.0,
   });
 
   factory Food.fromJson(String source) => Food.fromMap(json.decode(source));
@@ -115,19 +115,19 @@ class Food {
       quantity: map['quantity']?.toDouble() ?? 0.0,
       quantityUnit: map['quantityUnit'] ?? 'g',
       portion: map['portion'] ?? 'g',
-      sugar: map['sugar']?.toDouble(),
-      fiber: map['fiber']?.toDouble(),
-      saturatedFat: map['saturatedFat']?.toDouble(),
-      polyunsaturatedFat: map['polyunsaturatedFat']?.toDouble(),
-      monounsaturatedFat: map['monounsaturatedFat']?.toDouble(),
-      transFat: map['transFat']?.toDouble(),
-      cholesterol: map['cholesterol']?.toDouble(),
-      sodium: map['sodium']?.toDouble(),
-      potassium: map['potassium']?.toDouble(),
-      vitaminA: map['vitaminA']?.toDouble(),
-      vitaminC: map['vitaminC']?.toDouble(),
-      calcium: map['calcium']?.toDouble(),
-      iron: map['iron']?.toDouble(),
+      sugar: map['sugar']?.toDouble() ?? 0.0,
+      fiber: map['fiber']?.toDouble() ?? 0.0,
+      saturatedFat: map['saturatedFat']?.toDouble() ?? 0.0,
+      polyunsaturatedFat: map['polyunsaturatedFat']?.toDouble() ?? 0.0,
+      monounsaturatedFat: map['monounsaturatedFat']?.toDouble() ?? 0.0,
+      transFat: map['transFat']?.toDouble() ?? 0.0,
+      cholesterol: map['cholesterol']?.toDouble() ?? 0.0,
+      sodium: map['sodium']?.toDouble() ?? 0.0,
+      potassium: map['potassium']?.toDouble() ?? 0.0,
+      vitaminA: map['vitaminA']?.toDouble() ?? 0.0,
+      vitaminC: map['vitaminC']?.toDouble() ?? 0.0,
+      calcium: map['calcium']?.toDouble() ?? 0.0,
+      iron: map['iron']?.toDouble() ?? 0.0,
     );
   }
 
@@ -143,19 +143,19 @@ class Food {
       quantity: data['quantity']?.toDouble() ?? 0.0,
       quantityUnit: data['quantityUnit'] ?? 'g',
       portion: data['portion'] ?? 'g',
-      sugar: data['sugar']?.toDouble(),
-      fiber: data['fiber']?.toDouble(),
-      saturatedFat: data['saturatedFat']?.toDouble(),
-      polyunsaturatedFat: data['polyunsaturatedFat']?.toDouble(),
-      monounsaturatedFat: data['monounsaturatedFat']?.toDouble(),
-      transFat: data['transFat']?.toDouble(),
-      cholesterol: data['cholesterol']?.toDouble(),
-      sodium: data['sodium']?.toDouble(),
-      potassium: data['potassium']?.toDouble(),
-      vitaminA: data['vitaminA']?.toDouble(),
-      vitaminC: data['vitaminC']?.toDouble(),
-      calcium: data['calcium']?.toDouble(),
-      iron: data['iron']?.toDouble(),
+      sugar: data['sugar']?.toDouble() ?? 0.0,
+      fiber: data['fiber']?.toDouble() ?? 0.0,
+      saturatedFat: data['saturatedFat']?.toDouble() ?? 0.0,
+      polyunsaturatedFat: data['polyunsaturatedFat']?.toDouble() ?? 0.0,
+      monounsaturatedFat: data['monounsaturatedFat']?.toDouble() ?? 0.0,
+      transFat: data['transFat']?.toDouble() ?? 0.0,
+      cholesterol: data['cholesterol']?.toDouble() ?? 0.0,
+      sodium: data['sodium']?.toDouble() ?? 0.0,
+      potassium: data['potassium']?.toDouble() ?? 0.0,
+      vitaminA: data['vitaminA']?.toDouble() ?? 0.0,
+      vitaminC: data['vitaminC']?.toDouble() ?? 0.0,
+      calcium: data['calcium']?.toDouble() ?? 0.0,
+      iron: data['iron']?.toDouble() ?? 0.0,
     );
   }
 

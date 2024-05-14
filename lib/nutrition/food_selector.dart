@@ -148,6 +148,8 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
         portion: _unit,
       );
 
+      debugPrint('Saving food: ${adjustedFood.toJson()}');
+
       await mealsService.addFoodToMeal(
         mealId: widget.meal.id!,
         food: adjustedFood,
