@@ -6,7 +6,6 @@ import 'meals_model.dart' as meals;
 import 'meals_services.dart';
 import 'macros_services.dart';
 import 'food_selector.dart';
-import 'edit_food.dart';  // Make sure this import is correct
 
 class FoodList extends ConsumerWidget {
   final DateTime selectedDate;
@@ -115,7 +114,7 @@ class FoodList extends ConsumerWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => EditFoodScreen(mealId: meal.id!, food: food),
+                  builder: (context) => FoodSelector(meal: meal, food: food),
                 ),
               );
             },

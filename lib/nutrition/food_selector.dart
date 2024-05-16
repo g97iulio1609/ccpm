@@ -8,8 +8,9 @@ import 'autotype.dart';
 
 class FoodSelector extends ConsumerStatefulWidget {
   final meals.Meal meal;
+  final macros.Food? food;
 
-  const FoodSelector({required this.meal, super.key});
+  const FoodSelector({required this.meal, this.food, super.key});
 
   @override
   _FoodSelectorState createState() => _FoodSelectorState();
@@ -23,10 +24,21 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
   String _unit = 'g'; // Default unit
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.food != null) {
+      _selectedFoodId = widget.food!.id!;
+      _quantity = widget.food!.quantity;
+      _quantityController.text = widget.food!.quantity.toString();
+      _unit = widget.food!.quantityUnit;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Entry'),
+        title: const Text('Add/Edit Entry'),
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
@@ -38,16 +50,17 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            AutoTypeField(
-              controller: _searchController,
-              focusNode: FocusNode(),
-              onSelected: (macros.Food food) {
-                setState(() {
-                  _selectedFoodId = food.id!;
-                  debugPrint('AutoTypeField: Selected food ID: $_selectedFoodId');
-                });
-              },
-            ),
+            if (widget.food == null)
+              AutoTypeField(
+                controller: _searchController,
+                focusNode: FocusNode(),
+                onSelected: (macros.Food food) {
+                  setState(() {
+                    _selectedFoodId = food.id!;
+                    debugPrint('AutoTypeField: Selected food ID: $_selectedFoodId');
+                  });
+                },
+              ),
             if (_selectedFoodId.isNotEmpty)
               _buildSelectedFoodDetails(context),
           ],
@@ -184,14 +197,23 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
           debugPrint('_saveFood: Meal found with ID: ${meal.id}');
         }
 
-        debugPrint('_saveFood: Adding food to meal with ID: ${meal.id}');
-        await mealsService.addFoodToMeal(
-          mealId: meal.id!,
-          food: adjustedFood,
-          quantity: _quantity,
-        );
+        if (widget.food == null) {
+          debugPrint('_saveFood: Adding food to meal with ID: ${meal.id}');
+          await mealsService.addFoodToMeal(
+            mealId: meal.id!,
+            food: adjustedFood,
+            quantity: _quantity,
+          );
+          debugPrint('_saveFood: Food added to meal successfully');
+        } else {
+          debugPrint('_saveFood: Updating food in meal with ID: ${meal.id}');
+          await mealsService.updateFoodInMeal(
+            myFoodId: widget.food!.id!,
+            newQuantity: _quantity,
+          );
+          debugPrint('_saveFood: Food updated in meal successfully');
+        }
 
-        debugPrint('_saveFood: Food added to meal successfully');
         Navigator.of(context).pop();
       }
     } catch (e) {

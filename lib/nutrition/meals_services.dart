@@ -6,12 +6,12 @@ import 'package:rxdart/rxdart.dart';
 import 'meals_model.dart' as meals;
 import 'macros_model.dart' as macros;
 
-final mealsServiceProvider = Provider<MealsService>((ref) {
+final mealsServiceProvider = ChangeNotifierProvider<MealsService>((ref) {
   return MealsService(ref, FirebaseFirestore.instance);
 });
 
-class MealsService {
-  final ProviderRef ref;
+class MealsService extends ChangeNotifier {
+  final ChangeNotifierProviderRef<MealsService> ref;
   final FirebaseFirestore _firestore;
   final _mealsStreamController = BehaviorSubject<List<meals.Meal>>();
   StreamSubscription? _mealsChangesSubscription;
@@ -69,15 +69,18 @@ class MealsService {
     debugPrint('addMeal: Attempting to add meal: ${meal.toMap()}');
     await mealRef.set(meal.toMap());
     debugPrint('addMeal: Meal added with ID: ${mealRef.id}');
+    notifyListeners(); // Notify listeners when new meal is added
     return mealRef.id;
   }
 
   Future<void> updateMeal(String mealId, meals.Meal updatedMeal) async {
     await _firestore.collection('meals').doc(mealId).update(updatedMeal.toMap());
+    notifyListeners(); // Notify listeners when meal is updated
   }
 
   Future<void> deleteMeal(String mealId) async {
     await _firestore.collection('meals').doc(mealId).delete();
+    notifyListeners(); // Notify listeners when meal is deleted
   }
 
   Future<void> addFoodToMeal({required String mealId, required macros.Food food, required double quantity}) async {
@@ -127,6 +130,7 @@ class MealsService {
     await mealRef.update(meal.toMap());
 
     debugPrint('addFoodToMeal: Food added to meal successfully');
+    notifyListeners(); // Notify listeners when food is added to meal
   }
 
   Future<void> updateFoodInMeal({required String myFoodId, required double newQuantity}) async {
@@ -165,6 +169,7 @@ class MealsService {
 
     await myFoodRef.update(updatedFood);
     debugPrint('updateFoodInMeal: Food updated successfully');
+    notifyListeners(); // Notify listeners when food is updated in meal
   }
 
   Future<void> removeFoodFromMeal({required String mealId, required String myFoodId}) async {
@@ -183,6 +188,7 @@ class MealsService {
     await myFoodRef.delete();
 
     debugPrint('removeFoodFromMeal: Food removed from meal successfully');
+    notifyListeners(); // Notify listeners when food is removed from meal
   }
 
   Future<void> createDailyStatsIfNotExist(String userId, DateTime date) async {
@@ -272,8 +278,6 @@ class MealsService {
   Future<void> updateFood(String foodId, macros.Food updatedFood) async {
     await _firestore.collection('foods').doc(foodId).update(updatedFood.toMap());
   }
-
-  
 
   Future<void> deleteFood(String foodId) async {
     await _firestore.collection('foods').doc(foodId).delete();
