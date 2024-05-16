@@ -138,12 +138,59 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
       debugPrint('_saveFood: Retrieved food: ${food?.toJson()}');
 
       if (food != null) {
-        debugPrint('_saveFood: Saving adjusted food');
+        final adjustedFood = macros.Food(
+          id: food.id,
+          name: food.name,
+          kcal: food.kcal * _quantity / 100,
+          carbs: food.carbs * _quantity / 100,
+          fat: food.fat * _quantity / 100,
+          protein: food.protein * _quantity / 100,
+          quantity: _quantity,
+          quantityUnit: _unit,
+          portion: _unit,
+          sugar: food.sugar,
+          fiber: food.fiber,
+          saturatedFat: food.saturatedFat,
+          polyunsaturatedFat: food.polyunsaturatedFat,
+          monounsaturatedFat: food.monounsaturatedFat,
+          transFat: food.transFat,
+          cholesterol: food.cholesterol,
+          sodium: food.sodium,
+          potassium: food.potassium,
+          vitaminA: food.vitaminA,
+          vitaminC: food.vitaminC,
+          calcium: food.calcium,
+          iron: food.iron,
+        );
+
+        debugPrint('_saveFood: Saving adjusted food: ${adjustedFood.toJson()}');
+
+        // Check if meal exists, if not create it
+        debugPrint('_saveFood: Checking if meal exists with ID: ${widget.meal.id}');
+        var meal = await mealsService.getMealById(widget.meal.id ?? '');
+        if (meal == null) {
+          debugPrint('_saveFood: Meal not found, creating new meal');
+          meal = meals.Meal(
+            userId: widget.meal.userId,
+            dailyStatsId: widget.meal.dailyStatsId,
+            date: widget.meal.date,
+            mealType: widget.meal.mealType,
+          );
+          final newMealId = await mealsService.addMeal(meal, widget.meal.dailyStatsId);
+          debugPrint('_saveFood: New meal ID received: $newMealId');
+          meal = meal.copyWith(id: newMealId); // Assign the generated ID
+          debugPrint('_saveFood: Created new meal with ID: ${meal.id}');
+        } else {
+          debugPrint('_saveFood: Meal found with ID: ${meal.id}');
+        }
+
+        debugPrint('_saveFood: Adding food to meal with ID: ${meal.id}');
         await mealsService.addFoodToMeal(
-          mealId: widget.meal.id!,
-          food: food,
+          mealId: meal.id!,
+          food: adjustedFood,
           quantity: _quantity,
         );
+
         debugPrint('_saveFood: Food added to meal successfully');
         Navigator.of(context).pop();
       }

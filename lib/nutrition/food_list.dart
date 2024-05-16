@@ -1,9 +1,12 @@
 import 'package:alphanessone/users_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'macros_model.dart' as macros;
 import 'meals_model.dart' as meals;
 import 'meals_services.dart';
+import 'macros_services.dart';
 import 'food_selector.dart';
+import 'edit_food.dart';  // Make sure this import is correct
 
 class FoodList extends ConsumerWidget {
   final DateTime selectedDate;
@@ -61,13 +64,13 @@ class FoodList extends ConsumerWidget {
             style: const TextStyle(color: Colors.white),
           ),
           children: [
-            StreamBuilder<List<meals.Food>>(
-              stream: mealsService.getFoodsForMeal(meal.id!),
+            FutureBuilder<List<macros.Food>>(
+              future: mealsService.getFoodsForMeal(meal.id!),
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
-                  final foodList = snapshot.data!;
+                  final foods = snapshot.data!;
                   return Column(
-                    children: foodList.map((food) => _buildFoodItem(context, ref, meal, food)).toList(),
+                    children: foods.map((food) => _buildFoodItem(context, ref, meal, food)).toList(),
                   );
                 } else if (snapshot.hasError) {
                   return ListTile(
@@ -97,17 +100,33 @@ class FoodList extends ConsumerWidget {
     );
   }
 
-  Widget _buildFoodItem(BuildContext context, WidgetRef ref, meals.Meal meal, meals.Food food) {
+  Widget _buildFoodItem(BuildContext context, WidgetRef ref, meals.Meal meal, macros.Food food) {
     final mealsService = ref.read(mealsServiceProvider);
     return ListTile(
       leading: const Icon(Icons.fastfood, color: Colors.white),
       title: Text(food.name, style: const TextStyle(color: Colors.white)),
       subtitle: Text('${food.quantity} ${food.portion}', style: const TextStyle(color: Colors.white)),
-      trailing: IconButton(
-        icon: const Icon(Icons.delete, color: Colors.white),
-        onPressed: () {
-          mealsService.removeFoodFromMeal(mealId: meal.id!, myFoodId: food.id!);
-        },
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.edit, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => EditFoodScreen(mealId: meal.id!, food: food),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete, color: Colors.white),
+            onPressed: () {
+              mealsService.removeFoodFromMeal(mealId: meal.id!, myFoodId: food.id!);
+            },
+          ),
+        ],
       ),
     );
   }
