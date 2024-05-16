@@ -29,6 +29,7 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
   double _kcalValue = 0.0;
 
   Future<macros.Food?>? _foodFuture;
+  macros.Food? _loadedFood;
 
   @override
   void initState() {
@@ -48,6 +49,7 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
       debugPrint('_loadFoodData: Food data loaded: ${food.toJson()}');
       setState(() {
         _selectedFoodId = food.id!;
+        _loadedFood = food;
         _quantity = food.quantity;
         _unit = food.quantityUnit;
         _quantityController.text = food.quantity.toString();
@@ -58,6 +60,7 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
       debugPrint('_loadFoodData: No food data found for ID = $foodId');
       setState(() {
         _selectedFoodId = '';
+        _loadedFood = null;
       });
       return null;
     }
@@ -96,6 +99,7 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
                 onSelected: (macros.Food food) {
                   setState(() {
                     _selectedFoodId = food.id!;
+                    _loadedFood = food;
                     _updateMacronutrientValues(food);
                     debugPrint('AutoTypeField: Selected food ID: $_selectedFoodId');
                   });
@@ -122,6 +126,7 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
         } else if (snapshot.hasData) {
           final food = snapshot.data!;
           debugPrint('FutureBuilder: Retrieved food: ${food.toJson()}');
+          _loadedFood = food; // Save the loaded food
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -193,8 +198,8 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
       final macrosService = ref.read(macrosServiceProvider);
 
       debugPrint('_saveFood: Selected food ID: $_selectedFoodId');
-      final food = await macrosService.getFoodById(_selectedFoodId);
-      debugPrint('_saveFood: Retrieved food: ${food?.toJson()}');
+      final food = _loadedFood; // Use the loaded food
+      debugPrint('_saveFood: Loaded food: ${food?.toJson()}');
 
       if (food != null) {
         final adjustedFood = macros.Food(
