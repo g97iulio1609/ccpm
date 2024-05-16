@@ -17,6 +17,9 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
   DateTime _selectedDate = DateTime.now();
   int _targetCalories = 2000;
   double _consumedCalories = 1425;
+  double _totalProtein = 0;
+  double _totalCarbs = 0;
+  double _totalFat = 0;
 
   @override
   void initState() {
@@ -43,6 +46,16 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
 
     await mealsService.createDailyStatsIfNotExist(userId, _selectedDate);
     await mealsService.createMealsIfNotExist(userId, _selectedDate);
+
+    final dailyStats = await mealsService.getDailyStatsByDate(userId, _selectedDate);
+    if (dailyStats != null) {
+      setState(() {
+        _consumedCalories = dailyStats.totalCalories;
+        _totalProtein = dailyStats.totalProtein;
+        _totalCarbs = dailyStats.totalCarbs;
+        _totalFat = dailyStats.totalFat;
+      });
+    }
   }
 
   void _navigateToAddFood(BuildContext context) {
@@ -64,14 +77,22 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
     final userService = ref.watch(usersServiceProvider);
     final userId = userService.getCurrentUserId();
 
+    final bool isToday = _selectedDate.isAtSameMomentAs(DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    ));
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.black,
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.calendar_today),
-            SizedBox(width: 8),
-            Text('Today'),
+            const Icon(Icons.calendar_today),
+            const SizedBox(width: 8),
+            Text(
+              isToday ? 'Today' : '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+            ),
           ],
         ),
         actions: [
@@ -100,11 +121,11 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Expanded(child: _buildMacroItem('Protein', 105, 210, Colors.green)),
+                    Expanded(child: _buildMacroItem('Protein', _totalProtein, 210, Colors.green)),
                     const SizedBox(width: 8),
-                    Expanded(child: _buildMacroItem('Carbohydrates', 95, 125, Colors.orange)),
+                    Expanded(child: _buildMacroItem('Carbohydrates', _totalCarbs, 125, Colors.orange)),
                     const SizedBox(width: 8),
-                    Expanded(child: _buildMacroItem('Fat', 15, 35, Colors.purple)),
+                    Expanded(child: _buildMacroItem('Fat', _totalFat, 35, Colors.purple)),
                   ],
                 ),
                 const SizedBox(height: 16),
