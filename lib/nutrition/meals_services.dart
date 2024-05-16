@@ -28,6 +28,7 @@ class MealsService extends ChangeNotifier {
         .listen((snapshot) {
       final mealsList = snapshot.docs.map((doc) => meals.Meal.fromFirestore(doc)).toList();
       _mealsStreamController.add(mealsList);
+      notifyListeners();  // Notify listeners when meals change
     });
   }
 
@@ -69,18 +70,17 @@ class MealsService extends ChangeNotifier {
     debugPrint('addMeal: Attempting to add meal: ${meal.toMap()}');
     await mealRef.set(meal.toMap());
     debugPrint('addMeal: Meal added with ID: ${mealRef.id}');
-    notifyListeners(); // Notify listeners when new meal is added
     return mealRef.id;
   }
 
   Future<void> updateMeal(String mealId, meals.Meal updatedMeal) async {
     await _firestore.collection('meals').doc(mealId).update(updatedMeal.toMap());
-    notifyListeners(); // Notify listeners when meal is updated
+    notifyListeners();  // Notify listeners when a meal is updated
   }
 
   Future<void> deleteMeal(String mealId) async {
     await _firestore.collection('meals').doc(mealId).delete();
-    notifyListeners(); // Notify listeners when meal is deleted
+    notifyListeners();  // Notify listeners when a meal is deleted
   }
 
   Future<void> addFoodToMeal({required String mealId, required macros.Food food, required double quantity}) async {
@@ -128,9 +128,8 @@ class MealsService extends ChangeNotifier {
 
     // Add the food ID to the meal's foodIds list
     await mealRef.update(meal.toMap());
-
+    notifyListeners();  // Notify listeners when a food is added to a meal
     debugPrint('addFoodToMeal: Food added to meal successfully');
-    notifyListeners(); // Notify listeners when food is added to meal
   }
 
   Future<void> updateFoodInMeal({required String myFoodId, required double newQuantity}) async {
@@ -168,8 +167,8 @@ class MealsService extends ChangeNotifier {
     };
 
     await myFoodRef.update(updatedFood);
+    notifyListeners();  // Notify listeners when a food is updated
     debugPrint('updateFoodInMeal: Food updated successfully');
-    notifyListeners(); // Notify listeners when food is updated in meal
   }
 
   Future<void> removeFoodFromMeal({required String mealId, required String myFoodId}) async {
@@ -186,9 +185,8 @@ class MealsService extends ChangeNotifier {
 
     final myFoodRef = _firestore.collection('myfoods').doc(myFoodId);
     await myFoodRef.delete();
-
+    notifyListeners();  // Notify listeners when a food is removed from a meal
     debugPrint('removeFoodFromMeal: Food removed from meal successfully');
-    notifyListeners(); // Notify listeners when food is removed from meal
   }
 
   Future<void> createDailyStatsIfNotExist(String userId, DateTime date) async {
@@ -231,6 +229,14 @@ class MealsService extends ChangeNotifier {
       }
     }
   }
+
+  Future<macros.Food?> getMyFoodById(String myFoodId) async {
+  final myFoodDoc = await _firestore.collection('myfoods').doc(myFoodId).get();
+  if (myFoodDoc.exists) {
+    return macros.Food.fromFirestore(myFoodDoc);
+  } else {
+    return null;
+  }}
 
   Future<meals.DailyStats?> getDailyStatsByDate(String userId, DateTime date) async {
     final startOfDay = DateTime(date.year, date.month, date.day);

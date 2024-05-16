@@ -114,7 +114,7 @@ class FoodList extends ConsumerWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => FoodSelector(meal: meal, food: food),
+                  builder: (context) => FoodSelector(meal: meal, myFoodId: food.id),
                 ),
               );
             },

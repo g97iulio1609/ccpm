@@ -8,9 +8,9 @@ import 'autotype.dart';
 
 class FoodSelector extends ConsumerStatefulWidget {
   final meals.Meal meal;
-  final macros.Food? food;
+  final String? myFoodId;
 
-  const FoodSelector({required this.meal, this.food, super.key});
+  const FoodSelector({required this.meal, this.myFoodId, super.key});
 
   @override
   _FoodSelectorState createState() => _FoodSelectorState();
@@ -23,22 +23,45 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
   double _quantity = 100.0;
   String _unit = 'g'; // Default unit
 
+  double _proteinValue = 0.0;
+  double _carbsValue = 0.0;
+  double _fatValue = 0.0;
+  double _kcalValue = 0.0;
+
   @override
   void initState() {
     super.initState();
-    if (widget.food != null) {
-      _selectedFoodId = widget.food!.id!;
-      _quantity = widget.food!.quantity;
-      _quantityController.text = widget.food!.quantity.toString();
-      _unit = widget.food!.quantityUnit;
+    if (widget.myFoodId != null) {
+      _loadFoodData(widget.myFoodId!);
     }
+  }
+
+  Future<void> _loadFoodData(String foodId) async {
+    final mealsService = ref.read(mealsServiceProvider);
+    final food = await mealsService.getMyFoodById(foodId);
+    if (food != null) {
+      setState(() {
+        _selectedFoodId = food.id!;
+        _quantity = food.quantity;
+        _unit = food.quantityUnit;
+        _quantityController.text = food.quantity.toString();
+        _updateMacronutrientValues(food);
+      });
+    }
+  }
+
+  void _updateMacronutrientValues(macros.Food food) {
+    _proteinValue = food.protein * _quantity / 100;
+    _carbsValue = food.carbs * _quantity / 100;
+    _fatValue = food.fat * _quantity / 100;
+    _kcalValue = food.kcal * _quantity / 100;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add/Edit Entry'),
+        title: Text(widget.myFoodId == null ? 'Add Entry' : 'Edit Entry'),
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
@@ -50,18 +73,19 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            if (widget.food == null)
+            if (widget.myFoodId == null)
               AutoTypeField(
                 controller: _searchController,
                 focusNode: FocusNode(),
                 onSelected: (macros.Food food) {
                   setState(() {
                     _selectedFoodId = food.id!;
+                    _updateMacronutrientValues(food);
                     debugPrint('AutoTypeField: Selected food ID: $_selectedFoodId');
                   });
                 },
               ),
-            if (_selectedFoodId.isNotEmpty)
+            if (_selectedFoodId.isNotEmpty || widget.myFoodId != null)
               _buildSelectedFoodDetails(context),
           ],
         ),
@@ -101,6 +125,7 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
                       onChanged: (value) {
                         setState(() {
                           _quantity = double.tryParse(value) ?? 100.0;
+                          _updateMacronutrientValues(food);
                           debugPrint('TextField: Quantity changed to: $_quantity');
                         });
                       },
@@ -118,6 +143,7 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
                     onChanged: (String? newValue) {
                       setState(() {
                         _unit = newValue!;
+                        _updateMacronutrientValues(food);
                         debugPrint('DropdownButton: Unit changed to: $_unit');
                       });
                     },
@@ -126,10 +152,10 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
               ),
               const SizedBox(height: 16),
               const Text('Macro Nutrients:'),
-              Text('Protein: ${food.protein}g'),
-              Text('Carbohydrates: ${food.carbs}g'),
-              Text('Fat: ${food.fat}g'),
-              Text('Calories: ${food.kcal}kcal'),
+              Text('Protein: ${_proteinValue.toStringAsFixed(2)}g'),
+              Text('Carbohydrates: ${_carbsValue.toStringAsFixed(2)}g'),
+              Text('Fat: ${_fatValue.toStringAsFixed(2)}g'),
+              Text('Calories: ${_kcalValue.toStringAsFixed(2)}kcal'),
             ],
           );
         } else if (snapshot.hasError) {
@@ -154,10 +180,10 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
         final adjustedFood = macros.Food(
           id: food.id,
           name: food.name,
-          kcal: food.kcal * _quantity / 100,
-          carbs: food.carbs * _quantity / 100,
-          fat: food.fat * _quantity / 100,
-          protein: food.protein * _quantity / 100,
+          kcal: _kcalValue,
+          carbs: _carbsValue,
+          fat: _fatValue,
+          protein: _proteinValue,
           quantity: _quantity,
           quantityUnit: _unit,
           portion: _unit,
@@ -197,23 +223,22 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
           debugPrint('_saveFood: Meal found with ID: ${meal.id}');
         }
 
-        if (widget.food == null) {
-          debugPrint('_saveFood: Adding food to meal with ID: ${meal.id}');
+        if (widget.myFoodId == null) {
+          debugPrint('_saveFood: Adding new food to meal with ID: ${meal.id}');
           await mealsService.addFoodToMeal(
             mealId: meal.id!,
             food: adjustedFood,
             quantity: _quantity,
           );
-          debugPrint('_saveFood: Food added to meal successfully');
         } else {
           debugPrint('_saveFood: Updating food in meal with ID: ${meal.id}');
           await mealsService.updateFoodInMeal(
-            myFoodId: widget.food!.id!,
+            myFoodId: widget.myFoodId!,
             newQuantity: _quantity,
           );
-          debugPrint('_saveFood: Food updated in meal successfully');
         }
 
+        debugPrint('_saveFood: Food added/updated in meal successfully');
         Navigator.of(context).pop();
       }
     } catch (e) {
