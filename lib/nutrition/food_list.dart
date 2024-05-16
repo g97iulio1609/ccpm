@@ -23,6 +23,14 @@ class FoodList extends ConsumerWidget {
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           final mealsList = snapshot.data!;
+          if (mealsList.isEmpty) {
+            return const Center(
+              child: Text(
+                'No meals found for the selected date',
+                style: TextStyle(color: Colors.white),
+              ),
+            );
+          }
           return ListView(
             children: [
               _buildMealSection(context, ref, 'Breakfast', mealsList.firstWhere((meal) => meal.mealType == 'Breakfast', orElse: () => meals.Meal.emptyMeal(userId, mealsList.first.dailyStatsId, selectedDate, 'Breakfast'))),
@@ -51,7 +59,7 @@ class FoodList extends ConsumerWidget {
   }
 
   Widget _buildMealSection(BuildContext context, WidgetRef ref, String mealName, meals.Meal meal) {
-    final macrosService = ref.watch(macrosServiceProvider);
+    final mealsService = ref.read(mealsServiceProvider);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -63,24 +71,25 @@ class FoodList extends ConsumerWidget {
             style: const TextStyle(color: Colors.white),
           ),
           children: [
-            for (String foodId in meal.foodIds)
-              FutureBuilder<macros.Food?>(
-                future: macrosService.getFoodById(foodId),
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    final food = snapshot.data!;
-                    return _buildFoodItem(context, ref, meal, food);
-                  } else if (snapshot.hasError) {
-                    return ListTile(
-                      title: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.white)),
-                    );
-                  } else {
-                    return const ListTile(
-                      title: CircularProgressIndicator(),
-                    );
-                  }
-                },
-              ),
+            StreamBuilder<List<macros.Food>>(
+              stream: mealsService.getFoodsForMeal(meal.id!),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  final foods = snapshot.data!;
+                  return Column(
+                    children: foods.map((food) => _buildFoodItem(context, ref, meal, food)).toList(),
+                  );
+                } else if (snapshot.hasError) {
+                  return ListTile(
+                    title: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.white)),
+                  );
+                } else {
+                  return const ListTile(
+                    title: CircularProgressIndicator(),
+                  );
+                }
+              },
+            ),
             ListTile(
               title: const Text('Add Food', style: TextStyle(color: Colors.orange)),
               onTap: () {
@@ -107,7 +116,7 @@ class FoodList extends ConsumerWidget {
       trailing: IconButton(
         icon: const Icon(Icons.delete, color: Colors.white),
         onPressed: () {
-          mealsService.removeFoodFromMeal(mealId: meal.id!, food: food);
+          mealsService.removeFoodFromMeal(mealId: meal.id!, myFoodId: food.id!);
         },
       ),
     );

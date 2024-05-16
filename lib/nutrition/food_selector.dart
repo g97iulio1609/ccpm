@@ -189,6 +189,7 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
         await mealsService.addFoodToMeal(
           mealId: meal.id!,
           food: adjustedFood,
+          quantity: _quantity,
         );
 
         debugPrint('_saveFood: Food added to meal successfully');
