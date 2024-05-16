@@ -50,18 +50,31 @@ class MealsService {
     });
   }
 
-  Future<meals.Meal?> getMealById(String mealId) async {
-    final mealDoc = await _firestore.collection('meals').doc(mealId).get();
-    if (mealDoc.exists) {
-      return meals.Meal.fromFirestore(mealDoc);
-    } else {
+Future<meals.Meal?> getMealById(String mealId) async {
+    debugPrint('getMealById: Fetching meal with ID: $mealId');
+    final mealRef = _firestore.collection('meals').doc(mealId);
+    final mealSnapshot = await mealRef.get();
+
+    if (!mealSnapshot.exists) {
       return null;
     }
+
+    return meals.Meal.fromMap(mealSnapshot.data()!);
   }
 
-  Future<void> addMeal(meals.Meal meal) async {
-    await _firestore.collection('meals').add(meal.toMap());
+
+
+
+ Future<String> addMeal(meals.Meal meal, String dailyStatsId) async {
+    final mealRef = _firestore.collection('meals').doc();
+    meal.id = mealRef.id;
+    meal.dailyStatsId = dailyStatsId; // Associa l'ID dailyStats al pasto
+    debugPrint('addMeal: Attempting to add meal: ${meal.toMap()}');
+    await mealRef.set(meal.toMap());
+    debugPrint('addMeal: Meal added with ID: ${mealRef.id}');
+    return mealRef.id;
   }
+
 
   Future<void> updateMeal(String mealId, meals.Meal updatedMeal) async {
     await _firestore.collection('meals').doc(mealId).update(updatedMeal.toMap());
@@ -71,38 +84,24 @@ class MealsService {
     await _firestore.collection('meals').doc(mealId).delete();
   }
 
-Future<void> addFoodToMeal({
-  required String mealId,
-  required macros.Food food,
-}) async {
-  try {
-    debugPrint('Called addFoodToMeal && mealId is $mealId ');
-    debugPrint('Attempting to add food to meal. Food ID: ${food.id}');
-    if (food.id == null) {
-      throw Exception('Food ID is null');
+ Future<void> addFoodToMeal({required String mealId, required macros.Food food}) async {
+    debugPrint('addFoodToMeal: Adding food to meal with ID: $mealId');
+    final mealRef = _firestore.collection('meals').doc(mealId);
+    final mealSnapshot = await mealRef.get();
+
+    if (!mealSnapshot.exists) {
+      throw Exception('Meal not found');
     }
 
-    final mealDoc = await _firestore.collection('meals').doc(mealId).get();
-    if (mealDoc.exists) {
-      final meal = meals.Meal.fromFirestore(mealDoc);
-      meal.foodIds.add(food.id!);
-      meal.totalCalories += food.kcal;
-      meal.totalCarbs += food.carbs;
-      meal.totalFat += food.fat;
-      meal.totalProtein += food.protein;
+    final mealData = mealSnapshot.data();
+    debugPrint('addFoodToMeal: Retrieved meal data: $mealData');
 
-      debugPrint('Updating meal: ${meal.toMap()}');
-      await updateMeal(mealId, meal);
-    } else {
-      throw Exception('Meal document does not exist');
-    }
-  } catch (e) {
-    debugPrint('Error adding food to meal: $e');
-    throw e; // Re-throw the error to be caught by the caller
+    final meal = meals.Meal.fromMap(mealData!);
+    meal.foodIds.add(food.id!);
+
+    await mealRef.update(meal.toMap());
+    debugPrint('addFoodToMeal: Food added to meal successfully');
   }
-}
-
-
 
   Future<void> removeFoodFromMeal({
     required String mealId,
@@ -120,7 +119,50 @@ Future<void> addFoodToMeal({
     }
   }
 
-  Future<meals.DailyStats?> getDailyStatsByDate(String userId, DateTime date) async {
+ Future<void> createDailyStatsIfNotExist(String userId, DateTime date) async {
+    final dailyStats = await getDailyStatsByDate(userId, date);
+    if (dailyStats == null) {
+      final newStats = meals.DailyStats(userId: userId, date: date);
+      await _firestore.collection('dailyStats').add(newStats.toMap());
+      debugPrint('createDailyStatsIfNotExist: DailyStats created for user $userId on $date');
+    }
+  }
+
+  Future<void> createMealsIfNotExist(String userId, DateTime date) async {
+    final dailyStats = await getDailyStatsByDate(userId, date);
+    if (dailyStats == null) {
+      throw Exception('DailyStats not found for the specified date');
+    }
+
+    final dailyStatsId = dailyStats.id!;
+    final mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
+
+    for (final mealType in mealTypes) {
+      final mealQuery = await _firestore
+          .collection('meals')
+          .where('userId', isEqualTo: userId)
+          .where('dailyStatsId', isEqualTo: dailyStatsId)
+          .where('mealType', isEqualTo: mealType)
+          .get();
+
+      if (mealQuery.docs.isEmpty) {
+        final newMeal = meals.Meal(
+          userId: userId,
+          dailyStatsId: dailyStatsId,
+          date: date,
+          mealType: mealType,
+          foodIds: [],
+        );
+        final mealId = await addMeal(newMeal, dailyStatsId);
+        debugPrint('createMealsIfNotExist: $mealType meal created with ID: $mealId for user $userId on $date');
+      } else {
+        debugPrint('createMealsIfNotExist: $mealType meal already exists for user $userId on $date');
+      }
+    }
+  }
+
+
+    Future<meals.DailyStats?> getDailyStatsByDate(String userId, DateTime date) async {
     final startOfDay = DateTime(date.year, date.month, date.day);
     final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
 
@@ -137,6 +179,7 @@ Future<void> addFoodToMeal({
       return null;
     }
   }
+
 
   Future<void> addDailyStats(meals.DailyStats stats) async {
     await _firestore.collection('dailyStats').add(stats.toMap());

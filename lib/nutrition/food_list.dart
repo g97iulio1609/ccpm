@@ -25,9 +25,9 @@ class FoodList extends ConsumerWidget {
           final mealsList = snapshot.data!;
           return ListView(
             children: [
-              _buildMealSection(context, ref, 'Breakfast', mealsList.firstWhere((meal) => meal.mealType == 'Breakfast', orElse: () => meals.Meal.emptyMeal(userId, selectedDate, 'Breakfast'))),
-              _buildMealSection(context, ref, 'Lunch', mealsList.firstWhere((meal) => meal.mealType == 'Lunch', orElse: () => meals.Meal.emptyMeal(userId, selectedDate, 'Lunch'))),
-              _buildMealSection(context, ref, 'Dinner', mealsList.firstWhere((meal) => meal.mealType == 'Dinner', orElse: () => meals.Meal.emptyMeal(userId, selectedDate, 'Dinner'))),
+              _buildMealSection(context, ref, 'Breakfast', mealsList.firstWhere((meal) => meal.mealType == 'Breakfast', orElse: () => meals.Meal.emptyMeal(userId, mealsList.first.dailyStatsId, selectedDate, 'Breakfast'))),
+              _buildMealSection(context, ref, 'Lunch', mealsList.firstWhere((meal) => meal.mealType == 'Lunch', orElse: () => meals.Meal.emptyMeal(userId, mealsList.first.dailyStatsId, selectedDate, 'Lunch'))),
+              _buildMealSection(context, ref, 'Dinner', mealsList.firstWhere((meal) => meal.mealType == 'Dinner', orElse: () => meals.Meal.emptyMeal(userId, mealsList.first.dailyStatsId, selectedDate, 'Dinner'))),
               for (int i = 0; i < _getSnackMeals(mealsList).length; i++)
                 _buildMealSection(context, ref, 'Snack ${i + 1}', _getSnackMeals(mealsList)[i]),
               _buildAddSnackButton(context, _getSnackMeals(mealsList).length),
@@ -103,7 +103,7 @@ class FoodList extends ConsumerWidget {
     return ListTile(
       leading: const Icon(Icons.fastfood, color: Colors.white),
       title: Text(food.name, style: const TextStyle(color: Colors.white)),
-      subtitle: Text('${food.quantity} ${food.quantityUnit}', style: const TextStyle(color: Colors.white)),
+      subtitle: Text('${food.quantity} ${food.portion}', style: const TextStyle(color: Colors.white)),
       trailing: IconButton(
         icon: const Icon(Icons.delete, color: Colors.white),
         onPressed: () {

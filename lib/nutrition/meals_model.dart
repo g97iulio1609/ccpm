@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class Meal {
   String? id;
   String userId;
+  String dailyStatsId; // Aggiungi il riferimento a dailyStats
   DateTime date;
   String mealType; // Breakfast, Lunch, Dinner, Snack
   List<String> foodIds; // IDs of the foods in this meal
@@ -15,6 +16,7 @@ class Meal {
   Meal({
     this.id,
     required this.userId,
+    required this.dailyStatsId,
     required this.date,
     required this.mealType,
     required this.foodIds,
@@ -24,6 +26,32 @@ class Meal {
     this.totalProtein = 0,
   });
 
+   Meal copyWith({
+    String? id,
+    String?dailyStatsId,
+    String? userId,
+    DateTime? date,
+    String? mealType,
+    List<String>? foodIds,
+    double? totalCalories,
+    double? totalCarbs,
+    double? totalFat,
+    double? totalProtein,
+  }) {
+    return Meal(
+      id: id ?? this.id,
+      dailyStatsId: dailyStatsId ?? this.dailyStatsId,
+      userId: userId ?? this.userId,
+      date: date ?? this.date,
+      mealType: mealType ?? this.mealType,
+      foodIds: foodIds ?? this.foodIds,
+      totalCalories: totalCalories ?? this.totalCalories,
+      totalCarbs: totalCarbs ?? this.totalCarbs,
+      totalFat: totalFat ?? this.totalFat,
+      totalProtein: totalProtein ?? this.totalProtein,
+    );
+  }
+
   factory Meal.fromJson(String source) => Meal.fromMap(json.decode(source));
 
   String toJson() => json.encode(toMap());
@@ -32,6 +60,7 @@ class Meal {
     return Meal(
       id: map['id'],
       userId: map['userId'],
+      dailyStatsId: map['dailyStatsId'],
       date: (map['date'] as Timestamp).toDate(),
       mealType: map['mealType'],
       foodIds: List<String>.from(map['foodIds']),
@@ -47,6 +76,7 @@ class Meal {
     return Meal(
       id: doc.id,
       userId: data['userId'],
+      dailyStatsId: data['dailyStatsId'],
       date: (data['date'] as Timestamp).toDate(),
       mealType: data['mealType'],
       foodIds: List<String>.from(data['foodIds']),
@@ -61,6 +91,7 @@ class Meal {
     return {
       'id': id,
       'userId': userId,
+      'dailyStatsId': dailyStatsId,
       'date': Timestamp.fromDate(date),
       'mealType': mealType,
       'foodIds': foodIds,
@@ -71,15 +102,17 @@ class Meal {
     };
   }
 
-  static Meal emptyMeal(String userId, DateTime date, String mealType) {
+  static Meal emptyMeal(String userId, String dailyStatsId, DateTime date, String mealType) {
     return Meal(
       userId: userId,
+      dailyStatsId: dailyStatsId,
       date: date,
       mealType: mealType,
       foodIds: [],
     );
   }
 }
+
 
 class DailyStats {
   String? id;

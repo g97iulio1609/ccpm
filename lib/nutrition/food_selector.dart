@@ -44,6 +44,7 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
               onSelected: (macros.Food food) {
                 setState(() {
                   _selectedFoodId = food.id!;
+                  debugPrint('AutoTypeField: Selected food ID: $_selectedFoodId');
                 });
               },
             ),
@@ -61,8 +62,11 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
     return FutureBuilder<macros.Food?>(
       future: macrosService.getFoodById(_selectedFoodId),
       builder: (context, snapshot) {
-        if (snapshot.hasData) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const CircularProgressIndicator();
+        } else if (snapshot.hasData) {
           final food = snapshot.data!;
+          debugPrint('FutureBuilder: Retrieved food: ${food.toJson()}');
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -84,6 +88,7 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
                       onChanged: (value) {
                         setState(() {
                           _quantity = double.tryParse(value) ?? 100.0;
+                          debugPrint('TextField: Quantity changed to: $_quantity');
                         });
                       },
                     ),
@@ -100,6 +105,7 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
                     onChanged: (String? newValue) {
                       setState(() {
                         _unit = newValue!;
+                        debugPrint('DropdownButton: Unit changed to: $_unit');
                       });
                     },
                   ),
@@ -116,7 +122,7 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
         } else if (snapshot.hasError) {
           return Text('Error: ${snapshot.error}');
         } else {
-          return const CircularProgressIndicator();
+          return const Text('No data');
         }
       },
     );
@@ -127,9 +133,9 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
       final mealsService = ref.read(mealsServiceProvider);
       final macrosService = ref.read(macrosServiceProvider);
 
-      debugPrint('Selected food ID: $_selectedFoodId');
+      debugPrint('_saveFood: Selected food ID: $_selectedFoodId');
       final food = await macrosService.getFoodById(_selectedFoodId);
-      debugPrint('Retrieved food: ${food?.toJson()}');
+      debugPrint('_saveFood: Retrieved food: ${food?.toJson()}');
 
       if (food != null) {
         final adjustedFood = macros.Food(
@@ -142,45 +148,54 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
           quantity: _quantity,
           quantityUnit: _unit,
           portion: _unit,
-          sugar: food.sugar ?? 0.0,
-          fiber: food.fiber ?? 0.0,
-          saturatedFat: food.saturatedFat ?? 0.0,
-          polyunsaturatedFat: food.polyunsaturatedFat ?? 0.0,
-          monounsaturatedFat: food.monounsaturatedFat ?? 0.0,
-          transFat: food.transFat ?? 0.0,
-          cholesterol: food.cholesterol ?? 0.0,
-          sodium: food.sodium ?? 0.0,
-          potassium: food.potassium ?? 0.0,
-          vitaminA: food.vitaminA ?? 0.0,
-          vitaminC: food.vitaminC ?? 0.0,
-          calcium: food.calcium ?? 0.0,
-          iron: food.iron ?? 0.0,
+          sugar: food.sugar,
+          fiber: food.fiber,
+          saturatedFat: food.saturatedFat,
+          polyunsaturatedFat: food.polyunsaturatedFat,
+          monounsaturatedFat: food.monounsaturatedFat,
+          transFat: food.transFat,
+          cholesterol: food.cholesterol,
+          sodium: food.sodium,
+          potassium: food.potassium,
+          vitaminA: food.vitaminA,
+          vitaminC: food.vitaminC,
+          calcium: food.calcium,
+          iron: food.iron,
         );
 
-        debugPrint('Saving food: ${adjustedFood.toJson()}');
+        debugPrint('_saveFood: Saving adjusted food: ${adjustedFood.toJson()}');
 
         // Check if meal exists, if not create it
-        var meal = await mealsService.getMealById(widget.meal.id!);
+        debugPrint('_saveFood: Checking if meal exists with ID: ${widget.meal.id}');
+        var meal = await mealsService.getMealById(widget.meal.id ?? '');
         if (meal == null) {
+          debugPrint('_saveFood: Meal not found, creating new meal');
           meal = meals.Meal(
             userId: widget.meal.userId,
+            dailyStatsId: widget.meal.dailyStatsId,
             date: widget.meal.date,
             mealType: widget.meal.mealType,
             foodIds: [],
           );
-          await mealsService.addMeal(meal);
-          debugPrint('Created new meal: ${meal.toMap()}');
+          final newMealId = await mealsService.addMeal(meal, widget.meal.dailyStatsId);
+          debugPrint('_saveFood: New meal ID received: $newMealId');
+          meal = meal.copyWith(id: newMealId); // Assign the generated ID
+          debugPrint('_saveFood: Created new meal with ID: ${meal.id}');
+        } else {
+          debugPrint('_saveFood: Meal found with ID: ${meal.id}');
         }
 
+        debugPrint('_saveFood: Adding food to meal with ID: ${meal.id}');
         await mealsService.addFoodToMeal(
           mealId: meal.id!,
           food: adjustedFood,
         );
 
+        debugPrint('_saveFood: Food added to meal successfully');
         Navigator.of(context).pop();
       }
     } catch (e) {
-      debugPrint('Error saving food: $e');
+      debugPrint('_saveFood: Error saving food: $e');
     }
   }
 }

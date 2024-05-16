@@ -1,10 +1,10 @@
 import 'package:alphanessone/users_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'macros_model.dart';
+import 'meals_services.dart';
 import 'macros_services.dart';
-import 'food_management.dart';
 import 'food_list.dart';
+import 'food_management.dart';
 
 class DailyFoodTracker extends ConsumerStatefulWidget {
   const DailyFoodTracker({super.key});
@@ -21,6 +21,7 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
   @override
   void initState() {
     super.initState();
+    _initializeDailyStatsAndMeals();
     _loadUserTDEE();
   }
 
@@ -35,10 +36,26 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
     }
   }
 
+  Future<void> _initializeDailyStatsAndMeals() async {
+    final userService = ref.read(usersServiceProvider);
+    final userId = userService.getCurrentUserId();
+    final mealsService = ref.read(mealsServiceProvider);
+
+    await mealsService.createDailyStatsIfNotExist(userId, _selectedDate);
+    await mealsService.createMealsIfNotExist(userId, _selectedDate);
+  }
+
   void _navigateToAddFood(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (context) => const FoodManagement()),
     );
+  }
+
+  void _changeDate(DateTime newDate) {
+    setState(() {
+      _selectedDate = newDate;
+    });
+    _initializeDailyStatsAndMeals();
   }
 
   @override
@@ -61,17 +78,13 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
           IconButton(
             icon: const Icon(Icons.chevron_left),
             onPressed: () {
-              setState(() {
-                _selectedDate = _selectedDate.subtract(const Duration(days: 1));
-              });
+              _changeDate(_selectedDate.subtract(const Duration(days: 1)));
             },
           ),
           IconButton(
             icon: const Icon(Icons.chevron_right),
             onPressed: () {
-              setState(() {
-                _selectedDate = _selectedDate.add(const Duration(days: 1));
-              });
+              _changeDate(_selectedDate.add(const Duration(days: 1)));
             },
           ),
         ],
