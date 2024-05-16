@@ -255,7 +255,13 @@ class MealsService extends ChangeNotifier {
       return null;
     }
   }
-
+Future<void> updateMyFood({required String myFoodId, required macros.Food updatedFood}) async {
+  debugPrint('updateMyFood: Updating food with ID: $myFoodId');
+  final myFoodRef = _firestore.collection('myfoods').doc(myFoodId);
+  await myFoodRef.update(updatedFood.toMap());
+  notifyListeners(); // Notify listeners when a food is updated
+  debugPrint('updateMyFood: Food updated successfully');
+}
   Future<void> addDailyStats(meals.DailyStats stats) async {
     await _firestore.collection('dailyStats').add(stats.toMap());
   }

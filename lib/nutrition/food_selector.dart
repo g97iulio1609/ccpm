@@ -28,18 +28,24 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
   double _fatValue = 0.0;
   double _kcalValue = 0.0;
 
+  Future<macros.Food?>? _foodFuture;
+
   @override
   void initState() {
     super.initState();
+    debugPrint('initState: myFoodId = ${widget.myFoodId}');
     if (widget.myFoodId != null) {
-      _loadFoodData(widget.myFoodId!);
+      _selectedFoodId = widget.myFoodId!;
+      _foodFuture = _loadFoodData(widget.myFoodId!);
     }
   }
 
-  Future<void> _loadFoodData(String foodId) async {
+  Future<macros.Food?> _loadFoodData(String foodId) async {
+    debugPrint('_loadFoodData: Loading food data for ID = $foodId');
     final mealsService = ref.read(mealsServiceProvider);
     final food = await mealsService.getMyFoodById(foodId);
     if (food != null) {
+      debugPrint('_loadFoodData: Food data loaded: ${food.toJson()}');
       setState(() {
         _selectedFoodId = food.id!;
         _quantity = food.quantity;
@@ -47,14 +53,24 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
         _quantityController.text = food.quantity.toString();
         _updateMacronutrientValues(food);
       });
+      return food;
+    } else {
+      debugPrint('_loadFoodData: No food data found for ID = $foodId');
+      setState(() {
+        _selectedFoodId = '';
+      });
+      return null;
     }
   }
 
   void _updateMacronutrientValues(macros.Food food) {
-    _proteinValue = food.protein * _quantity / 100;
-    _carbsValue = food.carbs * _quantity / 100;
-    _fatValue = food.fat * _quantity / 100;
-    _kcalValue = food.kcal * _quantity / 100;
+    debugPrint('_updateMacronutrientValues: Updating macronutrient values for food: ${food.toJson()}');
+    setState(() {
+      _proteinValue = food.protein * _quantity / 100;
+      _carbsValue = food.carbs * _quantity / 100;
+      _fatValue = food.fat * _quantity / 100;
+      _kcalValue = food.kcal * _quantity / 100;
+    });
   }
 
   @override
@@ -85,8 +101,8 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
                   });
                 },
               ),
-            if (_selectedFoodId.isNotEmpty || widget.myFoodId != null)
-              _buildSelectedFoodDetails(context),
+            if (_selectedFoodId.isNotEmpty)
+              Expanded(child: _buildSelectedFoodDetails(context)),
           ],
         ),
       ),
@@ -94,13 +110,15 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
   }
 
   Widget _buildSelectedFoodDetails(BuildContext context) {
+    debugPrint('_buildSelectedFoodDetails: Building details for food ID = $_selectedFoodId');
     final macrosService = ref.watch(macrosServiceProvider);
 
     return FutureBuilder<macros.Food?>(
-      future: macrosService.getFoodById(_selectedFoodId),
+      future: _foodFuture ?? macrosService.getFoodById(_selectedFoodId),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const CircularProgressIndicator();
+          debugPrint('FutureBuilder: Waiting for data');
+          return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasData) {
           final food = snapshot.data!;
           debugPrint('FutureBuilder: Retrieved food: ${food.toJson()}');
@@ -159,8 +177,10 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
             ],
           );
         } else if (snapshot.hasError) {
+          debugPrint('FutureBuilder: Error: ${snapshot.error}');
           return Text('Error: ${snapshot.error}');
         } else {
+          debugPrint('FutureBuilder: No data');
           return const Text('No data');
         }
       },
@@ -180,10 +200,10 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
         final adjustedFood = macros.Food(
           id: food.id,
           name: food.name,
-          kcal: _kcalValue,
-          carbs: _carbsValue,
-          fat: _fatValue,
-          protein: _proteinValue,
+          kcal: food.kcal * _quantity / 100,
+          carbs: food.carbs * _quantity / 100,
+          fat: food.fat * _quantity / 100,
+          protein: food.protein * _quantity / 100,
           quantity: _quantity,
           quantityUnit: _unit,
           portion: _unit,
@@ -204,41 +224,24 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
 
         debugPrint('_saveFood: Saving adjusted food: ${adjustedFood.toJson()}');
 
-        // Check if meal exists, if not create it
-        debugPrint('_saveFood: Checking if meal exists with ID: ${widget.meal.id}');
-        var meal = await mealsService.getMealById(widget.meal.id ?? '');
-        if (meal == null) {
-          debugPrint('_saveFood: Meal not found, creating new meal');
-          meal = meals.Meal(
-            userId: widget.meal.userId,
-            dailyStatsId: widget.meal.dailyStatsId,
-            date: widget.meal.date,
-            mealType: widget.meal.mealType,
-          );
-          final newMealId = await mealsService.addMeal(meal, widget.meal.dailyStatsId);
-          debugPrint('_saveFood: New meal ID received: $newMealId');
-          meal = meal.copyWith(id: newMealId); // Assign the generated ID
-          debugPrint('_saveFood: Created new meal with ID: ${meal.id}');
-        } else {
-          debugPrint('_saveFood: Meal found with ID: ${meal.id}');
-        }
-
         if (widget.myFoodId == null) {
-          debugPrint('_saveFood: Adding new food to meal with ID: ${meal.id}');
+          // Add new food to meal
+          debugPrint('_saveFood: Adding new food to meal with ID: ${widget.meal.id}');
           await mealsService.addFoodToMeal(
-            mealId: meal.id!,
+            mealId: widget.meal.id!,
             food: adjustedFood,
             quantity: _quantity,
           );
         } else {
-          debugPrint('_saveFood: Updating food in meal with ID: ${meal.id}');
-          await mealsService.updateFoodInMeal(
+          // Update existing food in myfoods collection
+          debugPrint('_saveFood: Updating existing food in myfoods collection');
+          await mealsService.updateMyFood(
             myFoodId: widget.myFoodId!,
-            newQuantity: _quantity,
+            updatedFood: adjustedFood,
           );
         }
 
-        debugPrint('_saveFood: Food added/updated in meal successfully');
+        debugPrint('_saveFood: Food added/updated successfully');
         Navigator.of(context).pop();
       }
     } catch (e) {
