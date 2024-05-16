@@ -130,6 +130,9 @@ class MealsService extends ChangeNotifier {
     await mealRef.update(meal.toMap());
     notifyListeners();  // Notify listeners when a food is added to a meal
     debugPrint('addFoodToMeal: Food added to meal successfully');
+
+    // Update meal and daily stats with the new food values
+    await updateMealAndDailyStats(mealId, food, isAdding: true);
   }
 
   Future<void> updateFoodInMeal({required String myFoodId, required double newQuantity}) async {
@@ -181,12 +184,21 @@ class MealsService extends ChangeNotifier {
     }
 
     final meal = meals.Meal.fromFirestore(mealSnapshot);
-    await mealRef.update(meal.toMap());
-
+    
+    // Get the food data to update meal and daily stats
     final myFoodRef = _firestore.collection('myfoods').doc(myFoodId);
+    final myFoodSnapshot = await myFoodRef.get();
+    if (!myFoodSnapshot.exists) {
+      throw Exception('Food not found');
+    }
+
+    final myFood = macros.Food.fromFirestore(myFoodSnapshot);
     await myFoodRef.delete();
     notifyListeners();  // Notify listeners when a food is removed from a meal
     debugPrint('removeFoodFromMeal: Food removed from meal successfully');
+
+    // Update meal and daily stats with the removed food values
+    await updateMealAndDailyStats(mealId, myFood, isAdding: false);
   }
 
   Future<void> createDailyStatsIfNotExist(String userId, DateTime date) async {
@@ -302,7 +314,7 @@ class MealsService extends ChangeNotifier {
     return foodDocs.docs.map((doc) => macros.Food.fromFirestore(doc)).toList();
   }
 
-  Future<void> updateMealAndDailyStats(String mealId, macros.Food food) async {
+  Future<void> updateMealAndDailyStats(String mealId, macros.Food food, {required bool isAdding}) async {
     debugPrint('updateMealAndDailyStats: Updating meal and daily stats for meal ID: $mealId');
     final mealRef = _firestore.collection('meals').doc(mealId);
     final mealSnapshot = await mealRef.get();
@@ -314,10 +326,10 @@ class MealsService extends ChangeNotifier {
     final meal = meals.Meal.fromFirestore(mealSnapshot);
 
     // Aggiorna i valori nutrizionali del pasto
-    meal.totalCalories += food.kcal;
-    meal.totalCarbs += food.carbs;
-    meal.totalFat += food.fat;
-    meal.totalProtein += food.protein;
+    meal.totalCalories += isAdding ? food.kcal : -food.kcal;
+    meal.totalCarbs += isAdding ? food.carbs : -food.carbs;
+    meal.totalFat += isAdding ? food.fat : -food.fat;
+    meal.totalProtein += isAdding ? food.protein : -food.protein;
 
     await mealRef.update(meal.toMap());
 
@@ -331,13 +343,33 @@ class MealsService extends ChangeNotifier {
 
     final dailyStats = meals.DailyStats.fromFirestore(dailyStatsSnapshot);
 
-    dailyStats.totalCalories += food.kcal;
-    dailyStats.totalCarbs += food.carbs;
-    dailyStats.totalFat += food.fat;
-    dailyStats.totalProtein += food.protein;
+    dailyStats.totalCalories += isAdding ? food.kcal : -food.kcal;
+    dailyStats.totalCarbs += isAdding ? food.carbs : -food.carbs;
+    dailyStats.totalFat += isAdding ? food.fat : -food.fat;
+    dailyStats.totalProtein += isAdding ? food.protein : -food.protein;
 
     await dailyStatsRef.update(dailyStats.toMap());
 
     debugPrint('updateMealAndDailyStats: Meal and daily stats updated successfully');
   }
+
+  Stream<meals.DailyStats> getDailyStatsByDateStream(String userId, DateTime date) {
+    final startOfDay = DateTime(date.year, date.month, date.day);
+    final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
+
+    return _firestore
+        .collection('dailyStats')
+        .where('userId', isEqualTo: userId)
+        .where('date', isGreaterThanOrEqualTo: startOfDay)
+        .where('date', isLessThanOrEqualTo: endOfDay)
+        .snapshots()
+        .map((snapshot) {
+      if (snapshot.docs.isNotEmpty) {
+        return meals.DailyStats.fromFirestore(snapshot.docs.first);
+      } else {
+        throw Exception('DailyStats not found');
+      }
+    });
+  }
+
 }

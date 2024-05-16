@@ -5,6 +5,7 @@ import 'meals_services.dart';
 import 'macros_services.dart';
 import 'food_list.dart';
 import 'food_management.dart';
+import 'meals_model.dart' as meals;
 
 class DailyFoodTracker extends ConsumerStatefulWidget {
   const DailyFoodTracker({super.key});
@@ -16,15 +17,10 @@ class DailyFoodTracker extends ConsumerStatefulWidget {
 class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
   DateTime _selectedDate = DateTime.now();
   int _targetCalories = 2000;
-  double _consumedCalories = 1425;
-  double _totalProtein = 0;
-  double _totalCarbs = 0;
-  double _totalFat = 0;
 
   @override
   void initState() {
     super.initState();
-    _initializeDailyStatsAndMeals();
     _loadUserTDEE();
   }
 
@@ -39,25 +35,6 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
     }
   }
 
-  Future<void> _initializeDailyStatsAndMeals() async {
-    final userService = ref.read(usersServiceProvider);
-    final userId = userService.getCurrentUserId();
-    final mealsService = ref.read(mealsServiceProvider);
-
-    await mealsService.createDailyStatsIfNotExist(userId, _selectedDate);
-    await mealsService.createMealsIfNotExist(userId, _selectedDate);
-
-    final dailyStats = await mealsService.getDailyStatsByDate(userId, _selectedDate);
-    if (dailyStats != null) {
-      setState(() {
-        _consumedCalories = dailyStats.totalCalories;
-        _totalProtein = dailyStats.totalProtein;
-        _totalCarbs = dailyStats.totalCarbs;
-        _totalFat = dailyStats.totalFat;
-      });
-    }
-  }
-
   void _navigateToAddFood(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (context) => const FoodManagement()),
@@ -68,14 +45,11 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
     setState(() {
       _selectedDate = newDate;
     });
-    _initializeDailyStatsAndMeals();
   }
 
   @override
   Widget build(BuildContext context) {
-    final macrosService = ref.watch(macrosServiceProvider);
-    final userService = ref.watch(usersServiceProvider);
-    final userId = userService.getCurrentUserId();
+    final dailyStats = ref.watch(dailyStatsProvider(_selectedDate));
 
     final bool isToday = _selectedDate.isAtSameMomentAs(DateTime(
       DateTime.now().year,
@@ -110,82 +84,88 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Container(
-            color: Colors.black,
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: dailyStats.when(
+        data: (stats) {
+          return Column(
+            children: [
+              Container(
+                color: Colors.black,
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(child: _buildMacroItem('Protein', _totalProtein, 210, Colors.green)),
-                    const SizedBox(width: 8),
-                    Expanded(child: _buildMacroItem('Carbohydrates', _totalCarbs, 125, Colors.orange)),
-                    const SizedBox(width: 8),
-                    Expanded(child: _buildMacroItem('Fat', _totalFat, 35, Colors.purple)),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(child: _buildMacroItem('Protein', stats.totalProtein, 210, Colors.green)),
+                        const SizedBox(width: 8),
+                        Expanded(child: _buildMacroItem('Carbohydrates', stats.totalCarbs, 125, Colors.orange)),
+                        const SizedBox(width: 8),
+                        Expanded(child: _buildMacroItem('Fat', stats.totalFat, 35, Colors.purple)),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          stats.totalCalories.toStringAsFixed(0),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                          ),
+                        ),
+                        Text(
+                          '${(_targetCalories - stats.totalCalories).toStringAsFixed(0)} Cal Remaining',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
                     Text(
-                      _consumedCalories.toStringAsFixed(0),
+                      'of $_targetCalories Cal Goal',
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 24,
-                      ),
-                    ),
-                    Text(
-                      '${(_targetCalories - _consumedCalories).toStringAsFixed(0)} Cal Remaining',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
+                        fontSize: 12,
                       ),
                     ),
                   ],
                 ),
-                Text(
-                  'of $_targetCalories Cal Goal',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: FoodList(selectedDate: _selectedDate),
-          ),
-          Container(
-            color: Colors.black,
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    decoration: const InputDecoration(
-                      hintText: 'Search for food',
-                      hintStyle: TextStyle(color: Colors.white54),
-                      prefixIcon: Icon(Icons.search, color: Colors.white54),
-                      border: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white54),
+              ),
+              Expanded(
+                child: FoodList(selectedDate: _selectedDate),
+              ),
+              Container(
+                color: Colors.black,
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        decoration: const InputDecoration(
+                          hintText: 'Search for food',
+                          hintStyle: TextStyle(color: Colors.white54),
+                          prefixIcon: Icon(Icons.search, color: Colors.white54),
+                          border: OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.white54),
+                          ),
+                        ),
+                        style: const TextStyle(color: Colors.white),
+                        onChanged: (query) {
+                          ref.read(macrosServiceProvider).searchFoods(query);
+                        },
                       ),
                     ),
-                    style: const TextStyle(color: Colors.white),
-                    onChanged: (query) {
-                      macrosService.searchFoods(query);
-                    },
-                  ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-        ],
+              ),
+            ],
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Error: $err')),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _navigateToAddFood(context),
@@ -228,3 +208,11 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
     );
   }
 }
+
+final dailyStatsProvider = StreamProvider.autoDispose.family<meals.DailyStats, DateTime>((ref, date) {
+  final mealsService = ref.read(mealsServiceProvider);
+  final userService = ref.read(usersServiceProvider);
+  final userId = userService.getCurrentUserId();
+
+  return mealsService.getDailyStatsByDateStream(userId, date);
+});
