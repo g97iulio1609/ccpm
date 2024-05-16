@@ -255,13 +255,15 @@ class MealsService extends ChangeNotifier {
       return null;
     }
   }
-Future<void> updateMyFood({required String myFoodId, required macros.Food updatedFood}) async {
-  debugPrint('updateMyFood: Updating food with ID: $myFoodId');
-  final myFoodRef = _firestore.collection('myfoods').doc(myFoodId);
-  await myFoodRef.update(updatedFood.toMap());
-  notifyListeners(); // Notify listeners when a food is updated
-  debugPrint('updateMyFood: Food updated successfully');
-}
+
+  Future<void> updateMyFood({required String myFoodId, required macros.Food updatedFood}) async {
+    debugPrint('updateMyFood: Updating food with ID: $myFoodId');
+    final myFoodRef = _firestore.collection('myfoods').doc(myFoodId);
+    await myFoodRef.update(updatedFood.toMap());
+    notifyListeners(); // Notify listeners when a food is updated
+    debugPrint('updateMyFood: Food updated successfully');
+  }
+
   Future<void> addDailyStats(meals.DailyStats stats) async {
     await _firestore.collection('dailyStats').add(stats.toMap());
   }
@@ -298,5 +300,44 @@ Future<void> updateMyFood({required String myFoodId, required macros.Food update
   Future<List<macros.Food>> getFoodsForMeal(String mealId) async {
     final foodDocs = await _firestore.collection('myfoods').where('mealId', isEqualTo: mealId).get();
     return foodDocs.docs.map((doc) => macros.Food.fromFirestore(doc)).toList();
+  }
+
+  Future<void> updateMealAndDailyStats(String mealId, macros.Food food) async {
+    debugPrint('updateMealAndDailyStats: Updating meal and daily stats for meal ID: $mealId');
+    final mealRef = _firestore.collection('meals').doc(mealId);
+    final mealSnapshot = await mealRef.get();
+
+    if (!mealSnapshot.exists) {
+      throw Exception('Meal not found');
+    }
+
+    final meal = meals.Meal.fromFirestore(mealSnapshot);
+
+    // Aggiorna i valori nutrizionali del pasto
+    meal.totalCalories += food.kcal;
+    meal.totalCarbs += food.carbs;
+    meal.totalFat += food.fat;
+    meal.totalProtein += food.protein;
+
+    await mealRef.update(meal.toMap());
+
+    // Aggiorna i valori nutrizionali delle statistiche giornaliere
+    final dailyStatsRef = _firestore.collection('dailyStats').doc(meal.dailyStatsId);
+    final dailyStatsSnapshot = await dailyStatsRef.get();
+
+    if (!dailyStatsSnapshot.exists) {
+      throw Exception('DailyStats not found');
+    }
+
+    final dailyStats = meals.DailyStats.fromFirestore(dailyStatsSnapshot);
+
+    dailyStats.totalCalories += food.kcal;
+    dailyStats.totalCarbs += food.carbs;
+    dailyStats.totalFat += food.fat;
+    dailyStats.totalProtein += food.protein;
+
+    await dailyStatsRef.update(dailyStats.toMap());
+
+    debugPrint('updateMealAndDailyStats: Meal and daily stats updated successfully');
   }
 }

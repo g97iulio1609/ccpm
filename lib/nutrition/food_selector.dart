@@ -247,6 +247,10 @@ class _FoodSelectorState extends ConsumerState<FoodSelector> {
         }
 
         debugPrint('_saveFood: Food added/updated successfully');
+
+        // Update meal and daily stats with the new food values
+        await mealsService.updateMealAndDailyStats(widget.meal.id!, adjustedFood);
+
         Navigator.of(context).pop();
       }
     } catch (e) {
