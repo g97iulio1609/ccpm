@@ -1,8 +1,8 @@
 import 'package:alphanessone/measurements/measurements.dart';
-import 'package:alphanessone/nutrition/daily_food_tracker.dart';
-import 'package:alphanessone/nutrition/food_management.dart';
-import 'package:alphanessone/nutrition/macros_selector.dart';
-import 'package:alphanessone/nutrition/tdee.dart';
+import 'package:alphanessone/nutrition/tracker/daily_food_tracker.dart';
+import 'package:alphanessone/nutrition/tracker/food_management.dart';
+import 'package:alphanessone/nutrition/Calc/macros_selector.dart';
+import 'package:alphanessone/nutrition/Calc/tdee.dart';
 import 'package:alphanessone/training_gallery.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'macros_model.dart' as macros;
-import 'meals_model.dart' as meals;
-import 'meals_services.dart';
-import 'macros_services.dart';
+import '../models&Services/macros_model.dart' as macros;
+import '../models&Services/meals_model.dart' as meals;
+import '../models&Services/meals_services.dart';
+import '../models&Services/macros_services.dart';
 import 'autotype.dart';
 
 class FoodSelector extends ConsumerStatefulWidget {

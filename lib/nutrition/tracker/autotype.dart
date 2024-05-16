@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
-import 'macros_model.dart';
-import 'macros_services.dart';
+import '../models&Services/macros_model.dart';
+import '../models&Services/macros_services.dart';
 
 class AutoTypeField extends ConsumerWidget {
   final TextEditingController controller;

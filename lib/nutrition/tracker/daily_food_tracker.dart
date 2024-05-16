@@ -1,11 +1,11 @@
 import 'package:alphanessone/users_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'meals_services.dart';
-import 'macros_services.dart';
+import '../models&Services/meals_services.dart';
+import '../models&Services/macros_services.dart';
 import 'food_list.dart';
 import 'food_management.dart';
-import 'meals_model.dart' as meals;
+import '../models&Services/meals_model.dart' as meals;
 
 class DailyFoodTracker extends ConsumerStatefulWidget {
   const DailyFoodTracker({super.key});

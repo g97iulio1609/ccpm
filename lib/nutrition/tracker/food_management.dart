@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'macros_model.dart';
-import 'macros_services.dart';
+import '../models&Services/macros_model.dart';
+import '../models&Services/macros_services.dart';
 
 class FoodManagement extends HookConsumerWidget {
   const FoodManagement({super.key});
