@@ -1,10 +1,8 @@
 import 'package:alphanessone/users_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'macros_model.dart' as macros;
 import 'meals_model.dart' as meals;
 import 'meals_services.dart';
-import 'macros_services.dart';
 import 'food_selector.dart';
 
 class FoodList extends ConsumerWidget {
@@ -23,14 +21,6 @@ class FoodList extends ConsumerWidget {
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           final mealsList = snapshot.data!;
-          if (mealsList.isEmpty) {
-            return const Center(
-              child: Text(
-                'No meals found for the selected date',
-                style: TextStyle(color: Colors.white),
-              ),
-            );
-          }
           return ListView(
             children: [
               _buildMealSection(context, ref, 'Breakfast', mealsList.firstWhere((meal) => meal.mealType == 'Breakfast', orElse: () => meals.Meal.emptyMeal(userId, mealsList.first.dailyStatsId, selectedDate, 'Breakfast'))),
@@ -59,7 +49,7 @@ class FoodList extends ConsumerWidget {
   }
 
   Widget _buildMealSection(BuildContext context, WidgetRef ref, String mealName, meals.Meal meal) {
-    final mealsService = ref.read(mealsServiceProvider);
+    final mealsService = ref.watch(mealsServiceProvider);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -71,13 +61,13 @@ class FoodList extends ConsumerWidget {
             style: const TextStyle(color: Colors.white),
           ),
           children: [
-            StreamBuilder<List<macros.Food>>(
+            StreamBuilder<List<meals.Food>>(
               stream: mealsService.getFoodsForMeal(meal.id!),
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
-                  final foods = snapshot.data!;
+                  final foodList = snapshot.data!;
                   return Column(
-                    children: foods.map((food) => _buildFoodItem(context, ref, meal, food)).toList(),
+                    children: foodList.map((food) => _buildFoodItem(context, ref, meal, food)).toList(),
                   );
                 } else if (snapshot.hasError) {
                   return ListTile(
@@ -107,7 +97,7 @@ class FoodList extends ConsumerWidget {
     );
   }
 
-  Widget _buildFoodItem(BuildContext context, WidgetRef ref, meals.Meal meal, macros.Food food) {
+  Widget _buildFoodItem(BuildContext context, WidgetRef ref, meals.Meal meal, meals.Food food) {
     final mealsService = ref.read(mealsServiceProvider);
     return ListTile(
       leading: const Icon(Icons.fastfood, color: Colors.white),

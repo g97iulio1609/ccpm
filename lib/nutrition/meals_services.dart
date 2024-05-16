@@ -59,13 +59,13 @@ class MealsService {
       return null;
     }
 
-    return meals.Meal.fromMap(mealSnapshot.data()!);
+    return meals.Meal.fromFirestore(mealSnapshot);
   }
 
   Future<String> addMeal(meals.Meal meal, String dailyStatsId) async {
     final mealRef = _firestore.collection('meals').doc();
     meal.id = mealRef.id;
-    meal.dailyStatsId = dailyStatsId; // Associa l'ID dailyStats al pasto
+    meal.dailyStatsId = dailyStatsId;
     debugPrint('addMeal: Attempting to add meal: ${meal.toMap()}');
     await mealRef.set(meal.toMap());
     debugPrint('addMeal: Meal added with ID: ${mealRef.id}');
@@ -80,8 +80,11 @@ class MealsService {
     await _firestore.collection('meals').doc(mealId).delete();
   }
 
-  Future<void> addFoodToMeal({required String mealId, required macros.Food food, required double quantity}) async {
-    debugPrint('addFoodToMeal: Adding food to meal with ID: $mealId');
+  Future<void> addFoodToMeal({
+    required String mealId,
+    required macros.Food food,
+    required double quantity,
+  }) async {
     final mealRef = _firestore.collection('meals').doc(mealId);
     final mealSnapshot = await mealRef.get();
 
@@ -90,32 +93,42 @@ class MealsService {
     }
 
     final foodRef = _firestore.collection('myfoods').doc();
-    final foodData = food.toMap();
-    foodData['quantity'] = quantity;
-    foodData['totalKcal'] = food.kcal * quantity / 100;
-    foodData['totalCarbs'] = food.carbs * quantity / 100;
-    foodData['totalFat'] = food.fat * quantity / 100;
-    foodData['totalProtein'] = food.protein * quantity / 100;
-    foodData['mealId'] = mealId;
+    final adjustedFood = meals.Food(
+      id: foodRef.id,
+      mealId: mealId,
+      name: food.name,
+      kcal: food.kcal * quantity / 100,
+      carbs: food.carbs * quantity / 100,
+      fat: food.fat * quantity / 100,
+      protein: food.protein * quantity / 100,
+      quantity: quantity,
+      portion: food.portion,
+    );
 
-    await foodRef.set(foodData);
+    await foodRef.set(adjustedFood.toMap());
 
     final meal = meals.Meal.fromFirestore(mealSnapshot);
-    meal.foodIds.add(foodRef.id);
-    meal.totalCalories += foodData['totalKcal'];
-    meal.totalCarbs += foodData['totalCarbs'];
-    meal.totalFat += foodData['totalFat'];
-    meal.totalProtein += foodData['totalProtein'];
+    meal.totalCalories += adjustedFood.kcal;
+    meal.totalCarbs += adjustedFood.carbs;
+    meal.totalFat += adjustedFood.fat;
+    meal.totalProtein += adjustedFood.protein;
 
-    await mealRef.update(meal.toMap());
-    debugPrint('addFoodToMeal: Food added to meal successfully');
+    await updateMeal(mealId, meal);
   }
 
   Future<void> removeFoodFromMeal({
     required String mealId,
     required String myFoodId,
   }) async {
-    debugPrint('removeFoodFromMeal: Removing food from meal with ID: $mealId');
+    final foodRef = _firestore.collection('myfoods').doc(myFoodId);
+    final foodSnapshot = await foodRef.get();
+
+    if (!foodSnapshot.exists) {
+      throw Exception('Food not found');
+    }
+
+    final food = meals.Food.fromFirestore(foodSnapshot);
+
     final mealRef = _firestore.collection('meals').doc(mealId);
     final mealSnapshot = await mealRef.get();
 
@@ -124,23 +137,13 @@ class MealsService {
     }
 
     final meal = meals.Meal.fromFirestore(mealSnapshot);
-    final foodRef = _firestore.collection('myfoods').doc(myFoodId);
-    final foodSnapshot = await foodRef.get();
+    meal.totalCalories -= food.kcal;
+    meal.totalCarbs -= food.carbs;
+    meal.totalFat -= food.fat;
+    meal.totalProtein -= food.protein;
 
-    if (!foodSnapshot.exists) {
-      throw Exception('Food not found in meal');
-    }
-
-    final foodData = foodSnapshot.data() as Map<String, dynamic>;
-    meal.foodIds.remove(myFoodId);
-    meal.totalCalories -= foodData['totalKcal'];
-    meal.totalCarbs -= foodData['totalCarbs'];
-    meal.totalFat -= foodData['totalFat'];
-    meal.totalProtein -= foodData['totalProtein'];
-
+    await updateMeal(mealId, meal);
     await foodRef.delete();
-    await mealRef.update(meal.toMap());
-    debugPrint('removeFoodFromMeal: Food removed from meal successfully');
   }
 
   Future<void> createDailyStatsIfNotExist(String userId, DateTime date) async {
@@ -175,7 +178,6 @@ class MealsService {
           dailyStatsId: dailyStatsId,
           date: date,
           mealType: mealType,
-          foodIds: [],
         );
         final mealId = await addMeal(newMeal, dailyStatsId);
         debugPrint('createMealsIfNotExist: $mealType meal created with ID: $mealId for user $userId on $date');
@@ -236,13 +238,13 @@ class MealsService {
     await _firestore.collection('foods').doc(foodId).delete();
   }
 
-  Stream<List<macros.Food>> getFoodsForMeal(String mealId) {
+  Stream<List<meals.Food>> getFoodsForMeal(String mealId) {
     return _firestore
         .collection('myfoods')
         .where('mealId', isEqualTo: mealId)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) => macros.Food.fromFirestore(doc)).toList();
+      return snapshot.docs.map((doc) => meals.Food.fromFirestore(doc)).toList();
     });
   }
 }
