@@ -1,3 +1,4 @@
+// meals_services.dart
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -242,12 +243,85 @@ class MealsService extends ChangeNotifier {
     }
   }
 
+  Future<void> createDailyStatsForMonth(String userId, int year, int month) async {
+    final daysInMonth = DateTime(year, month + 1, 0).day;
+    final batch = _firestore.batch();
+
+    for (int day = 1; day <= daysInMonth; day++) {
+      final date = DateTime(year, month, day);
+      final dailyStats = await getDailyStatsByDate(userId, date);
+      if (dailyStats == null) {
+        final newStats = meals.DailyStats(userId: userId, date: date);
+        final dailyStatsRef = _firestore.collection('dailyStats').doc();
+        batch.set(dailyStatsRef, newStats.toMap());
+      }
+    }
+
+    await batch.commit();
+    debugPrint('createDailyStatsForMonth: DailyStats created for user $userId for month $month of year $year');
+  }
+
+  Future<void> createMealsForMonth(String userId, int year, int month) async {
+    final daysInMonth = DateTime(year, month + 1, 0).day;
+    final batch = _firestore.batch();
+
+    for (int day = 1; day <= daysInMonth; day++) {
+      final date = DateTime(year, month, day);
+      final dailyStats = await getDailyStatsByDate(userId, date);
+      if (dailyStats != null) {
+        final dailyStatsId = dailyStats.id!;
+        final mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
+
+        for (final mealType in mealTypes) {
+          final mealQuery = await _firestore
+              .collection('meals')
+              .where('userId', isEqualTo: userId)
+              .where('dailyStatsId', isEqualTo: dailyStatsId)
+              .where('mealType', isEqualTo: mealType)
+              .get();
+
+          if (mealQuery.docs.isEmpty) {
+            final newMeal = meals.Meal(
+              userId: userId,
+              dailyStatsId: dailyStatsId,
+              date: date,
+              mealType: mealType,
+            );
+            final mealRef = _firestore.collection('meals').doc();
+            batch.set(mealRef, newMeal.toMap());
+          }
+        }
+      }
+    }
+
+    await batch.commit();
+    debugPrint('createMealsForMonth: Meals created for user $userId for month $month of year $year');
+  }
+
+  Future<void> createDailyStatsForYear(String userId, int year) async {
+    final batch = _firestore.batch();
+    for (int month = 1; month <= 12; month++) {
+      await createDailyStatsForMonth(userId, year, month);
+    }
+    await batch.commit();
+    debugPrint('createDailyStatsForYear: DailyStats created for user $userId for year $year');
+  }
+
+  Future<void> createMealsForYear(String userId, int year) async {
+    final batch = _firestore.batch();
+    for (int month = 1; month <= 12; month++) {
+      await createMealsForMonth(userId, year, month);
+    }
+    await batch.commit();
+    debugPrint('createMealsForYear: Meals created for user $userId for year $year');
+  }
+
   Future<macros.Food?> getMyFoodById(String myFoodId) async {
-  final myFoodDoc = await _firestore.collection('myfoods').doc(myFoodId).get();
-  if (myFoodDoc.exists) {
-    return macros.Food.fromFirestore(myFoodDoc);
-  } else {
-    return null;
+    final myFoodDoc = await _firestore.collection('myfoods').doc(myFoodId).get();
+    if (myFoodDoc.exists) {
+      return macros.Food.fromFirestore(myFoodDoc);
+    } else {
+      return null;
   }}
 
   Future<meals.DailyStats?> getDailyStatsByDate(String userId, DateTime date) async {
@@ -371,5 +445,4 @@ class MealsService extends ChangeNotifier {
       }
     });
   }
-
 }

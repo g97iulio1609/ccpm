@@ -57,7 +57,7 @@ dependencies:
   js: ^0.6.7
   material_color_utilities: ^0.8.0
   meta: ^1.11.0
-  vm_service: ^13.0.0
+  vm_service:
   flutter_slidable: ^3.1.0
   random_string: ^2.3.1
   google_sign_in_web: ^0.12.4
@@ -70,6 +70,7 @@ dependencies:
   flutter_typeahead: ^5.2.0
   font_awesome_flutter: ^10.7.0
   in_app_update: ^4.2.2
+  openfoodfacts: ^3.8.0
 
   
 

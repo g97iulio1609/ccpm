@@ -21,7 +21,19 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
   @override
   void initState() {
     super.initState();
+    _initializeData();
     _loadUserTDEE();
+  }
+
+  Future<void> _initializeData() async {
+    final userService = ref.read(usersServiceProvider);
+    final mealsService = ref.read(mealsServiceProvider);
+    final userId = userService.getCurrentUserId();
+    final currentYear = DateTime.now().year;
+
+    // Create daily stats and meals for the current year
+    await mealsService.createDailyStatsForYear(userId, currentYear);
+    await mealsService.createMealsForYear(userId, currentYear);
   }
 
   Future<void> _loadUserTDEE() async {
@@ -209,10 +221,12 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
   }
 }
 
-final dailyStatsProvider = StreamProvider.autoDispose.family<meals.DailyStats, DateTime>((ref, date) {
+final dailyStatsProvider = StreamProvider.autoDispose.family<meals.DailyStats, DateTime>((ref, date) async* {
   final mealsService = ref.read(mealsServiceProvider);
   final userService = ref.read(usersServiceProvider);
   final userId = userService.getCurrentUserId();
 
-  return mealsService.getDailyStatsByDateStream(userId, date);
+  await mealsService.createDailyStatsIfNotExist(userId, date);
+  await mealsService.createMealsIfNotExist(userId, date);
+  yield* mealsService.getDailyStatsByDateStream(userId, date);
 });
