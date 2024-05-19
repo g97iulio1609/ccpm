@@ -1,6 +1,7 @@
 import 'package:alphanessone/users_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../models&Services/macros_model.dart' as macros;
 import '../models&Services/meals_model.dart' as meals;
 import '../models&Services/meals_services.dart';
@@ -85,11 +86,9 @@ class FoodList extends ConsumerWidget {
             ListTile(
               title: const Text('Add Food', style: TextStyle(color: Colors.orange)),
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => FoodSelector(meal: meal),
-                  ),
+                context.push(
+                  '/food_selector',
+                  extra: meal,
                 );
               },
             ),
@@ -111,11 +110,12 @@ class FoodList extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.edit, color: Colors.white),
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => FoodSelector(meal: meal, myFoodId: food.id),
-                ),
+              context.push(
+                Uri(
+                  path: '/food_selector',
+                  queryParameters: {'myFoodId': food.id},
+                ).toString(),
+                extra: meal,
               );
             },
           ),

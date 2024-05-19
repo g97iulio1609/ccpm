@@ -8,17 +8,25 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
   const CustomAppBar({
     super.key,
     required this.userRole,
-    required this.controller,
+    this.controller,
     required this.isLargeScreen,
+    this.showBackButton = true,
+    this.customActions = const [],
+    this.title,
   });
 
   final String userRole;
-  final TrainingProgramController controller;
+  final TrainingProgramController? controller;
   final bool isLargeScreen;
+  final bool showBackButton;
+  final List<Widget> customActions;
+  final String? title;
 
   String _getTitleForRoute(BuildContext context) {
     final String currentPath = GoRouterState.of(context).uri.toString();
-
+    if (title != null) {
+      return title!;
+    }
     switch (currentPath) {
       case '/programs_screen':
         return 'I Miei Allenamenti';
@@ -38,12 +46,14 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
         return 'Programmi Utente';
       case '/measurements':
         return 'Misurazioni Antropometriche';
-         case '/tdee':
+      case '/tdee':
         return 'Fabbisogno Calorico';
-        case '/macros_selector':
+      case '/macros_selector':
         return 'Calcolatore Macronutrienti';
       case '/training_gallery':
         return 'Galleria Allenamenti';
+      case '/food_selector':
+        return 'Selezione Alimento';
       default:
         break;
     }
@@ -77,11 +87,50 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
     return 'Alphaness One';
   }
 
-  bool _isTrainingProgramRoute(BuildContext context) {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final currentRoute = GoRouterState.of(context).uri.toString();
-    return currentRoute.startsWith('/programs_screen/user_programs/') &&
-        (currentRoute.contains('/training_program/') ||
-            currentRoute.contains('/week/'));
+    final isBackButtonVisible = showBackButton && currentRoute.split('/').length > 2;
+
+    return AppBar(
+      title: Text(_getTitleForRoute(context)),
+      backgroundColor: Colors.transparent,
+      foregroundColor: Theme.of(context).colorScheme.onBackground,
+      leading: isBackButtonVisible
+          ? IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () {
+                final currentPath = GoRouterState.of(context).uri.toString();
+                final trainingProgramWeekPattern = RegExp(r'/programs_screen/user_programs/\w+/training_program/\w+/week/\d+$');
+                final trainingProgramPattern = RegExp(r'/programs_screen/user_programs/\w+/training_program/\w+$');
+
+                if (trainingProgramWeekPattern.hasMatch(currentPath)) {
+                  final programId = currentPath.split('/')[5];
+                  final userId = currentPath.split('/')[3];
+                  context.go('/programs_screen/user_programs/$userId/training_program/$programId');
+                } else if (trainingProgramPattern.hasMatch(currentPath)) {
+                  final userId = currentPath.split('/')[3];
+                  context.go('/programs_screen/user_programs/$userId');
+                } else {
+                  context.pop();
+                }
+              },
+            )
+          : null,
+      actions: [
+        if (userRole == 'admin' && GoRouterState.of(context).uri.toString() == '/users_dashboard')
+          IconButton(
+            onPressed: () => _showAddUserDialog(context, ref),
+            icon: const Icon(Icons.person_add),
+          ),
+        if (controller != null && currentRoute.startsWith('/programs_screen/user_programs/'))
+          IconButton(
+            onPressed: () => controller!.submitProgram(context),
+            icon: const Icon(Icons.save),
+          ),
+        ...customActions,
+      ],
+    );
   }
 
   void _showAddUserDialog(BuildContext context, WidgetRef ref) {
@@ -166,67 +215,6 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
           ],
         );
       },
-    );
-  }
-  
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final currentRoute = GoRouterState.of(context).uri.toString();
-    final isBackButtonVisible = currentRoute.split('/').length > 2;
-
-    return AppBar(
-      title: Text(_getTitleForRoute(context)),
-      backgroundColor: Colors.transparent,
-      foregroundColor: Theme.of(context).colorScheme.onBackground,
-      leading: isBackButtonVisible
-          ? Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(
-                  child: IconButton(
-                    iconSize: 24,
-                    icon: const Icon(Icons.arrow_back),
-                    onPressed: () {
-                      final currentPath = GoRouterState.of(context).uri.toString();
-                      final trainingProgramWeekPattern = RegExp(r'/programs_screen/user_programs/\w+/training_program/\w+/week/\d+$');
-                      final trainingProgramPattern = RegExp(r'/programs_screen/user_programs/\w+/training_program/\w+$');
-
-                      if (trainingProgramWeekPattern.hasMatch(currentPath)) {
-                        final programId = currentPath.split('/')[5];
-                        final userId = currentPath.split('/')[3];
-                        context.go('/programs_screen/user_programs/$userId/training_program/$programId');
-                      } else if (trainingProgramPattern.hasMatch(currentPath)) {
-                        final userId = currentPath.split('/')[3];
-                        context.go('/programs_screen/user_programs/$userId');
-                      } else {
-                        context.pop();
-                      }
-                    },
-                  ),
-                ),
-                if (!isLargeScreen)
-                  Flexible(
-                    child: IconButton(
-                      iconSize: 24,
-                      icon: const Icon(Icons.menu),
-                      onPressed: () => Scaffold.of(context).openDrawer(),
-                    ),
-                  ),
-              ],
-            )
-          : null,
-      actions: [
-        if (userRole == 'admin' && GoRouterState.of(context).uri.toString() == '/users_dashboard')
-          IconButton(
-            onPressed: () => _showAddUserDialog(context, ref),
-            icon: const Icon(Icons.person_add),
-          ),
-        if (_isTrainingProgramRoute(context))
-          IconButton(
-            onPressed: () => controller.submitProgram(context),
-            icon: const Icon(Icons.save),
-          ),
-      ],
     );
   }
 

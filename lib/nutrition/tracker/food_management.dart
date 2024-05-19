@@ -11,15 +11,19 @@ class FoodManagement extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final descriptionController = useTextEditingController();
     final numberOfServingsController = useState(1);
-    final servingSizeController = useTextEditingController();
+    final servingSizeValueController = useTextEditingController();
+    final servingSizeUnitController = useState('g');
     final cookedController = useState(false);
     final notesController = useTextEditingController();
+    final barcodeController = useTextEditingController();
     final caloriesController = useTextEditingController(text: '0');
     final proteinController = useTextEditingController(text: '0');
     final carbohydratesController = useTextEditingController(text: '0');
     final fatController = useTextEditingController(text: '0');
 
     void _saveFood() {
+      final portion = '${servingSizeValueController.text}${servingSizeUnitController.value}';
+
       final food = Food(
         name: descriptionController.text,
         carbs: double.tryParse(carbohydratesController.text) ?? 0,
@@ -27,7 +31,7 @@ class FoodManagement extends HookConsumerWidget {
         protein: double.tryParse(proteinController.text) ?? 0,
         kcal: double.tryParse(caloriesController.text) ?? 0,
         quantity: numberOfServingsController.value.toDouble(),
-        portion: servingSizeController.text,
+        portion: portion,
       );
 
       final macrosService = ref.read(macrosServiceProvider);
@@ -35,96 +39,154 @@ class FoodManagement extends HookConsumerWidget {
       Navigator.of(context).pop();
     }
 
+    void _cancel() {
+      Navigator.of(context).pop();
+    }
+
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        leading: TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text(
-            'Cancel',
-            style: TextStyle(color: Colors.orange),
-          ),
-        ),
-        title: const Text('Add Food'),
-        actions: [
-          TextButton(
-            onPressed: _saveFood,
-            child: const Text(
-              'Save',
-              style: TextStyle(color: Colors.orange),
-            ),
-          ),
-        ],
-      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: ListView(
+        child: Column(
           children: [
-            TextField(
-              controller: descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Name',
+            Expanded(
+              child: ListView(
+                children: [
+                  TextFormField(
+                    controller: descriptionController,
+                    decoration: const InputDecoration(
+                      labelText: 'Name',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SwitchListTile(
+                    value: cookedController.value,
+                    onChanged: (value) => cookedController.value = value,
+                    title: const Text('Cooked'),
+                    activeColor: Colors.green,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Macronutrients',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildNutrientRow('Protein', proteinController, 'g'),
+                  _buildNutrientRow('Carbohydrates', carbohydratesController, 'g'),
+                  _buildNutrientRow('Fat', fatController, 'g'),
+                  const SizedBox(height: 8),
+                  _buildNutrientRow('Calories', caloriesController, 'kcal'),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Servings',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Text('Number of Servings'),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.remove),
+                        onPressed: () {
+                          if (numberOfServingsController.value > 1) {
+                            numberOfServingsController.value--;
+                          }
+                        },
+                      ),
+                      Text(numberOfServingsController.value.toString()),
+                      IconButton(
+                        icon: const Icon(Icons.add),
+                        onPressed: () => numberOfServingsController.value++,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: servingSizeValueController,
+                          decoration: const InputDecoration(
+                            labelText: 'Serving Size',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType: TextInputType.number,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      DropdownButton<String>(
+                        value: servingSizeUnitController.value,
+                        onChanged: (String? newValue) {
+                          servingSizeUnitController.value = newValue!;
+                        },
+                        items: <String>['g', 'ml', 'oz']
+                            .map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Additional',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: notesController,
+                    decoration: const InputDecoration(
+                      labelText: 'Notes',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: barcodeController,
+                    decoration: const InputDecoration(
+                      labelText: 'Barcode',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            SwitchListTile(
-              value: cookedController.value,
-              onChanged: (value) => cookedController.value = value,
-              title: const Text('Cooked'),
-            ),
-            const SizedBox(height: 16),
-            const Text('Macronutrients', style: TextStyle(fontSize: 16)),
-            const SizedBox(height: 8),
-            _buildNutrientRow('Protein', proteinController, 'g'),
-            _buildNutrientRow('Carbohydrates', carbohydratesController, 'g'),
-            _buildNutrientRow('Fat', fatController, 'g'),
-            const SizedBox(height: 8),
-            _buildNutrientRow('Calories', caloriesController, 'kcal'),
-            const SizedBox(height: 16),
-            const Text('Servings', style: TextStyle(fontSize: 16)),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Text('Number of Servings'),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.remove),
-                  onPressed: () {
-                    if (numberOfServingsController.value > 1) {
-                      numberOfServingsController.value--;
-                    }
-                  },
-                ),
-                Text(numberOfServingsController.value.toString()),
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: () => numberOfServingsController.value++,
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: servingSizeController,
-              decoration: const InputDecoration(
-                labelText: 'Serving Size (g, ml, oz)',
-              ),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 16),
-            const Text('Additional', style: TextStyle(fontSize: 16)),
-            const SizedBox(height: 8),
-            TextField(
-              controller: notesController,
-              decoration: const InputDecoration(
-                labelText: 'Notes',
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: _cancel,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    icon: const Icon(Icons.cancel),
+                    label: const Text('Cancel'),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: _saveFood,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    icon: const Icon(Icons.save),
+                    label: const Text('Save'),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            const Text('Barcode: 001234567899'),
-            const SizedBox(height: 8),
-            const Text('Timestamp: 7:06 PM'),
-            const SizedBox(height: 8),
-            const Text('Report an Issue', style: TextStyle(color: Colors.red)),
           ],
         ),
       ),
@@ -132,21 +194,24 @@ class FoodManagement extends HookConsumerWidget {
   }
 
   Widget _buildNutrientRow(String label, TextEditingController controller, String unit) {
-    return Row(
-      children: [
-        Text(label),
-        const Spacer(),
-        SizedBox(
-          width: 60,
-          child: TextField(
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label),
+          const SizedBox(height: 4),
+          TextFormField(
             controller: controller,
             decoration: InputDecoration(
               suffixText: unit,
+              border: const OutlineInputBorder(),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
             keyboardType: TextInputType.number,
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

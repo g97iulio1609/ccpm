@@ -1,4 +1,5 @@
 import 'package:alphanessone/measurements/measurements.dart';
+import 'package:alphanessone/nutrition/models&Services/meals_model.dart';
 import 'package:alphanessone/nutrition/tracker/daily_food_tracker.dart';
 import 'package:alphanessone/nutrition/tracker/food_management.dart';
 import 'package:alphanessone/nutrition/Calc/macros_selector.dart';
@@ -31,9 +32,9 @@ import 'Viewer/workout_details.dart';
 import 'Viewer/exercise_details.dart';
 import 'Viewer/timer.dart';
 import 'app_services.dart';
+import 'nutrition/tracker/food_selector.dart';
 
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-    FlutterLocalNotificationsPlugin();
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
 Future<void> requestNotificationPermission() async {
   if (!kIsWeb) {
@@ -51,10 +52,8 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  const AndroidInitializationSettings initializationSettingsAndroid =
-      AndroidInitializationSettings('app_icon');
-  const DarwinInitializationSettings initializationSettingsIOS =
-      DarwinInitializationSettings();
+  const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('app_icon');
+  const DarwinInitializationSettings initializationSettingsIOS = DarwinInitializationSettings();
   const InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,
     iOS: initializationSettingsIOS,
@@ -62,22 +61,16 @@ void main() async {
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
   await requestNotificationPermission();
   if (!kIsWeb) {
-    final AndroidFlutterLocalNotificationsPlugin? androidPlugin =
-        flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+    final AndroidFlutterLocalNotificationsPlugin? androidPlugin = flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     await androidPlugin?.requestExactAlarmsPermission();
   }
 
   await AppServices().initialize();
 
   final bool isVersionSupported = await AppServices().isAppVersionSupported();
-  //debugPrint('Controllo della versione passato: $isVersionSupported');
-
   if (isVersionSupported) {
-    //debugPrint('La versione corrente è supportata. Avvio dell\'app...');
     runApp(const ProviderScope(child: MyApp()));
   } else {
-    //debugPrint('La versione corrente non è supportata. Mostra la schermata di aggiornamento...');
     runApp(const UnsupportedVersionApp());
   }
 }
@@ -163,36 +156,34 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-   
+    final ColorScheme darkColorScheme = ColorScheme.fromSeed(
+      seedColor: const Color(0xFF1976D2),
+      primary: const Color(0xFFFFD700),
+      secondary: const Color(0xFFFF9800),
+      tertiary: const Color(0xFF4CAF50),
+      error: const Color(0xFFF44336),
+      background: const Color(0xFF121212),
+      surface: const Color(0xFF1E1E1E),
+      onPrimary: Colors.black,
+      onSecondary: Colors.black,
+      onTertiary: Colors.black,
+      onError: Colors.white,
+      onBackground: Colors.white,
+      onSurface: Colors.white,
+      brightness: Brightness.dark,
+    );
 
-   final ColorScheme darkColorScheme = ColorScheme.fromSeed(
-  seedColor: const Color(0xFF1976D2),
-  primary: const Color(0xFFFFD700),
-  secondary: const Color(0xFFFF9800),
-  tertiary: const Color(0xFF4CAF50),
-  error: const Color(0xFFF44336),
-  background: const Color(0xFF121212),
-  surface: const Color(0xFF1E1E1E),
-  onPrimary: Colors.black,
-  onSecondary: Colors.black,
-  onTertiary: Colors.black,
-  onError: Colors.white,
-  onBackground: Colors.white,
-  onSurface: Colors.white,
-  brightness: Brightness.dark,
-);
+    final ThemeData darkTheme = ThemeData(
+      useMaterial3: true,
+      colorScheme: darkColorScheme,
+      textTheme: GoogleFonts.robotoTextTheme().apply(
+        bodyColor: Colors.white,
+        displayColor: Colors.white,
+      ),
+      visualDensity: VisualDensity.adaptivePlatformDensity,
+    );
 
-final ThemeData darkTheme = ThemeData(
-  useMaterial3: true,
-  colorScheme: darkColorScheme,
-  textTheme: GoogleFonts.robotoTextTheme().apply(
-    bodyColor: Colors.white,
-    displayColor: Colors.white,
-  ),
-  visualDensity: VisualDensity.adaptivePlatformDensity,
-);
-
-  final GoRouter router = GoRouter(
+    final GoRouter router = GoRouter(
       routes: [
         ShellRoute(
           builder: (context, state, child) => HomeScreen(child: child),
@@ -249,24 +240,15 @@ final ThemeData darkTheme = ThemeData(
                                   builder: (context, state) {
                                     final extra = state.extra as Map<String, dynamic>?;
                                     return ExerciseDetails(
-                                      programId: Uri.decodeComponent(
-                                          state.pathParameters['programId']!),
-                                      weekId: Uri.decodeComponent(
-                                          state.pathParameters['weekId']!),
-                                      workoutId: Uri.decodeComponent(
-                                          state.pathParameters['workoutId']!),
-                                      exerciseId: Uri.decodeComponent(
-                                          state.pathParameters['exerciseId']!),
-                                      superSetExercises:
-                                          extra?['superSetExercises'] != null
-                                              ? List<Map<String, dynamic>>.from(
-                                                  extra?['superSetExercises'])
-                                              : [],
-                                      superSetExerciseIndex:
-                                          extra?['superSetExerciseIndex'] ?? 0,
-                                      seriesList:
-                                          List<Map<String, dynamic>>.from(
-                                              extra?['seriesList'] ?? []),
+                                      programId: Uri.decodeComponent(state.pathParameters['programId']!),
+                                      weekId: Uri.decodeComponent(state.pathParameters['weekId']!),
+                                      workoutId: Uri.decodeComponent(state.pathParameters['workoutId']!),
+                                      exerciseId: Uri.decodeComponent(state.pathParameters['exerciseId']!),
+                                      superSetExercises: extra?['superSetExercises'] != null
+                                          ? List<Map<String, dynamic>>.from(extra?['superSetExercises'])
+                                          : [],
+                                      superSetExerciseIndex: extra?['superSetExerciseIndex'] ?? 0,
+                                      seriesList: List<Map<String, dynamic>>.from(extra?['seriesList'] ?? []),
                                       startIndex: extra?['startIndex'] ?? 0,
                                       userId: state.pathParameters['userId']!,
                                     );
@@ -277,28 +259,18 @@ final ThemeData darkTheme = ThemeData(
                                       builder: (context, state) {
                                         final extra = state.extra as Map<String, dynamic>?;
                                         return TimerPage(
-                                          programId: Uri.decodeComponent(
-                                              state.pathParameters['programId']!),
-                                          weekId: Uri.decodeComponent(
-                                              state.pathParameters['weekId']!),
-                                          workoutId: Uri.decodeComponent(
-                                              state.pathParameters['workoutId']!),
-                                          exerciseId: Uri.decodeComponent(
-                                              state.pathParameters['exerciseId']!),
-                                          currentSeriesIndex: int.parse(state.uri
-                                              .queryParameters['currentSeriesIndex']!),
-                                          superSetExerciseIndex: int.parse(state
-                                              .uri.queryParameters['superSetExerciseIndex']!),
-                                          totalSeries: int.parse(
-                                              state.uri.queryParameters['totalSeries']!),
-                                          restTime: int.parse(
-                                              state.uri.queryParameters['restTime']!),
-                                          isEmomMode: state.uri.queryParameters['isEmomMode'] ==
-                                              'true',
+                                          programId: Uri.decodeComponent(state.pathParameters['programId']!),
+                                          weekId: Uri.decodeComponent(state.pathParameters['weekId']!),
+                                          workoutId: Uri.decodeComponent(state.pathParameters['workoutId']!),
+                                          exerciseId: Uri.decodeComponent(state.pathParameters['exerciseId']!),
+                                          currentSeriesIndex: int.parse(state.uri.queryParameters['currentSeriesIndex']!),
+                                          superSetExerciseIndex: int.parse(state.uri.queryParameters['superSetExerciseIndex']!),
+                                          totalSeries: int.parse(state.uri.queryParameters['totalSeries']!),
+                                          restTime: int.parse(state.uri.queryParameters['restTime']!),
+                                          isEmomMode: state.uri.queryParameters['isEmomMode'] == 'true',
                                           userId: state.pathParameters['userId']!,
                                           seriesList: extra?['seriesList'] != null
-                                              ? List<Map<String, dynamic>>.from(
-                                                  extra?['seriesList'])
+                                              ? List<Map<String, dynamic>>.from(extra?['seriesList'])
                                               : [],
                                         );
                                       },
@@ -372,7 +344,7 @@ final ThemeData darkTheme = ThemeData(
                     : const SizedBox();
               },
             ),
-              GoRoute(
+            GoRoute(
               path: '/macros_selector',
               builder: (context, state) {
                 final userId = FirebaseAuth.instance.currentUser?.uid;
@@ -381,13 +353,25 @@ final ThemeData darkTheme = ThemeData(
                     : const SizedBox();
               },
             ),
-             GoRoute(
+            GoRoute(
               path: '/food_tracker',
               builder: (context, state) => const DailyFoodTracker(),
             ),
-             GoRoute(
+            GoRoute(
               path: '/food_management',
               builder: (context, state) => const FoodManagement(),
+            ),
+            GoRoute(
+              path: '/food_selector',
+              builder: (context, state) {
+                final meal = state.extra as Meal;
+                final myFoodId = state.uri.queryParameters['myFoodId'];
+                return FoodSelector(
+                  meal: meal,
+                  myFoodId: myFoodId,
+                  
+                );
+              },
             ),
             GoRoute(
               path: '/exercises_list',
@@ -430,7 +414,6 @@ final ThemeData darkTheme = ThemeData(
     );
   }
 }
-
 
 class AuthWrapper extends ConsumerWidget {
   const AuthWrapper({super.key});
