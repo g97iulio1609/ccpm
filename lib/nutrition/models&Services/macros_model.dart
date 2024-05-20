@@ -8,9 +8,9 @@ class Food {
   double fat;
   double protein;
   double kcal;
-  double quantity;
+  double? quantity;
   String quantityUnit;
-  String portion;
+  String? portion;
   double sugar;
   double fiber;
   double saturatedFat;
@@ -32,9 +32,9 @@ class Food {
     required this.fat,
     required this.protein,
     required this.kcal,
-    required this.quantity,
+     this.quantity,
     this.quantityUnit = 'g',
-    required this.portion,
+     this.portion,
     this.sugar = 0.0,
     this.fiber = 0.0,
     this.saturatedFat = 0.0,

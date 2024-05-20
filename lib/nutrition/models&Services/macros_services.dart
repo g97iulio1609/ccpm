@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rxdart/rxdart.dart';
+import 'package:openfoodfacts/openfoodfacts.dart';
 import 'macros_model.dart';
 
 final macrosServiceProvider = Provider<MacrosService>((ref) {
@@ -19,6 +20,17 @@ class MacrosService {
 
   MacrosService(this.ref, this._firestore) {
     _initializeFoodsStream();
+    _setupOpenFoodFacts();
+  }
+
+  void _setupOpenFoodFacts() {
+    OpenFoodAPIConfiguration.userAgent = UserAgent(
+      name: 'alphaness',
+      url: 'https://alphaness-322423.web.app/',
+    );
+    OpenFoodAPIConfiguration.globalLanguages = <OpenFoodFactsLanguage>[
+      OpenFoodFactsLanguage.ENGLISH
+    ];
   }
 
   void _initializeFoodsStream() {
@@ -48,9 +60,44 @@ class MacrosService {
     _searchResultsStreamController.add(_filterFoods(foods));
   }
 
-  Stream<List<Food>> searchFoods(String query) {
+  Stream<List<Food>> searchFoods(String query) async* {
     setSearchQuery(query);
-    return _searchResultsStreamController.stream;
+
+    // Combina i risultati di Firestore e OpenFoodFacts
+    final firestoreResults = await _searchResultsStreamController.stream.first;
+    final openFoodFactsResults = await searchOpenFoodFacts(query);
+
+    yield [...firestoreResults, ...openFoodFactsResults];
+  }
+
+  Future<List<Food>> searchOpenFoodFacts(String query) async {
+    final ProductSearchQueryConfiguration configuration = ProductSearchQueryConfiguration(
+      parametersList: <Parameter>[
+        SearchTerms(terms: [query]),
+      ],
+      fields: [ProductField.ALL],
+      version: ProductQueryVersion.v3,
+    );
+
+    final SearchResult result = await OpenFoodAPIClient.searchProducts(
+      null,
+      configuration,
+    );
+
+    if (result.products != null) {
+      return result.products!.map((product) {
+        return Food(
+          id: product.barcode ?? '',
+          name: product.productName ?? 'Unknown',
+          kcal: product.nutriments?.getValue(Nutrient.energyKCal, PerSize.oneHundredGrams) ?? 0.0,
+          carbs: product.nutriments?.getValue(Nutrient.carbohydrates, PerSize.oneHundredGrams) ?? 0.0,
+          fat: product.nutriments?.getValue(Nutrient.fat, PerSize.oneHundredGrams) ?? 0.0,
+          protein: product.nutriments?.getValue(Nutrient.proteins, PerSize.oneHundredGrams) ?? 0.0,
+        );
+      }).toList();
+    } else {
+      return [];
+    }
   }
 
   Stream<List<Food>> getFoods() {

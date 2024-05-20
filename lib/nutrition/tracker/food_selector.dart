@@ -57,7 +57,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
       setState(() {
         _selectedFoodId = food.id!;
         _loadedFood = food;
-        _quantity = food.quantity;
+        _quantity = food.quantity!;
         _unit = food.quantityUnit;
         _quantityController.text = food.quantity.toString();
         _updateMacronutrientValues(food);

@@ -13,8 +13,8 @@ class AutoTypeField extends ConsumerWidget {
     required this.controller,
     required this.focusNode,
     required this.onSelected,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -24,7 +24,6 @@ class AutoTypeField extends ConsumerWidget {
     return TypeAheadField<Food>(
       suggestionsController: suggestionsController,
       suggestionsCallback: (pattern) async {
-        macrosService.setSearchQuery(pattern);
         return await macrosService.searchFoods(pattern).first;
       },
       debounceDuration: const Duration(milliseconds: 300),

@@ -137,7 +137,7 @@ class _MacrosSelectorState extends ConsumerState<MacrosSelector> {
           ),
           const SizedBox(height: 24),
           SwitchListTile(
-            title: Text('Auto Adjust Macros'),
+            title: const Text('Auto Adjust Macros'),
             value: _autoAdjustMacros,
             onChanged: (value) {
               setState(() {
