@@ -53,7 +53,7 @@ class MealsService extends ChangeNotifier {
   }
 
   Future<meals.Meal?> getMealById(String mealId) async {
-    debugPrint('getMealById: Fetching meal with ID: $mealId');
+    //debugPrint('getMealById: Fetching meal with ID: $mealId');
     final mealRef = _firestore.collection('meals').doc(mealId);
     final mealSnapshot = await mealRef.get();
 
@@ -68,9 +68,9 @@ class MealsService extends ChangeNotifier {
     final mealRef = _firestore.collection('meals').doc();
     meal.id = mealRef.id;
     meal.dailyStatsId = dailyStatsId; // Associa l'ID dailyStats al pasto
-    debugPrint('addMeal: Attempting to add meal: ${meal.toMap()}');
+    //debugPrint('addMeal: Attempting to add meal: ${meal.toMap()}');
     await mealRef.set(meal.toMap());
-    debugPrint('addMeal: Meal added with ID: ${mealRef.id}');
+    //debugPrint('addMeal: Meal added with ID: ${mealRef.id}');
     return mealRef.id;
   }
 
@@ -85,7 +85,7 @@ class MealsService extends ChangeNotifier {
   }
 
   Future<void> addFoodToMeal({required String mealId, required macros.Food food, required double quantity}) async {
-    debugPrint('addFoodToMeal: Adding food to meal with ID: $mealId');
+    //debugPrint('addFoodToMeal: Adding food to meal with ID: $mealId');
     final mealRef = _firestore.collection('meals').doc(mealId);
     final mealSnapshot = await mealRef.get();
 
@@ -94,7 +94,7 @@ class MealsService extends ChangeNotifier {
     }
 
     final mealData = mealSnapshot.data();
-    debugPrint('addFoodToMeal: Retrieved meal data: $mealData');
+    //debugPrint('addFoodToMeal: Retrieved meal data: $mealData');
 
     final meal = meals.Meal.fromMap(mealData!);
 
@@ -130,14 +130,14 @@ class MealsService extends ChangeNotifier {
     // Add the food ID to the meal's foodIds list
     await mealRef.update(meal.toMap());
     notifyListeners();  // Notify listeners when a food is added to a meal
-    debugPrint('addFoodToMeal: Food added to meal successfully');
+    //debugPrint('addFoodToMeal: Food added to meal successfully');
 
     // Update meal and daily stats with the new food values
     await updateMealAndDailyStats(mealId, food, isAdding: true);
   }
 
   Future<void> updateFoodInMeal({required String myFoodId, required double newQuantity}) async {
-    debugPrint('updateFoodInMeal: Updating food with ID: $myFoodId');
+    //debugPrint('updateFoodInMeal: Updating food with ID: $myFoodId');
     final myFoodRef = _firestore.collection('myfoods').doc(myFoodId);
     final myFoodSnapshot = await myFoodRef.get();
 
@@ -172,11 +172,11 @@ class MealsService extends ChangeNotifier {
 
     await myFoodRef.update(updatedFood);
     notifyListeners();  // Notify listeners when a food is updated
-    debugPrint('updateFoodInMeal: Food updated successfully');
+    //debugPrint('updateFoodInMeal: Food updated successfully');
   }
 
   Future<void> removeFoodFromMeal({required String mealId, required String myFoodId}) async {
-    debugPrint('removeFoodFromMeal: Removing food with ID: $myFoodId from meal with ID: $mealId');
+    //debugPrint('removeFoodFromMeal: Removing food with ID: $myFoodId from meal with ID: $mealId');
     final mealRef = _firestore.collection('meals').doc(mealId);
     final mealSnapshot = await mealRef.get();
 
@@ -196,22 +196,27 @@ class MealsService extends ChangeNotifier {
     final myFood = macros.Food.fromFirestore(myFoodSnapshot);
     await myFoodRef.delete();
     notifyListeners();  // Notify listeners when a food is removed from a meal
-    debugPrint('removeFoodFromMeal: Food removed from meal successfully');
+    //debugPrint('removeFoodFromMeal: Food removed from meal successfully');
 
     // Update meal and daily stats with the removed food values
     await updateMealAndDailyStats(mealId, myFood, isAdding: false);
   }
 
   Future<void> createDailyStatsIfNotExist(String userId, DateTime date) async {
+    // Check if dailyStats already exist for the user on the given date
     final dailyStats = await getDailyStatsByDate(userId, date);
     if (dailyStats == null) {
+      // If not, create a new dailyStats document
       final newStats = meals.DailyStats(userId: userId, date: date);
       await _firestore.collection('dailyStats').add(newStats.toMap());
-      debugPrint('createDailyStatsIfNotExist: DailyStats created for user $userId on $date');
+      //debugPrint('createDailyStatsIfNotExist: DailyStats created for user $userId on $date');
+    } else {
+      //debugPrint('createDailyStatsIfNotExist: DailyStats already exist for user $userId on $date');
     }
   }
 
   Future<void> createMealsIfNotExist(String userId, DateTime date) async {
+    // Retrieve the existing dailyStats for the specified date
     final dailyStats = await getDailyStatsByDate(userId, date);
     if (dailyStats == null) {
       throw Exception('DailyStats not found for the specified date');
@@ -221,6 +226,7 @@ class MealsService extends ChangeNotifier {
     final mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
 
     for (final mealType in mealTypes) {
+      // Check if a meal of the specified type already exists for the user on the given date
       final mealQuery = await _firestore
           .collection('meals')
           .where('userId', isEqualTo: userId)
@@ -229,6 +235,7 @@ class MealsService extends ChangeNotifier {
           .get();
 
       if (mealQuery.docs.isEmpty) {
+        // If not, create a new meal document
         final newMeal = meals.Meal(
           userId: userId,
           dailyStatsId: dailyStatsId,
@@ -236,9 +243,9 @@ class MealsService extends ChangeNotifier {
           mealType: mealType,
         );
         final mealId = await addMeal(newMeal, dailyStatsId);
-        debugPrint('createMealsIfNotExist: $mealType meal created with ID: $mealId for user $userId on $date');
+        //debugPrint('createMealsIfNotExist: $mealType meal created with ID: $mealId for user $userId on $date');
       } else {
-        debugPrint('createMealsIfNotExist: $mealType meal already exists for user $userId on $date');
+        //debugPrint('createMealsIfNotExist: $mealType meal already exists for user $userId on $date');
       }
     }
   }
@@ -254,16 +261,17 @@ class MealsService extends ChangeNotifier {
         final newStats = meals.DailyStats(userId: userId, date: date);
         final dailyStatsRef = _firestore.collection('dailyStats').doc();
         batch.set(dailyStatsRef, newStats.toMap());
+      } else {
+        //debugPrint('createDailyStatsForMonth: DailyStats already exists for user $userId on $date');
       }
     }
 
     await batch.commit();
-    debugPrint('createDailyStatsForMonth: DailyStats created for user $userId for month $month of year $year');
+    //debugPrint('createDailyStatsForMonth: DailyStats created for user $userId for month $month of year $year');
   }
 
   Future<void> createMealsForMonth(String userId, int year, int month) async {
     final daysInMonth = DateTime(year, month + 1, 0).day;
-    final batch = _firestore.batch();
 
     for (int day = 1; day <= daysInMonth; day++) {
       final date = DateTime(year, month, day);
@@ -287,33 +295,27 @@ class MealsService extends ChangeNotifier {
               date: date,
               mealType: mealType,
             );
-            final mealRef = _firestore.collection('meals').doc();
-            batch.set(mealRef, newMeal.toMap());
+            await addMeal(newMeal, dailyStatsId);
+          } else {
+            //debugPrint('createMealsForMonth: $mealType meal already exists for user $userId on $date');
           }
         }
       }
     }
-
-    await batch.commit();
-    debugPrint('createMealsForMonth: Meals created for user $userId for month $month of year $year');
   }
 
   Future<void> createDailyStatsForYear(String userId, int year) async {
-    final batch = _firestore.batch();
     for (int month = 1; month <= 12; month++) {
       await createDailyStatsForMonth(userId, year, month);
     }
-    await batch.commit();
-    debugPrint('createDailyStatsForYear: DailyStats created for user $userId for year $year');
+    //debugPrint('createDailyStatsForYear: DailyStats created for user $userId for year $year');
   }
 
   Future<void> createMealsForYear(String userId, int year) async {
-    final batch = _firestore.batch();
     for (int month = 1; month <= 12; month++) {
       await createMealsForMonth(userId, year, month);
     }
-    await batch.commit();
-    debugPrint('createMealsForYear: Meals created for user $userId for year $year');
+    //debugPrint('createMealsForYear: Meals created for user $userId for year $year');
   }
 
   Future<macros.Food?> getMyFoodById(String myFoodId) async {
@@ -343,11 +345,11 @@ class MealsService extends ChangeNotifier {
   }
 
   Future<void> updateMyFood({required String myFoodId, required macros.Food updatedFood}) async {
-    debugPrint('updateMyFood: Updating food with ID: $myFoodId');
+    //debugPrint('updateMyFood: Updating food with ID: $myFoodId');
     final myFoodRef = _firestore.collection('myfoods').doc(myFoodId);
     await myFoodRef.update(updatedFood.toMap());
     notifyListeners(); // Notify listeners when a food is updated
-    debugPrint('updateMyFood: Food updated successfully');
+    //debugPrint('updateMyFood: Food updated successfully');
   }
 
   Future<void> addDailyStats(meals.DailyStats stats) async {
@@ -389,7 +391,7 @@ class MealsService extends ChangeNotifier {
   }
 
   Future<void> updateMealAndDailyStats(String mealId, macros.Food food, {required bool isAdding}) async {
-    debugPrint('updateMealAndDailyStats: Updating meal and daily stats for meal ID: $mealId');
+    //debugPrint('updateMealAndDailyStats: Updating meal and daily stats for meal ID: $mealId');
     final mealRef = _firestore.collection('meals').doc(mealId);
     final mealSnapshot = await mealRef.get();
 
@@ -424,7 +426,7 @@ class MealsService extends ChangeNotifier {
 
     await dailyStatsRef.update(dailyStats.toMap());
 
-    debugPrint('updateMealAndDailyStats: Meal and daily stats updated successfully');
+    //debugPrint('updateMealAndDailyStats: Meal and daily stats updated successfully');
   }
 
   Stream<meals.DailyStats> getDailyStatsByDateStream(String userId, DateTime date) {

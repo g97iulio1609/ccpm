@@ -102,7 +102,7 @@ class MacrosService {
 
   Stream<List<Food>> getFoods() {
     return _foodsStreamController.stream.doOnData((foods) {
-      debugPrint('Emitted foods: $foods');
+      //debugPrint('Emitted foods: $foods');
     });
   }
 
