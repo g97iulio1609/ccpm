@@ -1,26 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'macros_calc.dart';
 import '../../users_services.dart';
 
 final macrosProvider = StateNotifierProvider<MacrosNotifier, Map<String, double>>((ref) {
-  return MacrosNotifier();
+  return MacrosNotifier(ref);
 });
 
 class MacrosNotifier extends StateNotifier<Map<String, double>> {
-  MacrosNotifier() : super({'carbs': 0, 'protein': 0, 'fat': 0});
+  final StateNotifierProviderRef<MacrosNotifier, Map<String, double>> ref;
+
+  MacrosNotifier(this.ref) : super({'carbs': 0, 'protein': 0, 'fat': 0});
 
   void updateMacrosFromPercentages(double tdee, Map<String, double> percentages) {
     state = MacrosCalculator.calculateMacrosFromPercentages(tdee, percentages);
+    _saveMacrosToFirebase(state);
   }
 
   void updateMacrosFromGramsPerKg(double tdee, double weight, Map<String, double> gramsPerKg) {
     state = MacrosCalculator.calculateMacrosFromGramsPerKg(tdee, weight, gramsPerKg);
+    _saveMacrosToFirebase(state);
   }
 
   void updateMacrosFromGrams(double tdee, Map<String, double> grams) {
     state = MacrosCalculator.calculateMacrosFromGrams(tdee, grams);
+    _saveMacrosToFirebase(state);
+  }
+
+  Future<void> _saveMacrosToFirebase(Map<String, double> macros) async {
+    final usersService = ref.read(usersServiceProvider);
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId != null) {
+      await usersService.updateMacros(userId, macros);
+    }
   }
 }
 
@@ -89,16 +104,19 @@ class _MacrosSelectorState extends ConsumerState<MacrosSelector> {
 
     if (tdeeData != null) {
       setState(() {
-        _tdee = tdeeData['tdee']!;
-        _weight = tdeeData['weight']!.toDouble();
+        _tdee = (tdeeData['tdee'] ?? 0.0).toDouble();
+        _weight = (tdeeData['weight'] ?? 0.0).toDouble();
       });
 
-      final macroPercentages = {
-        'carbs': 50.0,
-        'protein': 20.0,
-        'fat': 30.0,
+      final existingMacros = {
+        'carbs': (tdeeData['carbs'] ?? 0.0).toDouble(),
+        'protein': (tdeeData['protein'] ?? 0.0).toDouble(),
+        'fat': (tdeeData['fat'] ?? 0.0).toDouble(),
       };
-      ref.read(macrosProvider.notifier).updateMacrosFromPercentages(_tdee, macroPercentages);
+
+      // Assigning only if values are double
+      ref.read(macrosProvider.notifier).state = existingMacros.map((key, value) => MapEntry(key, value.toDouble()));
+
       _updateInputFields();
     }
   }

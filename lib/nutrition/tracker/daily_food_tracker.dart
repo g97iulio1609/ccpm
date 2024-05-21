@@ -16,12 +16,15 @@ class DailyFoodTracker extends ConsumerStatefulWidget {
 class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
   DateTime _selectedDate = DateTime.now();
   int _targetCalories = 2000;
+  double _targetCarbs = 0;
+  double _targetProteins = 0;
+  double _targetFats = 0;
 
   @override
   void initState() {
     super.initState();
     _initializeData();
-    _loadUserTDEE();
+    _loadUserTDEEAndMacros();
   }
 
   Future<void> _initializeData() async {
@@ -35,13 +38,23 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
     await mealsService.createMealsForYear(userId, currentYear);
   }
 
-  Future<void> _loadUserTDEE() async {
+  Future<void> _loadUserTDEEAndMacros() async {
     final userService = ref.read(usersServiceProvider);
     final userId = userService.getCurrentUserId();
     final tdeeData = await userService.getTDEEData(userId);
+    final macrosData = await userService.getUserMacros(userId);
+
     if (tdeeData != null && tdeeData['tdee'] != null) {
       setState(() {
         _targetCalories = tdeeData['tdee'].round();
+      });
+    }
+
+    if (macrosData != null) {
+      setState(() {
+        _targetCarbs = macrosData['carbs']!;
+        _targetProteins = macrosData['protein']!;
+        _targetFats = macrosData['fat']!;
       });
     }
   }
@@ -102,11 +115,11 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(child: _buildMacroItem('Protein', stats.totalProtein, 210, Colors.green)),
+                        Expanded(child: _buildMacroItem('Protein', stats.totalProtein, _targetProteins, Colors.green)),
                         const SizedBox(width: 8),
-                        Expanded(child: _buildMacroItem('Carbohydrates', stats.totalCarbs, 125, Colors.orange)),
+                        Expanded(child: _buildMacroItem('Carbohydrates', stats.totalCarbs, _targetCarbs, Colors.orange)),
                         const SizedBox(width: 8),
-                        Expanded(child: _buildMacroItem('Fat', stats.totalFat, 35, Colors.purple)),
+                        Expanded(child: _buildMacroItem('Fat', stats.totalFat, _targetFats, Colors.purple)),
                       ],
                     ),
                     const SizedBox(height: 16),
