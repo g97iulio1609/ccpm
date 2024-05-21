@@ -87,7 +87,7 @@ class FoodList extends ConsumerWidget {
               title: const Text('Add Food', style: TextStyle(color: Colors.orange)),
               onTap: () {
                 context.push(
-                  '/food_selector',
+                  '/food_tracker/food_selector',
                   extra: meal,
                 );
               },
@@ -112,7 +112,7 @@ class FoodList extends ConsumerWidget {
             onPressed: () {
               context.push(
                 Uri(
-                  path: '/food_selector',
+                  path: '/food_tracker/food_selector',
                   queryParameters: {'myFoodId': food.id},
                 ).toString(),
                 extra: meal,

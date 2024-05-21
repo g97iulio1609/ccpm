@@ -356,22 +356,23 @@ class MyApp extends ConsumerWidget {
             GoRoute(
               path: '/food_tracker',
               builder: (context, state) => const DailyFoodTracker(),
-            ),
-            GoRoute(
-              path: '/food_management',
-              builder: (context, state) => const FoodManagement(),
-            ),
-            GoRoute(
-              path: '/food_selector',
-              builder: (context, state) {
-                final meal = state.extra as Meal;
-                final myFoodId = state.uri.queryParameters['myFoodId'];
-                return FoodSelector(
-                  meal: meal,
-                  myFoodId: myFoodId,
-                  
-                );
-              },
+              routes: [
+                GoRoute(
+                  path: 'food_management',
+                  builder: (context, state) => const FoodManagement(),
+                ),
+                GoRoute(
+                  path: 'food_selector',
+                  builder: (context, state) {
+                    final meal = state.extra as Meal;
+                    final myFoodId = state.uri.queryParameters['myFoodId'];
+                    return FoodSelector(
+                      meal: meal,
+                      myFoodId: myFoodId,
+                    );
+                  },
+                ),
+              ],
             ),
             GoRoute(
               path: '/exercises_list',

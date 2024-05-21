@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert'; // Aggiungi questa importazione per la decodifica JSON
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:openfoodfacts/openfoodfacts.dart';
+import 'package:http/http.dart' as http; // Aggiungi questa importazione
 import 'macros_model.dart';
 
 final macrosServiceProvider = Provider<MacrosService>((ref) {
@@ -15,6 +17,10 @@ class MacrosService {
   final FirebaseFirestore _firestore;
   final _foodsStreamController = BehaviorSubject<List<Food>>.seeded([]);
   final _searchResultsStreamController = BehaviorSubject<List<Food>>.seeded([]);
+  final Map<String, List<String>> _suggestionsCache =
+      {}; // Cache per i suggerimenti
+  final Map<String, List<Food>> _foodsCache =
+      {}; // Cache per i risultati dei cibi
   String _searchQuery = '';
   StreamSubscription? _foodsChangesSubscription;
 
@@ -29,7 +35,7 @@ class MacrosService {
       url: 'https://alphaness-322423.web.app/',
     );
     OpenFoodAPIConfiguration.globalLanguages = <OpenFoodFactsLanguage>[
-      OpenFoodFactsLanguage.ENGLISH
+      OpenFoodFactsLanguage.ITALIAN
     ];
   }
 
@@ -63,19 +69,34 @@ class MacrosService {
   Stream<List<Food>> searchFoods(String query) async* {
     setSearchQuery(query);
 
+    // Usa il cache per migliorare le prestazioni
+    if (_foodsCache.containsKey(query)) {
+      yield _foodsCache[query]!;
+      return;
+    }
+
     // Combina i risultati di Firestore e OpenFoodFacts
     final firestoreResults = await _searchResultsStreamController.stream.first;
     final openFoodFactsResults = await searchOpenFoodFacts(query);
 
-    yield [...firestoreResults, ...openFoodFactsResults];
+    final combinedResults = [...firestoreResults, ...openFoodFactsResults];
+    _foodsCache[query] = combinedResults; // Cache dei risultati
+
+    yield combinedResults;
   }
 
   Future<List<Food>> searchOpenFoodFacts(String query) async {
-    final ProductSearchQueryConfiguration configuration = ProductSearchQueryConfiguration(
+    if (_foodsCache.containsKey(query)) {
+      return _foodsCache[query]!;
+    }
+
+    final ProductSearchQueryConfiguration configuration =
+        ProductSearchQueryConfiguration(
       parametersList: <Parameter>[
         SearchTerms(terms: [query]),
       ],
       fields: [ProductField.ALL],
+      language: OpenFoodFactsLanguage.ITALIAN,
       version: ProductQueryVersion.v3,
     );
 
@@ -85,24 +106,80 @@ class MacrosService {
     );
 
     if (result.products != null) {
-      return result.products!.map((product) {
+      final foods = result.products!.map((product) {
         return Food(
           id: product.barcode ?? '',
           name: product.productName ?? 'Unknown',
-          kcal: product.nutriments?.getValue(Nutrient.energyKCal, PerSize.oneHundredGrams) ?? 0.0,
-          carbs: product.nutriments?.getValue(Nutrient.carbohydrates, PerSize.oneHundredGrams) ?? 0.0,
-          fat: product.nutriments?.getValue(Nutrient.fat, PerSize.oneHundredGrams) ?? 0.0,
-          protein: product.nutriments?.getValue(Nutrient.proteins, PerSize.oneHundredGrams) ?? 0.0,
+          kcal: product.nutriments
+                  ?.getValue(Nutrient.energyKCal, PerSize.oneHundredGrams) ??
+              0.0,
+          carbs: product.nutriments
+                  ?.getValue(Nutrient.carbohydrates, PerSize.oneHundredGrams) ??
+              0.0,
+          fat: product.nutriments
+                  ?.getValue(Nutrient.fat, PerSize.oneHundredGrams) ??
+              0.0,
+          protein: product.nutriments
+                  ?.getValue(Nutrient.proteins, PerSize.oneHundredGrams) ??
+              0.0,
         );
       }).toList();
+      _foodsCache[query] = foods; // Cache dei risultati
+      return foods;
     } else {
       return [];
     }
   }
 
+  Future<List<String>> getSuggestions(String query) async {
+    if (_suggestionsCache.containsKey(query)) {
+      return _suggestionsCache[query]!;
+    }
+
+    final Map<String, String> queryParameters = <String, String>{
+      'tagtype': 'categories',
+      'lc': OpenFoodFactsLanguage.ITALIAN.offTag,
+      'string': query,
+      'limit': '25',
+    };
+
+    final Uri uri = Uri(
+      scheme: 'https',
+      host: 'world.openfoodfacts.org',
+      path: '/api/v3/taxonomy_suggestions',
+      queryParameters: queryParameters,
+    );
+
+    debugPrint('Requesting suggestions from: $uri');
+
+    try {
+      final http.Response response = await http.get(uri);
+
+      debugPrint('Response status: ${response.statusCode}');
+      debugPrint('Response body: ${response.body}');
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to load suggestions');
+      }
+
+      final Map<String, dynamic> map = json.decode(response.body);
+      final List<String> result = <String>[];
+      if (map['suggestions'] != null) {
+        for (dynamic value in map['suggestions']) {
+          result.add(value.toString());
+        }
+      }
+      _suggestionsCache[query] = result; // Cache dei suggerimenti
+      return result;
+    } catch (e) {
+      debugPrint('getSuggestions: Failed to load suggestions: $e');
+      throw Exception('Failed to load suggestions');
+    }
+  }
+
   Stream<List<Food>> getFoods() {
     return _foodsStreamController.stream.doOnData((foods) {
-      //debugPrint('Emitted foods: $foods');
+      debugPrint('Emitted foods: $foods');
     });
   }
 
@@ -122,7 +199,10 @@ class MacrosService {
   }
 
   Future<void> updateFood(String foodId, Food updatedFood) async {
-    await _firestore.collection('foods').doc(foodId).update(updatedFood.toMap());
+    await _firestore
+        .collection('foods')
+        .doc(foodId)
+        .update(updatedFood.toMap());
   }
 
   Future<void> deleteFood(String foodId) async {

@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models&Services/meals_services.dart';
 import '../models&Services/macros_services.dart';
 import 'food_list.dart';
-import 'food_management.dart';
 import '../models&Services/meals_model.dart' as meals;
 
 class DailyFoodTracker extends ConsumerStatefulWidget {
@@ -45,12 +44,6 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
         _targetCalories = tdeeData['tdee'].round();
       });
     }
-  }
-
-  void _navigateToAddFood(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => const FoodManagement()),
-    );
   }
 
   void _changeDate(DateTime newDate) {
@@ -149,40 +142,11 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
               Expanded(
                 child: FoodList(selectedDate: _selectedDate),
               ),
-              Container(
-                color: Colors.black,
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        decoration: const InputDecoration(
-                          hintText: 'Search for food',
-                          hintStyle: TextStyle(color: Colors.white54),
-                          prefixIcon: Icon(Icons.search, color: Colors.white54),
-                          border: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.white54),
-                          ),
-                        ),
-                        style: const TextStyle(color: Colors.white),
-                        onChanged: (query) {
-                          ref.read(macrosServiceProvider).searchFoods(query);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ],
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error: $err')),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _navigateToAddFood(context),
-        child: const Icon(Icons.add),
-        backgroundColor: Colors.orange,
       ),
     );
   }
