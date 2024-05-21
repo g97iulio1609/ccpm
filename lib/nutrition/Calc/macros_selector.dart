@@ -52,9 +52,6 @@ class _MacrosSelectorState extends ConsumerState<MacrosSelector> {
   double _tdee = 0.0;
   double _weight = 0.0;
   bool _autoAdjustMacros = false;
-  bool _isEditingPercentage = false;
-  bool _isEditingGrams = false;
-  bool _isEditingGramsPerKg = false;
 
   final _gramsControllers = {
     'carbs': TextEditingController(),
@@ -114,7 +111,7 @@ class _MacrosSelectorState extends ConsumerState<MacrosSelector> {
         'fat': (tdeeData['fat'] ?? 0.0).toDouble(),
       };
 
-      // Assigning only if values are double
+      // Convert the existingMacros values to double explicitly
       ref.read(macrosProvider.notifier).state = existingMacros.map((key, value) => MapEntry(key, value.toDouble()));
 
       _updateInputFields();
@@ -129,11 +126,9 @@ class _MacrosSelectorState extends ConsumerState<MacrosSelector> {
       final calories = MacrosCalculator.calculateCaloriesFromGrams(macro, grams);
       final percentage = calories / _tdee * 100;
 
-      if (!_isEditingPercentage && !_isEditingGrams && !_isEditingGramsPerKg) {
-        _gramsControllers[macro]?.text = grams.toStringAsFixed(2);
-        _gramsPerKgControllers[macro]?.text = gramsPerKg.toStringAsFixed(2);
-        _percentageControllers[macro]?.text = percentage.toStringAsFixed(0);
-      }
+      _gramsControllers[macro]?.text = grams.toStringAsFixed(2);
+      _gramsPerKgControllers[macro]?.text = gramsPerKg.toStringAsFixed(2);
+      _percentageControllers[macro]?.text = percentage.toStringAsFixed(0);
     }
   }
 
@@ -240,20 +235,8 @@ class _MacrosSelectorState extends ConsumerState<MacrosSelector> {
               onChanged: (value) {
                 final percentage = double.tryParse(value) ?? 0.0;
                 final macroPercentages = {macroKey: percentage};
-                setState(() {
-                  _isEditingPercentage = true;
-                });
                 ref.read(macrosProvider.notifier).updateMacrosFromPercentages(_tdee, macroPercentages);
-                if (_autoAdjustMacros) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    _updateMacroPercentages();
-                  });
-                } else {
-                  _updateInputFields();
-                }
-                setState(() {
-                  _isEditingPercentage = false;
-                });
+                _updateInputFields();
               },
               isPercentage: true,
             ),
@@ -268,20 +251,8 @@ class _MacrosSelectorState extends ConsumerState<MacrosSelector> {
                     onChanged: (value) {
                       final grams = double.tryParse(value) ?? 0.0;
                       final macroGrams = {macroKey: grams};
-                      setState(() {
-                        _isEditingGrams = true;
-                      });
                       ref.read(macrosProvider.notifier).updateMacrosFromGrams(_tdee, macroGrams);
-                      if (_autoAdjustMacros) {
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          _updateMacroPercentages();
-                        });
-                      } else {
-                        _updateInputFields();
-                      }
-                      setState(() {
-                        _isEditingGrams = false;
-                      });
+                      _updateInputFields();
                     },
                   ),
                 ),
@@ -294,20 +265,8 @@ class _MacrosSelectorState extends ConsumerState<MacrosSelector> {
                     onChanged: (value) {
                       final gramsPerKg = double.tryParse(value) ?? 0.0;
                       final macroGramsPerKg = {macroKey: gramsPerKg};
-                      setState(() {
-                        _isEditingGramsPerKg = true;
-                      });
                       ref.read(macrosProvider.notifier).updateMacrosFromGramsPerKg(_tdee, _weight, macroGramsPerKg);
-                      if (_autoAdjustMacros) {
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          _updateMacrosFromGramsPerKg();
-                        });
-                      } else {
-                        _updateInputFields();
-                      }
-                      setState(() {
-                        _isEditingGramsPerKg = false;
-                      });
+                      _updateInputFields();
                     },
                   ),
                 ),
@@ -339,55 +298,8 @@ class _MacrosSelectorState extends ConsumerState<MacrosSelector> {
       inputFormatters: [
         FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
       ],
-      onChanged: (value) {
-        setState(() {
-          if (isPercentage) {
-            _isEditingPercentage = true;
-          }
-        });
-        onChanged(value);
-        setState(() {
-          if (isPercentage) {
-            _isEditingPercentage = false;
-          }
-        });
-      },
+      onChanged: onChanged,
     );
-  }
-
-  void _updateMacroPercentages() {
-    final macroPercentages = {
-      'carbs': double.tryParse(_percentageControllers['carbs']?.text ?? '') ?? 0.0,
-      'protein': double.tryParse(_percentageControllers['protein']?.text ?? '') ?? 0.0,
-      'fat': double.tryParse(_percentageControllers['fat']?.text ?? '') ?? 0.0,
-    };
-    final macros = MacrosCalculator.calculateMacrosFromPercentages(_tdee, macroPercentages);
-    ref.read(macrosProvider.notifier).state = macros;
-    _updateInputFields();
-  }
-
-  void _updateMacrosFromGrams() {
-    final macroGrams = {
-      'carbs': double.tryParse(_gramsControllers['carbs']?.text ?? '') ?? 0.0,
-      'protein': double.tryParse(_gramsControllers['protein']?.text ?? '') ?? 0.0,
-      'fat': double.tryParse(_gramsControllers['fat']?.text ?? '') ?? 0.0,
-    };
-    final macroPercentages = MacrosCalculator.calculatePercentagesFromGrams(_tdee, macroGrams);
-    final macros = MacrosCalculator.calculateMacrosFromPercentages(_tdee, macroPercentages);
-    ref.read(macrosProvider.notifier).state = macros;
-    _updateInputFields();
-  }
-
-  void _updateMacrosFromGramsPerKg() {
-    final macroGramsPerKg = {
-      'carbs': double.tryParse(_gramsPerKgControllers['carbs']?.text ?? '') ?? 0.0,
-      'protein': double.tryParse(_gramsPerKgControllers['protein']?.text ?? '') ?? 0.0,
-      'fat': double.tryParse(_gramsPerKgControllers['fat']?.text ?? '') ?? 0.0,
-    };
-    final macroPercentages = MacrosCalculator.calculatePercentagesFromGramsPerKg(_tdee, _weight, macroGramsPerKg);
-    final macros = MacrosCalculator.calculateMacrosFromPercentages(_tdee, macroPercentages);
-    ref.read(macrosProvider.notifier).state = macros;
-    _updateInputFields();
   }
 
   Widget _buildMacroBreakdown(BuildContext context) {

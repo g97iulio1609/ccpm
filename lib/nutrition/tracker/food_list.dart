@@ -28,11 +28,11 @@ class FoodList extends ConsumerWidget {
           final mealsList = snapshot.data!;
           return ListView(
             children: [
-              _buildMealSection(context, ref, 'Breakfast', mealsList.firstWhere((meal) => meal.mealType == 'Breakfast', orElse: () => meals.Meal.emptyMeal(userId, mealsList.first.dailyStatsId, selectedDate, 'Breakfast'))),
-              _buildMealSection(context, ref, 'Lunch', mealsList.firstWhere((meal) => meal.mealType == 'Lunch', orElse: () => meals.Meal.emptyMeal(userId, mealsList.first.dailyStatsId, selectedDate, 'Lunch'))),
-              _buildMealSection(context, ref, 'Dinner', mealsList.firstWhere((meal) => meal.mealType == 'Dinner', orElse: () => meals.Meal.emptyMeal(userId, mealsList.first.dailyStatsId, selectedDate, 'Dinner'))),
+              _buildMealSection(context, ref, 'Breakfast', mealsList.firstWhere((meal) => meal.mealType == 'Breakfast', orElse: () => meals.Meal.emptyMeal(userId, mealsList.first.dailyStatsId, selectedDate, 'Breakfast')), mealsList),
+              _buildMealSection(context, ref, 'Lunch', mealsList.firstWhere((meal) => meal.mealType == 'Lunch', orElse: () => meals.Meal.emptyMeal(userId, mealsList.first.dailyStatsId, selectedDate, 'Lunch')), mealsList),
+              _buildMealSection(context, ref, 'Dinner', mealsList.firstWhere((meal) => meal.mealType == 'Dinner', orElse: () => meals.Meal.emptyMeal(userId, mealsList.first.dailyStatsId, selectedDate, 'Dinner')), mealsList),
               for (int i = 0; i < _getSnackMeals(mealsList).length; i++)
-                _buildMealSection(context, ref, 'Snack ${i + 1}', _getSnackMeals(mealsList)[i]),
+                _buildMealSection(context, ref, 'Snack ${i + 1}', _getSnackMeals(mealsList)[i], mealsList, i),
               _buildAddSnackButton(context, ref, userId, mealsList.isNotEmpty ? mealsList.first.dailyStatsId : '', selectedDate, _getSnackMeals(mealsList).length),
             ],
           );
@@ -53,7 +53,7 @@ class FoodList extends ConsumerWidget {
     return mealsList.where((meal) => meal.mealType.startsWith('Snack')).toList();
   }
 
-  Widget _buildMealSection(BuildContext context, WidgetRef ref, String mealName, meals.Meal meal) {
+  Widget _buildMealSection(BuildContext context, WidgetRef ref, String mealName, meals.Meal meal, List<meals.Meal> mealsList, [int? snackIndex]) {
     final mealsService = ref.watch(mealsServiceProvider);
 
     return Padding(
@@ -61,9 +61,24 @@ class FoodList extends ConsumerWidget {
       child: Card(
         color: Colors.black,
         child: ExpansionTile(
-          title: Text(
-            mealName,
-            style: const TextStyle(color: Colors.white),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                mealName,
+                style: const TextStyle(color: Colors.white),
+              ),
+              if (snackIndex != null)
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.white),
+                  onPressed: () async {
+                    final snackMeals = _getSnackMeals(mealsList);
+                    if (snackMeals.length > 1) {
+                      await mealsService.deleteSnack(mealId: meal.id!);
+                    }
+                  },
+                ),
+            ],
           ),
           children: [
             FutureBuilder<List<macros.Food>>(
@@ -131,8 +146,6 @@ class FoodList extends ConsumerWidget {
       ),
     );
   }
-
-  
 
   Widget _buildAddSnackButton(BuildContext context, WidgetRef ref, String userId, String dailyStatsId, DateTime date, int currentSnacksCount) {
     return Padding(

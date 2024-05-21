@@ -385,6 +385,9 @@ Future<String> createSnack({required String userId, required String dailyStatsId
   );
   return await addMeal(snackMeal, dailyStatsId);
 }
+Future<void> deleteSnack({required String mealId}) async {
+  await deleteMeal(mealId);
+}
   Future<void> updateFood(String foodId, macros.Food updatedFood) async {
     await _firestore.collection('foods').doc(foodId).update(updatedFood.toMap());
   }
