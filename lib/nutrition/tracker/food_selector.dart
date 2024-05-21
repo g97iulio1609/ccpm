@@ -57,9 +57,9 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
       setState(() {
         _selectedFoodId = food.id!;
         _loadedFood = food;
-        _quantity = food.quantity!;
+        _quantity = food.quantity ?? 100.0;
         _unit = food.quantityUnit;
-        _quantityController.text = food.quantity.toString();
+        _quantityController.text = _quantity.toString();
         _updateMacronutrientValues(food);
       });
       return food;
@@ -163,8 +163,13 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
                   setState(() {
                     _selectedFoodId = food.id!;
                     _loadedFood = food;
+                    _quantity = 100.0;
+                    _unit = 'g';
+                    _quantityController.text = '100';
+                    _foodFuture = Future.value(food); // Aggiorna il futuro
                     _updateMacronutrientValues(food);
                     debugPrint('AutoTypeField: Selected food ID: $_selectedFoodId');
+                    debugPrint('AutoTypeField: Selected food data: ${food.toJson()}');
                   });
                 },
               ),
@@ -183,10 +188,8 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
 
   Widget _buildSelectedFoodDetails(BuildContext context) {
     debugPrint('_buildSelectedFoodDetails: Building details for food ID = $_selectedFoodId');
-    final macrosService = ref.watch(macrosServiceProvider);
-
     return FutureBuilder<macros.Food?>(
-      future: _foodFuture ?? macrosService.getFoodById(_selectedFoodId),
+      future: _foodFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           debugPrint('FutureBuilder: Waiting for data');
@@ -195,59 +198,61 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
           final food = snapshot.data!;
           debugPrint('FutureBuilder: Retrieved food: ${food.toJson()}');
           _loadedFood = food; // Save the loaded food
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Divider(),
-              Text(
-                food.name,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _quantityController,
-                      decoration: const InputDecoration(
-                        labelText: 'Quantity',
+          return SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Divider(),
+                Text(
+                  food.name,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _quantityController,
+                        decoration: const InputDecoration(
+                          labelText: 'Quantity',
+                        ),
+                        keyboardType: TextInputType.number,
+                        onChanged: (value) {
+                          setState(() {
+                            _quantity = double.tryParse(value) ?? 100.0;
+                            _updateMacronutrientValues(food);
+                            debugPrint('TextField: Quantity changed to: $_quantity');
+                          });
+                        },
                       ),
-                      keyboardType: TextInputType.number,
-                      onChanged: (value) {
+                    ),
+                    const SizedBox(width: 8),
+                    DropdownButton<String>(
+                      value: _unit,
+                      items: <String>['g', 'ml', 'oz'].map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
                         setState(() {
-                          _quantity = double.tryParse(value) ?? 100.0;
+                          _unit = newValue!;
                           _updateMacronutrientValues(food);
-                          debugPrint('TextField: Quantity changed to: $_quantity');
+                          debugPrint('DropdownButton: Unit changed to: $_unit');
                         });
                       },
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  DropdownButton<String>(
-                    value: _unit,
-                    items: <String>['g', 'ml', 'oz'].map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        _unit = newValue!;
-                        _updateMacronutrientValues(food);
-                        debugPrint('DropdownButton: Unit changed to: $_unit');
-                      });
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              const Text('Macro Nutrients:'),
-              Text('Protein: ${_proteinValue.toStringAsFixed(2)}g'),
-              Text('Carbohydrates: ${_carbsValue.toStringAsFixed(2)}g'),
-              Text('Fat: ${_fatValue.toStringAsFixed(2)}g'),
-              Text('Calories: ${_kcalValue.toStringAsFixed(2)}kcal'),
-            ],
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Text('Macro Nutrients:'),
+                Text('Protein: ${_proteinValue.toStringAsFixed(2)}g'),
+                Text('Carbohydrates: ${_carbsValue.toStringAsFixed(2)}g'),
+                Text('Fat: ${_fatValue.toStringAsFixed(2)}g'),
+                Text('Calories: ${_kcalValue.toStringAsFixed(2)}kcal'),
+              ],
+            ),
           );
         } else if (snapshot.hasError) {
           debugPrint('FutureBuilder: Error: ${snapshot.error}');
