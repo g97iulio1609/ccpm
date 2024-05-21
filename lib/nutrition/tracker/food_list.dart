@@ -1,3 +1,5 @@
+// food_list.dart
+
 import 'package:alphanessone/users_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,7 +33,7 @@ class FoodList extends ConsumerWidget {
               _buildMealSection(context, ref, 'Dinner', mealsList.firstWhere((meal) => meal.mealType == 'Dinner', orElse: () => meals.Meal.emptyMeal(userId, mealsList.first.dailyStatsId, selectedDate, 'Dinner'))),
               for (int i = 0; i < _getSnackMeals(mealsList).length; i++)
                 _buildMealSection(context, ref, 'Snack ${i + 1}', _getSnackMeals(mealsList)[i]),
-              _buildAddSnackButton(context, _getSnackMeals(mealsList).length),
+              _buildAddSnackButton(context, ref, userId, mealsList.isNotEmpty ? mealsList.first.dailyStatsId : '', selectedDate, _getSnackMeals(mealsList).length),
             ],
           );
         } else if (snapshot.hasError) {
@@ -130,12 +132,17 @@ class FoodList extends ConsumerWidget {
     );
   }
 
-  Widget _buildAddSnackButton(BuildContext context, int currentSnacksCount) {
+  
+
+  Widget _buildAddSnackButton(BuildContext context, WidgetRef ref, String userId, String dailyStatsId, DateTime date, int currentSnacksCount) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
       child: ElevatedButton(
-        onPressed: () {
-          // TODO: Implement Add Snack functionality
+        onPressed: () async {
+          if (dailyStatsId.isNotEmpty) {
+            final mealsService = ref.read(mealsServiceProvider);
+            await mealsService.createSnack(userId: userId, dailyStatsId: dailyStatsId, date: date);
+          }
         },
         style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
         child: Text('Add Snack ${currentSnacksCount + 1}'),

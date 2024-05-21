@@ -376,7 +376,15 @@ class MealsService extends ChangeNotifier {
   Future<void> addFood(macros.Food food) async {
     await _firestore.collection('foods').add(food.toMap());
   }
-
+Future<String> createSnack({required String userId, required String dailyStatsId, required DateTime date}) async {
+  final snackMeal = meals.Meal(
+    userId: userId,
+    dailyStatsId: dailyStatsId,
+    date: date,
+    mealType: 'Snack',
+  );
+  return await addMeal(snackMeal, dailyStatsId);
+}
   Future<void> updateFood(String foodId, macros.Food updatedFood) async {
     await _firestore.collection('foods').doc(foodId).update(updatedFood.toMap());
   }
