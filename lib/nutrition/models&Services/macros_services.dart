@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'dart:convert'; // Aggiungi questa importazione per la decodifica JSON
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:openfoodfacts/openfoodfacts.dart';
-import 'package:http/http.dart' as http; // Aggiungi questa importazione
+import 'package:http/http.dart' as http;
 import 'macros_model.dart';
 
 final macrosServiceProvider = Provider<MacrosService>((ref) {
@@ -17,10 +17,7 @@ class MacrosService {
   final FirebaseFirestore _firestore;
   final _foodsStreamController = BehaviorSubject<List<Food>>.seeded([]);
   final _searchResultsStreamController = BehaviorSubject<List<Food>>.seeded([]);
-  final Map<String, List<String>> _suggestionsCache =
-      {}; // Cache per i suggerimenti
-  final Map<String, List<Food>> _foodsCache =
-      {}; // Cache per i risultati dei cibi
+  final Map<String, List<Food>> _foodsCache = {}; // Cache per i risultati dei cibi
   String _searchQuery = '';
   StreamSubscription? _foodsChangesSubscription;
 
@@ -75,9 +72,14 @@ class MacrosService {
       return;
     }
 
-    // Combina i risultati di Firestore e OpenFoodFacts
-    final firestoreResults = await _searchResultsStreamController.stream.first;
-    final openFoodFactsResults = await searchOpenFoodFacts(query);
+    // Eseguire le richieste a Firestore e OpenFoodFacts in parallelo
+    final firestoreFuture = _searchResultsStreamController.stream.first;
+    final openFoodFactsFuture = searchOpenFoodFacts(query);
+
+    final results = await Future.wait([firestoreFuture, openFoodFactsFuture]);
+
+    final firestoreResults = results[0] as List<Food>;
+    final openFoodFactsResults = results[1] as List<Food>;
 
     final combinedResults = [...firestoreResults, ...openFoodFactsResults];
     _foodsCache[query] = combinedResults; // Cache dei risultati
@@ -124,63 +126,11 @@ class MacrosService {
               0.0,
         );
       }).toList();
-      _foodsCache[query] = foods; // Cache dei risultati
+      _foodsCache[query] = foods;
       return foods;
     } else {
       return [];
     }
-  }
-
-  Future<List<String>> getSuggestions(String query) async {
-    if (_suggestionsCache.containsKey(query)) {
-      return _suggestionsCache[query]!;
-    }
-
-    final Map<String, String> queryParameters = <String, String>{
-      'tagtype': 'categories',
-      'lc': OpenFoodFactsLanguage.ITALIAN.offTag,
-      'string': query,
-      'limit': '25',
-    };
-
-    final Uri uri = Uri(
-      scheme: 'https',
-      host: 'world.openfoodfacts.org',
-      path: '/api/v3/taxonomy_suggestions',
-      queryParameters: queryParameters,
-    );
-
-    debugPrint('Requesting suggestions from: $uri');
-
-    try {
-      final http.Response response = await http.get(uri);
-
-      debugPrint('Response status: ${response.statusCode}');
-      debugPrint('Response body: ${response.body}');
-
-      if (response.statusCode != 200) {
-        throw Exception('Failed to load suggestions');
-      }
-
-      final Map<String, dynamic> map = json.decode(response.body);
-      final List<String> result = <String>[];
-      if (map['suggestions'] != null) {
-        for (dynamic value in map['suggestions']) {
-          result.add(value.toString());
-        }
-      }
-      _suggestionsCache[query] = result; // Cache dei suggerimenti
-      return result;
-    } catch (e) {
-      debugPrint('getSuggestions: Failed to load suggestions: $e');
-      throw Exception('Failed to load suggestions');
-    }
-  }
-
-  Stream<List<Food>> getFoods() {
-    return _foodsStreamController.stream.doOnData((foods) {
-      debugPrint('Emitted foods: $foods');
-    });
   }
 
   Future<Food?> getFoodById(String foodId) async {
@@ -188,7 +138,9 @@ class MacrosService {
     if (foodDoc.exists) {
       return Food.fromFirestore(foodDoc);
     } else {
-      return null;
+      // Prova a cercare su OpenFoodFacts se non è presente in Firestore
+      final foods = await searchOpenFoodFacts(foodId);
+      return foods.isNotEmpty ? foods.first : null;
     }
   }
 

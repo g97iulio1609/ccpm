@@ -64,12 +64,28 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
       });
       return food;
     } else {
-      debugPrint('_loadFoodData: No food data found for ID = $foodId');
-      setState(() {
-        _selectedFoodId = '';
-        _loadedFood = null;
-      });
-      return null;
+      // Prova a cercare su OpenFoodFacts se non è presente in Firestore
+      final foods = await ref.read(macrosServiceProvider).searchOpenFoodFacts(foodId);
+      if (foods.isNotEmpty) {
+        final food = foods.first;
+        debugPrint('_loadFoodData: Food data loaded from OpenFoodFacts: ${food.toJson()}');
+        setState(() {
+          _selectedFoodId = food.id!;
+          _loadedFood = food;
+          _quantity = 100.0;
+          _unit = 'g';
+          _quantityController.text = '100';
+          _updateMacronutrientValues(food);
+        });
+        return food;
+      } else {
+        debugPrint('_loadFoodData: No food data found for ID = $foodId');
+        setState(() {
+          _selectedFoodId = '';
+          _loadedFood = null;
+        });
+        return null;
+      }
     }
   }
 

@@ -19,35 +19,28 @@ class AutoTypeField extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final macrosService = ref.watch(macrosServiceProvider);
-    final suggestionsController = SuggestionsController<String>();
+    final suggestionsController = SuggestionsController<Food>();
 
-    return TypeAheadField<String>(
+    return TypeAheadField<Food>(
       suggestionsController: suggestionsController,
       suggestionsCallback: (pattern) async {
         try {
-          await Future.delayed(const Duration(milliseconds: 300));
-          return await macrosService.getSuggestions(pattern);
+          await Future.delayed(const Duration(milliseconds: 100)); // Riduci ulteriormente il debounce time
+          return await macrosService.searchOpenFoodFacts(pattern);
         } catch (e) {
           debugPrint('Error fetching suggestions: $e');
           return [];
         }
       },
-      debounceDuration: const Duration(milliseconds: 300),
-      itemBuilder: (context, String suggestion) {
+      debounceDuration: const Duration(milliseconds: 100), // Riduci ulteriormente il debounce time
+      itemBuilder: (context, Food suggestion) {
         return ListTile(
-          title: Text(suggestion),
+          title: Text(suggestion.name),
         );
       },
-      onSelected: (String suggestion) async {
-        controller.text = suggestion;
-        final foods = await macrosService.searchOpenFoodFacts(suggestion);
-        if (foods.isNotEmpty) {
-          onSelected(foods.first);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No food found for the selected suggestion')),
-          );
-        }
+      onSelected: (Food suggestion) {
+        controller.text = suggestion.name;
+        onSelected(suggestion);
       },
       errorBuilder: (context, error) => Padding(
         padding: const EdgeInsets.all(8.0),
