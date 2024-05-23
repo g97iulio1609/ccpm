@@ -24,18 +24,25 @@ class AutoTypeField extends ConsumerWidget {
     return TypeAheadField<Food>(
       suggestionsController: suggestionsController,
       suggestionsCallback: (pattern) async {
+        if (pattern.length < 3) {
+          return [];
+        }
         try {
-          await Future.delayed(const Duration(milliseconds: 100)); // Riduci ulteriormente il debounce time
-          return await macrosService.searchOpenFoodFacts(pattern);
+          await Future.delayed(const Duration(milliseconds: 500)); // Riduci ulteriormente il debounce time
+          return await macrosService.searchFoods(pattern).first;
         } catch (e) {
           debugPrint('Error fetching suggestions: $e');
           return [];
         }
       },
-      debounceDuration: const Duration(milliseconds: 100), // Riduci ulteriormente il debounce time
+      debounceDuration: const Duration(milliseconds: 500), // Riduci ulteriormente il debounce time
       itemBuilder: (context, Food suggestion) {
         return ListTile(
           title: Text(suggestion.name),
+          subtitle: Text(
+            'Brand: ${suggestion.brands}\n'
+            'C: ${suggestion.carbs}g, P: ${suggestion.protein}g, F: ${suggestion.fat}g, Kcal:${suggestion.kcal}'
+          ),
         );
       },
       onSelected: (Food suggestion) {
@@ -49,10 +56,20 @@ class AutoTypeField extends ConsumerWidget {
           style: const TextStyle(color: Colors.red),
         ),
       ),
-      emptyBuilder: (context) => const Padding(
-        padding: EdgeInsets.all(8.0),
-        child: Text('No items found'),
-      ),
+      emptyBuilder: (context) {
+        if (controller.text.length < 3) {
+          final remainingChars = 3 - controller.text.length;
+          return Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text('Please enter at least $remainingChars more characters'),
+          );
+        } else {
+          return const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text('No items found'),
+          );
+        }
+      },
       hideWithKeyboard: true,
       hideOnSelect: true,
       retainOnLoading: false,

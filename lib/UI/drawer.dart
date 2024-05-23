@@ -60,6 +60,8 @@ class CustomDrawer extends ConsumerWidget {
         return '/tdee';
       case 'Food Tracker':
         return '/food_tracker';
+         case 'Food Management':
+        return '/food_management';
       case 'Calcolatore Macronutrienti':
         return '/macros_selector';
       case 'Misurazioni':
@@ -93,6 +95,8 @@ class CustomDrawer extends ConsumerWidget {
         return Icons.calculate;
       case 'Food Tracker':
         return Icons.calculate;
+        case 'Food Management':
+        return Icons.calculate;
       case 'Misurazioni':
         return Icons.trending_up;
       default:
@@ -111,6 +115,7 @@ class CustomDrawer extends ConsumerWidget {
       'Fabbisogno Calorico',
       'Calcolatore Macronutrienti',
       'Food Tracker',
+      'Food Management',
       'Misurazioni'
     ];
   }

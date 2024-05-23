@@ -1,11 +1,8 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rxdart/rxdart.dart';
-import 'package:openfoodfacts/openfoodfacts.dart';
-import 'package:http/http.dart' as http;
 import 'macros_model.dart';
 
 final macrosServiceProvider = Provider<MacrosService>((ref) {
@@ -23,17 +20,6 @@ class MacrosService {
 
   MacrosService(this.ref, this._firestore) {
     _initializeFoodsStream();
-    _setupOpenFoodFacts();
-  }
-
-  void _setupOpenFoodFacts() {
-    OpenFoodAPIConfiguration.userAgent = UserAgent(
-      name: 'alphaness',
-      url: 'https://alphaness-322423.web.app/',
-    );
-    OpenFoodAPIConfiguration.globalLanguages = <OpenFoodFactsLanguage>[
-      OpenFoodFactsLanguage.ITALIAN
-    ];
   }
 
   void _initializeFoodsStream() {
@@ -72,93 +58,54 @@ class MacrosService {
       return;
     }
 
-    // Eseguire le richieste a Firestore e OpenFoodFacts in parallelo
-    final firestoreFuture = _searchResultsStreamController.stream.first;
-    final openFoodFactsFuture = searchOpenFoodFacts(query);
+    // Cerca i cibi su Firestore
+    final firestoreResults = await _searchResultsStreamController.stream.first;
+    _foodsCache[query] = firestoreResults;
 
-    final results = await Future.wait([firestoreFuture, openFoodFactsFuture]);
-
-    final firestoreResults = results[0] as List<Food>;
-    final openFoodFactsResults = results[1] as List<Food>;
-
-    final combinedResults = [...firestoreResults, ...openFoodFactsResults];
-    _foodsCache[query] = combinedResults; // Cache dei risultati
-
-    yield combinedResults;
-  }
-
-  Future<List<Food>> searchOpenFoodFacts(String query) async {
-    if (_foodsCache.containsKey(query)) {
-      return _foodsCache[query]!;
-    }
-
-    final ProductSearchQueryConfiguration configuration =
-        ProductSearchQueryConfiguration(
-      parametersList: <Parameter>[
-        SearchTerms(terms: [query]),
-      ],
-      fields: [ProductField.ALL],
-      language: OpenFoodFactsLanguage.ITALIAN,
-      version: ProductQueryVersion.v3,
-    );
-
-    final SearchResult result = await OpenFoodAPIClient.searchProducts(
-      null,
-      configuration,
-    );
-
-    if (result.products != null) {
-      final foods = result.products!.map((product) {
-        return Food(
-          id: product.barcode ?? '',
-          name: product.productName ?? 'Unknown',
-          kcal: product.nutriments
-                  ?.getValue(Nutrient.energyKCal, PerSize.oneHundredGrams) ??
-              0.0,
-          carbs: product.nutriments
-                  ?.getValue(Nutrient.carbohydrates, PerSize.oneHundredGrams) ??
-              0.0,
-          fat: product.nutriments
-                  ?.getValue(Nutrient.fat, PerSize.oneHundredGrams) ??
-              0.0,
-          protein: product.nutriments
-                  ?.getValue(Nutrient.proteins, PerSize.oneHundredGrams) ??
-              0.0,
-        );
-      }).toList();
-      _foodsCache[query] = foods;
-      return foods;
-    } else {
-      return [];
-    }
+    yield firestoreResults;
   }
 
   Future<Food?> getFoodById(String foodId) async {
-    final foodDoc = await _firestore.collection('foods').doc(foodId).get();
-    if (foodDoc.exists) {
-      return Food.fromFirestore(foodDoc);
-    } else {
-      // Prova a cercare su OpenFoodFacts se non è presente in Firestore
-      final foods = await searchOpenFoodFacts(foodId);
-      return foods.isNotEmpty ? foods.first : null;
+    try {
+      final foodDoc = await _firestore.collection('foods').doc(foodId).get();
+      if (foodDoc.exists) {
+        return Food.fromFirestore(foodDoc);
+      } else {
+        debugPrint('getFoodById: Food not found in Firestore for ID = $foodId');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('getFoodById: Error fetching food by ID = $foodId: $e');
+      return null;
     }
   }
 
   Future<void> addFood(Food food) async {
-    final foodRef = _firestore.collection('foods').doc();
-    food.id = foodRef.id;
-    await foodRef.set(food.toMap());
+    try {
+      final foodRef = _firestore.collection('foods').doc(food.id);
+      await foodRef.set(food.toMap());
+      debugPrint('addFood: Food added with ID = ${food.id}');
+    } catch (e) {
+      debugPrint('addFood: Error adding food: $e');
+    }
   }
 
   Future<void> updateFood(String foodId, Food updatedFood) async {
-    await _firestore
-        .collection('foods')
-        .doc(foodId)
-        .update(updatedFood.toMap());
+    try {
+      await _firestore.collection('foods').doc(foodId).update(updatedFood.toMap());
+      debugPrint('updateFood: Food updated with ID = $foodId');
+    } catch (e) {
+      debugPrint('updateFood: Error updating food with ID = $foodId: $e');
+    }
   }
 
   Future<void> deleteFood(String foodId) async {
-    await _firestore.collection('foods').doc(foodId).delete();
+    try {
+      await _firestore.collection('foods').doc(foodId).delete();
+      debugPrint('deleteFood: Food deleted with ID = $foodId');
+    } catch (e) {
+      debugPrint('deleteFood: Error deleting food with ID = $foodId: $e');
+    }
   }
 
   Future<void> addFoodToUser({
@@ -167,20 +114,25 @@ class MacrosService {
     required double quantity,
     required DateTime date,
   }) async {
-    final foodData = await getFoodById(foodId);
-    if (foodData != null) {
-      final userFoodData = {
-        'foodId': foodId,
-        'quantity': quantity,
-        'date': Timestamp.fromDate(date),
-        'userId': userId,
-        ...foodData.toMap(),
-      };
-      await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('foods')
-          .add(userFoodData);
+    try {
+      final foodData = await getFoodById(foodId);
+      if (foodData != null) {
+        final userFoodData = {
+          'foodId': foodId,
+          'quantity': quantity,
+          'date': Timestamp.fromDate(date),
+          'userId': userId,
+          ...foodData.toMap(),
+        };
+        await _firestore
+            .collection('users')
+            .doc(userId)
+            .collection('foods')
+            .add(userFoodData);
+        debugPrint('addFoodToUser: Food added to user with ID = $userId');
+      }
+    } catch (e) {
+      debugPrint('addFoodToUser: Error adding food to user with ID = $userId: $e');
     }
   }
 
@@ -190,27 +142,37 @@ class MacrosService {
     required double quantity,
     required DateTime date,
   }) async {
-    await _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('foods')
-        .doc(userFoodId)
-        .update({
-      'quantity': quantity,
-      'date': Timestamp.fromDate(date),
-    });
+    try {
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('foods')
+          .doc(userFoodId)
+          .update({
+        'quantity': quantity,
+        'date': Timestamp.fromDate(date),
+      });
+      debugPrint('updateUserFood: Food updated for user with ID = $userId');
+    } catch (e) {
+      debugPrint('updateUserFood: Error updating food for user with ID = $userId: $e');
+    }
   }
 
   Future<void> deleteUserFood({
     required String userId,
     required String userFoodId,
   }) async {
-    await _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('foods')
-        .doc(userFoodId)
-        .delete();
+    try {
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('foods')
+          .doc(userFoodId)
+          .delete();
+      debugPrint('deleteUserFood: Food deleted for user with ID = $userId');
+    } catch (e) {
+      debugPrint('deleteUserFood: Error deleting food for user with ID = $userId: $e');
+    }
   }
 
   Stream<List<Food>> getUserFoods({required String userId}) {
@@ -234,13 +196,23 @@ class MacrosService {
       final foodRef = _firestore.collection('foods').doc();
       batch.set(foodRef, foodData);
     }
-    await batch.commit();
+    try {
+      await batch.commit();
+      debugPrint('importFoods: Foods imported successfully');
+    } catch (e) {
+      debugPrint('importFoods: Error importing foods: $e');
+    }
   }
 
   Future<void> exportFoods() async {
-    final snapshot = await _firestore.collection('foods').get();
-    final foodsData = snapshot.docs.map((doc) => doc.data()).toList();
-    // Perform the export operation using the foodsData
-    // For example, you can convert it to JSON and save it to a file or send it to an API
+    try {
+      final snapshot = await _firestore.collection('foods').get();
+      final foodsData = snapshot.docs.map((doc) => doc.data()).toList();
+      // Perform the export operation using the foodsData
+      // For example, you can convert it to JSON and save it to a file or send it to an API
+      debugPrint('exportFoods: Foods exported successfully');
+    } catch (e) {
+      debugPrint('exportFoods: Error exporting foods: $e');
+    }
   }
 }

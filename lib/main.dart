@@ -357,10 +357,7 @@ class MyApp extends ConsumerWidget {
               path: '/food_tracker',
               builder: (context, state) => const DailyFoodTracker(),
               routes: [
-                GoRoute(
-                  path: 'food_management',
-                  builder: (context, state) => const FoodManagement(),
-                ),
+               
                 GoRoute(
                   path: 'food_selector',
                   builder: (context, state) {
@@ -374,6 +371,10 @@ class MyApp extends ConsumerWidget {
                 ),
               ],
             ),
+             GoRoute(
+                  path: '/food_management',
+                  builder: (context, state) => const FoodManagement(),
+                ),
             GoRoute(
               path: '/exercises_list',
               builder: (context, state) => const ExercisesList(),

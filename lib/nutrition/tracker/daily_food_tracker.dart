@@ -1,8 +1,9 @@
 import 'package:alphanessone/users_services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models&Services/meals_services.dart';
-import '../models&Services/macros_services.dart';
+import '../models&Services/food_services.dart';
 import 'food_list.dart';
 import '../models&Services/meals_model.dart' as meals;
 
@@ -25,6 +26,7 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
     super.initState();
     _initializeData();
     _loadUserTDEEAndMacros();
+    _importFoods();
   }
 
   Future<void> _initializeData() async {
@@ -57,6 +59,12 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
         _targetFats = macrosData['fat']!;
       });
     }
+  }
+
+  Future<void> _importFoods() async {
+    final foodService = FoodService(FirebaseFirestore.instance);
+    await foodService.importFoods();
+    await foodService.updateFoodTranslations();
   }
 
   void _changeDate(DateTime newDate) {

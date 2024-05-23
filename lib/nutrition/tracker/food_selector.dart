@@ -41,7 +41,6 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
   @override
   void initState() {
     super.initState();
-    //debugPrint('initState: myFoodId = ${widget.myFoodId}');
     if (widget.myFoodId != null) {
       _selectedFoodId = widget.myFoodId!;
       _foodFuture = _loadFoodData(widget.myFoodId!);
@@ -49,11 +48,9 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
   }
 
   Future<macros.Food?> _loadFoodData(String foodId) async {
-    //debugPrint('_loadFoodData: Loading food data for ID = $foodId');
-    final mealsService = ref.read(mealsServiceProvider);
-    final food = await mealsService.getMyFoodById(foodId);
+    final macrosService = ref.read(macrosServiceProvider);
+    final food = await macrosService.getFoodById(foodId);
     if (food != null) {
-      //debugPrint('_loadFoodData: Food data loaded: ${food.toJson()}');
       setState(() {
         _selectedFoodId = food.id!;
         _loadedFood = food;
@@ -64,33 +61,15 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
       });
       return food;
     } else {
-      // Prova a cercare su OpenFoodFacts se non è presente in Firestore
-      final foods = await ref.read(macrosServiceProvider).searchOpenFoodFacts(foodId);
-      if (foods.isNotEmpty) {
-        final food = foods.first;
-        //debugPrint('_loadFoodData: Food data loaded from OpenFoodFacts: ${food.toJson()}');
-        setState(() {
-          _selectedFoodId = food.id!;
-          _loadedFood = food;
-          _quantity = 100.0;
-          _unit = 'g';
-          _quantityController.text = '100';
-          _updateMacronutrientValues(food);
-        });
-        return food;
-      } else {
-        //debugPrint('_loadFoodData: No food data found for ID = $foodId');
-        setState(() {
-          _selectedFoodId = '';
-          _loadedFood = null;
-        });
-        return null;
-      }
+      setState(() {
+        _selectedFoodId = '';
+        _loadedFood = null;
+      });
+      return null;
     }
   }
 
   void _updateMacronutrientValues(macros.Food food) {
-    //debugPrint('_updateMacronutrientValues: Updating macronutrient values for food: ${food.toJson()}');
     setState(() {
       _proteinValue = food.protein * _quantity / 100;
       _carbsValue = food.carbs * _quantity / 100;
@@ -99,16 +78,10 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
     });
   }
 
-  Future<void> savefood() async {
-    //debugPrint('Save button pressed');
+  Future<void> saveFood() async {
     try {
       final mealsService = ref.read(mealsServiceProvider);
-      final macrosService = ref.read(macrosServiceProvider);
-
-      //debugPrint('savefood: Selected food ID: $_selectedFoodId');
-      final food = _loadedFood; // Use the loaded food
-      //debugPrint('savefood: Loaded food: ${food?.toJson()}');
-
+      final food = _loadedFood;
       if (food != null) {
         final adjustedFood = macros.Food(
           id: food.id,
@@ -135,38 +108,33 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
           iron: food.iron,
         );
 
-        //debugPrint('savefood: Saving adjusted food: ${adjustedFood.toJson()}');
-
         if (widget.myFoodId == null) {
-          // Add new food to meal
-          //debugPrint('savefood: Adding new food to meal with ID: ${widget.meal.id}');
           await mealsService.addFoodToMeal(
             mealId: widget.meal.id!,
             food: adjustedFood,
             quantity: _quantity,
           );
         } else {
-          // Update existing food in myfoods collection
-          //debugPrint('savefood: Updating existing food in myfoods collection');
           await mealsService.updateMyFood(
             myFoodId: widget.myFoodId!,
             updatedFood: adjustedFood,
           );
         }
 
-        //debugPrint('savefood: Food added/updated successfully');
-
         widget.onSave?.call();
-        context.pop(); // Go back to the previous screen
+        context.pop();
       }
     } catch (e) {
-      //debugPrint('savefood: Error saving food: $e');
+      debugPrint('saveFood: Error saving food: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Alphaness One'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -182,10 +150,8 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
                     _quantity = 100.0;
                     _unit = 'g';
                     _quantityController.text = '100';
-                    _foodFuture = Future.value(food); // Aggiorna il futuro
+                    _foodFuture = Future.value(food);
                     _updateMacronutrientValues(food);
-                    //debugPrint('AutoTypeField: Selected food ID: $_selectedFoodId');
-                    //debugPrint('AutoTypeField: Selected food data: ${food.toJson()}');
                   });
                 },
               ),
@@ -193,7 +159,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
               Expanded(child: _buildSelectedFoodDetails(context)),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: savefood,
+              onPressed: saveFood,
               child: const Text('Save and Go Back'),
             ),
           ],
@@ -203,17 +169,14 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
   }
 
   Widget _buildSelectedFoodDetails(BuildContext context) {
-    //debugPrint('_buildSelectedFoodDetails: Building details for food ID = $_selectedFoodId');
     return FutureBuilder<macros.Food?>(
       future: _foodFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          //debugPrint('FutureBuilder: Waiting for data');
           return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasData) {
           final food = snapshot.data!;
-          //debugPrint('FutureBuilder: Retrieved food: ${food.toJson()}');
-          _loadedFood = food; // Save the loaded food
+          _loadedFood = food;
           return SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -237,7 +200,6 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
                           setState(() {
                             _quantity = double.tryParse(value) ?? 100.0;
                             _updateMacronutrientValues(food);
-                            //debugPrint('TextField: Quantity changed to: $_quantity');
                           });
                         },
                       ),
@@ -255,7 +217,6 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
                         setState(() {
                           _unit = newValue!;
                           _updateMacronutrientValues(food);
-                          //debugPrint('DropdownButton: Unit changed to: $_unit');
                         });
                       },
                     ),
@@ -271,10 +232,8 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
             ),
           );
         } else if (snapshot.hasError) {
-          //debugPrint('FutureBuilder: Error: ${snapshot.error}');
           return Text('Error: ${snapshot.error}');
         } else {
-          //debugPrint('FutureBuilder: No data');
           return const Text('No data');
         }
       },
