@@ -19,23 +19,17 @@ class AutoTypeField extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final macrosService = ref.watch(macrosServiceProvider);
-    final suggestionsController = SuggestionsController<Food>();
 
     return TypeAheadField<Food>(
-      suggestionsController: suggestionsController,
       suggestionsCallback: (pattern) async {
-        if (pattern.length < 3) {
-          return [];
-        }
         try {
-          await Future.delayed(const Duration(milliseconds: 500)); // Riduci ulteriormente il debounce time
           return await macrosService.searchFoods(pattern).first;
         } catch (e) {
           debugPrint('Error fetching suggestions: $e');
           return [];
         }
       },
-      debounceDuration: const Duration(milliseconds: 500), // Riduci ulteriormente il debounce time
+      debounceDuration: const Duration(milliseconds: 500),
       itemBuilder: (context, Food suggestion) {
         return ListTile(
           title: Text(suggestion.name),
@@ -56,20 +50,10 @@ class AutoTypeField extends ConsumerWidget {
           style: const TextStyle(color: Colors.red),
         ),
       ),
-      emptyBuilder: (context) {
-        if (controller.text.length < 3) {
-          final remainingChars = 3 - controller.text.length;
-          return Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text('Please enter at least $remainingChars more characters'),
-          );
-        } else {
-          return const Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Text('No items found'),
-          );
-        }
-      },
+      emptyBuilder: (context) => const Padding(
+        padding: EdgeInsets.all(8.0),
+        child: Text('No items found'),
+      ),
       hideWithKeyboard: true,
       hideOnSelect: true,
       retainOnLoading: false,

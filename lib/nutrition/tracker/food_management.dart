@@ -98,6 +98,13 @@ class FoodManagement extends HookConsumerWidget {
       ));
     }
 
+    void normalizeNames() async {
+      await foodService.normalizeNames();
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Normalization completed'),
+      ));
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Food Management Dashboard'),
@@ -252,6 +259,11 @@ class FoodManagement extends HookConsumerWidget {
                   ElevatedButton(
                     onPressed: updateTranslations,
                     child: const Text('Update Translations'),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: normalizeNames,
+                    child: const Text('Normalize Names'),
                   ),
                   const SizedBox(height: 24),
                   StreamBuilder<Map<String, int>>(

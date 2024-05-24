@@ -110,12 +110,14 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
 
         if (widget.myFoodId == null) {
           await mealsService.addFoodToMeal(
+            userId: widget.meal.userId!,
             mealId: widget.meal.id!,
             food: adjustedFood,
             quantity: _quantity,
           );
         } else {
           await mealsService.updateMyFood(
+            userId: widget.meal.userId!,
             myFoodId: widget.myFoodId!,
             updatedFood: adjustedFood,
           );

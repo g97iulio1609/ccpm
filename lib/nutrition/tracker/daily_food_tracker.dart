@@ -26,7 +26,6 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
     super.initState();
     _initializeData();
     _loadUserTDEEAndMacros();
-    _importFoods();
   }
 
   Future<void> _initializeData() async {

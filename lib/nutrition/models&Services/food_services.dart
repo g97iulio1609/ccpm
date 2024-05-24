@@ -331,4 +331,28 @@ class FoodService {
     _isImporting = false;
     debugPrint('Import stopped');
   }
+
+
+ Future<void> normalizeNames() async {
+    final snapshot = await _firestore.collection('foods').get();
+    final batch = _firestore.batch();
+
+    for (var doc in snapshot.docs) {
+      final data = doc.data();
+      final normalizedData = {
+        'name': data['name'].toString().toLowerCase(),
+        'name_en': data['name_en']?.toString().toLowerCase(),
+        'name_it': data['name_it']?.toString().toLowerCase(),
+        'name_fr': data['name_fr']?.toString().toLowerCase(),
+        'name_es': data['name_es']?.toString().toLowerCase(),
+      };
+
+      batch.update(doc.reference, normalizedData);
+    }
+
+    await batch.commit();
+    debugPrint('Normalization completed.');
+  }
+
+
 }
