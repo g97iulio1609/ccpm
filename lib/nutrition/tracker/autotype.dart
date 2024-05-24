@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
-import 'macros_model.dart';
-import 'macros_services.dart';
+import '../models&Services/macros_model.dart';
+import '../models&Services/macros_services.dart';
 
 class AutoTypeField extends ConsumerWidget {
   final TextEditingController controller;
@@ -13,26 +13,29 @@ class AutoTypeField extends ConsumerWidget {
     required this.controller,
     required this.focusNode,
     required this.onSelected,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final macrosService = ref.watch(macrosServiceProvider);
-    final suggestionsController = SuggestionsController<Food>();
 
     return TypeAheadField<Food>(
-      suggestionsController: suggestionsController,
       suggestionsCallback: (pattern) async {
-        macrosService.setSearchQuery(pattern);
-        return await macrosService.searchFoods(pattern).first;
+        try {
+          return await macrosService.searchFoods(pattern).first;
+        } catch (e) {
+          debugPrint('Error fetching suggestions: $e');
+          return [];
+        }
       },
-      debounceDuration: const Duration(milliseconds: 300),
+      debounceDuration: const Duration(milliseconds: 500),
       itemBuilder: (context, Food suggestion) {
         return ListTile(
           title: Text(suggestion.name),
           subtitle: Text(
-            'Calories: ${suggestion.kcal}, Carbs: ${suggestion.carbs}, Fat: ${suggestion.fat}, Protein: ${suggestion.protein}',
+            'Brand: ${suggestion.brands}\n'
+            'C: ${suggestion.carbs}g, P: ${suggestion.protein}g, F: ${suggestion.fat}g, Kcal:${suggestion.kcal}'
           ),
         );
       },

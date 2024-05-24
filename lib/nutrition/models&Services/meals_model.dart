@@ -4,9 +4,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class Meal {
   String? id;
   String userId;
+  String dailyStatsId;
   DateTime date;
   String mealType; // Breakfast, Lunch, Dinner, Snack
-  List<String> foodIds; // IDs of the foods in this meal
   double totalCalories;
   double totalCarbs;
   double totalFat;
@@ -15,14 +15,38 @@ class Meal {
   Meal({
     this.id,
     required this.userId,
+    required this.dailyStatsId,
     required this.date,
     required this.mealType,
-    required this.foodIds,
     this.totalCalories = 0,
     this.totalCarbs = 0,
     this.totalFat = 0,
     this.totalProtein = 0,
   });
+
+  Meal copyWith({
+    String? id,
+    String? dailyStatsId,
+    String? userId,
+    DateTime? date,
+    String? mealType,
+    double? totalCalories,
+    double? totalCarbs,
+    double? totalFat,
+    double? totalProtein,
+  }) {
+    return Meal(
+      id: id ?? this.id,
+      dailyStatsId: dailyStatsId ?? this.dailyStatsId,
+      userId: userId ?? this.userId,
+      date: date ?? this.date,
+      mealType: mealType ?? this.mealType,
+      totalCalories: totalCalories ?? this.totalCalories,
+      totalCarbs: totalCarbs ?? this.totalCarbs,
+      totalFat: totalFat ?? this.totalFat,
+      totalProtein: totalProtein ?? this.totalProtein,
+    );
+  }
 
   factory Meal.fromJson(String source) => Meal.fromMap(json.decode(source));
 
@@ -32,9 +56,9 @@ class Meal {
     return Meal(
       id: map['id'],
       userId: map['userId'],
+      dailyStatsId: map['dailyStatsId'],
       date: (map['date'] as Timestamp).toDate(),
       mealType: map['mealType'],
-      foodIds: List<String>.from(map['foodIds']),
       totalCalories: map['totalCalories']?.toDouble() ?? 0.0,
       totalCarbs: map['totalCarbs']?.toDouble() ?? 0.0,
       totalFat: map['totalFat']?.toDouble() ?? 0.0,
@@ -47,9 +71,9 @@ class Meal {
     return Meal(
       id: doc.id,
       userId: data['userId'],
+      dailyStatsId: data['dailyStatsId'],
       date: (data['date'] as Timestamp).toDate(),
       mealType: data['mealType'],
-      foodIds: List<String>.from(data['foodIds']),
       totalCalories: data['totalCalories']?.toDouble() ?? 0.0,
       totalCarbs: data['totalCarbs']?.toDouble() ?? 0.0,
       totalFat: data['totalFat']?.toDouble() ?? 0.0,
@@ -61,9 +85,9 @@ class Meal {
     return {
       'id': id,
       'userId': userId,
+      'dailyStatsId': dailyStatsId,
       'date': Timestamp.fromDate(date),
       'mealType': mealType,
-      'foodIds': foodIds,
       'totalCalories': totalCalories,
       'totalCarbs': totalCarbs,
       'totalFat': totalFat,
@@ -71,12 +95,12 @@ class Meal {
     };
   }
 
-  static Meal emptyMeal(String userId, DateTime date, String mealType) {
+  static Meal emptyMeal(String userId, String dailyStatsId, DateTime date, String mealType) {
     return Meal(
       userId: userId,
+      dailyStatsId: dailyStatsId,
       date: date,
       mealType: mealType,
-      foodIds: [],
     );
   }
 }
@@ -144,6 +168,7 @@ class DailyStats {
 
 class Food {
   String? id;
+  String mealId;
   String name;
   double kcal;
   double carbs;
@@ -154,13 +179,14 @@ class Food {
 
   Food({
     this.id,
+    required this.mealId,
     required this.name,
     required this.kcal,
     required this.carbs,
     required this.fat,
     required this.protein,
-    this.quantity = 100,
-    this.portion = 'g',
+    required this.quantity,
+    required this.portion,
   });
 
   factory Food.fromJson(String source) => Food.fromMap(json.decode(source));
@@ -170,6 +196,7 @@ class Food {
   factory Food.fromMap(Map<String, dynamic> map) {
     return Food(
       id: map['id'],
+      mealId: map['mealId'],
       name: map['name'],
       kcal: map['kcal']?.toDouble() ?? 0.0,
       carbs: map['carbs']?.toDouble() ?? 0.0,
@@ -184,6 +211,7 @@ class Food {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return Food(
       id: doc.id,
+      mealId: data['mealId'],
       name: data['name'],
       kcal: data['kcal']?.toDouble() ?? 0.0,
       carbs: data['carbs']?.toDouble() ?? 0.0,
@@ -197,6 +225,7 @@ class Food {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+      'mealId': mealId,
       'name': name,
       'kcal': kcal,
       'carbs': carbs,

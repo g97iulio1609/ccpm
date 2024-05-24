@@ -1,0 +1,215 @@
+import 'package:alphanessone/users_services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models&Services/meals_services.dart';
+import '../models&Services/food_services.dart';
+import 'food_list.dart';
+import '../models&Services/meals_model.dart' as meals;
+
+class DailyFoodTracker extends ConsumerStatefulWidget {
+  const DailyFoodTracker({super.key});
+
+  @override
+  _DailyFoodTrackerState createState() => _DailyFoodTrackerState();
+}
+
+class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
+  DateTime _selectedDate = DateTime.now();
+  int _targetCalories = 2000;
+  double _targetCarbs = 0;
+  double _targetProteins = 0;
+  double _targetFats = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeData();
+    _loadUserTDEEAndMacros();
+  }
+
+  Future<void> _initializeData() async {
+    final userService = ref.read(usersServiceProvider);
+    final mealsService = ref.read(mealsServiceProvider);
+    final userId = userService.getCurrentUserId();
+    final currentYear = DateTime.now().year;
+
+    await mealsService.createDailyStatsForYear(userId, currentYear);
+    await mealsService.createMealsForYear(userId, currentYear);
+  }
+
+  Future<void> _loadUserTDEEAndMacros() async {
+    final userService = ref.read(usersServiceProvider);
+    final userId = userService.getCurrentUserId();
+    final tdeeData = await userService.getTDEEData(userId);
+    final macrosData = await userService.getUserMacros(userId);
+
+    if (tdeeData != null && tdeeData['tdee'] != null) {
+      setState(() {
+        _targetCalories = tdeeData['tdee'].round();
+      });
+    }
+
+    if (macrosData != null) {
+      setState(() {
+        _targetCarbs = macrosData['carbs']!;
+        _targetProteins = macrosData['protein']!;
+        _targetFats = macrosData['fat']!;
+      });
+    }
+  }
+
+  Future<void> _importFoods() async {
+    final foodService = FoodService(FirebaseFirestore.instance);
+    await foodService.importFoods();
+    await foodService.updateFoodTranslations();
+  }
+
+  void _changeDate(DateTime newDate) {
+    setState(() {
+      _selectedDate = newDate;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dailyStats = ref.watch(dailyStatsProvider(_selectedDate));
+
+    final bool isToday = _selectedDate.isAtSameMomentAs(DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    ));
+
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        title: Row(
+          children: [
+            const Icon(Icons.calendar_today),
+            const SizedBox(width: 8),
+            Text(
+              isToday ? 'Today' : '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.chevron_left),
+            onPressed: () {
+              _changeDate(_selectedDate.subtract(const Duration(days: 1)));
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.chevron_right),
+            onPressed: () {
+              _changeDate(_selectedDate.add(const Duration(days: 1)));
+            },
+          ),
+        ],
+      ),
+      body: dailyStats.when(
+        data: (stats) {
+          return Column(
+            children: [
+              Container(
+                color: Colors.black,
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(child: _buildMacroItem('Protein', stats.totalProtein, _targetProteins, Colors.green)),
+                        const SizedBox(width: 8),
+                        Expanded(child: _buildMacroItem('Carbohydrates', stats.totalCarbs, _targetCarbs, Colors.orange)),
+                        const SizedBox(width: 8),
+                        Expanded(child: _buildMacroItem('Fat', stats.totalFat, _targetFats, Colors.purple)),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          stats.totalCalories.toStringAsFixed(0),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                          ),
+                        ),
+                        Text(
+                          '${(_targetCalories - stats.totalCalories).toStringAsFixed(0)} Cal Remaining',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      'of $_targetCalories Cal Goal',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: FoodList(selectedDate: _selectedDate),
+              ),
+            ],
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Error: $err')),
+      ),
+    );
+  }
+
+  Widget _buildMacroItem(String title, double value, double target, Color color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Container(
+          constraints: const BoxConstraints(maxWidth: double.infinity),
+          child: LinearProgressIndicator(
+            value: (value / target).clamp(0.0, 1.0),
+            backgroundColor: Colors.white,
+            color: color,
+            minHeight: 8,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '${value.toStringAsFixed(0)} / ${target.toStringAsFixed(0)} g',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+final dailyStatsProvider = StreamProvider.autoDispose.family<meals.DailyStats, DateTime>((ref, date) async* {
+  final mealsService = ref.read(mealsServiceProvider);
+  final userService = ref.read(usersServiceProvider);
+  final userId = userService.getCurrentUserId();
+
+  await mealsService.createDailyStatsIfNotExist(userId, date);
+  await mealsService.createMealsIfNotExist(userId, date);
+  yield* mealsService.getDailyStatsByDateStream(userId, date);
+});

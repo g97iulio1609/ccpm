@@ -4,13 +4,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class Food {
   String? id;
   String name;
+  String? brands;
   double carbs;
   double fat;
   double protein;
   double kcal;
-  double quantity;
+  double? quantity;
   String quantityUnit;
-  String portion;
+  String? portion;
   double sugar;
   double fiber;
   double saturatedFat;
@@ -27,14 +28,15 @@ class Food {
 
   Food({
     this.id,
+    this.brands,
     required this.name,
     required this.carbs,
     required this.fat,
     required this.protein,
     required this.kcal,
-    required this.quantity,
+    this.quantity,
     this.quantityUnit = 'g',
-    required this.portion,
+    this.portion,
     this.sugar = 0.0,
     this.fiber = 0.0,
     this.saturatedFat = 0.0,
@@ -56,6 +58,7 @@ class Food {
 
   Food copyWith({
     String? id,
+    String? brands,
     String? name,
     double? carbs,
     double? fat,
@@ -81,6 +84,7 @@ class Food {
     return Food(
       id: id ?? this.id,
       name: name ?? this.name,
+      brands: brands ?? this.brands,
       carbs: carbs ?? this.carbs,
       fat: fat ?? this.fat,
       protein: protein ?? this.protein,
@@ -108,6 +112,7 @@ class Food {
     return Food(
       id: map['id'],
       name: map['name'],
+      brands: map['brands'],
       carbs: map['carbs']?.toDouble() ?? 0.0,
       fat: map['fat']?.toDouble() ?? 0.0,
       protein: map['protein']?.toDouble() ?? 0.0,
@@ -136,6 +141,7 @@ class Food {
     return Food(
       id: doc.id,
       name: data['name'],
+      brands: data['brands'],
       carbs: data['carbs']?.toDouble() ?? 0.0,
       fat: data['fat']?.toDouble() ?? 0.0,
       protein: data['protein']?.toDouble() ?? 0.0,
@@ -163,6 +169,7 @@ class Food {
     return {
       'id': id,
       'name': name,
+      'brands': brands,
       'carbs': carbs,
       'fat': fat,
       'protein': protein,

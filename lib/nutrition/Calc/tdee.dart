@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../users_services.dart';
+import '../../users_services.dart';
 import 'package:intl/intl.dart';
 
 class TDEEScreen extends ConsumerStatefulWidget {
@@ -20,12 +20,27 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
   int _weight = 0;
   String _gender = '';
   double _activityLevel = 1.2;
-  double _tdee = 0.0;
+  int _tdee = 0;
+
+  late TextEditingController _ageController;
+  late TextEditingController _heightController;
+  late TextEditingController _weightController;
 
   @override
   void initState() {
     super.initState();
+    _ageController = TextEditingController();
+    _heightController = TextEditingController();
+    _weightController = TextEditingController();
     _loadTDEEData();
+  }
+
+  @override
+  void dispose() {
+    _ageController.dispose();
+    _heightController.dispose();
+    _weightController.dispose();
+    super.dispose();
   }
 
   void _loadTDEEData() async {
@@ -40,6 +55,10 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
         _gender = tdeeData['gender'];
         _activityLevel = tdeeData['activityLevel'];
         _tdee = tdeeData['tdee'];
+
+        _ageController.text = _calculateAge(_birthDate!).toString();
+        _heightController.text = _height.toString();
+        _weightController.text = _weight.toString();
       });
     }
   }
@@ -57,7 +76,7 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
         bmr = 447.593 + (9.247 * _weight) + (3.098 * _height) - (4.330 * age);
       }
 
-      _tdee = bmr * _activityLevel;
+      _tdee = (bmr * _activityLevel).round();
 
       final usersService = ref.read(usersServiceProvider);
       await usersService.updateTDEEData(widget.userId, {
@@ -79,7 +98,9 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-     
+      appBar: AppBar(
+        title: Text('Fabbisogno Calorico'),
+      ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -109,9 +130,7 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  initialValue: _birthDate != null
-                      ? (_calculateAge(_birthDate!)).toString()
-                      : '',
+                  controller: _ageController,
                   readOnly: true,
                   onTap: () async {
                     final pickedDate = await showDatePicker(
@@ -123,6 +142,7 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
                     if (pickedDate != null) {
                       setState(() {
                         _birthDate = pickedDate;
+                        _ageController.text = _calculateAge(_birthDate!).toString();
                       });
                     }
                   },
@@ -138,7 +158,7 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        initialValue: _height.toString(),
+                        controller: _heightController,
                         keyboardType: TextInputType.number,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -181,7 +201,7 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        initialValue: _weight.toString(),
+                        controller: _weightController,
                         keyboardType: TextInputType.number,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -221,7 +241,7 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  value: _gender,
+                  value: _gender.isNotEmpty ? _gender : null,
                   items: ['male', 'female'].map((gender) {
                     return DropdownMenuItem(
                       value: gender,
@@ -291,7 +311,7 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
                 ),
                 const SizedBox(height: 32),
                 Text(
-                  'Your TDEE is: ${_tdee.toStringAsFixed(2)}',
+                  'Your TDEE is: $_tdee',
                   style: textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),

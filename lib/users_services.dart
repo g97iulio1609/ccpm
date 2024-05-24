@@ -429,6 +429,31 @@ Future<void> updateTDEEData(String userId, Map<String, dynamic> tdeeData) async 
   await _firestore.collection('users').doc(userId).update(tdeeData);
 }
 
+ Future<void> updateMacros(String userId, Map<String, double> macros) async {
+    await _firestore.collection('users').doc(userId).update(macros);
+  }
+
+Future<Map<String, dynamic>> getUserData(String userId) async {
+  // Fetch user data from Firestore
+  final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+  return userDoc.data() ?? {};
+}
+
+
+  Future<Map<String, double>> getUserMacros(String userId) async {
+    final userDoc = await _firestore.collection('users').doc(userId).get();
+    if (userDoc.exists) {
+      final userData = userDoc.data() as Map<String, dynamic>;
+      return {
+        'carbs': userData['carbs']?.toDouble() ?? 0.0,
+        'protein': userData['protein']?.toDouble() ?? 0.0,
+        'fat': userData['fat']?.toDouble() ?? 0.0,
+      };
+    }
+    return {'carbs': 0.0, 'protein': 0.0, 'fat': 0.0};
+  }
+
+
 
   Future<void> _updateCurrentProgramWeights(
       String userId, String exerciseId, num newMaxWeight) async {

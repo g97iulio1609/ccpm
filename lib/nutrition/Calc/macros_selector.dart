@@ -1,27 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'macros_calc.dart';
-import '../users_services.dart';
+import '../../users_services.dart';
 
-final macrosProvider =
-    StateNotifierProvider<MacrosNotifier, Map<String, double>>((ref) {
-  return MacrosNotifier();
+final macrosProvider = StateNotifierProvider<MacrosNotifier, Map<String, double>>((ref) {
+  return MacrosNotifier(ref);
 });
 
 class MacrosNotifier extends StateNotifier<Map<String, double>> {
-  MacrosNotifier() : super({'carbs': 0, 'protein': 0, 'fat': 0});
+  final StateNotifierProviderRef<MacrosNotifier, Map<String, double>> ref;
+
+  MacrosNotifier(this.ref) : super({'carbs': 0, 'protein': 0, 'fat': 0});
 
   void updateMacrosFromPercentages(double tdee, Map<String, double> percentages) {
     state = MacrosCalculator.calculateMacrosFromPercentages(tdee, percentages);
+    _saveMacrosToFirebase(state);
   }
 
   void updateMacrosFromGramsPerKg(double tdee, double weight, Map<String, double> gramsPerKg) {
     state = MacrosCalculator.calculateMacrosFromGramsPerKg(tdee, weight, gramsPerKg);
+    _saveMacrosToFirebase(state);
   }
 
   void updateMacrosFromGrams(double tdee, Map<String, double> grams) {
     state = MacrosCalculator.calculateMacrosFromGrams(tdee, grams);
+    _saveMacrosToFirebase(state);
+  }
+
+  Future<void> _saveMacrosToFirebase(Map<String, double> macros) async {
+    final usersService = ref.read(usersServiceProvider);
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId != null) {
+      await usersService.updateMacros(userId, macros);
+    }
   }
 }
 
@@ -37,6 +51,7 @@ class MacrosSelector extends ConsumerStatefulWidget {
 class _MacrosSelectorState extends ConsumerState<MacrosSelector> {
   double _tdee = 0.0;
   double _weight = 0.0;
+  bool _autoAdjustMacros = false;
 
   final _gramsControllers = {
     'carbs': TextEditingController(),
@@ -49,10 +64,10 @@ class _MacrosSelectorState extends ConsumerState<MacrosSelector> {
     'protein': TextEditingController(),
     'fat': TextEditingController(),
   };
-  
+
   final _percentageControllers = {
     'carbs': TextEditingController(),
-    'protein': TextEditingController(), 
+    'protein': TextEditingController(),
     'fat': TextEditingController(),
   };
 
@@ -86,16 +101,19 @@ class _MacrosSelectorState extends ConsumerState<MacrosSelector> {
 
     if (tdeeData != null) {
       setState(() {
-        _tdee = tdeeData['tdee']!;
-        _weight = tdeeData['weight']!.toDouble();
+        _tdee = (tdeeData['tdee'] ?? 0.0).toDouble();
+        _weight = (tdeeData['weight'] ?? 0.0).toDouble();
       });
 
-final macroPercentages = {
-  'carbs': 50.0,
-  'protein': 20.0, 
-  'fat': 30.0,
-};
-      ref.read(macrosProvider.notifier).updateMacrosFromPercentages(_tdee, macroPercentages);
+      final existingMacros = {
+        'carbs': (tdeeData['carbs'] ?? 0.0).toDouble(),
+        'protein': (tdeeData['protein'] ?? 0.0).toDouble(),
+        'fat': (tdeeData['fat'] ?? 0.0).toDouble(),
+      };
+
+      // Convert the existingMacros values to double explicitly
+      ref.read(macrosProvider.notifier).state = existingMacros.map((key, value) => MapEntry(key, value.toDouble()));
+
       _updateInputFields();
     }
   }
@@ -103,11 +121,11 @@ final macroPercentages = {
   void _updateInputFields() {
     final macros = ref.read(macrosProvider);
     for (final macro in macros.keys) {
-      final grams = macros[macro]!; 
+      final grams = macros[macro]!;
       final gramsPerKg = grams / _weight;
       final calories = MacrosCalculator.calculateCaloriesFromGrams(macro, grams);
       final percentage = calories / _tdee * 100;
-      
+
       _gramsControllers[macro]?.text = grams.toStringAsFixed(2);
       _gramsPerKgControllers[macro]?.text = gramsPerKg.toStringAsFixed(2);
       _percentageControllers[macro]?.text = percentage.toStringAsFixed(0);
@@ -128,7 +146,17 @@ final macroPercentages = {
             style: textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
             ),
-            textAlign: TextAlign.center,  
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          SwitchListTile(
+            title: const Text('Auto Adjust Macros'),
+            value: _autoAdjustMacros,
+            onChanged: (value) {
+              setState(() {
+                _autoAdjustMacros = value;
+              });
+            },
           ),
           const SizedBox(height: 24),
           _buildMacroSection(
@@ -142,10 +170,10 @@ final macroPercentages = {
           const SizedBox(height: 16),
           _buildMacroSection(
             context,
-            ref,  
+            ref,
             'Protein',
             _gramsControllers['protein'],
-            _gramsPerKgControllers['protein'], 
+            _gramsPerKgControllers['protein'],
             _percentageControllers['protein'],
           ),
           const SizedBox(height: 16),
@@ -155,7 +183,7 @@ final macroPercentages = {
             'Fat',
             _gramsControllers['fat'],
             _gramsPerKgControllers['fat'],
-            _percentageControllers['fat'],  
+            _percentageControllers['fat'],
           ),
           const SizedBox(height: 32),
           Text(
@@ -172,155 +200,113 @@ final macroPercentages = {
     );
   }
 
-Widget _buildMacroSection(
-  BuildContext context,
-  WidgetRef ref,
-  String macroName,
-  TextEditingController? gramsController,
-  TextEditingController? gramsPerKgController,
-  TextEditingController? percentageController,
-) {
-  final textTheme = Theme.of(context).textTheme;
-  final macroKey = macroName.toLowerCase() == 'carbohydrates' ? 'carbs' : macroName.toLowerCase();
+  Widget _buildMacroSection(
+    BuildContext context,
+    WidgetRef ref,
+    String macroName,
+    TextEditingController? gramsController,
+    TextEditingController? gramsPerKgController,
+    TextEditingController? percentageController,
+  ) {
+    final textTheme = Theme.of(context).textTheme;
+    final macroKey = macroName.toLowerCase() == 'carbohydrates' ? 'carbs' : macroName.toLowerCase();
 
-  return Card(
-    elevation: 2,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(16),
-    ),
-    child: Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            macroName,
-            style: textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              macroName,
+              style: textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          _buildTextField(
-            controller: percentageController,
-            labelText: 'Percentage',
-            hintText: 'Enter percentage',
-            onChanged: (value) {
-              final percentage = double.tryParse(value) ?? 0.0;
-              final macroPercentages = {macroKey: percentage};
-              ref.read(macrosProvider.notifier).updateMacrosFromPercentages(_tdee, macroPercentages);
-              _updateInputFields();
-            },
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildTextField(
-                  controller: gramsController,
-                  labelText: 'Grams',
-                  hintText: 'Enter grams',
-                  onChanged: (value) {
-                    final grams = double.tryParse(value) ?? 0.0;
-                    final macroGrams = {macroKey: grams};
-                    ref.read(macrosProvider.notifier).updateMacrosFromGrams(_tdee, macroGrams);
-                    _updateInputFields();
-                  },
+            const SizedBox(height: 16),
+            _buildTextField(
+              controller: percentageController,
+              labelText: 'Percentage',
+              hintText: 'Enter percentage',
+              onChanged: (value) {
+                final percentage = double.tryParse(value) ?? 0.0;
+                final macroPercentages = {macroKey: percentage};
+                ref.read(macrosProvider.notifier).updateMacrosFromPercentages(_tdee, macroPercentages);
+                _updateInputFields();
+              },
+              isPercentage: true,
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildTextField(
+                    controller: gramsController,
+                    labelText: 'Grams',
+                    hintText: 'Enter grams',
+                    onChanged: (value) {
+                      final grams = double.tryParse(value) ?? 0.0;
+                      final macroGrams = {macroKey: grams};
+                      ref.read(macrosProvider.notifier).updateMacrosFromGrams(_tdee, macroGrams);
+                      _updateInputFields();
+                    },
+                  ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildTextField(
-                  controller: gramsPerKgController,
-                  labelText: 'Grams per kg',
-                  hintText: 'Enter grams per kg',
-                  onChanged: (value) {
-                    final gramsPerKg = double.tryParse(value) ?? 0.0;
-                    final macroGramsPerKg = {macroKey: gramsPerKg};
-                    ref.read(macrosProvider.notifier).updateMacrosFromGramsPerKg(_tdee, _weight, macroGramsPerKg);
-                    _updateInputFields();
-                  },
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildTextField(
+                    controller: gramsPerKgController,
+                    labelText: 'Grams per kg',
+                    hintText: 'Enter grams per kg',
+                    onChanged: (value) {
+                      final gramsPerKg = double.tryParse(value) ?? 0.0;
+                      final macroGramsPerKg = {macroKey: gramsPerKg};
+                      ref.read(macrosProvider.notifier).updateMacrosFromGramsPerKg(_tdee, _weight, macroGramsPerKg);
+                      _updateInputFields();
+                    },
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
-Widget _buildTextField({
-  required TextEditingController? controller,
-  required String labelText,
-  required String hintText,
-  required ValueChanged<String> onChanged,
-  bool isPercentage = false,
-}) {
-  return TextFormField(
-    controller: controller,
-    decoration: InputDecoration(
-      labelText: labelText,
-      hintText: hintText,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController? controller,
+    required String labelText,
+    required String hintText,
+    required ValueChanged<String> onChanged,
+    bool isPercentage = false,
+  }) {
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: labelText,
+        hintText: hintText,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
       ),
-    ),
-    keyboardType: TextInputType.number,
-    inputFormatters: [
-      FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-    ],
-    onChanged: (value) {
-      onChanged(value);
-      if (isPercentage) {
-        _updateMacroPercentages();
-      } else {
-        _updateMacrosFromGrams();
-      }
-    },
-  );
-}
-
-void _updateMacroPercentages() {
-  final macroPercentages = {
-    'carbs': double.tryParse(_percentageControllers['carbs']?.text ?? '') ?? 0.0,
-    'protein': double.tryParse(_percentageControllers['protein']?.text ?? '') ?? 0.0,
-    'fat': double.tryParse(_percentageControllers['fat']?.text ?? '') ?? 0.0,
-  };
-  final macros = MacrosCalculator.calculateMacrosFromPercentages(_tdee, macroPercentages);
-  ref.read(macrosProvider.notifier).state = macros;
-  _updateInputFields();
-}
-
-void _updateMacrosFromGrams() {
-  final macroGrams = {
-    'carbs': double.tryParse(_gramsControllers['carbs']?.text ?? '') ?? 0.0,
-    'protein': double.tryParse(_gramsControllers['protein']?.text ?? '') ?? 0.0,
-    'fat': double.tryParse(_gramsControllers['fat']?.text ?? '') ?? 0.0,
-  };
-  final macroPercentages = MacrosCalculator.calculatePercentagesFromGrams(_tdee, macroGrams);
-  final macros = MacrosCalculator.calculateMacrosFromPercentages(_tdee, macroPercentages);
-  ref.read(macrosProvider.notifier).state = macros;
-  _updateInputFields();
-}
-
-
-void _updateMacrosFromGramsPerKg() {
-  final macroGramsPerKg = {
-    'carbs': double.tryParse(_gramsPerKgControllers['carbs']?.text ?? '') ?? 0.0,
-    'protein': double.tryParse(_gramsPerKgControllers['protein']?.text ?? '') ?? 0.0,
-    'fat': double.tryParse(_gramsPerKgControllers['fat']?.text ?? '') ?? 0.0,
-  };
-  final macroPercentages = MacrosCalculator.calculatePercentagesFromGramsPerKg(_tdee, _weight, macroGramsPerKg);
-  final macros = MacrosCalculator.calculateMacrosFromPercentages(_tdee, macroPercentages);
-  ref.read(macrosProvider.notifier).state = macros;
-  _updateInputFields();
-}
-
+      keyboardType: TextInputType.number,
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+      ],
+      onChanged: onChanged,
+    );
+  }
 
   Widget _buildMacroBreakdown(BuildContext context) {
     final macros = ref.watch(macrosProvider);
 
     return Card(
-      elevation: 2, 
+      elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),

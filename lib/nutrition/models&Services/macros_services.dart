@@ -27,25 +27,38 @@ class MacrosService {
         _firestore.collection('foods').snapshots().listen((snapshot) {
       final foods =
           snapshot.docs.map((doc) => Food.fromFirestore(doc)).toList();
-      _foodsStreamController.add(_filterFoods(foods));
+      _foodsStreamController.add(foods);
     });
   }
 
-  List<Food> _filterFoods(List<Food> foods) {
-    if (_searchQuery.isEmpty) {
-      return foods;
-    } else {
-      final lowercaseQuery = _searchQuery.toLowerCase();
-      return foods
-          .where((food) => food.name.toLowerCase().contains(lowercaseQuery))
-          .toList();
-    }
+  void setSearchQuery(String query) {
+    _searchQuery = query.trim().toLowerCase(); // Assicurati che la query sia in minuscolo e senza spazi iniziali o finali
+    debugPrint('Query impostata a: $_searchQuery');
+    _searchFoods();
   }
 
-  void setSearchQuery(String query) {
-    _searchQuery = query;
-    final foods = _foodsStreamController.valueOrNull ?? [];
-    _searchResultsStreamController.add(_filterFoods(foods));
+  Future<void> _searchFoods() async {
+    try {
+      debugPrint('Eseguendo ricerca per: $_searchQuery');
+      final firestoreResults = await _firestore
+          .collection('foods')
+          .orderBy('name')
+          .startAt([_searchQuery])
+          .endAt([_searchQuery + '\uf8ff'])
+          .limit(10) // Limita il numero di risultati per migliorare le performance
+          .get();
+
+      final foods = firestoreResults.docs.map((doc) {
+        final food = Food.fromFirestore(doc);
+        debugPrint('Trovato: ${food.name}');
+        return food;
+      }).toList();
+      debugPrint('Risultati della ricerca: ${foods.length} elementi trovati.');
+      _searchResultsStreamController.add(foods);
+    } catch (e) {
+      debugPrint('Errore durante la ricerca: $e');
+      _searchResultsStreamController.addError(e);
+    }
   }
 
   Stream<List<Food>> searchFoods(String query) {
@@ -53,28 +66,22 @@ class MacrosService {
     return _searchResultsStreamController.stream;
   }
 
-  Stream<List<Food>> getFoods() {
-    return _foodsStreamController.stream.doOnData((foods) {
-      debugPrint('Emitted foods: $foods');
-    });
-  }
-
   Future<Food?> getFoodById(String foodId) async {
     final foodDoc = await _firestore.collection('foods').doc(foodId).get();
     if (foodDoc.exists) {
       return Food.fromFirestore(foodDoc);
-    } else {
-      return null;
     }
+    return null;
   }
 
   Future<void> addFood(Food food) async {
-    final foodRef = _firestore.collection('foods').doc();
-    food.id = foodRef.id;
+    final foodRef = _firestore.collection('foods').doc(food.id);
+    food.name = food.name.toLowerCase(); // Converti il nome in minuscolo
     await foodRef.set(food.toMap());
   }
 
   Future<void> updateFood(String foodId, Food updatedFood) async {
+    updatedFood.name = updatedFood.name.toLowerCase(); // Converti il nome in minuscolo
     await _firestore.collection('foods').doc(foodId).update(updatedFood.toMap());
   }
 
@@ -153,6 +160,7 @@ class MacrosService {
     final batch = _firestore.batch();
     for (final foodData in foodsData) {
       final foodRef = _firestore.collection('foods').doc();
+      foodData['name'] = foodData['name'].toString().toLowerCase(); // Converti il nome in minuscolo
       batch.set(foodRef, foodData);
     }
     await batch.commit();
