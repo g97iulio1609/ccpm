@@ -36,6 +36,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
 
   Future<macros.Food?>? _foodFuture;
   macros.Food? _loadedFood;
+  macros.Food? _originalFood;
 
   @override
   void initState() {
@@ -48,11 +49,12 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
 
   Future<macros.Food?> _loadFoodData(String foodId) async {
     final mealsService = ref.read(mealsServiceProvider);
-    final food = await mealsService.getMyFoodById(widget.meal.userId!, foodId);
+    final food = await mealsService.getMyFoodById(widget.meal.userId, foodId);
     if (food != null) {
       setState(() {
         _selectedFoodId = food.id!;
         _loadedFood = food;
+        _originalFood = food;
         _quantity = food.quantity ?? 100.0;
         _unit = food.quantityUnit;
         _quantityController.text = _quantity.toString();
@@ -109,16 +111,29 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
 
         if (widget.myFoodId == null) {
           await mealsService.addFoodToMeal(
-            userId: widget.meal.userId!,
+            userId: widget.meal.userId,
             mealId: widget.meal.id!,
             food: adjustedFood,
             quantity: _quantity,
           );
         } else {
           await mealsService.updateMyFood(
-            userId: widget.meal.userId!,
+            userId: widget.meal.userId,
             myFoodId: widget.myFoodId!,
             updatedFood: adjustedFood,
+          );
+          // Adjust meal and daily stats
+          await mealsService.updateMealAndDailyStats(
+            widget.meal.userId,
+            widget.meal.id!,
+            _originalFood!,
+            isAdding: false,
+          );
+          await mealsService.updateMealAndDailyStats(
+            widget.meal.userId,
+            widget.meal.id!,
+            adjustedFood,
+            isAdding: true,
           );
         }
 
@@ -133,26 +148,28 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Food Selector'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            if (widget.myFoodId == null)
-              AutoTypeField(
-                controller: _searchController,
-                focusNode: FocusNode(),
-                onSelected: (macros.Food food) {
-                  setState(() {
-                    _selectedFoodId = food.id!;
-                    _loadedFood = food;
-                    _quantity = 100.0;
-                    _unit = 'g';
-                    _quantityController.text = '100';
-                    _foodFuture = Future.value(food);
-                    _updateMacronutrientValues(food);
-                  });
-                },
-              ),
+            AutoTypeField(
+              controller: _searchController,
+              focusNode: FocusNode(),
+              onSelected: (macros.Food food) {
+                setState(() {
+                  _selectedFoodId = food.id!;
+                  _loadedFood = food;
+                  _quantity = 100.0;
+                  _unit = 'g';
+                  _quantityController.text = '100';
+                  _foodFuture = Future.value(food);
+                  _updateMacronutrientValues(food);
+                });
+              },
+            ),
             if (_selectedFoodId.isNotEmpty || widget.myFoodId != null)
               Expanded(child: _buildSelectedFoodDetails(context)),
             const SizedBox(height: 16),
