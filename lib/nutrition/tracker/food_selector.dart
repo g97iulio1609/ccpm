@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models&Services/macros_model.dart' as macros;
 import '../models&Services/meals_model.dart' as meals;
 import '../models&Services/meals_services.dart';
-import '../models&Services/macros_services.dart';
 import 'autotype.dart';
 import 'package:go_router/go_router.dart';
 
@@ -48,8 +47,8 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
   }
 
   Future<macros.Food?> _loadFoodData(String foodId) async {
-    final macrosService = ref.read(macrosServiceProvider);
-    final food = await macrosService.getFoodById(foodId);
+    final mealsService = ref.read(mealsServiceProvider);
+    final food = await mealsService.getMyFoodById(widget.meal.userId!, foodId);
     if (food != null) {
       setState(() {
         _selectedFoodId = food.id!;
@@ -110,12 +109,14 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
 
         if (widget.myFoodId == null) {
           await mealsService.addFoodToMeal(
+            userId: widget.meal.userId!,
             mealId: widget.meal.id!,
             food: adjustedFood,
             quantity: _quantity,
           );
         } else {
           await mealsService.updateMyFood(
+            userId: widget.meal.userId!,
             myFoodId: widget.myFoodId!,
             updatedFood: adjustedFood,
           );
@@ -152,7 +153,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
                   });
                 },
               ),
-            if (_selectedFoodId.isNotEmpty)
+            if (_selectedFoodId.isNotEmpty || widget.myFoodId != null)
               Expanded(child: _buildSelectedFoodDetails(context)),
             const SizedBox(height: 16),
             ElevatedButton(

@@ -7,8 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../models&Services/macros_model.dart' as macros;
 import '../models&Services/meals_model.dart' as meals;
 import '../models&Services/meals_services.dart';
-import '../models&Services/macros_services.dart';
-import 'food_selector.dart';
+
 
 class FoodList extends ConsumerWidget {
   final DateTime selectedDate;
@@ -74,7 +73,7 @@ class FoodList extends ConsumerWidget {
                   onPressed: () async {
                     final snackMeals = _getSnackMeals(mealsList);
                     if (snackMeals.length > 1) {
-                      await mealsService.deleteSnack(mealId: meal.id!);
+                      await mealsService.deleteSnack(userId: meal.userId, mealId: meal.id!);
                     }
                   },
                 ),
@@ -82,7 +81,7 @@ class FoodList extends ConsumerWidget {
           ),
           children: [
             FutureBuilder<List<macros.Food>>(
-              future: mealsService.getFoodsForMeal(meal.id!),
+              future: mealsService.getFoodsForMeals(userId: meal.userId, mealId: meal.id!),
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
                   final foods = snapshot.data!;
@@ -139,7 +138,7 @@ class FoodList extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.delete, color: Colors.white),
             onPressed: () {
-              mealsService.removeFoodFromMeal(mealId: meal.id!, myFoodId: food.id!);
+              mealsService.removeFoodFromMeal(userId: meal.userId, mealId: meal.id!, myFoodId: food.id!);
             },
           ),
         ],
