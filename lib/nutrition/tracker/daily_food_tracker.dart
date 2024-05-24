@@ -34,7 +34,6 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
     final userId = userService.getCurrentUserId();
     final currentYear = DateTime.now().year;
 
-    // Create daily stats and meals for the current year
     await mealsService.createDailyStatsForYear(userId, currentYear);
     await mealsService.createMealsForYear(userId, currentYear);
   }
@@ -186,7 +185,7 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
         Container(
           constraints: const BoxConstraints(maxWidth: double.infinity),
           child: LinearProgressIndicator(
-            value: value / target,
+            value: (value / target).clamp(0.0, 1.0),
             backgroundColor: Colors.white,
             color: color,
             minHeight: 8,

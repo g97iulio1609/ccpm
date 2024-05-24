@@ -374,39 +374,39 @@ class MealsService extends ChangeNotifier {
     return foodDocs.docs.map((doc) => macros.Food.fromFirestore(doc)).toList();
   }
 
-  Future<void> updateMealAndDailyStats(String userId, String mealId, macros.Food food, {required bool isAdding}) async {
-    final mealRef = _firestore.collection('users').doc(userId).collection('meals').doc(mealId);
-    final mealSnapshot = await mealRef.get();
+Future<void> updateMealAndDailyStats(String userId, String mealId, macros.Food food, {required bool isAdding}) async {
+  final mealRef = _firestore.collection('users').doc(userId).collection('meals').doc(mealId);
+  final mealSnapshot = await mealRef.get();
 
-    if (!mealSnapshot.exists) {
-      throw Exception('Meal not found');
-    }
-
-    final meal = meals.Meal.fromFirestore(mealSnapshot);
-
-    meal.totalCalories += isAdding ? food.kcal : -food.kcal;
-    meal.totalCarbs += isAdding ? food.carbs : -food.carbs;
-    meal.totalFat += isAdding ? food.fat : -food.fat;
-    meal.totalProtein += isAdding ? food.protein : -food.protein;
-
-    await mealRef.update(meal.toMap());
-
-    final dailyStatsRef = _firestore.collection('users').doc(userId).collection('dailyStats').doc(meal.dailyStatsId);
-    final dailyStatsSnapshot = await dailyStatsRef.get();
-
-    if (!dailyStatsSnapshot.exists) {
-      throw Exception('DailyStats not found');
-    }
-
-    final dailyStats = meals.DailyStats.fromFirestore(dailyStatsSnapshot);
-
-    dailyStats.totalCalories += isAdding ? food.kcal : -food.kcal;
-    dailyStats.totalCarbs += isAdding ? food.carbs : -food.carbs;
-    dailyStats.totalFat += isAdding ? food.fat : -food.fat;
-    dailyStats.totalProtein += isAdding ? food.protein : -food.protein;
-
-    await dailyStatsRef.update(dailyStats.toMap());
+  if (!mealSnapshot.exists) {
+    throw Exception('Meal not found');
   }
+
+  final meal = meals.Meal.fromFirestore(mealSnapshot);
+
+  meal.totalCalories = (meal.totalCalories + (isAdding ? food.kcal : -food.kcal)).clamp(0, double.infinity);
+  meal.totalCarbs = (meal.totalCarbs + (isAdding ? food.carbs : -food.carbs)).clamp(0, double.infinity);
+  meal.totalFat = (meal.totalFat + (isAdding ? food.fat : -food.fat)).clamp(0, double.infinity);
+  meal.totalProtein = (meal.totalProtein + (isAdding ? food.protein : -food.protein)).clamp(0, double.infinity);
+
+  await mealRef.update(meal.toMap());
+
+  final dailyStatsRef = _firestore.collection('users').doc(userId).collection('dailyStats').doc(meal.dailyStatsId);
+  final dailyStatsSnapshot = await dailyStatsRef.get();
+
+  if (!dailyStatsSnapshot.exists) {
+    throw Exception('DailyStats not found');
+  }
+
+  final dailyStats = meals.DailyStats.fromFirestore(dailyStatsSnapshot);
+
+  dailyStats.totalCalories = (dailyStats.totalCalories + (isAdding ? food.kcal : -food.kcal)).clamp(0, double.infinity);
+  dailyStats.totalCarbs = (dailyStats.totalCarbs + (isAdding ? food.carbs : -food.carbs)).clamp(0, double.infinity);
+  dailyStats.totalFat = (dailyStats.totalFat + (isAdding ? food.fat : -food.fat)).clamp(0, double.infinity);
+  dailyStats.totalProtein = (dailyStats.totalProtein + (isAdding ? food.protein : -food.protein)).clamp(0, double.infinity);
+
+  await dailyStatsRef.update(dailyStats.toMap());
+}
 
   Stream<meals.DailyStats> getDailyStatsByDateStream(String userId, DateTime date) {
     final startOfDay = DateTime(date.year, date.month, date.day);
