@@ -132,9 +132,6 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Alphaness One'),
-      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

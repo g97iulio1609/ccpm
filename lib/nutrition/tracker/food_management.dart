@@ -3,8 +3,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:openfoodfacts/openfoodfacts.dart';
-import '../models&Services/macros_model.dart';
-import '../models&Services/macros_services.dart';
+import 'package:multi_select_flutter/multi_select_flutter.dart';
 import '../models&Services/food_services.dart';
 
 final foodServiceProvider = Provider<FoodService>((ref) {
@@ -17,25 +16,13 @@ class FoodManagement extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final foodService = ref.read(foodServiceProvider);
-    final macrosService = ref.read(macrosServiceProvider);
 
-    final descriptionController = useTextEditingController();
-    final numberOfServingsController = useState(1);
-    final servingSizeValueController = useTextEditingController();
-    final servingSizeUnitController = useState('g');
-    final cookedController = useState(false);
-    final notesController = useTextEditingController();
-    final barcodeController = useTextEditingController();
-    final caloriesController = useTextEditingController(text: '0');
-    final proteinController = useTextEditingController(text: '0');
-    final carbohydratesController = useTextEditingController(text: '0');
-    final fatController = useTextEditingController(text: '0');
     final importPagesController = useTextEditingController(text: '10');
     final importDelayController = useTextEditingController(text: '60');
 
     final List<String> categories = [
       'pasta', 'meat', 'fish', 'legumes', 'milk', 'dairy', 'spices', 'beverages',
-      'grains', 'cereals', 'bread', 'cereal', 'eggs', 'fresh-fruits', 'fresh-vegetables',
+      'grains', 'cereals', 'bread', 'cereal', 'biscuits', 'eggs', 'fresh-fruits', 'fresh-vegetables',
       'frozen-fruits', 'frozen-vegetables', 'dried-fruits', 'soft-drinks', 'juices',
       'alcoholic-beverages', 'tea', 'coffee', 'cooking-oils', 'margarine', 'animal-fats',
       'cookies', 'cakes', 'chocolate', 'chips', 'herbs', 'sauces', 'dressings',
@@ -81,27 +68,6 @@ class FoodManagement extends HookConsumerWidget {
       }
     }
 
-    void saveFood() {
-      final portion = '${servingSizeValueController.text}${servingSizeUnitController.value}';
-
-      final food = Food(
-        name: descriptionController.text,
-        carbs: double.tryParse(carbohydratesController.text) ?? 0,
-        fat: double.tryParse(fatController.text) ?? 0,
-        protein: double.tryParse(proteinController.text) ?? 0,
-        kcal: double.tryParse(caloriesController.text) ?? 0,
-        quantity: numberOfServingsController.value.toDouble(),
-        portion: portion,
-      );
-
-      macrosService.addFood(food);
-      Navigator.of(context).pop();
-    }
-
-    void cancel() {
-      Navigator.of(context).pop();
-    }
-
     void startImport() async {
       final pages = int.tryParse(importPagesController.text) ?? 10;
       final delay = int.tryParse(importDelayController.text) ?? 60;
@@ -133,134 +99,69 @@ class FoodManagement extends HookConsumerWidget {
     }
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Food Management Dashboard'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            const Text(
+              'Import Foods',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
             Expanded(
               child: ListView(
                 children: [
-                  TextFormField(
-                    controller: descriptionController,
-                    decoration: const InputDecoration(
-                      labelText: 'Name',
-                      border: OutlineInputBorder(),
+                  MultiSelectDialogField(
+                    items: categories.map((e) => MultiSelectItem<String>(e, e)).toList(),
+                    title: const Text("Categories", style: TextStyle(color: Colors.white)),
+                    selectedColor: Theme.of(context).primaryColor,
+                    decoration: BoxDecoration(
+                      color: Colors.black,
+                      borderRadius: const BorderRadius.all(Radius.circular(4)),
+                      border: Border.all(
+                        color: Colors.grey,
+                        width: 1,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  SwitchListTile(
-                    value: cookedController.value,
-                    onChanged: (value) => cookedController.value = value,
-                    title: const Text('Cooked'),
-                    activeColor: Colors.green,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Macronutrients',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildNutrientRow('Protein', proteinController, 'g'),
-                  _buildNutrientRow('Carbohydrates', carbohydratesController, 'g'),
-                  _buildNutrientRow('Fat', fatController, 'g'),
-                  const SizedBox(height: 8),
-                  _buildNutrientRow('Calories', caloriesController, 'kcal'),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Servings',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Text('Number of Servings'),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.remove),
-                        onPressed: () {
-                          if (numberOfServingsController.value > 1) {
-                            numberOfServingsController.value--;
-                          }
-                        },
-                      ),
-                      Text(numberOfServingsController.value.toString()),
-                      IconButton(
-                        icon: const Icon(Icons.add),
-                        onPressed: () => numberOfServingsController.value++,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: servingSizeValueController,
-                          decoration: const InputDecoration(
-                            labelText: 'Serving Size',
-                            border: OutlineInputBorder(),
-                          ),
-                          keyboardType: TextInputType.number,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      DropdownButton<String>(
-                        value: servingSizeUnitController.value,
-                        onChanged: (String? newValue) {
-                          servingSizeUnitController.value = newValue!;
-                        },
-                        items: <String>['g', 'ml', 'oz']
-                            .map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Additional',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: notesController,
-                    decoration: const InputDecoration(
-                      labelText: 'Notes',
-                      border: OutlineInputBorder(),
+                    buttonIcon: const Icon(
+                      Icons.arrow_drop_down,
+                      color: Colors.white,
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: barcodeController,
-                    decoration: const InputDecoration(
-                      labelText: 'Barcode',
-                      border: OutlineInputBorder(),
+                    buttonText: const Text(
+                      "Select Categories",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
                     ),
-                    keyboardType: TextInputType.number,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Import Foods',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  MultiSelectChip(
-                    categories,
-                    selectedCategories: selectedCategories.value,
-                    onSelectionChanged: (selectedList) {
-                      selectedCategories.value = selectedList;
+                    onConfirm: (results) {
+                      selectedCategories.value = results.cast<String>();
                     },
+                    itemsTextStyle: const TextStyle(color: Colors.white), // Added text style
+                    chipDisplay: MultiSelectChipDisplay(
+                      textStyle: const TextStyle(color: Colors.white),
+                      chipColor: Theme.of(context).primaryColor,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.white),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
                     value: selectedLanguage.value,
                     decoration: const InputDecoration(
                       labelText: 'Language',
+                      labelStyle: TextStyle(color: Colors.white),
                       border: OutlineInputBorder(),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey),
+                      ),
                     ),
+                    dropdownColor: Colors.black,
+                    style: const TextStyle(color: Colors.white),
                     onChanged: (String? newValue) {
                       selectedLanguage.value = newValue!;
                     },
@@ -272,13 +173,19 @@ class FoodManagement extends HookConsumerWidget {
                       );
                     }).toList(),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
                     value: selectedCountry.value,
                     decoration: const InputDecoration(
                       labelText: 'Country',
+                      labelStyle: TextStyle(color: Colors.white),
                       border: OutlineInputBorder(),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey),
+                      ),
                     ),
+                    dropdownColor: Colors.black,
+                    style: const TextStyle(color: Colors.white),
                     onChanged: (String? newValue) {
                       selectedCountry.value = newValue!;
                     },
@@ -290,7 +197,7 @@ class FoodManagement extends HookConsumerWidget {
                       );
                     }).toList(),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 16),
                   Row(
                     children: [
                       Expanded(
@@ -298,51 +205,66 @@ class FoodManagement extends HookConsumerWidget {
                           controller: importPagesController,
                           decoration: const InputDecoration(
                             labelText: 'Number of Pages',
+                            labelStyle: TextStyle(color: Colors.white),
                             border: OutlineInputBorder(),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.grey),
+                            ),
                           ),
                           keyboardType: TextInputType.number,
+                          style: const TextStyle(color: Colors.white),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 16),
                       Expanded(
                         child: TextFormField(
                           controller: importDelayController,
                           decoration: const InputDecoration(
                             labelText: 'Delay (seconds)',
+                            labelStyle: TextStyle(color: Colors.white),
                             border: OutlineInputBorder(),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.grey),
+                            ),
                           ),
                           keyboardType: TextInputType.number,
+                          style: const TextStyle(color: Colors.white),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: startImport,
-                    child: const Text('Start Import'),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      ElevatedButton(
+                        onPressed: startImport,
+                        child: const Text('Start Import'),
+                      ),
+                      ElevatedButton(
+                        onPressed: stopImport,
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                        child: const Text('Stop Import'),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: stopImport,
-                    child: const Text('Stop Import'),
-                  ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: updateTranslations,
                     child: const Text('Update Translations'),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
                   StreamBuilder<Map<String, int>>(
                     stream: foodService.importProgressStream,
                     builder: (context, snapshot) {
                       if (!snapshot.hasData) {
-                        return const Text('No import progress');
+                        return const Text('No import progress', style: TextStyle(color: Colors.white));
                       }
                       final progress = snapshot.data!;
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: progress.entries.map((entry) {
-                          return Text('${entry.key}: ${entry.value} products imported');
+                          return Text('${entry.key}: ${entry.value} products imported', style: const TextStyle(color: Colors.white));
                         }).toList(),
                       );
                     },
@@ -350,93 +272,9 @@ class FoodManagement extends HookConsumerWidget {
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: cancel,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    icon: const Icon(Icons.cancel),
-                    label: const Text('Cancel'),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: saveFood,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    icon: const Icon(Icons.save),
-                    label: const Text('Save'),
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildNutrientRow(String label, TextEditingController controller, String unit) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label),
-          const SizedBox(height: 4),
-          TextFormField(
-            controller: controller,
-            decoration: InputDecoration(
-              suffixText: unit,
-              border: const OutlineInputBorder(),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            ),
-            keyboardType: TextInputType.number,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class MultiSelectChip extends StatelessWidget {
-  final List<String> categories;
-  final List<String> selectedCategories;
-  final Function(List<String>) onSelectionChanged;
-
-  const MultiSelectChip(this.categories, {super.key, required this.selectedCategories, required this.onSelectionChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8.0,
-      children: categories.map((category) {
-        final isSelected = selectedCategories.contains(category);
-        return ChoiceChip(
-          label: Text(category),
-          selected: isSelected,
-          onSelected: (selected) {
-            if (selected) {
-              selectedCategories.add(category);
-            } else {
-              selectedCategories.remove(category);
-            }
-            onSelectionChanged(List.from(selectedCategories)); // Create a new list instance
-          },
-        );
-      }).toList(),
     );
   }
 }

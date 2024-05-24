@@ -71,6 +71,7 @@ dependencies:
   font_awesome_flutter: ^10.7.0
   in_app_update: ^4.2.2
   openfoodfacts: ^3.8.0
+  multi_select_flutter: ^4.1.3
 
   
 
