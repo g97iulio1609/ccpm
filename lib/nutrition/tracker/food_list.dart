@@ -68,7 +68,7 @@ class FoodList extends ConsumerWidget {
                 mealName,
                 style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface),
               ),
-              if (snackIndex != null)
+              if (snackIndex != null && mealsList.where((meal) => meal.mealType.startsWith('Snack')).length > 1)
                 IconButton(
                   icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.onSurface),
                   onPressed: () async {
@@ -120,7 +120,10 @@ class FoodList extends ConsumerWidget {
     return ListTile(
       leading: Icon(Icons.fastfood, color: Theme.of(context).colorScheme.onSurface),
       title: Text(food.name, style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface)),
-      subtitle: Text('${food.quantity} ${food.portion}', style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface)),
+      subtitle: Text(
+        'C:${food.carbs}g P:${food.protein}g F:${food.fat}g, ${food.kcal}Kcal',
+        style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface),
+      ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
