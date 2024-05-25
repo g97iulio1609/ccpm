@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../models&Services/macros_model.dart' as macros;
 import '../models&Services/meals_model.dart' as meals;
 import '../models&Services/meals_services.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class FoodList extends ConsumerWidget {
   final DateTime selectedDate;
@@ -34,7 +35,7 @@ class FoodList extends ConsumerWidget {
           );
         } else if (snapshot.hasError) {
           return Center(
-            child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.white)),
+            child: Text('Error: ${snapshot.error}', style: TextStyle(color: Theme.of(context).colorScheme.onError)),
           );
         } else {
           return const Center(
@@ -55,18 +56,21 @@ class FoodList extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Card(
-        color: Colors.black,
+        color: Colors.transparent,
+        elevation: 0,
         child: ExpansionTile(
+          backgroundColor: Theme.of(context).colorScheme.surface.withOpacity(0.1),
+          collapsedBackgroundColor: Theme.of(context).colorScheme.surface.withOpacity(0.1),
           title: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 mealName,
-                style: const TextStyle(color: Colors.white),
+                style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface),
               ),
               if (snackIndex != null)
                 IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.white),
+                  icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.onSurface),
                   onPressed: () async {
                     final snackMeals = _getSnackMeals(mealsList);
                     if (snackMeals.length > 1) {
@@ -87,7 +91,7 @@ class FoodList extends ConsumerWidget {
                   );
                 } else if (snapshot.hasError) {
                   return ListTile(
-                    title: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.white)),
+                    title: Text('Error: ${snapshot.error}', style: TextStyle(color: Theme.of(context).colorScheme.onError)),
                   );
                 } else {
                   return const ListTile(
@@ -97,7 +101,7 @@ class FoodList extends ConsumerWidget {
               },
             ),
             ListTile(
-              title: const Text('Add Food', style: TextStyle(color: Colors.orange)),
+              title: Text('Add Food', style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.primary)),
               onTap: () {
                 context.push(
                   '/food_tracker/food_selector',
@@ -114,14 +118,14 @@ class FoodList extends ConsumerWidget {
   Widget _buildFoodItem(BuildContext context, WidgetRef ref, meals.Meal meal, macros.Food food) {
     final mealsService = ref.read(mealsServiceProvider);
     return ListTile(
-      leading: const Icon(Icons.fastfood, color: Colors.white),
-      title: Text(food.name, style: const TextStyle(color: Colors.white)),
-      subtitle: Text('${food.quantity} ${food.portion}', style: const TextStyle(color: Colors.white)),
+      leading: Icon(Icons.fastfood, color: Theme.of(context).colorScheme.onSurface),
+      title: Text(food.name, style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface)),
+      subtitle: Text('${food.quantity} ${food.portion}', style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           IconButton(
-            icon: const Icon(Icons.edit, color: Colors.white),
+            icon: Icon(Icons.edit, color: Theme.of(context).colorScheme.onSurface),
             onPressed: () {
               context.push(
                 Uri(
@@ -133,7 +137,7 @@ class FoodList extends ConsumerWidget {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.delete, color: Colors.white),
+            icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.onSurface),
             onPressed: () {
               mealsService.removeFoodFromMeal(userId: meal.userId, mealId: meal.id!, myFoodId: food.id!);
             },
@@ -154,11 +158,13 @@ class FoodList extends ConsumerWidget {
           }
         },
         style: ElevatedButton.styleFrom(
-          foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 24.0), backgroundColor: Colors.orange,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          padding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 24.0),
+          backgroundColor: Theme.of(context).colorScheme.primary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12.0),
           ),
-          textStyle: const TextStyle(
+          textStyle: GoogleFonts.roboto(
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),

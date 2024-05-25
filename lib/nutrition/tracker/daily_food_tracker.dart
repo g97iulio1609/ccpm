@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models&Services/meals_services.dart';
 import 'food_list.dart';
 import '../models&Services/meals_model.dart' as meals;
+import 'package:google_fonts/google_fonts.dart';
 
 class DailyFoodTracker extends ConsumerStatefulWidget {
   const DailyFoodTracker({super.key});
@@ -48,14 +49,12 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
       });
     }
 
-    if (macrosData != null) {
-      setState(() {
-        _targetCarbs = macrosData['carbs']!;
-        _targetProteins = macrosData['protein']!;
-        _targetFats = macrosData['fat']!;
-      });
+    setState(() {
+      _targetCarbs = macrosData['carbs']!;
+      _targetProteins = macrosData['protein']!;
+      _targetFats = macrosData['fat']!;
+    });
     }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -73,7 +72,7 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
           return Column(
             children: [
               Container(
-                color: Colors.black,
+                color: Theme.of(context).colorScheme.background,
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,11 +80,11 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(child: _buildMacroItem('Protein', stats.totalProtein, _targetProteins, Colors.green)),
+                        Expanded(child: _buildMacroItem('Protein', stats.totalProtein, _targetProteins, Theme.of(context).colorScheme.tertiary)),
                         const SizedBox(width: 8),
-                        Expanded(child: _buildMacroItem('Carbohydrates', stats.totalCarbs, _targetCarbs, Colors.orange)),
+                        Expanded(child: _buildMacroItem('Carbohydrates', stats.totalCarbs, _targetCarbs, Theme.of(context).colorScheme.secondary)),
                         const SizedBox(width: 8),
-                        Expanded(child: _buildMacroItem('Fat', stats.totalFat, _targetFats, Colors.purple)),
+                        Expanded(child: _buildMacroItem('Fat', stats.totalFat, _targetFats, Theme.of(context).colorScheme.error)),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -94,15 +93,15 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
                       children: [
                         Text(
                           stats.totalCalories.toStringAsFixed(0),
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: GoogleFonts.roboto(
+                            color: Theme.of(context).colorScheme.onBackground,
                             fontSize: 24,
                           ),
                         ),
                         Text(
                           '${(_targetCalories - stats.totalCalories).toStringAsFixed(0)} Cal Remaining',
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: GoogleFonts.roboto(
+                            color: Theme.of(context).colorScheme.onBackground,
                             fontSize: 16,
                           ),
                         ),
@@ -110,8 +109,8 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
                     ),
                     Text(
                       'of $_targetCalories Cal Goal',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: GoogleFonts.roboto(
+                        color: Theme.of(context).colorScheme.onBackground,
                         fontSize: 12,
                       ),
                     ),
@@ -136,8 +135,8 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
       children: [
         Text(
           title,
-          style: const TextStyle(
-            color: Colors.white,
+          style: GoogleFonts.roboto(
+            color: Theme.of(context).colorScheme.onBackground,
             fontSize: 16,
           ),
         ),
@@ -146,7 +145,7 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
           constraints: const BoxConstraints(maxWidth: double.infinity),
           child: LinearProgressIndicator(
             value: (value / target).clamp(0.0, 1.0),
-            backgroundColor: Colors.white,
+            backgroundColor: Theme.of(context).colorScheme.surface,
             color: color,
             minHeight: 8,
           ),
@@ -154,8 +153,8 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
         const SizedBox(height: 4),
         Text(
           '${value.toStringAsFixed(0)} / ${target.toStringAsFixed(0)} g',
-          style: const TextStyle(
-            color: Colors.white,
+          style: GoogleFonts.roboto(
+            color: Theme.of(context).colorScheme.onBackground,
             fontSize: 16,
           ),
         ),
