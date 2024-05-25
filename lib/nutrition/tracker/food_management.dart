@@ -106,9 +106,6 @@ class FoodManagement extends HookConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Food Management Dashboard'),
-      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -116,6 +113,22 @@ class FoodManagement extends HookConsumerWidget {
             const Text(
               'Import Foods',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            FutureBuilder<int>(
+              future: foodService.getTotalFoodsCount(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const CircularProgressIndicator();
+                } else if (snapshot.hasError) {
+                  return const Text('Error loading food count');
+                } else {
+                  return Text(
+                    'Total foods: ${snapshot.data}',
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  );
+                }
+              },
             ),
             const SizedBox(height: 16),
             Expanded(

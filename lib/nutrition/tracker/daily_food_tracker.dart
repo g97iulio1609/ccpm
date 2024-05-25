@@ -1,9 +1,8 @@
+import 'package:alphanessone/UI/appBar_custom.dart';
 import 'package:alphanessone/services/users_services.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models&Services/meals_services.dart';
-import '../models&Services/food_services.dart';
 import 'food_list.dart';
 import '../models&Services/meals_model.dart' as meals;
 
@@ -15,7 +14,6 @@ class DailyFoodTracker extends ConsumerStatefulWidget {
 }
 
 class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
-  DateTime _selectedDate = DateTime.now();
   int _targetCalories = 2000;
   double _targetCarbs = 0;
   double _targetProteins = 0;
@@ -59,55 +57,17 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
     }
   }
 
-  Future<void> _importFoods() async {
-    final foodService = FoodService(FirebaseFirestore.instance);
-    await foodService.importFoods();
-    await foodService.updateFoodTranslations();
-  }
-
-  void _changeDate(DateTime newDate) {
-    setState(() {
-      _selectedDate = newDate;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    final dailyStats = ref.watch(dailyStatsProvider(_selectedDate));
-
-    final bool isToday = _selectedDate.isAtSameMomentAs(DateTime(
+    final selectedDate = ref.watch(selectedDateProvider);
+    final dailyStats = ref.watch(dailyStatsProvider(selectedDate));
+    final bool isToday = selectedDate.isAtSameMomentAs(DateTime(
       DateTime.now().year,
       DateTime.now().month,
       DateTime.now().day,
     ));
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        title: Row(
-          children: [
-            const Icon(Icons.calendar_today),
-            const SizedBox(width: 8),
-            Text(
-              isToday ? 'Today' : '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.chevron_left),
-            onPressed: () {
-              _changeDate(_selectedDate.subtract(const Duration(days: 1)));
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.chevron_right),
-            onPressed: () {
-              _changeDate(_selectedDate.add(const Duration(days: 1)));
-            },
-          ),
-        ],
-      ),
       body: dailyStats.when(
         data: (stats) {
           return Column(
@@ -159,7 +119,7 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
                 ),
               ),
               Expanded(
-                child: FoodList(selectedDate: _selectedDate),
+                child: FoodList(selectedDate: selectedDate),
               ),
             ],
           );

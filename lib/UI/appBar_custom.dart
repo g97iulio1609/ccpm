@@ -1,10 +1,12 @@
+import 'package:alphanessone/services/users_services.dart';
 import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../services/users_services.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart'; // Importa il pacchetto intl per la formattazione delle date
 
-class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
+class CustomAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
   const CustomAppBar({
     super.key,
     required this.userRole,
@@ -15,6 +17,20 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final String userRole;
   final TrainingProgramController controller;
   final bool isLargeScreen;
+
+  @override
+  _CustomAppBarState createState() => _CustomAppBarState();
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+}
+
+class _CustomAppBarState extends ConsumerState<CustomAppBar> {
+  @override
+  void initState() {
+    super.initState();
+    initializeDateFormatting('it_IT', null); // Inizializza la formattazione della data per la località italiana
+  }
 
   String _getTitleForRoute(BuildContext context) {
     final String currentPath = GoRouterState.of(context).uri.toString();
@@ -38,43 +54,15 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
         return 'Programmi Utente';
       case '/measurements':
         return 'Misurazioni Antropometriche';
-         case '/tdee':
+      case '/tdee':
         return 'Fabbisogno Calorico';
-        case '/macros_selector':
+      case '/macros_selector':
         return 'Calcolatore Macronutrienti';
       case '/training_gallery':
         return 'Galleria Allenamenti';
       default:
-        break;
+        return 'Alphaness One';
     }
-
-    final pattern1 = RegExp(r'/programs_screen/user_programs/\w+/training_viewer/\w+/week_details/\w+$');
-    if (pattern1.hasMatch(currentPath)) {
-      return 'Dettagli Settimana';
-    }
-
-    final pattern2 = RegExp(r'/programs_screen/user_programs/\w+/training_viewer/\w+/week_details/\w+/workout_details/\w+$');
-    if (pattern2.hasMatch(currentPath)) {
-      return 'Dettagli Allenamento';
-    }
-
-    final pattern3 = RegExp(r'/programs_screen/user_programs/\w+/training_viewer/\w+/week_details/\w+/workout_details/\w+/exercise_details/\w+$');
-    if (pattern3.hasMatch(currentPath)) {
-      return 'Dettagli Esercizio';
-    }
-
-    final pattern4 = RegExp(r'/programs_screen/user_programs/\w+/training_viewer/\w+/week_details/\w+/workout_details/\w+/exercise_details/\w+/timer$');
-    if (pattern4.hasMatch(currentPath)) {
-      return 'Timer';
-    }
-
-    final weekPattern = RegExp(r'/programs_screen/user_programs/\w+/training_program/\w+/week/\d+$');
-    if (weekPattern.hasMatch(currentPath)) {
-      final weekIndex = int.parse(currentPath.split('/').last);
-      return 'Settimana ${weekIndex + 1}';
-    }
-
-    return 'Alphaness One';
   }
 
   bool _isTrainingProgramRoute(BuildContext context) {
@@ -82,6 +70,17 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
     return currentRoute.startsWith('/programs_screen/user_programs/') &&
         (currentRoute.contains('/training_program/') ||
             currentRoute.contains('/week/'));
+  }
+
+  bool _isDailyFoodTrackerRoute(BuildContext context) {
+    final currentRoute = GoRouterState.of(context).uri.toString();
+    debugPrint('Current route: $currentRoute');
+    return currentRoute == '/food_tracker'; // Assicurati che la route sia corretta
+  }
+
+  String _formatDate(DateTime date) {
+    final DateFormat formatter = DateFormat('EEEE d MMMM y', 'it_IT'); // Formatta la data in italiano
+    return formatter.format(date);
   }
 
   void _showAddUserDialog(BuildContext context, WidgetRef ref) {
@@ -168,14 +167,40 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
       },
     );
   }
-  
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final currentRoute = GoRouterState.of(context).uri.toString();
     final isBackButtonVisible = currentRoute.split('/').length > 2;
+    final selectedDate = ref.watch(selectedDateProvider);
+
+    debugPrint('Building CustomAppBar, current route: $currentRoute');
 
     return AppBar(
-      title: Text(_getTitleForRoute(context)),
+      centerTitle: true,
+      title: _isDailyFoodTrackerRoute(context)
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.chevron_left),
+                  onPressed: () {
+                    ref.read(selectedDateProvider.notifier).update((state) => state.subtract(const Duration(days: 1)));
+                  },
+                ),
+                Text(
+                  _formatDate(selectedDate),
+                  style: const TextStyle(fontSize: 16),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right),
+                  onPressed: () {
+                    ref.read(selectedDateProvider.notifier).update((state) => state.add(const Duration(days: 1)));
+                  },
+                ),
+              ],
+            )
+          : Text(_getTitleForRoute(context)),
       backgroundColor: Colors.transparent,
       foregroundColor: Theme.of(context).colorScheme.onBackground,
       leading: isBackButtonVisible
@@ -187,24 +212,11 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
                     iconSize: 24,
                     icon: const Icon(Icons.arrow_back),
                     onPressed: () {
-                      final currentPath = GoRouterState.of(context).uri.toString();
-                      final trainingProgramWeekPattern = RegExp(r'/programs_screen/user_programs/\w+/training_program/\w+/week/\d+$');
-                      final trainingProgramPattern = RegExp(r'/programs_screen/user_programs/\w+/training_program/\w+$');
-
-                      if (trainingProgramWeekPattern.hasMatch(currentPath)) {
-                        final programId = currentPath.split('/')[5];
-                        final userId = currentPath.split('/')[3];
-                        context.go('/programs_screen/user_programs/$userId/training_program/$programId');
-                      } else if (trainingProgramPattern.hasMatch(currentPath)) {
-                        final userId = currentPath.split('/')[3];
-                        context.go('/programs_screen/user_programs/$userId');
-                      } else {
-                        context.pop();
-                      }
+                      context.pop();
                     },
                   ),
                 ),
-                if (!isLargeScreen)
+                if (!widget.isLargeScreen)
                   Flexible(
                     child: IconButton(
                       iconSize: 24,
@@ -216,20 +228,19 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
             )
           : null,
       actions: [
-        if (userRole == 'admin' && GoRouterState.of(context).uri.toString() == '/users_dashboard')
+        if (widget.userRole == 'admin' && currentRoute == '/users_dashboard')
           IconButton(
             onPressed: () => _showAddUserDialog(context, ref),
             icon: const Icon(Icons.person_add),
           ),
         if (_isTrainingProgramRoute(context))
           IconButton(
-            onPressed: () => controller.submitProgram(context),
+            onPressed: () => widget.controller.submitProgram(context),
             icon: const Icon(Icons.save),
           ),
       ],
     );
   }
-
-  @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
+
+final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());

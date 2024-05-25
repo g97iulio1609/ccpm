@@ -1,5 +1,3 @@
-// food_list.dart
-
 import 'package:alphanessone/services/users_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../models&Services/macros_model.dart' as macros;
 import '../models&Services/meals_model.dart' as meals;
 import '../models&Services/meals_services.dart';
-
 
 class FoodList extends ConsumerWidget {
   final DateTime selectedDate;
@@ -148,7 +145,7 @@ class FoodList extends ConsumerWidget {
 
   Widget _buildAddSnackButton(BuildContext context, WidgetRef ref, String userId, String dailyStatsId, DateTime date, int currentSnacksCount) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+      padding: const EdgeInsets.all(16.0),
       child: ElevatedButton(
         onPressed: () async {
           if (dailyStatsId.isNotEmpty) {
@@ -156,7 +153,16 @@ class FoodList extends ConsumerWidget {
             await mealsService.createSnack(userId: userId, dailyStatsId: dailyStatsId, date: date);
           }
         },
-        style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+        style: ElevatedButton.styleFrom(
+          foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 24.0), backgroundColor: Colors.orange,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+          textStyle: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         child: Text('Add Snack ${currentSnacksCount + 1}'),
       ),
     );

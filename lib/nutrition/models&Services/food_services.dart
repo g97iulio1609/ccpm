@@ -39,7 +39,7 @@ class FoodService {
       'bread',
       'cereal',
       'biscuits'
-      'eggs',
+          'eggs',
       'fresh-fruits',
       'fresh-vegetables',
       'frozen-fruits',
@@ -138,6 +138,11 @@ class FoodService {
             const Duration(seconds: 60)); // Aspetta 60 secondi tra le pagine
       }
     }
+  }
+
+  Future<int> getTotalFoodsCount() async {
+    final querySnapshot = await _firestore.collection('foods').get();
+    return querySnapshot.size;
   }
 
   Future<int> _importWithRetry(
@@ -332,8 +337,7 @@ class FoodService {
     debugPrint('Import stopped');
   }
 
-
- Future<void> normalizeNames() async {
+  Future<void> normalizeNames() async {
     final snapshot = await _firestore.collection('foods').get();
     final batch = _firestore.batch();
 
@@ -353,6 +357,4 @@ class FoodService {
     await batch.commit();
     debugPrint('Normalization completed.');
   }
-
-
 }
