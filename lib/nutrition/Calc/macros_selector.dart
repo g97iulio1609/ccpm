@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'macros_calc.dart';
-import '../../users_services.dart';
+import 'package:alphanessone/services/users_services.dart';
 
 final macrosProvider = StateNotifierProvider<MacrosNotifier, Map<String, double>>((ref) {
   return MacrosNotifier(ref);

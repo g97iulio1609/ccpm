@@ -4,7 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../training_model.dart';
 import '../controller/training_program_controller.dart';
 import '../utility_functions.dart';
-import '../../users_services.dart';
+import 'package:alphanessone/services/users_services.dart';
 import '../reorder_dialog.dart';
 import '../series_utils.dart';
 

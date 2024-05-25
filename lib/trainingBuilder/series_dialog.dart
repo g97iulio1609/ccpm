@@ -2,7 +2,7 @@ import 'package:alphanessone/trainingBuilder/series_utils.dart';
 import 'package:alphanessone/trainingBuilder/training_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../users_services.dart';
+import 'package:alphanessone/services/users_services.dart';
 
 class SeriesDialog extends StatefulWidget {
   final UsersService usersService;

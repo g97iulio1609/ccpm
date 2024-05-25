@@ -1,8 +1,9 @@
+import 'package:alphanessone/models/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'controller/training_program_controller.dart';
-import '../users_services.dart';
+import 'package:alphanessone/services/users_services.dart';
 
 class AthleteSelectionDialog extends ConsumerWidget {
   final TrainingProgramController controller;

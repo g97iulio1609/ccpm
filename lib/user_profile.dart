@@ -7,7 +7,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'users_services.dart';
+import 'package:alphanessone/services/users_services.dart';
 
 class UserProfile extends ConsumerStatefulWidget {
   final String? userId;

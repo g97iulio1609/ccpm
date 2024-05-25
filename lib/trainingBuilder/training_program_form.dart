@@ -2,7 +2,7 @@ import 'package:alphanessone/trainingBuilder/athlete_selection_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'controller/training_program_controller.dart';
-import '../users_services.dart';
+import 'package:alphanessone/services/users_services.dart';
 
 class TrainingProgramForm extends ConsumerWidget {
   final GlobalKey<FormState> formKey;

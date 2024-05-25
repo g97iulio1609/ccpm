@@ -1,4 +1,5 @@
 // exercise_list.dart
+import 'package:alphanessone/models/exercise_record.dart';
 import 'package:alphanessone/trainingBuilder/set_progression.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +10,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import '../training_model.dart';
 import '../controller/training_program_controller.dart';
 import 'series_list.dart';
-import '../../users_services.dart';
+import '../../services/users_services.dart';
 import '../reorder_dialog.dart';
 
 class TrainingProgramExerciseList extends ConsumerWidget {

@@ -1,7 +1,8 @@
+import 'package:alphanessone/models/measurement_model.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../users_services.dart';
+import 'package:alphanessone/services/users_services.dart';
 import 'measurements_provider.dart';
 import 'measurements_chart.dart';
 import 'package:fl_chart/fl_chart.dart';

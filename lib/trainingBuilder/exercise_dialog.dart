@@ -1,5 +1,5 @@
 import 'package:alphanessone/exerciseManager/exercise_model.dart';
-import 'package:alphanessone/users_services.dart';
+import 'package:alphanessone/services/users_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';

@@ -4,7 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter/material.dart';
-import '../users_services.dart';
+import 'package:alphanessone/services/users_services.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) => AuthService(ref));
 

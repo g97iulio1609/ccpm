@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../training_model.dart';
 import '../training_services.dart';
-import 'package:alphanessone/users_services.dart' as user_services;
+import 'package:alphanessone/services/users_services.dart' as user_services;
 import '../training_program_state_provider.dart';
 import 'training_program_repository.dart';
 import 'week_controller.dart';

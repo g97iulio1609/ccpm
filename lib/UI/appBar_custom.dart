@@ -2,7 +2,7 @@ import 'package:alphanessone/trainingBuilder/controller/training_program_control
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../users_services.dart';
+import '../services/users_services.dart';
 
 class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
   const CustomAppBar({

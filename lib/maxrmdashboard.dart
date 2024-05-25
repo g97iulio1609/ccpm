@@ -1,3 +1,5 @@
+import 'package:alphanessone/models/exercise_record.dart';
+import 'package:alphanessone/models/user_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +11,7 @@ import 'package:path/path.dart';
 import 'package:rxdart/rxdart.dart';
 import 'exerciseManager/exercise_model.dart';
 import 'exerciseManager/exercises_services.dart';
-import 'users_services.dart';
+import 'package:alphanessone/services/users_services.dart';
 
 // Providers
 final authProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);

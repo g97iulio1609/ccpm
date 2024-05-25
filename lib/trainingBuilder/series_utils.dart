@@ -1,4 +1,4 @@
-import 'package:alphanessone/users_services.dart';
+import 'package:alphanessone/services/users_services.dart';
 import 'package:flutter/material.dart';
 import './training_model.dart';
 

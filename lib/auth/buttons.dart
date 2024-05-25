@@ -1,11 +1,10 @@
-import 'package:alphanessone/users_services.dart';
+import 'package:alphanessone/services/users_services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'auth_service.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class SubmitButton extends ConsumerStatefulWidget {
   const SubmitButton({

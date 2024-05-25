@@ -2,7 +2,7 @@ import 'package:alphanessone/trainingBuilder/series_dialog.dart';
 import 'package:alphanessone/trainingBuilder/series_utils.dart';
 import 'package:flutter/material.dart';
 import '../training_model.dart';
-import 'package:alphanessone/users_services.dart';
+import 'package:alphanessone/services/users_services.dart';
 
 class SeriesController extends ChangeNotifier {
   final UsersService usersService;

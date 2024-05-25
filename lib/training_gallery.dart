@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
-import 'users_services.dart';
+import 'package:alphanessone/services/users_services.dart';
 import './trainingBuilder/controller/training_program_controller.dart';
 
 class TrainingGalleryScreen extends HookConsumerWidget {

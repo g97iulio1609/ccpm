@@ -1,6 +1,7 @@
+import 'package:alphanessone/models/measurement_model.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../users_services.dart';
+import 'package:alphanessone/services/users_services.dart';
 
 class MeasurementsList extends StatelessWidget {
   final UsersService usersService;
