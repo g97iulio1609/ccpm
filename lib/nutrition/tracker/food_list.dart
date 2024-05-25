@@ -53,65 +53,107 @@ class FoodList extends ConsumerWidget {
   Widget _buildMealSection(BuildContext context, WidgetRef ref, String mealName, meals.Meal meal, List<meals.Meal> mealsList, [int? snackIndex]) {
     final mealsService = ref.watch(mealsServiceProvider);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Card(
-        color: Colors.transparent,
-        elevation: 0,
-        child: ExpansionTile(
-          backgroundColor: Theme.of(context).colorScheme.surface.withOpacity(0.1),
-          collapsedBackgroundColor: Theme.of(context).colorScheme.surface.withOpacity(0.1),
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                mealName,
-                style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface),
-              ),
-              if (snackIndex != null && mealsList.where((meal) => meal.mealType.startsWith('Snack')).length > 1)
-                IconButton(
-                  icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.onSurface),
-                  onPressed: () async {
-                    final snackMeals = _getSnackMeals(mealsList);
-                    if (snackMeals.length > 1) {
-                      await mealsService.deleteSnack(userId: meal.userId, mealId: meal.id!);
-                    }
-                  },
+    return FutureBuilder<Map<String, double>>(
+      future: mealsService.getTotalNutrientsForMeal(meal.userId, meal.id!),
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          final totalNutrients = snapshot.data!;
+          final subtitle = 'C:${totalNutrients['carbs']}g P:${totalNutrients['proteins']}g F:${totalNutrients['fats']}g, ${totalNutrients['calories']}Kcal';
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Card(
+              color: Colors.transparent,
+              elevation: 0,
+              child: ExpansionTile(
+                backgroundColor: Theme.of(context).colorScheme.surface.withOpacity(0.1),
+                collapsedBackgroundColor: Theme.of(context).colorScheme.surface.withOpacity(0.1),
+                title: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      mealName,
+                      style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface),
+                    ),
+                    Text(
+                      subtitle,
+                      style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface, fontSize: 14),
+                    ),
+                  ],
                 ),
-            ],
-          ),
-          children: [
-            FutureBuilder<List<macros.Food>>(
-              future: mealsService.getFoodsForMeals(userId: meal.userId, mealId: meal.id!),
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  final foods = snapshot.data!;
-                  return Column(
-                    children: foods.map((food) => _buildFoodItem(context, ref, meal, food)).toList(),
-                  );
-                } else if (snapshot.hasError) {
-                  return ListTile(
+                children: [
+                  FutureBuilder<List<macros.Food>>(
+                    future: mealsService.getFoodsForMeals(userId: meal.userId, mealId: meal.id!),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData) {
+                        final foods = snapshot.data!;
+                        return Column(
+                          children: foods.map((food) => _buildFoodItem(context, ref, meal, food)).toList(),
+                        );
+                      } else if (snapshot.hasError) {
+                        return ListTile(
+                          title: Text('Error: ${snapshot.error}', style: TextStyle(color: Theme.of(context).colorScheme.onError)),
+                        );
+                      } else {
+                        return const ListTile(
+                          title: CircularProgressIndicator(),
+                        );
+                      }
+                    },
+                  ),
+                  ListTile(
+                    title: Text('Add Food', style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.primary)),
+                    onTap: () {
+                      context.push(
+                        '/food_tracker/food_selector',
+                        extra: meal,
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          );
+        } else if (snapshot.hasError) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Card(
+              color: Colors.transparent,
+              elevation: 0,
+              child: ExpansionTile(
+                title: Text(
+                  mealName,
+                  style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface),
+                ),
+                children: [
+                  ListTile(
                     title: Text('Error: ${snapshot.error}', style: TextStyle(color: Theme.of(context).colorScheme.onError)),
-                  );
-                } else {
-                  return const ListTile(
+                  ),
+                ],
+              ),
+            ),
+          );
+        } else {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Card(
+              color: Colors.transparent,
+              elevation: 0,
+              child: ExpansionTile(
+                title: Text(
+                  mealName,
+                  style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface),
+                ),
+                children: const [
+                  ListTile(
                     title: CircularProgressIndicator(),
-                  );
-                }
-              },
+                  ),
+                ],
+              ),
             ),
-            ListTile(
-              title: Text('Add Food', style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.primary)),
-              onTap: () {
-                context.push(
-                  '/food_tracker/food_selector',
-                  extra: meal,
-                );
-              },
-            ),
-          ],
-        ),
-      ),
+          );
+        }
+      },
     );
   }
 

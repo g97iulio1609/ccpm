@@ -185,6 +185,28 @@ class MealsService extends ChangeNotifier {
     await updateMealAndDailyStats(userId, mealId, myFood, isAdding: false);
   }
 
+    Future<Map<String, double>> getTotalNutrientsForMeal(String userId, String mealId) async {
+    final foods = await getFoodsForMeals(userId: userId, mealId: mealId);
+    double totalCarbs = 0;
+    double totalProteins = 0;
+    double totalFats = 0;
+    double totalCalories = 0;
+
+    for (final food in foods) {
+      totalCarbs += food.carbs;
+      totalProteins += food.protein;
+      totalFats += food.fat;
+      totalCalories += food.kcal;
+    }
+
+    return {
+      'carbs': totalCarbs,
+      'proteins': totalProteins,
+      'fats': totalFats,
+      'calories': totalCalories,
+    };
+  }
+
   Future<void> createDailyStatsIfNotExist(String userId, DateTime date) async {
     final dailyStats = await getDailyStatsByDate(userId, date);
     if (dailyStats == null) {
