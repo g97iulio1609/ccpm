@@ -207,11 +207,24 @@ class MealsService extends ChangeNotifier {
     };
   }
   
-Future<void> duplicateMeal({required String userId, required String sourceMealId, required String targetMealId}) async {
+Future<void> duplicateMeal({
+  required String userId,
+  required String sourceMealId,
+  required String targetMealId,
+  required bool overwriteExisting,
+}) async {
   final sourceFoods = await getFoodsForMeals(userId: userId, mealId: sourceMealId);
 
+  if (overwriteExisting) {
+    // Elimina tutti gli alimenti esistenti nel pasto di destinazione
+    final targetFoods = await getFoodsForMeals(userId: userId, mealId: targetMealId);
+    for (final food in targetFoods) {
+      await _firestore.collection('users').doc(userId).collection('myfoods').doc(food.id).delete();
+    }
+  }
+
   for (final food in sourceFoods) {
-    final duplicatedFood = food.copyWith(id: null, mealId: targetMealId); // Creiamo una copia del cibo cambiando il mealId
+    final duplicatedFood = food.copyWith(id: null, mealId: targetMealId);
     await _firestore.collection('users').doc(userId).collection('myfoods').add(duplicatedFood.toMap());
   }
 

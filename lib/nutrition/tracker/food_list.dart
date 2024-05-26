@@ -254,7 +254,34 @@ class FoodList extends ConsumerWidget {
     );
 
     if (selectedMeal != null) {
-      await mealsService.duplicateMeal(userId: sourceMeal.userId, sourceMealId: sourceMeal.id!, targetMealId: selectedMeal.id!);
+      final overwriteExisting = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Overwrite Existing Foods?', style: GoogleFonts.roboto()),
+            content: Text('Do you want to overwrite existing foods in the selected meal or add the new foods to it?', style: GoogleFonts.roboto()),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: Text('Add to Existing', style: GoogleFonts.roboto()),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: Text('Overwrite', style: GoogleFonts.roboto()),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (overwriteExisting != null) {
+        await mealsService.duplicateMeal(
+          userId: sourceMeal.userId,
+          sourceMealId: sourceMeal.id!,
+          targetMealId: selectedMeal.id!,
+          overwriteExisting: overwriteExisting,
+        );
+      }
     }
   }
 }
