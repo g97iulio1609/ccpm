@@ -11,7 +11,7 @@ import 'package:google_fonts/google_fonts.dart';
 class FoodList extends ConsumerStatefulWidget {
   final DateTime selectedDate;
 
-  const FoodList({required this.selectedDate, Key? key}) : super(key: key);
+  const FoodList({required this.selectedDate, super.key});
 
   @override
   _FoodListState createState() => _FoodListState();
