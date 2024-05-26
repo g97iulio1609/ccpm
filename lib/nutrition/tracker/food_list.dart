@@ -233,9 +233,7 @@ class _FoodListState extends ConsumerState<FoodList> {
           ),
           trailing: PopupMenuButton<String>(
             onSelected: (value) async {
-              debugPrint('PopupMenuItem selected: $value');
               if (value == 'edit') {
-                debugPrint('Edit food: ${food.id}');
                 context.push(
                   Uri(
                     path: '/food_tracker/food_selector',
@@ -244,16 +242,12 @@ class _FoodListState extends ConsumerState<FoodList> {
                   extra: meal,
                 );
               } else if (value == 'delete') {
-                debugPrint('Delete food: ${food.id}');
                 await mealsService.removeFoodFromMeal(userId: meal.userId, mealId: meal.id!, myFoodId: food.id!);
               } else if (value == 'move') {
-                debugPrint('Move selected foods');
                 if (_selectedFoods.isNotEmpty) {
-                  debugPrint('Selected foods: $_selectedFoods');
                   final mealsList = await _getAllMeals(meal.userId);
                   await _showMoveDialog(context, ref, mealsList);
                 } else {
-                  debugPrint('No foods selected');
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('No foods selected'),
@@ -374,7 +368,6 @@ class _FoodListState extends ConsumerState<FoodList> {
 
   Future<void> _showMoveDialog(BuildContext context, WidgetRef ref, List<meals.Meal> mealsList) async {
     final mealsService = ref.read(mealsServiceProvider);
-    debugPrint('Showing move dialog');
 
     final selectedMeal = await showDialog<meals.Meal>(
       context: context,
@@ -391,7 +384,6 @@ class _FoodListState extends ConsumerState<FoodList> {
                 return ListTile(
                   title: Text(meal.mealType, style: GoogleFonts.roboto()),
                   onTap: () {
-                    debugPrint('Selected meal: ${meal.mealType}');
                     Navigator.of(context).pop(meal);
                   },
                 );
@@ -403,7 +395,6 @@ class _FoodListState extends ConsumerState<FoodList> {
     );
 
     if (selectedMeal != null) {
-      debugPrint('Moving foods to meal: ${selectedMeal.id}');
       await mealsService.moveFoods(
         userId: selectedMeal.userId,
         foodIds: _selectedFoods,
@@ -413,8 +404,6 @@ class _FoodListState extends ConsumerState<FoodList> {
         _selectedFoods.clear();
         _isSelectionMode = false;
       });
-    } else {
-      debugPrint('No meal selected');
     }
   }
 
