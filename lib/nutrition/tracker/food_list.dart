@@ -76,16 +76,36 @@ class _FoodListState extends ConsumerState<FoodList> {
               child: ExpansionTile(
                 backgroundColor: Theme.of(context).colorScheme.surface.withOpacity(0.1),
                 collapsedBackgroundColor: Theme.of(context).colorScheme.surface.withOpacity(0.1),
-                title: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                title: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      mealName,
-                      style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          mealName,
+                          style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface),
+                        ),
+                        Text(
+                          subtitle,
+                          style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface, fontSize: 14),
+                        ),
+                      ],
                     ),
-                    Text(
-                      subtitle,
-                      style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface, fontSize: 14),
+                    PopupMenuButton<String>(
+                      onSelected: (value) async {
+                        if (value == 'duplicate') {
+                          await _showDuplicateDialog(context, ref, meal, mealsList);
+                        }
+                      },
+                      itemBuilder: (BuildContext context) {
+                        return [
+                          PopupMenuItem(
+                            value: 'duplicate',
+                            child: Text('Duplicate Meal'),
+                          ),
+                        ];
+                      },
                     ),
                   ],
                 ),
@@ -116,18 +136,6 @@ class _FoodListState extends ConsumerState<FoodList> {
                         '/food_tracker/food_selector',
                         extra: meal,
                       );
-                    },
-                  ),
-                  ListTile(
-                    title: Text('Duplicate Meal', style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.primary)),
-                    onTap: () async {
-                      await _showDuplicateDialog(context, ref, meal, mealsList);
-                    },
-                  ),
-                  ListTile(
-                    title: Text('Move Selected Foods', style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.primary)),
-                    onTap: () async {
-                      await _showMoveDialog(context, ref, meal, mealsList);
                     },
                   ),
                 ],
@@ -181,14 +189,20 @@ class _FoodListState extends ConsumerState<FoodList> {
     final mealsService = ref.read(mealsServiceProvider);
     final isSelected = _selectedFoods.contains(food.id);
 
-    return ListTile(
-      leading: Icon(Icons.fastfood, color: Theme.of(context).colorScheme.onSurface),
-      title: Text(food.name, style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface)),
-      subtitle: Text(
-        'C:${food.carbs}g P:${food.protein}g F:${food.fat}g, ${food.kcal}Kcal',
-        style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface),
-      ),
-      selected: isSelected,
+    return GestureDetector(
+      onLongPress: () {
+        setState(() {
+          _isSelectionMode = true;
+          if (!isSelected) {
+            _selectedFoods.add(food.id!);
+          }
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Selection mode enabled'),
+          ),
+        );
+      },
       onTap: () {
         if (_isSelectionMode) {
           setState(() {
@@ -197,7 +211,6 @@ class _FoodListState extends ConsumerState<FoodList> {
             } else {
               _selectedFoods.add(food.id!);
             }
-            _isSelectionMode = _selectedFoods.isNotEmpty;
           });
         } else {
           context.push(
@@ -209,53 +222,66 @@ class _FoodListState extends ConsumerState<FoodList> {
           );
         }
       },
-      onLongPress: () {
-        setState(() {
-          _isSelectionMode = true;
-          _selectedFoods.add(food.id!);
-        });
-      },
-      trailing: _isSelectionMode
-          ? Checkbox(
-              value: isSelected,
-              onChanged: (value) {
-                setState(() {
-                  if (value == true) {
-                    _selectedFoods.add(food.id!);
-                  } else {
-                    _selectedFoods.remove(food.id);
-                  }
-                  _isSelectionMode = _selectedFoods.isNotEmpty;
-                });
-              },
-            )
-          : PopupMenuButton<String>(
-              onSelected: (value) {
-                if (value == 'edit') {
-                  context.push(
-                    Uri(
-                      path: '/food_tracker/food_selector',
-                      queryParameters: {'myFoodId': food.id},
-                    ).toString(),
-                    extra: meal,
+      child: Container(
+        color: isSelected ? Colors.grey.withOpacity(0.3) : Colors.transparent,
+        child: ListTile(
+          leading: Icon(Icons.fastfood, color: Theme.of(context).colorScheme.onSurface),
+          title: Text(food.name, style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface)),
+          subtitle: Text(
+            'C:${food.carbs}g P:${food.protein}g F:${food.fat}g, ${food.kcal}Kcal',
+            style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface),
+          ),
+          trailing: PopupMenuButton<String>(
+            onSelected: (value) async {
+              debugPrint('PopupMenuItem selected: $value');
+              if (value == 'edit') {
+                debugPrint('Edit food: ${food.id}');
+                context.push(
+                  Uri(
+                    path: '/food_tracker/food_selector',
+                    queryParameters: {'myFoodId': food.id},
+                  ).toString(),
+                  extra: meal,
+                );
+              } else if (value == 'delete') {
+                debugPrint('Delete food: ${food.id}');
+                await mealsService.removeFoodFromMeal(userId: meal.userId, mealId: meal.id!, myFoodId: food.id!);
+              } else if (value == 'move') {
+                debugPrint('Move selected foods');
+                if (_selectedFoods.isNotEmpty) {
+                  debugPrint('Selected foods: $_selectedFoods');
+                  final mealsList = await _getAllMeals(meal.userId);
+                  await _showMoveDialog(context, ref, mealsList);
+                } else {
+                  debugPrint('No foods selected');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('No foods selected'),
+                    ),
                   );
-                } else if (value == 'delete') {
-                  mealsService.removeFoodFromMeal(userId: meal.userId, mealId: meal.id!, myFoodId: food.id!);
                 }
-              },
-              itemBuilder: (BuildContext context) {
-                return [
+              }
+            },
+            itemBuilder: (BuildContext context) {
+              return [
+                PopupMenuItem(
+                  value: 'edit',
+                  child: Text('Edit'),
+                ),
+                PopupMenuItem(
+                  value: 'delete',
+                  child: Text('Delete'),
+                ),
+                if (_isSelectionMode)
                   PopupMenuItem(
-                    value: 'edit',
-                    child: Text('Edit'),
+                    value: 'move',
+                    child: Text('Move Selected Foods'),
                   ),
-                  PopupMenuItem(
-                    value: 'delete',
-                    child: Text('Delete'),
-                  ),
-                ];
-              },
-            ),
+              ];
+            },
+          ),
+        ),
+      ),
     );
   }
 
@@ -346,8 +372,9 @@ class _FoodListState extends ConsumerState<FoodList> {
     }
   }
 
-  Future<void> _showMoveDialog(BuildContext context, WidgetRef ref, meals.Meal sourceMeal, List<meals.Meal> mealsList) async {
+  Future<void> _showMoveDialog(BuildContext context, WidgetRef ref, List<meals.Meal> mealsList) async {
     final mealsService = ref.read(mealsServiceProvider);
+    debugPrint('Showing move dialog');
 
     final selectedMeal = await showDialog<meals.Meal>(
       context: context,
@@ -364,6 +391,7 @@ class _FoodListState extends ConsumerState<FoodList> {
                 return ListTile(
                   title: Text(meal.mealType, style: GoogleFonts.roboto()),
                   onTap: () {
+                    debugPrint('Selected meal: ${meal.mealType}');
                     Navigator.of(context).pop(meal);
                   },
                 );
@@ -375,8 +403,9 @@ class _FoodListState extends ConsumerState<FoodList> {
     );
 
     if (selectedMeal != null) {
+      debugPrint('Moving foods to meal: ${selectedMeal.id}');
       await mealsService.moveFoods(
-        userId: sourceMeal.userId,
+        userId: selectedMeal.userId,
         foodIds: _selectedFoods,
         targetMealId: selectedMeal.id!,
       );
@@ -384,6 +413,14 @@ class _FoodListState extends ConsumerState<FoodList> {
         _selectedFoods.clear();
         _isSelectionMode = false;
       });
+    } else {
+      debugPrint('No meal selected');
     }
+  }
+
+  Future<List<meals.Meal>> _getAllMeals(String userId) async {
+    final mealsService = ref.read(mealsServiceProvider);
+    final snapshot = await mealsService.getUserMealsByDate(userId: userId, date: widget.selectedDate).first;
+    return snapshot;
   }
 }
