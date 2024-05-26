@@ -97,13 +97,19 @@ class _FoodListState extends ConsumerState<FoodList> {
                       onSelected: (value) async {
                         if (value == 'duplicate') {
                           await _showDuplicateDialog(context, ref, meal, mealsList);
+                        } else if (value == 'delete_all') {
+                          await _confirmDeleteAllFoods(context, ref, meal);
                         }
                       },
                       itemBuilder: (BuildContext context) {
                         return [
-                          PopupMenuItem(
+                          const PopupMenuItem(
                             value: 'duplicate',
                             child: Text('Duplicate Meal'),
+                          ),
+                          const PopupMenuItem(
+                            value: 'delete_all',
+                            child: Text('Delete All Foods'),
                           ),
                         ];
                       },
@@ -199,7 +205,7 @@ class _FoodListState extends ConsumerState<FoodList> {
           }
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('Selection mode enabled'),
           ),
         );
@@ -278,7 +284,7 @@ class _FoodListState extends ConsumerState<FoodList> {
                     await _showMoveDialog(context, ref, mealsList);
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
+                      const SnackBar(
                         content: Text('No foods selected'),
                       ),
                     );
@@ -316,7 +322,7 @@ class _FoodListState extends ConsumerState<FoodList> {
                     await _showMoveDialog(context, ref, mealsList);
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
+                      const SnackBar(
                         content: Text('No foods selected'),
                       ),
                     );
@@ -325,16 +331,16 @@ class _FoodListState extends ConsumerState<FoodList> {
               },
               itemBuilder: (BuildContext context) {
                 return [
-                  PopupMenuItem(
+                  const PopupMenuItem(
                     value: 'edit',
                     child: Text('Edit'),
                   ),
-                  PopupMenuItem(
+                  const PopupMenuItem(
                     value: 'delete',
                     child: Text('Delete'),
                   ),
                   if (_isSelectionMode)
-                    PopupMenuItem(
+                    const PopupMenuItem(
                       value: 'move',
                       child: Text('Move Selected Foods'),
                     ),
@@ -430,6 +436,36 @@ class _FoodListState extends ConsumerState<FoodList> {
           targetMealId: selectedMeal.id!,
           overwriteExisting: overwriteExisting,
         );
+      }
+    }
+  }
+
+  Future<void> _confirmDeleteAllFoods(BuildContext context, WidgetRef ref, meals.Meal meal) async {
+    final mealsService = ref.read(mealsServiceProvider);
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Delete All Foods', style: GoogleFonts.roboto()),
+          content: Text('Are you sure you want to delete all foods in this meal?', style: GoogleFonts.roboto()),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text('Cancel', style: GoogleFonts.roboto()),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text('Delete', style: GoogleFonts.roboto()),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm == true) {
+      final foods = await mealsService.getFoodsForMeals(userId: meal.userId, mealId: meal.id!);
+      for (final food in foods) {
+        await mealsService.removeFoodFromMeal(userId: meal.userId, mealId: meal.id!, myFoodId: food.id!);
       }
     }
   }
