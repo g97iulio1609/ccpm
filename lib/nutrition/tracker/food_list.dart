@@ -10,7 +10,7 @@ import 'package:google_fonts/google_fonts.dart';
 class FoodList extends ConsumerStatefulWidget {
   final DateTime selectedDate;
 
-  const FoodList({required this.selectedDate, Key? key}) : super(key: key);
+  const FoodList({required this.selectedDate, super.key});
 
   @override
   _FoodListState createState() => _FoodListState();
@@ -100,7 +100,7 @@ class _FoodListState extends ConsumerState<FoodList> {
                       },
                       itemBuilder: (BuildContext context) {
                         return [
-                          PopupMenuItem(
+                          const PopupMenuItem(
                             value: 'duplicate',
                             child: Text('Duplicate Meal'),
                           ),
@@ -198,7 +198,7 @@ class _FoodListState extends ConsumerState<FoodList> {
           }
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('Selection mode enabled'),
           ),
         );
@@ -249,7 +249,7 @@ class _FoodListState extends ConsumerState<FoodList> {
                   await _showMoveDialog(context, ref, mealsList);
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
+                    const SnackBar(
                       content: Text('No foods selected'),
                     ),
                   );
@@ -258,16 +258,16 @@ class _FoodListState extends ConsumerState<FoodList> {
             },
             itemBuilder: (BuildContext context) {
               return [
-                PopupMenuItem(
+                const PopupMenuItem(
                   value: 'edit',
                   child: Text('Edit'),
                 ),
-                PopupMenuItem(
+                const PopupMenuItem(
                   value: 'delete',
                   child: Text('Delete'),
                 ),
                 if (_isSelectionMode)
-                  PopupMenuItem(
+                  const PopupMenuItem(
                     value: 'move',
                     child: Text('Move Selected Foods'),
                   ),
