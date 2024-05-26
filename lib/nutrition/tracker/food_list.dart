@@ -2,6 +2,7 @@ import 'package:alphanessone/services/users_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import '../models&Services/macros_model.dart' as macros;
 import '../models&Services/meals_model.dart' as meals;
 import '../models&Services/meals_services.dart';
@@ -10,7 +11,7 @@ import 'package:google_fonts/google_fonts.dart';
 class FoodList extends ConsumerStatefulWidget {
   final DateTime selectedDate;
 
-  const FoodList({required this.selectedDate, super.key});
+  const FoodList({required this.selectedDate, Key? key}) : super(key: key);
 
   @override
   _FoodListState createState() => _FoodListState();
@@ -100,7 +101,7 @@ class _FoodListState extends ConsumerState<FoodList> {
                       },
                       itemBuilder: (BuildContext context) {
                         return [
-                          const PopupMenuItem(
+                          PopupMenuItem(
                             value: 'duplicate',
                             child: Text('Duplicate Meal'),
                           ),
@@ -198,7 +199,7 @@ class _FoodListState extends ConsumerState<FoodList> {
           }
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Selection mode enabled'),
           ),
         );
@@ -224,55 +225,122 @@ class _FoodListState extends ConsumerState<FoodList> {
       },
       child: Container(
         color: isSelected ? Colors.grey.withOpacity(0.3) : Colors.transparent,
-        child: ListTile(
-          leading: Icon(Icons.fastfood, color: Theme.of(context).colorScheme.onSurface),
-          title: Text(food.name, style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface)),
-          subtitle: Text(
-            'C:${food.carbs.toStringAsFixed(2)}g P:${food.protein.toStringAsFixed(2)}g F:${food.fat.toStringAsFixed(2)}g, ${food.kcal.toStringAsFixed(2)}Kcal',
-            style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface),
-          ),
-          trailing: PopupMenuButton<String>(
-            onSelected: (value) async {
-              if (value == 'edit') {
-                context.push(
-                  Uri(
-                    path: '/food_tracker/food_selector',
-                    queryParameters: {'myFoodId': food.id},
-                  ).toString(),
-                  extra: meal,
-                );
-              } else if (value == 'delete') {
-                await mealsService.removeFoodFromMeal(userId: meal.userId, mealId: meal.id!, myFoodId: food.id!);
-              } else if (value == 'move') {
-                if (_selectedFoods.isNotEmpty) {
-                  final mealsList = await _getAllMeals(meal.userId);
-                  await _showMoveDialog(context, ref, mealsList);
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('No foods selected'),
-                    ),
+        child: Slidable(
+          key: Key(food.id!),
+          startActionPane: ActionPane(
+            motion: const ScrollMotion(),
+            children: [
+              SlidableAction(
+                onPressed: (context) {
+                  context.push(
+                    Uri(
+                      path: '/food_tracker/food_selector',
+                      queryParameters: {'myFoodId': food.id},
+                    ).toString(),
+                    extra: meal,
                   );
+                },
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                icon: Icons.edit,
+                label: 'Edit',
+              ),
+              SlidableAction(
+                onPressed: (context) {
+                  context.push(
+                    '/food_tracker/food_selector',
+                    extra: meal,
+                  );
+                },
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                icon: Icons.add,
+                label: 'Add',
+              ),
+            ],
+          ),
+          endActionPane: ActionPane(
+            motion: const ScrollMotion(),
+            children: [
+              SlidableAction(
+                onPressed: (context) async {
+                  await mealsService.removeFoodFromMeal(userId: meal.userId, mealId: meal.id!, myFoodId: food.id!);
+                },
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                icon: Icons.delete,
+                label: 'Delete',
+              ),
+              SlidableAction(
+                onPressed: (context) async {
+                  if (_selectedFoods.isNotEmpty) {
+                    final mealsList = await _getAllMeals(meal.userId);
+                    await _showMoveDialog(context, ref, mealsList);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('No foods selected'),
+                      ),
+                    );
+                  }
+                },
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+                icon: Icons.move_to_inbox,
+                label: 'Move',
+              ),
+            ],
+          ),
+          child: ListTile(
+            leading: Icon(Icons.fastfood, color: Theme.of(context).colorScheme.onSurface),
+            title: Text(food.name, style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface)),
+            subtitle: Text(
+              'C:${food.carbs.toStringAsFixed(2)}g P:${food.protein.toStringAsFixed(2)}g F:${food.fat.toStringAsFixed(2)}g, ${food.kcal.toStringAsFixed(2)}Kcal',
+              style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface),
+            ),
+            trailing: PopupMenuButton<String>(
+              onSelected: (value) async {
+                if (value == 'edit') {
+                  context.push(
+                    Uri(
+                      path: '/food_tracker/food_selector',
+                      queryParameters: {'myFoodId': food.id},
+                    ).toString(),
+                    extra: meal,
+                  );
+                } else if (value == 'delete') {
+                  await mealsService.removeFoodFromMeal(userId: meal.userId, mealId: meal.id!, myFoodId: food.id!);
+                } else if (value == 'move') {
+                  if (_selectedFoods.isNotEmpty) {
+                    final mealsList = await _getAllMeals(meal.userId);
+                    await _showMoveDialog(context, ref, mealsList);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('No foods selected'),
+                      ),
+                    );
+                  }
                 }
-              }
-            },
-            itemBuilder: (BuildContext context) {
-              return [
-                const PopupMenuItem(
-                  value: 'edit',
-                  child: Text('Edit'),
-                ),
-                const PopupMenuItem(
-                  value: 'delete',
-                  child: Text('Delete'),
-                ),
-                if (_isSelectionMode)
-                  const PopupMenuItem(
-                    value: 'move',
-                    child: Text('Move Selected Foods'),
+              },
+              itemBuilder: (BuildContext context) {
+                return [
+                  PopupMenuItem(
+                    value: 'edit',
+                    child: Text('Edit'),
                   ),
-              ];
-            },
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: Text('Delete'),
+                  ),
+                  if (_isSelectionMode)
+                    PopupMenuItem(
+                      value: 'move',
+                      child: Text('Move Selected Foods'),
+                    ),
+                ];
+              },
+            ),
           ),
         ),
       ),
