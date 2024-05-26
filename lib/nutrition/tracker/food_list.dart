@@ -66,7 +66,7 @@ class _FoodListState extends ConsumerState<FoodList> {
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           final totalNutrients = snapshot.data!;
-          final subtitle = 'C:${totalNutrients['carbs']}g P:${totalNutrients['proteins']}g F:${totalNutrients['fats']}g, ${totalNutrients['calories']}Kcal';
+          final subtitle = 'C:${totalNutrients['carbs']?.toStringAsFixed(2)}g P:${totalNutrients['proteins']?.toStringAsFixed(2)}g F:${totalNutrients['fats']?.toStringAsFixed(2)}g, ${totalNutrients['calories']?.toStringAsFixed(2)}Kcal';
 
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -228,7 +228,7 @@ class _FoodListState extends ConsumerState<FoodList> {
           leading: Icon(Icons.fastfood, color: Theme.of(context).colorScheme.onSurface),
           title: Text(food.name, style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface)),
           subtitle: Text(
-            'C:${food.carbs}g P:${food.protein}g F:${food.fat}g, ${food.kcal}Kcal',
+            'C:${food.carbs.toStringAsFixed(2)}g P:${food.protein.toStringAsFixed(2)}g F:${food.fat.toStringAsFixed(2)}g, ${food.kcal.toStringAsFixed(2)}Kcal',
             style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface),
           ),
           trailing: PopupMenuButton<String>(
