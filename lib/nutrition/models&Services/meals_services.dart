@@ -206,6 +206,25 @@ class MealsService extends ChangeNotifier {
       'calories': totalCalories,
     };
   }
+  
+Future<void> duplicateMeal({required String userId, required String sourceMealId, required String targetMealId}) async {
+  final sourceFoods = await getFoodsForMeals(userId: userId, mealId: sourceMealId);
+
+  for (final food in sourceFoods) {
+    final duplicatedFood = food.copyWith(id: null, mealId: targetMealId); // Creiamo una copia del cibo cambiando il mealId
+    await _firestore.collection('users').doc(userId).collection('myfoods').add(duplicatedFood.toMap());
+  }
+
+  // Aggiorna le statistiche del pasto e del giorno di destinazione
+  for (final food in sourceFoods) {
+    final updatedFood = food.copyWith(mealId: targetMealId);
+    await updateMealAndDailyStats(userId, targetMealId, updatedFood, isAdding: true);
+  }
+}
+
+
+
+  
 
   Future<void> createDailyStatsIfNotExist(String userId, DateTime date) async {
     final dailyStats = await getDailyStatsByDate(userId, date);

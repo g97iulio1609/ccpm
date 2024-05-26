@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Food {
   String? id;
+  String? mealId;
   String name;
   String? brands;
   double carbs;
@@ -29,6 +30,7 @@ class Food {
   Food({
     this.id,
     this.brands,
+    this.mealId,
     required this.name,
     required this.carbs,
     required this.fat,
@@ -79,10 +81,12 @@ class Food {
     double? vitaminA,
     double? vitaminC,
     double? calcium,
-    double? iron,
+    double? iron, 
+    required String mealId,
   }) {
     return Food(
       id: id ?? this.id,
+      mealId: mealId ?? this.mealId,
       name: name ?? this.name,
       brands: brands ?? this.brands,
       carbs: carbs ?? this.carbs,
@@ -111,6 +115,8 @@ class Food {
   factory Food.fromMap(Map<String, dynamic> map) {
     return Food(
       id: map['id'],
+            mealId: map['mealId'],
+
       name: map['name'],
       brands: map['brands'],
       carbs: map['carbs']?.toDouble() ?? 0.0,
@@ -140,6 +146,8 @@ class Food {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return Food(
       id: doc.id,
+            mealId: data['mealId'],
+
       name: data['name'],
       brands: data['brands'],
       carbs: data['carbs']?.toDouble() ?? 0.0,
@@ -168,6 +176,7 @@ class Food {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+      'mealId':mealId,
       'name': name,
       'brands': brands,
       'carbs': carbs,

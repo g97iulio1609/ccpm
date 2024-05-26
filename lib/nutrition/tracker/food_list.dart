@@ -110,6 +110,12 @@ class FoodList extends ConsumerWidget {
                       );
                     },
                   ),
+                  ListTile(
+                    title: Text('Duplicate Meal', style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.primary)),
+                    onTap: () async {
+                      await _showDuplicateDialog(context, ref, meal, mealsList);
+                    },
+                  ),
                 ],
               ),
             ),
@@ -217,5 +223,38 @@ class FoodList extends ConsumerWidget {
         child: Text('Add Snack ${currentSnacksCount + 1}'),
       ),
     );
+  }
+
+  Future<void> _showDuplicateDialog(BuildContext context, WidgetRef ref, meals.Meal sourceMeal, List<meals.Meal> mealsList) async {
+    final mealsService = ref.read(mealsServiceProvider);
+
+    final selectedMeal = await showDialog<meals.Meal>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Select Destination Meal', style: GoogleFonts.roboto()),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: mealsList.length,
+              itemBuilder: (BuildContext context, int index) {
+                final meal = mealsList[index];
+                return ListTile(
+                  title: Text(meal.mealType, style: GoogleFonts.roboto()),
+                  onTap: () {
+                    Navigator.of(context).pop(meal);
+                  },
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selectedMeal != null) {
+      await mealsService.duplicateMeal(userId: sourceMeal.userId, sourceMealId: sourceMeal.id!, targetMealId: selectedMeal.id!);
+    }
   }
 }
