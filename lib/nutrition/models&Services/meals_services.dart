@@ -236,6 +236,20 @@ Future<void> duplicateMeal({
 }
 
 
+Future<void> moveFoods({
+  required String userId,
+  required List<String> foodIds,
+  required String targetMealId,
+}) async {
+  for (final foodId in foodIds) {
+    final foodDoc = await _firestore.collection('users').doc(userId).collection('myfoods').doc(foodId).get();
+    if (foodDoc.exists) {
+      final foodData = foodDoc.data()!;
+      final food = macros.Food.fromMap(foodData).copyWith(mealId: targetMealId);
+      await _firestore.collection('users').doc(userId).collection('myfoods').doc(foodId).update(food.toMap());
+    }
+  }
+}
 
   
 

@@ -7,30 +7,38 @@ import '../models&Services/meals_model.dart' as meals;
 import '../models&Services/meals_services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class FoodList extends ConsumerWidget {
+class FoodList extends ConsumerStatefulWidget {
   final DateTime selectedDate;
 
   const FoodList({required this.selectedDate, Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  _FoodListState createState() => _FoodListState();
+}
+
+class _FoodListState extends ConsumerState<FoodList> {
+  final List<String> _selectedFoods = [];
+  bool _isSelectionMode = false;
+
+  @override
+  Widget build(BuildContext context) {
     final mealsService = ref.watch(mealsServiceProvider);
     final userService = ref.watch(usersServiceProvider);
     final userId = userService.getCurrentUserId();
 
     return StreamBuilder<List<meals.Meal>>(
-      stream: mealsService.getUserMealsByDate(userId: userId, date: selectedDate),
+      stream: mealsService.getUserMealsByDate(userId: userId, date: widget.selectedDate),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           final mealsList = snapshot.data!;
           return ListView(
             children: [
-              _buildMealSection(context, ref, 'Breakfast', mealsList.firstWhere((meal) => meal.mealType == 'Breakfast', orElse: () => meals.Meal.emptyMeal(userId, mealsList.first.dailyStatsId, selectedDate, 'Breakfast')), mealsList),
-              _buildMealSection(context, ref, 'Lunch', mealsList.firstWhere((meal) => meal.mealType == 'Lunch', orElse: () => meals.Meal.emptyMeal(userId, mealsList.first.dailyStatsId, selectedDate, 'Lunch')), mealsList),
-              _buildMealSection(context, ref, 'Dinner', mealsList.firstWhere((meal) => meal.mealType == 'Dinner', orElse: () => meals.Meal.emptyMeal(userId, mealsList.first.dailyStatsId, selectedDate, 'Dinner')), mealsList),
+              _buildMealSection(context, ref, 'Breakfast', mealsList.firstWhere((meal) => meal.mealType == 'Breakfast', orElse: () => meals.Meal.emptyMeal(userId, mealsList.first.dailyStatsId, widget.selectedDate, 'Breakfast')), mealsList),
+              _buildMealSection(context, ref, 'Lunch', mealsList.firstWhere((meal) => meal.mealType == 'Lunch', orElse: () => meals.Meal.emptyMeal(userId, mealsList.first.dailyStatsId, widget.selectedDate, 'Lunch')), mealsList),
+              _buildMealSection(context, ref, 'Dinner', mealsList.firstWhere((meal) => meal.mealType == 'Dinner', orElse: () => meals.Meal.emptyMeal(userId, mealsList.first.dailyStatsId, widget.selectedDate, 'Dinner')), mealsList),
               for (int i = 0; i < _getSnackMeals(mealsList).length; i++)
                 _buildMealSection(context, ref, 'Snack ${i + 1}', _getSnackMeals(mealsList)[i], mealsList, i),
-              _buildAddSnackButton(context, ref, userId, mealsList.isNotEmpty ? mealsList.first.dailyStatsId : '', selectedDate, _getSnackMeals(mealsList).length),
+              _buildAddSnackButton(context, ref, userId, mealsList.isNotEmpty ? mealsList.first.dailyStatsId : '', widget.selectedDate, _getSnackMeals(mealsList).length),
             ],
           );
         } else if (snapshot.hasError) {
@@ -116,6 +124,12 @@ class FoodList extends ConsumerWidget {
                       await _showDuplicateDialog(context, ref, meal, mealsList);
                     },
                   ),
+                  ListTile(
+                    title: Text('Move Selected Foods', style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.primary)),
+                    onTap: () async {
+                      await _showMoveDialog(context, ref, meal, mealsList);
+                    },
+                  ),
                 ],
               ),
             ),
@@ -165,6 +179,8 @@ class FoodList extends ConsumerWidget {
 
   Widget _buildFoodItem(BuildContext context, WidgetRef ref, meals.Meal meal, macros.Food food) {
     final mealsService = ref.read(mealsServiceProvider);
+    final isSelected = _selectedFoods.contains(food.id);
+
     return ListTile(
       leading: Icon(Icons.fastfood, color: Theme.of(context).colorScheme.onSurface),
       title: Text(food.name, style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface)),
@@ -172,29 +188,74 @@ class FoodList extends ConsumerWidget {
         'C:${food.carbs}g P:${food.protein}g F:${food.fat}g, ${food.kcal}Kcal',
         style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface),
       ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            icon: Icon(Icons.edit, color: Theme.of(context).colorScheme.onSurface),
-            onPressed: () {
-              context.push(
-                Uri(
-                  path: '/food_tracker/food_selector',
-                  queryParameters: {'myFoodId': food.id},
-                ).toString(),
-                extra: meal,
-              );
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.onSurface),
-            onPressed: () {
-              mealsService.removeFoodFromMeal(userId: meal.userId, mealId: meal.id!, myFoodId: food.id!);
-            },
-          ),
-        ],
-      ),
+      selected: isSelected,
+      onTap: () {
+        if (_isSelectionMode) {
+          setState(() {
+            if (isSelected) {
+              _selectedFoods.remove(food.id);
+            } else {
+              _selectedFoods.add(food.id!);
+            }
+            _isSelectionMode = _selectedFoods.isNotEmpty;
+          });
+        } else {
+          context.push(
+            Uri(
+              path: '/food_tracker/food_selector',
+              queryParameters: {'myFoodId': food.id},
+            ).toString(),
+            extra: meal,
+          );
+        }
+      },
+      onLongPress: () {
+        setState(() {
+          _isSelectionMode = true;
+          _selectedFoods.add(food.id!);
+        });
+      },
+      trailing: _isSelectionMode
+          ? Checkbox(
+              value: isSelected,
+              onChanged: (value) {
+                setState(() {
+                  if (value == true) {
+                    _selectedFoods.add(food.id!);
+                  } else {
+                    _selectedFoods.remove(food.id);
+                  }
+                  _isSelectionMode = _selectedFoods.isNotEmpty;
+                });
+              },
+            )
+          : PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'edit') {
+                  context.push(
+                    Uri(
+                      path: '/food_tracker/food_selector',
+                      queryParameters: {'myFoodId': food.id},
+                    ).toString(),
+                    extra: meal,
+                  );
+                } else if (value == 'delete') {
+                  mealsService.removeFoodFromMeal(userId: meal.userId, mealId: meal.id!, myFoodId: food.id!);
+                }
+              },
+              itemBuilder: (BuildContext context) {
+                return [
+                  PopupMenuItem(
+                    value: 'edit',
+                    child: Text('Edit'),
+                  ),
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: Text('Delete'),
+                  ),
+                ];
+              },
+            ),
     );
   }
 
@@ -282,6 +343,47 @@ class FoodList extends ConsumerWidget {
           overwriteExisting: overwriteExisting,
         );
       }
+    }
+  }
+
+  Future<void> _showMoveDialog(BuildContext context, WidgetRef ref, meals.Meal sourceMeal, List<meals.Meal> mealsList) async {
+    final mealsService = ref.read(mealsServiceProvider);
+
+    final selectedMeal = await showDialog<meals.Meal>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Select Destination Meal', style: GoogleFonts.roboto()),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: mealsList.length,
+              itemBuilder: (BuildContext context, int index) {
+                final meal = mealsList[index];
+                return ListTile(
+                  title: Text(meal.mealType, style: GoogleFonts.roboto()),
+                  onTap: () {
+                    Navigator.of(context).pop(meal);
+                  },
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selectedMeal != null) {
+      await mealsService.moveFoods(
+        userId: sourceMeal.userId,
+        foodIds: _selectedFoods,
+        targetMealId: selectedMeal.id!,
+      );
+      setState(() {
+        _selectedFoods.clear();
+        _isSelectionMode = false;
+      });
     }
   }
 }
