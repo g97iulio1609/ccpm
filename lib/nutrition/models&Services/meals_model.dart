@@ -11,6 +11,7 @@ class Meal {
   double totalCarbs;
   double totalFat;
   double totalProtein;
+  bool isFavorite; // Aggiunto
 
   Meal({
     this.id,
@@ -22,6 +23,7 @@ class Meal {
     this.totalCarbs = 0,
     this.totalFat = 0,
     this.totalProtein = 0,
+    this.isFavorite = false, // Aggiunto
   });
 
   Meal copyWith({
@@ -34,6 +36,7 @@ class Meal {
     double? totalCarbs,
     double? totalFat,
     double? totalProtein,
+    bool? isFavorite, // Aggiunto
   }) {
     return Meal(
       id: id ?? this.id,
@@ -45,6 +48,7 @@ class Meal {
       totalCarbs: totalCarbs ?? this.totalCarbs,
       totalFat: totalFat ?? this.totalFat,
       totalProtein: totalProtein ?? this.totalProtein,
+      isFavorite: isFavorite ?? this.isFavorite, // Aggiunto
     );
   }
 
@@ -63,6 +67,7 @@ class Meal {
       totalCarbs: map['totalCarbs']?.toDouble() ?? 0.0,
       totalFat: map['totalFat']?.toDouble() ?? 0.0,
       totalProtein: map['totalProtein']?.toDouble() ?? 0.0,
+      isFavorite: map['isFavorite'] ?? false, // Aggiunto
     );
   }
 
@@ -78,6 +83,7 @@ class Meal {
       totalCarbs: data['totalCarbs']?.toDouble() ?? 0.0,
       totalFat: data['totalFat']?.toDouble() ?? 0.0,
       totalProtein: data['totalProtein']?.toDouble() ?? 0.0,
+      isFavorite: data['isFavorite'] ?? false, // Aggiunto
     );
   }
 
@@ -92,6 +98,7 @@ class Meal {
       'totalCarbs': totalCarbs,
       'totalFat': totalFat,
       'totalProtein': totalProtein,
+      'isFavorite': isFavorite, // Aggiunto
     };
   }
 

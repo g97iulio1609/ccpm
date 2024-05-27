@@ -1,4 +1,3 @@
-// meals_services.dart
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -408,9 +407,6 @@ Future<void> moveFoods({
     }
   }
 
-
-  
-
   Future<void> addFood(macros.Food food) async {
     await _firestore.collection('foods').add(food.toMap());
   }
@@ -494,5 +490,43 @@ Future<void> updateMealAndDailyStats(String userId, String mealId, macros.Food f
         throw Exception('DailyStats not found');
       }
     });
+  }
+
+  Future<void> saveMealAsFavorite(String userId, String mealId) async {
+    final mealRef = _firestore.collection('users').doc(userId).collection('meals').doc(mealId);
+    final mealSnapshot = await mealRef.get();
+
+    if (!mealSnapshot.exists) {
+      throw Exception('Meal not found');
+    }
+
+    final meal = meals.Meal.fromFirestore(mealSnapshot).copyWith(isFavorite: true);
+    await _firestore.collection('users').doc(userId).collection('mymeals').doc(mealId).set(meal.toMap());
+  }
+
+  Future<List<meals.Meal>> getFavoriteMeals(String userId) async {
+    final favMealsSnapshot = await _firestore.collection('users').doc(userId).collection('mymeals').get();
+    return favMealsSnapshot.docs.map((doc) => meals.Meal.fromFirestore(doc)).toList();
+  }
+
+  Future<void> applyFavoriteMealToCurrent(String userId, String favoriteMealId, String currentMealId) async {
+    final favoriteMealRef = _firestore.collection('users').doc(userId).collection('mymeals').doc(favoriteMealId);
+    final favoriteMealSnapshot = await favoriteMealRef.get();
+
+    if (!favoriteMealSnapshot.exists) {
+      throw Exception('Favorite meal not found');
+    }
+
+    final favoriteMeal = meals.Meal.fromFirestore(favoriteMealSnapshot);
+    final foods = await getFoodsForMeals(userId: userId, mealId: favoriteMealId);
+
+    for (final food in foods) {
+      final newFood = food.copyWith(id: null, mealId: currentMealId);
+      await _firestore.collection('users').doc(userId).collection('myfoods').add(newFood.toMap());
+    }
+
+    for (final food in foods) {
+      await updateMealAndDailyStats(userId, currentMealId, food, isAdding: true);
+    }
   }
 }

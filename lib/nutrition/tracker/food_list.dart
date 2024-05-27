@@ -116,6 +116,8 @@ class _FoodListState extends ConsumerState<FoodList> {
           itemBuilder: (BuildContext context) => [
             const PopupMenuItem(value: 'duplicate', child: Text('Duplicate Meal')),
             const PopupMenuItem(value: 'delete_all', child: Text('Delete All Foods')),
+            const PopupMenuItem(value: 'save_as_favorite', child: Text('Save as Favorite')),
+            const PopupMenuItem(value: 'apply_favorite', child: Text('Apply Favorite')),
           ],
         ),
       ],
@@ -415,10 +417,43 @@ class _FoodListState extends ConsumerState<FoodList> {
   }
 
   void _onMealMenuSelected(BuildContext context, WidgetRef ref, String value, meals.Meal meal, List<meals.Meal> mealsList) async {
+    final mealsService = ref.read(mealsServiceProvider);
     if (value == 'duplicate') {
       await _showDuplicateDialog(context, ref, meal, mealsList);
     } else if (value == 'delete_all') {
       await _confirmDeleteAllFoods(context, ref, meal);
+    } else if (value == 'save_as_favorite') {
+      await mealsService.saveMealAsFavorite(meal.userId, meal.id!);
+    } else if (value == 'apply_favorite') {
+      final favoriteMeals = await mealsService.getFavoriteMeals(meal.userId);
+      if (favoriteMeals.isNotEmpty) {
+        final selectedFavorite = await showDialog<meals.Meal>(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Select Favorite Meal', style: GoogleFonts.roboto()),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: favoriteMeals.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    final favMeal = favoriteMeals[index];
+                    return ListTile(
+                      title: Text(favMeal.mealType, style: GoogleFonts.roboto()),
+                      onTap: () => Navigator.of(context).pop(favMeal),
+                    );
+                  },
+                ),
+              ),
+            );
+          },
+        );
+
+        if (selectedFavorite != null) {
+          await mealsService.applyFavoriteMealToCurrent(meal.userId, selectedFavorite.id!, meal.id!);
+        }
+      }
     }
   }
 
