@@ -184,7 +184,7 @@ class MealsService extends ChangeNotifier {
     await updateMealAndDailyStats(userId, mealId, myFood, isAdding: false);
   }
 
-    Future<Map<String, double>> getTotalNutrientsForMeal(String userId, String mealId) async {
+  Future<Map<String, double>> getTotalNutrientsForMeal(String userId, String mealId) async {
     final foods = await getFoodsForMeals(userId: userId, mealId: mealId);
     double totalCarbs = 0;
     double totalProteins = 0;
@@ -206,51 +206,48 @@ class MealsService extends ChangeNotifier {
     };
   }
   
-Future<void> duplicateMeal({
-  required String userId,
-  required String sourceMealId,
-  required String targetMealId,
-  required bool overwriteExisting,
-}) async {
-  final sourceFoods = await getFoodsForMeals(userId: userId, mealId: sourceMealId);
+  Future<void> duplicateMeal({
+    required String userId,
+    required String sourceMealId,
+    required String targetMealId,
+    required bool overwriteExisting,
+  }) async {
+    final sourceFoods = await getFoodsForMeals(userId: userId, mealId: sourceMealId);
 
-  if (overwriteExisting) {
-    // Elimina tutti gli alimenti esistenti nel pasto di destinazione
-    final targetFoods = await getFoodsForMeals(userId: userId, mealId: targetMealId);
-    for (final food in targetFoods) {
-      await _firestore.collection('users').doc(userId).collection('myfoods').doc(food.id).delete();
+    if (overwriteExisting) {
+      // Elimina tutti gli alimenti esistenti nel pasto di destinazione
+      final targetFoods = await getFoodsForMeals(userId: userId, mealId: targetMealId);
+      for (final food in targetFoods) {
+        await _firestore.collection('users').doc(userId).collection('myfoods').doc(food.id).delete();
+      }
+    }
+
+    for (final food in sourceFoods) {
+      final duplicatedFood = food.copyWith(id: null, mealId: targetMealId);
+      await _firestore.collection('users').doc(userId).collection('myfoods').add(duplicatedFood.toMap());
+    }
+
+    // Aggiorna le statistiche del pasto e del giorno di destinazione
+    for (final food in sourceFoods) {
+      final updatedFood = food.copyWith(mealId: targetMealId);
+      await updateMealAndDailyStats(userId, targetMealId, updatedFood, isAdding: true);
     }
   }
 
-  for (final food in sourceFoods) {
-    final duplicatedFood = food.copyWith(id: null, mealId: targetMealId);
-    await _firestore.collection('users').doc(userId).collection('myfoods').add(duplicatedFood.toMap());
-  }
-
-  // Aggiorna le statistiche del pasto e del giorno di destinazione
-  for (final food in sourceFoods) {
-    final updatedFood = food.copyWith(mealId: targetMealId);
-    await updateMealAndDailyStats(userId, targetMealId, updatedFood, isAdding: true);
-  }
-}
-
-
-Future<void> moveFoods({
-  required String userId,
-  required List<String> foodIds,
-  required String targetMealId,
-}) async {
-  for (final foodId in foodIds) {
-    final foodDoc = await _firestore.collection('users').doc(userId).collection('myfoods').doc(foodId).get();
-    if (foodDoc.exists) {
-      final foodData = foodDoc.data()!;
-      final food = macros.Food.fromMap(foodData).copyWith(mealId: targetMealId);
-      await _firestore.collection('users').doc(userId).collection('myfoods').doc(foodId).update(food.toMap());
+  Future<void> moveFoods({
+    required String userId,
+    required List<String> foodIds,
+    required String targetMealId,
+  }) async {
+    for (final foodId in foodIds) {
+      final foodDoc = await _firestore.collection('users').doc(userId).collection('myfoods').doc(foodId).get();
+      if (foodDoc.exists) {
+        final foodData = foodDoc.data()!;
+        final food = macros.Food.fromMap(foodData).copyWith(mealId: targetMealId);
+        await _firestore.collection('users').doc(userId).collection('myfoods').doc(foodId).update(food.toMap());
+      }
     }
   }
-}
-
-  
 
   Future<void> createDailyStatsIfNotExist(String userId, DateTime date) async {
     final dailyStats = await getDailyStatsByDate(userId, date);
@@ -285,7 +282,7 @@ Future<void> moveFoods({
           date: date,
           mealType: mealType,
         );
-        final mealId = await addMeal(newMeal, userId, dailyStatsId);
+        await addMeal(newMeal, userId, dailyStatsId);
       }
     }
   }
@@ -438,39 +435,39 @@ Future<void> moveFoods({
     return foodDocs.docs.map((doc) => macros.Food.fromFirestore(doc)).toList();
   }
 
-Future<void> updateMealAndDailyStats(String userId, String mealId, macros.Food food, {required bool isAdding}) async {
-  final mealRef = _firestore.collection('users').doc(userId).collection('meals').doc(mealId);
-  final mealSnapshot = await mealRef.get();
+  Future<void> updateMealAndDailyStats(String userId, String mealId, macros.Food food, {required bool isAdding}) async {
+    final mealRef = _firestore.collection('users').doc(userId).collection('meals').doc(mealId);
+    final mealSnapshot = await mealRef.get();
 
-  if (!mealSnapshot.exists) {
-    throw Exception('Meal not found');
+    if (!mealSnapshot.exists) {
+      throw Exception('Meal not found');
+    }
+
+    final meal = meals.Meal.fromFirestore(mealSnapshot);
+
+    meal.totalCalories = (meal.totalCalories + (isAdding ? food.kcal : -food.kcal)).clamp(0, double.infinity);
+    meal.totalCarbs = (meal.totalCarbs + (isAdding ? food.carbs : -food.carbs)).clamp(0, double.infinity);
+    meal.totalFat = (meal.totalFat + (isAdding ? food.fat : -food.fat)).clamp(0, double.infinity);
+    meal.totalProtein = (meal.totalProtein + (isAdding ? food.protein : -food.protein)).clamp(0, double.infinity);
+
+    await mealRef.update(meal.toMap());
+
+    final dailyStatsRef = _firestore.collection('users').doc(userId).collection('dailyStats').doc(meal.dailyStatsId);
+    final dailyStatsSnapshot = await dailyStatsRef.get();
+
+    if (!dailyStatsSnapshot.exists) {
+      throw Exception('DailyStats not found');
+    }
+
+    final dailyStats = meals.DailyStats.fromFirestore(dailyStatsSnapshot);
+
+    dailyStats.totalCalories = (dailyStats.totalCalories + (isAdding ? food.kcal : -food.kcal)).clamp(0, double.infinity);
+    dailyStats.totalCarbs = (dailyStats.totalCarbs + (isAdding ? food.carbs : -food.carbs)).clamp(0, double.infinity);
+    dailyStats.totalFat = (dailyStats.totalFat + (isAdding ? food.fat : -food.fat)).clamp(0, double.infinity);
+    dailyStats.totalProtein = (dailyStats.totalProtein + (isAdding ? food.protein : -food.protein)).clamp(0, double.infinity);
+
+    await dailyStatsRef.update(dailyStats.toMap());
   }
-
-  final meal = meals.Meal.fromFirestore(mealSnapshot);
-
-  meal.totalCalories = (meal.totalCalories + (isAdding ? food.kcal : -food.kcal)).clamp(0, double.infinity);
-  meal.totalCarbs = (meal.totalCarbs + (isAdding ? food.carbs : -food.carbs)).clamp(0, double.infinity);
-  meal.totalFat = (meal.totalFat + (isAdding ? food.fat : -food.fat)).clamp(0, double.infinity);
-  meal.totalProtein = (meal.totalProtein + (isAdding ? food.protein : -food.protein)).clamp(0, double.infinity);
-
-  await mealRef.update(meal.toMap());
-
-  final dailyStatsRef = _firestore.collection('users').doc(userId).collection('dailyStats').doc(meal.dailyStatsId);
-  final dailyStatsSnapshot = await dailyStatsRef.get();
-
-  if (!dailyStatsSnapshot.exists) {
-    throw Exception('DailyStats not found');
-  }
-
-  final dailyStats = meals.DailyStats.fromFirestore(dailyStatsSnapshot);
-
-  dailyStats.totalCalories = (dailyStats.totalCalories + (isAdding ? food.kcal : -food.kcal)).clamp(0, double.infinity);
-  dailyStats.totalCarbs = (dailyStats.totalCarbs + (isAdding ? food.carbs : -food.carbs)).clamp(0, double.infinity);
-  dailyStats.totalFat = (dailyStats.totalFat + (isAdding ? food.fat : -food.fat)).clamp(0, double.infinity);
-  dailyStats.totalProtein = (dailyStats.totalProtein + (isAdding ? food.protein : -food.protein)).clamp(0, double.infinity);
-
-  await dailyStatsRef.update(dailyStats.toMap());
-}
 
   Stream<meals.DailyStats> getDailyStatsByDateStream(String userId, DateTime date) {
     final startOfDay = DateTime(date.year, date.month, date.day);
@@ -492,7 +489,7 @@ Future<void> updateMealAndDailyStats(String userId, String mealId, macros.Food f
     });
   }
 
-  Future<void> saveMealAsFavorite(String userId, String mealId) async {
+  Future<void> saveMealAsFavorite(String userId, String mealId, {String? favoriteName}) async {
     final mealRef = _firestore.collection('users').doc(userId).collection('meals').doc(mealId);
     final mealSnapshot = await mealRef.get();
 
@@ -500,7 +497,16 @@ Future<void> updateMealAndDailyStats(String userId, String mealId, macros.Food f
       throw Exception('Meal not found');
     }
 
-    final meal = meals.Meal.fromFirestore(mealSnapshot).copyWith(isFavorite: true);
+    final mealData = mealSnapshot.data()!;
+    final mealType = mealData['mealType'];
+    final mealDate = (mealData['date'] as Timestamp).toDate();
+    final defaultFavoriteName = '$mealType ${mealDate.day}/${mealDate.month}/${mealDate.year}';
+
+    final meal = meals.Meal.fromFirestore(mealSnapshot).copyWith(
+      isFavorite: true,
+      favoriteName: favoriteName ?? defaultFavoriteName,
+    );
+
     await _firestore.collection('users').doc(userId).collection('mymeals').doc(mealId).set(meal.toMap());
   }
 

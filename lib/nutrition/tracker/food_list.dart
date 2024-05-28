@@ -423,7 +423,10 @@ class _FoodListState extends ConsumerState<FoodList> {
     } else if (value == 'delete_all') {
       await _confirmDeleteAllFoods(context, ref, meal);
     } else if (value == 'save_as_favorite') {
-      await mealsService.saveMealAsFavorite(meal.userId, meal.id!);
+      final favoriteName = await _showFavoriteNameDialog(context);
+      if (favoriteName != null) {
+        await mealsService.saveMealAsFavorite(meal.userId, meal.id!, favoriteName: favoriteName);
+      }
     } else if (value == 'apply_favorite') {
       final favoriteMeals = await mealsService.getFavoriteMeals(meal.userId);
       if (favoriteMeals.isNotEmpty) {
@@ -440,7 +443,7 @@ class _FoodListState extends ConsumerState<FoodList> {
                   itemBuilder: (BuildContext context, int index) {
                     final favMeal = favoriteMeals[index];
                     return ListTile(
-                      title: Text(favMeal.mealType, style: GoogleFonts.roboto()),
+                      title: Text(favMeal.favoriteName ?? favMeal.mealType, style: GoogleFonts.roboto()),
                       onTap: () => Navigator.of(context).pop(favMeal),
                     );
                   },
@@ -455,6 +458,29 @@ class _FoodListState extends ConsumerState<FoodList> {
         }
       }
     }
+  }
+
+  Future<String?> _showFavoriteNameDialog(BuildContext context) {
+    final TextEditingController _nameController = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Save as Favorite', style: GoogleFonts.roboto()),
+          content: TextField(
+            controller: _nameController,
+            decoration: InputDecoration(
+              labelText: 'Favorite Name',
+              hintText: 'Enter a name for this favorite meal',
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(onPressed: () => Navigator.of(context).pop(), child: Text('Cancel', style: GoogleFonts.roboto())),
+            TextButton(onPressed: () => Navigator.of(context).pop(_nameController.text), child: Text('Save', style: GoogleFonts.roboto())),
+          ],
+        );
+      },
+    );
   }
 
   void _onFoodMenuSelected(BuildContext context, WidgetRef ref, String value, meals.Meal meal, String foodId) async {
