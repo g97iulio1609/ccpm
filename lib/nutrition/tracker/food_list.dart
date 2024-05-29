@@ -27,20 +27,23 @@ class _FoodListState extends ConsumerState<FoodList> {
     final userService = ref.watch(usersServiceProvider);
     final userId = userService.getCurrentUserId();
 
-    return StreamBuilder<List<meals.Meal>>(
-      stream: mealsService.getUserMealsByDate(userId: userId, date: widget.selectedDate),
-      builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          final mealsList = snapshot.data!;
-          return ListView(
-            children: _buildMealSections(context, ref, mealsList, userId),
-          );
-        } else if (snapshot.hasError) {
-          return _buildError(context, snapshot.error.toString());
-        } else {
-          return const Center(child: CircularProgressIndicator());
-        }
-      },
+    return Scaffold(
+ 
+      body: StreamBuilder<List<meals.Meal>>(
+        stream: mealsService.getUserMealsByDate(userId: userId, date: widget.selectedDate),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            final mealsList = snapshot.data!;
+            return ListView(
+              children: _buildMealSections(context, ref, mealsList, userId),
+            );
+          } else if (snapshot.hasError) {
+            return _buildError(context, snapshot.error.toString());
+          } else {
+            return const Center(child: CircularProgressIndicator());
+          }
+        },
+      ),
     );
   }
 
@@ -127,8 +130,8 @@ class _FoodListState extends ConsumerState<FoodList> {
   Widget _buildFoodList(BuildContext context, WidgetRef ref, meals.Meal meal) {
     final mealsService = ref.watch(mealsServiceProvider);
 
-    return FutureBuilder<List<macros.Food>>(
-      future: mealsService.getFoodsForMeals(userId: meal.userId, mealId: meal.id!),
+    return StreamBuilder<List<macros.Food>>(
+      stream: mealsService.getFoodsForMealStream(userId: meal.userId, mealId: meal.id!),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           return Column(

@@ -52,6 +52,12 @@ class MealsService extends ChangeNotifier {
     });
   }
 
+  Stream<List<macros.Food>> getFoodsForMealStream({required String userId, required String mealId}) {
+    return _firestore.collection('users').doc(userId).collection('myfoods').where('mealId', isEqualTo: mealId).snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) => macros.Food.fromFirestore(doc)).toList();
+    });
+  }
+
   Future<meals.Meal?> getMealById(String userId, String mealId) async {
     final mealRef = _firestore.collection('users').doc(userId).collection('meals').doc(mealId);
     final mealSnapshot = await mealRef.get();
@@ -125,7 +131,7 @@ class MealsService extends ChangeNotifier {
     await updateMealAndDailyStats(userId, mealId, food, isAdding: true);
   }
 
-  Future<void> updateFoodInMeal({required String userId, required String myFoodId, required double newQuantity}) async {
+Future<void> updateFoodInMeal({required String userId, required String myFoodId, required double newQuantity}) async {
     final myFoodRef = _firestore.collection('users').doc(userId).collection('myfoods').doc(myFoodId);
     final myFoodSnapshot = await myFoodRef.get();
 
@@ -160,7 +166,14 @@ class MealsService extends ChangeNotifier {
 
     await myFoodRef.update(updatedFood);
     notifyListeners();  // Notify listeners when a food is updated
-  }
+
+    // Recupera l'ID del pasto associato
+    final mealId = myFoodData['mealId'];
+    // Aggiorna le statistiche del pasto e giornaliere
+    final food = macros.Food.fromMap(myFoodData).copyWith(id: myFoodId, mealId: mealId, quantity: newQuantity);
+    await updateMealAndDailyStats(userId, mealId, food, isAdding: true);
+}
+
 
   Future<void> removeFoodFromMeal({required String userId, required String mealId, required String myFoodId}) async {
     final mealRef = _firestore.collection('users').doc(userId).collection('meals').doc(mealId);
@@ -534,5 +547,10 @@ class MealsService extends ChangeNotifier {
     for (final food in foods) {
       await updateMealAndDailyStats(userId, currentMealId, food, isAdding: true);
     }
+  }
+
+  Future<void> deleteFavoriteMeal(String userId, String favoriteMealId) async {
+    await _firestore.collection('users').doc(userId).collection('mymeals').doc(favoriteMealId).delete();
+    notifyListeners();  // Notify listeners when a favorite meal is deleted
   }
 }
