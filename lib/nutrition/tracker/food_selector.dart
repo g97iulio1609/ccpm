@@ -79,7 +79,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
     });
   }
 
-  Future<void> saveFood() async {
+Future<void> saveFood() async {
     try {
       final mealsService = ref.read(mealsServiceProvider);
       final food = _loadedFood;
@@ -107,6 +107,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
           vitaminC: food.vitaminC,
           calcium: food.calcium,
           iron: food.iron,
+          mealId: widget.meal.id!, // Assicuriamoci che mealId sia incluso
         );
 
         if (widget.myFoodId == null) {
@@ -117,24 +118,28 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
             quantity: _quantity,
           );
         } else {
+          final originalFood = _originalFood;
           await mealsService.updateMyFood(
             userId: widget.meal.userId,
             myFoodId: widget.myFoodId!,
             updatedFood: adjustedFood,
           );
-          // Adjust meal and daily stats
-          await mealsService.updateMealAndDailyStats(
-            widget.meal.userId,
-            widget.meal.id!,
-            _originalFood!,
-            isAdding: false,
-          );
-          await mealsService.updateMealAndDailyStats(
-            widget.meal.userId,
-            widget.meal.id!,
-            adjustedFood,
-            isAdding: true,
-          );
+
+          if (originalFood != null) {
+            // Adjust meal and daily stats
+            await mealsService.updateMealAndDailyStats(
+              widget.meal.userId,
+              widget.meal.id!,
+              originalFood,
+              isAdding: false,
+            );
+            await mealsService.updateMealAndDailyStats(
+              widget.meal.userId,
+              widget.meal.id!,
+              adjustedFood,
+              isAdding: true,
+            );
+          }
         }
 
         widget.onSave?.call();
@@ -144,6 +149,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
       debugPrint('saveFood: Error saving food: $e');
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

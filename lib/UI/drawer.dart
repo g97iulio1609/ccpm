@@ -66,6 +66,8 @@ class CustomDrawer extends ConsumerWidget {
         return '/macros_selector';
       case 'Misurazioni':
         return '/measurements';
+         case 'Meals Preferiti':
+        return '/mymeals';
       default:
         return null;
     }
@@ -99,6 +101,8 @@ class CustomDrawer extends ConsumerWidget {
         return Icons.calculate;
       case 'Misurazioni':
         return Icons.trending_up;
+              case 'Meals Preferiti':
+        return Icons.trending_up;
       default:
         return Icons.menu;
     }
@@ -116,7 +120,8 @@ class CustomDrawer extends ConsumerWidget {
       'Calcolatore Macronutrienti',
       'Food Tracker',
       'Food Management',
-      'Misurazioni'
+      'Misurazioni',
+      'Meals Preferiti'
     ];
   }
 

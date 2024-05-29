@@ -74,7 +74,6 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
 
   bool _isDailyFoodTrackerRoute(BuildContext context) {
     final currentRoute = GoRouterState.of(context).uri.toString();
-    debugPrint('Current route: $currentRoute');
     return currentRoute == '/food_tracker'; // Assicurati che la route sia corretta
   }
 
@@ -174,7 +173,6 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
     final isBackButtonVisible = currentRoute.split('/').length > 2;
     final selectedDate = ref.watch(selectedDateProvider);
 
-    debugPrint('Building CustomAppBar, current route: $currentRoute');
 
     return AppBar(
       centerTitle: true,

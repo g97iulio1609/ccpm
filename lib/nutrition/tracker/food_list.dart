@@ -27,20 +27,23 @@ class _FoodListState extends ConsumerState<FoodList> {
     final userService = ref.watch(usersServiceProvider);
     final userId = userService.getCurrentUserId();
 
-    return StreamBuilder<List<meals.Meal>>(
-      stream: mealsService.getUserMealsByDate(userId: userId, date: widget.selectedDate),
-      builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          final mealsList = snapshot.data!;
-          return ListView(
-            children: _buildMealSections(context, ref, mealsList, userId),
-          );
-        } else if (snapshot.hasError) {
-          return _buildError(context, snapshot.error.toString());
-        } else {
-          return const Center(child: CircularProgressIndicator());
-        }
-      },
+    return Scaffold(
+ 
+      body: StreamBuilder<List<meals.Meal>>(
+        stream: mealsService.getUserMealsByDate(userId: userId, date: widget.selectedDate),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            final mealsList = snapshot.data!;
+            return ListView(
+              children: _buildMealSections(context, ref, mealsList, userId),
+            );
+          } else if (snapshot.hasError) {
+            return _buildError(context, snapshot.error.toString());
+          } else {
+            return const Center(child: CircularProgressIndicator());
+          }
+        },
+      ),
     );
   }
 
@@ -116,6 +119,8 @@ class _FoodListState extends ConsumerState<FoodList> {
           itemBuilder: (BuildContext context) => [
             const PopupMenuItem(value: 'duplicate', child: Text('Duplicate Meal')),
             const PopupMenuItem(value: 'delete_all', child: Text('Delete All Foods')),
+            const PopupMenuItem(value: 'save_as_favorite', child: Text('Save as Favorite')),
+            const PopupMenuItem(value: 'apply_favorite', child: Text('Apply Favorite')),
           ],
         ),
       ],
@@ -125,8 +130,8 @@ class _FoodListState extends ConsumerState<FoodList> {
   Widget _buildFoodList(BuildContext context, WidgetRef ref, meals.Meal meal) {
     final mealsService = ref.watch(mealsServiceProvider);
 
-    return FutureBuilder<List<macros.Food>>(
-      future: mealsService.getFoodsForMeals(userId: meal.userId, mealId: meal.id!),
+    return StreamBuilder<List<macros.Food>>(
+      stream: mealsService.getFoodsForMealStream(userId: meal.userId, mealId: meal.id!),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           return Column(
@@ -415,11 +420,70 @@ class _FoodListState extends ConsumerState<FoodList> {
   }
 
   void _onMealMenuSelected(BuildContext context, WidgetRef ref, String value, meals.Meal meal, List<meals.Meal> mealsList) async {
+    final mealsService = ref.read(mealsServiceProvider);
     if (value == 'duplicate') {
       await _showDuplicateDialog(context, ref, meal, mealsList);
     } else if (value == 'delete_all') {
       await _confirmDeleteAllFoods(context, ref, meal);
+    } else if (value == 'save_as_favorite') {
+      final favoriteName = await _showFavoriteNameDialog(context);
+      if (favoriteName != null) {
+        await mealsService.saveMealAsFavorite(meal.userId, meal.id!, favoriteName: favoriteName);
+      }
+    } else if (value == 'apply_favorite') {
+      final favoriteMeals = await mealsService.getFavoriteMeals(meal.userId);
+      if (favoriteMeals.isNotEmpty) {
+        final selectedFavorite = await showDialog<meals.Meal>(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Select Favorite Meal', style: GoogleFonts.roboto()),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: favoriteMeals.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    final favMeal = favoriteMeals[index];
+                    return ListTile(
+                      title: Text(favMeal.favoriteName ?? favMeal.mealType, style: GoogleFonts.roboto()),
+                      onTap: () => Navigator.of(context).pop(favMeal),
+                    );
+                  },
+                ),
+              ),
+            );
+          },
+        );
+
+        if (selectedFavorite != null) {
+          await mealsService.applyFavoriteMealToCurrent(meal.userId, selectedFavorite.id!, meal.id!);
+        }
+      }
     }
+  }
+
+  Future<String?> _showFavoriteNameDialog(BuildContext context) {
+    final TextEditingController _nameController = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Save as Favorite', style: GoogleFonts.roboto()),
+          content: TextField(
+            controller: _nameController,
+            decoration: InputDecoration(
+              labelText: 'Favorite Name',
+              hintText: 'Enter a name for this favorite meal',
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(onPressed: () => Navigator.of(context).pop(), child: Text('Cancel', style: GoogleFonts.roboto())),
+            TextButton(onPressed: () => Navigator.of(context).pop(_nameController.text), child: Text('Save', style: GoogleFonts.roboto())),
+          ],
+        );
+      },
+    );
   }
 
   void _onFoodMenuSelected(BuildContext context, WidgetRef ref, String value, meals.Meal meal, String foodId) async {
