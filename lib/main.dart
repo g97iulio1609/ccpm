@@ -1,7 +1,7 @@
 import 'package:alphanessone/measurements/measurements.dart';
 import 'package:alphanessone/nutrition/models&Services/meals_model.dart';
 import 'package:alphanessone/nutrition/tracker/daily_food_tracker.dart';
-import 'package:alphanessone/nutrition/tracker/favourites_meals.dart';
+import 'package:alphanessone/nutrition/tracker/my_meals.dart';
 import 'package:alphanessone/nutrition/tracker/food_management.dart';
 import 'package:alphanessone/nutrition/Calc/macros_selector.dart';
 import 'package:alphanessone/nutrition/Calc/tdee.dart';

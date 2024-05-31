@@ -119,7 +119,6 @@ class Meal {
   }
 }
 
-
 class DailyStats {
   String? id;
   String userId;
@@ -248,6 +247,52 @@ class Food {
       'protein': protein,
       'quantity': quantity,
       'portion': portion,
+    };
+  }
+}
+
+class FavoriteDay {
+  String? id;
+  String userId;
+  DateTime date;
+  String favoriteName;
+
+  FavoriteDay({
+    this.id,
+    required this.userId,
+    required this.date,
+    required this.favoriteName,
+  });
+
+  factory FavoriteDay.fromJson(String source) => FavoriteDay.fromMap(json.decode(source));
+
+  String toJson() => json.encode(toMap());
+
+  factory FavoriteDay.fromMap(Map<String, dynamic> map) {
+    return FavoriteDay(
+      id: map['id'],
+      userId: map['userId'],
+      date: (map['date'] as Timestamp).toDate(),
+      favoriteName: map['favoriteName'],
+    );
+  }
+
+  factory FavoriteDay.fromFirestore(DocumentSnapshot doc) {
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    return FavoriteDay(
+      id: doc.id,
+      userId: data['userId'],
+      date: (data['date'] as Timestamp).toDate(),
+      favoriteName: data['favoriteName'],
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'userId': userId,
+      'date': Timestamp.fromDate(date),
+      'favoriteName': favoriteName,
     };
   }
 }

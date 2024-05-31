@@ -81,3 +81,78 @@ class FavouritesMeals extends ConsumerWidget {
     );
   }
 }
+
+class FavouriteDays extends ConsumerWidget {
+  const FavouriteDays({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mealsService = ref.watch(mealsServiceProvider);
+    final userService = ref.watch(usersServiceProvider);
+    final userId = userService.getCurrentUserId();
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Favourite Days', style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onPrimary)),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+      ),
+      body: FutureBuilder<List<meals.FavoriteDay>>(
+        future: mealsService.getFavoriteDays(userId),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            final favoriteDays = snapshot.data!;
+            if (favoriteDays.isEmpty) {
+              return Center(child: Text('No favourite days found', style: GoogleFonts.roboto()));
+            }
+            return ListView.builder(
+              itemCount: favoriteDays.length,
+              itemBuilder: (context, index) {
+                final day = favoriteDays[index];
+                return _buildFavoriteDayTile(context, ref, day);
+              },
+            );
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}', style: TextStyle(color: Theme.of(context).colorScheme.onError)));
+          } else {
+            return const Center(child: CircularProgressIndicator());
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildFavoriteDayTile(BuildContext context, WidgetRef ref, meals.FavoriteDay day) {
+    return Slidable(
+      key: Key(day.id!),
+      endActionPane: ActionPane(
+        motion: const ScrollMotion(),
+        children: [
+          SlidableAction(
+            onPressed: (_) async {
+              final mealsService = ref.read(mealsServiceProvider);
+              await mealsService.deleteFavoriteDay(day.userId, day.id!);
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Favourite day deleted')));
+            },
+            backgroundColor: Colors.red,
+            foregroundColor: Colors.white,
+            icon: Icons.delete,
+            label: 'Delete',
+          ),
+        ],
+      ),
+      child: ListTile(
+        title: Text(day.favoriteName ?? '', style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface)),
+        subtitle: Text('${day.date.day}/${day.date.month}/${day.date.year}', style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface, fontSize: 14)),
+        trailing: IconButton(
+          icon: const Icon(Icons.delete, color: Colors.red),
+          onPressed: () async {
+            final mealsService = ref.read(mealsServiceProvider);
+            await mealsService.deleteFavoriteDay(day.userId, day.id!);
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Favourite day deleted')));
+          },
+        ),
+        onTap: () => context.push('/food_tracker/food_selector', extra: day),
+      ),
+    );
+  }
+}

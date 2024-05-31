@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:intl/date_symbol_data_local.dart'; // Importa il pacchetto intl per la formattazione delle date
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:alphanessone/nutrition/models&Services/meals_model.dart' as meals;
+import 'package:alphanessone/nutrition/models&Services/meals_services.dart';
 
 class CustomAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
   const CustomAppBar({
@@ -29,7 +31,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
   @override
   void initState() {
     super.initState();
-    initializeDateFormatting('it_IT', null); // Inizializza la formattazione della data per la località italiana
+    initializeDateFormatting('it_IT', null);
   }
 
   String _getTitleForRoute(BuildContext context) {
@@ -60,6 +62,8 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
         return 'Calcolatore Macronutrienti';
       case '/training_gallery':
         return 'Galleria Allenamenti';
+      case '/food_tracker':
+        return 'Tracciatore Cibo';
       default:
         return 'Alphaness One';
     }
@@ -74,11 +78,11 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
 
   bool _isDailyFoodTrackerRoute(BuildContext context) {
     final currentRoute = GoRouterState.of(context).uri.toString();
-    return currentRoute == '/food_tracker'; // Assicurati che la route sia corretta
+    return currentRoute == '/food_tracker';
   }
 
   String _formatDate(DateTime date) {
-    final DateFormat formatter = DateFormat('EEEE d MMMM y', 'it_IT'); // Formatta la data in italiano
+    final DateFormat formatter = DateFormat('EEEE d MMMM y', 'it_IT');
     return formatter.format(date);
   }
 
@@ -167,12 +171,78 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
     );
   }
 
+  Future<void> _onDayMenuSelected(BuildContext context, WidgetRef ref, String value) async {
+    final mealsService = ref.read(mealsServiceProvider);
+    final userService = ref.read(usersServiceProvider);
+    final userId = userService.getCurrentUserId();
+    final selectedDate = ref.watch(selectedDateProvider);
+
+    if (value == 'save_as_favorite_day') {
+      final favoriteName = await _showFavoriteNameDialog(context);
+      if (favoriteName != null) {
+        await mealsService.saveDayAsFavorite(userId, selectedDate, favoriteName: favoriteName);
+      }
+    } else if (value == 'apply_favorite_day') {
+      final favoriteDays = await mealsService.getFavoriteDays(userId);
+      if (favoriteDays.isNotEmpty) {
+        final selectedFavorite = await showDialog<meals.FavoriteDay>(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Select Favorite Day', style: TextStyle(fontSize: 16)),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: favoriteDays.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    final favDay = favoriteDays[index];
+                    return ListTile(
+                      title: Text(favDay.favoriteName ?? 'Favorite Day', style: TextStyle(fontSize: 14)),
+                      onTap: () => Navigator.of(context).pop(favDay),
+                    );
+                  },
+                ),
+              ),
+            );
+          },
+        );
+
+        if (selectedFavorite != null) {
+          await mealsService.applyFavoriteDayToCurrent(userId, selectedFavorite.id!, selectedDate);
+        }
+      }
+    }
+  }
+
+  Future<String?> _showFavoriteNameDialog(BuildContext context) {
+    final TextEditingController _nameController = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Save as Favorite', style: TextStyle(fontSize: 16)),
+          content: TextField(
+            controller: _nameController,
+            decoration: InputDecoration(
+              labelText: 'Favorite Name',
+              hintText: 'Enter a name for this favorite day',
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(onPressed: () => Navigator.of(context).pop(), child: Text('Cancel')),
+            TextButton(onPressed: () => Navigator.of(context).pop(_nameController.text), child: Text('Save')),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentRoute = GoRouterState.of(context).uri.toString();
     final isBackButtonVisible = currentRoute.split('/').length > 2;
     final selectedDate = ref.watch(selectedDateProvider);
-
 
     return AppBar(
       centerTitle: true,
@@ -195,6 +265,13 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
                   onPressed: () {
                     ref.read(selectedDateProvider.notifier).update((state) => state.add(const Duration(days: 1)));
                   },
+                ),
+                PopupMenuButton<String>(
+                  onSelected: (value) => _onDayMenuSelected(context, ref, value),
+                  itemBuilder: (BuildContext context) => [
+                    const PopupMenuItem(value: 'save_as_favorite_day', child: Text('Save as Favorite Day')),
+                    const PopupMenuItem(value: 'apply_favorite_day', child: Text('Apply Favorite Day')),
+                  ],
                 ),
               ],
             )
