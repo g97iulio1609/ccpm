@@ -17,10 +17,7 @@ class FavouritesMeals extends ConsumerWidget {
     final userId = userService.getCurrentUserId();
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Favourite Meals', style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onPrimary)),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-      ),
+ 
       body: FutureBuilder<List<meals.Meal>>(
         future: mealsService.getFavoriteMeals(userId),
         builder: (context, snapshot) {
@@ -69,14 +66,10 @@ class FavouritesMeals extends ConsumerWidget {
         title: Text(meal.favoriteName ?? '', style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface)),
         subtitle: Text('${meal.mealType} - ${meal.date.day}/${meal.date.month}/${meal.date.year}', style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface, fontSize: 14)),
         trailing: IconButton(
-          icon: const Icon(Icons.delete, color: Colors.red),
-          onPressed: () async {
-            final mealsService = ref.read(mealsServiceProvider);
-            await mealsService.deleteFavoriteMeal(meal.userId, meal.id!);
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Favourite meal deleted')));
-          },
+          icon: const Icon(Icons.edit, color: Colors.blue),
+          onPressed: () => context.push('/mymeals/favorite_meal_detail', extra: meal),
         ),
-        onTap: () => context.push('/food_tracker/food_selector', extra: meal),
+        onTap: () => context.push('/mymeals/favorite_meal_detail', extra: meal),
       ),
     );
   }
@@ -144,14 +137,10 @@ class FavouriteDays extends ConsumerWidget {
         title: Text(day.favoriteName ?? '', style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface)),
         subtitle: Text('${day.date.day}/${day.date.month}/${day.date.year}', style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface, fontSize: 14)),
         trailing: IconButton(
-          icon: const Icon(Icons.delete, color: Colors.red),
-          onPressed: () async {
-            final mealsService = ref.read(mealsServiceProvider);
-            await mealsService.deleteFavoriteDay(day.userId, day.id!);
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Favourite day deleted')));
-          },
+          icon: const Icon(Icons.edit, color: Colors.blue),
+          onPressed: () => context.push('/mydays/favorite_day_detail', extra: day),
         ),
-        onTap: () => context.push('/food_tracker/food_selector', extra: day),
+        onTap: () => context.push('/mydays/favorite_day_detail', extra: day),
       ),
     );
   }
