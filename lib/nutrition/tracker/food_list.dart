@@ -80,7 +80,7 @@ class _FoodListState extends ConsumerState<FoodList> {
   }
 
   Widget _buildMealCard(BuildContext context, WidgetRef ref, String mealName, meals.Meal meal, List<meals.Meal> mealsList, Map<String, double> totalNutrients) {
-    final subtitle = 'C:${totalNutrients['carbs']?.toStringAsFixed(2)}g P:${totalNutrients['proteins']?.toStringAsFixed(2)}g F:${totalNutrients['fats']?.toStringAsFixed(2)}g, ${totalNutrients['calories']?.toStringAsFixed(2)}Kcal';
+    final subtitle = 'C:${totalNutrients['carbs']?.toStringAsFixed(0)}g P:${totalNutrients['proteins']?.toStringAsFixed(0)}g F:${totalNutrients['fats']?.toStringAsFixed(0)}g, ${totalNutrients['calories']?.toStringAsFixed(0)}Kcal';
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -95,7 +95,14 @@ class _FoodListState extends ConsumerState<FoodList> {
             _buildFoodList(context, ref, meal),
             ListTile(
               title: Text('Add Food', style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.primary)),
-              onTap: () => context.push('/food_tracker/food_selector', extra: meal),
+onTap: () => context.push(
+  '/food_tracker/food_selector',
+  extra: {
+    'meal': meal.toMap(), // Convertiamo l'oggetto Meal in Map<String, dynamic>
+    'isFavoriteMeal': false,
+    'myFoodId': null,
+  },
+),
             ),
           ],
         ),
@@ -224,7 +231,7 @@ class _FoodListState extends ConsumerState<FoodList> {
       leading: Icon(Icons.fastfood, color: Theme.of(context).colorScheme.onSurface),
       title: Text(food.name, style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface)),
       subtitle: Text(
-        'C:${food.carbs.toStringAsFixed(2)}g P:${food.protein.toStringAsFixed(2)}g F:${food.fat.toStringAsFixed(2)}g, ${food.kcal.toStringAsFixed(2)}Kcal',
+        'C:${food.carbs.toStringAsFixed(0)}g P:${food.protein.toStringAsFixed(0)}g F:${food.fat.toStringAsFixed(0)}g, ${food.kcal.toStringAsFixed(0)}Kcal',
         style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface),
       ),
       trailing: PopupMenuButton<String>(

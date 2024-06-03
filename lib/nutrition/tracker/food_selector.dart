@@ -153,10 +153,11 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
         }
 
         widget.onSave?.call();
-        context.pop();
       }
     } catch (e) {
       debugPrint('saveFood: Error saving food: $e');
+    } finally {
+      context.pop();  // Torna indietro in ogni caso
     }
   }
 

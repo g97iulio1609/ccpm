@@ -51,7 +51,7 @@ class _FavoriteMealDetailState extends ConsumerState<FavoriteMealDetail> {
           context.push(
             '/food_tracker/food_selector',
             extra: {
-              'meal': widget.meal,
+              'meal': widget.meal.toMap(), // Convertiamo l'oggetto Meal in Map<String, dynamic>
               'isFavoriteMeal': true,
             },
           );
@@ -82,7 +82,7 @@ class _FavoriteMealDetailState extends ConsumerState<FavoriteMealDetail> {
                       queryParameters: {'myFoodId': food.id},
                     ).toString(),
                     extra: {
-                      'meal': widget.meal,
+                      'meal': widget.meal.toMap(), // Convertiamo l'oggetto Meal in Map<String, dynamic>
                       'myFoodId': food.id,
                       'isFavoriteMeal': true,
                     },
@@ -143,7 +143,7 @@ class _FavoriteMealDetailState extends ConsumerState<FavoriteMealDetail> {
           queryParameters: {'myFoodId': foodId},
         ).toString(),
         extra: {
-          'meal': widget.meal,
+          'meal': widget.meal.toMap(), // Convertiamo l'oggetto Meal in Map<String, dynamic>
           'myFoodId': foodId,
           'isFavoriteMeal': true,
         },

@@ -372,20 +372,22 @@ class MyApp extends ConsumerWidget {
               path: '/food_tracker',
               builder: (context, state) => const DailyFoodTracker(),
               routes: [
-                GoRoute(
-                  path: 'food_selector',
-                  builder: (context, state) {
-                    final extra = state.extra as Map<String, dynamic>;
-                    final meal = extra['meal'] as meals.Meal;
-                    final myFoodId = extra['myFoodId'] as String?;
-                    final isFavoriteMeal = extra['isFavoriteMeal'] as bool;
-                    return FoodSelector(
-                      meal: meal,
-                      myFoodId: myFoodId,
-                      isFavoriteMeal: isFavoriteMeal,
-                    );
-                  },
-                ),
+GoRoute(
+  path: 'food_selector',
+  builder: (context, state) {
+    final extra = state.extra as Map<String, dynamic>;
+    final mealMap = extra['meal'] as Map<String, dynamic>;
+    final meal = meals.Meal.fromMap(mealMap);
+    final myFoodId = extra['myFoodId'] as String?;
+    final isFavoriteMeal = extra['isFavoriteMeal'] as bool;
+    return FoodSelector(
+      meal: meal,
+      myFoodId: myFoodId,
+      isFavoriteMeal: isFavoriteMeal,
+    );
+  },
+),
+
               ],
             ),
             GoRoute(
