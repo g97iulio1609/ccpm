@@ -87,6 +87,8 @@ class MealsService extends ChangeNotifier {
     notifyListeners();  // Notify listeners when a meal is deleted
   }
 
+
+
   Future<void> addFoodToMeal({required String userId, required String mealId, required macros.Food food, required double quantity}) async {
     final mealRef = _firestore.collection('users').doc(userId).collection('meals').doc(mealId);
     final mealSnapshot = await mealRef.get();
@@ -131,7 +133,7 @@ class MealsService extends ChangeNotifier {
     await updateMealAndDailyStats(userId, mealId, food, isAdding: true);
   }
 
-Future<void> updateFoodInMeal({required String userId, required String myFoodId, required double newQuantity}) async {
+  Future<void> updateFoodInMeal({required String userId, required String myFoodId, required double newQuantity}) async {
     final myFoodRef = _firestore.collection('users').doc(userId).collection('myfoods').doc(myFoodId);
     final myFoodSnapshot = await myFoodRef.get();
 
@@ -172,8 +174,7 @@ Future<void> updateFoodInMeal({required String userId, required String myFoodId,
     // Aggiorna le statistiche del pasto e giornaliere
     final food = macros.Food.fromMap(myFoodData).copyWith(id: myFoodId, mealId: mealId, quantity: newQuantity);
     await updateMealAndDailyStats(userId, mealId, food, isAdding: true);
-}
-
+  }
 
   Future<void> removeFoodFromMeal({required String userId, required String mealId, required String myFoodId}) async {
     final mealRef = _firestore.collection('users').doc(userId).collection('meals').doc(mealId);
@@ -196,6 +197,33 @@ Future<void> updateFoodInMeal({required String userId, required String myFoodId,
     notifyListeners();  // Notify listeners when a food is removed from a meal
     await updateMealAndDailyStats(userId, mealId, myFood, isAdding: false);
   }
+
+
+
+ Future<void> removeFoodFromFavoriteMeal({
+    required String userId,
+    required String mealId,
+    required String myFoodId,
+  }) async {
+    final mealRef = _firestore.collection('users').doc(userId).collection('mymeals').doc(mealId);
+    final mealSnapshot = await mealRef.get();
+
+    if (!mealSnapshot.exists) {
+      throw Exception('Meal not found');
+    }
+
+    final myFoodRef = _firestore.collection('users').doc(userId).collection('myfoods').doc(myFoodId);
+    final myFoodSnapshot = await myFoodRef.get();
+
+    if (!myFoodSnapshot.exists) {
+      throw Exception('Food not found');
+    }
+
+    final myFood = macros.Food.fromFirestore(myFoodSnapshot);
+    await myFoodRef.delete();
+    notifyListeners(); // Notify listeners when a food is removed from a meal
+  }
+
 
   Future<Map<String, double>> getTotalNutrientsForMeal(String userId, String mealId) async {
     final foods = await getFoodsForMeals(userId: userId, mealId: mealId);
@@ -502,55 +530,204 @@ Future<void> updateFoodInMeal({required String userId, required String myFoodId,
     });
   }
 
-  Future<void> saveMealAsFavorite(String userId, String mealId, {String? favoriteName}) async {
-    final mealRef = _firestore.collection('users').doc(userId).collection('meals').doc(mealId);
-    final mealSnapshot = await mealRef.get();
 
-    if (!mealSnapshot.exists) {
-      throw Exception('Meal not found');
-    }
+Future<String> saveMealAsFavorite(String userId, String mealId, {String? favoriteName, required String dailyStatsId}) async {
+  final mealRef = _firestore.collection('users').doc(userId).collection('meals').doc(mealId);
+  final mealSnapshot = await mealRef.get();
 
-    final mealData = mealSnapshot.data()!;
-    final mealType = mealData['mealType'];
-    final mealDate = (mealData['date'] as Timestamp).toDate();
-    final defaultFavoriteName = '$mealType ${mealDate.day}/${mealDate.month}/${mealDate.year}';
-
-    final meal = meals.Meal.fromFirestore(mealSnapshot).copyWith(
-      isFavorite: true,
-      favoriteName: favoriteName ?? defaultFavoriteName,
-    );
-
-    await _firestore.collection('users').doc(userId).collection('mymeals').doc(mealId).set(meal.toMap());
+  if (!mealSnapshot.exists) {
+    throw Exception('Meal not found');
   }
+
+  final mealData = mealSnapshot.data()!;
+  final mealType = mealData['mealType'];
+  final mealDate = (mealData['date'] as Timestamp).toDate();
+  final defaultFavoriteName = '$mealType ${mealDate.day}/${mealDate.month}/${mealDate.year}';
+
+  final meal = meals.Meal.fromFirestore(mealSnapshot).copyWith(
+    isFavorite: true,
+    favoriteName: favoriteName ?? defaultFavoriteName,
+    dailyStatsId: dailyStatsId, // Utilizza il dailyStatsId passato come parametro
+  );
+
+  final newMealRef = _firestore.collection('users').doc(userId).collection('mymeals').doc();
+  await newMealRef.set(meal.toMap());
+
+  return newMealRef.id;
+}
 
   Future<List<meals.Meal>> getFavoriteMeals(String userId) async {
     final favMealsSnapshot = await _firestore.collection('users').doc(userId).collection('mymeals').get();
     return favMealsSnapshot.docs.map((doc) => meals.Meal.fromFirestore(doc)).toList();
   }
 
-  Future<void> applyFavoriteMealToCurrent(String userId, String favoriteMealId, String currentMealId) async {
-    final favoriteMealRef = _firestore.collection('users').doc(userId).collection('mymeals').doc(favoriteMealId);
-    final favoriteMealSnapshot = await favoriteMealRef.get();
+Future<void> applyFavoriteMealToCurrent(String userId, String favoriteMealId, String currentMealId) async {
+  final favoriteMealRef = _firestore.collection('users').doc(userId).collection('mymeals').doc(favoriteMealId);
+  final favoriteMealSnapshot = await favoriteMealRef.get();
 
-    if (!favoriteMealSnapshot.exists) {
-      throw Exception('Favorite meal not found');
-    }
-
-    final favoriteMeal = meals.Meal.fromFirestore(favoriteMealSnapshot);
-    final foods = await getFoodsForMeals(userId: userId, mealId: favoriteMealId);
-
-    for (final food in foods) {
-      final newFood = food.copyWith(id: null, mealId: currentMealId);
-      await _firestore.collection('users').doc(userId).collection('myfoods').add(newFood.toMap());
-    }
-
-    for (final food in foods) {
-      await updateMealAndDailyStats(userId, currentMealId, food, isAdding: true);
-    }
+  if (!favoriteMealSnapshot.exists) {
+    throw Exception('Favorite meal not found');
   }
+
+  final foods = await getFoodsForMeals(userId: userId, mealId: favoriteMealId);
+
+  for (final food in foods) {
+    final newFood = food.copyWith(id: null, mealId: currentMealId);
+    await _firestore.collection('users').doc(userId).collection('myfoods').add(newFood.toMap());
+  }
+
+  for (final food in foods) {
+    await updateMealAndDailyStats(userId, currentMealId, food, isAdding: true);
+  }
+}
 
   Future<void> deleteFavoriteMeal(String userId, String favoriteMealId) async {
     await _firestore.collection('users').doc(userId).collection('mymeals').doc(favoriteMealId).delete();
     notifyListeners();  // Notify listeners when a favorite meal is deleted
+  }
+
+
+Future<void> saveDayAsFavorite(String userId, DateTime date, {String? favoriteName}) async {
+  final favoriteDayRef = _firestore.collection('users').doc(userId).collection('mydays').doc();
+  final favoriteDay = meals.FavoriteDay(
+    id: favoriteDayRef.id,
+    userId: userId,
+    date: date,
+    favoriteName: favoriteName ?? 'Favorite Day ${date.day}/${date.month}/${date.year}',
+  );
+
+  await favoriteDayRef.set(favoriteDay.toMap());
+
+  final dailyStats = await getDailyStatsByDate(userId, date);
+  if (dailyStats != null) {
+    final mealsForDay = await _firestore.collection('users').doc(userId).collection('meals')
+      .where('dailyStatsId', isEqualTo: dailyStats.id)
+      .get();
+
+    for (final mealDoc in mealsForDay.docs) {
+      final meal = meals.Meal.fromFirestore(mealDoc);
+      final newMealId = await saveMealAsFavorite(userId, meal.id!, favoriteName: meal.mealType, dailyStatsId: favoriteDay.id!);
+
+      // Copia gli alimenti associati al pasto nel nuovo pasto preferito
+      final foodsForMeal = await _firestore.collection('users').doc(userId).collection('myfoods')
+        .where('mealId', isEqualTo: meal.id)
+        .get();
+
+      for (final foodDoc in foodsForMeal.docs) {
+        final food = macros.Food.fromFirestore(foodDoc);
+        final newFood = food.copyWith(id: null, mealId: newMealId);
+        await _firestore.collection('users').doc(userId).collection('myfoods').add(newFood.toMap());
+      }
+    }
+  }
+}
+
+
+  Future<List<meals.FavoriteDay>> getFavoriteDays(String userId) async {
+    final favDaysSnapshot = await _firestore.collection('users').doc(userId).collection('mydays').get();
+    return favDaysSnapshot.docs.map((doc) => meals.FavoriteDay.fromFirestore(doc)).toList();
+  }
+
+ Future<void> addFoodToFavoriteMeal({required String userId, required String mealId, required macros.Food food, required double quantity}) async {
+    final mealRef = _firestore.collection('users').doc(userId).collection('mymeals').doc(mealId);
+    final mealSnapshot = await mealRef.get();
+
+    if (!mealSnapshot.exists) {
+      throw Exception('Meal not found');
+    }
+
+    final mealData = mealSnapshot.data();
+    final meal = meals.Meal.fromMap(mealData!);
+
+    final myFoodRef = _firestore.collection('users').doc(userId).collection('myfoods').doc();
+    final myFood = {
+      'mealId': mealId,
+      'name': food.name,
+      'kcal': food.kcal * quantity / 100,
+      'carbs': food.carbs * quantity / 100,
+      'fat': food.fat * quantity / 100,
+      'protein': food.protein * quantity / 100,
+      'quantity': quantity,
+      'quantityUnit': food.quantityUnit,
+      'portion': food.portion,
+      'sugar': food.sugar * quantity / 100,
+      'fiber': food.fiber * quantity / 100,
+      'saturatedFat': food.saturatedFat * quantity / 100,
+      'polyunsaturatedFat': food.polyunsaturatedFat * quantity / 100,
+      'monounsaturatedFat': food.monounsaturatedFat * quantity / 100,
+      'transFat': food.transFat * quantity / 100,
+      'cholesterol': food.cholesterol * quantity / 100,
+      'sodium': food.sodium * quantity / 100,
+      'potassium': food.potassium * quantity / 100,
+      'vitaminA': food.vitaminA * quantity / 100,
+      'vitaminC': food.vitaminC * quantity / 100,
+      'calcium': food.calcium * quantity / 100,
+      'iron': food.iron * quantity / 100,
+    };
+
+    await myFoodRef.set(myFood);
+
+    await mealRef.update(meal.toMap());
+    notifyListeners();  // Notify listeners when a food is added to a meal
+    await updateMealAndDailyStats(userId, mealId, food, isAdding: true);
+  }
+  
+Future<void> applyFavoriteDayToCurrent(String userId, String favoriteDayId, DateTime date) async {
+  final favoriteDayRef = _firestore.collection('users').doc(userId).collection('mydays').doc(favoriteDayId);
+  final favoriteDaySnapshot = await favoriteDayRef.get();
+
+  if (!favoriteDaySnapshot.exists) {
+    throw Exception('Favorite day not found');
+  }
+
+  final favoriteDay = meals.FavoriteDay.fromFirestore(favoriteDaySnapshot);
+
+  // Ottieni i pasti preferiti per questo giorno
+  final favoriteMealsSnapshot = await _firestore.collection('users').doc(userId).collection('mymeals')
+    .where('dailyStatsId', isEqualTo: favoriteDay.id)
+    .get();
+
+  // Crea daily stats per il giorno corrente
+  await createDailyStatsIfNotExist(userId, date);
+  final dailyStats = await getDailyStatsByDate(userId, date);
+  if (dailyStats == null) {
+    throw Exception('DailyStats not found for the specified date');
+  }
+
+  for (final favoriteMealDoc in favoriteMealsSnapshot.docs) {
+    final favoriteMeal = meals.Meal.fromFirestore(favoriteMealDoc);
+    // Usa il dailyStatsId del giorno corrente per i nuovi pasti
+    final newMealId = await createMealFromFavorite(userId, favoriteMeal.id!, date, dailyStats.id!);
+    await applyFavoriteMealToCurrent(userId, favoriteMeal.id!, newMealId);
+  }
+}
+
+
+
+Future<String> createMealFromFavorite(String userId, String favoriteMealId, DateTime date, String newDailyStatsId) async {
+  final favoriteMealRef = _firestore.collection('users').doc(userId).collection('mymeals').doc(favoriteMealId);
+  final favoriteMealSnapshot = await favoriteMealRef.get();
+
+  if (!favoriteMealSnapshot.exists) {
+    throw Exception('Favorite meal not found');
+  }
+
+  final favoriteMeal = meals.Meal.fromFirestore(favoriteMealSnapshot);
+
+  final newMeal = favoriteMeal.copyWith(
+    id: null,
+    dailyStatsId: newDailyStatsId,
+    date: date,
+  );
+
+  return await addMeal(newMeal, userId, newDailyStatsId);
+}
+
+
+
+
+  Future<void> deleteFavoriteDay(String userId, String favoriteDayId) async {
+    await _firestore.collection('users').doc(userId).collection('mydays').doc(favoriteDayId).delete();
+    notifyListeners();  // Notify listeners when a favorite day is deleted
   }
 }

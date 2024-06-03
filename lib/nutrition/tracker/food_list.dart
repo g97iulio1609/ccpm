@@ -28,7 +28,7 @@ class _FoodListState extends ConsumerState<FoodList> {
     final userId = userService.getCurrentUserId();
 
     return Scaffold(
- 
+    
       body: StreamBuilder<List<meals.Meal>>(
         stream: mealsService.getUserMealsByDate(userId: userId, date: widget.selectedDate),
         builder: (context, snapshot) {
@@ -80,7 +80,7 @@ class _FoodListState extends ConsumerState<FoodList> {
   }
 
   Widget _buildMealCard(BuildContext context, WidgetRef ref, String mealName, meals.Meal meal, List<meals.Meal> mealsList, Map<String, double> totalNutrients) {
-    final subtitle = 'C:${totalNutrients['carbs']?.toStringAsFixed(2)}g P:${totalNutrients['proteins']?.toStringAsFixed(2)}g F:${totalNutrients['fats']?.toStringAsFixed(2)}g, ${totalNutrients['calories']?.toStringAsFixed(2)}Kcal';
+    final subtitle = 'C:${totalNutrients['carbs']?.toStringAsFixed(0)}g P:${totalNutrients['proteins']?.toStringAsFixed(0)}g F:${totalNutrients['fats']?.toStringAsFixed(0)}g, ${totalNutrients['calories']?.toStringAsFixed(0)}Kcal';
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -95,7 +95,14 @@ class _FoodListState extends ConsumerState<FoodList> {
             _buildFoodList(context, ref, meal),
             ListTile(
               title: Text('Add Food', style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.primary)),
-              onTap: () => context.push('/food_tracker/food_selector', extra: meal),
+onTap: () => context.push(
+  '/food_tracker/food_selector',
+  extra: {
+    'meal': meal.toMap(), // Convertiamo l'oggetto Meal in Map<String, dynamic>
+    'isFavoriteMeal': false,
+    'myFoodId': null,
+  },
+),
             ),
           ],
         ),
@@ -224,7 +231,7 @@ class _FoodListState extends ConsumerState<FoodList> {
       leading: Icon(Icons.fastfood, color: Theme.of(context).colorScheme.onSurface),
       title: Text(food.name, style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface)),
       subtitle: Text(
-        'C:${food.carbs.toStringAsFixed(2)}g P:${food.protein.toStringAsFixed(2)}g F:${food.fat.toStringAsFixed(2)}g, ${food.kcal.toStringAsFixed(2)}Kcal',
+        'C:${food.carbs.toStringAsFixed(0)}g P:${food.protein.toStringAsFixed(0)}g F:${food.fat.toStringAsFixed(0)}g, ${food.kcal.toStringAsFixed(0)}Kcal',
         style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface),
       ),
       trailing: PopupMenuButton<String>(
@@ -238,27 +245,28 @@ class _FoodListState extends ConsumerState<FoodList> {
     );
   }
 
-  Widget _buildAddSnackButton(BuildContext context, WidgetRef ref, String userId, String dailyStatsId, DateTime date, int currentSnacksCount) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: ElevatedButton(
-        onPressed: () async {
-          if (dailyStatsId.isNotEmpty) {
-            final mealsService = ref.read(mealsServiceProvider);
-            await mealsService.createSnack(userId: userId, dailyStatsId: dailyStatsId, date: date);
-          }
-        },
-        style: ElevatedButton.styleFrom(
-          foregroundColor: Theme.of(context).colorScheme.onPrimary,
-          padding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 24.0),
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-          textStyle: GoogleFonts.roboto(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        child: Text('Add Snack ${currentSnacksCount + 1}'),
+Widget _buildAddSnackButton(BuildContext context, WidgetRef ref, String userId, String dailyStatsId, DateTime date, int currentSnacksCount) {
+  return Padding(
+    padding: const EdgeInsets.all(16.0),
+    child: ElevatedButton(
+      onPressed: () async {
+        if (dailyStatsId.isNotEmpty) {
+          final mealsService = ref.read(mealsServiceProvider);
+          await mealsService.createSnack(userId: userId, dailyStatsId: dailyStatsId, date: date);
+        }
+      },
+      style: ElevatedButton.styleFrom(
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        padding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 24.0),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+        textStyle: GoogleFonts.roboto(fontSize: 18, fontWeight: FontWeight.bold),
       ),
-    );
-  }
+      child: Text('Add Snack ${currentSnacksCount + 1}'),
+    ),
+  );
+}
+
 
   Future<void> _showDuplicateDialog(BuildContext context, WidgetRef ref, meals.Meal sourceMeal, List<meals.Meal> mealsList) async {
     final mealsService = ref.read(mealsServiceProvider);
@@ -419,49 +427,51 @@ class _FoodListState extends ConsumerState<FoodList> {
     );
   }
 
-  void _onMealMenuSelected(BuildContext context, WidgetRef ref, String value, meals.Meal meal, List<meals.Meal> mealsList) async {
-    final mealsService = ref.read(mealsServiceProvider);
-    if (value == 'duplicate') {
-      await _showDuplicateDialog(context, ref, meal, mealsList);
-    } else if (value == 'delete_all') {
-      await _confirmDeleteAllFoods(context, ref, meal);
-    } else if (value == 'save_as_favorite') {
-      final favoriteName = await _showFavoriteNameDialog(context);
-      if (favoriteName != null) {
-        await mealsService.saveMealAsFavorite(meal.userId, meal.id!, favoriteName: favoriteName);
-      }
-    } else if (value == 'apply_favorite') {
-      final favoriteMeals = await mealsService.getFavoriteMeals(meal.userId);
-      if (favoriteMeals.isNotEmpty) {
-        final selectedFavorite = await showDialog<meals.Meal>(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text('Select Favorite Meal', style: GoogleFonts.roboto()),
-              content: SizedBox(
-                width: double.maxFinite,
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: favoriteMeals.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    final favMeal = favoriteMeals[index];
-                    return ListTile(
-                      title: Text(favMeal.favoriteName ?? favMeal.mealType, style: GoogleFonts.roboto()),
-                      onTap: () => Navigator.of(context).pop(favMeal),
-                    );
-                  },
-                ),
+void _onMealMenuSelected(BuildContext context, WidgetRef ref, String value, meals.Meal meal, List<meals.Meal> mealsList) async {
+  final mealsService = ref.read(mealsServiceProvider);
+  if (value == 'duplicate') {
+    await _showDuplicateDialog(context, ref, meal, mealsList);
+  } else if (value == 'delete_all') {
+    await _confirmDeleteAllFoods(context, ref, meal);
+  } else if (value == 'save_as_favorite') {
+    final favoriteName = await _showFavoriteNameDialog(context);
+    if (favoriteName != null) {
+      await mealsService.saveMealAsFavorite(meal.userId, meal.id!, favoriteName: favoriteName, dailyStatsId: meal.dailyStatsId);
+    }
+  } else if (value == 'apply_favorite') {
+    final favoriteMeals = await mealsService.getFavoriteMeals(meal.userId);
+    if (favoriteMeals.isNotEmpty) {
+      final selectedFavorite = await showDialog<meals.Meal>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Select Favorite Meal', style: GoogleFonts.roboto()),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: favoriteMeals.length,
+                itemBuilder: (BuildContext context, int index) {
+                  final favMeal = favoriteMeals[index];
+                  return ListTile(
+                    title: Text(favMeal.favoriteName ?? favMeal.mealType, style: GoogleFonts.roboto()),
+                    onTap: () => Navigator.of(context).pop(favMeal),
+                  );
+                },
               ),
-            );
-          },
-        );
+            ),
+          );
+        },
+      );
 
-        if (selectedFavorite != null) {
-          await mealsService.applyFavoriteMealToCurrent(meal.userId, selectedFavorite.id!, meal.id!);
-        }
+      if (selectedFavorite != null) {
+        await mealsService.applyFavoriteMealToCurrent(meal.userId, selectedFavorite.id!, meal.id!);
       }
     }
   }
+}
+
+
 
   Future<String?> _showFavoriteNameDialog(BuildContext context) {
     final TextEditingController _nameController = TextEditingController();
@@ -523,4 +533,52 @@ class _FoodListState extends ConsumerState<FoodList> {
       context.push(Uri(path: '/food_tracker/food_selector', queryParameters: {'myFoodId': foodId}).toString(), extra: meal);
     }
   }
+
+void _onDayMenuSelected(BuildContext context, WidgetRef ref, String value) async {
+  final mealsService = ref.read(mealsServiceProvider);
+  final userService = ref.read(usersServiceProvider);
+  final userId = userService.getCurrentUserId();
+  final date = widget.selectedDate;
+
+  if (value == 'save_as_favorite_day') {
+    final favoriteName = await _showFavoriteNameDialog(context);
+    if (favoriteName != null) {
+      final dailyStats = await mealsService.getDailyStatsByDate(userId, date);
+      if (dailyStats != null) {
+        await mealsService.saveDayAsFavorite(userId, date, favoriteName: favoriteName);
+      }
+    }
+  } else if (value == 'apply_favorite_day') {
+    final favoriteDays = await mealsService.getFavoriteDays(userId);
+    if (favoriteDays.isNotEmpty) {
+      final selectedFavorite = await showDialog<meals.FavoriteDay>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Select Favorite Day', style: GoogleFonts.roboto()),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: favoriteDays.length,
+                itemBuilder: (BuildContext context, int index) {
+                  final favDay = favoriteDays[index];
+                  return ListTile(
+                    title: Text(favDay.favoriteName ?? 'Favorite Day', style: GoogleFonts.roboto()),
+                    onTap: () => Navigator.of(context).pop(favDay),
+                  );
+                },
+              ),
+            ),
+          );
+        },
+      );
+
+      if (selectedFavorite != null) {
+        await mealsService.applyFavoriteDayToCurrent(userId, selectedFavorite.id!, date);
+      }
+    }
+  }
+}
+
 }

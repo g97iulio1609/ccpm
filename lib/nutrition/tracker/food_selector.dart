@@ -10,11 +10,13 @@ class FoodSelector extends ConsumerStatefulWidget {
   final meals.Meal meal;
   final String? myFoodId;
   final VoidCallback? onSave;
+  final bool isFavoriteMeal;
 
   const FoodSelector({
     required this.meal,
     this.myFoodId,
     this.onSave,
+    this.isFavoriteMeal = false,
     super.key,
   });
 
@@ -79,7 +81,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
     });
   }
 
-Future<void> saveFood() async {
+  Future<void> saveFood() async {
     try {
       final mealsService = ref.read(mealsServiceProvider);
       final food = _loadedFood;
@@ -107,16 +109,25 @@ Future<void> saveFood() async {
           vitaminC: food.vitaminC,
           calcium: food.calcium,
           iron: food.iron,
-          mealId: widget.meal.id!, // Assicuriamoci che mealId sia incluso
+          mealId: widget.meal.id!,
         );
 
         if (widget.myFoodId == null) {
-          await mealsService.addFoodToMeal(
-            userId: widget.meal.userId,
-            mealId: widget.meal.id!,
-            food: adjustedFood,
-            quantity: _quantity,
-          );
+          if (widget.isFavoriteMeal) {
+            await mealsService.addFoodToFavoriteMeal(
+              userId: widget.meal.userId,
+              mealId: widget.meal.id!,
+              food: adjustedFood,
+              quantity: _quantity,
+            );
+          } else {
+            await mealsService.addFoodToMeal(
+              userId: widget.meal.userId,
+              mealId: widget.meal.id!,
+              food: adjustedFood,
+              quantity: _quantity,
+            );
+          }
         } else {
           final originalFood = _originalFood;
           await mealsService.updateMyFood(
@@ -126,7 +137,6 @@ Future<void> saveFood() async {
           );
 
           if (originalFood != null) {
-            // Adjust meal and daily stats
             await mealsService.updateMealAndDailyStats(
               widget.meal.userId,
               widget.meal.id!,
@@ -143,18 +153,17 @@ Future<void> saveFood() async {
         }
 
         widget.onSave?.call();
-        context.pop();
       }
     } catch (e) {
       debugPrint('saveFood: Error saving food: $e');
+    } finally {
+      context.pop();  // Torna indietro in ogni caso
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-  
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

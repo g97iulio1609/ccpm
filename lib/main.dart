@@ -1,7 +1,7 @@
 import 'package:alphanessone/measurements/measurements.dart';
-import 'package:alphanessone/nutrition/models&Services/meals_model.dart';
+import 'package:alphanessone/nutrition/models&Services/meals_model.dart' as meals;
 import 'package:alphanessone/nutrition/tracker/daily_food_tracker.dart';
-import 'package:alphanessone/nutrition/tracker/favourites_meals.dart';
+import 'package:alphanessone/nutrition/tracker/my_meals.dart';
 import 'package:alphanessone/nutrition/tracker/food_management.dart';
 import 'package:alphanessone/nutrition/Calc/macros_selector.dart';
 import 'package:alphanessone/nutrition/Calc/tdee.dart';
@@ -34,6 +34,7 @@ import 'Viewer/exercise_details.dart';
 import 'Viewer/timer.dart';
 import 'app_services.dart';
 import 'nutrition/tracker/food_selector.dart';
+import 'nutrition/tracker/favorite_meal_detail.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
@@ -354,32 +355,45 @@ class MyApp extends ConsumerWidget {
                     : const SizedBox();
               },
             ),
-          GoRoute(
-                  path: '/mymeals',
-                  builder: (context, state) => const FavouritesMeals(),
-                ),
             GoRoute(
-              path: '/food_tracker',
-              builder: (context, state) => const DailyFoodTracker(),
+              path: '/mymeals',
+              builder: (context, state) => const FavouritesMeals(),
               routes: [
-               
                 GoRoute(
-                  path: 'food_selector',
+                  path: 'favorite_meal_detail',
                   builder: (context, state) {
-                    final meal = state.extra as Meal;
-                    final myFoodId = state.uri.queryParameters['myFoodId'];
-                    return FoodSelector(
-                      meal: meal,
-                      myFoodId: myFoodId,
-                    );
+                    final meal = state.extra as meals.Meal;
+                    return FavoriteMealDetail(meal: meal);
                   },
                 ),
               ],
             ),
-             GoRoute(
-                  path: '/food_management',
-                  builder: (context, state) => const FoodManagement(),
-                ),
+            GoRoute(
+              path: '/food_tracker',
+              builder: (context, state) => const DailyFoodTracker(),
+              routes: [
+GoRoute(
+  path: 'food_selector',
+  builder: (context, state) {
+    final extra = state.extra as Map<String, dynamic>;
+    final mealMap = extra['meal'] as Map<String, dynamic>;
+    final meal = meals.Meal.fromMap(mealMap);
+    final myFoodId = extra['myFoodId'] as String?;
+    final isFavoriteMeal = extra['isFavoriteMeal'] as bool;
+    return FoodSelector(
+      meal: meal,
+      myFoodId: myFoodId,
+      isFavoriteMeal: isFavoriteMeal,
+    );
+  },
+),
+
+              ],
+            ),
+            GoRoute(
+              path: '/food_management',
+              builder: (context, state) => const FoodManagement(),
+            ),
             GoRoute(
               path: '/exercises_list',
               builder: (context, state) => const ExercisesList(),
