@@ -1,5 +1,6 @@
 import 'package:alphanessone/measurements/measurements.dart';
-import 'package:alphanessone/nutrition/models&Services/meals_model.dart' as meals;
+import 'package:alphanessone/nutrition/models&Services/meals_model.dart'
+    as meals;
 import 'package:alphanessone/nutrition/tracker/daily_food_tracker.dart';
 import 'package:alphanessone/nutrition/tracker/my_meals.dart';
 import 'package:alphanessone/nutrition/tracker/food_management.dart';
@@ -36,7 +37,8 @@ import 'app_services.dart';
 import 'nutrition/tracker/food_selector.dart';
 import 'nutrition/tracker/favorite_meal_detail.dart';
 
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
 
 Future<void> requestNotificationPermission() async {
   if (!kIsWeb) {
@@ -54,8 +56,10 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('app_icon');
-  const DarwinInitializationSettings initializationSettingsIOS = DarwinInitializationSettings();
+  const AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('app_icon');
+  const DarwinInitializationSettings initializationSettingsIOS =
+      DarwinInitializationSettings();
   const InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,
     iOS: initializationSettingsIOS,
@@ -63,7 +67,9 @@ void main() async {
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
   await requestNotificationPermission();
   if (!kIsWeb) {
-    final AndroidFlutterLocalNotificationsPlugin? androidPlugin = flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    final AndroidFlutterLocalNotificationsPlugin? androidPlugin =
+        flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
     await androidPlugin?.requestExactAlarmsPermission();
   }
 
@@ -210,8 +216,8 @@ class MyApp extends ConsumerWidget {
               routes: [
                 GoRoute(
                   path: 'user_programs/:userId',
-                  builder: (context, state) =>
-                      UserProgramsScreen(userId: state.pathParameters['userId']!),
+                  builder: (context, state) => UserProgramsScreen(
+                      userId: state.pathParameters['userId']!),
                   routes: [
                     GoRoute(
                       path: 'training_viewer/:programId',
@@ -240,17 +246,27 @@ class MyApp extends ConsumerWidget {
                                 GoRoute(
                                   path: 'exercise_details/:exerciseId',
                                   builder: (context, state) {
-                                    final extra = state.extra as Map<String, dynamic>?;
+                                    final extra =
+                                        state.extra as Map<String, dynamic>?;
                                     return ExerciseDetails(
-                                      programId: Uri.decodeComponent(state.pathParameters['programId']!),
-                                      weekId: Uri.decodeComponent(state.pathParameters['weekId']!),
-                                      workoutId: Uri.decodeComponent(state.pathParameters['workoutId']!),
-                                      exerciseId: Uri.decodeComponent(state.pathParameters['exerciseId']!),
-                                      superSetExercises: extra?['superSetExercises'] != null
-                                          ? List<Map<String, dynamic>>.from(extra?['superSetExercises'])
-                                          : [],
-                                      superSetExerciseIndex: extra?['superSetExerciseIndex'] ?? 0,
-                                      seriesList: List<Map<String, dynamic>>.from(extra?['seriesList'] ?? []),
+                                      programId: Uri.decodeComponent(
+                                          state.pathParameters['programId']!),
+                                      weekId: Uri.decodeComponent(
+                                          state.pathParameters['weekId']!),
+                                      workoutId: Uri.decodeComponent(
+                                          state.pathParameters['workoutId']!),
+                                      exerciseId: Uri.decodeComponent(
+                                          state.pathParameters['exerciseId']!),
+                                      superSetExercises:
+                                          extra?['superSetExercises'] != null
+                                              ? List<Map<String, dynamic>>.from(
+                                                  extra?['superSetExercises'])
+                                              : [],
+                                      superSetExerciseIndex:
+                                          extra?['superSetExerciseIndex'] ?? 0,
+                                      seriesList:
+                                          List<Map<String, dynamic>>.from(
+                                              extra?['seriesList'] ?? []),
                                       startIndex: extra?['startIndex'] ?? 0,
                                       userId: state.pathParameters['userId']!,
                                     );
@@ -259,20 +275,36 @@ class MyApp extends ConsumerWidget {
                                     GoRoute(
                                       path: 'timer',
                                       builder: (context, state) {
-                                        final extra = state.extra as Map<String, dynamic>?;
+                                        final extra = state.extra
+                                            as Map<String, dynamic>?;
                                         return TimerPage(
-                                          programId: Uri.decodeComponent(state.pathParameters['programId']!),
-                                          weekId: Uri.decodeComponent(state.pathParameters['weekId']!),
-                                          workoutId: Uri.decodeComponent(state.pathParameters['workoutId']!),
-                                          exerciseId: Uri.decodeComponent(state.pathParameters['exerciseId']!),
-                                          currentSeriesIndex: int.parse(state.uri.queryParameters['currentSeriesIndex']!),
-                                          superSetExerciseIndex: int.parse(state.uri.queryParameters['superSetExerciseIndex']!),
-                                          totalSeries: int.parse(state.uri.queryParameters['totalSeries']!),
-                                          restTime: int.parse(state.uri.queryParameters['restTime']!),
-                                          isEmomMode: state.uri.queryParameters['isEmomMode'] == 'true',
-                                          userId: state.pathParameters['userId']!,
-                                          seriesList: extra?['seriesList'] != null
-                                              ? List<Map<String, dynamic>>.from(extra?['seriesList'])
+                                          programId: Uri.decodeComponent(state
+                                              .pathParameters['programId']!),
+                                          weekId: Uri.decodeComponent(
+                                              state.pathParameters['weekId']!),
+                                          workoutId: Uri.decodeComponent(state
+                                              .pathParameters['workoutId']!),
+                                          exerciseId: Uri.decodeComponent(state
+                                              .pathParameters['exerciseId']!),
+                                          currentSeriesIndex: int.parse(
+                                              state.uri.queryParameters[
+                                                  'currentSeriesIndex']!),
+                                          superSetExerciseIndex: int.parse(
+                                              state.uri.queryParameters[
+                                                  'superSetExerciseIndex']!),
+                                          totalSeries: int.parse(state.uri
+                                              .queryParameters['totalSeries']!),
+                                          restTime: int.parse(state.uri
+                                              .queryParameters['restTime']!),
+                                          isEmomMode: state.uri.queryParameters[
+                                                  'isEmomMode'] ==
+                                              'true',
+                                          userId:
+                                              state.pathParameters['userId']!,
+                                          seriesList: extra?['seriesList'] !=
+                                                  null
+                                              ? List<Map<String, dynamic>>.from(
+                                                  extra?['seriesList'])
                                               : [],
                                         );
                                       },
@@ -304,7 +336,8 @@ class MyApp extends ConsumerWidget {
                           builder: (context, state) => TrainingProgramPage(
                             programId: state.pathParameters['programId']!,
                             userId: state.pathParameters['userId']!,
-                            weekIndex: int.parse(state.pathParameters['weekIndex']!),
+                            weekIndex:
+                                int.parse(state.pathParameters['weekIndex']!),
                           ),
                           routes: [
                             GoRoute(
@@ -312,8 +345,10 @@ class MyApp extends ConsumerWidget {
                               builder: (context, state) => TrainingProgramPage(
                                 programId: state.pathParameters['programId']!,
                                 userId: state.pathParameters['userId']!,
-                                weekIndex: int.parse(state.pathParameters['weekIndex']!),
-                                workoutIndex: int.parse(state.pathParameters['workoutIndex']!),
+                                weekIndex: int.parse(
+                                    state.pathParameters['weekIndex']!),
+                                workoutIndex: int.parse(
+                                    state.pathParameters['workoutIndex']!),
                               ),
                             ),
                           ],
@@ -372,22 +407,21 @@ class MyApp extends ConsumerWidget {
               path: '/food_tracker',
               builder: (context, state) => const DailyFoodTracker(),
               routes: [
-GoRoute(
-  path: 'food_selector',
-  builder: (context, state) {
-    final extra = state.extra as Map<String, dynamic>;
-    final mealMap = extra['meal'] as Map<String, dynamic>;
-    final meal = meals.Meal.fromMap(mealMap);
-    final myFoodId = extra['myFoodId'] as String?;
-    final isFavoriteMeal = extra['isFavoriteMeal'] as bool;
-    return FoodSelector(
-      meal: meal,
-      myFoodId: myFoodId,
-      isFavoriteMeal: isFavoriteMeal,
-    );
-  },
-),
-
+                GoRoute(
+                  path: 'food_selector',
+                  builder: (context, state) {
+                    final extra = state.extra as Map<String, dynamic>;
+                    final mealMap = extra['meal'] as Map<String, dynamic>;
+                    final meal = meals.Meal.fromMap(mealMap);
+                    final myFoodId = extra['myFoodId'] as String?;
+                    final isFavoriteMeal = extra['isFavoriteMeal'] as bool;
+                    return FoodSelector(
+                      meal: meal,
+                      myFoodId: myFoodId,
+                      isFavoriteMeal: isFavoriteMeal,
+                    );
+                  },
+                ),
               ],
             ),
             GoRoute(
