@@ -12,8 +12,8 @@ if (localPropertiesFile.exists()) {
     })
 }
 
-def flutterVersionCode = localProperties.getProperty('flutter.versionCode') ?: '21'
-def flutterVersionName = localProperties.getProperty('flutter.versionName') ?: '1.21'
+def flutterVersionCode = localProperties.getProperty('flutter.versionCode') ?: '22'
+def flutterVersionName = localProperties.getProperty('flutter.versionName') ?: '1.22'
 
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file('key.properties')
@@ -40,17 +40,19 @@ android {
 
     defaultConfig {
         applicationId 'com.alphaness.alphanessone'
-        minSdkVersion 23  // Updated to minSdkVersion 21
+        minSdkVersion flutter.minSdkVersion
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+        minSdkVersion 23
+        multiDexEnabled true
     }
 
     signingConfigs {
         release {
             keyAlias keystoreProperties['keyAlias']
             keyPassword keystoreProperties['keyPassword']
-            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+            storeFile file(keystoreProperties['storeFile'])
             storePassword keystoreProperties['storePassword']
         }
     }
@@ -61,7 +63,6 @@ android {
             minifyEnabled true
             shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            // Aggiunta della configurazione NDK per i simboli di debug
             ndk {
                 debugSymbolLevel 'SYMBOL_TABLE'
             }
@@ -74,5 +75,6 @@ flutter {
 }
 
 dependencies {
-    // Definisci qui le tue dipendenze
+    implementation 'androidx.multidex:multidex:2.0.1'
+    // Definisci qui le tue altre dipendenze
 }

@@ -32,31 +32,26 @@ class MacrosService {
   }
 
   void setSearchQuery(String query) {
-    _searchQuery = query.trim().toLowerCase(); // Assicurati che la query sia in minuscolo e senza spazi iniziali o finali
-    debugPrint('Query impostata a: $_searchQuery');
+    _searchQuery = query.trim().toLowerCase();
     _searchFoods();
   }
 
   Future<void> _searchFoods() async {
     try {
-      debugPrint('Eseguendo ricerca per: $_searchQuery');
       final firestoreResults = await _firestore
           .collection('foods')
           .orderBy('name')
           .startAt([_searchQuery])
           .endAt([_searchQuery + '\uf8ff'])
-          .limit(10) // Limita il numero di risultati per migliorare le performance
+          .limit(10)
           .get();
 
       final foods = firestoreResults.docs.map((doc) {
         final food = Food.fromFirestore(doc);
-        debugPrint('Trovato: ${food.name}');
         return food;
       }).toList();
-      debugPrint('Risultati della ricerca: ${foods.length} elementi trovati.');
       _searchResultsStreamController.add(foods);
     } catch (e) {
-      debugPrint('Errore durante la ricerca: $e');
       _searchResultsStreamController.addError(e);
     }
   }
@@ -75,18 +70,26 @@ class MacrosService {
   }
 
   Future<void> addFood(Food food) async {
+    final batch = _firestore.batch();
     final foodRef = _firestore.collection('foods').doc(food.id);
-    food.name = food.name.toLowerCase(); // Converti il nome in minuscolo
-    await foodRef.set(food.toMap());
+    food.name = food.name.toLowerCase();
+    batch.set(foodRef, food.toMap());
+    await batch.commit();
   }
 
   Future<void> updateFood(String foodId, Food updatedFood) async {
-    updatedFood.name = updatedFood.name.toLowerCase(); // Converti il nome in minuscolo
-    await _firestore.collection('foods').doc(foodId).update(updatedFood.toMap());
+    final batch = _firestore.batch();
+    final foodRef = _firestore.collection('foods').doc(foodId);
+    updatedFood.name = updatedFood.name.toLowerCase();
+    batch.update(foodRef, updatedFood.toMap());
+    await batch.commit();
   }
 
   Future<void> deleteFood(String foodId) async {
-    await _firestore.collection('foods').doc(foodId).delete();
+    final batch = _firestore.batch();
+    final foodRef = _firestore.collection('foods').doc(foodId);
+    batch.delete(foodRef);
+    await batch.commit();
   }
 
   Future<void> addFoodToUser({
@@ -97,6 +100,12 @@ class MacrosService {
   }) async {
     final foodData = await getFoodById(foodId);
     if (foodData != null) {
+      final batch = _firestore.batch();
+      final userFoodRef = _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('foods')
+          .doc();
       final userFoodData = {
         'foodId': foodId,
         'quantity': quantity,
@@ -104,11 +113,8 @@ class MacrosService {
         'userId': userId,
         ...foodData.toMap(),
       };
-      await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('foods')
-          .add(userFoodData);
+      batch.set(userFoodRef, userFoodData);
+      await batch.commit();
     }
   }
 
@@ -118,27 +124,31 @@ class MacrosService {
     required double quantity,
     required DateTime date,
   }) async {
-    await _firestore
+    final batch = _firestore.batch();
+    final userFoodRef = _firestore
         .collection('users')
         .doc(userId)
         .collection('foods')
-        .doc(userFoodId)
-        .update({
+        .doc(userFoodId);
+    batch.update(userFoodRef, {
       'quantity': quantity,
       'date': Timestamp.fromDate(date),
     });
+    await batch.commit();
   }
 
   Future<void> deleteUserFood({
     required String userId,
     required String userFoodId,
   }) async {
-    await _firestore
+    final batch = _firestore.batch();
+    final userFoodRef = _firestore
         .collection('users')
         .doc(userId)
         .collection('foods')
-        .doc(userFoodId)
-        .delete();
+        .doc(userFoodId);
+    batch.delete(userFoodRef);
+    await batch.commit();
   }
 
   Stream<List<Food>> getUserFoods({required String userId}) {
@@ -160,7 +170,7 @@ class MacrosService {
     final batch = _firestore.batch();
     for (final foodData in foodsData) {
       final foodRef = _firestore.collection('foods').doc();
-      foodData['name'] = foodData['name'].toString().toLowerCase(); // Converti il nome in minuscolo
+      foodData['name'] = foodData['name'].toString().toLowerCase();
       batch.set(foodRef, foodData);
     }
     await batch.commit();
