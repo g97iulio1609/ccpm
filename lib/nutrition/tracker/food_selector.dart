@@ -29,7 +29,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
   final TextEditingController _quantityController = TextEditingController(text: '100');
   String _selectedFoodId = '';
   double _quantity = 100.0;
-  String _unit = 'g'; // Default unit
+  String _unit = 'g';
 
   double _proteinValue = 0.0;
   double _carbsValue = 0.0;
@@ -54,22 +54,30 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
     final food = await mealsService.getMyFoodById(widget.meal.userId, foodId);
     if (food != null) {
       setState(() {
-        _selectedFoodId = food.id!;
-        _loadedFood = food;
-        _originalFood = food;
-        _quantity = food.quantity ?? 100.0;
-        _unit = food.quantityUnit;
-        _quantityController.text = _quantity.toString();
+        _updateLoadedFood(food);
         _updateMacronutrientValues(food);
       });
       return food;
     } else {
       setState(() {
-        _selectedFoodId = '';
-        _loadedFood = null;
+        _resetLoadedFood();
       });
       return null;
     }
+  }
+
+  void _updateLoadedFood(macros.Food food) {
+    _selectedFoodId = food.id!;
+    _loadedFood = food;
+    _originalFood = food;
+    _quantity = food.quantity ?? 100.0;
+    _unit = food.quantityUnit;
+    _quantityController.text = _quantity.toString();
+  }
+
+  void _resetLoadedFood() {
+    _selectedFoodId = '';
+    _loadedFood = null;
   }
 
   void _updateMacronutrientValues(macros.Food food) {
@@ -81,75 +89,17 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
     });
   }
 
-  Future<void> saveFood() async {
+  Future<void> _saveFood() async {
     try {
       final mealsService = ref.read(mealsServiceProvider);
       final food = _loadedFood;
       if (food != null) {
-        final adjustedFood = macros.Food(
-          id: food.id,
-          name: food.name,
-          kcal: food.kcal * _quantity / 100,
-          carbs: food.carbs * _quantity / 100,
-          fat: food.fat * _quantity / 100,
-          protein: food.protein * _quantity / 100,
-          quantity: _quantity,
-          quantityUnit: _unit,
-          portion: _unit,
-          sugar: food.sugar,
-          fiber: food.fiber,
-          saturatedFat: food.saturatedFat,
-          polyunsaturatedFat: food.polyunsaturatedFat,
-          monounsaturatedFat: food.monounsaturatedFat,
-          transFat: food.transFat,
-          cholesterol: food.cholesterol,
-          sodium: food.sodium,
-          potassium: food.potassium,
-          vitaminA: food.vitaminA,
-          vitaminC: food.vitaminC,
-          calcium: food.calcium,
-          iron: food.iron,
-          mealId: widget.meal.id!,
-        );
+        final adjustedFood = _createAdjustedFood(food);
 
         if (widget.myFoodId == null) {
-          if (widget.isFavoriteMeal) {
-            await mealsService.addFoodToFavoriteMeal(
-              userId: widget.meal.userId,
-              mealId: widget.meal.id!,
-              food: adjustedFood,
-              quantity: _quantity,
-            );
-          } else {
-            await mealsService.addFoodToMeal(
-              userId: widget.meal.userId,
-              mealId: widget.meal.id!,
-              food: adjustedFood,
-              quantity: _quantity,
-            );
-          }
+          await _addFood(mealsService, adjustedFood);
         } else {
-          final originalFood = _originalFood;
-          await mealsService.updateMyFood(
-            userId: widget.meal.userId,
-            myFoodId: widget.myFoodId!,
-            updatedFood: adjustedFood,
-          );
-
-          if (originalFood != null) {
-            await mealsService.updateMealAndDailyStats(
-              widget.meal.userId,
-              widget.meal.id!,
-              originalFood,
-              isAdding: false,
-            );
-            await mealsService.updateMealAndDailyStats(
-              widget.meal.userId,
-              widget.meal.id!,
-              adjustedFood,
-              isAdding: true,
-            );
-          }
+          await _updateFood(mealsService, adjustedFood);
         }
 
         widget.onSave?.call();
@@ -157,7 +107,76 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
     } catch (e) {
       debugPrint('saveFood: Error saving food: $e');
     } finally {
-      context.pop();  // Torna indietro in ogni caso
+      context.pop();
+    }
+  }
+
+  macros.Food _createAdjustedFood(macros.Food food) {
+    return macros.Food(
+      id: food.id,
+      name: food.name,
+      kcal: food.kcal * _quantity / 100,
+      carbs: food.carbs * _quantity / 100,
+      fat: food.fat * _quantity / 100,
+      protein: food.protein * _quantity / 100,
+      quantity: _quantity,
+      quantityUnit: _unit,
+      portion: _unit,
+      sugar: food.sugar,
+      fiber: food.fiber,
+      saturatedFat: food.saturatedFat,
+      polyunsaturatedFat: food.polyunsaturatedFat,
+      monounsaturatedFat: food.monounsaturatedFat,
+      transFat: food.transFat,
+      cholesterol: food.cholesterol,
+      sodium: food.sodium,
+      potassium: food.potassium,
+      vitaminA: food.vitaminA,
+      vitaminC: food.vitaminC,
+      calcium: food.calcium,
+      iron: food.iron,
+      mealId: widget.meal.id!,
+    );
+  }
+
+  Future<void> _addFood(MealsService mealsService, macros.Food adjustedFood) async {
+    if (widget.isFavoriteMeal) {
+      await mealsService.addFoodToFavoriteMeal(
+        userId: widget.meal.userId,
+        mealId: widget.meal.id!,
+        food: adjustedFood,
+        quantity: _quantity,
+      );
+    } else {
+      await mealsService.addFoodToMeal(
+        userId: widget.meal.userId,
+        mealId: widget.meal.id!,
+        food: adjustedFood,
+        quantity: _quantity,
+      );
+    }
+  }
+
+  Future<void> _updateFood(MealsService mealsService, macros.Food adjustedFood) async {
+    await mealsService.updateMyFood(
+      userId: widget.meal.userId,
+      myFoodId: widget.myFoodId!,
+      updatedFood: adjustedFood,
+    );
+
+    if (_originalFood != null) {
+      await mealsService.updateMealAndDailyStats(
+        widget.meal.userId,
+        widget.meal.id!,
+        _originalFood!,
+        isAdding: false,
+      );
+      await mealsService.updateMealAndDailyStats(
+        widget.meal.userId,
+        widget.meal.id!,
+        adjustedFood,
+        isAdding: true,
+      );
     }
   }
 
@@ -173,8 +192,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
               focusNode: FocusNode(),
               onSelected: (macros.Food food) {
                 setState(() {
-                  _selectedFoodId = food.id!;
-                  _loadedFood = food;
+                  _updateLoadedFood(food);
                   _quantity = 100.0;
                   _unit = 'g';
                   _quantityController.text = '100';
@@ -187,7 +205,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
               Expanded(child: _buildSelectedFoodDetails(context)),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: saveFood,
+              onPressed: _saveFood,
               child: const Text('Save and Go Back'),
             ),
           ],
@@ -215,41 +233,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _quantityController,
-                        decoration: const InputDecoration(
-                          labelText: 'Quantity',
-                        ),
-                        keyboardType: TextInputType.number,
-                        onChanged: (value) {
-                          setState(() {
-                            _quantity = double.tryParse(value) ?? 100.0;
-                            _updateMacronutrientValues(food);
-                          });
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    DropdownButton<String>(
-                      value: _unit,
-                      items: <String>['g', 'ml', 'oz'].map((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          _unit = newValue!;
-                          _updateMacronutrientValues(food);
-                        });
-                      },
-                    ),
-                  ],
-                ),
+                _buildQuantityInput(food),
                 const SizedBox(height: 16),
                 const Text('Macro Nutrients:'),
                 Text('Protein: ${_proteinValue.toStringAsFixed(2)}g'),
@@ -265,6 +249,44 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
           return const Text('No data');
         }
       },
+    );
+  }
+
+  Widget _buildQuantityInput(macros.Food food) {
+    return Row(
+      children: [
+        Expanded(
+          child: TextField(
+            controller: _quantityController,
+            decoration: const InputDecoration(
+              labelText: 'Quantity',
+            ),
+            keyboardType: TextInputType.number,
+            onChanged: (value) {
+              setState(() {
+                _quantity = double.tryParse(value) ?? 100.0;
+                _updateMacronutrientValues(food);
+              });
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        DropdownButton<String>(
+          value: _unit,
+          items: <String>['g', 'ml', 'oz'].map((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value),
+            );
+          }).toList(),
+          onChanged: (String? newValue) {
+            setState(() {
+              _unit = newValue!;
+              _updateMacronutrientValues(food);
+            });
+          },
+        ),
+      ],
     );
   }
 }
