@@ -12,10 +12,12 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
+      
     - name: Set up Flutter
       uses: subosito/flutter-action@v2
       with:
         flutter-version: '3.22.0'
+        
     - name: Cache CocoaPods
       uses: actions/cache@v2
       with:
@@ -23,8 +25,10 @@ jobs:
         key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
         restore-keys: |
           ${{ runner.os }}-pods-
+          
     - name: Install dependencies
       run: flutter pub get
+      
     - name: Set platform iOS in Podfile
       run: |
         cd ios
@@ -32,6 +36,7 @@ jobs:
         echo "use_frameworks!" >> Podfile
         echo "use_modular_headers!" >> Podfile
         echo "target 'Runner' do" >> Podfile
+        echo "  pod 'Firebase/Core'" >> Podfile  # Assicurati di includere Firebase
         echo "end" >> Podfile
         echo "post_install do |installer|" >> Podfile
         echo "  installer.pods_project.targets.each do |target|" >> Podfile
@@ -41,13 +46,16 @@ jobs:
         echo "    end" >> Podfile
         echo "  end" >> Podfile
         echo "end" >> Podfile
+        
     - name: Install CocoaPods dependencies
       run: |
         cd ios
         pod repo update
         pod install
+        
     - name: Build iOS
       run: flutter build ios --release --no-codesign
+      
     - name: Create IPA
       run: |
         mkdir -p build/ios/ipa
@@ -64,6 +72,7 @@ jobs:
           CODE_SIGN_IDENTITY="" \
           CODE_SIGNING_REQUIRED=NO \
           CODE_SIGNING_ALLOWED=NO
+          
     - name: Upload IPA
       uses: actions/upload-artifact@v2
       with:
