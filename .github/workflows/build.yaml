@@ -1,0 +1,52 @@
+name: Build iOS IPA
+
+on:
+  push:
+    branches:
+      - main_future
+  pull_request:
+    branches:
+      - main_future
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.22.0' # Specifica qui la versione di Flutter. Puoi usare 'latest' per l'ultima versione.
+
+    - name: Install dependencies
+      run: flutter pub get
+
+    - name: Build iOS
+      run: flutter build ios --release --no-codesign
+
+    - name: Create IPA
+      run: |
+        mkdir -p build/ios/ipa
+        xcodebuild -workspace ios/Runner.xcworkspace \
+          -scheme Runner \
+          -sdk iphoneos \
+          -configuration Release \
+          -archivePath build/ios/archive/MyApp.xcarchive \
+          archive
+
+        xcodebuild -exportArchive \
+          -archivePath build/ios/archive/MyApp.xcarchive \
+          -exportPath build/ios/ipa \
+          -exportOptionsPlist <(echo '{ "method": "development", "signingStyle": "manual", "teamID": "", "compileBitcode": false, "destination": "export" }') \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO
+
+    - name: Upload IPA
+      uses: actions/upload-artifact@v2
+      with:
+        name: myapp-ipa
+        path: build/ios/ipa/*.ipa
