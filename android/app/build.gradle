@@ -40,17 +40,18 @@ android {
 
     defaultConfig {
         applicationId 'com.alphaness.alphanessone'
-        minSdkVersion 23  // Updated to minSdkVersion 21
+        minSdkVersion 23
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+        multiDexEnabled true // Abilita MultiDex
     }
 
     signingConfigs {
         release {
             keyAlias keystoreProperties['keyAlias']
             keyPassword keystoreProperties['keyPassword']
-            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+            storeFile file(keystoreProperties['storeFile'])
             storePassword keystoreProperties['storePassword']
         }
     }
@@ -61,7 +62,6 @@ android {
             minifyEnabled true
             shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            // Aggiunta della configurazione NDK per i simboli di debug
             ndk {
                 debugSymbolLevel 'SYMBOL_TABLE'
             }
@@ -74,5 +74,6 @@ flutter {
 }
 
 dependencies {
-    // Definisci qui le tue dipendenze
+    implementation 'androidx.multidex:multidex:2.0.1' // Aggiunta della dipendenza MultiDex
+    // Definisci qui le tue altre dipendenze
 }
