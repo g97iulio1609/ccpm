@@ -52,7 +52,7 @@ jobs:
           echo 'end' >> Podfile
         else
           sed -i '' '1s/^/platform :ios, "16.0"\n/' Podfile
-          if ! grep -q 'post_install' Podfile; then
+          if ! grep -q 'post_install do |installer|' Podfile; then
             echo 'post_install do |installer|' >> Podfile
             echo '  installer.pods_project.targets.each do |target|' >> Podfile
             echo '    target.build_configurations.each do |config|' >> Podfile
