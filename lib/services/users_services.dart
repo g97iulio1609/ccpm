@@ -304,7 +304,7 @@ class UsersService {
         .delete();
   }
 
-Future<ExerciseRecord?> getLatestExerciseRecord({
+  Future<ExerciseRecord?> getLatestExerciseRecord({
     required String userId,
     required String exerciseId,
   }) async {
@@ -325,9 +325,21 @@ Future<ExerciseRecord?> getLatestExerciseRecord({
     }
   }
 
-
   Future<void> deleteUser(String userId) async {
-    await _firestore.collection('users').doc(userId).delete();
+    try {
+      // Elimina il documento dell'utente nella collection 'users'
+      await _firestore.collection('users').doc(userId).delete();
+
+      // Elimina l'utente dall'autenticazione Firebase
+      User? user = _auth.currentUser;
+      if (user != null && user.uid == userId) {
+        await user.delete();
+      } else {
+        throw Exception("User not authenticated or mismatched userId.");
+      }
+    } catch (e) {
+      throw Exception('Errore durante l\'eliminazione dell\'utente: $e');
+    }
   }
 
   Future<void> updateUser(String userId, Map<String, dynamic> data) async {
