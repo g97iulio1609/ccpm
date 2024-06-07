@@ -46,11 +46,22 @@ jobs:
           echo '  installer.pods_project.targets.each do |target|' >> Podfile
           echo '    target.build_configurations.each do |config|' >> Podfile
           echo '      config.build_settings["ENABLE_BITCODE"] = "NO"' >> Podfile
+          echo '      config.build_settings["IPHONEOS_DEPLOYMENT_TARGET"] = "16.0"' >> Podfile
           echo '    end' >> Podfile
           echo '  end' >> Podfile
           echo 'end' >> Podfile
         else
           sed -i '' '1s/^/platform :ios, "16.0"\n/' Podfile
+          if ! grep -q 'IPHONEOS_DEPLOYMENT_TARGET' Podfile; then
+            echo 'post_install do |installer|' >> Podfile
+            echo '  installer.pods_project.targets.each do |target|' >> Podfile
+            echo '    target.build_configurations.each do |config|' >> Podfile
+            echo '      config.build_settings["ENABLE_BITCODE"] = "NO"' >> Podfile
+            echo '      config.build_settings["IPHONEOS_DEPLOYMENT_TARGET"] = "16.0"' >> Podfile
+            echo '    end' >> Podfile
+            echo '  end' >> Podfile
+            echo 'end' >> Podfile
+          fi
         fi
 
     - name: Install CocoaPods dependencies
