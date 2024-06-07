@@ -24,12 +24,11 @@ jobs:
     - name: Install dependencies
       run: flutter pub get
 
-    - name: Install CocoaPods dependencies
+    - name: Set platform iOS in Podfile
       run: |
         cd ios
-        # Crea un Podfile se non esiste e specifica la piattaforma iOS
         if [ ! -f Podfile ]; then
-          echo 'platform :ios, "11.0"' >> Podfile
+          echo 'platform :ios, "11.0"' > Podfile
           echo 'use_frameworks!' >> Podfile
           echo 'use_modular_headers!' >> Podfile
           echo 'target "Runner" do' >> Podfile
@@ -42,7 +41,14 @@ jobs:
           echo '    end' >> Podfile
           echo '  end' >> Podfile
           echo 'end' >> Podfile
+        else
+          sed -i '' '1s/^/platform :ios, "11.0"\n/' Podfile
         fi
+
+    - name: Install CocoaPods dependencies
+      run: |
+        cd ios
+        pod repo update
         pod update
         pod install
 
