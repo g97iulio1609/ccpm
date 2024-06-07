@@ -62,12 +62,12 @@ jobs:
             echo '  end' >> Podfile
             echo 'end' >> Podfile
           else
-            sed -i '' '/post_install do |installer|/a\
-  installer.pods_project.targets.each do |target|\
-    target.build_configurations.each do |config|\
-      config.build_settings["ENABLE_BITCODE"] = "NO"\
-      config.build_settings["IPHONEOS_DEPLOYMENT_TARGET"] = "16.0"\
-    end\
+            sed -i '' '/post_install do |installer|/a\\
+  installer.pods_project.targets.each do |target|\\
+    target.build_configurations.each do |config|\\
+      config.build_settings["ENABLE_BITCODE"] = "NO"\\
+      config.build_settings["IPHONEOS_DEPLOYMENT_TARGET"] = "16.0"\\
+    end\\
   end' Podfile
           fi
         fi
