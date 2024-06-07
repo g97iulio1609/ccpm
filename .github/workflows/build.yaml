@@ -33,7 +33,7 @@ jobs:
         target 'Runner' do
           use_frameworks!
           use_modular_headers!
-          flutter_install_all_pods(File.dirname(File.realpath(__FILE__)))
+          flutter_install_all_pods File.dirname(File.realpath(__FILE__))
         end
         post_install do |installer|
           installer.pods_project.targets.each do |target|
