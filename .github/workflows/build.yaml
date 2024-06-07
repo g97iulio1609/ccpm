@@ -1,0 +1,108 @@
+
+name: Build iOS IPA
+
+on:
+  push:
+    branches:
+      - main_future
+  pull_request:
+    branches:
+      - main_future
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.22.0' # Specifica qui la versione di Flutter. Puoi usare 'latest' per l'ultima versione.
+
+    - name: Cache CocoaPods
+      uses: actions/cache@v2
+      with:
+        path: ios/Pods
+        key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-pods-
+
+    - name: Install dependencies
+      run: flutter pub get
+
+    - name: Set platform iOS in Podfile
+      run: |
+        cd ios
+        if [ ! -f Podfile ]; then
+          echo 'platform :ios, "16.0"' > Podfile
+          echo 'use_frameworks!' >> Podfile
+          echo 'use_modular_headers!' >> Podfile
+          echo 'target "Runner" do' >> Podfile
+          echo '  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))' >> Podfile
+          echo 'end' >> Podfile
+          echo 'post_install do |installer|' >> Podfile
+          echo '  installer.pods_project.targets.each do |target|' >> Podfile
+          echo '    target.build_configurations.each do |config|' >> Podfile
+          echo '      config.build_settings["ENABLE_BITCODE"] = "NO"' >> Podfile
+          echo '      config.build_settings["IPHONEOS_DEPLOYMENT_TARGET"] = "16.0"' >> Podfile
+          echo '    end' >> Podfile
+          echo '  end' >> Podfile
+          echo 'end' >> Podfile
+        else
+          sed -i '' '1s/^/platform :ios, "16.0"\n/' Podfile
+          if ! grep -q 'post_install do |installer|' Podfile; then
+            echo 'post_install do |installer|' >> Podfile
+            echo '  installer.pods_project.targets.each do |target|' >> Podfile
+            echo '    target.build_configurations.each do |config|' >> Podfile
+            echo '      config.build_settings["ENABLE_BITCODE"] = "NO"' >> Podfile
+            echo '      config.build_settings["IPHONEOS_DEPLOYMENT_TARGET"] = "16.0"' >> Podfile
+            echo '    end' >> Podfile
+            echo '  end' >> Podfile
+            echo 'end' >> Podfile
+          else
+            sed -i '' '/post_install do |installer|/a\
+              installer.pods_project.targets.each do |target|\
+                target.build_configurations.each do |config|\
+                  config.build_settings["ENABLE_BITCODE"] = "NO"\
+                  config.build_settings["IPHONEOS_DEPLOYMENT_TARGET"] = "16.0"\
+                end\
+              end' Podfile
+          fi
+        fi
+
+    - name: Install CocoaPods dependencies
+      run: |
+        cd ios
+        pod repo update
+        pod update
+        pod install
+
+    - name: Build iOS
+      run: flutter build ios --release --no-codesign
+
+    - name: Create IPA
+      run: |
+        mkdir -p build/ios/ipa
+        xcodebuild -workspace ios/Runner.xcworkspace \
+          -scheme Runner \
+          -sdk iphoneos \
+          -configuration Release \
+          -archivePath build/ios/archive/MyApp.xcarchive \
+          archive
+
+        xcodebuild -exportArchive \
+          -archivePath build/ios/archive/MyApp.xcarchive \
+          -exportPath build/ios/ipa \
+          -exportOptionsPlist <(echo '{ "method": "development", "signingStyle": "manual", "teamID": "", "compileBitcode": false, "destination": "export" }') \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO
+
+    - name: Upload IPA
+      uses: actions/upload-artifact@v2
+      with:
+        name: myapp-ipa
+        path: build/ios/ipa/*.ipa
