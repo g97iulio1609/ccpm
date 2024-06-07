@@ -36,33 +36,39 @@ jobs:
       run: |
         cd ios
         if [ ! -f Podfile ]; then
-          echo "platform :ios, '16.0'" > Podfile
-          echo "use_frameworks!" >> Podfile
-          echo "use_modular_headers!" >> Podfile
-          echo "target 'Runner' do" >> Podfile
-          echo "  flutter_install_all_ios_pods(File.dirname(File.realpath(__FILE__)))" >> Podfile
-          echo "end" >> Podfile
-          echo "" >> Podfile
-          echo "post_install do |installer|" >> Podfile
-          echo "  installer.pods_project.targets.each do |target|" >> Podfile
-          echo "    target.build_configurations.each do |config|" >> Podfile
-          echo "      config.build_settings['ENABLE_BITCODE'] = 'NO'" >> Podfile
-          echo "      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'" >> Podfile
-          echo "    end" >> Podfile
-          echo "  end" >> Podfile
-          echo "end" >> Podfile
+          cat <<EOF > Podfile
+platform :ios, '16.0'
+
+use_frameworks!
+use_modular_headers!
+
+target 'Runner' do
+  flutter_install_all_ios_pods(File.dirname(File.realpath(__FILE__)))
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['ENABLE_BITCODE'] = 'NO'
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
+    end
+  end
+end
+EOF
         else
           sed -i '' '1s/^/platform :ios, "16.0"\n/' Podfile
           if ! grep -q 'post_install do |installer|' Podfile; then
-            echo "" >> Podfile
-            echo "post_install do |installer|" >> Podfile
-            echo "  installer.pods_project.targets.each do |target|" >> Podfile
-            echo "    target.build_configurations.each do |config|" >> Podfile
-            echo "      config.build_settings['ENABLE_BITCODE'] = 'NO'" >> Podfile
-            echo "      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'" >> Podfile
-            echo "    end" >> Podfile
-            echo "  end" >> Podfile
-            echo "end" >> Podfile
+            cat <<EOF >> Podfile
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['ENABLE_BITCODE'] = 'NO'
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
+    end
+  end
+end
+EOF
           else
             sed -i '' '/post_install do |installer|/a\\
   installer.pods_project.targets.each do |target|\\
