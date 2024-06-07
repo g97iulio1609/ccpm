@@ -3,11 +3,13 @@ import 'dart:io';
 import 'package:path/path.dart' as path;
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/services/users_services.dart';
+import 'package:go_router/go_router.dart';
 
 class UserProfile extends ConsumerStatefulWidget {
   final String? userId;
@@ -25,6 +27,7 @@ class UserProfileState extends ConsumerState<UserProfile> {
   Color? _snackBarColor;
   final _debouncer = Debouncer(milliseconds: 1000);
   String? _selectedGender;
+  String? _password; // Campo per conservare la password
 
   @override
   void initState() {
@@ -41,7 +44,8 @@ class UserProfileState extends ConsumerState<UserProfile> {
         _controllers[key] = TextEditingController(text: value.toString());
       }
     });
-    _selectedGender = userProfileData?['gender'];
+    // Normalizza il valore di gender per gestire maiuscole/minuscole
+    _selectedGender = userProfileData?['gender']?.toString().toLowerCase();
     if (mounted) {
       setState(() {});
     }
@@ -105,12 +109,57 @@ class UserProfileState extends ConsumerState<UserProfile> {
   Future<void> deleteUser() async {
     String uid = widget.userId ?? ref.read(usersServiceProvider).getCurrentUserId();
     try {
-      await ref.read(usersServiceProvider).deleteUser(uid);
-      updateSnackBar('Utente eliminato con successo!', Colors.green);
-      // Naviga verso un'altra schermata o esegui le azioni necessarie dopo aver eliminato l'utente
+      // Re-authenticate the user before deletion
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null && _password != null) {
+        String email = user.email!;
+        AuthCredential credential = EmailAuthProvider.credential(email: email, password: _password!);
+        await user.reauthenticateWithCredential(credential);
+        await ref.read(usersServiceProvider).deleteUser(uid);
+        updateSnackBar('Utente eliminato con successo!', Colors.green);
+        // Naviga verso la schermata di login dopo aver eliminato l'utente
+        context.go('/'); // Usa la rotta configurata per la schermata di login
+      } else {
+        throw Exception("User not authenticated or password not provided.");
+      }
     } catch (e) {
-      updateSnackBar('Errore durante l\'eliminazione dell\'utente!', Colors.red);
+      updateSnackBar('Errore durante l\'eliminazione dell\'utente: $e', Colors.red);
     }
+  }
+
+  Future<void> _showPasswordDialog() async {
+    String password = '';
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Conferma la tua password'),
+          content: TextField(
+            obscureText: true,
+            onChanged: (value) {
+              password = value;
+            },
+            decoration: const InputDecoration(hintText: "Password"),
+          ),
+          actions: [
+            TextButton(
+              child: const Text('Annulla'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Conferma'),
+              onPressed: () {
+                _password = password;
+                Navigator.of(context).pop();
+                deleteUser(); // Chiama deleteUser dopo aver ottenuto la password
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void showDeleteConfirmationDialog() {
@@ -130,8 +179,8 @@ class UserProfileState extends ConsumerState<UserProfile> {
             TextButton(
               child: const Text('Elimina'),
               onPressed: () {
-                deleteUser();
                 Navigator.of(context).pop();
+                _showPasswordDialog(); // Mostra il dialogo per la password prima di eliminare
               },
             ),
           ],
@@ -183,8 +232,7 @@ class UserProfileState extends ConsumerState<UserProfile> {
             const SizedBox(height: 40),
             ..._controllers.keys
                 .where((field) => field != 'photoURL' && field != 'gender')
-                .map((field) => buildEditableField(field, _controllers[field]!))
-                ,
+                .map((field) => buildEditableField(field, _controllers[field]!)),
             const SizedBox(height: 24),
             buildGenderDropdown(),
             const SizedBox(height: 40),
@@ -197,7 +245,8 @@ class UserProfileState extends ConsumerState<UserProfile> {
                   style: TextStyle(fontSize: 18),
                 ),
                 style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white, backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.red,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
@@ -244,59 +293,59 @@ class UserProfileState extends ConsumerState<UserProfile> {
     );
   }
 
-Widget buildGenderDropdown() {
-  return DropdownButtonFormField<String>(
-    value: _selectedGender,
-    onChanged: (value) {
-      setState(() {
-        _selectedGender = value;
-        saveProfile('gender', value!);
-      });
-    },
-    decoration: InputDecoration(
-      labelText: 'Genere',
-      labelStyle: const TextStyle(
-        color: Colors.white70,
+  Widget buildGenderDropdown() {
+    return DropdownButtonFormField<String>(
+      value: _selectedGender,
+      onChanged: (value) {
+        setState(() {
+          _selectedGender = value?.toLowerCase();
+          saveProfile('gender', value!.toLowerCase());
+        });
+      },
+      decoration: InputDecoration(
+        labelText: 'Genere',
+        labelStyle: const TextStyle(
+          color: Colors.white70,
+          fontSize: 18,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Colors.white),
+        ),
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.1),
+      ),
+      dropdownColor: Colors.grey[900],
+      style: const TextStyle(
+        color: Colors.white,
         fontSize: 18,
       ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+      items: <String>['male', 'female', 'other']
+          .map<DropdownMenuItem<String>>((String value) {
+        return DropdownMenuItem<String>(
+          value: value.toLowerCase(),
+          child: Text(value),
+        );
+      }).toList(),
+      hint: const Text(
+        'Seleziona il genere',
+        style: TextStyle(
+          color: Colors.white70,
+          fontSize: 18,
+        ),
       ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Colors.white),
-      ),
-      filled: true,
-      fillColor: Colors.white.withOpacity(0.1),
-    ),
-    dropdownColor: Colors.grey[900],
-    style: const TextStyle(
-      color: Colors.white,
-      fontSize: 18,
-    ),
-    items: <String>['male', 'female', 'other']
-        .map<DropdownMenuItem<String>>((String value) {
-      return DropdownMenuItem<String>(
-        value: value,
-        child: Text(value),
-      );
-    }).toList(),
-    hint: const Text(
-      'Seleziona il genere',
-      style: TextStyle(
-        color: Colors.white70,
-        fontSize: 18,
-      ),
-    ),
-    validator: (value) {
-      if (value == null) {
-        return 'Per favore seleziona un genere';
-      }
-      return null;
-    },
-  );
-}
+      validator: (value) {
+        if (value == null) {
+          return 'Per favore seleziona un genere';
+        }
+        return null;
+      },
+    );
+  }
 
   @override
   void dispose() {
