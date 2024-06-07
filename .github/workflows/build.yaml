@@ -21,12 +21,43 @@ jobs:
       with:
         flutter-version: '3.22.0' # Specifica qui la versione di Flutter. Puoi usare 'latest' per l'ultima versione.
 
+    - name: Cache CocoaPods
+      uses: actions/cache@v2
+      with:
+        path: ios/Pods
+        key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-pods-
+
     - name: Install dependencies
       run: flutter pub get
+
+    - name: Set platform iOS in Podfile
+      run: |
+        cd ios
+        if [ ! -f Podfile ]; then
+          echo 'platform :ios, "11.0"' > Podfile
+          echo 'use_frameworks!' >> Podfile
+          echo 'use_modular_headers!' >> Podfile
+          echo 'target "Runner" do' >> Podfile
+          echo '  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))' >> Podfile
+          echo 'end' >> Podfile
+          echo 'post_install do |installer|' >> Podfile
+          echo '  installer.pods_project.targets.each do |target|' >> Podfile
+          echo '    target.build_configurations.each do |config|' >> Podfile
+          echo '      config.build_settings["ENABLE_BITCODE"] = "NO"' >> Podfile
+          echo '    end' >> Podfile
+          echo '  end' >> Podfile
+          echo 'end' >> Podfile
+        else
+          sed -i '' '1s/^/platform :ios, "11.0"\n/' Podfile
+        fi
 
     - name: Install CocoaPods dependencies
       run: |
         cd ios
+        pod repo update
+        pod update
         pod install
 
     - name: Build iOS
