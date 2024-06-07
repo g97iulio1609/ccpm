@@ -1,4 +1,5 @@
 name: Build iOS IPA
+
 on:
   push:
     branches:
@@ -18,7 +19,7 @@ jobs:
     - name: Set up Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.22.0' # Specifica qui la versione di Flutter. Puoi usare 'latest' per l'ultima versione.
+        flutter-version: '3.22.0'
 
     - name: Cache CocoaPods
       uses: actions/cache@v2
@@ -31,7 +32,7 @@ jobs:
     - name: Install dependencies
       run: flutter pub get
 
-    - name: Set platform iOS in Podfile
+    - name: Ensure Podfile exists and set platform iOS
       run: |
         cd ios
         if [ ! -f Podfile ]; then
@@ -69,12 +70,12 @@ post_install do |installer|
 end
 EOF
           else
-            sed -i '' '/post_install do |installer|/a\\
-  installer.pods_project.targets.each do |target|\\
-    target.build_configurations.each do |config|\\
-      config.build_settings["ENABLE_BITCODE"] = "NO"\\
-      config.build_settings["IPHONEOS_DEPLOYMENT_TARGET"] = "16.0"\\
-    end\\
+            sed -i '' '/post_install do |installer|/a\
+  installer.pods_project.targets.each do |target|\
+    target.build_configurations.each do |config|\
+      config.build_settings["ENABLE_BITCODE"] = "NO"\
+      config.build_settings["IPHONEOS_DEPLOYMENT_TARGET"] = "16.0"\
+    end\
   end' Podfile
           fi
         fi
