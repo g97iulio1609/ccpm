@@ -32,7 +32,6 @@ jobs:
         echo "use_frameworks!" >> Podfile
         echo "use_modular_headers!" >> Podfile
         echo "target 'Runner' do" >> Podfile
-        echo "  flutter_install_all_ios_pods(File.dirname(File.realpath(__FILE__)))" >> Podfile
         echo "end" >> Podfile
         echo "post_install do |installer|" >> Podfile
         echo "  installer.pods_project.targets.each do |target|" >> Podfile
