@@ -1,5 +1,4 @@
 name: Build iOS IPA
-
 on:
   push:
     branches:
