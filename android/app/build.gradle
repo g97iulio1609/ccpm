@@ -12,8 +12,8 @@ if (localPropertiesFile.exists()) {
     })
 }
 
-def flutterVersionCode = localProperties.getProperty('flutter.versionCode') ?: '22'
-def flutterVersionName = localProperties.getProperty('flutter.versionName') ?: '1.22'
+def flutterVersionCode = localProperties.getProperty('flutter.versionCode') ?: '21'
+def flutterVersionName = localProperties.getProperty('flutter.versionName') ?: '1.21'
 
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file('key.properties')
@@ -40,12 +40,11 @@ android {
 
     defaultConfig {
         applicationId 'com.alphaness.alphanessone'
-        minSdkVersion flutter.minSdkVersion
+        minSdkVersion 23
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
-        minSdkVersion 23
-        multiDexEnabled true
+        multiDexEnabled true // Abilita MultiDex
     }
 
     signingConfigs {
@@ -75,6 +74,6 @@ flutter {
 }
 
 dependencies {
-    implementation 'androidx.multidex:multidex:2.0.1'
+    implementation 'androidx.multidex:multidex:2.0.1' // Aggiunta della dipendenza MultiDex
     // Definisci qui le tue altre dipendenze
 }
