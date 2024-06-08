@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../services/users_services.dart';
+import 'package:alphanessone/providers/providers.dart';
 
 class CustomDrawer extends ConsumerWidget {
   const CustomDrawer({

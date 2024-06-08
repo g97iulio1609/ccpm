@@ -1,5 +1,5 @@
-import 'package:alphanessone/services/users_services.dart';
 import 'package:flutter/material.dart';
+import 'package:alphanessone/services/exercise_record_services.dart';
 import './training_model.dart';
 
 class SeriesUtils {
@@ -279,9 +279,9 @@ class SeriesUtils {
   }
 
   static Future<num> getLatestMaxWeight(
-      UsersService usersService, String userId, String exerciseId) async {
+      ExerciseRecordService exerciseRecordService, String userId, String exerciseId) async {
     num latestMaxWeight = 0;
-    await usersService
+    await exerciseRecordService
         .getExerciseRecords(userId: userId, exerciseId: exerciseId)
         .first
         .then((records) {
@@ -295,34 +295,34 @@ class SeriesUtils {
     return latestMaxWeight;
   }
 
-static void updateWeightFromIntensity(
-  TextEditingController weightController,
-  TextEditingController intensityController,
-  String exerciseType,
-  num latestMaxWeight, // Utilizza il parametro latestMaxWeight corretto
-  ValueNotifier<double> weightNotifier,
-) {
-  final intensity = double.tryParse(intensityController.text) ?? 0;
-  final calculatedWeight = calculateWeightFromIntensity(latestMaxWeight.toDouble(), intensity);
-  final roundedWeight = roundWeight(calculatedWeight, exerciseType);
-  weightController.text = roundedWeight.toStringAsFixed(2);
-  weightNotifier.value = roundedWeight;
-}
-
-void updateIntensityFromWeight(
-  TextEditingController weightController,
-  TextEditingController intensityController,
-  num latestMaxWeight, // Utilizza il parametro latestMaxWeight
-) {
-  final weight = double.tryParse(weightController.text) ?? 0;
-  if (weight > 0 && latestMaxWeight > 0) {
-    final calculatedIntensity = calculateIntensityFromWeight(weight, latestMaxWeight);
-    intensityController.text = calculatedIntensity.toStringAsFixed(2);
-    debugPrint('weight: $weight calculatedIntensity: $calculatedIntensity  intensityController.text: ${intensityController.text}'  );
-  } else {
-    intensityController.clear();
+  static void updateWeightFromIntensity(
+    TextEditingController weightController,
+    TextEditingController intensityController,
+    String exerciseType,
+    num latestMaxWeight, // Utilizza il parametro latestMaxWeight corretto
+    ValueNotifier<double> weightNotifier,
+  ) {
+    final intensity = double.tryParse(intensityController.text) ?? 0;
+    final calculatedWeight = calculateWeightFromIntensity(latestMaxWeight.toDouble(), intensity);
+    final roundedWeight = roundWeight(calculatedWeight, exerciseType);
+    weightController.text = roundedWeight.toStringAsFixed(2);
+    weightNotifier.value = roundedWeight;
   }
-}
+
+  static void updateIntensityFromWeight(
+    TextEditingController weightController,
+    TextEditingController intensityController,
+    num latestMaxWeight, // Utilizza il parametro latestMaxWeight
+  ) {
+    final weight = double.tryParse(weightController.text) ?? 0;
+    if (weight > 0 && latestMaxWeight > 0) {
+      final calculatedIntensity = calculateIntensityFromWeight(weight, latestMaxWeight);
+      intensityController.text = calculatedIntensity.toStringAsFixed(2);
+      debugPrint('weight: $weight calculatedIntensity: $calculatedIntensity  intensityController.text: ${intensityController.text}'  );
+    } else {
+      intensityController.clear();
+    }
+  }
 
   static void updateWeightFromRPE(
       TextEditingController repsController,
@@ -369,14 +369,14 @@ void updateIntensityFromWeight(
   }
 
   static Future<void> updateSeriesWeights(TrainingProgram program, int weekIndex,
-      int workoutIndex, int exerciseIndex, UsersService usersService) async {
+      int workoutIndex, int exerciseIndex, ExerciseRecordService exerciseRecordService) async {
     final exercise = program
         .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     final exerciseId = exercise.exerciseId;
     final athleteId = program.athleteId;
     if (exerciseId != null) {
       final latestMaxWeight =
-          await getLatestMaxWeight(usersService, athleteId, exerciseId);
+          await getLatestMaxWeight(exerciseRecordService, athleteId, exerciseId);
       if (latestMaxWeight != null) {
         for (final series in exercise.series) {
           _calculateWeight(series, exercise.type, latestMaxWeight);

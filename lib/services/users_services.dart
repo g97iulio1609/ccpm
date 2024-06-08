@@ -1,5 +1,6 @@
 import 'dart:async';
-import 'package:alphanessone/models/exercise_record.dart';
+import 'package:alphanessone/services/exercise_record_services.dart';
+import 'package:alphanessone/services/measurements_services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -7,17 +8,7 @@ import 'package:rxdart/rxdart.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import '../models/user_model.dart';
-// Import del nuovo servizio
-import 'exercise_record_services.dart'; // Import del nuovo servizio
-
-// Providers
-final userNameProvider = StateProvider<String>((ref) => '');
-final userRoleProvider = StateProvider<String>((ref) => '');
-
-// Service Provider
-final usersServiceProvider = Provider<UsersService>((ref) {
-  return UsersService(ref, FirebaseFirestore.instance, FirebaseAuth.instance);
-});
+import '../providers/providers.dart';
 
 class UsersService {
   final Ref _ref;
@@ -27,10 +18,12 @@ class UsersService {
   final _usersStreamController = BehaviorSubject<List<UserModel>>();
   StreamSubscription? _userChangesSubscription;
   String _searchQuery = '';
+  final MeasurementsService _measurementsService;
   final ExerciseRecordService _exerciseRecordService;
 
   UsersService(this._ref, this._firestore, this._auth)
-      : _exerciseRecordService = ExerciseRecordService(_firestore) {
+      : _measurementsService = _ref.read(measurementsServiceProvider),
+        _exerciseRecordService = _ref.read(exerciseRecordServiceProvider) {
     _initializeUserCreationAuth();
     _auth.authStateChanges().listen(_handleAuthStateChanges);
   }
@@ -138,70 +131,6 @@ class UsersService {
     return userDoc.exists ? UserModel.fromFirestore(userDoc) : null;
   }
 
-  // Delegating exercise record related methods to ExerciseRecordService
-  Stream<List<ExerciseRecord>> getExerciseRecords({
-    required String userId,
-    required String exerciseId,
-  }) {
-    return _exerciseRecordService.getExerciseRecords(userId: userId, exerciseId: exerciseId);
-  }
-
-  Future<void> addExerciseRecord({
-    required String userId,
-    required String exerciseId,
-    required String exerciseName,
-    required num maxWeight,
-    required int repetitions,
-    required String date,
-  }) async {
-    await _exerciseRecordService.addExerciseRecord(
-      userId: userId,
-      exerciseId: exerciseId,
-      exerciseName: exerciseName,
-      maxWeight: maxWeight,
-      repetitions: repetitions,
-      date: date,
-    );
-  }
-
-  Future<void> updateExerciseRecord({
-    required String userId,
-    required String exerciseId,
-    required String recordId,
-    required num maxWeight,
-    required int repetitions,
-  }) async {
-    await _exerciseRecordService.updateExerciseRecord(
-      userId: userId,
-      exerciseId: exerciseId,
-      recordId: recordId,
-      maxWeight: maxWeight,
-      repetitions: repetitions,
-    );
-  }
-
-  Future<ExerciseRecord?> getLatestExerciseRecord({
-    required String userId,
-    required String exerciseId,
-  }) async {
-    return await _exerciseRecordService.getLatestExerciseRecord(
-      userId: userId,
-      exerciseId: exerciseId,
-    );
-  }
-
-  Future<void> deleteExerciseRecord({
-    required String userId,
-    required String exerciseId,
-    required String recordId,
-  }) async {
-    await _exerciseRecordService.deleteExerciseRecord(
-      userId: userId,
-      exerciseId: exerciseId,
-      recordId: recordId,
-    );
-  }
-
   Future<void> deleteUser(String userId) async {
     try {
       // Elimina il documento dell'utente nella collection 'users'
@@ -248,21 +177,22 @@ class UsersService {
     }
   }
 
-  Future<Map<String, dynamic>?> getTDEEData(String userId) async {
-    final userDoc = await _firestore.collection('users').doc(userId).get();
-    if (userDoc.exists) {
-      final userData = userDoc.data() as Map<String, dynamic>;
-      return {
-        'birthDate': userData['birthDate'],
-        'height': userData['height'],
-        'weight': userData['weight'],
-        'gender': userData['gender'],
-        'activityLevel': userData['activityLevel'],
-        'tdee': userData['tdee'],
-      };
-    }
-    return null;
+Future<Map<String, dynamic>?> getTDEEData(String userId) async {
+  final userDoc = await _firestore.collection('users').doc(userId).get();
+  if (userDoc.exists) {
+    final userData = userDoc.data() as Map<String, dynamic>;
+    return {
+      'birthDate': userData['birthDate'],
+      'height': userData['height'],
+      'weight': userData['weight'],
+      'gender': userData['gender'],
+      'activityLevel': userData['activityLevel'],
+      'tdee': userData['tdee'],
+    };
   }
+  return null;
+}
+
 
   Future<void> updateTDEEData(String userId, Map<String, dynamic> tdeeData) async {
     await _firestore.collection('users').doc(userId).update(tdeeData);
@@ -294,4 +224,7 @@ class UsersService {
     _ref.read(userNameProvider.notifier).state = '';
     _ref.read(userRoleProvider.notifier).state = '';
   }
+
+  // Access methods of ExerciseRecordService directly when needed
+  ExerciseRecordService get exerciseRecordService => _exerciseRecordService;
 }

@@ -23,7 +23,7 @@ import 'package:go_router/go_router.dart';
 import 'trainingBuilder/volume_dashboard.dart';
 import 'user_profile.dart';
 import 'users_dashboard.dart';
-import 'package:alphanessone/services/users_services.dart';
+import 'package:alphanessone/providers/providers.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'programs_screen.dart';

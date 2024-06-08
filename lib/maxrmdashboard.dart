@@ -12,6 +12,7 @@ import 'package:rxdart/rxdart.dart';
 import 'exerciseManager/exercise_model.dart';
 import 'exerciseManager/exercises_services.dart';
 import 'package:alphanessone/services/users_services.dart';
+import 'package:alphanessone/services/exercise_record_services.dart';
 
 // Providers
 final authProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
@@ -21,6 +22,9 @@ final exercisesStreamProvider = StreamProvider<List<ExerciseModel>>((ref) {
 });
 final userServiceProvider = Provider<UsersService>((ref) {
   return UsersService(ref, FirebaseFirestore.instance, FirebaseAuth.instance);
+});
+final exerciseRecordServiceProvider = Provider<ExerciseRecordService>((ref) {
+  return ExerciseRecordService(FirebaseFirestore.instance);
 });
 final usersStreamProvider = StreamProvider<List<UserModel>>((ref) {
   final service = ref.watch(userServiceProvider);
@@ -35,6 +39,7 @@ class MaxRMDashboard extends HookConsumerWidget {
     final exercisesAsyncValue = ref.watch(exercisesStreamProvider);
     final usersAsyncValue = ref.watch(usersStreamProvider);
     final usersService = ref.watch(userServiceProvider);
+    final exerciseRecordService = ref.watch(exerciseRecordServiceProvider);
     final selectedExerciseController = useState<ExerciseModel?>(null);
     final exerciseNameController = useTextEditingController();
     final maxWeightController = useTextEditingController();
@@ -48,7 +53,7 @@ class MaxRMDashboard extends HookConsumerWidget {
       required int repetitions,
     }) async {
       String userId = usersService.getCurrentUserId();
-      await usersService.addExerciseRecord(
+      await exerciseRecordService.addExerciseRecord(
         userId: userId,
         exerciseId: exerciseId,
         exerciseName: exerciseName,
@@ -235,15 +240,14 @@ class MaxRMDashboard extends HookConsumerWidget {
                 ),
               ),
             ),
-            _buildAllExercisesMaxRMs(ref),
+            _buildAllExercisesMaxRMs(ref, usersService, exerciseRecordService),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildAllExercisesMaxRMs(WidgetRef ref) {
-    final usersService = ref.watch(userServiceProvider);
+  Widget _buildAllExercisesMaxRMs(WidgetRef ref, UsersService usersService, ExerciseRecordService exerciseRecordService) {
     final exercisesAsyncValue = ref.watch(exercisesStreamProvider);
     final userId = usersService.getCurrentUserId();
 
@@ -251,7 +255,7 @@ class MaxRMDashboard extends HookConsumerWidget {
       data: (exercises) {
         List<Stream<ExerciseRecord?>> exerciseRecordStreams =
             exercises.map((exercise) {
-          return usersService
+          return exerciseRecordService
               .getExerciseRecords(
                 userId: userId,
                 exerciseId: exercise.id,
@@ -295,6 +299,7 @@ class MaxRMDashboard extends HookConsumerWidget {
                         context,
                         record,
                         exercise,
+                        exerciseRecordService,
                         usersService,
                       ),
                       child: Padding(
@@ -344,6 +349,7 @@ class MaxRMDashboard extends HookConsumerWidget {
                                     context,
                                     record,
                                     exercise,
+                                    exerciseRecordService,
                                     usersService,
                                   ),
                                   color: Theme.of(context)
@@ -356,6 +362,7 @@ class MaxRMDashboard extends HookConsumerWidget {
                                     context,
                                     record,
                                     exercise,
+                                    exerciseRecordService,
                                     usersService,
                                   ),
                                   color: Theme.of(context)
@@ -391,6 +398,7 @@ class MaxRMDashboard extends HookConsumerWidget {
     BuildContext context,
     ExerciseRecord record,
     ExerciseModel exercise,
+    ExerciseRecordService exerciseRecordService,
     UsersService usersService,
   ) {
     TextEditingController maxWeightController =
@@ -460,7 +468,7 @@ class MaxRMDashboard extends HookConsumerWidget {
                           .round();
                   newRepetitions = 1;
                 }
-                usersService.updateExerciseRecord(
+                exerciseRecordService.updateExerciseRecord(
                   userId: usersService.getCurrentUserId(),
                   exerciseId: exercise.id,
                   recordId: record.id,
@@ -486,6 +494,7 @@ class MaxRMDashboard extends HookConsumerWidget {
     BuildContext context,
     ExerciseRecord record,
     ExerciseModel exercise,
+    ExerciseRecordService exerciseRecordService,
     UsersService usersService,
   ) {
     showDialog(
@@ -517,7 +526,7 @@ class MaxRMDashboard extends HookConsumerWidget {
             ),
             TextButton(
               onPressed: () {
-                usersService.deleteExerciseRecord(
+                exerciseRecordService.deleteExerciseRecord(
                   userId: usersService.getCurrentUserId(),
                   exerciseId: exercise.id,
                   recordId: record.id,

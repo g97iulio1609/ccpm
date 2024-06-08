@@ -8,7 +8,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:alphanessone/services/users_services.dart';
+import 'package:alphanessone/providers/providers.dart';
 import 'package:go_router/go_router.dart';
 
 class UserProfile extends ConsumerStatefulWidget {
@@ -28,6 +28,7 @@ class UserProfileState extends ConsumerState<UserProfile> {
   final _debouncer = Debouncer(milliseconds: 1000);
   String? _selectedGender;
   String? _password; // Campo per conservare la password
+  DateTime? _birthdate;
 
   @override
   void initState() {
@@ -46,12 +47,27 @@ class UserProfileState extends ConsumerState<UserProfile> {
     });
     // Normalizza il valore di gender per gestire maiuscole/minuscole
     _selectedGender = userProfileData?['gender']?.toString().toLowerCase();
+    
+    // Imposta la data di nascita
+    if (userProfileData?['birthdate'] != null) {
+      _birthdate = (userProfileData!['birthdate'] as Timestamp).toDate();
+    }
+
     if (mounted) {
       setState(() {});
     }
   }
 
-  Future<void> saveProfile(String field, String value) async {
+  int _calculateAge(DateTime birthdate) {
+    DateTime today = DateTime.now();
+    int age = today.year - birthdate.year;
+    if (today.month < birthdate.month || (today.month == birthdate.month && today.day < birthdate.day)) {
+      age--;
+    }
+    return age;
+  }
+
+  Future<void> saveProfile(String field, dynamic value) async {
     String uid = widget.userId ?? ref.read(usersServiceProvider).getCurrentUserId();
     try {
       await ref.read(usersServiceProvider).updateUser(uid, {field: value});
@@ -230,8 +246,9 @@ class UserProfileState extends ConsumerState<UserProfile> {
               ),
             ),
             const SizedBox(height: 40),
+            buildBirthdayField(),
             ..._controllers.keys
-                .where((field) => field != 'photoURL' && field != 'gender')
+                .where((field) => field != 'photoURL' && field != 'gender' && field != 'birthdate')
                 .map((field) => buildEditableField(field, _controllers[field]!)),
             const SizedBox(height: 24),
             buildGenderDropdown(),
@@ -289,6 +306,54 @@ class UserProfileState extends ConsumerState<UserProfile> {
         onChanged: (value) {
           _debouncer.run(() => saveProfile(field, value));
         },
+      ),
+    );
+  }
+
+  Widget buildBirthdayField() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: InkWell(
+        onTap: () async {
+          DateTime? pickedDate = await showDatePicker(
+            context: context,
+            initialDate: _birthdate ?? DateTime.now(),
+            firstDate: DateTime(1900),
+            lastDate: DateTime.now(),
+          );
+          if (pickedDate != null && pickedDate != _birthdate) {
+            setState(() {
+              _birthdate = pickedDate;
+              saveProfile('birthdate', Timestamp.fromDate(pickedDate));
+            });
+          }
+        },
+        child: InputDecorator(
+          decoration: InputDecoration(
+            labelText: 'Età',
+            labelStyle: const TextStyle(
+              color: Colors.white70,
+              fontSize: 18,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Colors.white),
+            ),
+            filled: true,
+            fillColor: Colors.white.withOpacity(0.1),
+          ),
+          child: Text(
+            _birthdate != null ? '${_calculateAge(_birthdate!)} anni' : 'Seleziona la data di nascita',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -1,7 +1,6 @@
+import 'package:alphanessone/providers/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:alphanessone/services/users_services.dart';
-import 'package:intl/intl.dart';
 
 class TDEEScreen extends ConsumerStatefulWidget {
   final String userId;
@@ -43,31 +42,32 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
     super.dispose();
   }
 
-  void _loadTDEEData() async {
-    final usersService = ref.read(usersServiceProvider);
-    final tdeeData = await usersService.getTDEEData(widget.userId);
+ void _loadTDEEData() async {
+  final usersService = ref.read(usersServiceProvider);
+  final tdeeData = await usersService.getTDEEData(widget.userId);
 
-    if (tdeeData != null) {
-      setState(() {
-        _birthDate = DateTime.parse(tdeeData['birthDate']);
-        _height = tdeeData['height'];
-        _weight = tdeeData['weight'];
-        _gender = tdeeData['gender'];
-        _activityLevel = tdeeData['activityLevel'];
-        _tdee = tdeeData['tdee'];
+  if (tdeeData != null) {
+    setState(() {
+      _birthDate = DateTime.parse(tdeeData['birthDate']);
+      _height = tdeeData['height'] is int ? tdeeData['height'] : (tdeeData['height'] as num).toInt();
+      _weight = tdeeData['weight'] is int ? tdeeData['weight'] : (tdeeData['weight'] as num).toInt();
+      _gender = tdeeData['gender'];
+      _activityLevel = tdeeData['activityLevel'] is double ? tdeeData['activityLevel'] : (tdeeData['activityLevel'] as num).toDouble();
+      _tdee = tdeeData['tdee'] is int ? tdeeData['tdee'] : (tdeeData['tdee'] as num).toInt();
 
-        _ageController.text = _calculateAge(_birthDate!).toString();
-        _heightController.text = _height.toString();
-        _weightController.text = _weight.toString();
-      });
-    }
+      _ageController.text = _calculateAge(_birthDate!).toString();
+      _heightController.text = _height.toString();
+      _weightController.text = _weight.toString();
+    });
   }
+}
+
 
   void _calculateTDEE() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
-      final age = DateTime.now().year - _birthDate!.year;
+      final age = _calculateAge(_birthDate!);
 
       double bmr;
       if (_gender == 'male') {
@@ -80,7 +80,7 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
 
       final usersService = ref.read(usersServiceProvider);
       await usersService.updateTDEEData(widget.userId, {
-        'birthDate': _birthDate.toString(),
+        'birthDate': _birthDate!.toIso8601String(),
         'height': _height,
         'weight': _weight,
         'gender': _gender,

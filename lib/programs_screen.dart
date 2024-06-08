@@ -1,8 +1,8 @@
+import 'package:alphanessone/providers/providers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:alphanessone/services/users_services.dart';
 
 class ProgramsScreen extends HookConsumerWidget {
   const ProgramsScreen({super.key});

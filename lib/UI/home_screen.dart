@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'drawer.dart';
 import 'appBar_custom.dart';
-import 'package:alphanessone/services/users_services.dart';
+import 'package:alphanessone/providers/providers.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key, required this.child});
