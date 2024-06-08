@@ -1,0 +1,56 @@
+name: Build iOS App
+
+on:
+  push:
+    branches:
+      - main_future
+  pull_request:
+    branches:
+      - main_future
+  workflow_dispatch:
+
+jobs:
+  build_ios:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Clean Flutter project
+        run: flutter clean
+
+      - name: Upgrade Flutter packages
+        run: flutter pub upgrade
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Update CocoaPods repository
+        run: |
+          cd ios
+          pod repo update
+
+      - name: Install CocoaPods dependencies
+        run: |
+          cd ios
+          pod install
+
+      - name: Build iOS
+        run: flutter build ipa --no-codesign
+
+      - name: Verify IPA path
+        run: ls -l build/ios/ipa/
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v3
+        with:
+          name: unsigned-ipa
+          path: build/ios/ipa/*.ipa
