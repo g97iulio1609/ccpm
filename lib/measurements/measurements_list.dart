@@ -1,17 +1,17 @@
 import 'package:alphanessone/models/measurement_model.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:alphanessone/services/users_services.dart';
+import 'package:alphanessone/services/measurements_services.dart';
 
 class MeasurementsList extends StatelessWidget {
-  final UsersService usersService;
+  final MeasurementsService measurementsService;
   final String userId;
   final Function(MeasurementModel) onEdit;
   final Function(MeasurementModel) onDelete;
 
   const MeasurementsList({
     super.key,
-    required this.usersService,
+    required this.measurementsService,
     required this.userId,
     required this.onEdit,
     required this.onDelete,
@@ -20,7 +20,7 @@ class MeasurementsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<MeasurementModel>>(
-      stream: usersService.getMeasurements(userId: userId),
+      stream: measurementsService.getMeasurements(userId: userId),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           final measurements = snapshot.data!;
@@ -49,16 +49,11 @@ class MeasurementsList extends StatelessWidget {
           Text('Peso: ${measurement.weight.toStringAsFixed(2)} kg'),
           Text('Altezza: ${measurement.height.toStringAsFixed(2)} cm'),
           Text('BMI: ${measurement.bmi.toStringAsFixed(2)}'),
-          Text(
-              'Massa Grassa: ${measurement.bodyFatPercentage.toStringAsFixed(2)}%'),
-          Text(
-              'Vita: ${measurement.waistCircumference.toStringAsFixed(2)} cm'),
-          Text(
-              'Fianchi: ${measurement.hipCircumference.toStringAsFixed(2)} cm'),
-          Text(
-              'Torace: ${measurement.chestCircumference.toStringAsFixed(2)} cm'),
-          Text(
-              'Bicipiti: ${measurement.bicepsCircumference.toStringAsFixed(2)} cm'),
+          Text('Massa Grassa: ${measurement.bodyFatPercentage.toStringAsFixed(2)}%'),
+          Text('Vita: ${measurement.waistCircumference.toStringAsFixed(2)} cm'),
+          Text('Fianchi: ${measurement.hipCircumference.toStringAsFixed(2)} cm'),
+          Text('Torace: ${measurement.chestCircumference.toStringAsFixed(2)} cm'),
+          Text('Bicipiti: ${measurement.bicepsCircumference.toStringAsFixed(2)} cm'),
         ],
       ),
       trailing: Row(

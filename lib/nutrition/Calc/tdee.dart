@@ -98,9 +98,6 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Fabbisogno Calorico'),
-      ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
