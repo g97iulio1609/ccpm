@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/users_services.dart';
+import '../services/tdee_services.dart';
 import '../services/exercise_record_services.dart';
 import '../services/measurements_services.dart';
 
@@ -25,6 +26,10 @@ final usersServiceProvider = Provider<UsersService>((ref) {
     ref.watch(firebaseFirestoreProvider),
     ref.watch(firebaseAuthProvider),
   );
+});
+
+final tdeeServiceProvider = Provider<TDEEService>((ref) {
+  return TDEEService(ref.watch(firebaseFirestoreProvider));
 });
 
 final exerciseRecordServiceProvider = Provider<ExerciseRecordService>((ref) {

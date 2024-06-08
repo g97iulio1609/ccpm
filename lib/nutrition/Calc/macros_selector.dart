@@ -1,4 +1,5 @@
 import 'package:alphanessone/providers/providers.dart';
+import 'package:alphanessone/services/tdee_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,10 +31,10 @@ class MacrosNotifier extends StateNotifier<Map<String, double>> {
   }
 
   Future<void> _saveMacrosToFirebase(Map<String, double> macros) async {
-    final usersService = ref.read(usersServiceProvider);
+    final tdeeService = ref.read(tdeeServiceProvider);
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId != null) {
-      await usersService.updateMacros(userId, macros);
+      await tdeeService.updateMacros(userId, macros);
     }
   }
 }
@@ -95,8 +96,8 @@ class _MacrosSelectorState extends ConsumerState<MacrosSelector> {
   }
 
   Future<void> _loadUserData() async {
-    final usersService = ref.read(usersServiceProvider);
-    final tdeeData = await usersService.getTDEEData(widget.userId);
+    final tdeeService = ref.read(tdeeServiceProvider);
+    final tdeeData = await tdeeService.getTDEEData(widget.userId);
 
     if (tdeeData != null) {
       setState(() {
