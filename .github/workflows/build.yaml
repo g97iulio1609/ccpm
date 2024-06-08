@@ -44,10 +44,29 @@ jobs:
           pod install
 
       - name: Build iOS
-        run: flutter build ipa --no-codesign
+        run: flutter build ios --release --no-codesign
+
+      - name: Create IPA
+        run: |
+          mkdir -p build/ios/ipa
+          xcodebuild -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -sdk iphoneos \
+            -configuration Release \
+            -archivePath build/ios/archive/MyApp.xcarchive \
+            archive
+          xcodebuild -exportArchive \
+            -archivePath build/ios/archive/MyApp.xcarchive \
+            -exportPath build/ios/ipa \
+            -exportOptionsPlist <(echo '{ "method": "development", "signingStyle": "manual", "teamID": "", "compileBitcode": false, "destination": "export" }') \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
 
       - name: Verify IPA path
-        run: ls -l build/ios/ipa/
+        run: |
+          ls -l build/ios/ipa
+          find build/ios/ipa -name "*.ipa"
 
       - name: Upload IPA
         uses: actions/upload-artifact@v3
