@@ -39,8 +39,10 @@ jobs:
           echo "platform :ios, '16.0'" > Podfile
           echo "use_frameworks!" >> Podfile
           echo "use_modular_headers!" >> Podfile
+          echo "flutter_application_path = '../'" >> Podfile
+          echo "load File.join(flutter_application_path, '.ios', 'Flutter', 'podhelper.rb')" >> Podfile
           echo "target 'Runner' do" >> Podfile
-          echo "  install_all_flutter_pods(File.dirname(File.realpath(__FILE__)))" >> Podfile
+          echo "  install_all_flutter_pods(flutter_application_path)" >> Podfile
           echo "end" >> Podfile
           echo "post_install do |installer|" >> Podfile
           echo "  installer.pods_project.targets.each do |target|" >> Podfile
@@ -49,6 +51,7 @@ jobs:
           echo "      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'" >> Podfile
           echo "    end" >> Podfile
           echo "  end" >> Podfile
+          echo "  flutter_post_install(installer)" >> Podfile
           echo "end" >> Podfile
 
       - name: Update CocoaPods repository
