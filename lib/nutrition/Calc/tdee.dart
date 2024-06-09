@@ -51,9 +51,13 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
 
     if (tdeeData != null) {
       setState(() {
-        _birthdate = tdeeData['birthdate'] != null
-            ? (tdeeData['birthdate'] as Timestamp).toDate()
-            : null;
+        // Verifica se il campo birthDate esiste nei dati caricati
+        if (tdeeData.containsKey('birthDate') && tdeeData['birthDate'] != null) {
+          _birthdate = DateTime.parse(tdeeData['birthDate']);
+        } else {
+          _birthdate = null;
+        }
+
         _height = tdeeData['height'] != null
             ? (tdeeData['height'] is int
                 ? tdeeData['height']
@@ -113,7 +117,7 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
 
       final tdeeService = ref.read(tdeeServiceProvider);
       await tdeeService.updateTDEEData(widget.userId, {
-        'birthdate': Timestamp.fromDate(_birthdate!),
+        'birthDate': _birthdate!.toIso8601String(),
         'height': _height,
         'weight': _weight,
         'gender': _gender,
@@ -184,6 +188,7 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
                   children: [
                     Expanded(
                       child: TextFormField(
+                        key: UniqueKey(), // Aggiungi una chiave unica qui
                         decoration: InputDecoration(
                           labelText: "Height",
                           border: OutlineInputBorder(
@@ -204,6 +209,7 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
                     const SizedBox(width: 16),
                     Expanded(
                       child: DropdownButtonFormField(
+                        key: UniqueKey(), // Aggiungi una chiave unica qui
                         decoration: InputDecoration(
                           labelText: 'Units',
                           border: OutlineInputBorder(
@@ -227,6 +233,7 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
                   children: [
                     Expanded(
                       child: TextFormField(
+                        key: UniqueKey(), // Aggiungi una chiave unica qui
                         decoration: InputDecoration(
                           labelText: "Weight",
                           border: OutlineInputBorder(
@@ -247,6 +254,7 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
                     const SizedBox(width: 16),
                     Expanded(
                       child: DropdownButtonFormField(
+                        key: UniqueKey(), // Aggiungi una chiave unica qui
                         decoration: InputDecoration(
                           labelText: 'Units',
                           border: OutlineInputBorder(
