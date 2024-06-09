@@ -99,20 +99,17 @@ class _MacrosSelectorState extends ConsumerState<MacrosSelector> {
     final tdeeService = ref.read(tdeeServiceProvider);
     final tdeeData = await tdeeService.getTDEEData(widget.userId);
 
+
     if (tdeeData != null) {
       setState(() {
         _tdee = (tdeeData['tdee'] ?? 0.0).toDouble();
         _weight = (tdeeData['weight'] ?? 0.0).toDouble();
       });
 
-      final existingMacros = {
-        'carbs': (tdeeData['carbs'] ?? 0.0).toDouble(),
-        'protein': (tdeeData['protein'] ?? 0.0).toDouble(),
-        'fat': (tdeeData['fat'] ?? 0.0).toDouble(),
-      };
+      final userMacros = await tdeeService.getUserMacros(widget.userId);
 
-      // Convert the existingMacros values to double explicitly
-      ref.read(macrosProvider.notifier).state = existingMacros.map((key, value) => MapEntry(key, value.toDouble()));
+      // Convert the userMacros values to double explicitly
+      ref.read(macrosProvider.notifier).state = userMacros;
 
       _updateInputFields();
     }
@@ -122,9 +119,9 @@ class _MacrosSelectorState extends ConsumerState<MacrosSelector> {
     final macros = ref.read(macrosProvider);
     for (final macro in macros.keys) {
       final grams = macros[macro]!;
-      final gramsPerKg = grams / _weight;
+      final gramsPerKg = _weight > 0 ? grams / _weight : 0.0;
       final calories = MacrosCalculator.calculateCaloriesFromGrams(macro, grams);
-      final percentage = calories / _tdee * 100;
+      final percentage = _tdee > 0 ? (calories / _tdee * 100) : 0.0;
 
       _gramsControllers[macro]?.text = grams.toStringAsFixed(2);
       _gramsPerKgControllers[macro]?.text = gramsPerKg.toStringAsFixed(2);
