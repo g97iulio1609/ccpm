@@ -18,14 +18,24 @@ class _TrainingViewerState extends ConsumerState<TrainingViewer> {
   @override
   void initState() {
     super.initState();
-    fetchTrainingWeeks();
+    // Delay the fetch call to after the build phase
+    Future.microtask(() => fetchTrainingWeeks());
   }
 
   Future<void> fetchTrainingWeeks() async {
     ref.read(trainingLoadingProvider.notifier).state = true;
-    final weeks = await ref.read(trainingServiceProvider).fetchTrainingWeeks(widget.programId);
-    ref.read(trainingWeeksProvider.notifier).state = weeks;
-    ref.read(trainingLoadingProvider.notifier).state = false;
+    try {
+      final weeks = await ref.read(trainingServiceProvider).fetchTrainingWeeks(widget.programId);
+      if (mounted) {
+        ref.read(trainingWeeksProvider.notifier).state = weeks;
+      }
+    } catch (e) {
+      // Handle error
+    } finally {
+      if (mounted) {
+        ref.read(trainingLoadingProvider.notifier).state = false;
+      }
+    }
   }
 
   @override

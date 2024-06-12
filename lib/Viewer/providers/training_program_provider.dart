@@ -3,4 +3,4 @@ import '../services/training_program_services.dart';
 
 final trainingServiceProvider = Provider<TrainingService>((ref) => TrainingService());
 final trainingWeeksProvider = StateProvider<List<Map<String, dynamic>>>((ref) => []);
-final trainingLoadingProvider = StateProvider<bool>((ref) => true);
+final trainingLoadingProvider = StateProvider<bool>((ref) => false);

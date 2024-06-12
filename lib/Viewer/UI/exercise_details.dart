@@ -35,6 +35,7 @@ class ExerciseDetails extends StatefulWidget {
 
 class _ExerciseDetailsState extends State<ExerciseDetails> {
   int currentSeriesIndex = 0;
+  int currentSuperSetExerciseIndex = 0;
   final Map<String, Map<String, TextEditingController>> _repsControllers = {};
   final Map<String, Map<String, TextEditingController>> _weightControllers = {};
   int _minutes = 1;
@@ -63,7 +64,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
 
   void _setCurrentSeriesIndex() {
     final currentExercise =
-        widget.superSetExercises[widget.superSetExerciseIndex];
+        widget.superSetExercises[currentSuperSetExerciseIndex];
     final currentSeriesList = currentExercise['series'];
     currentSeriesIndex = widget.startIndex < currentSeriesList.length
         ? widget.startIndex
@@ -104,7 +105,8 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
         totalSeries: widget.seriesList.length,
         restTime: _getRestTimeInSeconds(),
         isEmomMode: _isEmomMode,
-        superSetExerciseIndex: widget.superSetExerciseIndex,
+        superSetExerciseIndex: currentSuperSetExerciseIndex,
+        superSetExercises: widget.superSetExercises, // Aggiungi questo parametro
       ),
     );
 
@@ -117,6 +119,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
       } else {
         setState(() {
           currentSeriesIndex = nextIndex;
+          currentSuperSetExerciseIndex = superSetIndex;
         });
       }
 
@@ -149,7 +152,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
     final isDarkMode = theme.brightness == Brightness.dark;
     final colorScheme = theme.colorScheme;
     final currentExercise =
-        widget.superSetExercises[widget.superSetExerciseIndex];
+        widget.superSetExercises[currentSuperSetExerciseIndex];
     final currentSeriesList = currentExercise['series'];
     final currentSeries = currentSeriesIndex < currentSeriesList.length
         ? currentSeriesList[currentSeriesIndex]
@@ -178,10 +181,10 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
                     const SizedBox(height: 24),
                   ],
                   const SizedBox(height: 32),
-                  if (widget.superSetExerciseIndex <
+                  if (currentSuperSetExerciseIndex <
                       widget.superSetExercises.length - 1)
                     Text(
-                      'Next: ${widget.superSetExercises[widget.superSetExerciseIndex + 1]['name']}',
+                      'Next: ${widget.superSetExercises[currentSuperSetExerciseIndex + 1]['name']}',
                       style: theme.textTheme.titleLarge?.copyWith(
                         color: isDarkMode
                             ? colorScheme.onBackground
@@ -234,7 +237,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
         children: [
           Text(
             widget.superSetExercises.length > 1
-                ? 'Super Set ${widget.superSetExerciseIndex + 1}'
+                ? 'Super Set ${currentSeriesIndex + 1}'
                 : 'Set ${currentSeriesIndex + 1} / ${widget.seriesList.length}',
             style: theme.textTheme.headlineSmall?.copyWith(
               color: isDarkMode ? colorScheme.onSurface : colorScheme.onPrimary,
@@ -244,7 +247,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
           ),
           ...exerciseNames.map((exerciseName) {
             final isCurrentExercise = exerciseNames.indexOf(exerciseName) ==
-                widget.superSetExerciseIndex;
+                currentSuperSetExerciseIndex;
             return Text(
               exerciseName,
               style: theme.textTheme.titleLarge?.copyWith(
@@ -519,16 +522,6 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
     Map<String, dynamic> currentExercise,
     Map<String, dynamic> currentSeries,
   ) {
-    final nextExerciseIndex =
-        (widget.superSetExerciseIndex + 1) % widget.superSetExercises.length;
-    final nextExercise = widget.superSetExercises[nextExerciseIndex];
-    final nextSeriesList = nextExercise['series'];
-    final nextSeriesIndex = nextExerciseIndex == 0
-        ? (currentSeriesIndex + 1) % nextSeriesList.length
-        : currentSeriesIndex;
-    final nextSeriesWeight =
-        nextSeriesList[nextSeriesIndex]['weight'].toDouble();
-
     return ElevatedButton(
       onPressed: () async {
         await _updateSeriesData(
@@ -539,7 +532,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
                   .text),
           _weightControllers[currentExercise['id']]![currentSeries['id']]!.text,
         );
-        _navigateToTimer();
+        _moveToNextExercise();
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: primaryColor,
@@ -552,13 +545,28 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
         elevation: 0,
       ),
       child: Text(
-        'NEXT (${nextSeriesWeight.toStringAsFixed(2)} kg)',
+        'NEXT',
         style: theme.textTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.bold,
           fontSize: 18,
         ),
       ),
     );
+  }
+
+  void _moveToNextExercise() {
+    setState(() {
+      if (currentSuperSetExerciseIndex < widget.superSetExercises.length - 1) {
+        currentSuperSetExerciseIndex++;
+      } else {
+        currentSuperSetExerciseIndex = 0;
+        currentSeriesIndex++;
+      }
+    });
+
+    if (currentSuperSetExerciseIndex == 0) {
+      _navigateToTimer();
+    }
   }
 
   @override

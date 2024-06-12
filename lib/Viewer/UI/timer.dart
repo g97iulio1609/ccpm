@@ -51,46 +51,49 @@ class _TimerPageState extends ConsumerState<TimerPage>
     });
   }
 
-  void _handleNextSeries() {
-    _timer.cancel();
-    final timerModel = ref.read(timerModelProvider)!.copyWith(
-          currentSeriesIndex:
-              ref.read(timerModelProvider)!.currentSeriesIndex + 1,
-        );
+void _handleNextSeries() {
+  _timer.cancel();
+  final timerModel = ref.read(timerModelProvider)!;
+  final newSuperSetExerciseIndex = (timerModel.superSetExerciseIndex + 1) % timerModel.superSetExercises.length;
 
-    if (timerModel.currentSeriesIndex < timerModel.totalSeries) {
-      ref.read(timerModelProvider.notifier).state = timerModel;
-      ref.read(remainingSecondsProvider.notifier).state = timerModel.restTime;
-      _startTimer();
-    } else {
-      ref
-          .read(timerServiceProvider)
-          .showNotification('Rest Time Completed', 'Your rest time has ended.');
-      final result = {
-        'startIndex': timerModel.currentSeriesIndex,
-        'superSetExerciseIndex': timerModel.superSetExerciseIndex,
-        'seriesList': timerModel.seriesList,
-      };
-      context.pop(result);
-    }
+  final nextSeriesIndex = newSuperSetExerciseIndex == 0
+      ? timerModel.currentSeriesIndex + 1
+      : timerModel.currentSeriesIndex;
+
+  if (nextSeriesIndex < timerModel.totalSeries) {
+    final result = {
+      'startIndex': nextSeriesIndex,
+      'superSetExerciseIndex': newSuperSetExerciseIndex,
+    };
+    context.pop(result);
+  } else {
+    context.go(
+      '/programs_screen/user_programs/${timerModel.userId}/training_viewer/${timerModel.programId}/week_details/${timerModel.weekId}/workout_details/${timerModel.workoutId}',
+    );
   }
+}
 
-  void _skipRestTime() {
-    _timer.cancel();
-    final timerModel = ref.read(timerModelProvider)!;
+void _skipRestTime() {
+  _timer.cancel();
+  final timerModel = ref.read(timerModelProvider)!;
+  final newSuperSetExerciseIndex = (timerModel.superSetExerciseIndex + 1) % timerModel.superSetExercises.length;
 
-    if (timerModel.currentSeriesIndex < timerModel.totalSeries - 1) {
-      final result = {
-        'startIndex': timerModel.currentSeriesIndex + 1,
-        'superSetExerciseIndex': timerModel.superSetExerciseIndex,
-      };
-      context.pop(result);
-    } else {
-      context.go(
-        '/programs_screen/user_programs/${timerModel.userId}/training_viewer/${timerModel.programId}/week_details/${timerModel.weekId}/workout_details/${timerModel.workoutId}',
-      );
-    }
+  final nextSeriesIndex = newSuperSetExerciseIndex == 0
+      ? timerModel.currentSeriesIndex + 1
+      : timerModel.currentSeriesIndex;
+
+  if (nextSeriesIndex < timerModel.totalSeries) {
+    final result = {
+      'startIndex': nextSeriesIndex,
+      'superSetExerciseIndex': newSuperSetExerciseIndex,
+    };
+    context.pop(result);
+  } else {
+    context.go(
+      '/programs_screen/user_programs/${timerModel.userId}/training_viewer/${timerModel.programId}/week_details/${timerModel.weekId}/workout_details/${timerModel.workoutId}',
+    );
   }
+}
 
   @override
   void dispose() {

@@ -10,6 +10,7 @@ class TimerModel {
   final int restTime;
   final bool isEmomMode;
   final int superSetExerciseIndex;
+  final List<Map<String, dynamic>> superSetExercises; // Aggiungi questo campo
 
   TimerModel({
     required this.programId,
@@ -23,6 +24,7 @@ class TimerModel {
     required this.restTime,
     required this.isEmomMode,
     required this.superSetExerciseIndex,
+    required this.superSetExercises, // Aggiungi questo parametro
   });
 
   TimerModel copyWith({
@@ -37,6 +39,7 @@ class TimerModel {
     int? restTime,
     bool? isEmomMode,
     int? superSetExerciseIndex,
+    List<Map<String, dynamic>>? superSetExercises, // Aggiungi questo parametro
   }) {
     return TimerModel(
       programId: programId ?? this.programId,
@@ -51,6 +54,7 @@ class TimerModel {
       isEmomMode: isEmomMode ?? this.isEmomMode,
       superSetExerciseIndex:
           superSetExerciseIndex ?? this.superSetExerciseIndex,
+      superSetExercises: superSetExercises ?? this.superSetExercises, // Aggiungi questo campo
     );
   }
 }
