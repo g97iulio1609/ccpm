@@ -26,11 +26,11 @@ class _TimerPageState extends ConsumerState<TimerPage>
   @override
   void initState() {
     super.initState();
+    _initializeController(); // Assicurati di inizializzare prima
     Future.microtask(() {
       ref.read(timerModelProvider.notifier).state = widget.timerModel;
       ref.read(remainingSecondsProvider.notifier).state =
           widget.timerModel.restTime;
-      _initializeController();
       _startTimer();
     });
   }
@@ -60,7 +60,6 @@ class _TimerPageState extends ConsumerState<TimerPage>
     final timerModel = ref.read(timerModelProvider);
     if (timerModel != null) {
       final newSuperSetExerciseIndex = (timerModel.superSetExerciseIndex + 1) % timerModel.superSetExercises.length;
-
       final nextSeriesIndex = newSuperSetExerciseIndex == 0
           ? timerModel.currentSeriesIndex + 1
           : timerModel.currentSeriesIndex;
@@ -68,7 +67,7 @@ class _TimerPageState extends ConsumerState<TimerPage>
       if (nextSeriesIndex < timerModel.totalSeries) {
         final result = {
           'startIndex': nextSeriesIndex,
-          'superSetExerciseIndex': newSuperSetExerciseIndex,
+          'superSetExerciseIndex': newSuperSetExerciseIndex == 0 ? 0 : newSuperSetExerciseIndex,
         };
         context.pop(result);
       } else {
@@ -86,7 +85,6 @@ class _TimerPageState extends ConsumerState<TimerPage>
     final timerModel = ref.read(timerModelProvider);
     if (timerModel != null) {
       final newSuperSetExerciseIndex = (timerModel.superSetExerciseIndex + 1) % timerModel.superSetExercises.length;
-
       final nextSeriesIndex = newSuperSetExerciseIndex == 0
           ? timerModel.currentSeriesIndex + 1
           : timerModel.currentSeriesIndex;
@@ -94,7 +92,7 @@ class _TimerPageState extends ConsumerState<TimerPage>
       if (nextSeriesIndex < timerModel.totalSeries) {
         final result = {
           'startIndex': nextSeriesIndex,
-          'superSetExerciseIndex': newSuperSetExerciseIndex,
+          'superSetExerciseIndex': newSuperSetExerciseIndex == 0 ? 0 : newSuperSetExerciseIndex,
         };
         context.pop(result);
       } else {
@@ -167,11 +165,16 @@ class _TimerPageState extends ConsumerState<TimerPage>
     return SizedBox(
       width: 300,
       height: 300,
-      child: CircularProgressIndicator(
-        value: _animation.value,
-        strokeWidth: 12,
-        backgroundColor: Colors.white.withOpacity(0.2),
-        valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+      child: AnimatedBuilder(
+        animation: _animation,
+        builder: (context, child) {
+          return CircularProgressIndicator(
+            value: _animation.value,
+            strokeWidth: 12,
+            backgroundColor: Colors.white.withOpacity(0.2),
+            valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+          );
+        },
       ),
     );
   }
