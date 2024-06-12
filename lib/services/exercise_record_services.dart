@@ -43,23 +43,24 @@ class ExerciseRecordService {
     );
   }
 
-  Future<void> updateExerciseRecord({
-    required String userId,
-    required String exerciseId,
-    required String recordId,
-    required num maxWeight,
-    required int repetitions,
-  }) async {
-    await _addOrUpdateRecord(
-      userId: userId,
-      exerciseId: exerciseId,
-      recordId: recordId,
-      data: {
-        'maxWeight': maxWeight,
-        'repetitions': repetitions,
-      },
-    );
-  }
+Future<void> updateExerciseRecord({
+  required String userId,
+  required String exerciseId,
+  required String recordId,
+  required num maxWeight,
+  required int repetitions,
+}) async {
+  await _addOrUpdateRecord(
+    userId: userId,
+    exerciseId: exerciseId,
+    recordId: recordId,
+    data: {
+      'maxWeight': maxWeight,
+      'repetitions': repetitions,
+    },
+  );
+}
+
 
   Future<ExerciseRecord?> getLatestExerciseRecord({
     required String userId,
