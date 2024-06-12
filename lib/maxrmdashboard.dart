@@ -44,23 +44,23 @@ class MaxRMDashboard extends HookConsumerWidget {
     final repetitionsController = useTextEditingController();
     final dateFormat = DateFormat('yyyy-MM-dd');
 
-Future<void> addRecord({
-  required String exerciseId,
-  required String exerciseName,
-  required num maxWeight,
-  required int repetitions,
-}) async {
-  String userId = usersService.getCurrentUserId();
-  await exerciseRecordService.addExerciseRecord(
-    userId: userId,
-    exerciseId: exerciseId,
-    exerciseName: exerciseName,
-    maxWeight: maxWeight,
-    repetitions: repetitions,
-    date: dateFormat.format(DateTime.now()),
-  );
-}
-
+    Future<void> addRecord({
+      required String exerciseId,
+      required String exerciseName,
+      required num maxWeight,
+      required int repetitions,
+    }) async {
+      String userId = usersService.getCurrentUserId();
+      await exerciseRecordService.addExerciseRecord(
+        userId: userId,
+        exerciseId: exerciseId,
+        exerciseName: exerciseName,
+        maxWeight: maxWeight,
+        repetitions: repetitions,
+        date: dateFormat.format(DateTime.now()),
+      );
+      debugPrint('Record added: $exerciseName, Max Weight: $maxWeight, Repetitions: $repetitions');
+    }
 
     return Scaffold(
       body: Padding(
@@ -87,6 +87,8 @@ Future<void> addRecord({
               maxWeightController,
               repetitionsController,
               addRecord,
+              exerciseRecordService,
+              usersService,
             ),
             _buildAllExercisesMaxRMs(ref, usersService, exerciseRecordService, context),
           ],
@@ -179,53 +181,95 @@ Future<void> addRecord({
     );
   }
 
-Widget _buildAddRecordButton(
-  BuildContext context,
-  ValueNotifier<ExerciseModel?> selectedExerciseController,
-  TextEditingController maxWeightController,
-  TextEditingController repetitionsController,
-  Future<void> Function({
-    required String exerciseId,
-    required String exerciseName,
-    required num maxWeight,
-    required int repetitions,
-  }) addRecord,
-) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 16.0),
-    child: Center(
-      child: ElevatedButton(
-        onPressed: () async {
-          final int repetitions = int.tryParse(repetitionsController.text) ?? 0;
-          double maxWeight = double.tryParse(maxWeightController.text) ?? 0;
-          if (repetitions > 1) {
-            maxWeight = (maxWeight / (1.0278 - (0.0278 * repetitions))).roundToDouble();
-          }
-          final ExerciseModel? selectedExercise = selectedExerciseController.value;
-          if (selectedExercise != null && maxWeight > 0) {
-            await addRecord(
-              exerciseId: selectedExercise.id,
-              exerciseName: selectedExercise.name,
-              maxWeight: maxWeight,
-              repetitions: 1,
-            );
-            maxWeightController.clear();
-            repetitionsController.clear();
-            selectedExerciseController.value = null;
-          }
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          foregroundColor: Theme.of(context).colorScheme.onPrimary,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-        child: const Text('Add Record'),
-      ),
-    ),
-  );
-}
+  Widget _buildAddRecordButton(
+    BuildContext context,
+    ValueNotifier<ExerciseModel?> selectedExerciseController,
+    TextEditingController maxWeightController,
+    TextEditingController repetitionsController,
+    Future<void> Function({
+      required String exerciseId,
+      required String exerciseName,
+      required num maxWeight,
+      required int repetitions,
+    }) addRecord,
+    ExerciseRecordService exerciseRecordService,
+    UsersService usersService,
+  ) {
+    return StatefulBuilder(
+      builder: (BuildContext context, StateSetter setState) {
+        bool keepWeight = false;
 
+        return Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Keep current weight',
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                ),
+                Switch(
+                  value: keepWeight,
+                  onChanged: (value) {
+                    setState(() {
+                      keepWeight = value;
+                    });
+                  },
+                ),
+              ],
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final int repetitions = int.tryParse(repetitionsController.text) ?? 0;
+                double maxWeight = double.tryParse(maxWeightController.text) ?? 0;
+                if (repetitions > 1) {
+                  maxWeight = (maxWeight / (1.0278 - (0.0278 * repetitions))).roundToDouble();
+                }
+                final ExerciseModel? selectedExercise = selectedExerciseController.value;
+                if (selectedExercise != null && maxWeight > 0) {
+                  await addRecord(
+                    exerciseId: selectedExercise.id,
+                    exerciseName: selectedExercise.name,
+                    maxWeight: maxWeight,
+                    repetitions: 1,
+                  );
+
+                  if (context.mounted) {
+                    if (keepWeight) {
+                      debugPrint('Updating intensity while keeping weight.');
+                      await exerciseRecordService.updateIntensityForProgram(
+                        usersService.getCurrentUserId(),
+                        selectedExercise.id,
+                        maxWeight,
+                      );
+                    } else {
+                      debugPrint('Updating weights based on new max weight.');
+                      await exerciseRecordService.updateWeightsForProgram(
+                        usersService.getCurrentUserId(),
+                        selectedExercise.id,
+                        maxWeight,
+                      );
+                    }
+
+                    maxWeightController.clear();
+                    repetitionsController.clear();
+                    selectedExerciseController.value = null;
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Add Record'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   Widget _buildAllExercisesMaxRMs(
     WidgetRef ref,
@@ -338,61 +382,30 @@ Widget _buildAddRecordButton(
     );
   }
 
-void _showEditDialog(
-  BuildContext context,
-  ExerciseRecord record,
-  ExerciseModel exercise,
-  ExerciseRecordService exerciseRecordService,
-  UsersService usersService,
-) {
-  TextEditingController maxWeightController = TextEditingController(text: record.maxWeight.toString());
-  TextEditingController repetitionsController = TextEditingController(text: record.repetitions.toString());
+  void _showEditDialog(
+    BuildContext context,
+    ExerciseRecord record,
+    ExerciseModel exercise,
+    ExerciseRecordService exerciseRecordService,
+    UsersService usersService,
+  ) {
+    TextEditingController maxWeightController = TextEditingController(text: record.maxWeight.toString());
+    TextEditingController repetitionsController = TextEditingController(text: record.repetitions.toString());
 
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: Text(
-          'Edit Record',
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-        ),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildDialogTextFormField(maxWeightController, 'Max weight', context),
-            _buildDialogTextFormField(repetitionsController, 'Repetitions', context),
-          ],
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-          ),
-          TextButton(
-            onPressed: () async {
-              double newMaxWeight = double.parse(maxWeightController.text);
-              int newRepetitions = int.parse(repetitionsController.text);
-              if (newRepetitions > 1) {
-                newMaxWeight = (newMaxWeight / (1.0278 - (0.0278 * newRepetitions))).roundToDouble();
-                newRepetitions = 1;
-              }
-              await exerciseRecordService.updateExerciseRecord(
-                userId: usersService.getCurrentUserId(),
-                exerciseId: exercise.id,
-                recordId: record.id,
-                maxWeight: newMaxWeight,
-                repetitions: newRepetitions,
-              );
-              Navigator.of(context).pop();
-            },
-            child: Text('Save', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-          ),
-        ],
-      );
-    },
-  );
-}
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return EditRecordDialog(
+          record: record,
+          exercise: exercise,
+          exerciseRecordService: exerciseRecordService,
+          usersService: usersService,
+          maxWeightController: maxWeightController,
+          repetitionsController: repetitionsController,
+        );
+      },
+    );
+  }
 
   void _showDeleteDialog(
     BuildContext context,
@@ -433,6 +446,114 @@ void _showEditDialog(
           ],
         );
       },
+    );
+  }
+}
+
+class EditRecordDialog extends StatefulWidget {
+  final ExerciseRecord record;
+  final ExerciseModel exercise;
+  final ExerciseRecordService exerciseRecordService;
+  final UsersService usersService;
+  final TextEditingController maxWeightController;
+  final TextEditingController repetitionsController;
+
+  const EditRecordDialog({
+    Key? key,
+    required this.record,
+    required this.exercise,
+    required this.exerciseRecordService,
+    required this.usersService,
+    required this.maxWeightController,
+    required this.repetitionsController,
+  }) : super(key: key);
+
+  @override
+  _EditRecordDialogState createState() => _EditRecordDialogState();
+}
+
+class _EditRecordDialogState extends State<EditRecordDialog> {
+  bool keepWeight = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(
+        'Edit Record',
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+      ),
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildDialogTextFormField(widget.maxWeightController, 'Max weight', context),
+          _buildDialogTextFormField(widget.repetitionsController, 'Repetitions', context),
+          Row(
+            children: [
+              Text(
+                'Keep current weight',
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+              ),
+              Switch(
+                value: keepWeight,
+                onChanged: (value) {
+                  setState(() {
+                    keepWeight = value;
+                  });
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+        ),
+        TextButton(
+          onPressed: () async {
+            double newMaxWeight = double.parse(widget.maxWeightController.text);
+            int newRepetitions = int.parse(widget.repetitionsController.text);
+
+            if (newRepetitions > 1) {
+              newMaxWeight = (newMaxWeight / (1.0278 - (0.0278 * newRepetitions))).roundToDouble();
+              newRepetitions = 1;
+            }
+
+            await widget.exerciseRecordService.updateExerciseRecord(
+              userId: widget.usersService.getCurrentUserId(),
+              exerciseId: widget.exercise.id,
+              recordId: widget.record.id,
+              maxWeight: newMaxWeight,
+              repetitions: newRepetitions,
+            );
+
+            if (context.mounted) {
+              if (keepWeight) {
+                debugPrint('Updating intensity while keeping weight.');
+                await widget.exerciseRecordService.updateIntensityForProgram(
+                  widget.usersService.getCurrentUserId(),
+                  widget.exercise.id,
+                  newMaxWeight,
+                );
+              } else {
+                debugPrint('Updating weights based on new max weight.');
+                await widget.exerciseRecordService.updateWeightsForProgram(
+                  widget.usersService.getCurrentUserId(),
+                  widget.exercise.id,
+                  newMaxWeight,
+                );
+              }
+            }
+
+            if (context.mounted) {
+              Navigator.of(context).pop();
+            }
+          },
+          child: Text('Save', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+        ),
+      ],
     );
   }
 
