@@ -203,14 +203,15 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
                   const SizedBox(height: 32),
                   _buildEmomSwitch(theme, isDarkMode, colorScheme),
                   const SizedBox(height: 40),
-                  _buildNextButton(
-                    theme,
-                    isDarkMode,
-                    colorScheme,
-                    colorScheme.primary,
-                    currentExercise,
-                    currentSeries,
-                  ),
+                  if (currentSeries != null) // Check if currentSeries is not null
+                    _buildNextButton(
+                      theme,
+                      isDarkMode,
+                      colorScheme,
+                      colorScheme.primary,
+                      currentExercise,
+                      currentSeries,
+                    ),
                   const SizedBox(height: 24),
                 ],
               ),
@@ -554,21 +555,20 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
     );
   }
 
-void _moveToNextExercise() {
-  setState(() {
-    if (currentSuperSetExerciseIndex < widget.superSetExercises.length - 1) {
-      currentSuperSetExerciseIndex++;
-    } else {
-      currentSuperSetExerciseIndex = 0; // Reset the super set exercise index
-      currentSeriesIndex++;
+  void _moveToNextExercise() {
+    setState(() {
+      if (currentSuperSetExerciseIndex < widget.superSetExercises.length - 1) {
+        currentSuperSetExerciseIndex++;
+      } else {
+        currentSuperSetExerciseIndex = 0; // Reset the super set exercise index
+        currentSeriesIndex++;
+      }
+    });
+
+    if (currentSuperSetExerciseIndex == 0) {
+      _navigateToTimer();
     }
-  });
-
-  if (currentSuperSetExerciseIndex == 0) {
-    _navigateToTimer();
   }
-}
-
 
   @override
   void dispose() {
