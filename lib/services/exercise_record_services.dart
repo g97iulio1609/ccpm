@@ -29,21 +29,18 @@ class ExerciseRecordService {
     required int repetitions,
     required String date,
   }) async {
-    await _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('exercises')
-        .doc(exerciseId)
-        .collection('records')
-        .add({
-      'date': date,
-      'exerciseId': exerciseId,
-      'exerciseName': exerciseName,
-      'maxWeight': maxWeight,
-      'repetitions': repetitions,
-      'userId': userId,
-    });
-    await _updateCurrentProgramWeights(userId, exerciseId, maxWeight);
+    await _addOrUpdateRecord(
+      userId: userId,
+      exerciseId: exerciseId,
+      data: {
+        'date': date,
+        'exerciseId': exerciseId,
+        'exerciseName': exerciseName,
+        'maxWeight': maxWeight,
+        'repetitions': repetitions,
+        'userId': userId,
+      },
+    );
   }
 
   Future<void> updateExerciseRecord({
@@ -53,18 +50,15 @@ class ExerciseRecordService {
     required num maxWeight,
     required int repetitions,
   }) async {
-    await _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('exercises')
-        .doc(exerciseId)
-        .collection('records')
-        .doc(recordId)
-        .update({
-      'maxWeight': maxWeight,
-      'repetitions': repetitions,
-    });
-    await _updateCurrentProgramWeights(userId, exerciseId, maxWeight);
+    await _addOrUpdateRecord(
+      userId: userId,
+      exerciseId: exerciseId,
+      recordId: recordId,
+      data: {
+        'maxWeight': maxWeight,
+        'repetitions': repetitions,
+      },
+    );
   }
 
   Future<ExerciseRecord?> getLatestExerciseRecord({
@@ -103,87 +97,64 @@ class ExerciseRecordService {
         .delete();
   }
 
-  Future<void> _updateCurrentProgramWeights(String userId, String exerciseId, num newMaxWeight) async {
-    final userDoc = await _firestore.collection('users').doc(userId).get();
-    final currentProgramId = userDoc.data()?['currentProgram'];
-    if (currentProgramId != null) {
-      await _updateWeeksWeights(currentProgramId, exerciseId, newMaxWeight);
+  Future<void> _addOrUpdateRecord({
+    required String userId,
+    required String exerciseId,
+    String? recordId,
+    required Map<String, dynamic> data,
+  }) async {
+    final recordRef = _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('exercises')
+        .doc(exerciseId)
+        .collection('records')
+        .doc(recordId);
+
+    if (recordId == null) {
+      await recordRef.set(data);
+    } else {
+      await recordRef.update(data);
+    }
+
+    if (data.containsKey('maxWeight')) {
+      await _updateCurrentProgramWeights(userId, exerciseId, data['maxWeight']);
     }
   }
 
-  Future<List<Map<String, dynamic>>> _updateWeeksWeights(
+  Future<void> _updateCurrentProgramWeights(
+      String userId, String exerciseId, num newMaxWeight) async {
+    final userDoc = await _firestore.collection('users').doc(userId).get();
+    final currentProgramId = userDoc.data()?['currentProgram'];
+    if (currentProgramId != null) {
+      await _updateWeightsForProgram(currentProgramId, exerciseId, newMaxWeight);
+    }
+  }
+
+  Future<void> _updateWeightsForProgram(
       String programId, String exerciseId, num newMaxWeight) async {
-    final weeksSnapshot = await _firestore
-        .collection('weeks')
-        .where('programId', isEqualTo: programId)
-        .get();
-    return await Future.wait(weeksSnapshot.docs.map((weekDoc) async {
-      final weekData = weekDoc.data();
-      final updatedWorkouts = await _updateWorkoutsWeights(weekDoc.id, exerciseId, newMaxWeight);
-      return {
-        'id': weekDoc.id,
-        ...weekData,
-        'workouts': updatedWorkouts.map((workout) => workout['id']).toList(),
-      };
-    }));
-  }
-
-  Future<List<Map<String, dynamic>>> _updateWorkoutsWeights(
-      String weekId, String exerciseId, num newMaxWeight) async {
-    final workoutsSnapshot = await _firestore
-        .collection('workouts')
-        .where('weekId', isEqualTo: weekId)
-        .get();
-    return await Future.wait(workoutsSnapshot.docs.map((workoutDoc) async {
-      final workoutData = workoutDoc.data();
-      final updatedExercises = await _updateExercisesWeights(workoutDoc.id, exerciseId, newMaxWeight);
-      return {
-        'id': workoutDoc.id,
-        ...workoutData,
-        'exercises': updatedExercises.map((exercise) => exercise['id']).toList(),
-      };
-    }));
-  }
-
-  Future<List<Map<String, dynamic>>> _updateExercisesWeights(
-      String workoutId, String exerciseId, num newMaxWeight) async {
-    final exercisesSnapshot = await _firestore
-        .collection('exercisesWorkout')
-        .where('workoutId', isEqualTo: workoutId)
-        .get();
-    return await Future.wait(exercisesSnapshot.docs.map((exerciseDoc) async {
-      final exerciseData = exerciseDoc.data();
-      if (exerciseData['exerciseId'] == exerciseId) {
-        final updatedSeries = await _updateSeriesWeights(exerciseDoc.id, newMaxWeight);
-        return {
-          'id': exerciseDoc.id,
-          ...exerciseData,
-          'series': updatedSeries.map((serie) => serie['id']).toList(),
-        };
+    final weeks = await _getDocuments('weeks', 'programId', programId);
+    for (var week in weeks) {
+      final workouts = await _getDocuments('workouts', 'weekId', week.id);
+      for (var workout in workouts) {
+        final exercises = await _getDocuments('exercisesWorkout', 'workoutId', workout.id);
+        for (var exercise in exercises) {
+          if (exercise['exerciseId'] == exerciseId) {
+            final series = await _getDocuments('series', 'exerciseId', exercise.id);
+            for (var serie in series) {
+              final intensity = double.parse(serie['intensity']);
+              final calculatedWeight = (newMaxWeight * intensity) / 100;
+              await _firestore.collection('series').doc(serie.id).update({'weight': calculatedWeight});
+            }
+          }
+        }
       }
-      return {
-        'id': exerciseDoc.id,
-        ...exerciseData,
-      };
-    }));
+    }
   }
 
-  Future<List<Map<String, dynamic>>> _updateSeriesWeights(
-      String exerciseWorkoutId, num newMaxWeight) async {
-    final seriesSnapshot = await _firestore
-        .collection('series')
-        .where('exerciseId', isEqualTo: exerciseWorkoutId)
-        .get();
-    return await Future.wait(seriesSnapshot.docs.map((serieDoc) async {
-      final serieData = serieDoc.data();
-      final intensity = double.parse(serieData['intensity']);
-      final calculatedWeight = (newMaxWeight * intensity) / 100;
-      await _firestore.collection('series').doc(serieDoc.id).update({'weight': calculatedWeight});
-      return {
-        'id': serieDoc.id,
-        ...serieData,
-        'weight': calculatedWeight,
-      };
-    }));
+  Future<List<DocumentSnapshot>> _getDocuments(
+      String collection, String field, String value) async {
+    final snapshot = await _firestore.collection(collection).where(field, isEqualTo: value).get();
+    return snapshot.docs;
   }
 }

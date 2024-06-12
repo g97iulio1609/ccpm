@@ -1,49 +1,38 @@
-// training_viewer.dart
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'training_program_services.dart';
+import 'training_program_provider.dart';
 
-class TrainingViewer extends StatefulWidget {
+class TrainingViewer extends ConsumerStatefulWidget {
   final String programId;
   final String userId;
+
   const TrainingViewer({super.key, required this.programId, required this.userId});
 
   @override
   _TrainingViewerState createState() => _TrainingViewerState();
 }
 
-class _TrainingViewerState extends State<TrainingViewer> {
-  bool loading = true;
-  List<Map<String, dynamic>> weeks = [];
-
+class _TrainingViewerState extends ConsumerState<TrainingViewer> {
   @override
   void initState() {
     super.initState();
     fetchTrainingWeeks();
   }
 
-  void fetchTrainingWeeks() async {
-    setState(() {
-      loading = true;
-    });
-
-    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-        .collection('weeks')
-        .where('programId', isEqualTo: widget.programId)
-        .orderBy('number')
-        .get();
-
-    weeks = querySnapshot.docs
-        .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
-        .toList();
-
-    setState(() {
-      loading = false;
-    });
+  Future<void> fetchTrainingWeeks() async {
+    ref.read(trainingLoadingProvider.notifier).state = true;
+    final weeks = await ref.read(trainingServiceProvider).fetchTrainingWeeks(widget.programId);
+    ref.read(trainingWeeksProvider.notifier).state = weeks;
+    ref.read(trainingLoadingProvider.notifier).state = false;
   }
 
   @override
   Widget build(BuildContext context) {
+    final loading = ref.watch(trainingLoadingProvider);
+    final weeks = ref.watch(trainingWeeksProvider);
+
     return Scaffold(
       body: loading
           ? const Center(child: CircularProgressIndicator())

@@ -1,65 +1,48 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'timer_model.dart';
+import 'timer_provider.dart';
 
-class TimerPage extends StatefulWidget {
-  final String programId;
-  final String userId;
-  final List<Map<String, dynamic>> seriesList;
-  final String weekId;
-  final String workoutId;
-  final String exerciseId;
-  final int currentSeriesIndex;
-  final int totalSeries;
-  final int restTime;
-  final bool isEmomMode;
-  final int superSetExerciseIndex;
+class TimerPage extends ConsumerStatefulWidget {
+  final TimerModel timerModel;
 
   const TimerPage({
     super.key,
-    required this.programId,
-    required this.userId,
-    required this.seriesList,
-    required this.weekId,
-    required this.workoutId,
-    required this.exerciseId,
-    required this.currentSeriesIndex,
-    required this.totalSeries,
-    required this.restTime,
-    required this.isEmomMode,
-    required this.superSetExerciseIndex,
+    required this.timerModel,
   });
 
   @override
   _TimerPageState createState() => _TimerPageState();
 }
 
-class _TimerPageState extends State<TimerPage> with SingleTickerProviderStateMixin {
+class _TimerPageState extends ConsumerState<TimerPage> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
   late Timer _timer;
-  int _remainingSeconds = 0;
 
   @override
   void initState() {
     super.initState();
-    _remainingSeconds = widget.restTime;
-    _controller = AnimationController(
-      vsync: this,
-      duration: Duration(seconds: widget.restTime),
-    );
-    _animation = Tween<double>(begin: 1.0, end: 0.0).animate(_controller);
-    _startTimer();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(timerModelProvider.notifier).state = widget.timerModel;
+      ref.read(remainingSecondsProvider.notifier).state = widget.timerModel.restTime;
+      _controller = AnimationController(
+        vsync: this,
+        duration: Duration(seconds: widget.timerModel.restTime),
+      );
+      _animation = Tween<double>(begin: 1.0, end: 0.0).animate(_controller);
+      _startTimer();
+    });
   }
 
   void _startTimer() {
     _controller.forward(from: 0.0);
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_remainingSeconds > 0) {
-        setState(() {
-          _remainingSeconds--;
-        });
+      final remainingSeconds = ref.read(remainingSecondsProvider);
+      if (remainingSeconds > 0) {
+        ref.read(remainingSecondsProvider.notifier).state--;
       } else {
         _handleNextSeries();
       }
@@ -68,51 +51,25 @@ class _TimerPageState extends State<TimerPage> with SingleTickerProviderStateMix
 
   void _handleNextSeries() {
     _timer.cancel();
-    if (widget.isEmomMode) {
-      _remainingSeconds = widget.restTime;
+    final timerModel = ref.read(timerModelProvider)!;
+    if (timerModel.isEmomMode) {
+      ref.read(remainingSecondsProvider.notifier).state = timerModel.restTime;
       _startTimer();
     } else {
-      _showNotification('Rest Time Completed', 'Your rest time has ended.');
-      if (widget.currentSeriesIndex < widget.seriesList.length - 1) {
+      ref.read(timerServiceProvider).showNotification('Rest Time Completed', 'Your rest time has ended.');
+      if (timerModel.currentSeriesIndex < timerModel.seriesList.length - 1) {
         final result = <String, dynamic>{
-          'startIndex': widget.currentSeriesIndex + 1,
-          'superSetExerciseIndex': widget.superSetExerciseIndex,
-          'seriesList': widget.seriesList,
+          'startIndex': timerModel.currentSeriesIndex + 1,
+          'superSetExerciseIndex': timerModel.superSetExerciseIndex,
+          'seriesList': timerModel.seriesList,
         };
         context.pop(result);
       } else {
         final workoutDetailsUrl =
-            '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}';
+            '/programs_screen/user_programs/${timerModel.userId}/training_viewer/${timerModel.programId}/week_details/${timerModel.weekId}/workout_details/${timerModel.workoutId}';
         context.go(workoutDetailsUrl);
       }
     }
-  }
-
-  Future<void> _showNotification(String title, String body) async {
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails(
-      'rest_timer_channel',
-      'Rest Timer',
-      importance: Importance.max,
-      priority: Priority.high,
-      ticker: 'ticker',
-      visibility: NotificationVisibility.public,
-      enableLights: true,
-      enableVibration: true,
-      playSound: true,
-      timeoutAfter: null,
-      autoCancel: false,
-      ongoing: false,
-      fullScreenIntent: true,
-    );
-    const NotificationDetails platformChannelSpecifics =
-        NotificationDetails(android: androidPlatformChannelSpecifics);
-    await FlutterLocalNotificationsPlugin().show(
-      0,
-      title,
-      body,
-      platformChannelSpecifics,
-    );
   }
 
   @override
@@ -124,6 +81,9 @@ class _TimerPageState extends State<TimerPage> with SingleTickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
+    final timerModel = ref.watch(timerModelProvider)!;
+    final remainingSeconds = ref.watch(remainingSecondsProvider);
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
@@ -132,7 +92,7 @@ class _TimerPageState extends State<TimerPage> with SingleTickerProviderStateMix
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                widget.isEmomMode ? 'EMOM MODE' : 'REST TIME',
+                timerModel.isEmomMode ? 'EMOM MODE' : 'REST TIME',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 24,
@@ -145,11 +105,11 @@ class _TimerPageState extends State<TimerPage> with SingleTickerProviderStateMix
                 alignment: Alignment.center,
                 children: [
                   _buildProgressIndicator(),
-                  _buildCountdownText(),
+                  _buildCountdownText(remainingSeconds),
                 ],
               ),
               const SizedBox(height: 24),
-              if (!widget.isEmomMode) _buildSkipButton(),
+              if (!timerModel.isEmomMode) _buildSkipButton(),
             ],
           ),
         ),
@@ -170,24 +130,24 @@ class _TimerPageState extends State<TimerPage> with SingleTickerProviderStateMix
     );
   }
 
-  Widget _buildCountdownText() {
-  final minutes = (_remainingSeconds ~/ 60).toString().padLeft(2, '0');
-  final seconds = (_remainingSeconds % 60).toString().padLeft(2, '0');
-  final shadow = Shadow(
-    color: Colors.black.withOpacity(0.3),
-    blurRadius: 10,
-    offset: const Offset(0, 5),
-  );
-  return Text(
-    '$minutes:$seconds',
-    style: TextStyle(
-      color: Colors.white,
-      fontSize: 72,
-      fontWeight: FontWeight.bold,
-      shadows: [shadow],
-    ),
-  );
-}
+  Widget _buildCountdownText(int remainingSeconds) {
+    final minutes = (remainingSeconds ~/ 60).toString().padLeft(2, '0');
+    final seconds = (remainingSeconds % 60).toString().padLeft(2, '0');
+    final shadow = Shadow(
+      color: Colors.black.withOpacity(0.3),
+      blurRadius: 10,
+      offset: const Offset(0, 5),
+    );
+    return Text(
+      '$minutes:$seconds',
+      style: TextStyle(
+        color: Colors.white,
+        fontSize: 72,
+        fontWeight: FontWeight.bold,
+        shadows: [shadow],
+      ),
+    );
+  }
 
   Widget _buildSkipButton() {
     return TextButton(

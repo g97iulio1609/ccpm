@@ -1,9 +1,11 @@
-// week_details_new.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'week_services.dart';
+import 'week_details_provider.dart';
 
-class WeekDetails extends StatelessWidget {
+class WeekDetails extends ConsumerWidget {
   final String programId;
   final String weekId;
   final String userId;
@@ -16,14 +18,12 @@ class WeekDetails extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final weekService = ref.watch(weekServiceProvider);
+
     return Scaffold(
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('workouts')
-            .where('weekId', isEqualTo: weekId)
-            .orderBy('order')
-            .snapshots(),
+        stream: weekService.getWorkouts(weekId),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));

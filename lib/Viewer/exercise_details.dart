@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numberpicker/numberpicker.dart';
+import 'exercise_provider.dart';
+import 'exercise_services.dart';
+import 'timer_model.dart';
 
-class ExerciseDetails extends StatefulWidget {
+class ExerciseDetails extends ConsumerStatefulWidget {
   final String userId;
   final String programId;
   final String weekId;
@@ -32,7 +35,7 @@ class ExerciseDetails extends StatefulWidget {
   _ExerciseDetailsState createState() => _ExerciseDetailsState();
 }
 
-class _ExerciseDetailsState extends State<ExerciseDetails> {
+class _ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
   int currentSeriesIndex = 0;
   final Map<String, Map<String, TextEditingController>> _repsControllers = {};
   final Map<String, Map<String, TextEditingController>> _weightControllers = {};
@@ -71,22 +74,8 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
 
   Future<void> _updateSeriesData(String exerciseId, String seriesId,
       int? repsDone, String? weightDoneString) async {
-    final currentSeries = widget.superSetExercises
-        .firstWhere((exercise) => exercise['id'] == exerciseId)['series']
-        .firstWhere((series) => series['id'] == seriesId);
-    final expectedReps = currentSeries['reps'];
-    final expectedWeight = currentSeries['weight'];
-
     final weightDone = double.tryParse(weightDoneString ?? '');
-
-    final done = (repsDone != null && repsDone >= expectedReps) &&
-        (weightDone != null && weightDone >= expectedWeight);
-
-    await FirebaseFirestore.instance.collection('series').doc(seriesId).update({
-      'done': done,
-      'reps_done': repsDone,
-      'weight_done': weightDone,
-    });
+    await ref.read(exerciseServiceProvider).updateSeriesData(seriesId, repsDone, weightDone);
   }
 
   int _getRestTimeInSeconds() {
@@ -111,18 +100,20 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
         currentExercise['series'] as List<Map<String, dynamic>>;
 
     if (widget.superSetExercises.length == 1) {
-      final result = await context.push<Map<String, dynamic>>(
-        '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${widget.exerciseId}/timer?currentSeriesIndex=$currentSeriesIndex&totalSeries=${currentSeriesList.length}&restTime=$restTimeInSeconds&isEmomMode=$_isEmomMode&superSetExerciseIndex=${widget.superSetExerciseIndex}',
-        extra: {
-          'seriesList': currentSeriesList,
-        },
+      final timerModel = TimerModel(
+        programId: widget.programId,
+        userId: widget.userId,
+        seriesList: currentSeriesList,
+        weekId: widget.weekId,
+        workoutId: widget.workoutId,
+        exerciseId: widget.exerciseId,
+        currentSeriesIndex: currentSeriesIndex,
+        totalSeries: currentSeriesList.length,
+        restTime: restTimeInSeconds,
+        isEmomMode: _isEmomMode,
+        superSetExerciseIndex: widget.superSetExerciseIndex,
       );
-
-      if (result != null) {
-        setState(() {
-          currentSeriesIndex = result['startIndex'] as int;
-        });
-      }
+      context.push('/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${widget.exerciseId}/timer', extra: timerModel);
     } else if (widget.superSetExerciseIndex <
         widget.superSetExercises.length - 1) {
       final nextExerciseIndex = widget.superSetExerciseIndex + 1;
@@ -132,20 +123,20 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
       final nextSeriesIndex = currentSeriesIndex < nextSeriesList.length
           ? currentSeriesIndex
           : 0;
-      final result = await context.push<Map<String, dynamic>>(
-        '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${nextExercise['id']}?currentSeriesIndex=$nextSeriesIndex&totalSeries=${nextSeriesList.length}&restTime=$restTimeInSeconds&isEmomMode=$_isEmomMode&superSetExerciseIndex=$nextExerciseIndex',
-        extra: {
-          'superSetExercises': widget.superSetExercises,
-          'superSetExerciseIndex': nextExerciseIndex,
-          'seriesList': nextSeriesList,
-          'startIndex': nextSeriesIndex,
-        },
+      final timerModel = TimerModel(
+        programId: widget.programId,
+        userId: widget.userId,
+        seriesList: nextSeriesList,
+        weekId: widget.weekId,
+        workoutId: widget.workoutId,
+        exerciseId: nextExercise['id'],
+        currentSeriesIndex: nextSeriesIndex,
+        totalSeries: nextSeriesList.length,
+        restTime: restTimeInSeconds,
+        isEmomMode: _isEmomMode,
+        superSetExerciseIndex: nextExerciseIndex,
       );
-      if (result != null) {
-        setState(() {
-          currentSeriesIndex = result['startIndex'] as int;
-        });
-      }
+      context.push('/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${nextExercise['id']}/timer', extra: timerModel);
     } else {
       final allExercisesCompleted = widget.superSetExercises.every((exercise) {
         final seriesList = exercise['series'] as List<Map<String, dynamic>>;
@@ -159,21 +150,20 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
       } else {
         final nextSeriesIndex = currentSeriesIndex + 1;
         if (nextSeriesIndex < currentSeriesList.length) {
-          final result = await context.push<Map<String, dynamic>>(
-            '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${widget.exerciseId}?currentSeriesIndex=$nextSeriesIndex&totalSeries=${currentSeriesList.length}&restTime=$restTimeInSeconds&isEmomMode=$_isEmomMode&superSetExerciseIndex=0',
-            extra: {
-              'superSetExercises': widget.superSetExercises,
-              'superSetExerciseIndex': 0,
-              'seriesList': widget.superSetExercises[0]['series']
-                  as List<Map<String, dynamic>>,
-              'startIndex': nextSeriesIndex,
-            },
+          final timerModel = TimerModel(
+            programId: widget.programId,
+            userId: widget.userId,
+            seriesList: widget.seriesList,
+            weekId: widget.weekId,
+            workoutId: widget.workoutId,
+            exerciseId: widget.exerciseId,
+            currentSeriesIndex: nextSeriesIndex,
+            totalSeries: currentSeriesList.length,
+            restTime: restTimeInSeconds,
+            isEmomMode: _isEmomMode,
+            superSetExerciseIndex: 0,
           );
-          if (result != null) {
-            setState(() {
-              currentSeriesIndex = result['startIndex'] as int;
-            });
-          }
+          context.push('/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${widget.exerciseId}/timer', extra: timerModel);
         }
       }
     }
@@ -580,8 +570,6 @@ Widget _buildNumberPickerWithLabel(
        style: theme.textTheme.titleLarge?.copyWith(
          fontWeight: FontWeight.bold,
          fontSize: 18,
-
-        
        ),
      ),
    );

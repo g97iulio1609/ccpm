@@ -1,3 +1,4 @@
+import 'package:alphanessone/Viewer/timer_model.dart';
 import 'package:alphanessone/measurements/measurements.dart';
 import 'package:alphanessone/nutrition/models&Services/meals_model.dart'
     as meals;
@@ -272,43 +273,15 @@ class MyApp extends ConsumerWidget {
                                     );
                                   },
                                   routes: [
-                                    GoRoute(
-                                      path: 'timer',
-                                      builder: (context, state) {
-                                        final extra = state.extra
-                                            as Map<String, dynamic>?;
-                                        return TimerPage(
-                                          programId: Uri.decodeComponent(state
-                                              .pathParameters['programId']!),
-                                          weekId: Uri.decodeComponent(
-                                              state.pathParameters['weekId']!),
-                                          workoutId: Uri.decodeComponent(state
-                                              .pathParameters['workoutId']!),
-                                          exerciseId: Uri.decodeComponent(state
-                                              .pathParameters['exerciseId']!),
-                                          currentSeriesIndex: int.parse(
-                                              state.uri.queryParameters[
-                                                  'currentSeriesIndex']!),
-                                          superSetExerciseIndex: int.parse(
-                                              state.uri.queryParameters[
-                                                  'superSetExerciseIndex']!),
-                                          totalSeries: int.parse(state.uri
-                                              .queryParameters['totalSeries']!),
-                                          restTime: int.parse(state.uri
-                                              .queryParameters['restTime']!),
-                                          isEmomMode: state.uri.queryParameters[
-                                                  'isEmomMode'] ==
-                                              'true',
-                                          userId:
-                                              state.pathParameters['userId']!,
-                                          seriesList: extra?['seriesList'] !=
-                                                  null
-                                              ? List<Map<String, dynamic>>.from(
-                                                  extra?['seriesList'])
-                                              : [],
-                                        );
-                                      },
-                                    ),
+   GoRoute(
+  path: 'timer',
+  builder: (context, state) {
+    final timerModel = state.extra as TimerModel;
+    return TimerPage(timerModel: timerModel);
+  },
+),
+
+
                                   ],
                                 ),
                               ],
