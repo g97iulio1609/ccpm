@@ -1,4 +1,4 @@
-import 'package:alphanessone/Viewer/timer_model.dart';
+import 'package:alphanessone/Viewer/models/timer_model.dart';
 import 'package:alphanessone/measurements/measurements.dart';
 import 'package:alphanessone/nutrition/models&Services/meals_model.dart'
     as meals;
@@ -29,11 +29,11 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'programs_screen.dart';
 import 'user_programs.dart';
-import 'Viewer/training_viewer.dart';
-import 'Viewer/week_details.dart';
-import 'Viewer/workout_details.dart';
-import 'Viewer/exercise_details.dart';
-import 'Viewer/timer.dart';
+import 'Viewer/UI/training_viewer.dart';
+import 'Viewer/UI/week_details.dart';
+import 'Viewer/UI/workout_details.dart';
+import 'Viewer/UI/exercise_details.dart';
+import 'Viewer/UI/timer.dart';
 import 'app_services.dart';
 import 'nutrition/tracker/food_selector.dart';
 import 'nutrition/tracker/favorite_meal_detail.dart';
@@ -273,15 +273,15 @@ class MyApp extends ConsumerWidget {
                                     );
                                   },
                                   routes: [
-   GoRoute(
-  path: 'timer',
-  builder: (context, state) {
-    final timerModel = state.extra as TimerModel;
-    return TimerPage(timerModel: timerModel);
-  },
-),
-
-
+                                    GoRoute(
+                                      path: 'timer',
+                                      builder: (context, state) {
+                                        final timerModel =
+                                            state.extra as TimerModel;
+                                        return TimerPage(
+                                            timerModel: timerModel);
+                                      },
+                                    ),
                                   ],
                                 ),
                               ],

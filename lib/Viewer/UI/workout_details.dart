@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'workout_services.dart';
-import 'workout_provider.dart';
+import '../services/workout_services.dart';
+import '../providers/workout_provider.dart';
 
 class WorkoutDetails extends ConsumerStatefulWidget {
   final String programId;
@@ -60,12 +60,14 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
           .orderBy('order');
       seriesQuery.snapshots().listen((querySnapshot) {
         final updatedExercises = ref.read(exercisesProvider);
-        final index = updatedExercises.indexWhere((e) => e['id'] == exercise['id']);
+        final index =
+            updatedExercises.indexWhere((e) => e['id'] == exercise['id']);
         if (index != -1) {
           updatedExercises[index]['series'] = querySnapshot.docs
               .map((doc) => doc.data()..['id'] = doc.id)
               .toList();
-          ref.read(exercisesProvider.notifier).state = List.from(updatedExercises);
+          ref.read(exercisesProvider.notifier).state =
+              List.from(updatedExercises);
         }
       });
     }
@@ -102,7 +104,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     );
   }
 
-  Map<String?, List<Map<String, dynamic>>> groupExercisesBySuperSet(List<Map<String, dynamic>> exercises) {
+  Map<String?, List<Map<String, dynamic>>> groupExercisesBySuperSet(
+      List<Map<String, dynamic>> exercises) {
     final groupedExercises = <String?, List<Map<String, dynamic>>>{};
 
     for (final exercise in exercises) {
@@ -113,7 +116,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     return groupedExercises;
   }
 
-  Widget buildSuperSetCard(List<Map<String, dynamic>> superSetExercises, BuildContext context) {
+  Widget buildSuperSetCard(
+      List<Map<String, dynamic>> superSetExercises, BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
@@ -147,7 +151,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
           ...superSetExercises
               .asMap()
               .entries
-              .map((entry) => buildSuperSetExerciseName(entry.key, entry.value, context))
+              .map((entry) =>
+                  buildSuperSetExerciseName(entry.key, entry.value, context))
               .toList(),
           const SizedBox(height: 24),
           buildSuperSetStartButton(superSetExercises, context),
@@ -159,7 +164,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     );
   }
 
-  Widget buildSingleExerciseCard(Map<String, dynamic> exercise, BuildContext context) {
+  Widget buildSingleExerciseCard(
+      Map<String, dynamic> exercise, BuildContext context) {
     final series = List<Map<String, dynamic>>.from(exercise['series']);
     final firstNotDoneSeriesIndex = findFirstNotDoneSeriesIndex(series);
     final isContinueMode = firstNotDoneSeriesIndex > 0;
@@ -187,7 +193,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
           buildExerciseName(exercise, context),
           const SizedBox(height: 24),
           if (!allSeriesCompleted)
-            buildStartButton(exercise, firstNotDoneSeriesIndex, isContinueMode, context),
+            buildStartButton(
+                exercise, firstNotDoneSeriesIndex, isContinueMode, context),
           if (!allSeriesCompleted) const SizedBox(height: 24),
           buildSeriesHeaderRow(context),
           const SizedBox(height: 8),
@@ -197,7 +204,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     );
   }
 
-  Widget buildSuperSetExerciseName(int index, Map<String, dynamic> exercise, BuildContext context) {
+  Widget buildSuperSetExerciseName(
+      int index, Map<String, dynamic> exercise, BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
     return Padding(
@@ -205,13 +213,15 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       child: Text(
         '${index + 1}. ${exercise['name']} ${exercise['variant'] ?? ''}',
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-          color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
-        ),
+              color:
+                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+            ),
       ),
     );
   }
 
-  Widget buildSuperSetStartButton(List<Map<String, dynamic>> superSetExercises, BuildContext context) {
+  Widget buildSuperSetStartButton(
+      List<Map<String, dynamic>> superSetExercises, BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -283,16 +293,18 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       child: Text(
         text,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-          color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-        ),
+              color:
+                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
         textAlign: TextAlign.center,
       ),
     );
   }
 
-  List<Widget> buildSeriesRows(List<Map<String, dynamic>> superSetExercises, BuildContext context) {
+  List<Widget> buildSeriesRows(
+      List<Map<String, dynamic>> superSetExercises, BuildContext context) {
     final maxSeriesCount = superSetExercises
         .map((exercise) => exercise['series'].length)
         .reduce((a, b) => a > b ? a : b);
@@ -303,7 +315,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
           Row(
             children: [
               buildSeriesIndexText(seriesIndex, context, 1),
-              ...buildSuperSetSeriesColumns(superSetExercises, seriesIndex, context),
+              ...buildSuperSetSeriesColumns(
+                  superSetExercises, seriesIndex, context),
             ],
           ),
           if (seriesIndex < maxSeriesCount - 1)
@@ -321,22 +334,29 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       child: Text(
         '${seriesIndex + 1}',
         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-          color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
-        ),
+              color:
+                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+            ),
         textAlign: TextAlign.center,
       ),
     );
   }
 
-  List<Widget> buildSuperSetSeriesColumns(List<Map<String, dynamic>> superSetExercises, int seriesIndex, BuildContext context) {
+  List<Widget> buildSuperSetSeriesColumns(
+      List<Map<String, dynamic>> superSetExercises,
+      int seriesIndex,
+      BuildContext context) {
     return [
-      buildSuperSetSeriesColumn(superSetExercises, seriesIndex, 'reps', context, 2),
-      buildSuperSetSeriesColumn(superSetExercises, seriesIndex, 'weight', context, 2),
+      buildSuperSetSeriesColumn(
+          superSetExercises, seriesIndex, 'reps', context, 2),
+      buildSuperSetSeriesColumn(
+          superSetExercises, seriesIndex, 'weight', context, 2),
       buildSuperSetSeriesDoneColumn(superSetExercises, seriesIndex, context, 1),
     ];
   }
 
-  Widget buildSuperSetSeriesColumn(List<Map<String, dynamic>> superSetExercises, int seriesIndex, String field, BuildContext context, int flex) {
+  Widget buildSuperSetSeriesColumn(List<Map<String, dynamic>> superSetExercises,
+      int seriesIndex, String field, BuildContext context, int flex) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
     return Expanded(
@@ -351,15 +371,15 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: series != null
                 ? GestureDetector(
-                    onTap: () =>
-                        showEditSeriesDialog(series['id'].toString(), series, context),
+                    onTap: () => showEditSeriesDialog(
+                        series['id'].toString(), series, context),
                     child: Text(
                       "${series[field]}/${series['${field}_done'] ?? ''}",
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: isDarkMode
-                            ? colorScheme.onSurface
-                            : colorScheme.onBackground,
-                      ),
+                            color: isDarkMode
+                                ? colorScheme.onSurface
+                                : colorScheme.onBackground,
+                          ),
                       textAlign: TextAlign.center,
                     ),
                   )
@@ -370,7 +390,11 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     );
   }
 
-  Widget buildSuperSetSeriesDoneColumn(List<Map<String, dynamic>> superSetExercises, int seriesIndex, BuildContext context, int flex) {
+  Widget buildSuperSetSeriesDoneColumn(
+      List<Map<String, dynamic>> superSetExercises,
+      int seriesIndex,
+      BuildContext context,
+      int flex) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
     return Expanded(
@@ -397,7 +421,9 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
                       );
                     },
                     child: Icon(
-                      series['done'] == true ? Icons.check_circle : Icons.cancel,
+                      series['done'] == true
+                          ? Icons.check_circle
+                          : Icons.cancel,
                       color: series['done'] == true
                           ? colorScheme.primary
                           : isDarkMode
@@ -412,20 +438,23 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     );
   }
 
-  Widget buildExerciseName(Map<String, dynamic> exercise, BuildContext context) {
+  Widget buildExerciseName(
+      Map<String, dynamic> exercise, BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
     return Text(
       "${exercise['name']} ${exercise['variant'] ?? ''}",
       style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+            color:
+                isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
           ),
       textAlign: TextAlign.center,
     );
   }
 
-  Widget buildStartButton(Map<String, dynamic> exercise, int firstNotDoneSeriesIndex, bool isContinueMode, BuildContext context) {
+  Widget buildStartButton(Map<String, dynamic> exercise,
+      int firstNotDoneSeriesIndex, bool isContinueMode, BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
     final series = exercise['series'];
@@ -468,14 +497,15 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     );
   }
 
-  List<Widget> buildSeriesContainers(List<Map<String, dynamic>> series, BuildContext context) {
+  List<Widget> buildSeriesContainers(
+      List<Map<String, dynamic>> series, BuildContext context) {
     return series.asMap().entries.map((entry) {
       final seriesIndex = entry.key;
       final seriesData = entry.value;
 
       return GestureDetector(
-        onTap: () =>
-            showEditSeriesDialog(seriesData['id'].toString(), seriesData, context),
+        onTap: () => showEditSeriesDialog(
+            seriesData['id'].toString(), seriesData, context),
         child: Column(
           children: [
             Row(
@@ -494,7 +524,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     }).toList();
   }
 
-  Widget buildSeriesDataText(String field, Map<String, dynamic> seriesData, BuildContext context, int flex) {
+  Widget buildSeriesDataText(String field, Map<String, dynamic> seriesData,
+      BuildContext context, int flex) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
     final value = seriesData[field];
@@ -513,14 +544,16 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       child: Text(
         text,
         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-          color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
-        ),
+              color:
+                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+            ),
         textAlign: TextAlign.center,
       ),
     );
   }
 
-  Widget buildSeriesDoneIcon(Map<String, dynamic> seriesData, BuildContext context, int flex) {
+  Widget buildSeriesDoneIcon(
+      Map<String, dynamic> seriesData, BuildContext context, int flex) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
     return Expanded(
@@ -550,9 +583,12 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     );
   }
 
-  Future<void> showEditSeriesDialog(String seriesId, Map<String, dynamic> series, BuildContext context) async {
-    final repsController = TextEditingController(text: series['reps']?.toString() ?? '');
-    final weightController = TextEditingController(text: series['weight']?.toString() ?? '');
+  Future<void> showEditSeriesDialog(String seriesId,
+      Map<String, dynamic> series, BuildContext context) async {
+    final repsController =
+        TextEditingController(text: series['reps']?.toString() ?? '');
+    final weightController =
+        TextEditingController(text: series['weight']?.toString() ?? '');
 
     await showDialog(
       context: context,
@@ -569,7 +605,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
               ),
               TextField(
                 controller: weightController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
                   TextInputFormatter.withFunction((oldValue, newValue) {
@@ -595,7 +632,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
                 final weightDone = double.tryParse(
                         weightController.text.replaceAll(',', '.')) ??
                     0.0;
-                await _workoutService.updateSeries(seriesId, repsDone, weightDone);
+                await _workoutService.updateSeries(
+                    seriesId, repsDone, weightDone);
                 Navigator.pop(context);
               },
               child: const Text('Salva'),

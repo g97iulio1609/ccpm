@@ -2,8 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'timer_model.dart';
-import 'timer_provider.dart';
+import '../models/timer_model.dart';
+import '../providers/timer_provider.dart';
 
 class TimerPage extends ConsumerStatefulWidget {
   final TimerModel timerModel;
@@ -17,7 +17,8 @@ class TimerPage extends ConsumerStatefulWidget {
   _TimerPageState createState() => _TimerPageState();
 }
 
-class _TimerPageState extends ConsumerState<TimerPage> with SingleTickerProviderStateMixin {
+class _TimerPageState extends ConsumerState<TimerPage>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
   late Timer _timer;
@@ -27,7 +28,8 @@ class _TimerPageState extends ConsumerState<TimerPage> with SingleTickerProvider
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(timerModelProvider.notifier).state = widget.timerModel;
-      ref.read(remainingSecondsProvider.notifier).state = widget.timerModel.restTime;
+      ref.read(remainingSecondsProvider.notifier).state =
+          widget.timerModel.restTime;
       _controller = AnimationController(
         vsync: this,
         duration: Duration(seconds: widget.timerModel.restTime),
@@ -51,24 +53,42 @@ class _TimerPageState extends ConsumerState<TimerPage> with SingleTickerProvider
 
   void _handleNextSeries() {
     _timer.cancel();
-    final timerModel = ref.read(timerModelProvider)!;
-    if (timerModel.isEmomMode) {
+    final timerModel = ref.read(timerModelProvider)!.copyWith(
+          currentSeriesIndex:
+              ref.read(timerModelProvider)!.currentSeriesIndex + 1,
+        );
+
+    if (timerModel.currentSeriesIndex < timerModel.totalSeries) {
+      ref.read(timerModelProvider.notifier).state = timerModel;
       ref.read(remainingSecondsProvider.notifier).state = timerModel.restTime;
       _startTimer();
     } else {
-      ref.read(timerServiceProvider).showNotification('Rest Time Completed', 'Your rest time has ended.');
-      if (timerModel.currentSeriesIndex < timerModel.seriesList.length - 1) {
-        final result = <String, dynamic>{
-          'startIndex': timerModel.currentSeriesIndex + 1,
-          'superSetExerciseIndex': timerModel.superSetExerciseIndex,
-          'seriesList': timerModel.seriesList,
-        };
-        context.pop(result);
-      } else {
-        final workoutDetailsUrl =
-            '/programs_screen/user_programs/${timerModel.userId}/training_viewer/${timerModel.programId}/week_details/${timerModel.weekId}/workout_details/${timerModel.workoutId}';
-        context.go(workoutDetailsUrl);
-      }
+      ref
+          .read(timerServiceProvider)
+          .showNotification('Rest Time Completed', 'Your rest time has ended.');
+      final result = {
+        'startIndex': timerModel.currentSeriesIndex,
+        'superSetExerciseIndex': timerModel.superSetExerciseIndex,
+        'seriesList': timerModel.seriesList,
+      };
+      context.pop(result);
+    }
+  }
+
+  void _skipRestTime() {
+    _timer.cancel();
+    final timerModel = ref.read(timerModelProvider)!;
+
+    if (timerModel.currentSeriesIndex < timerModel.totalSeries - 1) {
+      final result = {
+        'startIndex': timerModel.currentSeriesIndex + 1,
+        'superSetExerciseIndex': timerModel.superSetExerciseIndex,
+      };
+      context.pop(result);
+    } else {
+      context.go(
+        '/programs_screen/user_programs/${timerModel.userId}/training_viewer/${timerModel.programId}/week_details/${timerModel.weekId}/workout_details/${timerModel.workoutId}',
+      );
     }
   }
 
@@ -151,7 +171,7 @@ class _TimerPageState extends ConsumerState<TimerPage> with SingleTickerProvider
 
   Widget _buildSkipButton() {
     return TextButton(
-      onPressed: _handleNextSeries,
+      onPressed: _skipRestTime,
       style: TextButton.styleFrom(
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
