@@ -30,7 +30,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    Future.microtask(() {
       ref.read(workoutIdProvider.notifier).state = widget.workoutId;
       _fetchExercises();
     });
@@ -40,7 +40,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   void didUpdateWidget(covariant WorkoutDetails oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.workoutId != oldWidget.workoutId) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.microtask(() {
         ref.read(workoutIdProvider.notifier).state = widget.workoutId;
         _fetchExercises();
       });
@@ -49,27 +49,38 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
 
   Future<void> _fetchExercises() async {
     ref.read(loadingProvider.notifier).state = true;
-    final exercises = await _workoutService.fetchExercises(widget.workoutId);
-    ref.read(exercisesProvider.notifier).state = exercises;
-    ref.read(loadingProvider.notifier).state = false;
+    try {
+      final exercises = await _workoutService.fetchExercises(widget.workoutId);
+      if (mounted) {
+        ref.read(exercisesProvider.notifier).state = exercises;
+      }
 
-    for (final exercise in exercises) {
-      final seriesQuery = FirebaseFirestore.instance
-          .collection('series')
-          .where('exerciseId', isEqualTo: exercise['id'])
-          .orderBy('order');
-      seriesQuery.snapshots().listen((querySnapshot) {
-        final updatedExercises = ref.read(exercisesProvider);
-        final index =
-            updatedExercises.indexWhere((e) => e['id'] == exercise['id']);
-        if (index != -1) {
-          updatedExercises[index]['series'] = querySnapshot.docs
-              .map((doc) => doc.data()..['id'] = doc.id)
-              .toList();
-          ref.read(exercisesProvider.notifier).state =
-              List.from(updatedExercises);
-        }
-      });
+      for (final exercise in exercises) {
+        final seriesQuery = FirebaseFirestore.instance
+            .collection('series')
+            .where('exerciseId', isEqualTo: exercise['id'])
+            .orderBy('order');
+        seriesQuery.snapshots().listen((querySnapshot) {
+          final updatedExercises = ref.read(exercisesProvider);
+          final index =
+              updatedExercises.indexWhere((e) => e['id'] == exercise['id']);
+          if (index != -1) {
+            updatedExercises[index]['series'] = querySnapshot.docs
+                .map((doc) => doc.data()..['id'] = doc.id)
+                .toList();
+            if (mounted) {
+              ref.read(exercisesProvider.notifier).state =
+                  List.from(updatedExercises);
+            }
+          }
+        });
+      }
+    } catch (e) {
+      // Handle error
+    } finally {
+      if (mounted) {
+        ref.read(loadingProvider.notifier).state = false;
+      }
     }
   }
 
