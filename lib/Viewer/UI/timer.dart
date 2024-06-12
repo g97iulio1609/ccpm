@@ -55,55 +55,55 @@ class _TimerPageState extends ConsumerState<TimerPage>
     });
   }
 
-  void _handleNextSeries() {
-    _timer.cancel();
-    final timerModel = ref.read(timerModelProvider);
-    if (timerModel != null) {
-      final newSuperSetExerciseIndex = (timerModel.superSetExerciseIndex + 1) % timerModel.superSetExercises.length;
-      final nextSeriesIndex = newSuperSetExerciseIndex == 0
-          ? timerModel.currentSeriesIndex + 1
-          : timerModel.currentSeriesIndex;
+void _handleNextSeries() {
+  _timer.cancel();
+  final timerModel = ref.read(timerModelProvider);
+  if (timerModel != null) {
+    final newSuperSetExerciseIndex = (timerModel.superSetExerciseIndex + 1) % timerModel.superSetExercises.length;
+    final nextSeriesIndex = newSuperSetExerciseIndex == 0
+        ? timerModel.currentSeriesIndex + 1
+        : timerModel.currentSeriesIndex;
 
-      if (nextSeriesIndex < timerModel.totalSeries) {
-        final result = {
-          'startIndex': nextSeriesIndex,
-          'superSetExerciseIndex': newSuperSetExerciseIndex == 0 ? 0 : newSuperSetExerciseIndex,
-        };
-        context.pop(result);
-      } else {
-        context.go(
-          '/programs_screen/user_programs/${timerModel.userId}/training_viewer/${timerModel.programId}/week_details/${timerModel.weekId}/workout_details/${timerModel.workoutId}',
-        );
-      }
+    if (nextSeriesIndex < timerModel.totalSeries) {
+      final result = {
+        'startIndex': nextSeriesIndex,
+        'superSetExerciseIndex': 0, // Reset the super set exercise index
+      };
+      context.pop(result);
     } else {
-      // Handle null timerModel case
+      context.go(
+        '/programs_screen/user_programs/${timerModel.userId}/training_viewer/${timerModel.programId}/week_details/${timerModel.weekId}/workout_details/${timerModel.workoutId}',
+      );
     }
+  } else {
+    // Handle null timerModel case
   }
+}
 
-  void _skipRestTime() {
-    _timer.cancel();
-    final timerModel = ref.read(timerModelProvider);
-    if (timerModel != null) {
-      final newSuperSetExerciseIndex = (timerModel.superSetExerciseIndex + 1) % timerModel.superSetExercises.length;
-      final nextSeriesIndex = newSuperSetExerciseIndex == 0
-          ? timerModel.currentSeriesIndex + 1
-          : timerModel.currentSeriesIndex;
+void _skipRestTime() {
+  _timer.cancel();
+  final timerModel = ref.read(timerModelProvider);
+  if (timerModel != null) {
+    final newSuperSetExerciseIndex = (timerModel.superSetExerciseIndex + 1) % timerModel.superSetExercises.length;
+    final nextSeriesIndex = newSuperSetExerciseIndex == 0
+        ? timerModel.currentSeriesIndex + 1
+        : timerModel.currentSeriesIndex;
 
-      if (nextSeriesIndex < timerModel.totalSeries) {
-        final result = {
-          'startIndex': nextSeriesIndex,
-          'superSetExerciseIndex': newSuperSetExerciseIndex == 0 ? 0 : newSuperSetExerciseIndex,
-        };
-        context.pop(result);
-      } else {
-        context.go(
-          '/programs_screen/user_programs/${timerModel.userId}/training_viewer/${timerModel.programId}/week_details/${timerModel.weekId}/workout_details/${timerModel.workoutId}',
-        );
-      }
+    if (nextSeriesIndex < timerModel.totalSeries) {
+      final result = {
+        'startIndex': nextSeriesIndex,
+        'superSetExerciseIndex': 0, // Reset the super set exercise index
+      };
+      context.pop(result);
     } else {
-      // Handle null timerModel case
+      context.go(
+        '/programs_screen/user_programs/${timerModel.userId}/training_viewer/${timerModel.programId}/week_details/${timerModel.weekId}/workout_details/${timerModel.workoutId}',
+      );
     }
+  } else {
+    // Handle null timerModel case
   }
+}
 
   @override
   void dispose() {

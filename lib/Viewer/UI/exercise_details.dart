@@ -554,20 +554,21 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
     );
   }
 
-  void _moveToNextExercise() {
-    setState(() {
-      if (currentSuperSetExerciseIndex < widget.superSetExercises.length - 1) {
-        currentSuperSetExerciseIndex++;
-      } else {
-        currentSuperSetExerciseIndex = 0;
-        currentSeriesIndex++;
-      }
-    });
-
-    if (currentSuperSetExerciseIndex == 0) {
-      _navigateToTimer();
+void _moveToNextExercise() {
+  setState(() {
+    if (currentSuperSetExerciseIndex < widget.superSetExercises.length - 1) {
+      currentSuperSetExerciseIndex++;
+    } else {
+      currentSuperSetExerciseIndex = 0; // Reset the super set exercise index
+      currentSeriesIndex++;
     }
+  });
+
+  if (currentSuperSetExerciseIndex == 0) {
+    _navigateToTimer();
   }
+}
+
 
   @override
   void dispose() {
