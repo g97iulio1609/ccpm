@@ -26,17 +26,21 @@ class _TimerPageState extends ConsumerState<TimerPage>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    Future.microtask(() {
       ref.read(timerModelProvider.notifier).state = widget.timerModel;
       ref.read(remainingSecondsProvider.notifier).state =
           widget.timerModel.restTime;
-      _controller = AnimationController(
-        vsync: this,
-        duration: Duration(seconds: widget.timerModel.restTime),
-      );
-      _animation = Tween<double>(begin: 1.0, end: 0.0).animate(_controller);
+      _initializeController();
       _startTimer();
     });
+  }
+
+  void _initializeController() {
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(seconds: widget.timerModel.restTime),
+    );
+    _animation = Tween<double>(begin: 1.0, end: 0.0).animate(_controller);
   }
 
   void _startTimer() {
@@ -51,49 +55,57 @@ class _TimerPageState extends ConsumerState<TimerPage>
     });
   }
 
-void _handleNextSeries() {
-  _timer.cancel();
-  final timerModel = ref.read(timerModelProvider)!;
-  final newSuperSetExerciseIndex = (timerModel.superSetExerciseIndex + 1) % timerModel.superSetExercises.length;
+  void _handleNextSeries() {
+    _timer.cancel();
+    final timerModel = ref.read(timerModelProvider);
+    if (timerModel != null) {
+      final newSuperSetExerciseIndex = (timerModel.superSetExerciseIndex + 1) % timerModel.superSetExercises.length;
 
-  final nextSeriesIndex = newSuperSetExerciseIndex == 0
-      ? timerModel.currentSeriesIndex + 1
-      : timerModel.currentSeriesIndex;
+      final nextSeriesIndex = newSuperSetExerciseIndex == 0
+          ? timerModel.currentSeriesIndex + 1
+          : timerModel.currentSeriesIndex;
 
-  if (nextSeriesIndex < timerModel.totalSeries) {
-    final result = {
-      'startIndex': nextSeriesIndex,
-      'superSetExerciseIndex': newSuperSetExerciseIndex,
-    };
-    context.pop(result);
-  } else {
-    context.go(
-      '/programs_screen/user_programs/${timerModel.userId}/training_viewer/${timerModel.programId}/week_details/${timerModel.weekId}/workout_details/${timerModel.workoutId}',
-    );
+      if (nextSeriesIndex < timerModel.totalSeries) {
+        final result = {
+          'startIndex': nextSeriesIndex,
+          'superSetExerciseIndex': newSuperSetExerciseIndex,
+        };
+        context.pop(result);
+      } else {
+        context.go(
+          '/programs_screen/user_programs/${timerModel.userId}/training_viewer/${timerModel.programId}/week_details/${timerModel.weekId}/workout_details/${timerModel.workoutId}',
+        );
+      }
+    } else {
+      // Handle null timerModel case
+    }
   }
-}
 
-void _skipRestTime() {
-  _timer.cancel();
-  final timerModel = ref.read(timerModelProvider)!;
-  final newSuperSetExerciseIndex = (timerModel.superSetExerciseIndex + 1) % timerModel.superSetExercises.length;
+  void _skipRestTime() {
+    _timer.cancel();
+    final timerModel = ref.read(timerModelProvider);
+    if (timerModel != null) {
+      final newSuperSetExerciseIndex = (timerModel.superSetExerciseIndex + 1) % timerModel.superSetExercises.length;
 
-  final nextSeriesIndex = newSuperSetExerciseIndex == 0
-      ? timerModel.currentSeriesIndex + 1
-      : timerModel.currentSeriesIndex;
+      final nextSeriesIndex = newSuperSetExerciseIndex == 0
+          ? timerModel.currentSeriesIndex + 1
+          : timerModel.currentSeriesIndex;
 
-  if (nextSeriesIndex < timerModel.totalSeries) {
-    final result = {
-      'startIndex': nextSeriesIndex,
-      'superSetExerciseIndex': newSuperSetExerciseIndex,
-    };
-    context.pop(result);
-  } else {
-    context.go(
-      '/programs_screen/user_programs/${timerModel.userId}/training_viewer/${timerModel.programId}/week_details/${timerModel.weekId}/workout_details/${timerModel.workoutId}',
-    );
+      if (nextSeriesIndex < timerModel.totalSeries) {
+        final result = {
+          'startIndex': nextSeriesIndex,
+          'superSetExerciseIndex': newSuperSetExerciseIndex,
+        };
+        context.pop(result);
+      } else {
+        context.go(
+          '/programs_screen/user_programs/${timerModel.userId}/training_viewer/${timerModel.programId}/week_details/${timerModel.weekId}/workout_details/${timerModel.workoutId}',
+        );
+      }
+    } else {
+      // Handle null timerModel case
+    }
   }
-}
 
   @override
   void dispose() {
@@ -104,7 +116,18 @@ void _skipRestTime() {
 
   @override
   Widget build(BuildContext context) {
-    final timerModel = ref.watch(timerModelProvider)!;
+    final timerModel = ref.watch(timerModelProvider);
+    if (timerModel == null) {
+      return const Scaffold(
+        body: Center(
+          child: Text(
+            'Errore: timerModel non disponibile',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
+
     final remainingSeconds = ref.watch(remainingSecondsProvider);
 
     return Scaffold(
