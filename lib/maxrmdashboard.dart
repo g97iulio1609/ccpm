@@ -35,71 +35,73 @@ class MaxRMDashboard extends HookConsumerWidget {
   const MaxRMDashboard({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final exercisesAsyncValue = ref.watch(exercisesStreamProvider);
-    final usersService = ref.watch(userServiceProvider);
-    final exerciseRecordService = ref.watch(exerciseRecordServiceProvider);
-    final selectedExerciseController = useState<ExerciseModel?>(null);
-    final exerciseNameController = useTextEditingController();
-    final maxWeightController = useTextEditingController();
-    final repetitionsController = useTextEditingController();
-    final keepWeight = ref.watch(keepWeightProvider);
-    final dateFormat = DateFormat('yyyy-MM-dd');
+@override
+Widget build(BuildContext context, WidgetRef ref) {
+  final exercisesAsyncValue = ref.watch(exercisesStreamProvider);
+  final usersService = ref.watch(userServiceProvider);
+  final exerciseRecordService = ref.watch(exerciseRecordServiceProvider);
+  final selectedExerciseController = useState<ExerciseModel?>(null);
+  final exerciseNameController = useTextEditingController();
+  final maxWeightController = useTextEditingController();
+  final repetitionsController = useTextEditingController();
+  final keepWeight = ref.watch(keepWeightProvider);
+  final dateFormat = DateFormat('yyyy-MM-dd');
 
-    Future<void> addRecord({
-      required String exerciseId,
-      required String exerciseName,
-      required num maxWeight,
-      required int repetitions,
-    }) async {
-      String userId = usersService.getCurrentUserId();
-      await exerciseRecordService.addExerciseRecord(
-        userId: userId,
-        exerciseId: exerciseId,
-        exerciseName: exerciseName,
-        maxWeight: maxWeight,
-        repetitions: repetitions,
-        date: dateFormat.format(DateTime.now()),
-      );
-      debugPrint('Record added: $exerciseName, Max Weight: $maxWeight, Repetitions: $repetitions');
-    }
-
-    return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildExerciseTypeAheadField(exercisesAsyncValue, selectedExerciseController, exerciseNameController, context),
-            _buildTextFormField(
-              controller: maxWeightController,
-              labelText: 'Max weight lifted',
-              context: context,
-              keyboardType: TextInputType.number,
-            ),
-            _buildTextFormField(
-              controller: repetitionsController,
-              labelText: 'Number of repetitions',
-              context: context,
-              keyboardType: TextInputType.number,
-            ),
-            _buildKeepWeightSwitch(context, keepWeight, ref),
-            _buildAddRecordButton(
-              context,
-              selectedExerciseController,
-              maxWeightController,
-              repetitionsController,
-              addRecord,
-              exerciseRecordService,
-              usersService,
-              keepWeight,
-            ),
-            _buildAllExercisesMaxRMs(ref, usersService, exerciseRecordService, context),
-          ],
-        ),
-      ),
+  Future<void> addRecord({
+    required String exerciseId,
+    required String exerciseName,
+    required num maxWeight,
+    required int repetitions,
+  }) async {
+    String userId = usersService.getCurrentUserId();
+    await exerciseRecordService.addExerciseRecord(
+      userId: userId,
+      exerciseId: exerciseId,
+      exerciseName: exerciseName,
+      maxWeight: maxWeight,
+      repetitions: repetitions,
+      date: dateFormat.format(DateTime.now()),
     );
+    debugPrint('Record added: $exerciseName, Max Weight: $maxWeight, Repetitions: $repetitions');
   }
+
+  return Scaffold(
+    body: Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildExerciseTypeAheadField(exercisesAsyncValue, selectedExerciseController, exerciseNameController, context),
+          _buildTextFormField(
+            controller: maxWeightController,
+            labelText: 'Max weight lifted',
+            context: context,
+            keyboardType: TextInputType.number,
+          ),
+          _buildTextFormField(
+            controller: repetitionsController,
+            labelText: 'Number of repetitions',
+            context: context,
+            keyboardType: TextInputType.number,
+          ),
+          _buildKeepWeightSwitch(context, keepWeight, ref),
+          _buildAddRecordButton(
+            context,
+            selectedExerciseController,
+            maxWeightController,
+            repetitionsController,
+            addRecord,
+            exerciseRecordService,
+            usersService,
+            keepWeight,
+          ),
+          SizedBox(height: 20), // Aggiungi questa linea per creare spazio
+          _buildAllExercisesMaxRMs(ref, usersService, exerciseRecordService, context),
+        ],
+      ),
+    ),
+  );
+}
 
   Widget _buildExerciseTypeAheadField(
     AsyncValue<List<ExerciseModel>> exercisesAsyncValue,
@@ -203,7 +205,7 @@ class MaxRMDashboard extends HookConsumerWidget {
     );
   }
 
-  Widget _buildAddRecordButton(
+Widget _buildAddRecordButton(
     BuildContext context,
     ValueNotifier<ExerciseModel?> selectedExerciseController,
     TextEditingController maxWeightController,
@@ -218,52 +220,54 @@ class MaxRMDashboard extends HookConsumerWidget {
     UsersService usersService,
     bool keepWeight,
   ) {
-    return ElevatedButton(
-      onPressed: () async {
-        final int repetitions = int.tryParse(repetitionsController.text) ?? 0;
-        double maxWeight = double.tryParse(maxWeightController.text) ?? 0;
-        if (repetitions > 1) {
-          maxWeight = (maxWeight / (1.0278 - (0.0278 * repetitions))).roundToDouble();
-        }
-        final ExerciseModel? selectedExercise = selectedExerciseController.value;
-        if (selectedExercise != null && maxWeight > 0) {
-          await addRecord(
-            exerciseId: selectedExercise.id,
-            exerciseName: selectedExercise.name,
-            maxWeight: maxWeight,
-            repetitions: 1,
-          );
-
-          if (context.mounted) {
-            if (keepWeight) {
-              debugPrint('Updating intensity while keeping weight.');
-              await exerciseRecordService.updateIntensityForProgram(
-                usersService.getCurrentUserId(),
-                selectedExercise.id,
-                maxWeight,
-              );
-            } else {
-              debugPrint('Updating weights based on new max weight.');
-              await exerciseRecordService.updateWeightsForProgram(
-                usersService.getCurrentUserId(),
-                selectedExercise.id,
-                maxWeight,
-              );
-            }
-
-            maxWeightController.clear();
-            repetitionsController.clear();
-            selectedExerciseController.value = null;
+    return Center(
+      child: ElevatedButton(
+        onPressed: () async {
+          final int repetitions = int.tryParse(repetitionsController.text) ?? 0;
+          double maxWeight = double.tryParse(maxWeightController.text) ?? 0;
+          if (repetitions > 1) {
+            maxWeight = (maxWeight / (1.0278 - (0.0278 * repetitions))).roundToDouble();
           }
-        }
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          final ExerciseModel? selectedExercise = selectedExerciseController.value;
+          if (selectedExercise != null && maxWeight > 0) {
+            await addRecord(
+              exerciseId: selectedExercise.id,
+              exerciseName: selectedExercise.name,
+              maxWeight: maxWeight,
+              repetitions: 1,
+            );
+
+            if (context.mounted) {
+              if (keepWeight) {
+                debugPrint('Updating intensity while keeping weight.');
+                await exerciseRecordService.updateIntensityForProgram(
+                  usersService.getCurrentUserId(),
+                  selectedExercise.id,
+                  maxWeight,
+                );
+              } else {
+                debugPrint('Updating weights based on new max weight.');
+                await exerciseRecordService.updateWeightsForProgram(
+                  usersService.getCurrentUserId(),
+                  selectedExercise.id,
+                  maxWeight,
+                );
+              }
+
+              maxWeightController.clear();
+              repetitionsController.clear();
+              selectedExerciseController.value = null;
+            }
+          }
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        child: const Text('Add Record'),
       ),
-      child: const Text('Add Record'),
     );
   }
 

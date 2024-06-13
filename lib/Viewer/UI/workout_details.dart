@@ -61,7 +61,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
             .where('exerciseId', isEqualTo: exercise['id'])
             .orderBy('order');
         seriesQuery.snapshots().listen((querySnapshot) {
-          final updatedExercises = ref.read(exercisesProvider);
+          final updatedExercises = ref.read(exercisesProvider.notifier).state;
           final index =
               updatedExercises.indexWhere((e) => e['id'] == exercise['id']);
           if (index != -1) {
