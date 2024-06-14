@@ -10,6 +10,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class UserProfile extends ConsumerStatefulWidget {
   final String? userId;
@@ -125,21 +126,57 @@ class UserProfileState extends ConsumerState<UserProfile> {
   Future<void> deleteUser() async {
     String uid = widget.userId ?? ref.read(usersServiceProvider).getCurrentUserId();
     try {
-      // Re-authenticate the user before deletion
+      // Elimina l'utente dall'autenticazione Firebase
       User? user = FirebaseAuth.instance.currentUser;
-      if (user != null && _password != null) {
-        String email = user.email!;
-        AuthCredential credential = EmailAuthProvider.credential(email: email, password: _password!);
-        await user.reauthenticateWithCredential(credential);
+      if (user != null) {
         await ref.read(usersServiceProvider).deleteUser(uid);
         updateSnackBar('Utente eliminato con successo!', Colors.green);
         // Naviga verso la schermata di login dopo aver eliminato l'utente
         context.go('/'); // Usa la rotta configurata per la schermata di login
       } else {
-        throw Exception("User not authenticated or password not provided.");
+        throw Exception("User not authenticated.");
       }
     } catch (e) {
       updateSnackBar('Errore durante l\'eliminazione dell\'utente: $e', Colors.red);
+    }
+  }
+
+  Future<void> reauthenticateWithGoogle() async {
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      if (googleUser == null) {
+        // L'utente ha annullato l'accesso
+        updateSnackBar('Accesso annullato.', Colors.red);
+        return;
+      }
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      await FirebaseAuth.instance.currentUser?.reauthenticateWithCredential(credential);
+      await deleteUser(); // Chiama deleteUser dopo la re-autenticazione
+    } catch (e) {
+      updateSnackBar('Errore durante la re-autenticazione: $e', Colors.red);
+    }
+  }
+
+  Future<void> reauthenticateWithPassword() async {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null && _password != null) {
+        String email = user.email!;
+        AuthCredential credential = EmailAuthProvider.credential(email: email, password: _password!);
+        await user.reauthenticateWithCredential(credential);
+        await deleteUser(); // Chiama deleteUser dopo la re-autenticazione
+      } else {
+        throw Exception("User not authenticated or password not provided.");
+      }
+    } catch (e) {
+      updateSnackBar('Errore durante la re-autenticazione: $e', Colors.red);
     }
   }
 
@@ -169,7 +206,7 @@ class UserProfileState extends ConsumerState<UserProfile> {
               onPressed: () {
                 _password = password;
                 Navigator.of(context).pop();
-                deleteUser(); // Chiama deleteUser dopo aver ottenuto la password
+                reauthenticateWithPassword(); // Re-autenticazione con la password
               },
             ),
           ],
@@ -196,13 +233,22 @@ class UserProfileState extends ConsumerState<UserProfile> {
               child: const Text('Elimina'),
               onPressed: () {
                 Navigator.of(context).pop();
-                _showPasswordDialog(); // Mostra il dialogo per la password prima di eliminare
+                User? currentUser = FirebaseAuth.instance.currentUser;
+                if (isGoogleUser(currentUser)) {
+                  reauthenticateWithGoogle(); // Re-autenticazione con Google
+                } else {
+                  _showPasswordDialog(); // Richiedi password per email/password
+                }
               },
             ),
           ],
         );
       },
     );
+  }
+
+  bool isGoogleUser(User? user) {
+    return user?.providerData.any((userInfo) => userInfo.providerId == 'google.com') ?? false;
   }
 
   @override

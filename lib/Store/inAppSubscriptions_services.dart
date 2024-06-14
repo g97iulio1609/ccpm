@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:in_app_purchase_android/billing_client_wrappers.dart';
-import 'package:in_app_purchase_android/in_app_purchase_android.dart'; // Importa il pacchetto per Android
+import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'inAppSubscriptions_model.dart';
 
 class InAppPurchaseService {
@@ -9,9 +8,13 @@ class InAppPurchaseService {
   final List<ProductDetails> _productDetails = [];
   final List<Purchase> _purchases = [];
 
-  // Mappa dei codici promozionali agli ID dei prodotti
   final Map<String, String> promoCodeToProductId = {
-    'A1PROMO': 'alphanessoneplussubscription', // Mappa il codice promozionale all'ID del prodotto
+    'A1PROMO': 'alphanessoneplussubscription',
+  };
+
+  final Map<String, String> subscriptionDurations = {
+    'alphanessoneplussubscription': 'Monthly',
+    'alphanessoneplusathlete3m': 'Quarterly',
   };
 
   Stream<List<PurchaseDetails>> get purchaseStream => _inAppPurchase.purchaseStream;
@@ -25,7 +28,7 @@ class InAppPurchaseService {
     }
     debugPrint("Store is available");
 
-    const Set<String> _kIds = {'alphanessoneplussubscription', 'alphanessoneplusathlete3m'}; // Sostituisci con gli ID dei tuoi prodotti
+    const Set<String> _kIds = {'alphanessoneplussubscription', 'alphanessoneplusathlete3m'};
     debugPrint("Querying product details for IDs: $_kIds");
     final ProductDetailsResponse response = await _inAppPurchase.queryProductDetails(_kIds);
 
@@ -48,10 +51,7 @@ class InAppPurchaseService {
       _inAppPurchase.getPlatformAddition<InAppPurchaseAndroidPlatformAddition>();
 
     try {
-      // Rimuovi eventuali spazi dal codice promozionale
       final trimmedPromoCode = promoCode.trim();
-
-      // Trova l'ID del prodotto corrispondente al codice promozionale
       final productId = promoCodeToProductId[trimmedPromoCode];
       if (productId == null) {
         throw Exception("Promo code not found: $trimmedPromoCode");
