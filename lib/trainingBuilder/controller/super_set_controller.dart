@@ -1,5 +1,6 @@
 import 'dart:math';
-import '../training_model.dart';
+import 'package:alphanessone/trainingBuilder/models/superseries_model.dart';
+import 'package:alphanessone/trainingBuilder/models/training_model.dart';
 
 class SuperSetController {
   static int superSetCounter = 0;

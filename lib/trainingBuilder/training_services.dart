@@ -1,5 +1,9 @@
+import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
+import 'package:alphanessone/trainingBuilder/models/series_model.dart';
+import 'package:alphanessone/trainingBuilder/models/week_model.dart';
+import 'package:alphanessone/trainingBuilder/models/workout_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'training_model.dart';
+import './models/training_model.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;

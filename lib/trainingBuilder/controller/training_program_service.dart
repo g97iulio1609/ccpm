@@ -1,4 +1,4 @@
-import '../training_model.dart';
+import 'package:alphanessone/trainingBuilder/models/training_model.dart';
 import '../training_services.dart';
 
 class TrainingProgramService {

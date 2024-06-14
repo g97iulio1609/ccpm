@@ -1,11 +1,11 @@
-import 'package:alphanessone/trainingBuilder/training_model.dart';
+import 'package:alphanessone/trainingBuilder/models/week_model.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import '../controller/training_program_controller.dart';
 import '../training_program_state_provider.dart';
-import '../reorder_dialog.dart';
+import '../dialog/reorder_dialog.dart';
 
 class TrainingProgramWeekList extends ConsumerWidget {
   final String programId;

@@ -1,10 +1,11 @@
-import 'package:alphanessone/trainingBuilder/series_dialog.dart';
+import 'package:alphanessone/trainingBuilder/dialog/series_dialog.dart';
+import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
+import 'package:alphanessone/trainingBuilder/models/series_model.dart';
 import 'package:alphanessone/trainingBuilder/series_utils.dart';
 import 'package:flutter/material.dart';
-import '../training_model.dart';
+import 'package:alphanessone/trainingBuilder/models/training_model.dart';
 import 'package:alphanessone/services/exercise_record_services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:alphanessone/providers/providers.dart';
+
 
 class SeriesController extends ChangeNotifier {
   final ExerciseRecordService exerciseRecordService;

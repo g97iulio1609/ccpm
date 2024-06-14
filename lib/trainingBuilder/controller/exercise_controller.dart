@@ -1,8 +1,11 @@
 import 'package:alphanessone/trainingBuilder/controller/series_controller.dart';
-import 'package:alphanessone/trainingBuilder/exercise_dialog.dart';
+import 'package:alphanessone/trainingBuilder/dialog/exercise_dialog.dart';
 import 'package:alphanessone/services/exercise_record_services.dart';
+import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
+import 'package:alphanessone/trainingBuilder/models/progressions_model.dart';
+import 'package:alphanessone/trainingBuilder/models/series_model.dart';
 import 'package:flutter/material.dart';
-import '../training_model.dart';
+import 'package:alphanessone/trainingBuilder/models/training_model.dart';
 import '../utility_functions.dart';
 
 class ExerciseController extends ChangeNotifier {

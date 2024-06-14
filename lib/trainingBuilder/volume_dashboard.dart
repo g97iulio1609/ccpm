@@ -1,6 +1,7 @@
+import 'package:alphanessone/trainingBuilder/models/series_model.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'training_model.dart';
+import './models/training_model.dart';
 
 class VolumeDashboard extends StatefulWidget {
   final TrainingProgram program;

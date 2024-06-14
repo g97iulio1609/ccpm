@@ -1,11 +1,12 @@
 import 'package:alphanessone/services/exercise_record_services.dart';
+import 'package:alphanessone/trainingBuilder/models/series_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import '../training_model.dart';
+
 import '../controller/training_program_controller.dart';
 import '../utility_functions.dart';
-import '../reorder_dialog.dart';
+import '../dialog/reorder_dialog.dart';
 import '../series_utils.dart';
 
 final expansionStateProvider = StateNotifierProvider.autoDispose<
