@@ -1,13 +1,18 @@
-// inAppSubscriptions_services.dart
-
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_android/billing_client_wrappers.dart';
+import 'package:in_app_purchase_android/in_app_purchase_android.dart'; // Importa il pacchetto per Android
 import 'inAppSubscriptions_model.dart';
 
 class InAppPurchaseService {
   final InAppPurchase _inAppPurchase = InAppPurchase.instance;
   final List<ProductDetails> _productDetails = [];
   final List<Purchase> _purchases = [];
+
+  // Mappa dei codici promozionali agli ID dei prodotti
+  final Map<String, String> promoCodeToProductId = {
+    'A1PROMO': 'alphanessoneplussubscription', // Mappa il codice promozionale all'ID del prodotto
+  };
 
   Stream<List<PurchaseDetails>> get purchaseStream => _inAppPurchase.purchaseStream;
 
@@ -36,6 +41,34 @@ class InAppPurchaseService {
     final PurchaseParam purchaseParam = PurchaseParam(productDetails: productDetails);
     debugPrint("Initiating purchase for product: ${productDetails.id}");
     _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
+  }
+
+  Future<void> redeemPromoCode(String promoCode) async {
+    final InAppPurchaseAndroidPlatformAddition androidAddition = 
+      _inAppPurchase.getPlatformAddition<InAppPurchaseAndroidPlatformAddition>();
+
+    try {
+      // Rimuovi eventuali spazi dal codice promozionale
+      final trimmedPromoCode = promoCode.trim();
+
+      // Trova l'ID del prodotto corrispondente al codice promozionale
+      final productId = promoCodeToProductId[trimmedPromoCode];
+      if (productId == null) {
+        throw Exception("Promo code not found: $trimmedPromoCode");
+      }
+
+      final productDetails = _productDetails.firstWhere(
+        (pd) => pd.id == productId,
+        orElse: () => throw Exception("Product not found for promo code: $trimmedPromoCode"),
+      );
+
+      final PurchaseParam purchaseParam = PurchaseParam(productDetails: productDetails);
+      debugPrint("Initiating purchase with promo code: $trimmedPromoCode");
+      _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
+    } catch (e) {
+      debugPrint("Error redeeming promo code: $e");
+      throw Exception("Error redeeming promo code: $e");
+    }
   }
 
   void handlePurchaseUpdates(List<PurchaseDetails> purchaseDetailsList) {
