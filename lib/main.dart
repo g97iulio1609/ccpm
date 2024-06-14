@@ -1,3 +1,4 @@
+import 'package:alphanessone/Store/inAppSubscriptions.dart';
 import 'package:alphanessone/Viewer/models/timer_model.dart';
 import 'package:alphanessone/measurements/measurements.dart';
 import 'package:alphanessone/nutrition/models&Services/meals_model.dart'
@@ -335,6 +336,10 @@ class MyApp extends ConsumerWidget {
             GoRoute(
               path: '/training_gallery',
               builder: (context, state) => const TrainingGalleryScreen(),
+            ),
+                GoRoute(
+              path: '/subscriptions',
+              builder: (context, state) => InAppSubscriptionsPage(),
             ),
             GoRoute(
               path: '/measurements',

@@ -68,6 +68,8 @@ class CustomDrawer extends ConsumerWidget {
         return '/measurements';
          case 'Meals Preferiti':
         return '/mymeals';
+         case 'Abbonamenti':
+        return '/subscriptions';
       default:
         return null;
     }
@@ -111,6 +113,7 @@ class CustomDrawer extends ConsumerWidget {
   List<String> _getAdminMenuItems() {
     return [
       'I Miei Allenamenti',
+      'Abbonamenti',
       'Galleria Allenamenti',
       'Esercizi',
       'Massimali',
@@ -128,6 +131,7 @@ class CustomDrawer extends ConsumerWidget {
   List<String> _getClientMenuItems() {
     return [
       'I Miei Allenamenti',
+      'Abbonamenti',
       'Esercizi',
       'Massimali',
       'Profilo Utente',
