@@ -2,10 +2,10 @@ import 'package:alphanessone/trainingBuilder/series_utils.dart';
 import 'package:alphanessone/trainingBuilder/training_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:alphanessone/services/users_services.dart';
+import 'package:alphanessone/services/exercise_record_services.dart';
 
 class SeriesDialog extends StatefulWidget {
-  final UsersService usersService;
+  final ExerciseRecordService exerciseRecordService;
   final String athleteId;
   final String exerciseId;
   final int weekIndex;
@@ -15,8 +15,8 @@ class SeriesDialog extends StatefulWidget {
   final num latestMaxWeight;
   final ValueNotifier<double> weightNotifier;
 
-   const SeriesDialog({
-    required this.usersService,
+  const SeriesDialog({
+    required this.exerciseRecordService,
     required this.athleteId,
     required this.exerciseId,
     required this.exerciseType,
@@ -159,11 +159,10 @@ class _SeriesDialogState extends State<SeriesDialog> {
               onChanged: (value) {
                 final newWeight = double.tryParse(value) ?? 0;
                 widget.weightNotifier.value = newWeight;
-                SeriesUtils().updateIntensityFromWeight(
+                SeriesUtils.updateIntensityFromWeight(
                   _weightController,
                   _intensityController,
-                  latestMaxWeight
-                      .toDouble(), // Passa il valore corretto di latestMaxWeight
+                  latestMaxWeight.toDouble(), // Passa il valore corretto di latestMaxWeight
                 );
                 SeriesUtils.updateRPE(
                   _repsController,

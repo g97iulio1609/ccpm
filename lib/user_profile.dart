@@ -8,8 +8,9 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:alphanessone/services/users_services.dart';
+import 'package:alphanessone/providers/providers.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class UserProfile extends ConsumerStatefulWidget {
   final String? userId;
@@ -28,6 +29,7 @@ class UserProfileState extends ConsumerState<UserProfile> {
   final _debouncer = Debouncer(milliseconds: 1000);
   String? _selectedGender;
   String? _password; // Campo per conservare la password
+  DateTime? _birthdate;
 
   @override
   void initState() {
@@ -46,12 +48,27 @@ class UserProfileState extends ConsumerState<UserProfile> {
     });
     // Normalizza il valore di gender per gestire maiuscole/minuscole
     _selectedGender = userProfileData?['gender']?.toString().toLowerCase();
+    
+    // Imposta la data di nascita
+    if (userProfileData?['birthdate'] != null) {
+      _birthdate = (userProfileData!['birthdate'] as Timestamp).toDate();
+    }
+
     if (mounted) {
       setState(() {});
     }
   }
 
-  Future<void> saveProfile(String field, String value) async {
+  int _calculateAge(DateTime birthdate) {
+    DateTime today = DateTime.now();
+    int age = today.year - birthdate.year;
+    if (today.month < birthdate.month || (today.month == birthdate.month && today.day < birthdate.day)) {
+      age--;
+    }
+    return age;
+  }
+
+  Future<void> saveProfile(String field, dynamic value) async {
     String uid = widget.userId ?? ref.read(usersServiceProvider).getCurrentUserId();
     try {
       await ref.read(usersServiceProvider).updateUser(uid, {field: value});
@@ -109,21 +126,57 @@ class UserProfileState extends ConsumerState<UserProfile> {
   Future<void> deleteUser() async {
     String uid = widget.userId ?? ref.read(usersServiceProvider).getCurrentUserId();
     try {
-      // Re-authenticate the user before deletion
+      // Elimina l'utente dall'autenticazione Firebase
       User? user = FirebaseAuth.instance.currentUser;
-      if (user != null && _password != null) {
-        String email = user.email!;
-        AuthCredential credential = EmailAuthProvider.credential(email: email, password: _password!);
-        await user.reauthenticateWithCredential(credential);
+      if (user != null) {
         await ref.read(usersServiceProvider).deleteUser(uid);
         updateSnackBar('Utente eliminato con successo!', Colors.green);
         // Naviga verso la schermata di login dopo aver eliminato l'utente
         context.go('/'); // Usa la rotta configurata per la schermata di login
       } else {
-        throw Exception("User not authenticated or password not provided.");
+        throw Exception("User not authenticated.");
       }
     } catch (e) {
       updateSnackBar('Errore durante l\'eliminazione dell\'utente: $e', Colors.red);
+    }
+  }
+
+  Future<void> reauthenticateWithGoogle() async {
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      if (googleUser == null) {
+        // L'utente ha annullato l'accesso
+        updateSnackBar('Accesso annullato.', Colors.red);
+        return;
+      }
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      await FirebaseAuth.instance.currentUser?.reauthenticateWithCredential(credential);
+      await deleteUser(); // Chiama deleteUser dopo la re-autenticazione
+    } catch (e) {
+      updateSnackBar('Errore durante la re-autenticazione: $e', Colors.red);
+    }
+  }
+
+  Future<void> reauthenticateWithPassword() async {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null && _password != null) {
+        String email = user.email!;
+        AuthCredential credential = EmailAuthProvider.credential(email: email, password: _password!);
+        await user.reauthenticateWithCredential(credential);
+        await deleteUser(); // Chiama deleteUser dopo la re-autenticazione
+      } else {
+        throw Exception("User not authenticated or password not provided.");
+      }
+    } catch (e) {
+      updateSnackBar('Errore durante la re-autenticazione: $e', Colors.red);
     }
   }
 
@@ -153,7 +206,7 @@ class UserProfileState extends ConsumerState<UserProfile> {
               onPressed: () {
                 _password = password;
                 Navigator.of(context).pop();
-                deleteUser(); // Chiama deleteUser dopo aver ottenuto la password
+                reauthenticateWithPassword(); // Re-autenticazione con la password
               },
             ),
           ],
@@ -180,13 +233,22 @@ class UserProfileState extends ConsumerState<UserProfile> {
               child: const Text('Elimina'),
               onPressed: () {
                 Navigator.of(context).pop();
-                _showPasswordDialog(); // Mostra il dialogo per la password prima di eliminare
+                User? currentUser = FirebaseAuth.instance.currentUser;
+                if (isGoogleUser(currentUser)) {
+                  reauthenticateWithGoogle(); // Re-autenticazione con Google
+                } else {
+                  _showPasswordDialog(); // Richiedi password per email/password
+                }
               },
             ),
           ],
         );
       },
     );
+  }
+
+  bool isGoogleUser(User? user) {
+    return user?.providerData.any((userInfo) => userInfo.providerId == 'google.com') ?? false;
   }
 
   @override
@@ -230,8 +292,9 @@ class UserProfileState extends ConsumerState<UserProfile> {
               ),
             ),
             const SizedBox(height: 40),
+            buildBirthdayField(),
             ..._controllers.keys
-                .where((field) => field != 'photoURL' && field != 'gender')
+                .where((field) => field != 'photoURL' && field != 'gender' && field != 'birthdate')
                 .map((field) => buildEditableField(field, _controllers[field]!)),
             const SizedBox(height: 24),
             buildGenderDropdown(),
@@ -289,6 +352,54 @@ class UserProfileState extends ConsumerState<UserProfile> {
         onChanged: (value) {
           _debouncer.run(() => saveProfile(field, value));
         },
+      ),
+    );
+  }
+
+  Widget buildBirthdayField() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: InkWell(
+        onTap: () async {
+          DateTime? pickedDate = await showDatePicker(
+            context: context,
+            initialDate: _birthdate ?? DateTime.now(),
+            firstDate: DateTime(1900),
+            lastDate: DateTime.now(),
+          );
+          if (pickedDate != null && pickedDate != _birthdate) {
+            setState(() {
+              _birthdate = pickedDate;
+              saveProfile('birthdate', Timestamp.fromDate(pickedDate));
+            });
+          }
+        },
+        child: InputDecorator(
+          decoration: InputDecoration(
+            labelText: 'Età',
+            labelStyle: const TextStyle(
+              color: Colors.white70,
+              fontSize: 18,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Colors.white),
+            ),
+            filled: true,
+            fillColor: Colors.white.withOpacity(0.1),
+          ),
+          child: Text(
+            _birthdate != null ? '${_calculateAge(_birthdate!)} anni' : 'Seleziona la data di nascita',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+            ),
+          ),
+        ),
       ),
     );
   }

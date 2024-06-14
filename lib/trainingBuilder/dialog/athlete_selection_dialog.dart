@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'controller/training_program_controller.dart';
-import 'package:alphanessone/services/users_services.dart';
+import 'package:alphanessone/providers/providers.dart';
 
 class AthleteSelectionDialog extends ConsumerWidget {
   final TrainingProgramController controller;

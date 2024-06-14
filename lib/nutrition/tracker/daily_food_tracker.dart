@@ -1,5 +1,6 @@
 import 'package:alphanessone/UI/appBar_custom.dart';
-import 'package:alphanessone/services/users_services.dart';
+import 'package:alphanessone/providers/providers.dart';
+import 'package:alphanessone/services/tdee_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models&Services/meals_services.dart';
@@ -38,10 +39,12 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
   }
 
   Future<void> _loadUserTDEEAndMacros() async {
-    final userService = ref.read(usersServiceProvider);
+    final tdeeService = ref.read(tdeeServiceProvider);
+        final userService = ref.read(usersServiceProvider);
+
     final userId = userService.getCurrentUserId();
-    final tdeeData = await userService.getTDEEData(userId);
-    final macrosData = await userService.getUserMacros(userId);
+    final tdeeData = await tdeeService.getTDEEData(userId);
+    final macrosData = await tdeeService.getUserMacros(userId);
 
     if (tdeeData != null && tdeeData['tdee'] != null) {
       setState(() {

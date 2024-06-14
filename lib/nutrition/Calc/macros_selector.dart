@@ -1,10 +1,10 @@
+import 'package:alphanessone/providers/providers.dart';
+import 'package:alphanessone/services/tdee_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'macros_calc.dart';
-import 'package:alphanessone/services/users_services.dart';
 
 final macrosProvider = StateNotifierProvider<MacrosNotifier, Map<String, double>>((ref) {
   return MacrosNotifier(ref);
@@ -31,10 +31,10 @@ class MacrosNotifier extends StateNotifier<Map<String, double>> {
   }
 
   Future<void> _saveMacrosToFirebase(Map<String, double> macros) async {
-    final usersService = ref.read(usersServiceProvider);
+    final tdeeService = ref.read(tdeeServiceProvider);
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId != null) {
-      await usersService.updateMacros(userId, macros);
+      await tdeeService.updateMacros(userId, macros);
     }
   }
 }
@@ -96,8 +96,9 @@ class _MacrosSelectorState extends ConsumerState<MacrosSelector> {
   }
 
   Future<void> _loadUserData() async {
-    final usersService = ref.read(usersServiceProvider);
-    final tdeeData = await usersService.getTDEEData(widget.userId);
+    final tdeeService = ref.read(tdeeServiceProvider);
+    final tdeeData = await tdeeService.getTDEEData(widget.userId);
+
 
     if (tdeeData != null) {
       setState(() {
@@ -105,14 +106,10 @@ class _MacrosSelectorState extends ConsumerState<MacrosSelector> {
         _weight = (tdeeData['weight'] ?? 0.0).toDouble();
       });
 
-      final existingMacros = {
-        'carbs': (tdeeData['carbs'] ?? 0.0).toDouble(),
-        'protein': (tdeeData['protein'] ?? 0.0).toDouble(),
-        'fat': (tdeeData['fat'] ?? 0.0).toDouble(),
-      };
+      final userMacros = await tdeeService.getUserMacros(widget.userId);
 
-      // Convert the existingMacros values to double explicitly
-      ref.read(macrosProvider.notifier).state = existingMacros.map((key, value) => MapEntry(key, value.toDouble()));
+      // Convert the userMacros values to double explicitly
+      ref.read(macrosProvider.notifier).state = userMacros;
 
       _updateInputFields();
     }
@@ -122,9 +119,9 @@ class _MacrosSelectorState extends ConsumerState<MacrosSelector> {
     final macros = ref.read(macrosProvider);
     for (final macro in macros.keys) {
       final grams = macros[macro]!;
-      final gramsPerKg = grams / _weight;
+      final gramsPerKg = _weight > 0 ? grams / _weight : 0.0;
       final calories = MacrosCalculator.calculateCaloriesFromGrams(macro, grams);
-      final percentage = calories / _tdee * 100;
+      final percentage = _tdee > 0 ? (calories / _tdee * 100) : 0.0;
 
       _gramsControllers[macro]?.text = grams.toStringAsFixed(2);
       _gramsPerKgControllers[macro]?.text = gramsPerKg.toStringAsFixed(2);

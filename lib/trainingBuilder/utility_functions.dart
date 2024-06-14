@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:alphanessone/services/exercise_record_services.dart';
 import 'package:alphanessone/services/users_services.dart';
 
 double roundWeight(double weight, String? exerciseType) {
@@ -26,22 +27,23 @@ double roundWeight(double weight, String? exerciseType) {
 
 
 
-Future<num> getLatestMaxWeight(
-    UsersService usersService, String userId, String exerciseId) async {
-  num latestMaxWeight = 0;
-  await usersService
-      .getExerciseRecords(userId: userId, exerciseId: exerciseId)
-      .first
-      .then((records) {
-    if (records.isNotEmpty) {
-      final latestRecord = records.first;
-      latestMaxWeight = latestRecord.maxWeight;
-    }
-  }).catchError((error) {
-    // Gestisci l'errore
-  });
-  return latestMaxWeight;
-}
+   Future<num> getLatestMaxWeight(
+      ExerciseRecordService exerciseRecordService, String userId, String exerciseId) async {
+    num latestMaxWeight = 0;
+    await exerciseRecordService
+        .getExerciseRecords(userId: userId, exerciseId: exerciseId)
+        .first
+        .then((records) {
+      if (records.isNotEmpty) {
+        final latestRecord = records.first;
+        latestMaxWeight = latestRecord.maxWeight;
+      }
+    }).catchError((error) {
+      // Gestisci l'errore
+    });
+    return latestMaxWeight;
+  }
+
 
 double calculateWeightFromIntensity(latestMaxWeight, double intensity) {
   return (latestMaxWeight * intensity) / 100;

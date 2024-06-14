@@ -1,5 +1,7 @@
 // exercise_list.dart
 import 'package:alphanessone/models/exercise_record.dart';
+import 'package:alphanessone/providers/providers.dart';
+import 'package:alphanessone/services/exercise_record_services.dart';
 import 'package:alphanessone/trainingBuilder/set_progression.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
@@ -10,7 +12,6 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import '../training_model.dart';
 import '../controller/training_program_controller.dart';
 import 'series_list.dart';
-import '../../services/users_services.dart';
 import '../reorder_dialog.dart';
 
 class TrainingProgramExerciseList extends ConsumerWidget {
@@ -30,6 +31,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     final workout = controller.program.weeks[weekIndex].workouts[workoutIndex];
     final exercises = workout.exercises;
     final usersService = ref.watch(usersServiceProvider);
+    final exerciseRecordService = usersService.exerciseRecordService;
     final athleteId = controller.athleteIdController.text;
     final dateFormat = DateFormat('yyyy-MM-dd');
     final theme = Theme.of(context);
@@ -43,18 +45,16 @@ class TrainingProgramExerciseList extends ConsumerWidget {
         if (index == exercises.length) {
           return _buildAddExerciseButton(context, isDarkMode, colorScheme);
         }
-        return _buildExerciseCard(context, exercises[index], usersService,
+        return _buildExerciseCard(context, exercises[index], exerciseRecordService,
             athleteId, dateFormat, isDarkMode, colorScheme);
       },
     );
   }
 
-
-
   Widget _buildExerciseCard(
     BuildContext context,
     Exercise exercise,
-    UsersService usersService,
+    ExerciseRecordService exerciseRecordService,
     String athleteId,
     DateFormat dateFormat,
     bool isDarkMode,
@@ -68,7 +68,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
 
     return FutureBuilder<num>(
       future: getLatestMaxWeight(
-          usersService, athleteId, exercise.exerciseId ?? ''),
+          exerciseRecordService, athleteId, exercise.exerciseId ?? ''),
       builder: (context, snapshot) {
         final latestMaxWeight = snapshot.data ?? 0;
         return Slidable(
@@ -123,7 +123,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
                   _buildExerciseHeader(
                       context,
                       exercise,
-                      usersService,
+                      exerciseRecordService,
                       athleteId,
                       dateFormat,
                       latestMaxWeight,
@@ -141,7 +141,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
                       ),
                     ),
                   const SizedBox(height: 16),
-                  _buildExerciseSeries(context, exercise, usersService),
+                  _buildExerciseSeries(context, exercise, exerciseRecordService),
                   const SizedBox(height: 16),
                   Center(
                     child: _buildAddSeriesButton(
@@ -159,7 +159,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
   Widget _buildExerciseHeader(
     BuildContext context,
     Exercise exercise,
-    UsersService usersService,
+    ExerciseRecordService exerciseRecordService,
     String athleteId,
     DateFormat dateFormat,
     num latestMaxWeight,
@@ -197,7 +197,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
           ),
         ),
         
-        _buildExercisePopupMenu(context, exercise, usersService, athleteId,
+        _buildExercisePopupMenu(context, exercise, exerciseRecordService, athleteId,
             dateFormat, latestMaxWeight, isDarkMode, colorScheme),
       ],
     );
@@ -206,7 +206,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
 Widget _buildExercisePopupMenu(
   BuildContext context,
   Exercise exercise,
-  UsersService usersService,
+  ExerciseRecordService exerciseRecordService,
   String athleteId,
   DateFormat dateFormat,
   num latestMaxWeight,
@@ -235,7 +235,7 @@ Widget _buildExercisePopupMenu(
                 isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
           ),
         ),
-        onTap: () => _addOrUpdateMaxRM(exercise, context, usersService,
+        onTap: () => _addOrUpdateMaxRM(exercise, context, exerciseRecordService,
             athleteId, dateFormat, isDarkMode, colorScheme),
       ),
       PopupMenuItem(
@@ -323,11 +323,11 @@ Widget _buildExercisePopupMenu(
 Widget _buildExerciseSeries(
   BuildContext context,
   Exercise exercise,
-  UsersService usersService,
+  ExerciseRecordService exerciseRecordService,
 ) {
   return TrainingProgramSeriesList(
     controller: controller,
-    usersService: usersService,
+    exerciseRecordService: exerciseRecordService,
     weekIndex: weekIndex,
     workoutIndex: workoutIndex,
     exerciseIndex: exercise.order - 1,
@@ -449,13 +449,13 @@ Future<void> _showMoveExerciseDialog(
 Future<void> _addOrUpdateMaxRM(
   Exercise exercise,
   BuildContext context,
-  UsersService usersService,
+  ExerciseRecordService exerciseRecordService,
   String athleteId,
   DateFormat dateFormat,
   bool isDarkMode,
   ColorScheme colorScheme,
 ) async {
-  final record = await usersService.getLatestExerciseRecord(
+  final record = await exerciseRecordService.getLatestExerciseRecord(
     userId: athleteId,
     exerciseId: exercise.exerciseId!,
   );
@@ -463,15 +463,15 @@ Future<void> _addOrUpdateMaxRM(
   final maxWeightController = TextEditingController(text: record?.maxWeight.toString() ?? '');
   final repetitionsController = TextEditingController(text: record?.repetitions.toString() ?? '');
 
-repetitionsController.addListener(() {
-  var repetitions = int.tryParse(repetitionsController.text) ?? 0;
-  if (repetitions > 1) {
-    final maxWeight = double.tryParse(maxWeightController.text) ?? 0;
-    final calculatedMaxWeight = roundWeight(maxWeight / (1.0278 - (0.0278 * repetitions)),exercise.type);
-    maxWeightController.text = calculatedMaxWeight.toString();
-    repetitionsController.text = '1'; // Imposta le ripetizioni a 1 dopo aver calcolato il massimale
-  }
-});
+  repetitionsController.addListener(() {
+    var repetitions = int.tryParse(repetitionsController.text) ?? 0;
+    if (repetitions > 1) {
+      final maxWeight = double.tryParse(maxWeightController.text) ?? 0;
+      final calculatedMaxWeight = roundWeight(maxWeight / (1.0278 - (0.0278 * repetitions)), exercise.type);
+      maxWeightController.text = calculatedMaxWeight.toString();
+      repetitionsController.text = '1'; // Imposta le ripetizioni a 1 dopo aver calcolato il massimale
+    }
+  });
 
   await showDialog(
     context: context,
@@ -503,7 +503,7 @@ repetitionsController.addListener(() {
                 exercise,
                 maxWeightController,
                 repetitionsController,
-                usersService,
+                exerciseRecordService,
                 dateFormat,
                 exercise.type,
               );
@@ -580,7 +580,7 @@ Future<void> _saveMaxRM(
   Exercise exercise,
   TextEditingController maxWeightController,
   TextEditingController repetitionsController,
-  UsersService usersService,
+  ExerciseRecordService exerciseRecordService,
   DateFormat dateFormat,
   String exerciseType,
 ) async {
@@ -590,7 +590,7 @@ Future<void> _saveMaxRM(
   final roundedMaxWeight = roundWeight(maxWeight, exercise.type);
 
   if (record != null) {
-    await usersService.updateExerciseRecord(
+    await exerciseRecordService.updateExerciseRecord(
       userId: athleteId,
       exerciseId: exercise.exerciseId!,
       recordId: record.id,
@@ -598,7 +598,7 @@ Future<void> _saveMaxRM(
       repetitions: 1,
     );
   } else {
-    await usersService.addExerciseRecord(
+    await exerciseRecordService.addExerciseRecord(
       userId: athleteId,
       exerciseId: exercise.exerciseId!,
       exerciseName: exercise.name,
@@ -877,8 +877,6 @@ Future<void> _showSetProgressionScreen(
   bool isDarkMode,
   ColorScheme colorScheme,
 ) async {
-
-
   final updatedExercise = await Navigator.push(
     context,
     MaterialPageRoute(
@@ -890,9 +888,6 @@ Future<void> _showSetProgressionScreen(
     ),
   );
   if (updatedExercise != null) {
-    for (final series in updatedExercise.series) {
-
-    }
     controller.updateExercise(updatedExercise);
   }
 }

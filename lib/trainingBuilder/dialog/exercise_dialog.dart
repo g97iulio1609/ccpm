@@ -1,5 +1,5 @@
 import 'package:alphanessone/exerciseManager/exercise_model.dart';
-import 'package:alphanessone/services/users_services.dart';
+import 'package:alphanessone/services/exercise_record_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -7,15 +7,15 @@ import '../exerciseManager/exercises_services.dart';
 import 'training_model.dart';
 import 'controller/training_program_controller.dart';
 import 'add_exercise_dialog.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Importa firebase_auth
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ExerciseDialog extends ConsumerWidget {
-  final UsersService usersService;
+  final ExerciseRecordService exerciseRecordService;
   final String athleteId;
   final Exercise? exercise;
 
   const ExerciseDialog({
-    required this.usersService,
+    required this.exerciseRecordService,
     required this.athleteId,
     this.exercise,
     super.key,
@@ -30,7 +30,7 @@ class ExerciseDialog extends ConsumerWidget {
     String selectedExerciseType = exercise?.type ?? '';
 
     final exercisesService = ref.watch(exercisesServiceProvider);
-    final userId = FirebaseAuth.instance.currentUser?.uid; // Ottieni l'ID dell'utente corrente
+    final userId = FirebaseAuth.instance.currentUser?.uid;
 
     return AlertDialog(
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -62,9 +62,9 @@ class ExerciseDialog extends ConsumerWidget {
                 if (suggestion.name == 'Crea Esercizio') {
                   final newExercise = await showDialog<ExerciseModel>(
                     context: context,
-                    builder: (context) => userId != null // Verifica se userId è null
-                        ? AddExerciseDialog(exercisesService: exercisesService, userId: userId) // Passa userId
-                        : const SizedBox.shrink(), // Renderizza un widget vuoto se userId è null
+                    builder: (context) => userId != null
+                        ? AddExerciseDialog(exercisesService: exercisesService, userId: userId)
+                        : const SizedBox.shrink(),
                   );
                   if (newExercise != null) {
                     exerciseNameController.text = newExercise.name;
@@ -105,7 +105,7 @@ class ExerciseDialog extends ConsumerWidget {
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: const BorderSide(
-                        color: Colors.white, // Bordo bianco sottile
+                        color: Colors.white,
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
@@ -139,7 +139,7 @@ class ExerciseDialog extends ConsumerWidget {
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: const BorderSide(
-                    color: Colors.white, // Bordo bianco sottile
+                    color: Colors.white,
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(

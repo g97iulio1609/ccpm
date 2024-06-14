@@ -1,7 +1,7 @@
+import 'package:alphanessone/providers/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:alphanessone/services/users_services.dart';
-import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Assicurati di importare il pacchetto Firestore
 
 class TDEEScreen extends ConsumerStatefulWidget {
   final String userId;
@@ -15,7 +15,7 @@ class TDEEScreen extends ConsumerStatefulWidget {
 class _TDEEScreenState extends ConsumerState<TDEEScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  DateTime? _birthDate;
+  DateTime? _birthdate;
   int _height = 0;
   int _weight = 0;
   String _gender = '';
@@ -44,21 +44,51 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
   }
 
   void _loadTDEEData() async {
-    final usersService = ref.read(usersServiceProvider);
-    final tdeeData = await usersService.getTDEEData(widget.userId);
+    final tdeeService = ref.read(tdeeServiceProvider);
+    final tdeeData = await tdeeService.getTDEEData(widget.userId);
+
+    debugPrint('Loaded TDEE Data: $tdeeData');
 
     if (tdeeData != null) {
       setState(() {
-        _birthDate = DateTime.parse(tdeeData['birthDate']);
-        _height = tdeeData['height'];
-        _weight = tdeeData['weight'];
-        _gender = tdeeData['gender'];
-        _activityLevel = tdeeData['activityLevel'];
-        _tdee = tdeeData['tdee'];
+        // Verifica se il campo birthDate esiste nei dati caricati
+        if (tdeeData.containsKey('birthDate') && tdeeData['birthDate'] != null) {
+          _birthdate = DateTime.parse(tdeeData['birthDate']);
+        } else {
+          _birthdate = null;
+        }
 
-        _ageController.text = _calculateAge(_birthDate!).toString();
+        _height = tdeeData['height'] != null
+            ? (tdeeData['height'] is int
+                ? tdeeData['height']
+                : (tdeeData['height'] as num).toInt())
+            : 0;
+        _weight = tdeeData['weight'] != null
+            ? (tdeeData['weight'] is int
+                ? tdeeData['weight']
+                : (tdeeData['weight'] as num).toInt())
+            : 0;
+        _gender = tdeeData['gender'] ?? '';
+        _activityLevel = tdeeData['activityLevel'] != null
+            ? (tdeeData['activityLevel'] is double
+                ? tdeeData['activityLevel']
+                : (tdeeData['activityLevel'] as num).toDouble())
+            : 1.2;
+        _tdee = tdeeData['tdee'] != null
+            ? (tdeeData['tdee'] is int
+                ? tdeeData['tdee']
+                : (tdeeData['tdee'] as num).toInt())
+            : 0;
+
+        debugPrint('Parsed Data - Birthdate: $_birthdate, Height: $_height, Weight: $_weight, Gender: $_gender, Activity Level: $_activityLevel, TDEE: $_tdee');
+
+        _ageController.text = _birthdate != null
+            ? _calculateAge(_birthdate!).toString()
+            : '';
         _heightController.text = _height.toString();
         _weightController.text = _weight.toString();
+
+        debugPrint('Age Controller Text: ${_ageController.text}');
       });
     }
   }
@@ -67,7 +97,14 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
-      final age = DateTime.now().year - _birthDate!.year;
+      if (_birthdate == null) {
+        debugPrint('Birthdate is null. Cannot calculate TDEE.');
+        return;
+      }
+
+      final age = _calculateAge(_birthdate!);
+
+      debugPrint('Calculating TDEE - Age: $age, Birthdate: $_birthdate');
 
       double bmr;
       if (_gender == 'male') {
@@ -78,15 +115,17 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
 
       _tdee = (bmr * _activityLevel).round();
 
-      final usersService = ref.read(usersServiceProvider);
-      await usersService.updateTDEEData(widget.userId, {
-        'birthDate': _birthDate.toString(),
+      final tdeeService = ref.read(tdeeServiceProvider);
+      await tdeeService.updateTDEEData(widget.userId, {
+        'birthDate': _birthdate!.toIso8601String(),
         'height': _height,
         'weight': _weight,
         'gender': _gender,
         'activityLevel': _activityLevel,
         'tdee': _tdee,
       });
+
+      debugPrint('Updated TDEE Data - TDEE: $_tdee');
 
       setState(() {});
     }
@@ -98,9 +137,6 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Fabbisogno Calorico'),
-      ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -135,14 +171,14 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
                   onTap: () async {
                     final pickedDate = await showDatePicker(
                       context: context,
-                      initialDate: _birthDate ?? DateTime.now(),
+                      initialDate: _birthdate ?? DateTime.now(),
                       firstDate: DateTime(1900),
                       lastDate: DateTime.now(),
                     );
                     if (pickedDate != null) {
                       setState(() {
-                        _birthDate = pickedDate;
-                        _ageController.text = _calculateAge(_birthDate!).toString();
+                        _birthdate = pickedDate;
+                        _ageController.text = _calculateAge(_birthdate!).toString();
                       });
                     }
                   },
@@ -152,6 +188,7 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
                   children: [
                     Expanded(
                       child: TextFormField(
+                        key: UniqueKey(), // Aggiungi una chiave unica qui
                         decoration: InputDecoration(
                           labelText: "Height",
                           border: OutlineInputBorder(
@@ -172,6 +209,7 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
                     const SizedBox(width: 16),
                     Expanded(
                       child: DropdownButtonFormField(
+                        key: UniqueKey(), // Aggiungi una chiave unica qui
                         decoration: InputDecoration(
                           labelText: 'Units',
                           border: OutlineInputBorder(
@@ -195,6 +233,7 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
                   children: [
                     Expanded(
                       child: TextFormField(
+                        key: UniqueKey(), // Aggiungi una chiave unica qui
                         decoration: InputDecoration(
                           labelText: "Weight",
                           border: OutlineInputBorder(
@@ -215,6 +254,7 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
                     const SizedBox(width: 16),
                     Expanded(
                       child: DropdownButtonFormField(
+                        key: UniqueKey(), // Aggiungi una chiave unica qui
                         decoration: InputDecoration(
                           labelText: 'Units',
                           border: OutlineInputBorder(
@@ -325,16 +365,16 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
     );
   }
 
-  int _calculateAge(DateTime birthDate) {
+  int _calculateAge(DateTime birthdate) {
     DateTime currentDate = DateTime.now();
-    int age = currentDate.year - birthDate.year;
+    int age = currentDate.year - birthdate.year;
     int month1 = currentDate.month;
-    int month2 = birthDate.month;
+    int month2 = birthdate.month;
     if (month2 > month1) {
       age--;
     } else if (month1 == month2) {
       int day1 = currentDate.day;
-      int day2 = birthDate.day;
+      int day2 = birthdate.day;
       if (day2 > day1) {
         age--;
       }

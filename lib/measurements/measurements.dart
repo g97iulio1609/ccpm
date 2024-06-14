@@ -1,11 +1,17 @@
 import 'package:alphanessone/models/measurement_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:alphanessone/services/users_services.dart';
+import 'package:alphanessone/services/measurements_services.dart'; // Importa il nuovo servizio
 import 'measurements_provider.dart';
 import 'measurements_chart.dart';
 import 'package:fl_chart/fl_chart.dart';
+
+// Service Provider
+final measurementsServiceProvider = Provider<MeasurementsService>((ref) {
+  return MeasurementsService(FirebaseFirestore.instance);
+});
 
 class MeasurementsPage extends ConsumerStatefulWidget {
   final String userId;
@@ -64,49 +70,49 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> with Single
   }
 
   @override
-Widget build(BuildContext context) {
-  final usersService = ref.watch(usersServiceProvider);
-  final selectedDates = ref.watch(measurementsStateNotifierProvider);
-  final selectedMeasurements = ref.watch(selectedMeasurementsProvider);
+  Widget build(BuildContext context) {
+    final measurementsService = ref.watch(measurementsServiceProvider);
+    final selectedDates = ref.watch(measurementsStateNotifierProvider);
+    final selectedMeasurements = ref.watch(selectedMeasurementsProvider);
 
-  return Scaffold(
-    backgroundColor: Colors.black,
-    body: DefaultTabController(
-      length: 3,
-      child: NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) {
-          return [
-            SliverAppBar(
-              toolbarHeight: 0,
-              pinned: true,
-              backgroundColor: Colors.black,
-              bottom: TabBar(
-                controller: _tabController,
-                tabs: const [
-                  Tab(text: 'Misurazioni'),
-                  Tab(text: 'Grafici'),
-                  Tab(text: 'Nuova'),
-                ],
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: DefaultTabController(
+        length: 3,
+        child: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) {
+            return [
+              SliverAppBar(
+                toolbarHeight: 0,
+                pinned: true,
+                backgroundColor: Colors.black,
+                bottom: TabBar(
+                  controller: _tabController,
+                  tabs: const [
+                    Tab(text: 'Misurazioni'),
+                    Tab(text: 'Grafici'),
+                    Tab(text: 'Nuova'),
+                  ],
+                ),
               ),
-            ),
-          ];
-        },
-        body: TabBarView(
-          controller: _tabController,
-          children: [
-             _buildTableSection(usersService),
-            _buildChartSection(usersService, selectedDates, selectedMeasurements),
-            _buildAddMeasurementSection(),
-          ],
+            ];
+          },
+          body: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildTableSection(measurementsService),
+              _buildChartSection(measurementsService, selectedDates, selectedMeasurements),
+              _buildAddMeasurementSection(),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
-  Widget _buildChartSection(UsersService usersService, MeasurementsState selectedDates, Set<String> selectedMeasurements) {
+  Widget _buildChartSection(MeasurementsService measurementsService, MeasurementsState selectedDates, Set<String> selectedMeasurements) {
     return StreamBuilder<List<MeasurementModel>>(
-      stream: usersService.getMeasurements(userId: widget.userId),
+      stream: measurementsService.getMeasurements(userId: widget.userId),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -172,9 +178,9 @@ Widget build(BuildContext context) {
     );
   }
 
-  Widget _buildTableSection(UsersService usersService) {
+  Widget _buildTableSection(MeasurementsService measurementsService) {
     return StreamBuilder<List<MeasurementModel>>(
-      stream: usersService.getMeasurements(userId: widget.userId),
+      stream: measurementsService.getMeasurements(userId: widget.userId),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -360,7 +366,7 @@ Widget build(BuildContext context) {
             ),
             const SizedBox(width: 8),
             FilterChip(
-              label:const Text('Circonferenza Bicipiti'),
+              label: const Text('Circonferenza Bicipiti'),
               selected: selectedMeasurements.contains('bicepsCircumference'),
               onSelected: (selected) {
                 ref.read(selectedMeasurementsProvider.notifier).toggleSelectedMeasurement('bicepsCircumference');
@@ -560,7 +566,7 @@ Widget build(BuildContext context) {
             ElevatedButton(
               onPressed: () async {
                 if (_formKey.currentState!.validate()) {
-                  final usersService = ref.read(usersServiceProvider);
+                  final measurementsService = ref.read(measurementsServiceProvider);
                   final date = DateFormat('dd/MM/yyyy').parse(_dateController.text);
                   final weight = double.parse(_weightController.text);
                   final height = double.parse(_heightController.text);
@@ -573,7 +579,7 @@ Widget build(BuildContext context) {
                   final bmi = weight / ((height / 100) * (height / 100));
 
                   if (_editMeasurementId == null) {
-                    await usersService.addMeasurement(
+                    await measurementsService.addMeasurement(
                       userId: widget.userId,
                       date: date,
                       weight: weight,
@@ -586,7 +592,7 @@ Widget build(BuildContext context) {
                       bicepsCircumference: biceps,
                     );
                   } else {
-                    await usersService.updateMeasurement(
+                    await measurementsService.updateMeasurement(
                       userId: widget.userId,
                       measurementId: _editMeasurementId!,
                       date: date,
@@ -646,8 +652,8 @@ Widget build(BuildContext context) {
             ),
             TextButton(
               onPressed: () {
-                final usersService = ref.read(usersServiceProvider);
-                usersService.deleteMeasurement(
+                final measurementsService = ref.read(measurementsServiceProvider);
+                measurementsService.deleteMeasurement(
                   userId: widget.userId,
                   measurementId: measurement.id,
                 );

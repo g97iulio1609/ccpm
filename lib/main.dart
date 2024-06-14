@@ -1,3 +1,5 @@
+import 'package:alphanessone/Store/inAppSubscriptions.dart';
+import 'package:alphanessone/Viewer/models/timer_model.dart';
 import 'package:alphanessone/measurements/measurements.dart';
 import 'package:alphanessone/nutrition/models&Services/meals_model.dart'
     as meals;
@@ -23,16 +25,16 @@ import 'package:go_router/go_router.dart';
 import 'trainingBuilder/volume_dashboard.dart';
 import 'user_profile.dart';
 import 'users_dashboard.dart';
-import 'package:alphanessone/services/users_services.dart';
+import 'package:alphanessone/providers/providers.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'programs_screen.dart';
 import 'user_programs.dart';
-import 'Viewer/training_viewer.dart';
-import 'Viewer/week_details.dart';
-import 'Viewer/workout_details.dart';
-import 'Viewer/exercise_details.dart';
-import 'Viewer/timer.dart';
+import 'Viewer/UI/training_viewer.dart';
+import 'Viewer/UI/week_details.dart';
+import 'Viewer/UI/workout_details.dart';
+import 'Viewer/UI/exercise_details.dart';
+import 'Viewer/UI/timer.dart';
 import 'app_services.dart';
 import 'nutrition/tracker/food_selector.dart';
 import 'nutrition/tracker/favorite_meal_detail.dart';
@@ -275,38 +277,10 @@ class MyApp extends ConsumerWidget {
                                     GoRoute(
                                       path: 'timer',
                                       builder: (context, state) {
-                                        final extra = state.extra
-                                            as Map<String, dynamic>?;
+                                        final timerModel =
+                                            state.extra as TimerModel;
                                         return TimerPage(
-                                          programId: Uri.decodeComponent(state
-                                              .pathParameters['programId']!),
-                                          weekId: Uri.decodeComponent(
-                                              state.pathParameters['weekId']!),
-                                          workoutId: Uri.decodeComponent(state
-                                              .pathParameters['workoutId']!),
-                                          exerciseId: Uri.decodeComponent(state
-                                              .pathParameters['exerciseId']!),
-                                          currentSeriesIndex: int.parse(
-                                              state.uri.queryParameters[
-                                                  'currentSeriesIndex']!),
-                                          superSetExerciseIndex: int.parse(
-                                              state.uri.queryParameters[
-                                                  'superSetExerciseIndex']!),
-                                          totalSeries: int.parse(state.uri
-                                              .queryParameters['totalSeries']!),
-                                          restTime: int.parse(state.uri
-                                              .queryParameters['restTime']!),
-                                          isEmomMode: state.uri.queryParameters[
-                                                  'isEmomMode'] ==
-                                              'true',
-                                          userId:
-                                              state.pathParameters['userId']!,
-                                          seriesList: extra?['seriesList'] !=
-                                                  null
-                                              ? List<Map<String, dynamic>>.from(
-                                                  extra?['seriesList'])
-                                              : [],
-                                        );
+                                            timerModel: timerModel);
                                       },
                                     ),
                                   ],
@@ -362,6 +336,10 @@ class MyApp extends ConsumerWidget {
             GoRoute(
               path: '/training_gallery',
               builder: (context, state) => const TrainingGalleryScreen(),
+            ),
+                GoRoute(
+              path: '/subscriptions',
+              builder: (context, state) => InAppSubscriptionsPage(),
             ),
             GoRoute(
               path: '/measurements',
