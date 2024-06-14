@@ -51,6 +51,39 @@ class _InAppSubscriptionsPageState extends State<InAppSubscriptionsPage> {
     }
   }
 
+  void _showPromoCodeDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Redeem Promo Code'),
+          content: TextField(
+            controller: _promoCodeController,
+            decoration: InputDecoration(
+              labelText: 'Enter Promo Code',
+              errorText: _promoCodeError,
+            ),
+          ),
+          actions: [
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Redeem'),
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _redeemPromoCode();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,20 +93,9 @@ class _InAppSubscriptionsPageState extends State<InAppSubscriptionsPage> {
               children: [
                 Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    children: [
-                      TextField(
-                        controller: _promoCodeController,
-                        decoration: InputDecoration(
-                          labelText: 'Enter Promo Code',
-                          errorText: _promoCodeError,
-                        ),
-                      ),
-                      ElevatedButton(
-                        onPressed: _redeemPromoCode,
-                        child: Text('Redeem Promo Code'),
-                      ),
-                    ],
+                  child: ElevatedButton(
+                    onPressed: _showPromoCodeDialog,
+                    child: Text('Redeem Promo Code'),
                   ),
                 ),
                 ..._inAppPurchaseService.productDetails.map((productDetails) {
@@ -88,7 +110,7 @@ class _InAppSubscriptionsPageState extends State<InAppSubscriptionsPage> {
                       },
                     ),
                   );
-                }).toList(),
+                }),
               ],
             ),
     );
