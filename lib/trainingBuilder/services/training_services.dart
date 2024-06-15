@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import '../models/training_model.dart';
 import '../models/week_model.dart';
 import '../models/workout_model.dart';
@@ -26,8 +27,45 @@ class FirestoreService {
   }
 
   Future<void> removeProgram(String programId) async {
-    await _db.collection('programs').doc(programId).delete();
-    await _removeRelatedData('weeks', 'programId', programId);
+    WriteBatch batch = _db.batch();
+
+    // Get all weeks related to the program
+    QuerySnapshot weeksSnapshot = await _db.collection('weeks').where('programId', isEqualTo: programId).get();
+
+    for (var weekDoc in weeksSnapshot.docs) {
+      String weekId = weekDoc.id;
+
+      // Get all workouts related to the week
+      QuerySnapshot workoutsSnapshot = await _db.collection('workouts').where('weekId', isEqualTo: weekId).get();
+
+      for (var workoutDoc in workoutsSnapshot.docs) {
+        String workoutId = workoutDoc.id;
+
+        // Get all exercises related to the workout
+        QuerySnapshot exercisesSnapshot = await _db.collection('exercisesWorkout').where('workoutId', isEqualTo: workoutId).get();
+
+        for (var exerciseDoc in exercisesSnapshot.docs) {
+          String exerciseId = exerciseDoc.id;
+
+          // Get all series related to the exercise
+          QuerySnapshot seriesSnapshot = await _db.collection('series').where('exerciseId', isEqualTo: exerciseId).get();
+
+          for (var seriesDoc in seriesSnapshot.docs) {
+            batch.delete(seriesDoc.reference);
+          }
+
+          batch.delete(exerciseDoc.reference);
+        }
+
+        batch.delete(workoutDoc.reference);
+      }
+
+      batch.delete(weekDoc.reference);
+    }
+
+    batch.delete(_db.collection('programs').doc(programId));
+
+    await batch.commit();
   }
 
   Future<TrainingProgram> fetchTrainingProgram(String programId) async {

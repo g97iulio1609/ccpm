@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:alphanessone/providers/providers.dart';
 import './trainingBuilder/controller/training_program_controller.dart';
+import './trainingBuilder/services/training_services.dart';
 
 class UserProgramsScreen extends HookConsumerWidget {
   final String? userId;
@@ -14,6 +15,7 @@ class UserProgramsScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userRole = ref.watch(userRoleProvider);
+    final firestoreService = ref.watch(firestoreServiceProvider);
 
     Future<void> addProgram() async {
       final programDetails = await showDialog<Map<String, dynamic>>(
@@ -49,7 +51,7 @@ class UserProgramsScreen extends HookConsumerWidget {
               FilledButton(
                 child: const Text('Elimina'),
                 onPressed: () async {
-                  await FirebaseFirestore.instance.collection('programs').doc(id).delete();
+                  await firestoreService.removeProgram(id);
                   Navigator.of(context).pop();
                 },
               ),
@@ -64,18 +66,18 @@ class UserProgramsScreen extends HookConsumerWidget {
         'hide': !currentVisibility,
       });
     }
-    
-Stream<QuerySnapshot> getProgramsStream() {
-  final query = FirebaseFirestore.instance
-      .collection('programs')
-      .where('athleteId', isEqualTo: userId ?? FirebaseAuth.instance.currentUser!.uid);
-  
-  if (userRole != 'admin') {
-    return query.where('hide', isEqualTo: false).snapshots();
-  }
-  
-  return query.snapshots();
-}
+
+    Stream<QuerySnapshot> getProgramsStream() {
+      final query = FirebaseFirestore.instance
+          .collection('programs')
+          .where('athleteId', isEqualTo: userId ?? FirebaseAuth.instance.currentUser!.uid);
+      
+      if (userRole != 'admin') {
+        return query.where('hide', isEqualTo: false).snapshots();
+      }
+      
+      return query.snapshots();
+    }
 
     return Scaffold(
       body: Column(
@@ -99,11 +101,10 @@ Stream<QuerySnapshot> getProgramsStream() {
                   children: [
                     Icon(Icons.add),
                     SizedBox(width: 8),
-               Text(
+                    Text(
                       'Crea Programma Di Allenamento',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-
                   ],
                 ),
               ),
@@ -155,7 +156,7 @@ Stream<QuerySnapshot> getProgramsStream() {
                                   onPressed: () =>
                                       toggleProgramVisibility(doc.id, isHidden),
                                 ),
-          if (userRole == 'admin' || userRole == 'client_premium')
+                              if (userRole == 'admin' || userRole == 'client_premium')
                                 PopupMenuButton(
                                   itemBuilder: (context) => [
                                     PopupMenuItem(
