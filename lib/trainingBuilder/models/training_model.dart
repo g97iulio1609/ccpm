@@ -31,6 +31,7 @@ class TrainingProgram {
   TrainingProgram copyWith({
     String? id,
     String? name,
+    bool? hide,
     String? description,
     String? athleteId,
     String? status,
@@ -40,11 +41,11 @@ class TrainingProgram {
     return TrainingProgram(
       id: id ?? this.id,
       name: name ?? this.name,
+      hide: hide ?? this.hide,
       description: description ?? this.description,
       athleteId: athleteId ?? this.athleteId,
       status: status ?? this.status,
       mesocycleNumber: mesocycleNumber ?? this.mesocycleNumber,
-      weeks: weeks ?? this.weeks.map((week) => week.copyWith()).toList(),
     );
   }
 
@@ -52,11 +53,11 @@ class TrainingProgram {
     return TrainingProgram(
       id: map['id'],
       name: map['name'],
+      hide: map['hide'],
       description: map['description'],
       athleteId: map['athleteId'],
       status: map['status'] ?? 'private',
       mesocycleNumber: map['mesocycleNumber'],
-      weeks: List<Week>.from(map['weeks']?.map((x) => Week.fromMap(x)) ?? []),
     );
   }
 
@@ -65,13 +66,11 @@ class TrainingProgram {
     return TrainingProgram(
       id: doc.id,
       name: data['name'],
+      hide: data['hide'],
       description: data['description'],
       athleteId: data['athleteId'],
       status: data['status'] ?? 'private',
       mesocycleNumber: data['mesocycleNumber'],
-      weeks: (data['weeks'] as List<dynamic>? ?? [])
-          .map((week) => Week.fromFirestore(week))
-          .toList(),
     );
   }
 
@@ -79,11 +78,11 @@ class TrainingProgram {
     return {
       'id': id,
       'name': name,
+      'hide': hide,
       'description': description,
       'athleteId': athleteId,
       'status': status,
       'mesocycleNumber': mesocycleNumber,
-      'weeks': weeks.map((x) => x.toMap()).toList(),
     };
   }
 }

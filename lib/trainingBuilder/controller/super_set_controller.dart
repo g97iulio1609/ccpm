@@ -1,6 +1,8 @@
 import 'dart:math';
+
 import 'package:alphanessone/trainingBuilder/models/superseries_model.dart';
 import 'package:alphanessone/trainingBuilder/models/training_model.dart';
+
 
 class SuperSetController {
   static int superSetCounter = 0;
@@ -23,8 +25,7 @@ class SuperSetController {
               exerciseIds: []),
         );
         final superSetIndex = int.tryParse(
-                existingSuperSet.name?.replaceAll('SS', '') ?? '0') ??
-            0;
+                existingSuperSet.name!.replaceAll('SS', '')) ?? 0;
         if (superSetIndex > maxSuperSetIndex) {
           maxSuperSetIndex = superSetIndex;
         }
@@ -64,10 +65,10 @@ class SuperSetController {
   void createSuperSet(TrainingProgram program, int weekIndex, int workoutIndex) {
     final superSetId = generateRandomId(16);
     final superSetName =
-        'SS${SuperSetController.superSetCounter}'; // Rimuovi l'aggiunta di 1
+        'SS${SuperSetController.superSetCounter}';
     SuperSetController.superSetCounter++;
 
-    // Controlla se il contatore ha superato il valore massimo (ad esempio, 100)
+    // Reset the counter if it exceeds a certain value (e.g., 100)
     if (SuperSetController.superSetCounter > 100) {
       SuperSetController.superSetCounter = 1;
     }
@@ -85,7 +86,7 @@ class SuperSetController {
     );
     superSet.exerciseIds.add(exerciseId);
 
-    // Aggiorna la proprietà superSetId dell'esercizio
+    // Update the superSetId property of the exercise
     final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises
         .firstWhere(
       (e) => e.id == exerciseId,
@@ -101,14 +102,14 @@ class SuperSetController {
     );
     superSet.exerciseIds.remove(exerciseId);
 
-    // Reimposta la proprietà superSetId dell'esercizio a null
+    // Reset the superSetId property of the exercise to null
     final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises
         .firstWhere(
       (e) => e.id == exerciseId,
     );
     exercise.superSetId = null;
 
-    // Se il superset non contiene più esercizi, rimuovilo
+    // If the superset no longer contains exercises, remove it
     if (superSet.exerciseIds.isEmpty) {
       removeSuperSet(program, weekIndex, workoutIndex, superSetId);
     }
@@ -121,15 +122,14 @@ class SuperSetController {
         workout.superSets.where((ss) => ss.id == superSetId).toList();
     workout.superSets.removeWhere((ss) => ss.id == superSetId);
 
-    // Aggiorniamo il contatore dei supersets
+    // Update the supersets counter
     if (removedSuperSets.isNotEmpty) {
       final removedSuperSetIndex = int.tryParse(
-              removedSuperSets.first.name?.replaceAll('SS', '') ?? '0') ??
-          0;
+              removedSuperSets.first.name!.replaceAll('SS', '')) ?? 0;
       SuperSetController.superSetCounter = removedSuperSetIndex + 1;
     }
 
-    // Aggiorniamo gli indici dei supersets rimanenti
+    // Update the indices of the remaining supersets
     for (int i = 0; i < workout.superSets.length; i++) {
       workout.superSets[i].name = 'SS${i + 1}';
     }

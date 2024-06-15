@@ -7,7 +7,7 @@ import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:alphanessone/trainingBuilder/models/training_model.dart';
-import '../training_services.dart';
+import '../services/training_services.dart';
 import 'package:alphanessone/services/exercise_record_services.dart';
 import 'package:alphanessone/services/users_services.dart';
 import '../training_program_state_provider.dart';

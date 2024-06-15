@@ -1,5 +1,5 @@
 import 'package:alphanessone/trainingBuilder/models/training_model.dart';
-import '../training_services.dart';
+import '../services/training_services.dart';
 
 class TrainingProgramRepository {
   final FirestoreService _service;
