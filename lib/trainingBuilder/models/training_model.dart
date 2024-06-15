@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'week_model.dart';
 
 class TrainingProgram {
@@ -10,8 +9,8 @@ class TrainingProgram {
   int mesocycleNumber;
   bool hide;
   String status;
-
   List<Week> weeks;
+
   List<String> trackToDeleteWeeks = [];
   List<String> trackToDeleteWorkouts = [];
   List<String> trackToDeleteExercises = [];
@@ -46,6 +45,7 @@ class TrainingProgram {
       athleteId: athleteId ?? this.athleteId,
       status: status ?? this.status,
       mesocycleNumber: mesocycleNumber ?? this.mesocycleNumber,
+      weeks: weeks ?? this.weeks.map((week) => week.copyWith()).toList(),
     );
   }
 
@@ -71,6 +71,7 @@ class TrainingProgram {
       athleteId: data['athleteId'],
       status: data['status'] ?? 'private',
       mesocycleNumber: data['mesocycleNumber'],
+      
     );
   }
 
