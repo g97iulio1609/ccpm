@@ -32,6 +32,9 @@ class FirestoreService {
     // Get all weeks related to the program
     QuerySnapshot weeksSnapshot = await _db.collection('weeks').where('programId', isEqualTo: programId).get();
 
+    // Collect all futures for batch delete
+    List<Future<void>> deleteFutures = [];
+
     for (var weekDoc in weeksSnapshot.docs) {
       String weekId = weekDoc.id;
 
@@ -65,7 +68,11 @@ class FirestoreService {
 
     batch.delete(_db.collection('programs').doc(programId));
 
-    await batch.commit();
+    // Add batch commit to futures
+    deleteFutures.add(batch.commit());
+
+    // Wait for all batch commits to complete
+    await Future.wait(deleteFutures);
   }
 
   Future<TrainingProgram> fetchTrainingProgram(String programId) async {

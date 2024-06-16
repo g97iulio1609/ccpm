@@ -34,47 +34,48 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
     initializeDateFormatting('it_IT', null);
   }
 
-  String _getTitleForRoute(BuildContext context) {
-    final String currentPath = GoRouterState.of(context).uri.toString();
+String _getTitleForRoute(BuildContext context) {
+  final String currentPath = GoRouterState.of(context).uri.toString();
 
-    switch (currentPath) {
-      case '/programs_screen':
-        return 'I Miei Allenamenti';
-      case '/exercises_list':
-        return 'Esercizi';
-      case '/maxrmdashboard':
-        return 'Massimali';
-      case '/user_profile':
-        return 'Profilo Utente';
-      case '/training_program':
-        return 'Programma di Allenamento';
-      case '/users_dashboard':
-        return 'Gestione Utenti';
-      case '/volume_dashboard':
-        return 'Volume Allenamento';
-      case '/user_programs':
-        return 'Programmi Utente';
-      case '/measurements':
-        return 'Misurazioni Antropometriche';
-      case '/tdee':
-        return 'Fabbisogno Calorico';
-      case '/macros_selector':
-        return 'Calcolatore Macronutrienti';
-      case '/training_gallery':
-        return 'Galleria Allenamenti';
-      case '/food_tracker':
-        return 'Tracciatore Cibo';
-      default:
-        return 'Alphaness One';
-    }
+  switch (currentPath) {
+    case '/programs_screen':
+      return 'I Miei Allenamenti';
+    case '/exercises_list':
+      return 'Esercizi';
+    case '/maxrmdashboard':
+      return 'Massimali';
+    case '/user_profile':
+      return 'Profilo Utente';
+    case '/training_program':
+      return 'Programma di Allenamento';
+    case '/users_dashboard':
+      return 'Gestione Utenti';
+    case '/volume_dashboard':
+      return 'Volume Allenamento';
+    case '/user_programs':
+      return 'Programmi Utente';
+    case '/measurements':
+      return 'Misurazioni Antropometriche';
+    case '/tdee':
+      return 'Fabbisogno Calorico';
+    case '/macros_selector':
+      return 'Calcolatore Macronutrienti';
+    case '/training_gallery':
+      return 'Galleria Allenamenti';
+    case '/food_tracker':
+      return 'Tracciatore Cibo';
+    default:
+      return 'Alphaness One';
   }
+}
 
-  bool _isTrainingProgramRoute(BuildContext context) {
-    final currentRoute = GoRouterState.of(context).uri.toString();
-    return currentRoute.startsWith('/programs_screen/user_programs/') &&
-        (currentRoute.contains('/training_program/') ||
-            currentRoute.contains('/week/'));
-  }
+bool _isTrainingProgramRoute(BuildContext context) {
+  final currentRoute = GoRouterState.of(context).uri.toString();
+  return currentRoute.startsWith('/programs_screen/user_programs/') &&
+      (currentRoute.contains('/training_program/') ||
+          currentRoute.contains('/week/'));
+}
+
 
   bool _isDailyFoodTrackerRoute(BuildContext context) {
     final currentRoute = GoRouterState.of(context).uri.toString();
@@ -189,7 +190,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: Text('Select Favorite Day', style: TextStyle(fontSize: 16)),
+              title: const Text('Select Favorite Day', style: TextStyle(fontSize: 16)),
               content: SizedBox(
                 width: double.maxFinite,
                 child: ListView.builder(
@@ -198,7 +199,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
                   itemBuilder: (BuildContext context, int index) {
                     final favDay = favoriteDays[index];
                     return ListTile(
-                      title: Text(favDay.favoriteName ?? 'Favorite Day', style: TextStyle(fontSize: 14)),
+                      title: Text(favDay.favoriteName ?? 'Favorite Day', style: const TextStyle(fontSize: 14)),
                       onTap: () => Navigator.of(context).pop(favDay),
                     );
                   },
@@ -221,17 +222,17 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Save as Favorite', style: TextStyle(fontSize: 16)),
+          title: const Text('Save as Favorite', style: TextStyle(fontSize: 16)),
           content: TextField(
             controller: _nameController,
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               labelText: 'Favorite Name',
               hintText: 'Enter a name for this favorite day',
             ),
           ),
           actions: <Widget>[
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: Text('Cancel')),
-            TextButton(onPressed: () => Navigator.of(context).pop(_nameController.text), child: Text('Save')),
+            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
+            TextButton(onPressed: () => Navigator.of(context).pop(_nameController.text), child: const Text('Save')),
           ],
         );
       },

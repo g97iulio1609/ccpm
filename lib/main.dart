@@ -193,137 +193,113 @@ class MyApp extends ConsumerWidget {
       visualDensity: VisualDensity.adaptivePlatformDensity,
     );
 
-    final GoRouter router = GoRouter(
+final GoRouter router = GoRouter(
+  routes: [
+    ShellRoute(
+      builder: (context, state, child) => HomeScreen(child: child),
       routes: [
-        ShellRoute(
-          builder: (context, state, child) => HomeScreen(child: child),
+        GoRoute(
+          path: '/',
+          builder: (context, state) => const AuthWrapper(),
+        ),
+        GoRoute(
+          path: '/programs_screen',
+          builder: (context, state) {
+            final userRole = ref.read(userRoleProvider);
+            final userId = FirebaseAuth.instance.currentUser?.uid;
+            if (userRole == 'admin') {
+              return const ProgramsScreen();
+            } else {
+              return userId != null
+                  ? UserProgramsScreen(userId: userId)
+                  : const SizedBox();
+            }
+          },
           routes: [
             GoRoute(
-              path: '/',
-              builder: (context, state) => const AuthWrapper(),
-            ),
-            GoRoute(
-              path: '/programs_screen',
-              builder: (context, state) {
-                final userRole = ref.read(userRoleProvider);
-                final userId = FirebaseAuth.instance.currentUser?.uid;
-                if (userRole == 'admin') {
-                  return const ProgramsScreen();
-                } else {
-                  return userId != null
-                      ? UserProgramsScreen(userId: userId)
-                      : const SizedBox();
-                }
-              },
+              path: 'user_programs/:userId',
+              builder: (context, state) => UserProgramsScreen(
+                  userId: state.pathParameters['userId']!),
               routes: [
                 GoRoute(
-                  path: 'user_programs/:userId',
-                  builder: (context, state) => UserProgramsScreen(
-                      userId: state.pathParameters['userId']!),
+                  path: 'training_program/:programId',
+                  builder: (context, state) => TrainingProgramPage(
+                    programId: state.pathParameters['programId']!,
+                    userId: state.pathParameters['userId']!,
+                  ),
                   routes: [
                     GoRoute(
-                      path: 'training_viewer/:programId',
-                      builder: (context, state) => TrainingViewer(
+                      path: 'week/:weekIndex',
+                      builder: (context, state) => TrainingProgramPage(
                         programId: state.pathParameters['programId']!,
                         userId: state.pathParameters['userId']!,
+                        weekIndex: int.parse(state.pathParameters['weekIndex']!),
                       ),
                       routes: [
                         GoRoute(
-                          path: 'week_details/:weekId',
-                          builder: (context, state) => WeekDetails(
+                          path: 'workout/:workoutIndex',
+                          builder: (context, state) => TrainingProgramPage(
                             programId: state.pathParameters['programId']!,
-                            weekId: state.pathParameters['weekId']!,
                             userId: state.pathParameters['userId']!,
+                            weekIndex: int.parse(state.pathParameters['weekIndex']!),
+                            workoutIndex: int.parse(state.pathParameters['workoutIndex']!),
                           ),
-                          routes: [
-                            GoRoute(
-                              path: 'workout_details/:workoutId',
-                              builder: (context, state) => WorkoutDetails(
-                                programId: state.pathParameters['programId']!,
-                                weekId: state.pathParameters['weekId']!,
-                                workoutId: state.pathParameters['workoutId']!,
-                                userId: state.pathParameters['userId']!,
-                              ),
-                              routes: [
-                                GoRoute(
-                                  path: 'exercise_details/:exerciseId',
-                                  builder: (context, state) {
-                                    final extra =
-                                        state.extra as Map<String, dynamic>?;
-                                    return ExerciseDetails(
-                                      programId: Uri.decodeComponent(
-                                          state.pathParameters['programId']!),
-                                      weekId: Uri.decodeComponent(
-                                          state.pathParameters['weekId']!),
-                                      workoutId: Uri.decodeComponent(
-                                          state.pathParameters['workoutId']!),
-                                      exerciseId: Uri.decodeComponent(
-                                          state.pathParameters['exerciseId']!),
-                                      superSetExercises:
-                                          extra?['superSetExercises'] != null
-                                              ? List<Map<String, dynamic>>.from(
-                                                  extra?['superSetExercises'])
-                                              : [],
-                                      superSetExerciseIndex:
-                                          extra?['superSetExerciseIndex'] ?? 0,
-                                      seriesList:
-                                          List<Map<String, dynamic>>.from(
-                                              extra?['seriesList'] ?? []),
-                                      startIndex: extra?['startIndex'] ?? 0,
-                                      userId: state.pathParameters['userId']!,
-                                    );
-                                  },
-                                  routes: [
-                                    GoRoute(
-                                      path: 'timer',
-                                      builder: (context, state) {
-                                        final timerModel =
-                                            state.extra as TimerModel;
-                                        return TimerPage(
-                                            timerModel: timerModel);
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ],
                         ),
                       ],
                     ),
+                  ],
+                ),
+                GoRoute(
+                  path: 'training_viewer/:programId',
+                  builder: (context, state) => TrainingViewer(
+                    programId: state.pathParameters['programId']!,
+                    userId: state.pathParameters['userId']!,
+                  ),
+                  routes: [
                     GoRoute(
-                      path: 'training_program',
-                      builder: (context, state) => TrainingProgramPage(
+                      path: 'week_details/:weekId',
+                      builder: (context, state) => WeekDetails(
+                        programId: state.pathParameters['programId']!,
+                        weekId: state.pathParameters['weekId']!,
                         userId: state.pathParameters['userId']!,
                       ),
                       routes: [
                         GoRoute(
-                          path: ':programId',
-                          builder: (context, state) => TrainingProgramPage(
-                            programId: state.pathParameters['programId'],
-                            userId: state.pathParameters['userId']!,
-                            weekIndex: null,
-                          ),
-                        ),
-                        GoRoute(
-                          path: ':programId/week/:weekIndex',
-                          builder: (context, state) => TrainingProgramPage(
+                          path: 'workout_details/:workoutId',
+                          builder: (context, state) => WorkoutDetails(
                             programId: state.pathParameters['programId']!,
+                            weekId: state.pathParameters['weekId']!,
+                            workoutId: state.pathParameters['workoutId']!,
                             userId: state.pathParameters['userId']!,
-                            weekIndex:
-                                int.parse(state.pathParameters['weekIndex']!),
                           ),
                           routes: [
                             GoRoute(
-                              path: 'workout/:workoutIndex',
-                              builder: (context, state) => TrainingProgramPage(
-                                programId: state.pathParameters['programId']!,
-                                userId: state.pathParameters['userId']!,
-                                weekIndex: int.parse(
-                                    state.pathParameters['weekIndex']!),
-                                workoutIndex: int.parse(
-                                    state.pathParameters['workoutIndex']!),
-                              ),
+                              path: 'exercise_details/:exerciseId',
+                              builder: (context, state) {
+                                final extra = state.extra as Map<String, dynamic>?;
+                                return ExerciseDetails(
+                                  programId: Uri.decodeComponent(state.pathParameters['programId']!),
+                                  weekId: Uri.decodeComponent(state.pathParameters['weekId']!),
+                                  workoutId: Uri.decodeComponent(state.pathParameters['workoutId']!),
+                                  exerciseId: Uri.decodeComponent(state.pathParameters['exerciseId']!),
+                                  superSetExercises: extra?['superSetExercises'] != null
+                                      ? List<Map<String, dynamic>>.from(extra?['superSetExercises'])
+                                      : [],
+                                  superSetExerciseIndex: extra?['superSetExerciseIndex'] ?? 0,
+                                  seriesList: List<Map<String, dynamic>>.from(extra?['seriesList'] ?? []),
+                                  startIndex: extra?['startIndex'] ?? 0,
+                                  userId: state.pathParameters['userId']!,
+                                );
+                              },
+                              routes: [
+                                GoRoute(
+                                  path: 'timer',
+                                  builder: (context, state) {
+                                    final timerModel = state.extra as TimerModel;
+                                    return TimerPage(timerModel: timerModel);
+                                  },
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -333,118 +309,112 @@ class MyApp extends ConsumerWidget {
                 ),
               ],
             ),
+          ],
+        ),
+        GoRoute(
+          path: '/training_gallery',
+          builder: (context, state) => const TrainingGalleryScreen(),
+        ),
+        GoRoute(
+          path: '/subscriptions',
+          builder: (context, state) => InAppSubscriptionsPage(),
+        ),
+        GoRoute(
+          path: '/measurements',
+          builder: (context, state) {
+            final userId = FirebaseAuth.instance.currentUser?.uid;
+            return userId != null ? MeasurementsPage(userId: userId) : const SizedBox();
+          },
+        ),
+        GoRoute(
+          path: '/tdee',
+          builder: (context, state) {
+            final userId = FirebaseAuth.instance.currentUser?.uid;
+            return userId != null ? TDEEScreen(userId: userId) : const SizedBox();
+          },
+        ),
+        GoRoute(
+          path: '/macros_selector',
+          builder: (context, state) {
+            final userId = FirebaseAuth.instance.currentUser?.uid;
+            return userId != null ? MacrosSelector(userId: userId) : const SizedBox();
+          },
+        ),
+        GoRoute(
+          path: '/mymeals',
+          builder: (context, state) => const FavouritesMeals(),
+          routes: [
             GoRoute(
-              path: '/training_gallery',
-              builder: (context, state) => const TrainingGalleryScreen(),
-            ),
-                GoRoute(
-              path: '/subscriptions',
-              builder: (context, state) => InAppSubscriptionsPage(),
-            ),
-            GoRoute(
-              path: '/measurements',
+              path: 'favorite_meal_detail',
               builder: (context, state) {
-                final userId = FirebaseAuth.instance.currentUser?.uid;
-                return userId != null
-                    ? MeasurementsPage(userId: userId)
-                    : const SizedBox();
-              },
-            ),
-            GoRoute(
-              path: '/tdee',
-              builder: (context, state) {
-                final userId = FirebaseAuth.instance.currentUser?.uid;
-                return userId != null
-                    ? TDEEScreen(userId: userId)
-                    : const SizedBox();
-              },
-            ),
-            GoRoute(
-              path: '/macros_selector',
-              builder: (context, state) {
-                final userId = FirebaseAuth.instance.currentUser?.uid;
-                return userId != null
-                    ? MacrosSelector(userId: userId)
-                    : const SizedBox();
-              },
-            ),
-            GoRoute(
-              path: '/mymeals',
-              builder: (context, state) => const FavouritesMeals(),
-              routes: [
-                GoRoute(
-                  path: 'favorite_meal_detail',
-                  builder: (context, state) {
-                    final meal = state.extra as meals.Meal;
-                    return FavoriteMealDetail(meal: meal);
-                  },
-                ),
-              ],
-            ),
-            GoRoute(
-              path: '/food_tracker',
-              builder: (context, state) => const DailyFoodTracker(),
-              routes: [
-                GoRoute(
-                  path: 'food_selector',
-                  builder: (context, state) {
-                    final extra = state.extra as Map<String, dynamic>;
-                    final mealMap = extra['meal'] as Map<String, dynamic>;
-                    final meal = meals.Meal.fromMap(mealMap);
-                    final myFoodId = extra['myFoodId'] as String?;
-                    final isFavoriteMeal = extra['isFavoriteMeal'] as bool;
-                    return FoodSelector(
-                      meal: meal,
-                      myFoodId: myFoodId,
-                      isFavoriteMeal: isFavoriteMeal,
-                    );
-                  },
-                ),
-              ],
-            ),
-            GoRoute(
-              path: '/food_management',
-              builder: (context, state) => const FoodManagement(),
-            ),
-            GoRoute(
-              path: '/exercises_list',
-              builder: (context, state) => const ExercisesList(),
-            ),
-            GoRoute(
-              path: '/maxrmdashboard',
-              builder: (context, state) => const MaxRMDashboard(),
-            ),
-            GoRoute(
-              path: '/users_dashboard',
-              builder: (context, state) => const UsersDashboard(),
-              routes: [
-                GoRoute(
-                  path: 'user_profile',
-                  builder: (context, state) =>
-                      UserProfile(userId: state.extra as String),
-                ),
-              ],
-            ),
-            GoRoute(
-              path: '/user_profile',
-              builder: (context, state) {
-                final userId = FirebaseAuth.instance.currentUser?.uid;
-                return userId != null
-                    ? UserProfile(userId: userId)
-                    : const SizedBox();
+                final meal = state.extra as meals.Meal;
+                return FavoriteMealDetail(meal: meal);
               },
             ),
           ],
         ),
+        GoRoute(
+          path: '/food_tracker',
+          builder: (context, state) => const DailyFoodTracker(),
+          routes: [
+            GoRoute(
+              path: 'food_selector',
+              builder: (context, state) {
+                final extra = state.extra as Map<String, dynamic>;
+                final mealMap = extra['meal'] as Map<String, dynamic>;
+                final meal = meals.Meal.fromMap(mealMap);
+                final myFoodId = extra['myFoodId'] as String?;
+                final isFavoriteMeal = extra['isFavoriteMeal'] as bool;
+                return FoodSelector(
+                  meal: meal,
+                  myFoodId: myFoodId,
+                  isFavoriteMeal: isFavoriteMeal,
+                );
+              },
+            ),
+          ],
+        ),
+        GoRoute(
+          path: '/food_management',
+          builder: (context, state) => const FoodManagement(),
+        ),
+        GoRoute(
+          path: '/exercises_list',
+          builder: (context, state) => const ExercisesList(),
+        ),
+        GoRoute(
+          path: '/maxrmdashboard',
+          builder: (context, state) => const MaxRMDashboard(),
+        ),
+        GoRoute(
+          path: '/users_dashboard',
+          builder: (context, state) => const UsersDashboard(),
+          routes: [
+            GoRoute(
+              path: 'user_profile',
+              builder: (context, state) => UserProfile(userId: state.extra as String),
+            ),
+          ],
+        ),
+        GoRoute(
+          path: '/user_profile',
+          builder: (context, state) {
+            final userId = FirebaseAuth.instance.currentUser?.uid;
+            return userId != null ? UserProfile(userId: userId) : const SizedBox();
+          },
+        ),
       ],
-    );
+    ),
+  ],
+);
 
-    return MaterialApp.router(
-      routerConfig: router,
-      title: 'AlphanessOne',
-      darkTheme: darkTheme,
-      themeMode: ThemeMode.dark,
-    );
+return MaterialApp.router(
+  routerConfig: router,
+  title: 'AlphanessOne',
+  darkTheme: darkTheme,
+  themeMode: ThemeMode.dark,
+);
+
   }
 }
 

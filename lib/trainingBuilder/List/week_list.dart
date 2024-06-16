@@ -77,7 +77,7 @@ class TrainingProgramWeekList extends ConsumerWidget {
       ),
       child: InkWell(
         onTap: () {
-          context.go('/programs_screen/user_programs/$userId/training_program/$programId/week/$index');
+          _navigateToWeek(context, userId, programId, index);
         },
         borderRadius: BorderRadius.circular(16),
         child: Padding(
@@ -140,9 +140,13 @@ class TrainingProgramWeekList extends ConsumerWidget {
     );
   }
 
+  void _navigateToWeek(BuildContext context, String userId, String programId, int weekIndex) {
+    final routePath = '/programs_screen/user_programs/$userId/training_program/$programId/week/$weekIndex';
+    context.go(routePath);
+  }
+
   void _showReorderWeeksDialog(BuildContext context) {
-    final weekNames =
-        controller.program.weeks.map((week) => 'Settimana ${week.number}').toList();
+    final weekNames = controller.program.weeks.map((week) => 'Settimana ${week.number}').toList();
     showDialog(
       context: context,
       builder: (context) => ReorderDialog(
