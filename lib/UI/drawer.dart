@@ -60,15 +60,15 @@ class CustomDrawer extends ConsumerWidget {
         return '/tdee';
       case 'Food Tracker':
         return '/food_tracker';
-         case 'Food Management':
+      case 'Food Management':
         return '/food_management';
       case 'Calcolatore Macronutrienti':
         return '/macros_selector';
       case 'Misurazioni':
         return '/measurements';
-         case 'Meals Preferiti':
+      case 'Meals Preferiti':
         return '/mymeals';
-         case 'Abbonamenti':
+      case 'Abbonamenti':
         return '/subscriptions';
       default:
         return null;
@@ -99,11 +99,11 @@ class CustomDrawer extends ConsumerWidget {
         return Icons.calculate;
       case 'Food Tracker':
         return Icons.calculate;
-        case 'Food Management':
+      case 'Food Management':
         return Icons.calculate;
       case 'Misurazioni':
         return Icons.trending_up;
-              case 'Meals Preferiti':
+      case 'Meals Preferiti':
         return Icons.trending_up;
       default:
         return Icons.menu;
@@ -138,7 +138,7 @@ class CustomDrawer extends ConsumerWidget {
       'Fabbisogno Calorico',
       'Calcolatore Macronutrienti',
       'Food Tracker',
-      'Misurazioni'
+      'Misurazioni',
     ];
   }
 
