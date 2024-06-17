@@ -70,7 +70,7 @@ class ProgramsScreen extends HookConsumerWidget {
                   ),
                   margin: const EdgeInsets.symmetric(vertical: 8.0),
                   child: InkWell(
-                    onTap: () => context.go('/programs_screen/user_programs/${user.id}'),
+                    onTap: () => context.go('/user_programs/${user.id}'),
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Text(

@@ -253,7 +253,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
             exercise['series'].indexWhere((series) => series['done'] != true);
 
         context.go(
-          '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${exercise['id']}',
+          '/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${exercise['id']}',
           extra: {
             'exerciseName': exercise['name'],
             'exerciseVariant': exercise['variant'],
@@ -478,7 +478,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     return GestureDetector(
       onTap: () {
         context.go(
-          '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${exercise['id']}',
+          '/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${exercise['id']}',
           extra: {
             'exerciseName': exercise['name'],
             'exerciseVariant': exercise['variant'] ?? '',

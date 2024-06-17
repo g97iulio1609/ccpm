@@ -141,7 +141,7 @@ class TrainingProgramWeekList extends ConsumerWidget {
   }
 
   void _navigateToWeek(BuildContext context, String userId, String programId, int weekIndex) {
-    final routePath = '/programs_screen/user_programs/$userId/training_program/$programId/week/$weekIndex';
+    final routePath = '/user_programs/$userId/training_program/$programId/week/$weekIndex';
     context.go(routePath);
   }
 

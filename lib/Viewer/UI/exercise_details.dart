@@ -93,7 +93,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
 
   void _navigateToTimer() async {
     final result = await context.push<Map<String, dynamic>>(
-      '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${widget.exerciseId}/timer',
+      '/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${widget.exerciseId}/timer',
       extra: TimerModel(
         programId: widget.programId,
         userId: widget.userId,
@@ -129,7 +129,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
         });
       } else {
         context.go(
-          '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}',
+          '/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}',
         );
       }
     }

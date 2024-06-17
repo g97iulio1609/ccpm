@@ -8,9 +8,9 @@ import './trainingBuilder/controller/training_program_controller.dart';
 import './trainingBuilder/services/training_services.dart';
 
 class UserProgramsScreen extends HookConsumerWidget {
-  final String? userId;
+  final String userId;
 
-  const UserProgramsScreen({super.key, this.userId});
+  const UserProgramsScreen({super.key, required this.userId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,7 +28,7 @@ class UserProgramsScreen extends HookConsumerWidget {
           'name': programDetails['name'],
           'description': programDetails['description'],
           'mesocycleNumber': programDetails['mesocycleNumber'],
-          'athleteId': userId ?? FirebaseAuth.instance.currentUser!.uid,
+          'athleteId': userId,
           'hide': false,
         });
       }
@@ -70,7 +70,7 @@ class UserProgramsScreen extends HookConsumerWidget {
     Stream<QuerySnapshot> getProgramsStream() {
       final query = FirebaseFirestore.instance
           .collection('programs')
-          .where('athleteId', isEqualTo: userId ?? FirebaseAuth.instance.currentUser!.uid);
+          .where('athleteId', isEqualTo: userId);
       
       if (userRole != 'admin') {
         return query.where('hide', isEqualTo: false).snapshots();
@@ -80,6 +80,7 @@ class UserProgramsScreen extends HookConsumerWidget {
     }
 
     return Scaffold(
+    
       body: Column(
         children: [
           if (userRole == 'admin' || userRole == 'client_premium')
@@ -137,7 +138,7 @@ class UserProgramsScreen extends HookConsumerWidget {
                       ),
                       child: InkWell(
                         onTap: () => context.go(
-                          '/programs_screen/user_programs/$userId/training_viewer/${doc.id}'),
+                          '/user_programs/$userId/training_viewer/${doc.id}'),
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
                           child: Row(
@@ -163,7 +164,7 @@ class UserProgramsScreen extends HookConsumerWidget {
                                       child: const Text('Modifica'),
                                       onTap: () {
                                         context.go(
-                                          '/programs_screen/user_programs/$userId/training_program/${doc.id}');
+                                          '/user_programs/$userId/training_program/${doc.id}');
                                       },
                                     ),
                                     PopupMenuItem(
@@ -178,13 +179,13 @@ class UserProgramsScreen extends HookConsumerWidget {
                                           context: context,
                                           builder: (BuildContext context) {
                                             TextEditingController
-                                                _nameController =
+                                                nameController =
                                                 TextEditingController();
                                             return AlertDialog(
                                               title: const Text(
                                                   'Duplica Programma'),
                                               content: TextField(
-                                                controller: _nameController,
+                                                controller: nameController,
                                                 decoration:
                                                     const InputDecoration(
                                                   labelText:
@@ -203,7 +204,7 @@ class UserProgramsScreen extends HookConsumerWidget {
                                                   onPressed: () =>
                                                       Navigator.of(context)
                                                           .pop(
-                                                              _nameController
+                                                              nameController
                                                                   .text
                                                                   .trim()),
                                                   child: const Text('OK'),
@@ -241,9 +242,9 @@ class UserProgramsScreen extends HookConsumerWidget {
 }
 
 class AddProgramDialog extends StatefulWidget {
-  final String? userId;
+  final String userId;
 
-  const AddProgramDialog({super.key, this.userId});
+  const AddProgramDialog({super.key, required this.userId});
 
   @override
   _AddProgramDialogState createState() => _AddProgramDialogState();

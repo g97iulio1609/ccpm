@@ -55,7 +55,7 @@ class _TrainingViewerState extends ConsumerState<TrainingViewer> {
                   weekDescription: week['description'] ?? '',
                   onTap: () {
                     context.go(
-                        '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${week['id']}');
+                        '/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${week['id']}');
                   },
                 );
               },

@@ -34,48 +34,47 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
     initializeDateFormatting('it_IT', null);
   }
 
-String _getTitleForRoute(BuildContext context) {
-  final String currentPath = GoRouterState.of(context).uri.toString();
+  String _getTitleForRoute(BuildContext context) {
+    final String currentPath = GoRouterState.of(context).uri.toString();
 
-  switch (currentPath) {
-    case '/programs_screen':
-      return 'I Miei Allenamenti';
-    case '/exercises_list':
-      return 'Esercizi';
-    case '/maxrmdashboard':
-      return 'Massimali';
-    case '/user_profile':
-      return 'Profilo Utente';
-    case '/training_program':
-      return 'Programma di Allenamento';
-    case '/users_dashboard':
-      return 'Gestione Utenti';
-    case '/volume_dashboard':
-      return 'Volume Allenamento';
-    case '/user_programs':
-      return 'Programmi Utente';
-    case '/measurements':
-      return 'Misurazioni Antropometriche';
-    case '/tdee':
-      return 'Fabbisogno Calorico';
-    case '/macros_selector':
-      return 'Calcolatore Macronutrienti';
-    case '/training_gallery':
-      return 'Galleria Allenamenti';
-    case '/food_tracker':
-      return 'Tracciatore Cibo';
-    default:
-      return 'Alphaness One';
+    switch (currentPath) {
+      case '/programs_screen':
+        return 'Coaching';
+      case '/user_programs':
+        return 'I Miei Allenamenti';
+      case '/exercises_list':
+        return 'Esercizi';
+      case '/maxrmdashboard':
+        return 'Massimali';
+      case '/user_profile':
+        return 'Profilo Utente';
+      case '/training_program':
+        return 'Programma di Allenamento';
+      case '/users_dashboard':
+        return 'Gestione Utenti';
+      case '/volume_dashboard':
+        return 'Volume Allenamento';
+      case '/measurements':
+        return 'Misurazioni Antropometriche';
+      case '/tdee':
+        return 'Fabbisogno Calorico';
+      case '/macros_selector':
+        return 'Calcolatore Macronutrienti';
+      case '/training_gallery':
+        return 'Galleria Allenamenti';
+      case '/food_tracker':
+        return 'Tracciatore Cibo';
+      default:
+        return 'Alphaness One';
+    }
   }
-}
 
-bool _isTrainingProgramRoute(BuildContext context) {
-  final currentRoute = GoRouterState.of(context).uri.toString();
-  return currentRoute.startsWith('/programs_screen/user_programs/') &&
-      (currentRoute.contains('/training_program/') ||
-          currentRoute.contains('/week/'));
-}
-
+  bool _isTrainingProgramRoute(BuildContext context) {
+    final currentRoute = GoRouterState.of(context).uri.toString();
+    return currentRoute.startsWith('/user_programs/') &&
+        (currentRoute.contains('/training_program/') ||
+            currentRoute.contains('/week/'));
+  }
 
   bool _isDailyFoodTrackerRoute(BuildContext context) {
     final currentRoute = GoRouterState.of(context).uri.toString();
@@ -288,7 +287,12 @@ bool _isTrainingProgramRoute(BuildContext context) {
                     iconSize: 24,
                     icon: const Icon(Icons.arrow_back),
                     onPressed: () {
-                      context.pop();
+                      if (currentRoute.startsWith('/user_programs/') &&
+                          ref.read(previousRouteProvider) == '/programs_screen') {
+                        context.go('/programs_screen');
+                      } else {
+                        context.pop();
+                      }
                     },
                   ),
                 ),
@@ -320,3 +324,4 @@ bool _isTrainingProgramRoute(BuildContext context) {
 }
 
 final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());
+final previousRouteProvider = StateProvider<String?>((ref) => null);

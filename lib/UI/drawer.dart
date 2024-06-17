@@ -36,12 +36,10 @@ class CustomDrawer extends ConsumerWidget {
   String? _getRouteForMenuItem(
       String menuItem, String userRole, String? userId) {
     switch (menuItem) {
+      case 'Coaching':
+        return '/programs_screen';
       case 'I Miei Allenamenti':
-        return userRole == 'admin'
-            ? '/programs_screen'
-            : userId != null
-                ? '/programs_screen/user_programs/$userId'
-                : null;
+        return '/user_programs/$userId';
       case 'Galleria Allenamenti':
         return '/training_gallery';
       case 'Esercizi':
@@ -77,6 +75,8 @@ class CustomDrawer extends ConsumerWidget {
 
   IconData _getIconForMenuItem(String menuItem) {
     switch (menuItem) {
+      case 'Coaching':
+        return Icons.school;
       case 'I Miei Allenamenti':
         return Icons.fitness_center;
       case 'Galleria Allenamenti':
@@ -104,7 +104,7 @@ class CustomDrawer extends ConsumerWidget {
       case 'Misurazioni':
         return Icons.trending_up;
       case 'Meals Preferiti':
-        return Icons.trending_up;
+        return Icons.favorite;
       default:
         return Icons.menu;
     }
@@ -112,6 +112,7 @@ class CustomDrawer extends ConsumerWidget {
 
   List<String> _getAdminMenuItems() {
     return [
+      'Coaching',
       'I Miei Allenamenti',
       'Abbonamenti',
       'Galleria Allenamenti',
@@ -138,7 +139,7 @@ class CustomDrawer extends ConsumerWidget {
       'Fabbisogno Calorico',
       'Calcolatore Macronutrienti',
       'Food Tracker',
-      'Misurazioni',
+      'Misurazioni'
     ];
   }
 
@@ -202,7 +203,7 @@ class CustomDrawer extends ConsumerWidget {
                             final currentRoute =
                                 GoRouterState.of(context).uri.toString();
                             final route =
-                                '/programs_screen/user_programs/${FirebaseAuth.instance.currentUser?.uid}/training_viewer/$programId/week_details/${weekDoc.id}/workout_details/${workoutDoc.id}';
+                                '/user_programs/${FirebaseAuth.instance.currentUser?.uid}/training_viewer/$programId/week_details/${weekDoc.id}/workout_details/${workoutDoc.id}';
 
                             return ListTile(
                               title: Text(

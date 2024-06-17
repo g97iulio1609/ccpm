@@ -95,7 +95,7 @@ class _TrainingProgramWorkoutListPageState
       child: InkWell(
         onTap: () {
           context.go(
-              '/programs_screen/user_programs/${widget.controller.program.athleteId}/training_program/${widget.controller.program.id}/week/${widget.weekIndex}/workout/$index');
+              '/user_programs/${widget.controller.program.athleteId}/training_program/${widget.controller.program.id}/week/${widget.weekIndex}/workout/$index');
         },
         borderRadius: BorderRadius.circular(16),
         child: Padding(

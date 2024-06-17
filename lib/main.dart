@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'firebase_options.dart';
-import 'app_router.dart';
-import 'app_theme.dart';
-import 'app_notifications.dart';
-import 'app_services.dart';
+import 'Main/app_router.dart';
+import 'Main/app_theme.dart';
+import 'Main/app_notifications.dart';
+import 'Main/app_services.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

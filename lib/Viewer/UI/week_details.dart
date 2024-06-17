@@ -22,6 +22,7 @@ class WeekDetails extends ConsumerWidget {
     final weekService = ref.watch(weekServiceProvider);
 
     return Scaffold(
+   
       body: StreamBuilder<QuerySnapshot>(
         stream: weekService.getWorkouts(weekId),
         builder: (context, snapshot) {
@@ -52,7 +53,7 @@ class WeekDetails extends ConsumerWidget {
                 onTap: () {
                   if (workoutId != null) {
                     context.go(
-                      '/programs_screen/user_programs/$userId/training_viewer/$programId/week_details/$weekId/workout_details/$workoutId',
+                      '/user_programs/$userId/training_viewer/$programId/week_details/$weekId/workout_details/$workoutId',
                     );
                   }
                 },
