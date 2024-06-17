@@ -1,10 +1,28 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
 import '../models/training_model.dart';
 import '../models/week_model.dart';
 import '../models/workout_model.dart';
 import '../models/exercise_model.dart';
 import '../models/series_model.dart';
+
+
+class TrainingProgramService {
+  final FirestoreService _service;
+
+  TrainingProgramService(this._service);
+
+  Future<TrainingProgram> fetchTrainingProgram(String programId) async {
+    return await _service.fetchTrainingProgram(programId);
+  }
+
+  Future<void> addOrUpdateTrainingProgram(TrainingProgram program) async {
+    await _service.addOrUpdateTrainingProgram(program);
+  }
+
+  Future<void> removeToDeleteItems(TrainingProgram program) async {
+    await _service.removeToDeleteItems(program);
+  }
+}
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;

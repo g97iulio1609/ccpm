@@ -3,6 +3,7 @@ import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
 import 'package:alphanessone/trainingBuilder/models/series_model.dart';
 import 'package:alphanessone/trainingBuilder/models/superseries_model.dart';
 import 'package:alphanessone/trainingBuilder/models/week_model.dart';
+import 'package:alphanessone/trainingBuilder/services/providers.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -10,8 +11,6 @@ import 'package:alphanessone/trainingBuilder/models/training_model.dart';
 import '../services/training_services.dart';
 import 'package:alphanessone/services/exercise_record_services.dart';
 import 'package:alphanessone/services/users_services.dart';
-import '../training_program_state_provider.dart';
-import 'training_program_repository.dart';
 import 'week_controller.dart';
 import 'workout_controller.dart';
 import 'exercise_controller.dart';
@@ -53,7 +52,7 @@ class TrainingProgramController extends ChangeNotifier {
     }
   }
 
-  final TrainingProgramRepository _repository;
+  final TrainingProgramService _trainingService;
   final WeekController _weekController;
   final WorkoutController _workoutController;
   late final SeriesController _seriesController;
@@ -67,7 +66,7 @@ class TrainingProgramController extends ChangeNotifier {
     this._exerciseRecordService,
     this._programStateNotifier,
     this.ref,
-  )   : _repository = TrainingProgramRepository(_service),
+  )   : _trainingService = TrainingProgramService(_service),
         _weekController = WeekController(),
         _workoutController = WorkoutController(),
         _superSetController = SuperSetController() {
@@ -107,7 +106,7 @@ class TrainingProgramController extends ChangeNotifier {
     }
 
     try {
-      _program = await _repository.fetchTrainingProgram(programId);
+      _program = await _trainingService.fetchTrainingProgram(programId);
       _updateProgram();
       _superSetController.loadSuperSets(_program);
 
@@ -334,8 +333,8 @@ class TrainingProgramController extends ChangeNotifier {
     _updateProgramFields();
 
     try {
-      await _repository.addOrUpdateTrainingProgram(_program);
-      await _repository.removeToDeleteItems(_program);
+      await _trainingService.addOrUpdateTrainingProgram(_program);
+      await _trainingService.removeToDeleteItems(_program);
       await _usersService.updateUser(
           _athleteIdController.text, {'currentProgram': _program.id});
 
@@ -391,7 +390,7 @@ class TrainingProgramController extends ChangeNotifier {
     try {
       // Fetch the existing program
       TrainingProgram? existingProgram =
-          await _repository.fetchTrainingProgram(programId);
+          await _trainingService.fetchTrainingProgram(programId);
 
       if (existingProgram == null) {
         _showErrorSnackBar(context, 'Programma esistente non trovato');
@@ -461,7 +460,7 @@ class TrainingProgramController extends ChangeNotifier {
       }
 
       // Save the new program
-      await _repository.addOrUpdateTrainingProgram(newProgram);
+      await _trainingService.addOrUpdateTrainingProgram(newProgram);
 
       // Show a success message
       _showSuccessSnackBar(context, 'Programma duplicato con successo');
