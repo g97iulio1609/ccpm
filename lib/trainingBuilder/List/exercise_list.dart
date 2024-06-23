@@ -3,7 +3,7 @@ import 'package:alphanessone/models/exercise_record.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/services/exercise_record_services.dart';
 import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
-import 'package:alphanessone/trainingBuilder/set_progression.dart';
+import 'package:alphanessone/trainingBuilder/List/set_progression.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
