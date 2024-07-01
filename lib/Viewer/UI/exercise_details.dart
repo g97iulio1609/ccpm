@@ -91,7 +91,9 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
     });
   }
 
-  void _navigateToTimer() async {
+  Future<void> _navigateToTimer() async {
+    if (!mounted) return;
+
     final result = await context.push<Map<String, dynamic>>(
       '/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${widget.exerciseId}/timer',
       extra: TimerModel(
@@ -106,9 +108,11 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
         restTime: _getRestTimeInSeconds(),
         isEmomMode: _isEmomMode,
         superSetExerciseIndex: currentSuperSetExerciseIndex,
-        superSetExercises: widget.superSetExercises, // Aggiungi questo parametro
+        superSetExercises: widget.superSetExercises,
       ),
     );
+
+    if (!mounted) return;
 
     if (result != null) {
       final int nextIndex = result['startIndex'] as int;
@@ -203,7 +207,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
                   const SizedBox(height: 32),
                   _buildEmomSwitch(theme, isDarkMode, colorScheme),
                   const SizedBox(height: 40),
-                  if (currentSeries != null) // Check if currentSeries is not null
+                  if (currentSeries != null)
                     _buildNextButton(
                       theme,
                       isDarkMode,
@@ -425,7 +429,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
         textStyle: theme.textTheme.titleLarge?.copyWith(
           color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
         ),
-        selectedTextStyle: theme.textTheme.titleLarge?.copyWith(
+selectedTextStyle: theme.textTheme.titleLarge?.copyWith(
           color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
           fontWeight: FontWeight.bold,
         ),

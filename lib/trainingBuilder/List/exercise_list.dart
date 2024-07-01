@@ -62,7 +62,6 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     bool isDarkMode,
     ColorScheme colorScheme,
   ) {
-
     final superSets = controller
         .program.weeks[weekIndex].workouts[workoutIndex].superSets
         .where((ss) => ss.exerciseIds.contains(exercise.id))
@@ -101,7 +100,6 @@ class TrainingProgramExerciseList extends ConsumerWidget {
             ],
           ),
           child: Padding(
-            // AGGIUNTO PADDING
             padding:
                 const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Container(
@@ -205,323 +203,321 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     );
   }
 
-Widget _buildExercisePopupMenu(
-  BuildContext context,
-  Exercise exercise,
-  ExerciseRecordService exerciseRecordService,
-  String athleteId,
-  DateFormat dateFormat,
-  num latestMaxWeight,
-  bool isDarkMode,
-  ColorScheme colorScheme,
-) {
-  return PopupMenuButton(
-    color: isDarkMode ? colorScheme.surface : colorScheme.background,
-    itemBuilder: (context) => [
-      PopupMenuItem(
-        child: Text(
-          'Modifica',
-          style: TextStyle(
-            color:
-                isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
-          ),
-        ),
-        onTap: () => controller.editExercise(
-            weekIndex, workoutIndex, exercise.order - 1, context),
-      ),
-      PopupMenuItem(
-        child: Text(
-          'Aggiorna Max RM',
-          style: TextStyle(
-            color:
-                isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
-          ),
-        ),
-        onTap: () => _addOrUpdateMaxRM(exercise, context, exerciseRecordService,
-            athleteId, dateFormat, isDarkMode, colorScheme),
-      ),
-      PopupMenuItem(
-        child: Text(
-          'Riordina Esercizi',
-          style: TextStyle(
-            color:
-                isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
-          ),
-        ),
-        onTap: () =>
-            _showReorderExercisesDialog(context, weekIndex, workoutIndex),
-      ),
-      PopupMenuItem(
-        child: Text(
-          'Aggiungi al Superset',
-          style: TextStyle(
-            color:
-                isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
-          ),
-        ),
-        onTap: () => _showAddToSuperSetDialog(
-            context, exercise, isDarkMode, colorScheme),
-      ),
-      if (exercise.superSetId != null)
+  Widget _buildExercisePopupMenu(
+    BuildContext context,
+    Exercise exercise,
+    ExerciseRecordService exerciseRecordService,
+    String athleteId,
+    DateFormat dateFormat,
+    num latestMaxWeight,
+    bool isDarkMode,
+    ColorScheme colorScheme,
+  ) {
+    return PopupMenuButton(
+      color: isDarkMode ? colorScheme.surface : colorScheme.background,
+      itemBuilder: (context) => [
         PopupMenuItem(
           child: Text(
-            'Rimuovi dal Superset',
+            'Modifica',
             style: TextStyle(
-              color: isDarkMode
-                  ? colorScheme.onSurface
-                  : colorScheme.onBackground,
+              color:
+                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
             ),
           ),
-          onTap: () => controller.removeExerciseFromSuperSet(
-              weekIndex, workoutIndex, exercise.superSetId!, exercise.id!),
+          onTap: () => controller.editExercise(
+              weekIndex, workoutIndex, exercise.order - 1, context),
         ),
-      PopupMenuItem(
-        child: Text(
-          'Set Progression',
-          style: TextStyle(
-            color:
-                isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+        PopupMenuItem(
+          child: Text(
+            'Aggiorna Max RM',
+            style: TextStyle(
+              color:
+                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+            ),
           ),
+          onTap: () => _addOrUpdateMaxRM(exercise, context, exerciseRecordService,
+              athleteId, dateFormat, isDarkMode, colorScheme),
         ),
-        onTap: () => _showSetProgressionScreen(
-            context, exercise, latestMaxWeight, isDarkMode, colorScheme),
-      ),
-     PopupMenuItem(
-  child: Text(
-    'Duplica Esercizio',
-    style: TextStyle(
-      color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
-    ),
-  ),
-  onTap: () => controller.duplicateExercise(
-      weekIndex, workoutIndex, exercise.order - 1),
-),
-      PopupMenuItem(
-        child: Text(
-          'Sposta Esercizio',
-          style: TextStyle(
-            color:
-                isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+        PopupMenuItem(
+          child: Text(
+            'Riordina Esercizi',
+            style: TextStyle(
+              color:
+                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+            ),
           ),
+          onTap: () =>
+              _showReorderExercisesDialog(context, weekIndex, workoutIndex),
         ),
-        onTap: () =>
-            _showMoveExerciseDialog(context, weekIndex, workoutIndex, exercise),
-      ),
-      PopupMenuItem(
-        child: Text(
-          'Elimina',
-          style: TextStyle(
-            color:
-                isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+        PopupMenuItem(
+          child: Text(
+            'Aggiungi al Superset',
+            style: TextStyle(
+              color:
+                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+            ),
           ),
+          onTap: () => _showAddToSuperSetDialog(
+              context, exercise, isDarkMode, colorScheme),
         ),
-        onTap: () => controller.removeExercise(
-            weekIndex, workoutIndex, exercise.order - 1),
-      ),
-    ],
-  );
-}
+        if (exercise.superSetId != null)
+          PopupMenuItem(
+            child: Text(
+              'Rimuovi dal Superset',
+              style: TextStyle(
+                color: isDarkMode
+                    ? colorScheme.onSurface
+                    : colorScheme.onBackground,
+              ),
+            ),
+            onTap: () => controller.removeExerciseFromSuperSet(
+                weekIndex, workoutIndex, exercise.superSetId!, exercise.id!),
+          ),
+        PopupMenuItem(
+          child: Text(
+            'Set Progression',
+            style: TextStyle(
+              color:
+                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+            ),
+          ),
+          onTap: () => _showSetProgressionScreen(
+              context, exercise, latestMaxWeight, isDarkMode, colorScheme),
+        ),
+        PopupMenuItem(
+          child: Text(
+            'Duplica Esercizio',
+            style: TextStyle(
+              color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+            ),
+          ),
+          onTap: () => controller.duplicateExercise(
+              weekIndex, workoutIndex, exercise.order - 1),
+        ),
+        PopupMenuItem(
+          child: Text(
+            'Sposta Esercizio',
+            style: TextStyle(
+              color:
+                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+            ),
+          ),
+          onTap: () =>
+              _showMoveExerciseDialog(context, weekIndex, workoutIndex, exercise),
+        ),
+        PopupMenuItem(
+          child: Text(
+            'Elimina',
+            style: TextStyle(
+              color:
+                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+            ),
+          ),
+          onTap: () => controller.removeExercise(
+              weekIndex, workoutIndex, exercise.order - 1),
+        ),
+      ],
+    );
+  }
 
-Widget _buildExerciseSeries(
-  BuildContext context,
-  Exercise exercise,
-  ExerciseRecordService exerciseRecordService,
-) {
-  return TrainingProgramSeriesList(
-    controller: controller,
-    exerciseRecordService: exerciseRecordService,
-    weekIndex: weekIndex,
-    workoutIndex: workoutIndex,
-    exerciseIndex: exercise.order - 1,
-    exerciseType: exercise.type,
-  );
-}
+  Widget _buildExerciseSeries(
+    BuildContext context,
+    Exercise exercise,
+    ExerciseRecordService exerciseRecordService,
+  ) {
+    return TrainingProgramSeriesList(
+      controller: controller,
+      exerciseRecordService: exerciseRecordService,
+      weekIndex: weekIndex,
+      workoutIndex: workoutIndex,
+      exerciseIndex: exercise.order - 1,
+      exerciseType: exercise.type,
+    );
+  }
 
-Widget _buildAddSeriesButton(
-  BuildContext context,
-  Exercise exercise,
-  bool isDarkMode,
-  ColorScheme colorScheme,
-) {
-  return ElevatedButton(
-    onPressed: () => controller.addSeries(weekIndex, workoutIndex,
-        exercise.order - 1, exercise.type ?? '', context),
-    style: ElevatedButton.styleFrom(
-      backgroundColor:
-          colorScheme.primary, // Usa il colore primario come sfondo
-      foregroundColor:
-          Colors.black, // Usa il colore nero per il testo
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-    ),
-    child: Text(
-      'Aggiungi Nuova Serie',
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: Colors.black, // Imposta esplicitamente il colore del testo a nero
-          ),
-    ),
-  );
-}
-
-Widget _buildAddExerciseButton(
-  BuildContext context,
-  bool isDarkMode,
-  ColorScheme colorScheme,
-) {
-  return Padding(
-    padding: const EdgeInsets.all(16.0),
-    child: ElevatedButton(
-      onPressed: () =>
-          controller.addExercise(weekIndex, workoutIndex, context),
+  Widget _buildAddSeriesButton(
+    BuildContext context,
+    Exercise exercise,
+    bool isDarkMode,
+    ColorScheme colorScheme,
+  ) {
+    return ElevatedButton(
+      onPressed: () => controller.addSeries(weekIndex, workoutIndex,
+          exercise.order - 1, exercise.type ?? '', context),
       style: ElevatedButton.styleFrom(
-        backgroundColor:
-            colorScheme.primary, // Usa il colore primario come sfondo
-        foregroundColor:
-            Colors.black, // Usa il colore nero per il testo
+        backgroundColor: colorScheme.primary,
+        foregroundColor: Colors.black,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
       ),
       child: Text(
-        'Aggiungi Esercizio',
+        'Aggiungi Nuova Serie',
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              color: Colors.black, // Imposta esplicitamente il colore del testo a nero
+              color: Colors.black,
             ),
       ),
-    ),
-  );
-}
+    );
+  }
 
-  // exercise_list.dart
+  Widget _buildAddExerciseButton(
+    BuildContext context,
+    bool isDarkMode,
+    ColorScheme colorScheme,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: ElevatedButton(
+        onPressed: () =>
+            controller.addExercise(weekIndex, workoutIndex, context),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: colorScheme.primary,
+          foregroundColor: Colors.black,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+        child: Text(
+          'Aggiungi Esercizio',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+        ),
+      ),
+    );
+  }
 
-Future<void> _showMoveExerciseDialog(
+  Future<void> _showMoveExerciseDialog(
     BuildContext context,
     int weekIndex,
     int sourceWorkoutIndex,
     Exercise exercise,
-) async {
-  final sourceExerciseIndex = exercise.order - 1;
-  final week = controller.program.weeks[weekIndex];
+  ) async {
+    final sourceExerciseIndex = exercise.order - 1;
+    final week = controller.program.weeks[weekIndex];
 
-  final destinationWorkoutIndex = await showDialog<int>(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text('Seleziona l\'Allenamento di Destinazione'),
-        content: DropdownButtonFormField<int>(
-          value: null,
-          items: List.generate(
-            week.workouts.length,
-            (index) => DropdownMenuItem(
-              value: index,
-              child: Text('Allenamento ${week.workouts[index].order}'),
-            ),
-          ),
-          onChanged: (value) {
-            Navigator.pop(context, value);
-          },
-          decoration: const InputDecoration(
-            labelText: 'Allenamento di Destinazione',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Annulla'),
-          ),
-        ],
-      );
-    },
-  );
+    if (!context.mounted) return;
 
-  if (destinationWorkoutIndex != null && destinationWorkoutIndex != sourceWorkoutIndex) {
-    controller.moveExercise(
-      weekIndex,
-      sourceWorkoutIndex,
-      sourceExerciseIndex,
-      weekIndex,
-      destinationWorkoutIndex,
-    );
-  }
-}
-
-Future<void> _addOrUpdateMaxRM(
-  Exercise exercise,
-  BuildContext context,
-  ExerciseRecordService exerciseRecordService,
-  String athleteId,
-  DateFormat dateFormat,
-  bool isDarkMode,
-  ColorScheme colorScheme,
-) async {
-  final record = await exerciseRecordService.getLatestExerciseRecord(
-    userId: athleteId,
-    exerciseId: exercise.exerciseId!,
-  );
-
-  final maxWeightController = TextEditingController(text: record?.maxWeight.toString() ?? '');
-  final repetitionsController = TextEditingController(text: record?.repetitions.toString() ?? '');
-
-  repetitionsController.addListener(() {
-    var repetitions = int.tryParse(repetitionsController.text) ?? 0;
-    if (repetitions > 1) {
-      final maxWeight = double.tryParse(maxWeightController.text) ?? 0;
-      final calculatedMaxWeight = roundWeight(maxWeight / (1.0278 - (0.0278 * repetitions)), exercise.type);
-      maxWeightController.text = calculatedMaxWeight.toString();
-      repetitionsController.text = '1'; // Imposta le ripetizioni a 1 dopo aver calcolato il massimale
-    }
-  });
-
-  await showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        backgroundColor: isDarkMode ? colorScheme.surface : colorScheme.background,
-        title: Text(
-          'Aggiorna Max RM',
-          style: TextStyle(
-            color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
-          ),
-        ),
-        content: _buildMaxRMInputFields(maxWeightController, repetitionsController, isDarkMode, colorScheme),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Annulla',
-              style: TextStyle(
-                color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+    final destinationWorkoutIndex = await showDialog<int>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Seleziona l\'Allenamento di Destinazione'),
+          content: DropdownButtonFormField<int>(
+            value: null,
+            items: List.generate(
+              week.workouts.length,
+              (index) => DropdownMenuItem(
+                value: index,
+                child: Text('Allenamento ${week.workouts[index].order}'),
               ),
             ),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              await _saveMaxRM(
-                record,
-                athleteId,
-                exercise,
-                maxWeightController,
-                repetitionsController,
-                exerciseRecordService,
-                dateFormat,
-                exercise.type,
-              );
-              Navigator.pop(context);
+            onChanged: (value) {
+              Navigator.pop(dialogContext, value);
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isDarkMode ? colorScheme.primary : colorScheme.secondary,
-              foregroundColor: isDarkMode ? colorScheme.onPrimary : colorScheme.onSecondary,
+            decoration: const InputDecoration(
+              labelText: 'Allenamento di Destinazione',
             ),
-            child: const Text('Salva'),
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Annulla'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (destinationWorkoutIndex != null && destinationWorkoutIndex != sourceWorkoutIndex) {
+      controller.moveExercise(
+        weekIndex,
+        sourceWorkoutIndex,
+        sourceExerciseIndex,
+        weekIndex,
+        destinationWorkoutIndex,
       );
-    },
-  );
-}
+    }
+  }
+
+    Future<void> _addOrUpdateMaxRM(
+    Exercise exercise,
+    BuildContext context,
+    ExerciseRecordService exerciseRecordService,
+    String athleteId,
+    DateFormat dateFormat,
+    bool isDarkMode,
+    ColorScheme colorScheme,
+  ) async {
+    final record = await exerciseRecordService.getLatestExerciseRecord(
+      userId: athleteId,
+      exerciseId: exercise.exerciseId!,
+    );
+
+    final maxWeightController = TextEditingController(text: record?.maxWeight.toString() ?? '');
+    final repetitionsController = TextEditingController(text: record?.repetitions.toString() ?? '');
+
+    repetitionsController.addListener(() {
+      var repetitions = int.tryParse(repetitionsController.text) ?? 0;
+      if (repetitions > 1) {
+        final maxWeight = double.tryParse(maxWeightController.text) ?? 0;
+        final calculatedMaxWeight = roundWeight(maxWeight / (1.0278 - (0.0278 * repetitions)), exercise.type);
+        maxWeightController.text = calculatedMaxWeight.toString();
+        repetitionsController.text = '1';
+      }
+    });
+
+    if (!context.mounted) return;
+
+    await showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          backgroundColor: isDarkMode ? colorScheme.surface : colorScheme.background,
+          title: Text(
+            'Aggiorna Max RM',
+            style: TextStyle(
+              color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+            ),
+          ),
+          content: _buildMaxRMInputFields(maxWeightController, repetitionsController, isDarkMode, colorScheme),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(
+                'Annulla',
+                style: TextStyle(
+                  color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                await _saveMaxRM(
+                  record,
+                  athleteId,
+                  exercise,
+                  maxWeightController,
+                  repetitionsController,
+                  exerciseRecordService,
+                  dateFormat,
+                  exercise.type,
+                );
+                Navigator.pop(dialogContext);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isDarkMode ? colorScheme.primary : colorScheme.secondary,
+                foregroundColor: isDarkMode ? colorScheme.onPrimary : colorScheme.onSecondary,
+              ),
+              child: const Text('Salva'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   Widget _buildMaxRMInputFields(
     TextEditingController maxWeightController,
@@ -546,14 +542,12 @@ Future<void> _addOrUpdateMaxRM(
             }),
           ],
           style: TextStyle(
-            color:
-                isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+            color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
           ),
           decoration: InputDecoration(
             labelText: 'Peso Massimo',
             labelStyle: TextStyle(
-              color:
-                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+              color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
             ),
           ),
         ),
@@ -561,14 +555,12 @@ Future<void> _addOrUpdateMaxRM(
           controller: repetitionsController,
           keyboardType: TextInputType.number,
           style: TextStyle(
-            color:
-                isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+            color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
           ),
           decoration: InputDecoration(
             labelText: 'Ripetizioni',
             labelStyle: TextStyle(
-              color:
-                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+              color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
             ),
           ),
         ),
@@ -576,45 +568,47 @@ Future<void> _addOrUpdateMaxRM(
     );
   }
 
-Future<void> _saveMaxRM(
-  ExerciseRecord? record,
-  String athleteId,
-  Exercise exercise,
-  TextEditingController maxWeightController,
-  TextEditingController repetitionsController,
-  ExerciseRecordService exerciseRecordService,
-  DateFormat dateFormat,
-  String exerciseType,
-) async {
-  final maxWeight = double.tryParse(maxWeightController.text) ?? 0;
+  Future<void> _saveMaxRM(
+    ExerciseRecord? record,
+    String athleteId,
+    Exercise exercise,
+    TextEditingController maxWeightController,
+    TextEditingController repetitionsController,
+    ExerciseRecordService exerciseRecordService,
+    DateFormat dateFormat,
+    String exerciseType,
+  ) async {
+    final maxWeight = double.tryParse(maxWeightController.text) ?? 0;
 
-  // Approssima il peso utilizzando la funzione roundWeight
-  final roundedMaxWeight = roundWeight(maxWeight, exercise.type);
+    final roundedMaxWeight = roundWeight(maxWeight, exercise.type);
 
-  if (record != null) {
-    await exerciseRecordService.updateExerciseRecord(
-      userId: athleteId,
-      exerciseId: exercise.exerciseId!,
-      recordId: record.id,
-      maxWeight: roundedMaxWeight.round(),
-      repetitions: 1,
-    );
-  } else {
-    await exerciseRecordService.addExerciseRecord(
-      userId: athleteId,
-      exerciseId: exercise.exerciseId!,
-      exerciseName: exercise.name,
-      maxWeight: roundedMaxWeight.round(),
-      repetitions: 1,
-      date: dateFormat.format(DateTime.now()),
-    );
+    if (record != null) {
+      await exerciseRecordService.updateExerciseRecord(
+        userId: athleteId,
+        exerciseId: exercise.exerciseId!,
+        recordId: record.id,
+        maxWeight: roundedMaxWeight.round(),
+        repetitions: 1,
+      );
+    } else {
+      await exerciseRecordService.addExerciseRecord(
+        userId: athleteId,
+        exerciseId: exercise.exerciseId!,
+        exerciseName: exercise.name,
+        maxWeight: roundedMaxWeight.round(),
+        repetitions: 1,
+        date: dateFormat.format(DateTime.now()),
+      );
+    }
+
+    await controller.updateExercise(exercise);
   }
 
-  await controller.updateExercise(exercise);
-}
-
   void _showReorderExercisesDialog(
-      BuildContext context, int weekIndex, int workoutIndex) {
+    BuildContext context,
+    int weekIndex,
+    int workoutIndex
+  ) {
     final exerciseNames = controller
         .program.weeks[weekIndex].workouts[workoutIndex].exercises
         .map((exercise) => exercise.name)
@@ -630,30 +624,29 @@ Future<void> _saveMaxRM(
   }
 
   Future<void> _createNewSuperSet(
-      BuildContext context, bool isDarkMode, ColorScheme colorScheme) async {
+    BuildContext context,
+    bool isDarkMode,
+    ColorScheme colorScheme
+  ) async {
     final superSetName = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor:
-            isDarkMode ? colorScheme.surface : colorScheme.background,
+        backgroundColor: isDarkMode ? colorScheme.surface : colorScheme.background,
         title: Text(
           'Nuovo Superset',
           style: TextStyle(
-            color:
-                isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+            color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
           ),
         ),
         content: TextField(
           autofocus: true,
           style: TextStyle(
-            color:
-                isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+            color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
           ),
           decoration: InputDecoration(
             labelText: 'Nome Superset',
             labelStyle: TextStyle(
-              color:
-                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+              color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
             ),
           ),
           onSubmitted: (value) => Navigator.of(context).pop(value),
@@ -664,9 +657,7 @@ Future<void> _saveMaxRM(
             child: Text(
               'Annulla',
               style: TextStyle(
-                color: isDarkMode
-                    ? colorScheme.onSurface
-                    : colorScheme.onBackground,
+                color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
               ),
             ),
           ),
@@ -676,10 +667,8 @@ Future<void> _saveMaxRM(
               Navigator.of(context).pop(textFieldController.text);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  isDarkMode ? colorScheme.primary : colorScheme.secondary,
-              foregroundColor:
-                  isDarkMode ? colorScheme.onPrimary : colorScheme.onSecondary,
+              backgroundColor: isDarkMode ? colorScheme.primary : colorScheme.secondary,
+              foregroundColor: isDarkMode ? colorScheme.onPrimary : colorScheme.onSecondary,
             ),
             child: const Text('Crea'),
           ),
@@ -692,32 +681,32 @@ Future<void> _saveMaxRM(
     }
   }
 
-  Future<void> _showAddToSuperSetDialog(BuildContext context, Exercise exercise,
-      bool isDarkMode, ColorScheme colorScheme) async {
+  Future<void> _showAddToSuperSetDialog(
+    BuildContext context,
+    Exercise exercise,
+    bool isDarkMode,
+    ColorScheme colorScheme,
+  ) async {
     String? selectedSuperSetId;
-    final superSets =
-        controller.program.weeks[weekIndex].workouts[workoutIndex].superSets;
+    final superSets = controller.program.weeks[weekIndex].workouts[workoutIndex].superSets;
 
     if (superSets.isEmpty) {
-      // Crea un nuovo superset se non ce ne sono
       controller.createSuperSet(weekIndex, workoutIndex);
-      selectedSuperSetId = controller
-          .program.weeks[weekIndex].workouts[workoutIndex].superSets.first.id;
+      selectedSuperSetId = controller.program.weeks[weekIndex].workouts[workoutIndex].superSets.first.id;
     } else {
+      if (!context.mounted) return;
+
       selectedSuperSetId = await showDialog<String>(
         context: context,
-        builder: (context) {
+        builder: (BuildContext dialogContext) {
           return StatefulBuilder(
-            builder: (context, setState) {
+            builder: (BuildContext builderContext, setState) {
               return AlertDialog(
-                backgroundColor:
-                    isDarkMode ? colorScheme.surface : colorScheme.background,
+                backgroundColor: isDarkMode ? colorScheme.surface : colorScheme.background,
                 title: Text(
                   'Aggiungi al Superset',
                   style: TextStyle(
-                    color: isDarkMode
-                        ? colorScheme.onSurface
-                        : colorScheme.onBackground,
+                    color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
                   ),
                 ),
                 content: DropdownButtonFormField<String>(
@@ -728,9 +717,7 @@ Future<void> _saveMaxRM(
                       child: Text(
                         ss.name ?? '',
                         style: TextStyle(
-                          color: isDarkMode
-                              ? colorScheme.onSurface
-                              : colorScheme.onBackground,
+                          color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
                         ),
                       ),
                     );
@@ -743,21 +730,17 @@ Future<void> _saveMaxRM(
                   decoration: InputDecoration(
                     hintText: 'Seleziona il Superset',
                     hintStyle: TextStyle(
-                      color: isDarkMode
-                          ? colorScheme.onSurface
-                          : colorScheme.onBackground,
+                      color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
                     ),
                   ),
                 ),
                 actions: [
                   TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => Navigator.of(dialogContext).pop(),
                     child: Text(
                       'Annulla',
                       style: TextStyle(
-                        color: isDarkMode
-                            ? colorScheme.onSurface
-                            : colorScheme.onBackground,
+                        color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
                       ),
                     ),
                   ),
@@ -766,26 +749,21 @@ Future<void> _saveMaxRM(
                       onPressed: () {
                         controller.createSuperSet(weekIndex, workoutIndex);
                         setState(() {});
-                        Navigator.of(context).pop(superSets.last.id);
+                        Navigator.of(dialogContext).pop(superSets.last.id);
                       },
                       child: Text(
                         'Crea Nuovo Superset',
                         style: TextStyle(
-                          color: isDarkMode
-                              ? colorScheme.onSurface
-                              : colorScheme.onBackground,
+                          color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
                         ),
                       ),
                     ),
                   TextButton(
-                    onPressed: () =>
-                        Navigator.of(context).pop(selectedSuperSetId),
+                    onPressed: () => Navigator.of(dialogContext).pop(selectedSuperSetId),
                     child: Text(
                       'Aggiungi',
                       style: TextStyle(
-                        color: isDarkMode
-                            ? colorScheme.onSurface
-                            : colorScheme.onBackground,
+                        color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
                       ),
                     ),
                   ),
@@ -799,12 +777,20 @@ Future<void> _saveMaxRM(
 
     if (selectedSuperSetId != null) {
       controller.addExerciseToSuperSet(
-          weekIndex, workoutIndex, selectedSuperSetId!, exercise.id!);
+        weekIndex,
+        workoutIndex,
+        selectedSuperSetId!,
+        exercise.id!,
+      );
     }
   }
 
-  Future<void> _showRemoveFromSuperSetDialog(BuildContext context,
-      Exercise exercise, bool isDarkMode, ColorScheme colorScheme) async {
+  Future<void> _showRemoveFromSuperSetDialog(
+    BuildContext context,
+    Exercise exercise,
+    bool isDarkMode,
+    ColorScheme colorScheme
+  ) async {
     final superSets = controller
         .program.weeks[weekIndex].workouts[workoutIndex].superSets
         .where((ss) => ss.exerciseIds.contains(exercise.id))
@@ -817,13 +803,11 @@ Future<void> _saveMaxRM(
     final superSetId = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor:
-            isDarkMode ? colorScheme.surface : colorScheme.background,
+        backgroundColor: isDarkMode ? colorScheme.surface : colorScheme.background,
         title: Text(
           'Rimuovi dal Superset',
           style: TextStyle(
-            color:
-                isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+            color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
           ),
         ),
         content: DropdownButtonFormField<String>(
@@ -834,9 +818,7 @@ Future<void> _saveMaxRM(
               child: Text(
                 'Superset ${ss.id}',
                 style: TextStyle(
-                  color: isDarkMode
-                      ? colorScheme.onSurface
-                      : colorScheme.onBackground,
+                  color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
                 ),
               ),
             );
@@ -845,8 +827,7 @@ Future<void> _saveMaxRM(
           decoration: InputDecoration(
             hintText: 'Seleziona il Superset',
             hintStyle: TextStyle(
-              color:
-                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+              color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
             ),
           ),
         ),
@@ -856,9 +837,7 @@ Future<void> _saveMaxRM(
             child: Text(
               'Annulla',
               style: TextStyle(
-                color: isDarkMode
-                    ? colorScheme.onSurface
-                    : colorScheme.onBackground,
+                color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
               ),
             ),
           ),
@@ -872,26 +851,28 @@ Future<void> _saveMaxRM(
     }
   }
 
-Future<void> _showSetProgressionScreen(
-  BuildContext context,
-  Exercise exercise,
-  num latestMaxWeight,
-  bool isDarkMode,
-  ColorScheme colorScheme,
-) async {
-  final updatedExercise = await Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => SetProgressionScreen(
-        exerciseId: exercise.exerciseId!,
-        exercise: exercise,
-        latestMaxWeight: latestMaxWeight,
-      ),
-    ),
-  );
-  if (updatedExercise != null) {
-    controller.updateExercise(updatedExercise);
-  }
-}
+  Future<void> _showSetProgressionScreen(
+    BuildContext context,
+    Exercise exercise,
+    num latestMaxWeight,
+    bool isDarkMode,
+    ColorScheme colorScheme,
+  ) async {
+    if (!context.mounted) return;
 
+    final updatedExercise = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SetProgressionScreen(
+          exerciseId: exercise.exerciseId!,
+          exercise: exercise,
+          latestMaxWeight: latestMaxWeight,
+        ),
+      ),
+    );
+    
+    if (updatedExercise != null) {
+      controller.updateExercise(updatedExercise);
+    }
+  }
 }
