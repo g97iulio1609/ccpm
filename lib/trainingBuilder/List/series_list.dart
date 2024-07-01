@@ -49,7 +49,7 @@ class TrainingProgramSeriesList extends ConsumerWidget {
     final workout = controller.program.weeks[weekIndex].workouts[workoutIndex];
     
     if (exerciseIndex >= workout.exercises.length) {
-      return Text('Invalid exercise index'); // Puoi gestire l'errore in modo più appropriato se necessario
+      return const Text('Invalid exercise index'); // Puoi gestire l'errore in modo più appropriato se necessario
     }
     
     final exercise = workout.exercises[exerciseIndex];
