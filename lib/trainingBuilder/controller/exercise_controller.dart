@@ -16,22 +16,18 @@ class ExerciseController extends ChangeNotifier {
 
   Future<void> addExercise(TrainingProgram program, int weekIndex,
       int workoutIndex, BuildContext context) async {
-    final exercise =
-        await _showExerciseDialog(context, null, program.athleteId);
+    final exercise = await _showExerciseDialog(context, null, program.athleteId);
     if (exercise != null) {
       exercise.id = null;
-      exercise.order =
-          program.weeks[weekIndex].workouts[workoutIndex].exercises.length + 1;
-      exercise.weekProgressions = List.generate(program.weeks.length, (_) => []); // Inizializza weekProgressions con le settimane del programma
+      exercise.order = program.weeks[weekIndex].workouts[workoutIndex].exercises.length + 1;
+      exercise.weekProgressions = List.generate(program.weeks.length, (_) => []);
       program.weeks[weekIndex].workouts[workoutIndex].exercises.add(exercise);
       notifyListeners();
-      await updateExercise(program, exercise.exerciseId!,
-          exercise.type); // Pass exercise.type here
+      await updateExercise(program, exercise.exerciseId!, exercise.type);
     }
   }
 
-  Future<Exercise?> _showExerciseDialog(
-      BuildContext context, Exercise? exercise, String athleteId) async {
+  Future<Exercise?> _showExerciseDialog(BuildContext context, Exercise? exercise, String athleteId) async {
     final result = await showDialog<Exercise>(
       context: context,
       builder: (context) => ExerciseDialog(
@@ -45,33 +41,25 @@ class ExerciseController extends ChangeNotifier {
 
   Future<void> editExercise(TrainingProgram program, int weekIndex,
       int workoutIndex, int exerciseIndex, BuildContext context) async {
-    final exercise = program
-        .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
 
-    final updatedExercise =
-        await _showExerciseDialog(context, exercise, program.athleteId);
+    final updatedExercise = await _showExerciseDialog(context, exercise, program.athleteId);
     if (updatedExercise != null) {
       updatedExercise.order = exercise.order;
       updatedExercise.weekProgressions ??= [];
-      program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] =
-          updatedExercise;
-      await updateExercise(program, updatedExercise.exerciseId ?? '',
-          updatedExercise.type); // Pass updatedExercise.type here
+      program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] = updatedExercise;
+      await updateExercise(program, updatedExercise.exerciseId ?? '', updatedExercise.type);
     }
   }
 
-  void removeExercise(TrainingProgram program, int weekIndex, int workoutIndex,
-      int exerciseIndex) {
-    final exercise = program
-        .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+  void removeExercise(TrainingProgram program, int weekIndex, int workoutIndex, int exerciseIndex) {
+    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     _removeExerciseAndRelatedData(program, exercise);
-    program.weeks[weekIndex].workouts[workoutIndex].exercises
-        .removeAt(exerciseIndex);
+    program.weeks[weekIndex].workouts[workoutIndex].exercises.removeAt(exerciseIndex);
     _updateExerciseOrders(program, weekIndex, workoutIndex, exerciseIndex);
   }
 
-  void _removeExerciseAndRelatedData(
-      TrainingProgram program, Exercise exercise) {
+  void _removeExerciseAndRelatedData(TrainingProgram program, Exercise exercise) {
     if (exercise.id != null) {
       program.trackToDeleteExercises.add(exercise.id!);
     }
@@ -86,27 +74,22 @@ class ExerciseController extends ChangeNotifier {
     }
   }
 
-  Future<void> updateExercise(
-      TrainingProgram program, String exerciseId, String exerciseType) async {
-    final newMaxWeight =
-        await getLatestMaxWeight(_exerciseRecordService, program.athleteId, exerciseId);
+  Future<void> updateExercise(TrainingProgram program, String exerciseId, String exerciseType) async {
+    final newMaxWeight = await getLatestMaxWeight(_exerciseRecordService, program.athleteId, exerciseId);
 
     for (final week in program.weeks) {
       for (final workout in week.workouts) {
         for (final exercise in workout.exercises) {
           if (exercise.exerciseId == exerciseId) {
-            _updateExerciseWeights(
-                exercise, newMaxWeight.toDouble(), exerciseType);
+            _updateExerciseWeights(exercise, newMaxWeight.toDouble(), exerciseType);
           }
         }
       }
     }
   }
 
-  Future<void> updateNewProgramExercises(
-      TrainingProgram program, String exerciseId, String exerciseType) async {
-    final newMaxWeight =
-        await getLatestMaxWeight(_exerciseRecordService, program.athleteId, exerciseId);
+  Future<void> updateNewProgramExercises(TrainingProgram program, String exerciseId, String exerciseType) async {
+    final newMaxWeight = await getLatestMaxWeight(_exerciseRecordService, program.athleteId, exerciseId);
 
     final exercise = _findExerciseById(program, exerciseId);
     if (exercise != null) {
@@ -127,31 +110,20 @@ class ExerciseController extends ChangeNotifier {
     return null;
   }
 
-  void _updateExerciseWeights(
-      Exercise exercise,
-      num newMaxWeight,
-      String exerciseType,
-      ) {
+  void _updateExerciseWeights(Exercise exercise, num newMaxWeight, String exerciseType) {
     _updateSeriesWeights(exercise.series, newMaxWeight, exerciseType);
     if (exercise.weekProgressions != null && exercise.weekProgressions!.isNotEmpty) {
-      _updateWeekProgressionWeights(
-        exercise.weekProgressions!,
-        newMaxWeight,
-        exerciseType,
-      );
+      _updateWeekProgressionWeights(exercise.weekProgressions!, newMaxWeight, exerciseType);
     }
   }
 
-  void _updateSeriesWeights(
-      List<Series>? series, num maxWeight, String exerciseType) {
+  void _updateSeriesWeights(List<Series>? series, num maxWeight, String exerciseType) {
     if (series != null) {
       for (final item in series) {
-        final intensity =
-        item.intensity.isNotEmpty ? double.tryParse(item.intensity) : null;
+        final intensity = item.intensity.isNotEmpty ? double.tryParse(item.intensity) : null;
 
         if (intensity != null) {
-          final calculatedWeight =
-          calculateWeightFromIntensity(maxWeight, intensity);
+          final calculatedWeight = calculateWeightFromIntensity(maxWeight, intensity);
 
           item.weight = roundWeight(calculatedWeight, exerciseType);
         }
@@ -159,11 +131,7 @@ class ExerciseController extends ChangeNotifier {
     }
   }
 
-  void _updateWeekProgressionWeights(
-      List<List<WeekProgression>> progressions,
-      num maxWeight,
-      String exerciseType,
-      ) {
+  void _updateWeekProgressionWeights(List<List<WeekProgression>> progressions, num maxWeight, String exerciseType) {
     if (progressions.isNotEmpty) {
       for (final weekProgressions in progressions) {
         for (final progression in weekProgressions) {
@@ -180,20 +148,14 @@ class ExerciseController extends ChangeNotifier {
     }
   }
 
-  void _updateExerciseOrders(TrainingProgram program, int weekIndex,
-      int workoutIndex, int startIndex) {
-    for (int i = startIndex;
-    i < program.weeks[weekIndex].workouts[workoutIndex].exercises.length;
-    i++) {
-      program.weeks[weekIndex].workouts[workoutIndex].exercises[i].order =
-          i + 1;
+  void _updateExerciseOrders(TrainingProgram program, int weekIndex, int workoutIndex, int startIndex) {
+    for (int i = startIndex; i < program.weeks[weekIndex].workouts[workoutIndex].exercises.length; i++) {
+      program.weeks[weekIndex].workouts[workoutIndex].exercises[i].order = i + 1;
     }
   }
 
-  Future<void> addSeriesToProgression(TrainingProgram program, int weekIndex,
-      int workoutIndex, int exerciseIndex, BuildContext context) async {
-    final exercise = program
-        .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+  Future<void> addSeriesToProgression(TrainingProgram program, int weekIndex, int workoutIndex, int exerciseIndex, BuildContext context) async {
+    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     final newSeriesOrder = exercise.series.length + 1;
     final newSeries = Series(
       serieId: generateRandomId(16).toString(),
@@ -210,33 +172,21 @@ class ExerciseController extends ChangeNotifier {
     exercise.series.add(newSeries);
   }
 
-  void reorderExercises(TrainingProgram program, int weekIndex,
-      int workoutIndex, int oldIndex, int newIndex) {
+  void reorderExercises(TrainingProgram program, int weekIndex, int workoutIndex, int oldIndex, int newIndex) {
     if (oldIndex < newIndex) {
       newIndex -= 1;
     }
-    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises
-        .removeAt(oldIndex);
-    program.weeks[weekIndex].workouts[workoutIndex].exercises
-        .insert(newIndex, exercise);
+    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises.removeAt(oldIndex);
+    program.weeks[weekIndex].workouts[workoutIndex].exercises.insert(newIndex, exercise);
     _updateExerciseOrders(program, weekIndex, workoutIndex, newIndex);
   }
 
-  void duplicateExercise(
-      TrainingProgram program,
-      int weekIndex,
-      int workoutIndex,
-      int exerciseIndex,
-      ) {
-    final sourceExercise =
-    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+  void duplicateExercise(TrainingProgram program, int weekIndex, int workoutIndex, int exerciseIndex) {
+    final sourceExercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     final duplicatedExercise = _copyExercise(sourceExercise);
 
-    // Aggiorna l'ordine del nuovo esercizio
-    duplicatedExercise.order =
-        program.weeks[weekIndex].workouts[workoutIndex].exercises.length + 1;
+    duplicatedExercise.order = program.weeks[weekIndex].workouts[workoutIndex].exercises.length + 1;
 
-    // Aggiungi il nuovo esercizio alla stessa posizione
     program.weeks[weekIndex].workouts[workoutIndex].exercises.add(duplicatedExercise);
   }
 
@@ -259,28 +209,13 @@ class ExerciseController extends ChangeNotifier {
     );
   }
 
-  void moveExercise(
-      TrainingProgram program,
-      int sourceWeekIndex,
-      int sourceWorkoutIndex,
-      int sourceExerciseIndex,
-      int destinationWeekIndex,
-      int destinationWorkoutIndex,
-      ) {
-    final exercise = program.weeks[sourceWeekIndex].workouts[sourceWorkoutIndex]
-        .exercises[sourceExerciseIndex];
+  void moveExercise(TrainingProgram program, int sourceWeekIndex, int sourceWorkoutIndex, int sourceExerciseIndex, int destinationWeekIndex, int destinationWorkoutIndex) {
+    final exercise = program.weeks[sourceWeekIndex].workouts[sourceWorkoutIndex].exercises[sourceExerciseIndex];
 
-    // Rimuovi l'esercizio dalla posizione originale
-    program.weeks[sourceWeekIndex].workouts[sourceWorkoutIndex].exercises
-        .removeAt(sourceExerciseIndex);
+    program.weeks[sourceWeekIndex].workouts[sourceWorkoutIndex].exercises.removeAt(sourceExerciseIndex);
 
-    // Aggiorna l'ordine dell'esercizio spostato
-    exercise.order =
-        program.weeks[destinationWeekIndex].workouts[destinationWorkoutIndex].exercises.length +
-            1;
+    exercise.order = program.weeks[destinationWeekIndex].workouts[destinationWorkoutIndex].exercises.length + 1;
 
-    // Aggiungi l'esercizio alla nuova posizione
-    program.weeks[destinationWeekIndex].workouts[destinationWorkoutIndex].exercises
-        .add(exercise);
+    program.weeks[destinationWeekIndex].workouts[destinationWorkoutIndex].exercises.add(exercise);
   }
 }

@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:alphanessone/trainingBuilder/models/training_model.dart';
 import 'package:alphanessone/services/exercise_record_services.dart';
 
-
 class SeriesController extends ChangeNotifier {
   final ExerciseRecordService exerciseRecordService;
   final ValueNotifier<double> weightNotifier;
@@ -15,8 +14,7 @@ class SeriesController extends ChangeNotifier {
 
   Future<void> addSeries(TrainingProgram program, int weekIndex,
       int workoutIndex, int exerciseIndex, BuildContext context) async {
-    final exercise = program
-        .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     final latestMaxWeight = await SeriesUtils.getLatestMaxWeight(
         exerciseRecordService, program.athleteId, exercise.exerciseId ?? '');
 
@@ -35,14 +33,8 @@ class SeriesController extends ChangeNotifier {
     }
   }
 
-  Future<List<Series>?> _showSeriesDialog(
-    BuildContext context,
-    Exercise exercise,
-    int weekIndex,
-    Series? currentSeries,
-    String? exerciseType,
-    num? latestMaxWeight,
-  ) async {
+  Future<List<Series>?> _showSeriesDialog(BuildContext context, Exercise exercise,
+      int weekIndex, Series? currentSeries, String? exerciseType, num? latestMaxWeight) async {
     return await showDialog<List<Series>>(
       context: context,
       builder: (context) => SeriesDialog(
@@ -59,15 +51,8 @@ class SeriesController extends ChangeNotifier {
     );
   }
 
-  Future<void> editSeries(
-    TrainingProgram program,
-    int weekIndex,
-    int workoutIndex,
-    int exerciseIndex,
-    Series currentSeries,
-    BuildContext context,
-    num latestMaxWeight,
-  ) async {
+  Future<void> editSeries(TrainingProgram program, int weekIndex, int workoutIndex,
+      int exerciseIndex, Series currentSeries, BuildContext context, num latestMaxWeight) async {
     final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
 
     final updatedSeriesList = await _showSeriesDialog(
@@ -88,20 +73,14 @@ class SeriesController extends ChangeNotifier {
       }
 
       await SeriesUtils.updateSeriesWeights(
-        program,
-        weekIndex,
-        workoutIndex,
-        exerciseIndex,
-        exerciseRecordService,
-      );
+          program, weekIndex, workoutIndex, exerciseIndex, exerciseRecordService);
       notifyListeners();
     }
   }
 
-  void removeAllSeriesForExercise(
-      TrainingProgram program, int weekIndex, int workoutIndex, int exerciseIndex) {
-    final exercise =
-        program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+  void removeAllSeriesForExercise(TrainingProgram program, int weekIndex,
+      int workoutIndex, int exerciseIndex) {
+    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     for (final series in exercise.series) {
       removeSeriesData(program, series);
     }
@@ -109,16 +88,9 @@ class SeriesController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void removeSeries(
-    TrainingProgram program,
-    int weekIndex,
-    int workoutIndex,
-    int exerciseIndex,
-    int groupIndex,
-    int seriesIndex,
-  ) {
-    final exercise = program
-        .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+  void removeSeries(TrainingProgram program, int weekIndex, int workoutIndex,
+      int exerciseIndex, int groupIndex, int seriesIndex) {
+    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     final series = exercise.series[groupIndex * 1 + seriesIndex];
     removeSeriesData(program, series);
     exercise.series.removeAt(groupIndex * 1 + seriesIndex);
@@ -141,10 +113,9 @@ class SeriesController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _updateSeriesOrders(TrainingProgram program, int weekIndex,
-      int workoutIndex, int exerciseIndex, int startIndex) {
-    final exercise = program
-        .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+  void _updateSeriesOrders(TrainingProgram program, int weekIndex, int workoutIndex,
+      int exerciseIndex, int startIndex) {
+    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     for (int i = startIndex; i < exercise.series.length; i++) {
       exercise.series[i].order = i + 1;
     }
@@ -155,12 +126,11 @@ class SeriesController extends ChangeNotifier {
     if (oldIndex < newIndex) {
       newIndex -= 1;
     }
-    final exercise = program
-        .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     final series = exercise.series.removeAt(oldIndex);
     exercise.series.insert(newIndex, series);
-    _updateSeriesOrders(
-        program, weekIndex, workoutIndex, exerciseIndex, newIndex);
+    _updateSeriesOrders(program, weekIndex, workoutIndex, exerciseIndex, newIndex);
     notifyListeners();
   }
 }
+

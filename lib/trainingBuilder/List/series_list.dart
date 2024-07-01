@@ -18,9 +18,10 @@ class ExpansionStateNotifier extends StateNotifier<Map<String, bool>> {
   ExpansionStateNotifier() : super({});
 
   void toggleExpansionState(String key) {
+    final currentState = state[key] ?? false; // Imposta a false se la chiave non esiste
     state = {
       ...state,
-      key: !state[key]!,
+      key: !currentState,
     };
   }
 }
@@ -45,8 +46,13 @@ class TrainingProgramSeriesList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final exercise = controller.program.weeks[weekIndex].workouts[workoutIndex]
-        .exercises[exerciseIndex];
+    final workout = controller.program.weeks[weekIndex].workouts[workoutIndex];
+    
+    if (exerciseIndex >= workout.exercises.length) {
+      return Text('Invalid exercise index'); // Puoi gestire l'errore in modo più appropriato se necessario
+    }
+    
+    final exercise = workout.exercises[exerciseIndex];
     final groupedSeries = _groupSeries(exercise.series);
     final expansionState = ref.watch(expansionStateProvider);
 
@@ -118,7 +124,7 @@ class TrainingProgramSeriesList extends ConsumerWidget {
         for (int i = 0; i < seriesGroup.length; i++)
           _buildSeriesCard(context, seriesGroup[i], groupIndex, i, () {
             seriesGroup.removeAt(i);
-            controller.notifyListeners();
+            controller.updateSeries(weekIndex, workoutIndex, exerciseIndex, seriesGroup); // Chiama il metodo del controller con parametri corretti
           }, exerciseType),
       ],
     );
@@ -188,8 +194,8 @@ class TrainingProgramSeriesList extends ConsumerWidget {
       exercise.series[i].order = i + 1;
     }
 
-    // Notifica il controller delle modifiche
-    controller.notifyListeners();
+    // Chiama il metodo del controller con parametri corretti
+    controller.updateSeries(weekIndex, workoutIndex, exerciseIndex, exercise.series);
   }
 
   Widget _buildSeriesCard(BuildContext context, Series series,
@@ -441,7 +447,6 @@ class TrainingProgramSeriesList extends ConsumerWidget {
       final rpe = rpeController.text;
       final weight = double.parse(weightController.text);
 
-      // Update the series within the group
       for (int i = 0; i < seriesGroup.length; i++) {
         final s = seriesGroup[i];
         s.reps = reps;
@@ -451,7 +456,6 @@ class TrainingProgramSeriesList extends ConsumerWidget {
         s.weight = weight;
       }
 
-      // Add or remove series to match the new sets count
       final exercise = controller.program.weeks[weekIndex]
           .workouts[workoutIndex].exercises[exerciseIndex];
       final seriesIndex = exercise.series.indexOf(seriesGroup.first);
@@ -478,7 +482,7 @@ class TrainingProgramSeriesList extends ConsumerWidget {
         }
       }
 
-      controller.notifyListeners();
+      controller.updateSeries(weekIndex, workoutIndex, exerciseIndex, exercise.series); // Chiama il metodo del controller con parametri corretti
     }
   }
 }
