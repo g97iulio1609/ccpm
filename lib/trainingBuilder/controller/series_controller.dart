@@ -18,7 +18,9 @@ class SeriesController extends ChangeNotifier {
     final latestMaxWeight = await SeriesUtils.getLatestMaxWeight(
         exerciseRecordService, program.athleteId, exercise.exerciseId ?? '');
 
-    final num maxWeight = latestMaxWeight ?? 100.0;
+    final num maxWeight = latestMaxWeight;
+
+    if (!context.mounted) return;
 
     final seriesList = await _showSeriesDialog(
         context, exercise, weekIndex, null, exercise.type, maxWeight);
@@ -35,6 +37,8 @@ class SeriesController extends ChangeNotifier {
 
   Future<List<Series>?> _showSeriesDialog(BuildContext context, Exercise exercise,
       int weekIndex, Series? currentSeries, String? exerciseType, num? latestMaxWeight) async {
+    if (!context.mounted) return null;
+
     return await showDialog<List<Series>>(
       context: context,
       builder: (context) => SeriesDialog(
@@ -54,6 +58,8 @@ class SeriesController extends ChangeNotifier {
   Future<void> editSeries(TrainingProgram program, int weekIndex, int workoutIndex,
       int exerciseIndex, Series currentSeries, BuildContext context, num latestMaxWeight) async {
     final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+
+    if (!context.mounted) return;
 
     final updatedSeriesList = await _showSeriesDialog(
       context,
@@ -77,6 +83,7 @@ class SeriesController extends ChangeNotifier {
       notifyListeners();
     }
   }
+
 
   void removeAllSeriesForExercise(TrainingProgram program, int weekIndex,
       int workoutIndex, int exerciseIndex) {
