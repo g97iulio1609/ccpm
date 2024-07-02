@@ -10,11 +10,11 @@ import 'package:alphanessone/nutrition/models&Services/meals_services.dart';
 
 class CustomAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
   const CustomAppBar({
-    Key? key,
+    super.key,
     required this.userRole,
     required this.controller,
     required this.isLargeScreen,
-  }) : super(key: key);
+  });
 
   final String userRole;
   final TrainingProgramController controller;

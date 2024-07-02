@@ -329,7 +329,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
   ) {
     return ElevatedButton(
       onPressed: () => controller.addSeries(weekIndex, workoutIndex,
-          exercise.order - 1, exercise.type ?? '', context),
+          exercise.order - 1, exercise.type, context),
       style: ElevatedButton.styleFrom(
         backgroundColor: colorScheme.primary,
         foregroundColor: Colors.black,

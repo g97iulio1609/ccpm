@@ -266,7 +266,7 @@ class FoodService {
     final snapshot = await _firestore.collection('foods').get();
     for (var doc in snapshot.docs) {
       final foodData = doc.data();
-      if (foodData != null && foodData['id'] != null) {
+      if (foodData['id'] != null) {
         final barcode = foodData['id'];
         await _retryUpdateProductTranslations(barcode);
       }

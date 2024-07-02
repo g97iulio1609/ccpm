@@ -1,4 +1,3 @@
-import 'package:alphanessone/trainingBuilder/controller/series_controller.dart';
 import 'package:alphanessone/trainingBuilder/dialog/exercise_dialog.dart';
 import 'package:alphanessone/services/exercise_record_services.dart';
 import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
@@ -45,7 +44,7 @@ class ExerciseController extends ChangeNotifier {
     final updatedExercise = await _showExerciseDialog(context, exercise, program.athleteId);
     if (updatedExercise != null) {
       updatedExercise.order = exercise.order;
-      updatedExercise.weekProgressions ??= [];
+      updatedExercise.weekProgressions;
       program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] = updatedExercise;
       await updateExercise(program, updatedExercise.exerciseId ?? '', updatedExercise.type);
     }
@@ -111,8 +110,8 @@ class ExerciseController extends ChangeNotifier {
 
   void _updateExerciseWeights(Exercise exercise, num newMaxWeight, String exerciseType) {
     _updateSeriesWeights(exercise.series, newMaxWeight, exerciseType);
-    if (exercise.weekProgressions != null && exercise.weekProgressions!.isNotEmpty) {
-      _updateWeekProgressionWeights(exercise.weekProgressions!, newMaxWeight, exerciseType);
+    if (exercise.weekProgressions.isNotEmpty) {
+      _updateWeekProgressionWeights(exercise.weekProgressions, newMaxWeight, exerciseType);
     }
   }
 

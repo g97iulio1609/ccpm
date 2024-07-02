@@ -164,7 +164,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
               .entries
               .map((entry) =>
                   buildSuperSetExerciseName(entry.key, entry.value, context))
-              .toList(),
+              ,
           const SizedBox(height: 24),
           buildSuperSetStartButton(superSetExercises, context),
           const SizedBox(height: 24),

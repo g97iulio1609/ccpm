@@ -104,7 +104,7 @@ class TrainingProgramController extends ChangeNotifier {
         weeks: [],
       );
     } else {
-      _program = _programState!;
+      _program = _programState;
     }
 
     _nameController = TextEditingController(text: _program.name);
@@ -202,7 +202,7 @@ class TrainingProgramController extends ChangeNotifier {
   }
 
   Future<void> updateExercise(Exercise exercise) async {
-    await _exerciseController.updateExercise(program, exercise.exerciseId!, exercise.type!);
+    await _exerciseController.updateExercise(program, exercise.exerciseId!, exercise.type);
     notifyListeners();
   }
 
@@ -333,7 +333,7 @@ class TrainingProgramController extends ChangeNotifier {
     for (final week in program.weeks) {
       for (final workout in week.workouts) {
         for (final exercise in workout.exercises) {
-          await _exerciseController.updateNewProgramExercises(program, exercise.exerciseId!, exercise.type!);
+          await _exerciseController.updateNewProgramExercises(program, exercise.exerciseId!, exercise.type);
         }
       }
     }
@@ -396,7 +396,7 @@ class TrainingProgramController extends ChangeNotifier {
               exercise.type = exerciseModel.type;
             }
 
-            await _exerciseController.updateNewProgramExercises(newProgram, exercise.exerciseId!, exercise.type!);
+            await _exerciseController.updateNewProgramExercises(newProgram, exercise.exerciseId!, exercise.type);
           }
         }
       }

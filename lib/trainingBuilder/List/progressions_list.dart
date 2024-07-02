@@ -265,7 +265,7 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
       return;
     }
 
-    final seriesInGroup = groupedSeries[seriesIndex] as List<Series>;
+    final seriesInGroup = groupedSeries[seriesIndex];
     final sets = seriesInGroup.length;
 
     for (final currentProgression in seriesInGroup) {
@@ -294,8 +294,8 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
   @override
   Widget build(BuildContext context) {
     final programController = ref.watch(trainingProgramControllerProvider);
-    final controllers = ref.watch(controllerProvider);
-    final focusNodes = ref.watch(focusNodesProvider);
+    ref.watch(controllerProvider);
+    ref.watch(focusNodesProvider);
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -319,7 +319,6 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
 
                   final series = groupedSeries[seriesIndex];
                   final reps = series.first.reps;
-                  final sets = series.length;
                   final intensity = series.first.intensity;
                   final rpe = series.first.rpe;
                   final weight = series.first.weight;

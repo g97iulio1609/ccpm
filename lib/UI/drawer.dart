@@ -246,8 +246,7 @@ class CustomDrawer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final List<String> menuItems =
         userRole == 'admin' ? _getAdminMenuItems() : _getClientMenuItems();
-    final isTrainingProgramRoute =
-        GoRouterState.of(context).uri.toString().contains('/training_program/');
+    GoRouterState.of(context).uri.toString().contains('/training_program/');
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
 

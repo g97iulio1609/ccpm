@@ -134,7 +134,7 @@ class FavouriteDays extends ConsumerWidget {
         ],
       ),
       child: ListTile(
-        title: Text(day.favoriteName ?? '', style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface)),
+        title: Text(day.favoriteName, style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface)),
         subtitle: Text('${day.date.day}/${day.date.month}/${day.date.year}', style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface, fontSize: 14)),
         trailing: IconButton(
           icon: const Icon(Icons.edit, color: Colors.blue),

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rxdart/rxdart.dart';
 import 'macros_model.dart';
@@ -178,7 +177,7 @@ class MacrosService {
 
   Future<void> exportFoods() async {
     final snapshot = await _firestore.collection('foods').get();
-    final foodsData = snapshot.docs.map((doc) => doc.data()).toList();
+    snapshot.docs.map((doc) => doc.data()).toList();
     // Perform the export operation using the foodsData
     // For example, you can convert it to JSON and save it to a file or send it to an API
   }

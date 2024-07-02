@@ -14,7 +14,6 @@ class TrainingProgramService {
     try {
       return await _service.fetchTrainingProgram(programId);
     } catch (e) {
-      print('Error fetching training program: $e');
       return null;
     }
   }
@@ -23,7 +22,6 @@ class TrainingProgramService {
     try {
       await _service.addOrUpdateTrainingProgram(program);
     } catch (e) {
-      print('Error adding/updating training program: $e');
       rethrow;
     }
   }
@@ -32,7 +30,6 @@ class TrainingProgramService {
     try {
       await _service.removeToDeleteItems(program);
     } catch (e) {
-      print('Error removing items to delete: $e');
       rethrow;
     }
   }
@@ -54,7 +51,6 @@ class FirestoreService {
       DocumentReference ref = await _db.collection('programs').add(programData);
       return ref.id;
     } catch (e) {
-      print('Error adding program: $e');
       rethrow;
     }
   }
@@ -64,7 +60,6 @@ class FirestoreService {
     try {
       await _db.collection('programs').doc(programId).update(programData);
     } catch (e) {
-      print('Error updating program: $e');
       rethrow;
     }
   }
@@ -88,7 +83,6 @@ class FirestoreService {
 
       await batch.commit();
     } catch (e) {
-      print('Error removing program: $e');
       rethrow;
     }
   }
@@ -144,7 +138,6 @@ class FirestoreService {
 
       return program;
     } catch (e) {
-      print('Error fetching training program: $e');
       rethrow;
     }
   }
@@ -229,7 +222,6 @@ class FirestoreService {
 
       await batch.commit();
     } catch (e) {
-      print('Error adding/updating training program: $e');
       rethrow;
     }
   }
@@ -370,7 +362,6 @@ class FirestoreService {
 
       await batch.commit();
     } catch (e) {
-      print('Error removing items to delete: $e');
       rethrow;
     }
   }

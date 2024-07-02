@@ -8,8 +8,7 @@ import 'package:alphanessone/providers/providers.dart';
 class AthleteSelectionDialog extends ConsumerWidget {
   final TrainingProgramController controller;
 
-  const AthleteSelectionDialog({required this.controller, Key? key})
-      : super(key: key);
+  const AthleteSelectionDialog({required this.controller, super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

@@ -269,7 +269,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
               ),
               textAlign: TextAlign.center,
             );
-          }).toList(),
+          }),
         ],
       ),
     );
