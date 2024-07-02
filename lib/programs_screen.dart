@@ -1,4 +1,3 @@
-import 'package:alphanessone/providers/providers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -15,10 +14,8 @@ class ProgramsScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userRole = ref.watch(userRoleProvider);
     final TextEditingController typeAheadController = useTextEditingController();
     final FocusNode focusNode = useFocusNode();
-    final userList = ref.watch(userListProvider);
     final filteredUserList = ref.watch(filteredUserListProvider);
 
     useEffect(() {

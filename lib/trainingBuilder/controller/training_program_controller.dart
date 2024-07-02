@@ -65,7 +65,7 @@ class TrainingProgramController extends ChangeNotifier {
     _initProgram();
     final weightNotifier = ValueNotifier<double>(0.0);
     _seriesController = SeriesController(_exerciseRecordService, weightNotifier);
-    _exerciseController = ExerciseController(_exerciseRecordService, _seriesController);
+    _exerciseController = ExerciseController(_exerciseRecordService);
   }
 
   TrainingProgram get program => _program;
@@ -120,7 +120,7 @@ class TrainingProgramController extends ChangeNotifier {
     }
 
     try {
-      _program = await _trainingService.fetchTrainingProgram(programId);
+      _program = (await _trainingService.fetchTrainingProgram(programId))!;
       _updateProgram();
       _superSetController.loadSuperSets(_program);
 

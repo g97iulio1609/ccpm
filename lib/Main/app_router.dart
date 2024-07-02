@@ -27,7 +27,6 @@ import '../nutrition/tracker/daily_food_tracker.dart';
 import '../nutrition/tracker/my_meals.dart';
 import '../store/inAppSubscriptions.dart';
 import '../exerciseManager/exercises_manager.dart';
-import 'app_services.dart';
 import '../providers/providers.dart';
 import '../nutrition/models&Services/meals_model.dart'; // Aggiunto import corretto per Meal
 

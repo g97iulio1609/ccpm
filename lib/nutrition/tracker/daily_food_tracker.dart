@@ -62,7 +62,7 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
   Widget build(BuildContext context) {
     final selectedDate = ref.watch(selectedDateProvider);
     final dailyStats = ref.watch(dailyStatsProvider(selectedDate));
-    final bool isToday = selectedDate.isAtSameMomentAs(DateTime(
+    selectedDate.isAtSameMomentAs(DateTime(
       DateTime.now().year,
       DateTime.now().month,
       DateTime.now().day,

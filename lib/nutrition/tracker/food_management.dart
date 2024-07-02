@@ -70,7 +70,6 @@ class FoodManagement extends HookConsumerWidget {
 
     void startImport() async {
       final pages = int.tryParse(importPagesController.text) ?? 10;
-      final delay = int.tryParse(importDelayController.text) ?? 60;
 
       await foodService.importFoods(
         pages: pages,

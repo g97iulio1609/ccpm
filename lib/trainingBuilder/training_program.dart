@@ -209,7 +209,7 @@ class TrainingProgramPage extends HookConsumerWidget {
                                 onPressed: controller.addWeek,
                                 icon: const Icon(Icons.add),
                                 label: const Text(
-                                  'Aggiungi Settimana',
+                                  'Settimana',
                                   style: TextStyle(fontSize: 18),
                                 ),
                                 style: ElevatedButton.styleFrom(
@@ -228,7 +228,7 @@ class TrainingProgramPage extends HookConsumerWidget {
                                 onPressed: () => controller.submitProgram(context),
                                 icon: const Icon(Icons.save),
                                 label: const Text(
-                                  'Salva Programma',
+                                  'Salva',
                                   style: TextStyle(fontSize: 18),
                                 ),
                                 style: ElevatedButton.styleFrom(

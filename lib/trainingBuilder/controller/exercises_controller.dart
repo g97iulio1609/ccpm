@@ -10,9 +10,8 @@ import '../utility_functions.dart';
 
 class ExerciseController extends ChangeNotifier {
   final ExerciseRecordService _exerciseRecordService;
-  final SeriesController _seriesController;
 
-  ExerciseController(this._exerciseRecordService, this._seriesController);
+  ExerciseController(this._exerciseRecordService);
 
   Future<void> addExercise(TrainingProgram program, int weekIndex,
       int workoutIndex, BuildContext context) async {

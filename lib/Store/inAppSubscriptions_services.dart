@@ -47,8 +47,7 @@ class InAppPurchaseService {
   }
 
   Future<void> redeemPromoCode(String promoCode) async {
-    final InAppPurchaseAndroidPlatformAddition androidAddition = 
-      _inAppPurchase.getPlatformAddition<InAppPurchaseAndroidPlatformAddition>();
+    _inAppPurchase.getPlatformAddition<InAppPurchaseAndroidPlatformAddition>();
 
     try {
       final trimmedPromoCode = promoCode.trim();

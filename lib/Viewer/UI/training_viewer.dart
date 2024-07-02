@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../services/training_program_services.dart';
 import '../providers/training_program_provider.dart';
 
 class TrainingViewer extends ConsumerStatefulWidget {

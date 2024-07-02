@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:alphanessone/services/exercise_record_services.dart';
-import 'package:alphanessone/services/measurements_services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -18,12 +17,10 @@ class UsersService {
   final _usersStreamController = BehaviorSubject<List<UserModel>>();
   StreamSubscription? _userChangesSubscription;
   String _searchQuery = '';
-  final MeasurementsService _measurementsService;
   final ExerciseRecordService _exerciseRecordService;
 
   UsersService(this._ref, this._firestore, this._auth)
-      : _measurementsService = _ref.read(measurementsServiceProvider),
-        _exerciseRecordService = _ref.read(exerciseRecordServiceProvider) {
+      : _exerciseRecordService = _ref.read(exerciseRecordServiceProvider) {
     _initializeUserCreationAuth();
     _auth.authStateChanges().listen(_handleAuthStateChanges);
   }

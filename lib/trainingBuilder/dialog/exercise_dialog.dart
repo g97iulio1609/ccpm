@@ -23,7 +23,7 @@ class ExerciseDialog extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final controller = ref.watch(trainingProgramControllerProvider);
+    ref.watch(trainingProgramControllerProvider);
     final exerciseNameController = TextEditingController(text: exercise?.name ?? '');
     final variantController = TextEditingController(text: exercise?.variant ?? '');
     String selectedExerciseId = exercise?.exerciseId ?? '';

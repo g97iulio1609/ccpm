@@ -95,7 +95,7 @@ Widget build(BuildContext context, WidgetRef ref) {
             usersService,
             keepWeight,
           ),
-          SizedBox(height: 20), // Aggiungi questa linea per creare spazio
+          const SizedBox(height: 20), // Aggiungi questa linea per creare spazio
           _buildAllExercisesMaxRMs(ref, usersService, exerciseRecordService, context),
         ],
       ),
