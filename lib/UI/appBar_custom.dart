@@ -277,7 +277,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
             )
           : Text(_getTitleForRoute(context)),
       backgroundColor: Colors.transparent,
-      foregroundColor: Theme.of(context).colorScheme.onBackground,
+      foregroundColor: Theme.of(context).colorScheme.onSurface,
       leading: isBackButtonVisible
           ? Row(
               mainAxisSize: MainAxisSize.min,

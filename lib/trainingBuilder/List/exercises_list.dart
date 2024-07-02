@@ -3,7 +3,7 @@ import 'package:alphanessone/models/exercise_record.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/services/exercise_record_services.dart';
 import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
-import 'package:alphanessone/trainingBuilder/List/set_progression.dart';
+import 'package:alphanessone/trainingBuilder/List/progressions_list.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -100,14 +100,12 @@ class TrainingProgramExerciseList extends ConsumerWidget {
             ],
           ),
           child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Container(
               margin: const EdgeInsets.only(bottom: 20),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color:
-                    isDarkMode ? colorScheme.surface : colorScheme.background,
+                color: isDarkMode ? colorScheme.surface : colorScheme.surface,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
@@ -214,14 +212,13 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     ColorScheme colorScheme,
   ) {
     return PopupMenuButton(
-      color: isDarkMode ? colorScheme.surface : colorScheme.background,
+      color: isDarkMode ? colorScheme.surface : colorScheme.surface,
       itemBuilder: (context) => [
         PopupMenuItem(
           child: Text(
             'Modifica',
             style: TextStyle(
-              color:
-                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+              color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
             ),
           ),
           onTap: () => controller.editExercise(
@@ -231,8 +228,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
           child: Text(
             'Aggiorna Max RM',
             style: TextStyle(
-              color:
-                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+              color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
             ),
           ),
           onTap: () => _addOrUpdateMaxRM(exercise, context, exerciseRecordService,
@@ -242,19 +238,16 @@ class TrainingProgramExerciseList extends ConsumerWidget {
           child: Text(
             'Riordina Esercizi',
             style: TextStyle(
-              color:
-                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+              color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
             ),
           ),
-          onTap: () =>
-              _showReorderExercisesDialog(context, weekIndex, workoutIndex),
+          onTap: () => _showReorderExercisesDialog(context, weekIndex, workoutIndex),
         ),
         PopupMenuItem(
           child: Text(
             'Aggiungi al Superset',
             style: TextStyle(
-              color:
-                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+              color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
             ),
           ),
           onTap: () => _showAddToSuperSetDialog(
@@ -265,9 +258,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
             child: Text(
               'Rimuovi dal Superset',
               style: TextStyle(
-                color: isDarkMode
-                    ? colorScheme.onSurface
-                    : colorScheme.onBackground,
+                color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
               ),
             ),
             onTap: () => controller.removeExerciseFromSuperSet(
@@ -277,8 +268,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
           child: Text(
             'Set Progression',
             style: TextStyle(
-              color:
-                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+              color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
             ),
           ),
           onTap: () => _showSetProgressionScreen(
@@ -288,7 +278,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
           child: Text(
             'Duplica Esercizio',
             style: TextStyle(
-              color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+              color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
             ),
           ),
           onTap: () => controller.duplicateExercise(
@@ -298,19 +288,16 @@ class TrainingProgramExerciseList extends ConsumerWidget {
           child: Text(
             'Sposta Esercizio',
             style: TextStyle(
-              color:
-                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+              color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
             ),
           ),
-          onTap: () =>
-              _showMoveExerciseDialog(context, weekIndex, workoutIndex, exercise),
+          onTap: () => _showMoveExerciseDialog(context, weekIndex, workoutIndex, exercise),
         ),
         PopupMenuItem(
           child: Text(
             'Elimina',
             style: TextStyle(
-              color:
-                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+              color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
             ),
           ),
           onTap: () => controller.removeExercise(
@@ -389,18 +376,16 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     );
   }
 
-  Future<void> _showMoveExerciseDialog(
+  void _showMoveExerciseDialog(
     BuildContext context,
     int weekIndex,
     int sourceWorkoutIndex,
     Exercise exercise,
-  ) async {
+  ) {
     final sourceExerciseIndex = exercise.order - 1;
     final week = controller.program.weeks[weekIndex];
 
-    if (!context.mounted) return;
-
-    final destinationWorkoutIndex = await showDialog<int>(
+    showDialog<int>(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
@@ -429,20 +414,20 @@ class TrainingProgramExerciseList extends ConsumerWidget {
           ],
         );
       },
-    );
-
-    if (destinationWorkoutIndex != null && destinationWorkoutIndex != sourceWorkoutIndex) {
-      controller.moveExercise(
-        weekIndex,
-        sourceWorkoutIndex,
-        sourceExerciseIndex,
-        weekIndex,
-        destinationWorkoutIndex,
-      );
-    }
+    ).then((destinationWorkoutIndex) {
+      if (destinationWorkoutIndex != null && destinationWorkoutIndex != sourceWorkoutIndex) {
+        controller.moveExercise(
+          weekIndex,
+          sourceWorkoutIndex,
+          sourceExerciseIndex,
+          weekIndex,
+          destinationWorkoutIndex,
+        );
+      }
+    });
   }
 
-    Future<void> _addOrUpdateMaxRM(
+void _addOrUpdateMaxRM(
     Exercise exercise,
     BuildContext context,
     ExerciseRecordService exerciseRecordService,
@@ -450,73 +435,72 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     DateFormat dateFormat,
     bool isDarkMode,
     ColorScheme colorScheme,
-  ) async {
-    final record = await exerciseRecordService.getLatestExerciseRecord(
+  ) {
+    exerciseRecordService.getLatestExerciseRecord(
       userId: athleteId,
       exerciseId: exercise.exerciseId!,
-    );
+    ).then((record) {
+      final maxWeightController = TextEditingController(text: record?.maxWeight.toString() ?? '');
+      final repetitionsController = TextEditingController(text: record?.repetitions.toString() ?? '');
 
-    final maxWeightController = TextEditingController(text: record?.maxWeight.toString() ?? '');
-    final repetitionsController = TextEditingController(text: record?.repetitions.toString() ?? '');
+      repetitionsController.addListener(() {
+        var repetitions = int.tryParse(repetitionsController.text) ?? 0;
+        if (repetitions > 1) {
+          final maxWeight = double.tryParse(maxWeightController.text) ?? 0;
+          final calculatedMaxWeight = roundWeight(maxWeight / (1.0278 - (0.0278 * repetitions)), exercise.type);
+          maxWeightController.text = calculatedMaxWeight.toString();
+          repetitionsController.text = '1';
+        }
+      });
 
-    repetitionsController.addListener(() {
-      var repetitions = int.tryParse(repetitionsController.text) ?? 0;
-      if (repetitions > 1) {
-        final maxWeight = double.tryParse(maxWeightController.text) ?? 0;
-        final calculatedMaxWeight = roundWeight(maxWeight / (1.0278 - (0.0278 * repetitions)), exercise.type);
-        maxWeightController.text = calculatedMaxWeight.toString();
-        repetitionsController.text = '1';
-      }
-    });
-
-    if (!context.mounted) return;
-
-    await showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          backgroundColor: isDarkMode ? colorScheme.surface : colorScheme.background,
-          title: Text(
-            'Aggiorna Max RM',
-            style: TextStyle(
-              color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+      showDialog<bool>(
+        context: context,
+        builder: (BuildContext dialogContext) {
+          return AlertDialog(
+            backgroundColor: isDarkMode ? colorScheme.surface : colorScheme.surface,
+            title: Text(
+              'Aggiorna Max RM',
+              style: TextStyle(
+                color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
+              ),
             ),
-          ),
-          content: _buildMaxRMInputFields(maxWeightController, repetitionsController, isDarkMode, colorScheme),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text(
-                'Annulla',
-                style: TextStyle(
-                  color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+            content: _buildMaxRMInputFields(maxWeightController, repetitionsController, isDarkMode, colorScheme),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(
+                  'Annulla',
+                  style: TextStyle(
+                    color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
+                  ),
                 ),
               ),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                await _saveMaxRM(
-                  record,
-                  athleteId,
-                  exercise,
-                  maxWeightController,
-                  repetitionsController,
-                  exerciseRecordService,
-                  dateFormat,
-                  exercise.type,
-                );
-                Navigator.pop(dialogContext);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isDarkMode ? colorScheme.primary : colorScheme.secondary,
-                foregroundColor: isDarkMode ? colorScheme.onPrimary : colorScheme.onSecondary,
+              ElevatedButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isDarkMode ? colorScheme.primary : colorScheme.secondary,
+                  foregroundColor: isDarkMode ? colorScheme.onPrimary : colorScheme.onSecondary,
+                ),
+                child: const Text('Salva'),
               ),
-              child: const Text('Salva'),
-            ),
-          ],
-        );
-      },
-    );
+            ],
+          );
+        },
+      ).then((result) {
+        if (result == true) {
+          _saveMaxRM(
+            record,
+            athleteId,
+            exercise,
+            maxWeightController,
+            repetitionsController,
+            exerciseRecordService,
+            dateFormat,
+            exercise.type,
+          );
+        }
+      });
+    });
   }
 
   Widget _buildMaxRMInputFields(
@@ -542,12 +526,12 @@ class TrainingProgramExerciseList extends ConsumerWidget {
             }),
           ],
           style: TextStyle(
-            color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+            color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
           ),
           decoration: InputDecoration(
             labelText: 'Peso Massimo',
             labelStyle: TextStyle(
-              color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+              color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
             ),
           ),
         ),
@@ -555,12 +539,12 @@ class TrainingProgramExerciseList extends ConsumerWidget {
           controller: repetitionsController,
           keyboardType: TextInputType.number,
           style: TextStyle(
-            color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+            color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
           ),
           decoration: InputDecoration(
             labelText: 'Ripetizioni',
             labelStyle: TextStyle(
-              color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+              color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
             ),
           ),
         ),
@@ -568,7 +552,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     );
   }
 
-  Future<void> _saveMaxRM(
+  void _saveMaxRM(
     ExerciseRecord? record,
     String athleteId,
     Exercise exercise,
@@ -577,13 +561,12 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     ExerciseRecordService exerciseRecordService,
     DateFormat dateFormat,
     String exerciseType,
-  ) async {
+  ) {
     final maxWeight = double.tryParse(maxWeightController.text) ?? 0;
-
     final roundedMaxWeight = roundWeight(maxWeight, exercise.type);
 
     if (record != null) {
-      await exerciseRecordService.updateExerciseRecord(
+      exerciseRecordService.updateExerciseRecord(
         userId: athleteId,
         exerciseId: exercise.exerciseId!,
         recordId: record.id,
@@ -591,7 +574,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
         repetitions: 1,
       );
     } else {
-      await exerciseRecordService.addExerciseRecord(
+      exerciseRecordService.addExerciseRecord(
         userId: athleteId,
         exerciseId: exercise.exerciseId!,
         exerciseName: exercise.name,
@@ -601,7 +584,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
       );
     }
 
-    await controller.updateExercise(exercise);
+    controller.updateExercise(exercise);
   }
 
   void _showReorderExercisesDialog(
@@ -623,30 +606,30 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     );
   }
 
-  Future<void> _createNewSuperSet(
+  void _createNewSuperSet(
     BuildContext context,
     bool isDarkMode,
     ColorScheme colorScheme
-  ) async {
-    final superSetName = await showDialog<String>(
+  ) {
+    showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: isDarkMode ? colorScheme.surface : colorScheme.background,
+        backgroundColor: isDarkMode ? colorScheme.surface : colorScheme.surface,
         title: Text(
           'Nuovo Superset',
           style: TextStyle(
-            color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+            color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
           ),
         ),
         content: TextField(
           autofocus: true,
           style: TextStyle(
-            color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+            color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
           ),
           decoration: InputDecoration(
             labelText: 'Nome Superset',
             labelStyle: TextStyle(
-              color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+              color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
             ),
           ),
           onSubmitted: (value) => Navigator.of(context).pop(value),
@@ -657,7 +640,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
             child: Text(
               'Annulla',
               style: TextStyle(
-                color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+                color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
               ),
             ),
           ),
@@ -674,39 +657,43 @@ class TrainingProgramExerciseList extends ConsumerWidget {
           ),
         ],
       ),
-    );
-
-    if (superSetName != null && superSetName.isNotEmpty) {
-      controller.createSuperSet(weekIndex, workoutIndex);
-    }
+    ).then((superSetName) {
+      if (superSetName != null && superSetName.isNotEmpty) {
+        controller.createSuperSet(weekIndex, workoutIndex);
+      }
+    });
   }
 
-  Future<void> _showAddToSuperSetDialog(
+  void _showAddToSuperSetDialog(
     BuildContext context,
     Exercise exercise,
     bool isDarkMode,
     ColorScheme colorScheme,
-  ) async {
+  ) {
     String? selectedSuperSetId;
     final superSets = controller.program.weeks[weekIndex].workouts[workoutIndex].superSets;
 
     if (superSets.isEmpty) {
       controller.createSuperSet(weekIndex, workoutIndex);
       selectedSuperSetId = controller.program.weeks[weekIndex].workouts[workoutIndex].superSets.first.id;
+      controller.addExerciseToSuperSet(
+        weekIndex,
+        workoutIndex,
+        selectedSuperSetId,
+        exercise.id!,
+      );
     } else {
-      if (!context.mounted) return;
-
-      selectedSuperSetId = await showDialog<String>(
+      showDialog<String>(
         context: context,
         builder: (BuildContext dialogContext) {
           return StatefulBuilder(
             builder: (BuildContext builderContext, setState) {
               return AlertDialog(
-                backgroundColor: isDarkMode ? colorScheme.surface : colorScheme.background,
+                backgroundColor: isDarkMode ? colorScheme.surface : colorScheme.surface,
                 title: Text(
                   'Aggiungi al Superset',
                   style: TextStyle(
-                    color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+                    color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
                   ),
                 ),
                 content: DropdownButtonFormField<String>(
@@ -717,7 +704,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
                       child: Text(
                         ss.name ?? '',
                         style: TextStyle(
-                          color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+                          color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
                         ),
                       ),
                     );
@@ -730,17 +717,17 @@ class TrainingProgramExerciseList extends ConsumerWidget {
                   decoration: InputDecoration(
                     hintText: 'Seleziona il Superset',
                     hintStyle: TextStyle(
-                      color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+                      color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
                     ),
                   ),
                 ),
                 actions: [
                   TextButton(
-                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    onPressed: () => Navigator.of(dialogContext).pop(null),
                     child: Text(
                       'Annulla',
                       style: TextStyle(
-                        color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+                        color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
                       ),
                     ),
                   ),
@@ -754,7 +741,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
                       child: Text(
                         'Crea Nuovo Superset',
                         style: TextStyle(
-                          color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+                          color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
                         ),
                       ),
                     ),
@@ -763,7 +750,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
                     child: Text(
                       'Aggiungi',
                       style: TextStyle(
-                        color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+                        color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
                       ),
                     ),
                   ),
@@ -772,25 +759,25 @@ class TrainingProgramExerciseList extends ConsumerWidget {
             },
           );
         },
-      );
-    }
-
-    if (selectedSuperSetId != null) {
-      controller.addExerciseToSuperSet(
-        weekIndex,
-        workoutIndex,
-        selectedSuperSetId!,
-        exercise.id!,
-      );
+      ).then((result) {
+        if (result != null) {
+          controller.addExerciseToSuperSet(
+            weekIndex,
+            workoutIndex,
+            result,
+            exercise.id!,
+          );
+        }
+      });
     }
   }
 
-  Future<void> _showRemoveFromSuperSetDialog(
+  void _showRemoveFromSuperSetDialog(
     BuildContext context,
     Exercise exercise,
     bool isDarkMode,
     ColorScheme colorScheme
-  ) async {
+  ) {
     final superSets = controller
         .program.weeks[weekIndex].workouts[workoutIndex].superSets
         .where((ss) => ss.exerciseIds.contains(exercise.id))
@@ -800,14 +787,14 @@ class TrainingProgramExerciseList extends ConsumerWidget {
       return;
     }
 
-    final superSetId = await showDialog<String>(
+    showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: isDarkMode ? colorScheme.surface : colorScheme.background,
+        backgroundColor: isDarkMode ? colorScheme.surface : colorScheme.surface,
         title: Text(
           'Rimuovi dal Superset',
           style: TextStyle(
-            color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+            color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
           ),
         ),
         content: DropdownButtonFormField<String>(
@@ -818,7 +805,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
               child: Text(
                 'Superset ${ss.id}',
                 style: TextStyle(
-                  color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+                  color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
                 ),
               ),
             );
@@ -827,7 +814,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
           decoration: InputDecoration(
             hintText: 'Seleziona il Superset',
             hintStyle: TextStyle(
-              color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+              color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
             ),
           ),
         ),
@@ -837,30 +824,28 @@ class TrainingProgramExerciseList extends ConsumerWidget {
             child: Text(
               'Annulla',
               style: TextStyle(
-                color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+                color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
               ),
             ),
           ),
         ],
       ),
-    );
-
-    if (superSetId != null) {
-      controller.removeExerciseFromSuperSet(
-          weekIndex, workoutIndex, superSetId, exercise.id!);
-    }
+    ).then((superSetId) {
+      if (superSetId != null) {
+        controller.removeExerciseFromSuperSet(
+            weekIndex, workoutIndex, superSetId, exercise.id!);
+      }
+    });
   }
 
-  Future<void> _showSetProgressionScreen(
+  void _showSetProgressionScreen(
     BuildContext context,
     Exercise exercise,
     num latestMaxWeight,
     bool isDarkMode,
     ColorScheme colorScheme,
-  ) async {
-    if (!context.mounted) return;
-
-    final updatedExercise = await Navigator.push(
+  ) {
+    Navigator.push<Exercise>(
       context,
       MaterialPageRoute(
         builder: (context) => SetProgressionScreen(
@@ -869,10 +854,10 @@ class TrainingProgramExerciseList extends ConsumerWidget {
           latestMaxWeight: latestMaxWeight,
         ),
       ),
-    );
-    
-    if (updatedExercise != null) {
-      controller.updateExercise(updatedExercise);
-    }
+    ).then((updatedExercise) {
+      if (updatedExercise != null) {
+        controller.updateExercise(updatedExercise);
+      }
+    });
   }
 }

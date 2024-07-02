@@ -319,7 +319,6 @@ class SeriesUtils {
     if (weight > 0 && latestMaxWeight > 0) {
       final calculatedIntensity = calculateIntensityFromWeight(weight, latestMaxWeight);
       intensityController.text = calculatedIntensity.toStringAsFixed(2);
-      debugPrint('weight: $weight calculatedIntensity: $calculatedIntensity  intensityController.text: ${intensityController.text}'  );
     } else {
       intensityController.clear();
     }

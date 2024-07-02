@@ -4,8 +4,7 @@ class ReorderDialog extends StatefulWidget {
   final List<String> items;
   final Function(int, int) onReorder;
 
-  const ReorderDialog({required this.items, required this.onReorder, Key? key})
-      : super(key: key);
+  const ReorderDialog({required this.items, required this.onReorder, super.key});
 
   @override
   _ReorderDialogState createState() => _ReorderDialogState();

@@ -43,7 +43,7 @@ class _InAppSubscriptionsPageState extends State<InAppSubscriptionsPage> {
     });
     try {
       await _inAppPurchaseService.redeemPromoCode(_promoCodeController.text);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Promo code redeemed successfully!')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Promo code redeemed successfully!')));
     } catch (e) {
       setState(() {
         _promoCodeError = e.toString();
@@ -56,7 +56,7 @@ class _InAppSubscriptionsPageState extends State<InAppSubscriptionsPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Redeem Promo Code'),
+          title: const Text('Redeem Promo Code'),
           content: TextField(
             controller: _promoCodeController,
             decoration: InputDecoration(
@@ -66,13 +66,13 @@ class _InAppSubscriptionsPageState extends State<InAppSubscriptionsPage> {
           ),
           actions: [
             TextButton(
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
             TextButton(
-              child: Text('Redeem'),
+              child: const Text('Redeem'),
               onPressed: () async {
                 Navigator.of(context).pop();
                 await _redeemPromoCode();
@@ -95,7 +95,7 @@ class _InAppSubscriptionsPageState extends State<InAppSubscriptionsPage> {
                   padding: const EdgeInsets.all(8.0),
                   child: ElevatedButton(
                     onPressed: _showPromoCodeDialog,
-                    child: Text('Redeem Promo Code'),
+                    child: const Text('Redeem Promo Code'),
                   ),
                 ),
                 ..._inAppPurchaseService.productDetails.map((productDetails) {

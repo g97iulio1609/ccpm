@@ -6,7 +6,7 @@ import '../models&Services/macros_model.dart' as macros;
 import '../models&Services/meals_model.dart' as meals;
 import '../models&Services/meals_services.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'food_selector.dart'; // Import FoodSelector
+// Import FoodSelector
 
 class FavoriteMealDetail extends ConsumerStatefulWidget {
   final meals.Meal meal;

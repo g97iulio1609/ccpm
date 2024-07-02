@@ -13,7 +13,7 @@ import 'package:alphanessone/services/exercise_record_services.dart';
 import 'package:alphanessone/services/users_services.dart';
 import 'week_controller.dart';
 import 'workout_controller.dart';
-import 'exercise_controller.dart';
+import 'exercises_controller.dart';
 import 'series_controller.dart';
 import 'super_set_controller.dart';
 import 'package:alphanessone/providers/providers.dart';

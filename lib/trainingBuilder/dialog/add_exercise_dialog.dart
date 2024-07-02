@@ -3,7 +3,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import '../../exerciseManager/exercises_services.dart';
 import '../../exerciseManager/exercises_manager.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class AddExerciseDialog extends HookConsumerWidget {
   final ExercisesService exercisesService;
@@ -107,15 +106,20 @@ class AddExerciseDialog extends HookConsumerWidget {
           child: const Text('Annulla'),
         ),
         TextButton(
-          onPressed: () async {
+          onPressed: () {
             if (formKey.currentState!.validate()) {
-              await exercisesService.addExercise(
-                nameController.text.trim(),
-                muscleGroupController.text.trim(),
-                typeController.text.trim(),
-                userId, // Passa l'ID dell'utente corrente
-              );
+              final name = nameController.text.trim();
+              final muscleGroup = muscleGroupController.text.trim();
+              final type = typeController.text.trim();
+              
               Navigator.pop(context);
+              
+              exercisesService.addExercise(
+                name,
+                muscleGroup,
+                type,
+                userId,
+              );
             }
           },
           child: const Text('Crea'),

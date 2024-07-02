@@ -1,7 +1,7 @@
 import 'package:alphanessone/providers/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Assicurati di importare il pacchetto Firestore
+// Assicurati di importare il pacchetto Firestore
 
 class TDEEScreen extends ConsumerStatefulWidget {
   final String userId;

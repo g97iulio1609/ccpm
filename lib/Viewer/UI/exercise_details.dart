@@ -191,7 +191,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
                       'Next: ${widget.superSetExercises[currentSuperSetExerciseIndex + 1]['name']}',
                       style: theme.textTheme.titleLarge?.copyWith(
                         color: isDarkMode
-                            ? colorScheme.onBackground
+                            ? colorScheme.onSurface
                             : colorScheme.onSurface,
                         fontWeight: FontWeight.bold,
                       ),
@@ -330,17 +330,17 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
         inputFormatters: [inputFormatter],
         textAlign: TextAlign.center,
         style: theme.textTheme.titleLarge?.copyWith(
-          color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+          color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
         ),
         decoration: InputDecoration(
           labelText: label,
           labelStyle: theme.textTheme.titleMedium?.copyWith(
             color: isDarkMode
                 ? colorScheme.onSurface.withOpacity(0.6)
-                : colorScheme.onBackground.withOpacity(0.6),
+                : colorScheme.onSurface.withOpacity(0.6),
           ),
           filled: true,
-          fillColor: isDarkMode ? colorScheme.surface : colorScheme.background,
+          fillColor: isDarkMode ? colorScheme.surface : colorScheme.surface,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
@@ -404,7 +404,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
       width: 90,
       height: 130,
       decoration: BoxDecoration(
-        color: isDarkMode ? colorScheme.surface : colorScheme.background,
+        color: isDarkMode ? colorScheme.surface : colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDarkMode ? Colors.white : Colors.white,
@@ -427,10 +427,10 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
         onChanged: onChanged,
         itemHeight: 45,
         textStyle: theme.textTheme.titleLarge?.copyWith(
-          color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+          color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
         ),
 selectedTextStyle: theme.textTheme.titleLarge?.copyWith(
-          color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+          color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
           fontWeight: FontWeight.bold,
         ),
         decoration: BoxDecoration(
@@ -469,7 +469,7 @@ selectedTextStyle: theme.textTheme.titleLarge?.copyWith(
           style: theme.textTheme.titleMedium?.copyWith(
             color: isDarkMode
                 ? colorScheme.onSurface.withOpacity(0.6)
-                : colorScheme.onBackground.withOpacity(0.6),
+                : colorScheme.onSurface.withOpacity(0.6),
           ),
           textAlign: TextAlign.center,
         ),
@@ -496,7 +496,7 @@ selectedTextStyle: theme.textTheme.titleLarge?.copyWith(
           'EMOM Mode',
           style: theme.textTheme.titleLarge?.copyWith(
             color:
-                isDarkMode ? colorScheme.onBackground : colorScheme.onSurface,
+                isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
             fontWeight: FontWeight.bold,
           ),
         ),

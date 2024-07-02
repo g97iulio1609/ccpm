@@ -376,7 +376,7 @@ class UserCard extends StatelessWidget {
               IconButton(
                 icon: const Icon(Icons.delete),
                 onPressed: onDelete,
-                color: colorScheme.onBackground,
+                color: colorScheme.onSurface,
               ),
             ],
           ),
