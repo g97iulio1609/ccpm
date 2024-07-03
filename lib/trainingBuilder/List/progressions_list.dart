@@ -589,7 +589,7 @@ void updateProgressionsFromFields(List<List<WeekProgression>> weekProgressions) 
       final sessionProgression = weekProgression[workoutIndex];
       List<Series> updatedSeries = [];
 
-      for (int seriesIndex = 0; seriesIndex < sessionProgression.series.length; seriesIndex++) {
+      for (int seriesGroupIndex = 0; seriesGroupIndex < sessionProgression.series.length; seriesGroupIndex++) {
         final setsController = controllerNotifier.getController(controllerIndex, 1);
         final repsController = controllerNotifier.getController(controllerIndex, 0);
         final intensityController = controllerNotifier.getController(controllerIndex, 2);
@@ -604,23 +604,35 @@ void updateProgressionsFromFields(List<List<WeekProgression>> weekProgressions) 
           final rpe = rpeController.text;
           final weight = double.tryParse(weightController.text) ?? 0.0;
 
+          // Crea o aggiorna il numero corretto di serie basato sul valore di 'sets'
           for (int i = 0; i < sets; i++) {
-            final currentSeries = Series(
-              serieId: '${sessionProgression.series[seriesIndex].serieId!}_$i',
-              reps: reps,
-              sets: 1,  // Ogni serie avrà 1 set
-              intensity: intensity,
-              rpe: rpe,
-              weight: weight,
-              order: updatedSeries.length + 1,
-              done: false,
-              reps_done: 0,
-              weight_done: 0.0,
-            );
-            updatedSeries.add(currentSeries);
-            
-            debugPrint('LOG: Updated series - Week: $weekIndex, Workout: $workoutIndex, Series: ${updatedSeries.length}, ID: ${currentSeries.serieId}, Sets: 1, Reps: $reps, Intensity: $intensity, RPE: $rpe, Weight: $weight');
+            Series series;
+            if (seriesGroupIndex < sessionProgression.series.length && i < sessionProgression.series[seriesGroupIndex].sets) {
+              // Aggiorna la serie esistente
+              series = sessionProgression.series[seriesGroupIndex];
+              series.reps = reps;
+              series.intensity = intensity;
+              series.rpe = rpe;
+              series.weight = weight;
+            } else {
+              // Crea una nuova serie
+              series = Series(
+                serieId: generateRandomId(16).toString(),
+                reps: reps,
+                sets: 1, // Ogni serie individuale ha sempre 1 set
+                intensity: intensity,
+                rpe: rpe,
+                weight: weight,
+                order: updatedSeries.length + 1,
+                done: false,
+                reps_done: 0,
+                weight_done: 0.0,
+              );
+            }
+            updatedSeries.add(series);
           }
+          
+          debugPrint('LOG: Updated/Added series group - Week: $weekIndex, Workout: $workoutIndex, Series Group: ${seriesGroupIndex + 1}, Sets: $sets, Reps: $reps, Intensity: $intensity, RPE: $rpe, Weight: $weight');
         }
 
         controllerIndex++;
@@ -629,6 +641,7 @@ void updateProgressionsFromFields(List<List<WeekProgression>> weekProgressions) 
         }
       }
 
+      // Aggiorna la sessione con le nuove serie
       sessionProgression.series = updatedSeries;
       debugPrint('LOG: Total series for Week $weekIndex, Workout $workoutIndex: ${updatedSeries.length}');
 
