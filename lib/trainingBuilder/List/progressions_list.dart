@@ -26,7 +26,8 @@ class ControllerNotifier extends StateNotifier<List<List<TextEditingController>>
     state = [...controllers];
   }
 
-  void updateController(int outerIndex, int innerIndex, String text) {
+
+ void updateController(int outerIndex, int innerIndex, String text) {
     if (outerIndex < 0 || outerIndex >= state.length || innerIndex < 0 || innerIndex >= state[outerIndex].length) {
       debugPrint('LOG: Invalid indices for updateController: $outerIndex, $innerIndex');
       return;
@@ -44,9 +45,15 @@ class ControllerNotifier extends StateNotifier<List<List<TextEditingController>>
     return state[outerIndex][innerIndex];
   }
 
+  void deleteSeries(int count) {
+    if (state.length > count) {
+      state = state.sublist(0, count);
+    }
+  }
+
   int get length => state.length;
 
-  @override
+ @override
   void dispose() {
     for (final controllerList in state) {
       for (final controller in controllerList) {
@@ -56,6 +63,7 @@ class ControllerNotifier extends StateNotifier<List<List<TextEditingController>>
     super.dispose();
   }
 }
+
 
 final focusNodesProvider = StateNotifierProvider.autoDispose<FocusNodesNotifier, List<FocusNode>>((ref) {
   return FocusNodesNotifier([]);
@@ -102,7 +110,9 @@ class SetProgressionScreen extends ConsumerStatefulWidget {
   ConsumerState<SetProgressionScreen> createState() => _SetProgressionScreenState();
 }
 
-class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
+class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   @override
   void initState() {
     super.initState();
@@ -123,7 +133,9 @@ void _initializeControllers() {
   });
 
   debugPrint('LOG: Total series count: $totalSeriesCount');
-  ref.read(controllerProvider.notifier).initialize(totalSeriesCount);
+  final controllerNotifier = ref.read(controllerProvider.notifier);
+  controllerNotifier.initialize(totalSeriesCount);
+  controllerNotifier.deleteSeries(totalSeriesCount);  // Rimuovi i controller in eccesso
   ref.read(focusNodesProvider.notifier).initialize(totalSeriesCount);
 
   int controllerIndex = 0;
@@ -567,27 +579,54 @@ void updateProgression(int controllerIndex, int reps, String intensity, String r
 Future<void> _handleSave() async {
   final programController = ref.read(trainingProgramControllerProvider);
   final weekProgressions = buildWeekProgressions(programController.program.weeks, widget.exercise!);
-
+  
   debugPrint('LOG: Handling save, updating progressions from fields for exercise: ${widget.exercise!.exerciseId}');
   updateProgressionsFromFields(weekProgressions);
-
+  
   debugPrint('LOG: Applying progressions for exercise: ${widget.exercise!.exerciseId}');
- // await programController.submitProgram(context);
+  programController.updateWeekProgressions(weekProgressions, widget.exercise!.exerciseId!);
+  
+  try {
+    
+    if (!mounted) return;
+    
+    // Tutte le operazioni che utilizzano BuildContext vengono eseguite qui
+    _showSuccessMessage();
+    _navigateBack();
+  } catch (e) {
+    debugPrint('ERROR: Failed to save changes: $e');
+    if (!mounted) return;
+    _showErrorMessage(e.toString());
+  }
+}
 
-  // Forza un aggiornamento dell'interfaccia utente
-  setState(() {});
+void _showSuccessMessage() {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('Progressioni salvate con successo')),
+  );
+}
+
+void _showErrorMessage(String errorMessage) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text('Errore durante il salvataggio delle progressioni: $errorMessage')),
+  );
+}
+
+void _navigateBack() {
+  Navigator.of(context).pop();
 }
 
 void updateProgressionsFromFields(List<List<WeekProgression>> weekProgressions) {
   final controllerNotifier = ref.read(controllerProvider.notifier);
   final programController = ref.read(trainingProgramControllerProvider);
+  final program = programController.program;
 
   int controllerIndex = 0;
   for (int weekIndex = 0; weekIndex < weekProgressions.length; weekIndex++) {
     final weekProgression = weekProgressions[weekIndex];
     for (int workoutIndex = 0; workoutIndex < weekProgression.length; workoutIndex++) {
       final sessionProgression = weekProgression[workoutIndex];
-      List<Series> updatedSeries = [];
+      List<Series> newSeriesList = [];
 
       for (int seriesGroupIndex = 0; seriesGroupIndex < sessionProgression.series.length; seriesGroupIndex++) {
         final setsController = controllerNotifier.getController(controllerIndex, 1);
@@ -598,41 +637,29 @@ void updateProgressionsFromFields(List<List<WeekProgression>> weekProgressions) 
 
         if (setsController != null && repsController != null && intensityController != null &&
             rpeController != null && weightController != null) {
-          final sets = int.tryParse(setsController.text) ?? 1;
+          final newSets = int.tryParse(setsController.text) ?? 1;
           final reps = int.tryParse(repsController.text) ?? 0;
           final intensity = intensityController.text;
           final rpe = rpeController.text;
           final weight = double.tryParse(weightController.text) ?? 0.0;
 
-          // Crea o aggiorna il numero corretto di serie basato sul valore di 'sets'
-          for (int i = 0; i < sets; i++) {
-            Series series;
-            if (seriesGroupIndex < sessionProgression.series.length && i < sessionProgression.series[seriesGroupIndex].sets) {
-              // Aggiorna la serie esistente
-              series = sessionProgression.series[seriesGroupIndex];
-              series.reps = reps;
-              series.intensity = intensity;
-              series.rpe = rpe;
-              series.weight = weight;
-            } else {
-              // Crea una nuova serie
-              series = Series(
-                serieId: generateRandomId(16).toString(),
-                reps: reps,
-                sets: 1, // Ogni serie individuale ha sempre 1 set
-                intensity: intensity,
-                rpe: rpe,
-                weight: weight,
-                order: updatedSeries.length + 1,
-                done: false,
-                reps_done: 0,
-                weight_done: 0.0,
-              );
-            }
-            updatedSeries.add(series);
+          for (int i = 0; i < newSets; i++) {
+            Series newSeries = Series(
+              serieId: generateRandomId(16).toString(),
+              reps: reps,
+              sets: 1,
+              intensity: intensity,
+              rpe: rpe,
+              weight: weight,
+              order: seriesGroupIndex + 1,
+              done: false,
+              reps_done: 0,
+              weight_done: 0.0,
+            );
+            newSeriesList.add(newSeries);
           }
-          
-          debugPrint('LOG: Updated/Added series group - Week: $weekIndex, Workout: $workoutIndex, Series Group: ${seriesGroupIndex + 1}, Sets: $sets, Reps: $reps, Intensity: $intensity, RPE: $rpe, Weight: $weight');
+
+          debugPrint('LOG: Updated series group - Week: $weekIndex, Workout: $workoutIndex, Series Group: ${seriesGroupIndex + 1}, Sets: $newSets, Reps: $reps, Intensity: $intensity, RPE: $rpe, Weight: $weight');
         }
 
         controllerIndex++;
@@ -641,9 +668,9 @@ void updateProgressionsFromFields(List<List<WeekProgression>> weekProgressions) 
         }
       }
 
-      // Aggiorna la sessione con le nuove serie
-      sessionProgression.series = updatedSeries;
-      debugPrint('LOG: Total series for Week $weekIndex, Workout $workoutIndex: ${updatedSeries.length}');
+      // Sostituisci le vecchie serie con le nuove serie
+      sessionProgression.series = newSeriesList;
+      debugPrint('LOG: Total series for Week $weekIndex, Workout $workoutIndex: ${newSeriesList.length}');
 
       if (controllerIndex >= controllerNotifier.length) {
         break;

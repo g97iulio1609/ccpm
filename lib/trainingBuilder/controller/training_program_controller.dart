@@ -116,51 +116,62 @@ class TrainingProgramController extends ChangeNotifier {
 
 
 void updateWeekProgressions(List<List<WeekProgression>> updatedProgressions, String exerciseId) {
-    debugPrint('Updating week progressions for exercise: $exerciseId. Total weeks: ${_program.weeks.length}, Updated progressions: ${updatedProgressions.length}');
-    
-    for (int weekIndex = 0; weekIndex < _program.weeks.length && weekIndex < updatedProgressions.length; weekIndex++) {
-      final week = _program.weeks[weekIndex];
-      for (int workoutIndex = 0; workoutIndex < week.workouts.length && workoutIndex < updatedProgressions[weekIndex].length; workoutIndex++) {
-        final workout = week.workouts[workoutIndex];
-        final exerciseIndex = workout.exercises.indexWhere((e) => e.exerciseId == exerciseId);
-        
-        if (exerciseIndex != -1) {
-          final exercise = workout.exercises[exerciseIndex];
-          
-          if (exercise.weekProgressions == null) {
-            exercise.weekProgressions = [];
+  debugPrint('Updating week progressions for exercise: $exerciseId. Total weeks: ${_program.weeks.length}, Updated progressions: ${updatedProgressions.length}');
+
+  for (int weekIndex = 0; weekIndex < _program.weeks.length && weekIndex < updatedProgressions.length; weekIndex++) {
+    final week = _program.weeks[weekIndex];
+    for (int workoutIndex = 0; workoutIndex < week.workouts.length && workoutIndex < updatedProgressions[weekIndex].length; workoutIndex++) {
+      final workout = week.workouts[workoutIndex];
+      final exerciseIndex = workout.exercises.indexWhere((e) => e.exerciseId == exerciseId);
+
+      if (exerciseIndex != -1) {
+        final exercise = workout.exercises[exerciseIndex];
+
+        // Rimuovi tutte le vecchie serie
+        if (exercise.series != null) {
+          for (final series in exercise.series) {
+            if (series.serieId != null && !program.trackToDeleteSeries.contains(series.serieId!)) {
+              program.trackToDeleteSeries.add(series.serieId!);
+            }
           }
-          
-          while (exercise.weekProgressions.length <= weekIndex) {
-            exercise.weekProgressions.add([]);
-          }
-          
-          if (exercise.weekProgressions[weekIndex].isEmpty) {
-            exercise.weekProgressions[weekIndex] = [WeekProgression(
-              weekNumber: weekIndex + 1,
-              sessionNumber: workoutIndex + 1,
-              series: []
-            )];
-          }
-          
-          exercise.weekProgressions[weekIndex][0] = updatedProgressions[weekIndex][workoutIndex];
-          exercise.series = updatedProgressions[weekIndex][workoutIndex].series;
-          
-          debugPrint('LOG: Updated exercise progressions - Week: $weekIndex, Workout: $workoutIndex, Exercise ID: ${exercise.exerciseId}, Series count: ${exercise.series.length}');
-          
-          // Log dei dettagli di ogni serie
-          for (int i = 0; i < exercise.series.length; i++) {
-            final series = exercise.series[i];
-            debugPrint('LOG: Series ${i + 1} - Reps: ${series.reps}, Intensity: ${series.intensity}, RPE: ${series.rpe}, Weight: ${series.weight}');
-          }
+        }
+
+        // Aggiungi le nuove serie
+        exercise.series = updatedProgressions[weekIndex][workoutIndex].series;
+
+        if (exercise.weekProgressions == null) {
+          exercise.weekProgressions = [];
+        }
+
+        while (exercise.weekProgressions.length <= weekIndex) {
+          exercise.weekProgressions.add([]);
+        }
+
+        if (exercise.weekProgressions[weekIndex].isEmpty) {
+          exercise.weekProgressions[weekIndex] = [WeekProgression(
+            weekNumber: weekIndex + 1,
+            sessionNumber: workoutIndex + 1,
+            series: []
+          )];
+        }
+
+        exercise.weekProgressions[weekIndex][0] = updatedProgressions[weekIndex][workoutIndex];
+
+        debugPrint('LOG: Updated exercise progressions - Week: $weekIndex, Workout: $workoutIndex, Exercise ID: ${exercise.exerciseId}, Series count: ${exercise.series.length}');
+
+        // Log dei dettagli di ogni serie
+        for (int i = 0; i < exercise.series.length; i++) {
+          final series = exercise.series[i];
+          debugPrint('LOG: Series ${i + 1} - Reps: ${series.reps}, Intensity: ${series.intensity}, RPE: ${series.rpe}, Weight: ${series.weight}');
         }
       }
     }
-    
-    debugPrint('Finished updating week progressions for exercise: $exerciseId');
-    notifyListeners();
   }
- 
+
+  debugPrint('Finished updating week progressions for exercise: $exerciseId');
+  notifyListeners();
+}
+
  
   Future<void> loadProgram(String? programId) async {
     if (programId == null) {
@@ -342,26 +353,40 @@ void updateWeekProgressions(List<List<WeekProgression>> updatedProgressions, Str
   }
 
  Future<void> submitProgram(BuildContext context) async {
-    _updateProgramFields();
+  _updateProgramFields();
 
-    try {
-      await _trainingService.addOrUpdateTrainingProgram(_program);
-      await _trainingService.removeToDeleteItems(_program);
-      await _usersService.updateUser(_athleteIdController.text, {'currentProgram': _program.id});
+  debugPrint('LOG: Submitting program');
+  debugPrint('LOG: trackToDeleteSeries before submission: ${_program.trackToDeleteSeries}');
 
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Program added/updated successfully')),
-        );
-      }
-    } catch (error) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error adding/updating program: $error')),
-        );
-      }
+  try {
+    await _trainingService.addOrUpdateTrainingProgram(_program);
+    debugPrint('LOG: Program added/updated successfully');
+    
+    debugPrint('LOG: Starting removal of items to delete');
+    await _trainingService.removeToDeleteItems(_program);
+    debugPrint('LOG: Finished removal of items to delete');
+    
+    // Update the program object with the cleared trackToDeleteSeries
+    _program.trackToDeleteSeries = [];
+    
+    debugPrint('LOG: trackToDeleteSeries after removal: ${_program.trackToDeleteSeries}');
+
+    await _usersService.updateUser(_athleteIdController.text, {'currentProgram': _program.id});
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Program added/updated successfully')),
+      );
+    }
+  } catch (error) {
+    debugPrint('ERROR: Failed to submit program: $error');
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error adding/updating program: $error')),
+      );
     }
   }
+}
 
   void _updateProgramFields() {
     _program.name = _nameController.text;
