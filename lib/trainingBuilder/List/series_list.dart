@@ -469,3 +469,4 @@ class _TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSerie
     widget.controller.updateSeries(widget.weekIndex, widget.workoutIndex, widget.exerciseIndex, exercise.series);
   }
 }
+

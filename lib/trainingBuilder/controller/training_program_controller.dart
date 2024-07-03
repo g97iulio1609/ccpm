@@ -1,5 +1,6 @@
 import 'package:alphanessone/exerciseManager/exercises_services.dart';
 import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
+import 'package:alphanessone/trainingBuilder/models/progressions_model.dart';
 import 'package:alphanessone/trainingBuilder/models/series_model.dart';
 import 'package:alphanessone/trainingBuilder/models/superseries_model.dart';
 import 'package:alphanessone/trainingBuilder/models/week_model.dart';
@@ -113,6 +114,54 @@ class TrainingProgramController extends ChangeNotifier {
     _mesocycleNumberController = TextEditingController(text: _program.mesocycleNumber.toString());
   }
 
+
+void updateWeekProgressions(List<List<WeekProgression>> updatedProgressions, String exerciseId) {
+    debugPrint('Updating week progressions for exercise: $exerciseId. Total weeks: ${_program.weeks.length}, Updated progressions: ${updatedProgressions.length}');
+    
+    for (int weekIndex = 0; weekIndex < _program.weeks.length && weekIndex < updatedProgressions.length; weekIndex++) {
+      final week = _program.weeks[weekIndex];
+      for (int workoutIndex = 0; workoutIndex < week.workouts.length && workoutIndex < updatedProgressions[weekIndex].length; workoutIndex++) {
+        final workout = week.workouts[workoutIndex];
+        final exerciseIndex = workout.exercises.indexWhere((e) => e.exerciseId == exerciseId);
+        
+        if (exerciseIndex != -1) {
+          final exercise = workout.exercises[exerciseIndex];
+          
+          if (exercise.weekProgressions == null) {
+            exercise.weekProgressions = [];
+          }
+          
+          while (exercise.weekProgressions.length <= weekIndex) {
+            exercise.weekProgressions.add([]);
+          }
+          
+          if (exercise.weekProgressions[weekIndex].isEmpty) {
+            exercise.weekProgressions[weekIndex] = [WeekProgression(
+              weekNumber: weekIndex + 1,
+              sessionNumber: workoutIndex + 1,
+              series: []
+            )];
+          }
+          
+          exercise.weekProgressions[weekIndex][0] = updatedProgressions[weekIndex][workoutIndex];
+          exercise.series = updatedProgressions[weekIndex][workoutIndex].series;
+          
+          debugPrint('LOG: Updated exercise progressions - Week: $weekIndex, Workout: $workoutIndex, Exercise ID: ${exercise.exerciseId}, Series count: ${exercise.series.length}');
+          
+          // Log dei dettagli di ogni serie
+          for (int i = 0; i < exercise.series.length; i++) {
+            final series = exercise.series[i];
+            debugPrint('LOG: Series ${i + 1} - Reps: ${series.reps}, Intensity: ${series.intensity}, RPE: ${series.rpe}, Weight: ${series.weight}');
+          }
+        }
+      }
+    }
+    
+    debugPrint('Finished updating week progressions for exercise: $exerciseId');
+    notifyListeners();
+  }
+ 
+ 
   Future<void> loadProgram(String? programId) async {
     if (programId == null) {
       _initProgram();
@@ -292,19 +341,25 @@ class TrainingProgramController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> submitProgram(BuildContext context) async {
+ Future<void> submitProgram(BuildContext context) async {
     _updateProgramFields();
-
-    final scaffoldMessenger = ScaffoldMessenger.of(context); // Capture ScaffoldMessenger before async call
 
     try {
       await _trainingService.addOrUpdateTrainingProgram(_program);
       await _trainingService.removeToDeleteItems(_program);
       await _usersService.updateUser(_athleteIdController.text, {'currentProgram': _program.id});
 
-      _showSuccessSnackBar(scaffoldMessenger, 'Program added/updated successfully');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Program added/updated successfully')),
+        );
+      }
     } catch (error) {
-      _showErrorSnackBar(scaffoldMessenger, 'Error adding/updating program: $error');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error adding/updating program: $error')),
+        );
+      }
     }
   }
 

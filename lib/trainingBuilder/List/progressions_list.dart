@@ -28,7 +28,7 @@ class ControllerNotifier extends StateNotifier<List<List<TextEditingController>>
 
   void updateController(int outerIndex, int innerIndex, String text) {
     if (outerIndex < 0 || outerIndex >= state.length || innerIndex < 0 || innerIndex >= state[outerIndex].length) {
-      debugPrint('Invalid indices for updateController: $outerIndex, $innerIndex');
+      debugPrint('LOG: Invalid indices for updateController: $outerIndex, $innerIndex');
       return;
     }
     final updatedState = List<List<TextEditingController>>.from(state);
@@ -38,7 +38,7 @@ class ControllerNotifier extends StateNotifier<List<List<TextEditingController>>
 
   TextEditingController? getController(int outerIndex, int innerIndex) {
     if (outerIndex < 0 || outerIndex >= state.length || innerIndex < 0 || innerIndex >= state[outerIndex].length) {
-      debugPrint('Invalid indices for getController: $outerIndex, $innerIndex');
+      debugPrint('LOG: Invalid indices for getController: $outerIndex, $innerIndex');
       return null;
     }
     return state[outerIndex][innerIndex];
@@ -71,7 +71,7 @@ class FocusNodesNotifier extends StateNotifier<List<FocusNode>> {
 
   FocusNode? getFocusNode(int index) {
     if (index < 0 || index >= state.length) {
-      debugPrint('Invalid index for getFocusNode: $index');
+      debugPrint('LOG: Invalid index for getFocusNode: $index');
       return null;
     }
     return state[index];
@@ -111,33 +111,43 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
     });
   }
 
-  void _initializeControllers() {
-    final programController = ref.read(trainingProgramControllerProvider);
-    final weekProgressions = buildWeekProgressions(programController.program.weeks, widget.exercise!);
+void _initializeControllers() {
+  final programController = ref.read(trainingProgramControllerProvider);
+  final weekProgressions = buildWeekProgressions(programController.program.weeks, widget.exercise!);
 
-    final controllerCount = weekProgressions.expand((week) => week.expand((session) => session.series)).length;
-    ref.read(controllerProvider.notifier).initialize(controllerCount);
-    ref.read(focusNodesProvider.notifier).initialize(controllerCount);
+  // Calcola il numero totale di serie
+  final totalSeriesCount = weekProgressions.fold<int>(0, (sum, week) {
+    return sum + week.fold<int>(0, (innerSum, session) {
+      return innerSum + session.series.length;
+    });
+  });
 
-    int controllerIndex = 0;
-    for (final weekProgression in weekProgressions) {
-      for (final sessionProgression in weekProgression) {
-        for (final series in sessionProgression.series) {
-          _updateControllerValues(controllerIndex, series);
-          controllerIndex++;
-        }
+  debugPrint('LOG: Total series count: $totalSeriesCount');
+  ref.read(controllerProvider.notifier).initialize(totalSeriesCount);
+  ref.read(focusNodesProvider.notifier).initialize(totalSeriesCount);
+
+  int controllerIndex = 0;
+  for (final weekProgression in weekProgressions) {
+    for (final sessionProgression in weekProgression) {
+      for (final series in sessionProgression.series) {
+        debugPrint('LOG: Initializing controller for series: ${series.serieId} at index $controllerIndex');
+        _updateControllerValues(controllerIndex, series);
+        controllerIndex++;
       }
     }
   }
+}
 
-  void _updateControllerValues(int controllerIndex, Series series) {
-    final controllerNotifier = ref.read(controllerProvider.notifier);
-    controllerNotifier.updateController(controllerIndex, 0, series.reps.toString());
-    controllerNotifier.updateController(controllerIndex, 1, series.sets.toString());
-    controllerNotifier.updateController(controllerIndex, 2, series.intensity);
-    controllerNotifier.updateController(controllerIndex, 3, series.rpe);
-    controllerNotifier.updateController(controllerIndex, 4, series.weight.toString());
-  }
+void _updateControllerValues(int controllerIndex, Series series) {
+  debugPrint('LOG: Updating controller values for index: $controllerIndex, series: ${series.serieId}');
+  final controllerNotifier = ref.read(controllerProvider.notifier);
+  controllerNotifier.updateController(controllerIndex, 0, series.reps.toString());
+  controllerNotifier.updateController(controllerIndex, 1, series.sets.toString());
+  controllerNotifier.updateController(controllerIndex, 2, series.intensity);
+  controllerNotifier.updateController(controllerIndex, 3, series.rpe);
+  controllerNotifier.updateController(controllerIndex, 4, series.weight.toString());
+}
+
 
   List<List<Series>> groupSeries(List<Series> series) {
     final groupedSeries = <List<Series>>[];
@@ -166,130 +176,161 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
     return groupedSeries;
   }
 
-  void updateWeightFromIntensity(int controllerIndex, String intensity) {
-    final programController = ref.read(trainingProgramControllerProvider);
-    final weekProgressions = buildWeekProgressions(programController.program.weeks, widget.exercise!);
+void updateWeightFromIntensity(int controllerIndex, String intensity) {
+  final programController = ref.read(trainingProgramControllerProvider);
+  final weekProgressions = buildWeekProgressions(programController.program.weeks, widget.exercise!);
 
-    final seriesIndex = controllerIndex ~/ 5;
-    final groupedSeries = groupSeries(weekProgressions.expand((week) => week.expand((session) => session.series)).toList());
+  final seriesIndex = controllerIndex ~/ 5;
+  final groupedSeries = groupSeries(weekProgressions.expand((week) => week.expand((session) => session.series)).toList());
 
-    if (seriesIndex < 0 || seriesIndex >= groupedSeries.length) {
-      debugPrint('Invalid seriesIndex: $seriesIndex');
-      return;
+  if (seriesIndex < 0 || seriesIndex >= groupedSeries.length) {
+    debugPrint('Invalid seriesIndex: $seriesIndex');
+    return;
+  }
+
+  for (final currentProgression in groupedSeries[seriesIndex]) {
+    if (intensity.isNotEmpty) {
+      final calculatedWeight = SeriesUtils.calculateWeightFromIntensity(widget.latestMaxWeight.toDouble(), double.parse(intensity));
+      currentProgression.weight = SeriesUtils.roundWeight(calculatedWeight, widget.exercise?.type);
+    } else {
+      currentProgression.weight = 0.0;
+    }
+    currentProgression.intensity = intensity;
+
+    updateSeriesInProgressions(weekProgressions, currentProgression);
+  }
+
+  for (int i = 0; i < groupedSeries[seriesIndex].length; i++) {
+    final weightControllerIndex = controllerIndex + (i * 5) + 2;
+    ref.read(controllerProvider.notifier).updateController(seriesIndex, weightControllerIndex % 5, groupedSeries[seriesIndex][i].weight.toStringAsFixed(2));
+  }
+}
+
+void _updateWeightFromRPE(int controllerIndex, String rpe, int reps) {
+  final programController = ref.read(trainingProgramControllerProvider);
+  final weekProgressions = buildWeekProgressions(programController.program.weeks, widget.exercise!);
+
+  final seriesIndex = controllerIndex ~/ 5;
+  final groupedSeries = groupSeries(weekProgressions.expand((week) => week.expand((session) => session.series)).toList());
+
+  if (seriesIndex < 0 || seriesIndex >= groupedSeries.length) {
+    debugPrint('Invalid seriesIndex: $seriesIndex');
+    return;
+  }
+
+  for (final currentProgression in groupedSeries[seriesIndex]) {
+    final repsController = ref.read(controllerProvider.notifier).getController(controllerIndex, 0);
+    final weightController = ref.read(controllerProvider.notifier).getController(controllerIndex, 4);
+    final rpeController = ref.read(controllerProvider.notifier).getController(controllerIndex, 3);
+    final intensityController = ref.read(controllerProvider.notifier).getController(controllerIndex, 2);
+
+    if (repsController != null && weightController != null && rpeController != null && intensityController != null) {
+      SeriesUtils.updateWeightFromRPE(
+        repsController,
+        weightController,
+        rpeController,
+        intensityController,
+        widget.exercise?.type ?? '',
+        widget.latestMaxWeight,
+        ValueNotifier<double>(0.0),
+      );
     }
 
-    for (final currentProgression in groupedSeries[seriesIndex]) {
-      if (intensity.isNotEmpty) {
-        final calculatedWeight = SeriesUtils.calculateWeightFromIntensity(widget.latestMaxWeight.toDouble(), double.parse(intensity));
-        currentProgression.weight = SeriesUtils.roundWeight(calculatedWeight, widget.exercise?.type);
-      } else {
-        currentProgression.weight = 0.0;
+    updateSeriesInProgressions(weekProgressions, currentProgression);
+  }
+
+  for (int i = 0; i < groupedSeries[seriesIndex].length; i++) {
+    final rpeControllerIndex = controllerIndex + (i * 5) + 4;
+    ref.read(controllerProvider.notifier).updateController(seriesIndex, rpeControllerIndex % 5, groupedSeries[seriesIndex][i].weight.toStringAsFixed(2));
+  }
+}
+
+
+void updateIntensityFromWeight(int controllerIndex, double weight) {
+  final programController = ref.read(trainingProgramControllerProvider);
+  final weekProgressions = buildWeekProgressions(programController.program.weeks, widget.exercise!);
+
+  final seriesIndex = controllerIndex ~/ 5;
+  final groupedSeries = groupSeries(weekProgressions.expand((week) => week.expand((session) => session.series)).toList());
+  final focusNodesNotifier = ref.read(focusNodesProvider.notifier);
+
+  if (seriesIndex < 0 || seriesIndex >= groupedSeries.length) {
+    debugPrint('LOG: Invalid seriesIndex: $seriesIndex');
+    return;
+  }
+
+  for (final currentProgression in groupedSeries[seriesIndex]) {
+    final focusNode = focusNodesNotifier.getFocusNode(controllerIndex + 2);
+    if (weight != 0 && focusNode != null && !focusNode.hasFocus) {
+      final calculatedIntensity = SeriesUtils.calculateIntensityFromWeight(weight, widget.latestMaxWeight.toDouble());
+      currentProgression.intensity = calculatedIntensity.toStringAsFixed(2);
+      final intensityControllerIndex = controllerIndex + 2;
+      ref.read(controllerProvider.notifier).updateController(seriesIndex, intensityControllerIndex % 5, currentProgression.intensity);
+    }
+
+    updateSeriesInProgressions(weekProgressions, currentProgression);
+  }
+
+  for (int i = 0; i < groupedSeries[seriesIndex].length; i++) {
+    final intensityControllerIndex = controllerIndex + (i * 5) + 2;
+    ref.read(controllerProvider.notifier).updateController(seriesIndex, intensityControllerIndex % 5, double.parse(groupedSeries[seriesIndex][i].intensity).toStringAsFixed(2));
+  }
+}
+
+
+
+void updateProgression(int controllerIndex, int reps, String intensity, String rpe, double weight) {
+  final programController = ref.read(trainingProgramControllerProvider);
+  final weekProgressions = buildWeekProgressions(programController.program.weeks, widget.exercise!);
+
+  final seriesIndex = controllerIndex ~/ 5;
+  final groupedSeries = groupSeries(weekProgressions.expand((week) => week.expand((session) => session.series)).toList());
+
+  if (seriesIndex < 0 || seriesIndex >= groupedSeries.length) {
+    debugPrint('LOG: Invalid seriesIndex: $seriesIndex');
+    return;
+  }
+
+  final seriesInGroup = groupedSeries[seriesIndex];
+  final sets = seriesInGroup.length;
+
+  debugPrint('LOG: Updating progression for series group index: $seriesIndex with reps: $reps, intensity: $intensity, rpe: $rpe, weight: $weight');
+
+  for (final currentProgression in seriesInGroup) {
+    currentProgression.reps = reps;
+    currentProgression.sets = sets;
+    currentProgression.intensity = intensity;
+    currentProgression.rpe = rpe;
+    currentProgression.weight = weight;
+
+    debugPrint('LOG: Updated series: ${currentProgression.serieId}');
+    updateSeriesInProgressions(weekProgressions, currentProgression);
+  }
+
+  for (int i = 0; i < seriesInGroup.length; i++) {
+    final progressionControllerIndex = controllerIndex + (i * 5);
+    debugPrint('LOG: Updating controller for progression index: $progressionControllerIndex');
+    ref.read(controllerProvider.notifier).updateController(progressionControllerIndex ~/ 5, 0, reps.toString());
+    ref.read(controllerProvider.notifier).updateController(progressionControllerIndex ~/ 5, 1, sets.toString());
+    ref.read(controllerProvider.notifier).updateController(progressionControllerIndex ~/ 5, 2, intensity);
+    ref.read(controllerProvider.notifier).updateController(progressionControllerIndex ~/ 5, 3, rpe);
+    ref.read(controllerProvider.notifier).updateController(progressionControllerIndex ~/ 5, 4, weight.toString());
+  }
+}
+
+
+ void updateSeriesInProgressions(List<List<WeekProgression>> weekProgressions, Series updatedSeries) {
+  for (int weekIndex = 0; weekIndex < weekProgressions.length; weekIndex++) {
+    for (int sessionIndex = 0; sessionIndex < weekProgressions[weekIndex].length; sessionIndex++) {
+      final sessionProgression = weekProgressions[weekIndex][sessionIndex];
+      final seriesIndex = sessionProgression.series.indexWhere((s) => s.serieId == updatedSeries.serieId);
+      if (seriesIndex != -1) {
+        weekProgressions[weekIndex][sessionIndex].series[seriesIndex] = updatedSeries;
       }
-      currentProgression.intensity = intensity;
-
-      updateSeriesInProgressions(weekProgressions, currentProgression);
-    }
-
-    final weightControllerIndex = controllerIndex + 2;
-    ref.read(controllerProvider.notifier).updateController(seriesIndex, weightControllerIndex % 5, groupedSeries[seriesIndex].first.weight.toStringAsFixed(2));
-  }
-
-  void _updateWeightFromRPE(int controllerIndex, String rpe, int reps) {
-    final programController = ref.read(trainingProgramControllerProvider);
-    final weekProgressions = buildWeekProgressions(programController.program.weeks, widget.exercise!);
-
-    final seriesIndex = controllerIndex ~/ 5;
-    final groupedSeries = groupSeries(weekProgressions.expand((week) => week.expand((session) => session.series)).toList());
-
-    if (seriesIndex < 0 || seriesIndex >= groupedSeries.length) {
-      debugPrint('Invalid seriesIndex: $seriesIndex');
-      return;
-    }
-
-    for (final currentProgression in groupedSeries[seriesIndex]) {
-      final repsController = ref.read(controllerProvider.notifier).getController(controllerIndex, 0);
-      final weightController = ref.read(controllerProvider.notifier).getController(controllerIndex, 4);
-      final rpeController = ref.read(controllerProvider.notifier).getController(controllerIndex, 3);
-      final intensityController = ref.read(controllerProvider.notifier).getController(controllerIndex, 2);
-
-      if (repsController != null && weightController != null && rpeController != null && intensityController != null) {
-        SeriesUtils.updateWeightFromRPE(
-          repsController,
-          weightController,
-          rpeController,
-          intensityController,
-          widget.exercise?.type ?? '',
-          widget.latestMaxWeight,
-          ValueNotifier<double>(0.0),
-        );
-      }
-
-      updateSeriesInProgressions(weekProgressions, currentProgression);
     }
   }
+}
 
-  void updateIntensityFromWeight(int controllerIndex, double weight) {
-    final programController = ref.read(trainingProgramControllerProvider);
-    final weekProgressions = buildWeekProgressions(programController.program.weeks, widget.exercise!);
-
-    final seriesIndex = controllerIndex ~/ 5;
-    final groupedSeries = groupSeries(weekProgressions.expand((week) => week.expand((session) => session.series)).toList());
-    final focusNodesNotifier = ref.read(focusNodesProvider.notifier);
-
-    if (seriesIndex < 0 || seriesIndex >= groupedSeries.length) {
-      debugPrint('Invalid seriesIndex: $seriesIndex');
-      return;
-    }
-
-    for (final currentProgression in groupedSeries[seriesIndex]) {
-      final focusNode = focusNodesNotifier.getFocusNode(controllerIndex + 2);
-      if (weight != 0 && focusNode != null && !focusNode.hasFocus) {
-        currentProgression.intensity = SeriesUtils.calculateIntensityFromWeight(weight, widget.latestMaxWeight.toDouble()).toStringAsFixed(2);
-        final intensityControllerIndex = controllerIndex + 2;
-        ref.read(controllerProvider.notifier).updateController(seriesIndex, intensityControllerIndex % 5, currentProgression.intensity);
-      }
-
-      updateSeriesInProgressions(weekProgressions, currentProgression);
-    }
-  }
-
-  void updateProgression(int controllerIndex, int reps, String intensity, String rpe, double weight) {
-    final programController = ref.read(trainingProgramControllerProvider);
-    final weekProgressions = buildWeekProgressions(programController.program.weeks, widget.exercise!);
-
-    final seriesIndex = controllerIndex ~/ 5;
-    final groupedSeries = groupSeries(weekProgressions.expand((week) => week.expand((session) => session.series)).toList());
-
-    if (seriesIndex < 0 || seriesIndex >= groupedSeries.length) {
-      debugPrint('Invalid seriesIndex: $seriesIndex');
-      return;
-    }
-
-    final seriesInGroup = groupedSeries[seriesIndex];
-    final sets = seriesInGroup.length;
-
-    for (final currentProgression in seriesInGroup) {
-      currentProgression.reps = reps;
-      currentProgression.sets = sets;
-      currentProgression.intensity = intensity;
-      currentProgression.rpe = rpe;
-      currentProgression.weight = weight;
-
-      updateSeriesInProgressions(weekProgressions, currentProgression);
-    }
-  }
-
-  void updateSeriesInProgressions(List<List<WeekProgression>> weekProgressions, Series updatedSeries) {
-    for (int weekIndex = 0; weekIndex < weekProgressions.length; weekIndex++) {
-      for (int sessionIndex = 0; sessionIndex < weekProgressions[weekIndex].length; sessionIndex++) {
-        final sessionProgression = weekProgressions[weekIndex][sessionIndex];
-        final seriesIndex = sessionProgression.series.indexWhere((s) => s.serieId == updatedSeries.serieId);
-        if (seriesIndex != -1) {
-          weekProgressions[weekIndex][sessionIndex].series[seriesIndex] = updatedSeries;
-        }
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -313,7 +354,7 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
                 itemCount: groupedSeries.length,
                 itemBuilder: (context, seriesIndex) {
                   if (seriesIndex < 0 || seriesIndex >= groupedSeries.length) {
-                    debugPrint('Invalid seriesIndex: $seriesIndex');
+                    debugPrint('LOG: Invalid seriesIndex: $seriesIndex');
                     return const SizedBox.shrink();
                   }
 
@@ -480,7 +521,7 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     if (controller == null) {
-      debugPrint('Controller is null for index: $index');
+      debugPrint('LOG: Controller is null for index: $index');
       return const SizedBox.shrink();
     }
 
@@ -523,58 +564,39 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
     );
   }
 
-  void _handleSave() {
-    final programController = ref.read(trainingProgramControllerProvider);
-    final weekProgressions = buildWeekProgressions(programController.program.weeks, widget.exercise!);
+Future<void> _handleSave() async {
+  final programController = ref.read(trainingProgramControllerProvider);
+  final weekProgressions = buildWeekProgressions(programController.program.weeks, widget.exercise!);
 
-    updateProgressionsFromFields(weekProgressions);
+  debugPrint('LOG: Handling save, updating progressions from fields for exercise: ${widget.exercise!.exerciseId}');
+  updateProgressionsFromFields(weekProgressions);
 
-    final exerciseIndex = programController.program.weeks
-        .expand((week) => week.workouts)
-        .expand((workout) => workout.exercises)
-        .toList()
-        .indexWhere((e) => e.exerciseId == widget.exercise!.exerciseId);
+  debugPrint('LOG: Applying progressions for exercise: ${widget.exercise!.exerciseId}');
+ // await programController.submitProgram(context);
 
-    if (exerciseIndex != -1) {
-      _applyProgressions(exerciseIndex, weekProgressions);
-    } else {
-      debugPrint('Exercise not found in the program');
-    }
-  }
+  // Forza un aggiornamento dell'interfaccia utente
+  setState(() {});
+}
 
-  Future<void> _applyProgressions(
-    int exerciseIndex,
-    List<List<WeekProgression>> progressions,
-  ) async {
-    await applyWeekProgressions(exerciseIndex, progressions);
-    
-    if (mounted) {
-      _navigateBack();
-    }
-  }
+void updateProgressionsFromFields(List<List<WeekProgression>> weekProgressions) {
+  final controllerNotifier = ref.read(controllerProvider.notifier);
+  final programController = ref.read(trainingProgramControllerProvider);
 
-  void _navigateBack() {
-    Navigator.of(context).pop();
-  }
+  int controllerIndex = 0;
+  for (int weekIndex = 0; weekIndex < weekProgressions.length; weekIndex++) {
+    final weekProgression = weekProgressions[weekIndex];
+    for (int workoutIndex = 0; workoutIndex < weekProgression.length; workoutIndex++) {
+      final sessionProgression = weekProgression[workoutIndex];
+      List<Series> updatedSeries = [];
 
-  void updateProgressionsFromFields(List<List<WeekProgression>> weekProgressions) {
-    final controllerNotifier = ref.read(controllerProvider.notifier);
-    final programController = ref.read(trainingProgramControllerProvider);
-
-    int controllerIndex = 0;
-    for (int weekIndex = 0; weekIndex < weekProgressions.length; weekIndex++) {
-      final weekProgression = weekProgressions[weekIndex];
-      for (int sessionIndex = 0; sessionIndex < weekProgression.length; sessionIndex++) {
-        final sessionProgression = weekProgression[sessionIndex];
-        final series = sessionProgression.series;
-
+      for (int seriesIndex = 0; seriesIndex < sessionProgression.series.length; seriesIndex++) {
         final setsController = controllerNotifier.getController(controllerIndex, 1);
         final repsController = controllerNotifier.getController(controllerIndex, 0);
         final intensityController = controllerNotifier.getController(controllerIndex, 2);
         final rpeController = controllerNotifier.getController(controllerIndex, 3);
         final weightController = controllerNotifier.getController(controllerIndex, 4);
 
-        if (setsController != null && repsController != null && intensityController != null && 
+        if (setsController != null && repsController != null && intensityController != null &&
             rpeController != null && weightController != null) {
           final sets = int.tryParse(setsController.text) ?? 1;
           final reps = int.tryParse(repsController.text) ?? 0;
@@ -582,38 +604,22 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
           final rpe = rpeController.text;
           final weight = double.tryParse(weightController.text) ?? 0.0;
 
-          final exerciseIndex = programController.program.weeks
-              .expand((week) => week.workouts)
-              .expand((workout) => workout.exercises)
-              .toList()
-              .indexWhere((e) => e.exerciseId == widget.exercise!.exerciseId);
-
-          if (exerciseIndex != -1) {
-            programController.seriesController.removeAllSeriesForExercise(
-              programController.program,
-              weekIndex,
-              sessionIndex,
-              exerciseIndex,
+          for (int i = 0; i < sets; i++) {
+            final currentSeries = Series(
+              serieId: '${sessionProgression.series[seriesIndex].serieId!}_$i',
+              reps: reps,
+              sets: 1,  // Ogni serie avrà 1 set
+              intensity: intensity,
+              rpe: rpe,
+              weight: weight,
+              order: updatedSeries.length + 1,
+              done: false,
+              reps_done: 0,
+              weight_done: 0.0,
             );
-
-            series.clear();
-            for (int i = 0; i < sets; i++) {
-              final newSeries = Series(
-                serieId: generateRandomId(16).toString(),
-                reps: reps,
-                sets: 1,
-                intensity: intensity,
-                rpe: rpe,
-                weight: weight,
-                order: i + 1,
-                done: false,
-                reps_done: 0,
-                weight_done: 0.0,
-              );
-              series.add(newSeries);
-            }
-          } else {
-            debugPrint('Exercise not found in the program');
+            updatedSeries.add(currentSeries);
+            
+            debugPrint('LOG: Updated series - Week: $weekIndex, Workout: $workoutIndex, Series: ${updatedSeries.length}, ID: ${currentSeries.serieId}, Sets: 1, Reps: $reps, Intensity: $intensity, RPE: $rpe, Weight: $weight');
           }
         }
 
@@ -622,23 +628,47 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
           break;
         }
       }
+
+      sessionProgression.series = updatedSeries;
+      debugPrint('LOG: Total series for Week $weekIndex, Workout $workoutIndex: ${updatedSeries.length}');
+
       if (controllerIndex >= controllerNotifier.length) {
         break;
       }
     }
   }
 
-  Future<void> applyWeekProgressions(
-    int exerciseIndex,
-    List<List<WeekProgression>> progressions,
-  ) async {
-    await updateExerciseProgressions(
-      widget.exercise!,
-      progressions,
-    );
-    ref.read(trainingProgramControllerProvider).notifyListeners();
+  // Aggiorna il programma con le progressioni modificate
+  programController.updateWeekProgressions(weekProgressions, widget.exercise!.exerciseId!);
+}
+
+Future<void> applyWeekProgressions(int exerciseIndex, List<List<WeekProgression>> progressions) async {
+  final programController = ref.read(trainingProgramControllerProvider);
+  final exercise = programController.program.weeks
+      .expand((week) => week.workouts)
+      .expand((workout) => workout.exercises)
+      .toList()[exerciseIndex];
+
+  for (int weekIndex = 0; weekIndex < programController.program.weeks.length; weekIndex++) {
+    final week = programController.program.weeks[weekIndex];
+    for (int workoutIndex = 0; workoutIndex < week.workouts.length; workoutIndex++) {
+      final workout = week.workouts[workoutIndex];
+      final exerciseIndexInWorkout = workout.exercises.indexWhere((e) => e.exerciseId == exercise.exerciseId);
+
+      if (exerciseIndexInWorkout != -1) {
+        final currentExercise = workout.exercises[exerciseIndexInWorkout];
+        currentExercise.weekProgressions = progressions;
+        debugPrint('LOG: Applied week progressions to exercise: ${currentExercise.exerciseId}');
+      }
+    }
   }
 
+  debugPrint('LOG: Program saved successfully');
+}
+
+
+
+ 
   Future<void> updateExerciseProgressions(Exercise exercise, List<List<WeekProgression>> updatedProgressions) async {
     final programController = ref.read(trainingProgramControllerProvider);
 
@@ -753,3 +783,5 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> {
     return progressions;
   }
 }
+
+
