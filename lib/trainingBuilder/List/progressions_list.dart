@@ -824,4 +824,3 @@ Future<void> applyWeekProgressions(int exerciseIndex, List<List<WeekProgression>
   }
 }
 
-

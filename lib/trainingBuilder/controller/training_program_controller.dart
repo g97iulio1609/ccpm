@@ -353,40 +353,41 @@ void updateWeekProgressions(List<List<WeekProgression>> updatedProgressions, Str
   }
 
  Future<void> submitProgram(BuildContext context) async {
-  _updateProgramFields();
+    _updateProgramFields();
 
-  debugPrint('LOG: Submitting program');
-  debugPrint('LOG: trackToDeleteSeries before submission: ${_program.trackToDeleteSeries}');
+    debugPrint('LOG: Submitting program');
+    debugPrint('LOG: trackToDeleteSeries before submission: ${_program.trackToDeleteSeries}');
 
-  try {
-    await _trainingService.addOrUpdateTrainingProgram(_program);
-    debugPrint('LOG: Program added/updated successfully');
-    
-    debugPrint('LOG: Starting removal of items to delete');
-    await _trainingService.removeToDeleteItems(_program);
-    debugPrint('LOG: Finished removal of items to delete');
-    
-    // Update the program object with the cleared trackToDeleteSeries
-    _program.trackToDeleteSeries = [];
-    
-    debugPrint('LOG: trackToDeleteSeries after removal: ${_program.trackToDeleteSeries}');
+    try {
+      // First, remove the items to delete
+      await _trainingService.removeToDeleteItems(_program);
+      debugPrint('LOG: Finished removal of items to delete');
 
-    await _usersService.updateUser(_athleteIdController.text, {'currentProgram': _program.id});
+      // Then, add or update the training program
+      await _trainingService.addOrUpdateTrainingProgram(_program);
+      debugPrint('LOG: Program added/updated successfully');
+      
+      // Clear trackToDeleteSeries after successful save
+      _program.trackToDeleteSeries = [];
+      
+      debugPrint('LOG: trackToDeleteSeries after removal: ${_program.trackToDeleteSeries}');
 
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Program added/updated successfully')),
-      );
-    }
-  } catch (error) {
-    debugPrint('ERROR: Failed to submit program: $error');
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error adding/updating program: $error')),
-      );
+      await _usersService.updateUser(_athleteIdController.text, {'currentProgram': _program.id});
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Program added/updated successfully')),
+        );
+      }
+    } catch (error) {
+      debugPrint('ERROR: Failed to submit program: $error');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error adding/updating program: $error')),
+        );
+      }
     }
   }
-}
 
   void _updateProgramFields() {
     _program.name = _nameController.text;
