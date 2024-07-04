@@ -86,7 +86,7 @@ class Food {
   }) {
     return Food(
       id: id ?? this.id,
-      mealId: mealId ?? this.mealId,
+      mealId: mealId,
       name: name ?? this.name,
       brands: brands ?? this.brands,
       carbs: carbs ?? this.carbs,

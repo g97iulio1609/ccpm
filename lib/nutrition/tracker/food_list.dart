@@ -495,7 +495,7 @@ class _FoodListState extends ConsumerState<FoodList> {
     if (value == 'edit') {
       final userService = ref.read(usersServiceProvider);
       final userId = userService.getCurrentUserId();
-      final mealsService = ref.read(mealsServiceProvider);
+      ref.read(mealsServiceProvider);
       final meal = meals.Meal(
         userId: userId,
         dailyStatsId: '',

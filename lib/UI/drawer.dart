@@ -36,12 +36,10 @@ class CustomDrawer extends ConsumerWidget {
   String? _getRouteForMenuItem(
       String menuItem, String userRole, String? userId) {
     switch (menuItem) {
+      case 'Coaching':
+        return '/programs_screen';
       case 'I Miei Allenamenti':
-        return userRole == 'admin'
-            ? '/programs_screen'
-            : userId != null
-                ? '/programs_screen/user_programs/$userId'
-                : null;
+        return '/user_programs/$userId';
       case 'Galleria Allenamenti':
         return '/training_gallery';
       case 'Esercizi':
@@ -60,15 +58,15 @@ class CustomDrawer extends ConsumerWidget {
         return '/tdee';
       case 'Food Tracker':
         return '/food_tracker';
-         case 'Food Management':
+      case 'Food Management':
         return '/food_management';
       case 'Calcolatore Macronutrienti':
         return '/macros_selector';
       case 'Misurazioni':
         return '/measurements';
-         case 'Meals Preferiti':
+      case 'Meals Preferiti':
         return '/mymeals';
-         case 'Abbonamenti':
+      case 'Abbonamenti':
         return '/subscriptions';
       default:
         return null;
@@ -77,6 +75,8 @@ class CustomDrawer extends ConsumerWidget {
 
   IconData _getIconForMenuItem(String menuItem) {
     switch (menuItem) {
+      case 'Coaching':
+        return Icons.school;
       case 'I Miei Allenamenti':
         return Icons.fitness_center;
       case 'Galleria Allenamenti':
@@ -99,12 +99,12 @@ class CustomDrawer extends ConsumerWidget {
         return Icons.calculate;
       case 'Food Tracker':
         return Icons.calculate;
-        case 'Food Management':
+      case 'Food Management':
         return Icons.calculate;
       case 'Misurazioni':
         return Icons.trending_up;
-              case 'Meals Preferiti':
-        return Icons.trending_up;
+      case 'Meals Preferiti':
+        return Icons.favorite;
       default:
         return Icons.menu;
     }
@@ -112,6 +112,7 @@ class CustomDrawer extends ConsumerWidget {
 
   List<String> _getAdminMenuItems() {
     return [
+      'Coaching',
       'I Miei Allenamenti',
       'Abbonamenti',
       'Galleria Allenamenti',
@@ -202,7 +203,7 @@ class CustomDrawer extends ConsumerWidget {
                             final currentRoute =
                                 GoRouterState.of(context).uri.toString();
                             final route =
-                                '/programs_screen/user_programs/${FirebaseAuth.instance.currentUser?.uid}/training_viewer/$programId/week_details/${weekDoc.id}/workout_details/${workoutDoc.id}';
+                                '/user_programs/${FirebaseAuth.instance.currentUser?.uid}/training_viewer/$programId/week_details/${weekDoc.id}/workout_details/${workoutDoc.id}';
 
                             return ListTile(
                               title: Text(
@@ -245,8 +246,7 @@ class CustomDrawer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final List<String> menuItems =
         userRole == 'admin' ? _getAdminMenuItems() : _getClientMenuItems();
-    final isTrainingProgramRoute =
-        GoRouterState.of(context).uri.toString().contains('/training_program/');
+    GoRouterState.of(context).uri.toString().contains('/training_program/');
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
 

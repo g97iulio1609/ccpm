@@ -1,6 +1,7 @@
+import 'package:alphanessone/trainingBuilder/models/series_model.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'training_model.dart';
+import './models/training_model.dart';
 
 class VolumeDashboard extends StatefulWidget {
   final TrainingProgram program;
@@ -235,7 +236,7 @@ class _VolumeDashboardState extends State<VolumeDashboard> {
               show: true,
               color: Colors.white.withOpacity(0.3),
             ),
-            dotData: FlDotData(show: true),
+            dotData: const FlDotData(show: true),
           ),
         ],
         minY: 0,
@@ -269,7 +270,7 @@ class _VolumeDashboardState extends State<VolumeDashboard> {
           show: true,
           drawVerticalLine: false,
           getDrawingHorizontalLine: (value) {
-            return FlLine(
+            return const FlLine(
               color: Colors.white24,
               strokeWidth: 1,
             );

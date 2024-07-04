@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../services/week_services.dart';
 import '../providers/week_details_provider.dart';
 
 class WeekDetails extends ConsumerWidget {
@@ -22,6 +21,7 @@ class WeekDetails extends ConsumerWidget {
     final weekService = ref.watch(weekServiceProvider);
 
     return Scaffold(
+   
       body: StreamBuilder<QuerySnapshot>(
         stream: weekService.getWorkouts(weekId),
         builder: (context, snapshot) {
@@ -52,7 +52,7 @@ class WeekDetails extends ConsumerWidget {
                 onTap: () {
                   if (workoutId != null) {
                     context.go(
-                      '/programs_screen/user_programs/$userId/training_viewer/$programId/week_details/$weekId/workout_details/$workoutId',
+                      '/user_programs/$userId/training_viewer/$programId/week_details/$weekId/workout_details/$workoutId',
                     );
                   }
                 },

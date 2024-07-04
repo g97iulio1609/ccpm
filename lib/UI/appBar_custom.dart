@@ -21,7 +21,7 @@ class CustomAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget
   final bool isLargeScreen;
 
   @override
-  _CustomAppBarState createState() => _CustomAppBarState();
+  ConsumerState<CustomAppBar> createState() => _CustomAppBarState();
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -34,11 +34,11 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
     initializeDateFormatting('it_IT', null);
   }
 
-  String _getTitleForRoute(BuildContext context) {
-    final String currentPath = GoRouterState.of(context).uri.toString();
-
+  String _getTitleForRoute(String currentPath) {
     switch (currentPath) {
       case '/programs_screen':
+        return 'Coaching';
+      case '/user_programs':
         return 'I Miei Allenamenti';
       case '/exercises_list':
         return 'Esercizi';
@@ -52,8 +52,6 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
         return 'Gestione Utenti';
       case '/volume_dashboard':
         return 'Volume Allenamento';
-      case '/user_programs':
-        return 'Programmi Utente';
       case '/measurements':
         return 'Misurazioni Antropometriche';
       case '/tdee':
@@ -69,15 +67,13 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
     }
   }
 
-  bool _isTrainingProgramRoute(BuildContext context) {
-    final currentRoute = GoRouterState.of(context).uri.toString();
-    return currentRoute.startsWith('/programs_screen/user_programs/') &&
+  bool _isTrainingProgramRoute(String currentRoute) {
+    return currentRoute.startsWith('/user_programs/') &&
         (currentRoute.contains('/training_program/') ||
             currentRoute.contains('/week/'));
   }
 
-  bool _isDailyFoodTrackerRoute(BuildContext context) {
-    final currentRoute = GoRouterState.of(context).uri.toString();
+  bool _isDailyFoodTrackerRoute(String currentRoute) {
     return currentRoute == '/food_tracker';
   }
 
@@ -86,16 +82,16 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
     return formatter.format(date);
   }
 
-  void _showAddUserDialog(BuildContext context, WidgetRef ref) {
+  Future<void> _showAddUserDialog(BuildContext context) async {
     final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController();
     final emailController = TextEditingController();
     final passwordController = TextEditingController();
     final roleController = TextEditingController(text: 'client');
 
-    showDialog(
+    final result = await showDialog<Map<String, String>>(
       context: context,
-      builder: (context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('Add User'),
           content: Form(
@@ -148,19 +144,18 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => Navigator.of(dialogContext).pop(),
               child: const Text('Cancel'),
             ),
             ElevatedButton(
-              onPressed: () async {
+              onPressed: () {
                 if (formKey.currentState!.validate()) {
-                  await ref.read(usersServiceProvider).createUser(
-                        name: nameController.text,
-                        email: emailController.text,
-                        password: passwordController.text,
-                        role: roleController.text,
-                      );
-                  Navigator.of(context).pop();
+                  Navigator.of(dialogContext).pop({
+                    'name': nameController.text,
+                    'email': emailController.text,
+                    'password': passwordController.text,
+                    'role': roleController.text,
+                  });
                 }
               },
               child: const Text('Add'),
@@ -169,70 +164,91 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
         );
       },
     );
+
+    if (result != null) {
+      final usersService = ref.read(usersServiceProvider);
+      await usersService.createUser(
+        name: result['name']!,
+        email: result['email']!,
+        password: result['password']!,
+        role: result['role']!,
+      );
+    }
   }
 
-  Future<void> _onDayMenuSelected(BuildContext context, WidgetRef ref, String value) async {
+  Future<void> _onDayMenuSelected(String value) async {
+    if (!mounted) return;
+
     final mealsService = ref.read(mealsServiceProvider);
     final userService = ref.read(usersServiceProvider);
     final userId = userService.getCurrentUserId();
-    final selectedDate = ref.watch(selectedDateProvider);
+    final selectedDate = ref.read(selectedDateProvider);
 
     if (value == 'save_as_favorite_day') {
-      final favoriteName = await _showFavoriteNameDialog(context);
-      if (favoriteName != null) {
+      final favoriteName = await _showFavoriteNameDialog();
+      if (favoriteName != null && mounted) {
         await mealsService.saveDayAsFavorite(userId, selectedDate, favoriteName: favoriteName);
       }
     } else if (value == 'apply_favorite_day') {
       final favoriteDays = await mealsService.getFavoriteDays(userId);
-      if (favoriteDays.isNotEmpty) {
-        final selectedFavorite = await showDialog<meals.FavoriteDay>(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text('Select Favorite Day', style: TextStyle(fontSize: 16)),
-              content: SizedBox(
-                width: double.maxFinite,
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: favoriteDays.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    final favDay = favoriteDays[index];
-                    return ListTile(
-                      title: Text(favDay.favoriteName ?? 'Favorite Day', style: TextStyle(fontSize: 14)),
-                      onTap: () => Navigator.of(context).pop(favDay),
-                    );
-                  },
-                ),
-              ),
-            );
-          },
-        );
-
-        if (selectedFavorite != null) {
+      if (favoriteDays.isNotEmpty && mounted) {
+        final selectedFavorite = await _showFavoriteDaySelectionDialog(favoriteDays);
+        if (selectedFavorite != null && mounted) {
           await mealsService.applyFavoriteDayToCurrent(userId, selectedFavorite.id!, selectedDate);
         }
       }
     }
   }
 
-  Future<String?> _showFavoriteNameDialog(BuildContext context) {
-    final TextEditingController _nameController = TextEditingController();
+  Future<String?> _showFavoriteNameDialog() {
+    final TextEditingController nameController = TextEditingController();
     return showDialog<String>(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: Text('Save as Favorite', style: TextStyle(fontSize: 16)),
+          title: const Text('Save as Favorite', style: TextStyle(fontSize: 16)),
           content: TextField(
-            controller: _nameController,
-            decoration: InputDecoration(
+            controller: nameController,
+            decoration: const InputDecoration(
               labelText: 'Favorite Name',
               hintText: 'Enter a name for this favorite day',
             ),
           ),
           actions: <Widget>[
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: Text('Cancel')),
-            TextButton(onPressed: () => Navigator.of(context).pop(_nameController.text), child: Text('Save')),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(nameController.text),
+              child: const Text('Save'),
+            ),
           ],
+        );
+      },
+    );
+  }
+
+  Future<meals.FavoriteDay?> _showFavoriteDaySelectionDialog(List<meals.FavoriteDay> favoriteDays) {
+    return showDialog<meals.FavoriteDay>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Select Favorite Day', style: TextStyle(fontSize: 16)),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: favoriteDays.length,
+              itemBuilder: (BuildContext context, int index) {
+                final favDay = favoriteDays[index];
+                return ListTile(
+                  title: Text(favDay.favoriteName, style: const TextStyle(fontSize: 14)),
+                  onTap: () => Navigator.of(dialogContext).pop(favDay),
+                );
+              },
+            ),
+          ),
         );
       },
     );
@@ -246,76 +262,103 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
 
     return AppBar(
       centerTitle: true,
-      title: _isDailyFoodTrackerRoute(context)
-          ? Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.chevron_left),
-                  onPressed: () {
-                    ref.read(selectedDateProvider.notifier).update((state) => state.subtract(const Duration(days: 1)));
-                  },
-                ),
-                Text(
-                  _formatDate(selectedDate),
-                  style: const TextStyle(fontSize: 16),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.chevron_right),
-                  onPressed: () {
-                    ref.read(selectedDateProvider.notifier).update((state) => state.add(const Duration(days: 1)));
-                  },
-                ),
-                PopupMenuButton<String>(
-                  onSelected: (value) => _onDayMenuSelected(context, ref, value),
-                  itemBuilder: (BuildContext context) => [
-                    const PopupMenuItem(value: 'save_as_favorite_day', child: Text('Save as Favorite Day')),
-                    const PopupMenuItem(value: 'apply_favorite_day', child: Text('Apply Favorite Day')),
-                  ],
-                ),
-              ],
-            )
-          : Text(_getTitleForRoute(context)),
+      title: _isDailyFoodTrackerRoute(currentRoute)
+          ? _buildDateSelector(selectedDate)
+          : Text(_getTitleForRoute(currentRoute)),
       backgroundColor: Colors.transparent,
-      foregroundColor: Theme.of(context).colorScheme.onBackground,
-      leading: isBackButtonVisible
-          ? Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(
-                  child: IconButton(
-                    iconSize: 24,
-                    icon: const Icon(Icons.arrow_back),
-                    onPressed: () {
-                      context.pop();
-                    },
-                  ),
-                ),
-                if (!widget.isLargeScreen)
-                  Flexible(
-                    child: IconButton(
-                      iconSize: 24,
-                      icon: const Icon(Icons.menu),
-                      onPressed: () => Scaffold.of(context).openDrawer(),
-                    ),
-                  ),
-              ],
-            )
-          : null,
-      actions: [
-        if (widget.userRole == 'admin' && currentRoute == '/users_dashboard')
-          IconButton(
-            onPressed: () => _showAddUserDialog(context, ref),
-            icon: const Icon(Icons.person_add),
+      foregroundColor: Theme.of(context).colorScheme.onSurface,
+      leading: isBackButtonVisible ? _buildLeadingButtons(currentRoute) : null,
+      actions: _buildActions(currentRoute),
+    );
+  }
+
+  Widget _buildDateSelector(DateTime selectedDate) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.chevron_left),
+          onPressed: () {
+            ref.read(selectedDateProvider.notifier).update((state) => state.subtract(const Duration(days: 1)));
+          },
+        ),
+        Text(
+          _formatDate(selectedDate),
+          style: const TextStyle(fontSize: 16),
+        ),
+        IconButton(
+          icon: const Icon(Icons.chevron_right),
+          onPressed: () {
+            ref.read(selectedDateProvider.notifier).update((state) => state.add(const Duration(days: 1)));
+          },
+        ),
+        PopupMenuButton<String>(
+          onSelected: _onDayMenuSelected,
+          itemBuilder: (BuildContext context) => [
+            const PopupMenuItem(value: 'save_as_favorite_day', child: Text('Save as Favorite Day')),
+            const PopupMenuItem(value: 'apply_favorite_day', child: Text('Apply Favorite Day')),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLeadingButtons(String currentRoute) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Flexible(
+          child: IconButton(
+            iconSize: 24,
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              if (currentRoute.startsWith('/user_programs/') &&
+                  ref.read(previousRouteProvider) == '/programs_screen') {
+                context.go('/programs_screen');
+              } else {
+                context.pop();
+              }
+            },
           ),
-        if (_isTrainingProgramRoute(context))
-          IconButton(
-            onPressed: () => widget.controller.submitProgram(context),
-            icon: const Icon(Icons.save),
+        ),
+        if (!widget.isLargeScreen)
+          Flexible(
+            child: IconButton(
+              iconSize: 24,
+              icon: const Icon(Icons.menu),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+            ),
           ),
       ],
     );
   }
+
+  List<Widget> _buildActions(String currentRoute) {
+    final List<Widget> actions = [];
+
+    if (widget.userRole == 'admin' && currentRoute == '/users_dashboard') {
+      actions.add(
+        IconButton(
+          onPressed: () => _showAddUserDialog(context),
+          icon: const Icon(Icons.person_add),
+        ),
+      );
+    }
+
+   if (_isTrainingProgramRoute(currentRoute)) {
+  actions.add(
+    IconButton(
+      onPressed: () {
+        widget.controller.submitProgram(context);
+      },
+      icon: const Icon(Icons.save),
+    ),
+  );
+}
+
+    return actions;
+  }
 }
 
 final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());
+final previousRouteProvider = StateProvider<String?>((ref) => null);

@@ -1,11 +1,11 @@
 import 'package:alphanessone/exerciseManager/exercise_model.dart';
 import 'package:alphanessone/services/exercise_record_services.dart';
+import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import '../exerciseManager/exercises_services.dart';
-import 'training_model.dart';
-import 'controller/training_program_controller.dart';
+import '../../exerciseManager/exercises_services.dart';
+import '../controller/training_program_controller.dart';
 import 'add_exercise_dialog.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -23,7 +23,7 @@ class ExerciseDialog extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final controller = ref.watch(trainingProgramControllerProvider);
+    ref.watch(trainingProgramControllerProvider);
     final exerciseNameController = TextEditingController(text: exercise?.name ?? '');
     final variantController = TextEditingController(text: exercise?.variant ?? '');
     String selectedExerciseId = exercise?.exerciseId ?? '';

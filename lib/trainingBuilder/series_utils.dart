@@ -1,6 +1,7 @@
+import 'package:alphanessone/trainingBuilder/models/series_model.dart';
 import 'package:flutter/material.dart';
 import 'package:alphanessone/services/exercise_record_services.dart';
-import './training_model.dart';
+import './models/training_model.dart';
 
 class SeriesUtils {
   static double calculateWeightFromIntensity(double maxWeight, double intensity) {
@@ -318,7 +319,6 @@ class SeriesUtils {
     if (weight > 0 && latestMaxWeight > 0) {
       final calculatedIntensity = calculateIntensityFromWeight(weight, latestMaxWeight);
       intensityController.text = calculatedIntensity.toStringAsFixed(2);
-      debugPrint('weight: $weight calculatedIntensity: $calculatedIntensity  intensityController.text: ${intensityController.text}'  );
     } else {
       intensityController.clear();
     }

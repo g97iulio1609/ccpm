@@ -28,9 +28,9 @@ class InAppPurchaseService {
     }
     debugPrint("Store is available");
 
-    const Set<String> _kIds = {'alphanessoneplussubscription', 'alphanessoneplusathlete3m'};
-    debugPrint("Querying product details for IDs: $_kIds");
-    final ProductDetailsResponse response = await _inAppPurchase.queryProductDetails(_kIds);
+    const Set<String> kIds = {'alphanessoneplussubscription', 'alphanessoneplusathlete3m'};
+    debugPrint("Querying product details for IDs: $kIds");
+    final ProductDetailsResponse response = await _inAppPurchase.queryProductDetails(kIds);
 
     if (response.notFoundIDs.isNotEmpty) {
       debugPrint("Products not found: ${response.notFoundIDs}");
@@ -47,8 +47,7 @@ class InAppPurchaseService {
   }
 
   Future<void> redeemPromoCode(String promoCode) async {
-    final InAppPurchaseAndroidPlatformAddition androidAddition = 
-      _inAppPurchase.getPlatformAddition<InAppPurchaseAndroidPlatformAddition>();
+    _inAppPurchase.getPlatformAddition<InAppPurchaseAndroidPlatformAddition>();
 
     try {
       final trimmedPromoCode = promoCode.trim();

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import '../training_model.dart';
+
 import '../controller/training_program_controller.dart';
-import '../reorder_dialog.dart';
+import '../dialog/reorder_dialog.dart';
+import '../models/workout_model.dart';
 
 class TrainingProgramWorkoutListPage extends StatefulWidget {
   final TrainingProgramController controller;
@@ -94,7 +95,7 @@ class _TrainingProgramWorkoutListPageState
       child: InkWell(
         onTap: () {
           context.go(
-              '/programs_screen/user_programs/${widget.controller.program.athleteId}/training_program/${widget.controller.program.id}/week/${widget.weekIndex}/workout/$index');
+              '/user_programs/${widget.controller.program.athleteId}/training_program/${widget.controller.program.id}/week/${widget.weekIndex}/workout/$index');
         },
         borderRadius: BorderRadius.circular(16),
         child: Padding(

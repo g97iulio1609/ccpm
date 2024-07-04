@@ -610,10 +610,10 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> with Single
                   _resetForm();
                 }
               },
-              child: Text(_editMeasurementId == null ? 'Aggiungi' : 'Aggiorna', style: const TextStyle(color: Colors.black)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
               ),
+              child: Text(_editMeasurementId == null ? 'Aggiungi' : 'Aggiorna', style: const TextStyle(color: Colors.black)),
             ),
           ],
         ),

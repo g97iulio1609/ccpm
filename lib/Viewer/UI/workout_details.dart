@@ -135,7 +135,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDarkMode ? colorScheme.surface : colorScheme.background,
+        color: isDarkMode ? colorScheme.surface : colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -154,7 +154,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
                   fontWeight: FontWeight.bold,
                   color: isDarkMode
                       ? colorScheme.onSurface
-                      : colorScheme.onBackground,
+                      : colorScheme.onSurface,
                 ),
             textAlign: TextAlign.center,
           ),
@@ -164,7 +164,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
               .entries
               .map((entry) =>
                   buildSuperSetExerciseName(entry.key, entry.value, context))
-              .toList(),
+              ,
           const SizedBox(height: 24),
           buildSuperSetStartButton(superSetExercises, context),
           const SizedBox(height: 24),
@@ -188,7 +188,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       decoration: BoxDecoration(
         color: Theme.of(context).brightness == Brightness.dark
             ? Theme.of(context).colorScheme.surface
-            : Theme.of(context).colorScheme.background,
+            : Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -225,7 +225,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
         '${index + 1}. ${exercise['name']} ${exercise['variant'] ?? ''}',
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color:
-                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+                  isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
             ),
       ),
     );
@@ -253,7 +253,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
             exercise['series'].indexWhere((series) => series['done'] != true);
 
         context.go(
-          '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${exercise['id']}',
+          '/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${exercise['id']}',
           extra: {
             'exerciseName': exercise['name'],
             'exerciseVariant': exercise['variant'],
@@ -284,8 +284,6 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   }
 
   Widget buildSeriesHeaderRow(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final colorScheme = Theme.of(context).colorScheme;
     return Row(
       children: [
         buildHeaderText('Serie', context, 1),
@@ -305,7 +303,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
         text,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color:
-                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+                  isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
@@ -346,7 +344,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
         '${seriesIndex + 1}',
         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color:
-                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+                  isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
             ),
         textAlign: TextAlign.center,
       ),
@@ -389,7 +387,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                             color: isDarkMode
                                 ? colorScheme.onSurface
-                                : colorScheme.onBackground,
+                                : colorScheme.onSurface,
                           ),
                       textAlign: TextAlign.center,
                     ),
@@ -458,7 +456,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
             color:
-                isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+                isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
           ),
       textAlign: TextAlign.center,
     );
@@ -478,7 +476,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     return GestureDetector(
       onTap: () {
         context.go(
-          '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${exercise['id']}',
+          '/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${exercise['id']}',
           extra: {
             'exerciseName': exercise['name'],
             'exerciseVariant': exercise['variant'] ?? '',
@@ -556,7 +554,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
         text,
         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color:
-                  isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+                  isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
             ),
         textAlign: TextAlign.center,
       ),
@@ -588,22 +586,22 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
               ? colorScheme.primary
               : isDarkMode
                   ? colorScheme.onSurface
-                  : colorScheme.onBackground,
+                  : colorScheme.onSurface,
         ),
       ),
     );
   }
 
-  Future<void> showEditSeriesDialog(String seriesId,
+ Future<void> showEditSeriesDialog(String seriesId,
       Map<String, dynamic> series, BuildContext context) async {
     final repsController =
         TextEditingController(text: series['reps']?.toString() ?? '');
     final weightController =
         TextEditingController(text: series['weight']?.toString() ?? '');
 
-    await showDialog(
+    return showDialog(
       context: context,
-      builder: (context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('Modifica Serie'),
           content: Column(
@@ -634,18 +632,17 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: const Text('Annulla'),
             ),
             ElevatedButton(
-              onPressed: () async {
+              onPressed: () {
                 final repsDone = int.tryParse(repsController.text) ?? 0;
                 final weightDone = double.tryParse(
                         weightController.text.replaceAll(',', '.')) ??
                     0.0;
-                await _workoutService.updateSeries(
-                    seriesId, repsDone, weightDone);
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
+                _workoutService.updateSeries(seriesId, repsDone, weightDone);
               },
               child: const Text('Salva'),
             ),

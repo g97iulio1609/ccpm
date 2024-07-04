@@ -1,7 +1,11 @@
+import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
+import 'package:alphanessone/trainingBuilder/models/progressions_model.dart';
+import 'package:alphanessone/trainingBuilder/models/series_model.dart';
+import 'package:alphanessone/trainingBuilder/models/training_model.dart';
+import 'package:alphanessone/trainingBuilder/models/week_model.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import '../training_model.dart';
 import 'training_program_controller.dart';
 
 final progressionControllerProvider = ChangeNotifierProvider((ref) {
@@ -29,25 +33,21 @@ class ProgressionController extends ChangeNotifier {
           final currentExercise = workout.exercises[exerciseIndex];
           debugPrint('Found exercise in week ${weekIndex + 1}, workout ${workoutIndex + 1}, exercise index $exerciseIndex');
 
-          // Assicurati che la lista weekProgressions dell'esercizio corrente sia inizializzata
           if (currentExercise.weekProgressions.length <= weekIndex) {
             currentExercise.weekProgressions = List.generate(program.weeks.length, (_) => []);
           }
 
-          // Aggiorna la proprietà weekProgressions dell'esercizio
           if (weekIndex < updatedProgressions.length) {
             currentExercise.weekProgressions[weekIndex] = updatedProgressions[weekIndex];
             debugPrint('Updated weekProgressions for week ${weekIndex + 1}: ${updatedProgressions[weekIndex]}');
           }
 
-          // Aggiorna le serie dell'esercizio in base alla progressione della sessione corrente
           final sessionIndex = workoutIndex;
           final exerciseProgressions = currentExercise.weekProgressions[weekIndex];
           if (sessionIndex < exerciseProgressions.length) {
             final progression = exerciseProgressions[sessionIndex];
             debugPrint('Applying progression for week ${weekIndex + 1}, session ${sessionIndex + 1}: $progression');
 
-            // Utilizza i valori inseriti nella schermata SetProgressionScreen
             currentExercise.series = List.generate(progression.series.length, (index) {
               final series = progression.series[index];
               final newSeries = Series(

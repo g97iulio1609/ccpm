@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../services/training_program_services.dart';
 import '../providers/training_program_provider.dart';
 
 class TrainingViewer extends ConsumerStatefulWidget {
@@ -55,7 +54,7 @@ class _TrainingViewerState extends ConsumerState<TrainingViewer> {
                   weekDescription: week['description'] ?? '',
                   onTap: () {
                     context.go(
-                        '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${week['id']}');
+                        '/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${week['id']}');
                   },
                 );
               },

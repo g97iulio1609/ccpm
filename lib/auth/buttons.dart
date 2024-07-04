@@ -1,7 +1,5 @@
 import 'package:alphanessone/providers/providers.dart';
-import 'package:alphanessone/services/users_services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -37,7 +35,7 @@ class _SubmitButtonState extends ConsumerState<SubmitButton> {
     final userRole = ref.watch(userRoleProvider);
 
     return ElevatedButton(
-      onPressed: () => _submit(context, userRole),
+      onPressed: () => _submit(userRole),
       style: ElevatedButton.styleFrom(
         foregroundColor: Colors.white,
         backgroundColor: Colors.blue,
@@ -53,46 +51,51 @@ class _SubmitButtonState extends ConsumerState<SubmitButton> {
     );
   }
 
-  Future<void> _submit(BuildContext context, String userRole) async {
+  Future<void> _submit(String userRole) async {
+    if (!mounted) return;
     if (widget.formKey.currentState?.validate() ?? false) {
       widget.formKey.currentState?.save();
       final email = widget.userEmail.value.trim();
       final password = widget.userPassword.value.trim();
       try {
-        final UserCredential userCredential;
-        if (widget.isLogin.value) {
-          userCredential = await widget.authService.signInWithEmailAndPassword(email, password);
-        } else {
-          userCredential = await widget.authService.signUpWithEmailAndPassword(
-              email, password, widget.userName.value, widget.userGender.value);
-        }
+        final UserCredential userCredential = await _performAuthentication(email, password);
         final userId = userCredential.user?.uid;
         if (userId != null) {
           await widget.authService.updateUserName(userCredential.user!);
-          if (mounted) {
-            _showSnackBar(context, 'Authentication successful', Colors.green);
-            SchedulerBinding.instance.addPostFrameCallback((_) {
-              if (userRole == 'admin') {
-                context.go('/programs_screen');
-              } else {
-                context.go('/programs_screen/user_programs/$userId');
-              }
-            });
-          }
+          if (!mounted) return;
+          _showSnackBar('Authentication successful', Colors.green);
+          _navigateToAppropriateScreen(userRole, userId);
         } else {
-          if (mounted) {
-            _showSnackBar(context, 'Failed to retrieve user ID', Colors.red);
-          }
+          if (!mounted) return;
+          _showSnackBar('Failed to retrieve user ID', Colors.red);
         }
       } catch (error) {
-        if (mounted) {
-          _showSnackBar(context, error.toString(), Colors.red);
-        }
+        if (!mounted) return;
+        _showSnackBar(error.toString(), Colors.red);
       }
     }
   }
 
-  void _showSnackBar(BuildContext context, String message, Color color) {
+  Future<UserCredential> _performAuthentication(String email, String password) async {
+    if (widget.isLogin.value) {
+      return await widget.authService.signInWithEmailAndPassword(email, password);
+    } else {
+      return await widget.authService.signUpWithEmailAndPassword(
+          email, password, widget.userName.value, widget.userGender.value);
+    }
+  }
+
+  void _navigateToAppropriateScreen(String userRole, String userId) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (userRole == 'admin') {
+        context.go('/programs_screen');
+      } else {
+        context.go('/programs_screen/user_programs/$userId');
+      }
+    });
+  }
+
+  void _showSnackBar(String message, Color color) {
     ScaffoldMessenger.of(context).removeCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: color),

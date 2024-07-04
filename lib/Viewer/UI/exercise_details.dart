@@ -91,9 +91,11 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
     });
   }
 
-  void _navigateToTimer() async {
+  Future<void> _navigateToTimer() async {
+    if (!mounted) return;
+
     final result = await context.push<Map<String, dynamic>>(
-      '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${widget.exerciseId}/timer',
+      '/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${widget.exerciseId}/timer',
       extra: TimerModel(
         programId: widget.programId,
         userId: widget.userId,
@@ -106,9 +108,11 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
         restTime: _getRestTimeInSeconds(),
         isEmomMode: _isEmomMode,
         superSetExerciseIndex: currentSuperSetExerciseIndex,
-        superSetExercises: widget.superSetExercises, // Aggiungi questo parametro
+        superSetExercises: widget.superSetExercises,
       ),
     );
+
+    if (!mounted) return;
 
     if (result != null) {
       final int nextIndex = result['startIndex'] as int;
@@ -129,7 +133,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
         });
       } else {
         context.go(
-          '/programs_screen/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}',
+          '/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}',
         );
       }
     }
@@ -187,7 +191,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
                       'Next: ${widget.superSetExercises[currentSuperSetExerciseIndex + 1]['name']}',
                       style: theme.textTheme.titleLarge?.copyWith(
                         color: isDarkMode
-                            ? colorScheme.onBackground
+                            ? colorScheme.onSurface
                             : colorScheme.onSurface,
                         fontWeight: FontWeight.bold,
                       ),
@@ -203,7 +207,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
                   const SizedBox(height: 32),
                   _buildEmomSwitch(theme, isDarkMode, colorScheme),
                   const SizedBox(height: 40),
-                  if (currentSeries != null) // Check if currentSeries is not null
+                  if (currentSeries != null)
                     _buildNextButton(
                       theme,
                       isDarkMode,
@@ -265,7 +269,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
               ),
               textAlign: TextAlign.center,
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -326,17 +330,17 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
         inputFormatters: [inputFormatter],
         textAlign: TextAlign.center,
         style: theme.textTheme.titleLarge?.copyWith(
-          color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+          color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
         ),
         decoration: InputDecoration(
           labelText: label,
           labelStyle: theme.textTheme.titleMedium?.copyWith(
             color: isDarkMode
                 ? colorScheme.onSurface.withOpacity(0.6)
-                : colorScheme.onBackground.withOpacity(0.6),
+                : colorScheme.onSurface.withOpacity(0.6),
           ),
           filled: true,
-          fillColor: isDarkMode ? colorScheme.surface : colorScheme.background,
+          fillColor: isDarkMode ? colorScheme.surface : colorScheme.surface,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
@@ -400,7 +404,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
       width: 90,
       height: 130,
       decoration: BoxDecoration(
-        color: isDarkMode ? colorScheme.surface : colorScheme.background,
+        color: isDarkMode ? colorScheme.surface : colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDarkMode ? Colors.white : Colors.white,
@@ -423,10 +427,10 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
         onChanged: onChanged,
         itemHeight: 45,
         textStyle: theme.textTheme.titleLarge?.copyWith(
-          color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+          color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
         ),
-        selectedTextStyle: theme.textTheme.titleLarge?.copyWith(
-          color: isDarkMode ? colorScheme.onSurface : colorScheme.onBackground,
+selectedTextStyle: theme.textTheme.titleLarge?.copyWith(
+          color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
           fontWeight: FontWeight.bold,
         ),
         decoration: BoxDecoration(
@@ -465,7 +469,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
           style: theme.textTheme.titleMedium?.copyWith(
             color: isDarkMode
                 ? colorScheme.onSurface.withOpacity(0.6)
-                : colorScheme.onBackground.withOpacity(0.6),
+                : colorScheme.onSurface.withOpacity(0.6),
           ),
           textAlign: TextAlign.center,
         ),
@@ -492,7 +496,7 @@ class _ExerciseDetailsState extends State<ExerciseDetails> {
           'EMOM Mode',
           style: theme.textTheme.titleLarge?.copyWith(
             color:
-                isDarkMode ? colorScheme.onBackground : colorScheme.onSurface,
+                isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
             fontWeight: FontWeight.bold,
           ),
         ),

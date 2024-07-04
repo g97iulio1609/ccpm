@@ -1,11 +1,11 @@
-import 'package:alphanessone/trainingBuilder/training_model.dart';
+import 'package:alphanessone/trainingBuilder/models/week_model.dart';
+import 'package:alphanessone/trainingBuilder/providers/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import '../controller/training_program_controller.dart';
-import '../training_program_state_provider.dart';
-import '../reorder_dialog.dart';
+import '../dialog/reorder_dialog.dart';
 
 class TrainingProgramWeekList extends ConsumerWidget {
   final String programId;
@@ -77,7 +77,7 @@ class TrainingProgramWeekList extends ConsumerWidget {
       ),
       child: InkWell(
         onTap: () {
-          context.go('/programs_screen/user_programs/$userId/training_program/$programId/week/$index');
+          _navigateToWeek(context, userId, programId, index);
         },
         borderRadius: BorderRadius.circular(16),
         child: Padding(
@@ -140,9 +140,13 @@ class TrainingProgramWeekList extends ConsumerWidget {
     );
   }
 
+  void _navigateToWeek(BuildContext context, String userId, String programId, int weekIndex) {
+    final routePath = '/user_programs/$userId/training_program/$programId/week/$weekIndex';
+    context.go(routePath);
+  }
+
   void _showReorderWeeksDialog(BuildContext context) {
-    final weekNames =
-        controller.program.weeks.map((week) => 'Settimana ${week.number}').toList();
+    final weekNames = controller.program.weeks.map((week) => 'Settimana ${week.number}').toList();
     showDialog(
       context: context,
       builder: (context) => ReorderDialog(

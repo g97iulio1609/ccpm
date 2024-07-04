@@ -2,14 +2,13 @@ import 'package:alphanessone/models/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'controller/training_program_controller.dart';
+import '../controller/training_program_controller.dart';
 import 'package:alphanessone/providers/providers.dart';
 
 class AthleteSelectionDialog extends ConsumerWidget {
   final TrainingProgramController controller;
 
-  const AthleteSelectionDialog({required this.controller, Key? key})
-      : super(key: key);
+  const AthleteSelectionDialog({required this.controller, super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

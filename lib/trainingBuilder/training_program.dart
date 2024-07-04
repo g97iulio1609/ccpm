@@ -1,24 +1,24 @@
+import 'package:alphanessone/trainingBuilder/providers/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
-import 'package:alphanessone/trainingBuilder/athlete_selection_dialog.dart';
+import 'package:alphanessone/trainingBuilder/dialog/athlete_selection_dialog.dart';
 import 'package:alphanessone/trainingBuilder/List/week_list.dart';
 import 'package:alphanessone/trainingBuilder/List/workout_list.dart';
-import 'package:alphanessone/trainingBuilder/List/exercise_list.dart';
-import 'training_program_state_provider.dart';
+import 'package:alphanessone/trainingBuilder/List/exercises_list.dart';
 import 'package:alphanessone/providers/providers.dart';
 
 class TrainingProgramPage extends HookConsumerWidget {
-  final String? programId;
+  final String programId;
   final String userId;
   final int? weekIndex;
   final int? workoutIndex;
 
   const TrainingProgramPage({
     super.key,
-    this.programId,
+    required this.programId,
     required this.userId,
     this.weekIndex,
     this.workoutIndex,
@@ -32,8 +32,8 @@ class TrainingProgramPage extends HookConsumerWidget {
     final userRole = ref.watch(userRoleProvider);
 
     useEffect(() {
-      if (programId != null && program.id != programId) {
-        controller.loadProgram(programId!);
+      if (programId.isNotEmpty && program.id != programId) {
+        controller.loadProgram(programId);
       }
       return null;
     }, [programId]);
@@ -197,7 +197,7 @@ class TrainingProgramPage extends HookConsumerWidget {
                         ),
                         const SizedBox(height: 16),
                         TrainingProgramWeekList(
-                          programId: programId ?? '',
+                          programId: programId,
                           userId: userId,
                           controller: controller,
                         ),
@@ -209,7 +209,7 @@ class TrainingProgramPage extends HookConsumerWidget {
                                 onPressed: controller.addWeek,
                                 icon: const Icon(Icons.add),
                                 label: const Text(
-                                  'Aggiungi Settimana',
+                                  'Settimana',
                                   style: TextStyle(fontSize: 18),
                                 ),
                                 style: ElevatedButton.styleFrom(
@@ -228,7 +228,7 @@ class TrainingProgramPage extends HookConsumerWidget {
                                 onPressed: () => controller.submitProgram(context),
                                 icon: const Icon(Icons.save),
                                 label: const Text(
-                                  'Salva Programma',
+                                  'Salva',
                                   style: TextStyle(fontSize: 18),
                                 ),
                                 style: ElevatedButton.styleFrom(

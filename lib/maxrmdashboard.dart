@@ -95,7 +95,7 @@ Widget build(BuildContext context, WidgetRef ref) {
             usersService,
             keepWeight,
           ),
-          SizedBox(height: 20), // Aggiungi questa linea per creare spazio
+          const SizedBox(height: 20), // Aggiungi questa linea per creare spazio
           _buildAllExercisesMaxRMs(ref, usersService, exerciseRecordService, context),
         ],
       ),
@@ -366,12 +366,12 @@ Widget _buildAddRecordButton(
                   IconButton(
                     icon: const Icon(Icons.edit),
                     onPressed: () => _showEditDialog(context, record, exercise, exerciseRecordService, usersService),
-                    color: Theme.of(context).colorScheme.onBackground,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete),
                     onPressed: () => _showDeleteDialog(context, record, exercise, exerciseRecordService, usersService),
-                    color: Theme.of(context).colorScheme.onBackground,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ],
               ),
@@ -459,14 +459,14 @@ class EditRecordDialog extends StatefulWidget {
   final TextEditingController repetitionsController;
 
   const EditRecordDialog({
-    Key? key,
+    super.key,
     required this.record,
     required this.exercise,
     required this.exerciseRecordService,
     required this.usersService,
     required this.maxWeightController,
     required this.repetitionsController,
-  }) : super(key: key);
+  });
 
   @override
   _EditRecordDialogState createState() => _EditRecordDialogState();

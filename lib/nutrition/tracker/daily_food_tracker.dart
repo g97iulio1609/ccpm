@@ -1,6 +1,5 @@
 import 'package:alphanessone/UI/appBar_custom.dart';
 import 'package:alphanessone/providers/providers.dart';
-import 'package:alphanessone/services/tdee_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models&Services/meals_services.dart';
@@ -63,7 +62,7 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
   Widget build(BuildContext context) {
     final selectedDate = ref.watch(selectedDateProvider);
     final dailyStats = ref.watch(dailyStatsProvider(selectedDate));
-    final bool isToday = selectedDate.isAtSameMomentAs(DateTime(
+    selectedDate.isAtSameMomentAs(DateTime(
       DateTime.now().year,
       DateTime.now().month,
       DateTime.now().day,
@@ -75,7 +74,7 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
           return Column(
             children: [
               Container(
-                color: Theme.of(context).colorScheme.background,
+                color: Theme.of(context).colorScheme.surface,
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,14 +96,14 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
                         Text(
                           stats.totalCalories.toStringAsFixed(0),
                           style: GoogleFonts.roboto(
-                            color: Theme.of(context).colorScheme.onBackground,
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontSize: 24,
                           ),
                         ),
                         Text(
                           '${(_targetCalories - stats.totalCalories).toStringAsFixed(0)} Cal Remaining',
                           style: GoogleFonts.roboto(
-                            color: Theme.of(context).colorScheme.onBackground,
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontSize: 16,
                           ),
                         ),
@@ -113,7 +112,7 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
                     Text(
                       'of $_targetCalories Cal Goal',
                       style: GoogleFonts.roboto(
-                        color: Theme.of(context).colorScheme.onBackground,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 12,
                       ),
                     ),
@@ -139,7 +138,7 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
         Text(
           title,
           style: GoogleFonts.roboto(
-            color: Theme.of(context).colorScheme.onBackground,
+            color: Theme.of(context).colorScheme.onSurface,
             fontSize: 16,
           ),
         ),
@@ -157,7 +156,7 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
         Text(
           '${value.toStringAsFixed(0)} / ${target.toStringAsFixed(0)} g',
           style: GoogleFonts.roboto(
-            color: Theme.of(context).colorScheme.onBackground,
+            color: Theme.of(context).colorScheme.onSurface,
             fontSize: 16,
           ),
         ),

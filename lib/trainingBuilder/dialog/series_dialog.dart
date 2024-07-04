@@ -1,8 +1,9 @@
-import 'package:alphanessone/trainingBuilder/series_utils.dart';
-import 'package:alphanessone/trainingBuilder/training_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:alphanessone/services/exercise_record_services.dart';
+import 'package:alphanessone/trainingBuilder/series_utils.dart';
+import 'package:alphanessone/trainingBuilder/models/series_model.dart';
+import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
 
 class SeriesDialog extends StatefulWidget {
   final ExerciseRecordService exerciseRecordService;
@@ -162,14 +163,14 @@ class _SeriesDialogState extends State<SeriesDialog> {
                 SeriesUtils.updateIntensityFromWeight(
                   _weightController,
                   _intensityController,
-                  latestMaxWeight.toDouble(), // Passa il valore corretto di latestMaxWeight
+                  latestMaxWeight.toDouble(),
                 );
                 SeriesUtils.updateRPE(
                   _repsController,
                   _weightController,
                   _rpeController,
                   _intensityController,
-                  latestMaxWeight, // Passa il valore corretto di latestMaxWeight
+                  latestMaxWeight,
                 );
               },
             ),

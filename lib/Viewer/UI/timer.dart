@@ -72,7 +72,7 @@ void _handleNextSeries() {
       context.pop(result);
     } else {
       context.go(
-        '/programs_screen/user_programs/${timerModel.userId}/training_viewer/${timerModel.programId}/week_details/${timerModel.weekId}/workout_details/${timerModel.workoutId}',
+        '/user_programs/${timerModel.userId}/training_viewer/${timerModel.programId}/week_details/${timerModel.weekId}/workout_details/${timerModel.workoutId}',
       );
     }
   } else {
@@ -97,7 +97,7 @@ void _skipRestTime() {
       context.pop(result);
     } else {
       context.go(
-        '/programs_screen/user_programs/${timerModel.userId}/training_viewer/${timerModel.programId}/week_details/${timerModel.weekId}/workout_details/${timerModel.workoutId}',
+        '/user_programs/${timerModel.userId}/training_viewer/${timerModel.programId}/week_details/${timerModel.weekId}/workout_details/${timerModel.workoutId}',
       );
     }
   } else {

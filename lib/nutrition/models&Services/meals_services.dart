@@ -221,7 +221,6 @@ class MealsService extends ChangeNotifier {
       throw Exception('Meal not found');
     }
 
-    final meal = meals.Meal.fromFirestore(mealSnapshot);
 
     final myFoodRef = _firestore.collection('users').doc(userId).collection('myfoods').doc(myFoodId);
     final myFoodSnapshot = await myFoodRef.get();
