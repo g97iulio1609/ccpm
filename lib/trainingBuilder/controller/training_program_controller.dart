@@ -93,7 +93,6 @@ class TrainingProgramController extends ChangeNotifier {
 
   void _initProgram() {
     if (_programState == null) {
-      // Initialize with a default TrainingProgram if _programState is null
       _program = TrainingProgram(
         id: '',
         name: '',
@@ -114,65 +113,50 @@ class TrainingProgramController extends ChangeNotifier {
     _mesocycleNumberController = TextEditingController(text: _program.mesocycleNumber.toString());
   }
 
+  void updateWeekProgressions(List<List<WeekProgression>> updatedProgressions, String exerciseId) {
+    for (int weekIndex = 0; weekIndex < _program.weeks.length && weekIndex < updatedProgressions.length; weekIndex++) {
+      final week = _program.weeks[weekIndex];
+      for (int workoutIndex = 0; workoutIndex < week.workouts.length && workoutIndex < updatedProgressions[weekIndex].length; workoutIndex++) {
+        final workout = week.workouts[workoutIndex];
+        final exerciseIndex = workout.exercises.indexWhere((e) => e.exerciseId == exerciseId);
 
-void updateWeekProgressions(List<List<WeekProgression>> updatedProgressions, String exerciseId) {
-  debugPrint('Updating week progressions for exercise: $exerciseId. Total weeks: ${_program.weeks.length}, Updated progressions: ${updatedProgressions.length}');
+        if (exerciseIndex != -1) {
+          final exercise = workout.exercises[exerciseIndex];
 
-  for (int weekIndex = 0; weekIndex < _program.weeks.length && weekIndex < updatedProgressions.length; weekIndex++) {
-    final week = _program.weeks[weekIndex];
-    for (int workoutIndex = 0; workoutIndex < week.workouts.length && workoutIndex < updatedProgressions[weekIndex].length; workoutIndex++) {
-      final workout = week.workouts[workoutIndex];
-      final exerciseIndex = workout.exercises.indexWhere((e) => e.exerciseId == exerciseId);
-
-      if (exerciseIndex != -1) {
-        final exercise = workout.exercises[exerciseIndex];
-
-        // Rimuovi tutte le vecchie serie
-        if (exercise.series != null) {
-          for (final series in exercise.series) {
-            if (series.serieId != null && !program.trackToDeleteSeries.contains(series.serieId!)) {
-              program.trackToDeleteSeries.add(series.serieId!);
+          if (exercise.series != null) {
+            for (final series in exercise.series) {
+              if (series.serieId != null && !program.trackToDeleteSeries.contains(series.serieId!)) {
+                program.trackToDeleteSeries.add(series.serieId!);
+              }
             }
           }
-        }
 
-        // Aggiungi le nuove serie
-        exercise.series = updatedProgressions[weekIndex][workoutIndex].series;
+          exercise.series = updatedProgressions[weekIndex][workoutIndex].series;
 
-        if (exercise.weekProgressions == null) {
-          exercise.weekProgressions = [];
-        }
+          if (exercise.weekProgressions == null) {
+            exercise.weekProgressions = [];
+          }
 
-        while (exercise.weekProgressions.length <= weekIndex) {
-          exercise.weekProgressions.add([]);
-        }
+          while (exercise.weekProgressions.length <= weekIndex) {
+            exercise.weekProgressions.add([]);
+          }
 
-        if (exercise.weekProgressions[weekIndex].isEmpty) {
-          exercise.weekProgressions[weekIndex] = [WeekProgression(
-            weekNumber: weekIndex + 1,
-            sessionNumber: workoutIndex + 1,
-            series: []
-          )];
-        }
+          if (exercise.weekProgressions[weekIndex].isEmpty) {
+            exercise.weekProgressions[weekIndex] = [WeekProgression(
+              weekNumber: weekIndex + 1,
+              sessionNumber: workoutIndex + 1,
+              series: []
+            )];
+          }
 
-        exercise.weekProgressions[weekIndex][0] = updatedProgressions[weekIndex][workoutIndex];
-
-        debugPrint('LOG: Updated exercise progressions - Week: $weekIndex, Workout: $workoutIndex, Exercise ID: ${exercise.exerciseId}, Series count: ${exercise.series.length}');
-
-        // Log dei dettagli di ogni serie
-        for (int i = 0; i < exercise.series.length; i++) {
-          final series = exercise.series[i];
-          debugPrint('LOG: Series ${i + 1} - Reps: ${series.reps}, Intensity: ${series.intensity}, RPE: ${series.rpe}, Weight: ${series.weight}');
+          exercise.weekProgressions[weekIndex][0] = updatedProgressions[weekIndex][workoutIndex];
         }
       }
     }
+
+    notifyListeners();
   }
 
-  debugPrint('Finished updating week progressions for exercise: $exerciseId');
-  notifyListeners();
-}
-
- 
   Future<void> loadProgram(String? programId) async {
     if (programId == null) {
       _initProgram();
@@ -352,26 +336,15 @@ void updateWeekProgressions(List<List<WeekProgression>> updatedProgressions, Str
     notifyListeners();
   }
 
- Future<void> submitProgram(BuildContext context) async {
+  Future<void> submitProgram(BuildContext context) async {
     _updateProgramFields();
 
-    debugPrint('LOG: Submitting program');
-    debugPrint('LOG: trackToDeleteSeries before submission: ${_program.trackToDeleteSeries}');
-
     try {
-      // First, remove the items to delete
       await _trainingService.removeToDeleteItems(_program);
-      debugPrint('LOG: Finished removal of items to delete');
-
-      // Then, add or update the training program
       await _trainingService.addOrUpdateTrainingProgram(_program);
-      debugPrint('LOG: Program added/updated successfully');
       
-      // Clear trackToDeleteSeries after successful save
       _program.trackToDeleteSeries = [];
       
-      debugPrint('LOG: trackToDeleteSeries after removal: ${_program.trackToDeleteSeries}');
-
       await _usersService.updateUser(_athleteIdController.text, {'currentProgram': _program.id});
 
       if (context.mounted) {
@@ -380,7 +353,6 @@ void updateWeekProgressions(List<List<WeekProgression>> updatedProgressions, Str
         );
       }
     } catch (error) {
-      debugPrint('ERROR: Failed to submit program: $error');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error adding/updating program: $error')),
@@ -391,7 +363,7 @@ void updateWeekProgressions(List<List<WeekProgression>> updatedProgressions, Str
 
   void _updateProgramFields() {
     _program.name = _nameController.text;
-    _program.description = _descriptionController.text; // Corrected typo
+    _program.description = _descriptionController.text;
     _program.athleteId = _athleteIdController.text;
     _program.mesocycleNumber = int.tryParse(_mesocycleNumberController.text) ?? 0;
     _program.hide = _program.hide;
@@ -421,7 +393,7 @@ void updateWeekProgressions(List<List<WeekProgression>> updatedProgressions, Str
   }
 
   Future<String?> duplicateProgram(String programId, String newProgramName, BuildContext context, {String? currentUserId}) async {
-    final scaffoldMessenger = ScaffoldMessenger.of(context); // Capture ScaffoldMessenger before async call
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
     try {
       TrainingProgram? existingProgram = await _trainingService.fetchTrainingProgram(programId);
 
