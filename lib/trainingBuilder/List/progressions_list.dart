@@ -11,11 +11,11 @@ import 'package:alphanessone/trainingBuilder/controller/training_program_control
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 
 final controllerProvider = StateNotifierProvider.autoDispose<ControllerNotifier, List<List<TextEditingController>>>((ref) {
-  return ControllerNotifier([]);
+  return ControllerNotifier();
 });
 
 class ControllerNotifier extends StateNotifier<List<List<TextEditingController>>> {
-  ControllerNotifier(super.state);
+  ControllerNotifier() : super([]);
 
   void initialize(int count) {
     final controllers = List.generate(
@@ -25,7 +25,7 @@ class ControllerNotifier extends StateNotifier<List<List<TextEditingController>>
         (seriesIndex) => TextEditingController(),
       ),
     );
-    state = [...controllers];
+    state = controllers;
   }
 
   void updateController(int outerIndex, int innerIndex, String text) {
@@ -52,6 +52,16 @@ class ControllerNotifier extends StateNotifier<List<List<TextEditingController>>
     }
   }
 
+  void addControllers(List<TextEditingController> newControllers) {
+    state = [...state, newControllers];
+  }
+
+  void removeControllers(int index) {
+    final newState = List<List<TextEditingController>>.from(state);
+    newState.removeAt(index);
+    state = newState;
+  }
+
   int get length => state.length;
 
   @override
@@ -66,15 +76,15 @@ class ControllerNotifier extends StateNotifier<List<List<TextEditingController>>
 }
 
 final focusNodesProvider = StateNotifierProvider.autoDispose<FocusNodesNotifier, List<FocusNode>>((ref) {
-  return FocusNodesNotifier([]);
+  return FocusNodesNotifier();
 });
 
 class FocusNodesNotifier extends StateNotifier<List<FocusNode>> {
-  FocusNodesNotifier(super.state);
+  FocusNodesNotifier() : super([]);
 
   void initialize(int count) {
     final focusNodes = List<FocusNode>.generate(count, (_) => FocusNode());
-    state = [...focusNodes];
+    state = focusNodes;
   }
 
   FocusNode? getFocusNode(int index) {
@@ -83,6 +93,16 @@ class FocusNodesNotifier extends StateNotifier<List<FocusNode>> {
       return null;
     }
     return state[index];
+  }
+
+  void addFocusNode() {
+    state = [...state, FocusNode()];
+  }
+
+  void removeFocusNode(int index) {
+    final newState = List<FocusNode>.from(state);
+    newState.removeAt(index);
+    state = newState;
   }
 
   @override
@@ -318,15 +338,14 @@ class _SetProgressionScreenState extends ConsumerState<SetProgressionScreen> wit
     for (int i = 0; i < seriesInGroup.length; i++) {
       final progressionControllerIndex = controllerIndex + (i * 5);
       debugPrint('LOG: Updating controller for progression index: $progressionControllerIndex');
-      ref.read(controllerProvider.notifier).updateController(progressionControllerIndex ~/ 5, 0, reps.toString());
-      ref.read(controllerProvider.notifier).updateController(progressionControllerIndex ~/ 5, 1, sets.toString());
+    ref.read(controllerProvider.notifier).updateController(progressionControllerIndex ~/ 5, 1, sets.toString());
       ref.read(controllerProvider.notifier).updateController(progressionControllerIndex ~/ 5, 2, intensity);
       ref.read(controllerProvider.notifier).updateController(progressionControllerIndex ~/ 5, 3, rpe);
       ref.read(controllerProvider.notifier).updateController(progressionControllerIndex ~/ 5, 4, weight.toString());
     }
   }
 
-void updateSeriesInProgressions(List<List<WeekProgression>> weekProgressions, Series updatedSeries) {
+  void updateSeriesInProgressions(List<List<WeekProgression>> weekProgressions, Series updatedSeries) {
     for (int weekIndex = 0; weekIndex < weekProgressions.length; weekIndex++) {
       for (int sessionIndex = 0; sessionIndex < weekProgressions[weekIndex].length; sessionIndex++) {
         final sessionProgression = weekProgressions[weekIndex][sessionIndex];
@@ -598,7 +617,7 @@ void updateSeriesInProgressions(List<List<WeekProgression>> weekProgressions, Se
     );
   }
 
- void _addSeriesGroup(int index) {
+  void _addSeriesGroup(int index) {
     final programController = ref.read(trainingProgramControllerProvider);
     final weekProgressions = buildWeekProgressions(programController.program.weeks, widget.exercise!);
     
@@ -649,11 +668,11 @@ void updateSeriesInProgressions(List<List<WeekProgression>> weekProgressions, Se
              newSeriesGroup.weight.toString()
       ),
     );
-    controllerNotifier.state = [...controllerNotifier.state, newControllers];
+    controllerNotifier.addControllers(newControllers);
 
     // Add new focus node
     final focusNodesNotifier = ref.read(focusNodesProvider.notifier);
-    focusNodesNotifier.state = [...focusNodesNotifier.state, FocusNode()];
+    focusNodesNotifier.addFocusNode();
 
     // Update the program with the new progressions
     programController.updateWeekProgressions(weekProgressions, widget.exercise!.exerciseId!);
@@ -705,11 +724,11 @@ void updateSeriesInProgressions(List<List<WeekProgression>> weekProgressions, Se
 
     // Remove controllers for the removed series
     final controllerNotifier = ref.read(controllerProvider.notifier);
-    controllerNotifier.state.removeAt(index);
+    controllerNotifier.removeControllers(index);
 
-    // Remove focus node
+   // Remove focus node
     final focusNodesNotifier = ref.read(focusNodesProvider.notifier);
-    focusNodesNotifier.state.removeAt(index);
+    focusNodesNotifier.removeFocusNode(index);
 
     // Update the program with the new progressions
     programController.updateWeekProgressions(weekProgressions, widget.exercise!.exerciseId!);
@@ -717,6 +736,7 @@ void updateSeriesInProgressions(List<List<WeekProgression>> weekProgressions, Se
     // Update the UI
     setState(() {});
   }
+
   Future<void> _handleSave() async {
     final programController = ref.read(trainingProgramControllerProvider);
     final weekProgressions = buildWeekProgressions(programController.program.weeks, widget.exercise!);
@@ -756,7 +776,7 @@ void updateSeriesInProgressions(List<List<WeekProgression>> weekProgressions, Se
     Navigator.of(context).pop();
   }
 
-void updateProgressionsFromFields(List<List<WeekProgression>> weekProgressions) {
+  void updateProgressionsFromFields(List<List<WeekProgression>> weekProgressions) {
     final controllerNotifier = ref.read(controllerProvider.notifier);
     final programController = ref.read(trainingProgramControllerProvider);
     final program = programController.program;
