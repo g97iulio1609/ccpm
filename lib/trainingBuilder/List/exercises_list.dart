@@ -265,7 +265,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
           ),
         PopupMenuItem(
           child: Text(
-            'Set Progression',
+            'Imposta Progressione',
             style: TextStyle(
               color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
             ),
@@ -847,7 +847,7 @@ void _addOrUpdateMaxRM(
     Navigator.push<Exercise>(
       context,
       MaterialPageRoute(
-        builder: (context) => SetProgressionScreen(
+        builder: (context) => ProgressionsList(
           exerciseId: exercise.exerciseId!,
           exercise: exercise,
           latestMaxWeight: latestMaxWeight,
