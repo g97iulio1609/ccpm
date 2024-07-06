@@ -847,7 +847,7 @@ void _addOrUpdateMaxRM(
     Navigator.push<Exercise>(
       context,
       MaterialPageRoute(
-        builder: (context) => SetProgressionScreen(
+        builder: (context) => ProgressionsList(
           exerciseId: exercise.exerciseId!,
           exercise: exercise,
           latestMaxWeight: latestMaxWeight,
