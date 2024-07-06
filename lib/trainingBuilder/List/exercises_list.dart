@@ -265,7 +265,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
           ),
         PopupMenuItem(
           child: Text(
-            'Set Progression',
+            'Imposta Progressione',
             style: TextStyle(
               color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
             ),

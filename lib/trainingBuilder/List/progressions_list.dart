@@ -91,17 +91,29 @@ void initialize(List<List<WeekProgression>> weekProgressions) {
     }
   }
 
-  void addControllers(int weekIndex, int sessionIndex, Series series) {
+void addControllers(int weekIndex, int sessionIndex, int groupIndex, Series series) {
   if (weekIndex >= 0 && weekIndex < state.length &&
       sessionIndex >= 0 && sessionIndex < state[weekIndex].length) {
-    state[weekIndex][sessionIndex].add(ProgressionControllers(
-      reps: TextEditingController(text: series.reps.toString()),
+    final newControllers = ProgressionControllers(
+      reps: TextEditingController(text: series.reps == 0 ? '' : series.reps.toString()),
       sets: TextEditingController(text: series.sets.toString()),
       intensity: TextEditingController(text: series.intensity),
       rpe: TextEditingController(text: series.rpe),
-      weight: TextEditingController(text: series.weight.toString()),
-      // Non è necessario fornire esplicitamente i FocusNode, verranno creati automaticamente
-    ));
+      weight: TextEditingController(text: series.weight == 0.0 ? '' : series.weight.toString()),
+    );
+    
+    // Crea una nuova copia dello stato mantenendo la tipizzazione
+    final newState = state.map((week) => 
+      week.map((session) => 
+        List<ProgressionControllers>.from(session)
+      ).toList()
+    ).toList();
+    
+    // Inserisci i nuovi controller nella posizione corretta
+    newState[weekIndex][sessionIndex].insert(groupIndex, newControllers);
+    
+    // Aggiorna lo stato
+    state = newState;
   }
 }
 
@@ -277,37 +289,37 @@ Widget build(BuildContext context) {
   );
 }
 
- Widget _buildSessionItem(
+Widget _buildSessionItem(
   int weekIndex, 
   int sessionIndex, 
   WeekProgression session, 
   List<ProgressionControllers> sessionControllers, 
   bool isDarkMode, 
   ColorScheme colorScheme
-) {final groupedSeries = _groupSeries(session.series);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 16, bottom: 8),
-          child: Text(
-            'Session ${sessionIndex + 1}',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
-            ),
+) {
+  final groupedSeries = _groupSeries(session.series);
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Padding(
+        padding: const EdgeInsets.only(top: 16, bottom: 8),
+        child: Text(
+          'Session ${sessionIndex + 1}',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
           ),
         ),
-        ...groupedSeries.asMap().entries.map((entry) {
-          final groupIndex = entry.key;
-          final seriesGroup = entry.value;
-          return _buildSeriesItem(weekIndex, sessionIndex, groupIndex, seriesGroup, sessionControllers[groupIndex], isDarkMode, colorScheme);
-        }),
-      ],
-    );
-  }
-
+      ),
+      ...groupedSeries.asMap().entries.map((entry) {
+        final groupIndex = entry.key;
+        final seriesGroup = entry.value;
+        return _buildSeriesItem(weekIndex, sessionIndex, groupIndex, seriesGroup, sessionControllers[groupIndex], isDarkMode, colorScheme);
+      }),
+    ],
+  );
+}
   Widget _buildSeriesItem(int weekIndex, int sessionIndex, int groupIndex, List<Series> seriesGroup, ProgressionControllers controllers, bool isDarkMode, ColorScheme colorScheme) {
     return Slidable(
       key: ValueKey('$weekIndex-$sessionIndex-$groupIndex'),
@@ -469,26 +481,48 @@ color: isDarkMode ? colorScheme.primary : colorScheme.primary,
     ref.read(trainingProgramControllerProvider).updateWeekProgressions(weekProgressions, widget.exercise!.exerciseId!);
   }
 
-  void _addSeriesGroup(int weekIndex, int sessionIndex, int groupIndex) {
-    final programController = ref.read(trainingProgramControllerProvider);
-    final weekProgressions = _buildWeekProgressions(programController.program.weeks, widget.exercise!);
+void _addSeriesGroup(int weekIndex, int sessionIndex, int groupIndex) {
+  final programController = ref.read(trainingProgramControllerProvider);
+  final weekProgressions = _buildWeekProgressions(programController.program.weeks, widget.exercise!);
+  final controllersNotifier = ref.read(progressionControllersProvider.notifier);
 
-    if (weekIndex >= 0 && weekIndex < weekProgressions.length &&
-        sessionIndex >= 0 && sessionIndex < weekProgressions[weekIndex].length) {
-      final groupedSeries = _groupSeries(weekProgressions[weekIndex][sessionIndex].series);
-      if (groupIndex >= 0 && groupIndex < groupedSeries.length) {
-        final newSeries = groupedSeries[groupIndex].first.copyWith(
-          serieId: generateRandomId(16).toString(),
-          order: groupedSeries[groupIndex].last.order + 1,
-        );
+  if (weekIndex >= 0 && weekIndex < weekProgressions.length &&
+      sessionIndex >= 0 && sessionIndex < weekProgressions[weekIndex].length) {
+    final currentSession = weekProgressions[weekIndex][sessionIndex];
+    final groupedSeries = _groupSeries(currentSession.series);
 
-        groupedSeries.insert(groupIndex + 1, [newSeries]);
-        weekProgressions[weekIndex][sessionIndex].series = groupedSeries.expand((group) => group).toList();
-        _updateProgressionsWithNewSeries(weekProgressions);
-        ref.read(progressionControllersProvider.notifier).addControllers(weekIndex, sessionIndex, newSeries);
-      }
+    if (groupIndex >= 0 && groupIndex < groupedSeries.length) {
+      // Crea una nuova serie con valori predefiniti
+      final newSeries = Series(
+        serieId: generateRandomId(16).toString(),
+        reps: 0,
+        sets: 1,
+        intensity: '',
+        rpe: '',
+        weight: 0.0,
+        order: groupedSeries.length + 1,
+        done: false,
+        reps_done: 0,
+        weight_done: 0.0,
+      );
+
+      // Inserisci il nuovo gruppo di serie dopo il gruppo corrente
+      groupedSeries.insert(groupIndex + 1, [newSeries]);
+
+      // Aggiorna le serie della sessione corrente
+      currentSession.series = groupedSeries.expand((group) => group).toList();
+
+      // Aggiorna le progressioni
+      _updateProgressionsWithNewSeries(weekProgressions);
+
+      // Aggiungi nuovi controller per il nuovo gruppo di serie
+      controllersNotifier.addControllers(weekIndex, sessionIndex, groupIndex + 1, newSeries);
+
+      // Aggiorna lo stato per ricostruire la UI
+      setState(() {});
     }
   }
+}
 
   void _removeSeriesGroup(int weekIndex, int sessionIndex, int groupIndex) {
     final programController = ref.read(trainingProgramControllerProvider);
