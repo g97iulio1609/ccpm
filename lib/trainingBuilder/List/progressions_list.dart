@@ -320,39 +320,47 @@ Widget _buildSessionItem(
     ],
   );
 }
-  Widget _buildSeriesItem(int weekIndex, int sessionIndex, int groupIndex, List<Series> seriesGroup, ProgressionControllers controllers, bool isDarkMode, ColorScheme colorScheme) {
-    return Slidable(
-      key: ValueKey('$weekIndex-$sessionIndex-$groupIndex'),
-      startActionPane: ActionPane(
-        motion: const ScrollMotion(),
-        children: [
-          SlidableAction(
-            onPressed: (_) => _addSeriesGroup(weekIndex, sessionIndex, groupIndex),
-            backgroundColor: Colors.blue,
-            foregroundColor: Colors.white,
-            icon: Icons.add,
-            label: 'Add',
+
+
+Widget _buildSeriesItem(int weekIndex, int sessionIndex, int groupIndex, List<Series> seriesGroup, ProgressionControllers controllers, bool isDarkMode, ColorScheme colorScheme) {
+    return SizedBox(
+      width: double.infinity,
+      child: Slidable(
+        key: ValueKey('$weekIndex-$sessionIndex-$groupIndex'),
+        startActionPane: ActionPane(
+          motion: const ScrollMotion(),
+          children: [
+            SlidableAction(
+              onPressed: (_) => _addSeriesGroup(weekIndex, sessionIndex, groupIndex),
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              icon: Icons.add,
+              label: 'Add',
+            ),
+          ],
+        ),
+        endActionPane: ActionPane(
+          motion: const ScrollMotion(),
+          children: [
+            SlidableAction(
+              onPressed: (_) => _removeSeriesGroup(weekIndex, sessionIndex, groupIndex),
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              icon: Icons.delete,
+              label: 'Delete',
+            ),
+          ],
+        ),
+        child: Container(
+          color: isDarkMode ? colorScheme.surface : Colors.white,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSeriesFields(weekIndex, sessionIndex, groupIndex, seriesGroup.first, controllers),
+              const SizedBox(height: 24),
+            ],
           ),
-        ],
-      ),
-      endActionPane: ActionPane(
-        motion: const ScrollMotion(),
-        children: [
-          SlidableAction(
-            onPressed: (_) => _removeSeriesGroup(weekIndex, sessionIndex, groupIndex),
-            backgroundColor: Colors.red,
-            foregroundColor: Colors.white,
-            icon: Icons.delete,
-            label: 'Delete',
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSeriesFields(weekIndex, sessionIndex, groupIndex, seriesGroup.first, controllers),
-          const SizedBox(height: 24),
-        ],
+        ),
       ),
     );
   }
