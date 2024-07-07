@@ -408,51 +408,56 @@ Widget _buildSeriesFields(int weekIndex, int sessionIndex, int groupIndex, Serie
     ],
   );
 }
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required FocusNode focusNode,
-    required String labelText,
-    required TextInputType keyboardType,
-    required Function(String) onChanged,
-  }) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final colorScheme = Theme.of(context).colorScheme;
+Widget _buildTextField({
+  required TextEditingController controller,
+  required FocusNode focusNode,
+  required String labelText,
+  required TextInputType keyboardType,
+  required Function(String) onChanged,
+}) {
+  final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+  final colorScheme = Theme.of(context).colorScheme;
 
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: TextFormField(
-          controller: controller,
-          focusNode: focusNode,
-          keyboardType: keyboardType,
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: Colors.white),
-          decoration: InputDecoration(
-            labelText: labelText,
-            labelStyle: const TextStyle(color: Colors.white),
-            filled: true,
-            fillColor: isDarkMode ? colorScheme.surface : Colors.white,
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: isDarkMode ? colorScheme.onSurface.withOpacity(0.12) : colorScheme.onSurface.withOpacity(0.12),
-                width: 1,
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-color: isDarkMode ? colorScheme.primary : colorScheme.primary,
-                width: 2,
-              ),
+  return Expanded(
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: TextFormField(
+        controller: controller,
+        focusNode: focusNode,
+        keyboardType: keyboardType,
+        textAlign: TextAlign.center,
+        style: const TextStyle(color: Colors.white),
+        decoration: InputDecoration(
+          labelText: labelText,
+          labelStyle: const TextStyle(color: Colors.white),
+          filled: true,
+          fillColor: isDarkMode ? colorScheme.surface : Colors.white,
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: isDarkMode ? colorScheme.onSurface.withOpacity(0.12) : colorScheme.onSurface.withOpacity(0.12),
+              width: 1,
             ),
           ),
-          onChanged: onChanged,
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: isDarkMode ? colorScheme.primary : colorScheme.primary,
+              width: 2,
+            ),
+          ),
         ),
+        onChanged: (value) {
+          final cursorPosition = controller.selection.base.offset;
+          onChanged(value);
+          controller.selection = TextSelection.fromPosition(
+            TextPosition(offset: cursorPosition),
+          );
+        },
       ),
-    );
-  }
-
+    ),
+  );
+}
   void _updateSeries(int weekIndex, int sessionIndex, int groupIndex, {int? reps, int? sets, String? intensity, String? rpe, double? weight}) {
     final programController = ref.read(trainingProgramControllerProvider);
     final weekProgressions = _buildWeekProgressions(programController.program.weeks, widget.exercise!);
