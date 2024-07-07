@@ -321,10 +321,13 @@ Widget _buildSessionItem(
   );
 }
 
+ bool _isSwipeInProgress = false;
 
-Widget _buildSeriesItem(int weekIndex, int sessionIndex, int groupIndex, List<Series> seriesGroup, ProgressionControllers controllers, bool isDarkMode, ColorScheme colorScheme) {
-    return SizedBox(
-      width: double.infinity,
+  Widget _buildSeriesItem(int weekIndex, int sessionIndex, int groupIndex, List<Series> seriesGroup, ProgressionControllers controllers, bool isDarkMode, ColorScheme colorScheme) {
+    return GestureDetector(
+      onHorizontalDragStart: (_) => setState(() => _isSwipeInProgress = true),
+      onHorizontalDragEnd: (_) => setState(() => _isSwipeInProgress = false),
+      onHorizontalDragCancel: () => setState(() => _isSwipeInProgress = false),
       child: Slidable(
         key: ValueKey('$weekIndex-$sessionIndex-$groupIndex'),
         startActionPane: ActionPane(
@@ -351,20 +354,22 @@ Widget _buildSeriesItem(int weekIndex, int sessionIndex, int groupIndex, List<Se
             ),
           ],
         ),
-        child: Container(
-          color: isDarkMode ? colorScheme.surface : Colors.white,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildSeriesFields(weekIndex, sessionIndex, groupIndex, seriesGroup.first, controllers),
-              const SizedBox(height: 24),
-            ],
+        child: AbsorbPointer(
+          absorbing: _isSwipeInProgress,
+          child: Container(
+            color: isDarkMode ? colorScheme.surface : Colors.white,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSeriesFields(weekIndex, sessionIndex, groupIndex, seriesGroup.first, controllers),
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
-
 Widget _buildSeriesFields(int weekIndex, int sessionIndex, int groupIndex, Series series, ProgressionControllers controllers) {
   return Row(
     children: [
@@ -416,56 +421,57 @@ Widget _buildSeriesFields(int weekIndex, int sessionIndex, int groupIndex, Serie
     ],
   );
 }
-Widget _buildTextField({
-  required TextEditingController controller,
-  required FocusNode focusNode,
-  required String labelText,
-  required TextInputType keyboardType,
-  required Function(String) onChanged,
-}) {
-  final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-  final colorScheme = Theme.of(context).colorScheme;
 
-  return Expanded(
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: TextFormField(
-        controller: controller,
-        focusNode: focusNode,
-        keyboardType: keyboardType,
-        textAlign: TextAlign.center,
-        style: const TextStyle(color: Colors.white),
-        decoration: InputDecoration(
-          labelText: labelText,
-          labelStyle: const TextStyle(color: Colors.white),
-          filled: true,
-          fillColor: isDarkMode ? colorScheme.surface : Colors.white,
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: isDarkMode ? colorScheme.onSurface.withOpacity(0.12) : colorScheme.onSurface.withOpacity(0.12),
-              width: 1,
+Widget _buildTextField({
+    required TextEditingController controller,
+    required FocusNode focusNode,
+    required String labelText,
+    required TextInputType keyboardType,
+    required Function(String) onChanged,
+  }) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: TextFormField(
+          controller: controller,
+          focusNode: focusNode,
+          keyboardType: keyboardType,
+          textAlign: TextAlign.center,
+          style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
+          decoration: InputDecoration(
+            labelText: labelText,
+            labelStyle: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black54),
+            filled: true,
+            fillColor: isDarkMode ? colorScheme.surface : Colors.white,
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: isDarkMode ? colorScheme.onSurface.withOpacity(0.12) : colorScheme.onSurface.withOpacity(0.12),
+                width: 1,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: isDarkMode ? colorScheme.primary : colorScheme.primary,
+                width: 2,
+              ),
             ),
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: isDarkMode ? colorScheme.primary : colorScheme.primary,
-              width: 2,
-            ),
-          ),
+          onChanged: (value) {
+            final cursorPosition = controller.selection.base.offset;
+            onChanged(value);
+            controller.selection = TextSelection.fromPosition(
+              TextPosition(offset: cursorPosition),
+            );
+          },
         ),
-        onChanged: (value) {
-          final cursorPosition = controller.selection.base.offset;
-          onChanged(value);
-          controller.selection = TextSelection.fromPosition(
-            TextPosition(offset: cursorPosition),
-          );
-        },
       ),
-    ),
-  );
-}
+    );
+  }
   void _updateSeries(int weekIndex, int sessionIndex, int groupIndex, {int? reps, int? sets, String? intensity, String? rpe, double? weight}) {
     final programController = ref.read(trainingProgramControllerProvider);
     final weekProgressions = _buildWeekProgressions(programController.program.weeks, widget.exercise!);
