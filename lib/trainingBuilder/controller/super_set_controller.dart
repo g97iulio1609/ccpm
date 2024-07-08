@@ -54,18 +54,23 @@ class SuperSetController {
     ));
   }
 
-  void createSuperSet(TrainingProgram program, int weekIndex, int workoutIndex) {
-    final superSetId = generateRandomId(16);
-    final superSetName = 'SS${SuperSetController.superSetCounter}';
-    SuperSetController.superSetCounter++;
+void createSuperSet(TrainingProgram program, int weekIndex, int workoutIndex) {
+  final superSet = SuperSet(
+    id: generateRandomId(16).toString(),
+    name: 'Superset ${++superSetCounter}',
+    exerciseIds: [],
+  );
 
-    if (SuperSetController.superSetCounter > 100) {
-      SuperSetController.superSetCounter = 1;
-    }
-
-    final superSet = SuperSet(id: superSetId, name: superSetName, exerciseIds: []);
-    program.weeks[weekIndex].workouts[workoutIndex].superSets.add(superSet);
-  }
+  final workout = program.weeks[weekIndex].workouts[workoutIndex];
+  
+  // Crea una nuova lista che include tutti i superset esistenti più il nuovo
+  final updatedSuperSets = List<SuperSet>.from(workout.superSets)..add(superSet);
+  
+  // Assegna la nuova lista al workout
+  program.weeks[weekIndex].workouts[workoutIndex] = workout.copyWith(
+    superSets: updatedSuperSets,
+  );
+}
 
   void addExerciseToSuperSet(TrainingProgram program, int weekIndex, int workoutIndex, String superSetId, String exerciseId) {
     final superSet = program.weeks[weekIndex].workouts[workoutIndex].superSets.firstWhere(
