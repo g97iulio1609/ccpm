@@ -1,4 +1,5 @@
 import 'package:alphanessone/trainingBuilder/models/series_model.dart';
+import 'package:alphanessone/trainingBuilder/models/superseries_model.dart';
 import 'package:alphanessone/trainingBuilder/models/week_model.dart';
 import 'package:alphanessone/trainingBuilder/models/workout_model.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
@@ -87,17 +88,6 @@ class WeekController {
     }
   }
 
-  Week _copyWeek(Week sourceWeek) {
-    final copiedWorkouts =
-        sourceWeek.workouts.map((workout) => _copyWorkout(workout)).toList();
-
-    return Week(
-      id: null,
-      number: sourceWeek.number,
-      workouts: copiedWorkouts,
-    );
-  }
-
   Future<int?> _showCopyWeekDialog(TrainingProgram program, BuildContext context) async {
     return showDialog<int>(
       context: context,
@@ -133,15 +123,50 @@ class WeekController {
     );
   }
 
+Week _copyWeek(Week sourceWeek) {
+    final copiedWorkouts = sourceWeek.workouts.map((workout) => _copyWorkout(workout)).toList();
+
+    return Week(
+      id: null,
+      number: sourceWeek.number,
+      workouts: copiedWorkouts,
+    );
+  }
+
   Workout _copyWorkout(Workout sourceWorkout) {
-    final copiedExercises = sourceWorkout.exercises
-        .map((exercise) => _copyExercise(exercise))
-        .toList();
+    // Create a mapping of old exercise IDs to new exercise IDs
+    final exerciseIdMap = <String, String>{};
+
+    final copiedExercises = sourceWorkout.exercises.map((exercise) {
+      final copiedExercise = _copyExercise(exercise);
+      exerciseIdMap[exercise.id!] = copiedExercise.id!;
+      return copiedExercise;
+    }).toList();
+
+    final copiedSuperSets = sourceWorkout.superSets.map((superSet) {
+      final newSuperSetId = generateRandomId(16);
+      final copiedExerciseIds = superSet.exerciseIds.map((exerciseId) {
+        final newExerciseId = exerciseIdMap[exerciseId];
+        if (newExerciseId != null) {
+          final copiedExercise = copiedExercises.firstWhere((e) => e.id == newExerciseId);
+          copiedExercise.superSetId = newSuperSetId;
+          return newExerciseId;
+        }
+        return exerciseId; // Fallback to original ID if not found (shouldn't happen)
+      }).toList();
+
+      return SuperSet(
+        id: newSuperSetId,
+        name: superSet.name,
+        exerciseIds: copiedExerciseIds,
+      );
+    }).toList();
 
     return Workout(
       id: null,
       order: sourceWorkout.order,
       exercises: copiedExercises,
+      superSets: copiedSuperSets,
     );
   }
 
@@ -153,6 +178,7 @@ class WeekController {
       id: generateRandomId(16).toString(),
       exerciseId: sourceExercise.exerciseId,
       series: copiedSeries,
+      superSetId: null, // We'll update this in _copyWorkout if it's part of a superset
     );
   }
 
