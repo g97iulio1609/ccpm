@@ -58,7 +58,7 @@ class UserProgramsScreen extends HookConsumerWidget {
     );
   }
 
-  Widget _buildProgramList(BuildContext context, WidgetRef ref, String userId, String userRole, FirestoreService firestoreService) {
+ Widget _buildProgramList(BuildContext context, WidgetRef ref, String userId, String userRole, FirestoreService firestoreService) {
     return StreamBuilder<QuerySnapshot>(
       stream: _getProgramsStream(userId, userRole),
       builder: (context, snapshot) {
@@ -83,6 +83,7 @@ class UserProgramsScreen extends HookConsumerWidget {
   Widget _buildProgramCard(BuildContext context, WidgetRef ref, DocumentSnapshot doc, String userId, String userRole, FirestoreService firestoreService) {
     final isHidden = doc['hide'] ?? false;
     final controller = ref.read(trainingProgramControllerProvider);
+    final mesocycleNumber = doc['mesocycleNumber'] ?? 1;
 
     return Card(
       elevation: 2,
@@ -93,27 +94,46 @@ class UserProgramsScreen extends HookConsumerWidget {
         onTap: () => context.go('/user_programs/$userId/training_viewer/${doc.id}'),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Text(
-                  doc['name'],
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      doc['name'],
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ),
+                  Text(
+                    'Mesociclo $mesocycleNumber',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                  ),
+                ],
               ),
-              if (userRole == 'admin')
-                IconButton(
-                  icon: Icon(isHidden ? Icons.visibility_off : Icons.visibility),
-                  onPressed: () => _toggleProgramVisibility(doc.id, isHidden),
-                ),
-              if (userRole == 'admin' || userRole == 'client_premium')
-                _buildPopupMenu(context, doc, userId, controller, firestoreService),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (userRole == 'admin')
+                    IconButton(
+                      icon: Icon(isHidden ? Icons.visibility_off : Icons.visibility),
+                      onPressed: () => _toggleProgramVisibility(doc.id, isHidden),
+                    ),
+                  if (userRole == 'admin' || userRole == 'client_premium')
+                    _buildPopupMenu(context, doc, userId, controller, firestoreService),
+                ],
+              ),
             ],
           ),
         ),
       ),
     );
   }
+
 
   Widget _buildPopupMenu(BuildContext context, DocumentSnapshot doc, String userId, TrainingProgramController controller, FirestoreService firestoreService) {
     return PopupMenuButton(
@@ -244,12 +264,13 @@ Future<void> _duplicateProgram(BuildContext context, String docId, TrainingProgr
   }
 
   Stream<QuerySnapshot> _getProgramsStream(String userId, String userRole) {
-    final query = FirebaseFirestore.instance
+    Query query = FirebaseFirestore.instance
         .collection('programs')
-        .where('athleteId', isEqualTo: userId);
+        .where('athleteId', isEqualTo: userId)
+        .orderBy('mesocycleNumber', descending: false);
     
     if (userRole != 'admin') {
-      return query.where('hide', isEqualTo: false).snapshots();
+      query = query.where('hide', isEqualTo: false);
     }
     
     return query.snapshots();
