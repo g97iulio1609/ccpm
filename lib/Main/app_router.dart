@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../auth/auth_screen.dart';
 import '../UI/home_screen.dart';
-import '../programs_screen.dart';
+import '../coaching_screen.dart';
 import '../user_programs.dart';
 import '../Viewer/UI/training_viewer.dart';
 import '../Viewer/UI/week_details.dart';
