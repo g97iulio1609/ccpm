@@ -70,6 +70,7 @@ class TrainingProgramController extends ChangeNotifier {
   }
 
   TrainingProgram get program => _program;
+  
   TextEditingController get nameController => _nameController;
   TextEditingController get descriptionController => _descriptionController;
   TextEditingController get athleteIdController => _athleteIdController;

@@ -108,6 +108,26 @@ class _TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSerie
           onPressed: () => _showReorderSeriesDialog(exercise.series),
           child: const Text('Riordina Serie'),
         ),
+        Center(
+          child: ElevatedButton(
+            onPressed: () => widget.controller.addSeries(widget.weekIndex, widget.workoutIndex,
+                widget.exerciseIndex, widget.exerciseType, context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text(
+              'Aggiungi Nuova Serie',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -148,7 +168,7 @@ class _TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSerie
       trailing: _buildSeriesGroupPopupMenu(context, seriesGroup, groupIndex),
       children: [
         for (int i = 0; i < seriesGroup.length; i++)
-          _buildSeriesCard(context, seriesGroup[i], groupIndex, i, () {
+_buildSeriesCard(context, seriesGroup[i], groupIndex, i, () {
             seriesGroup.removeAt(i);
             widget.controller.updateSeries(widget.weekIndex, widget.workoutIndex, widget.exerciseIndex, seriesGroup);
           }, widget.exerciseType),
@@ -407,7 +427,7 @@ class _TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSerie
                 child: const Text('Annulla'),
               ),
               TextButton(
-             onPressed: () {
+                onPressed: () {
                   final reps = int.parse(repsController.text);
                   final sets = int.parse(setsController.text);
                   final intensity = intensityController.text;
@@ -469,4 +489,3 @@ class _TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSerie
     widget.controller.updateSeries(widget.weekIndex, widget.workoutIndex, widget.exerciseIndex, exercise.series);
   }
 }
-

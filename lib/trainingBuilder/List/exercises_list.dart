@@ -1,4 +1,3 @@
-// exercise_list.dart
 import 'package:alphanessone/models/exercise_record.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/services/exercise_record_services.dart';
@@ -138,11 +137,13 @@ class TrainingProgramExerciseList extends ConsumerWidget {
                       ),
                     ),
                   const SizedBox(height: 16),
-                  _buildExerciseSeries(context, exercise, exerciseRecordService),
-                  const SizedBox(height: 16),
-                  Center(
-                    child: _buildAddSeriesButton(
-                        context, exercise, isDarkMode, colorScheme),
+                  TrainingProgramSeriesList(
+                    controller: controller,
+                    exerciseRecordService: exerciseRecordService,
+                    weekIndex: weekIndex,
+                    workoutIndex: workoutIndex,
+                    exerciseIndex: exercise.order - 1,
+                    exerciseType: exercise.type,
                   ),
                 ],
               ),
@@ -306,47 +307,6 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     );
   }
 
-  Widget _buildExerciseSeries(
-    BuildContext context,
-    Exercise exercise,
-    ExerciseRecordService exerciseRecordService,
-  ) {
-    return TrainingProgramSeriesList(
-      controller: controller,
-      exerciseRecordService: exerciseRecordService,
-      weekIndex: weekIndex,
-      workoutIndex: workoutIndex,
-      exerciseIndex: exercise.order - 1,
-      exerciseType: exercise.type,
-    );
-  }
-
-  Widget _buildAddSeriesButton(
-    BuildContext context,
-    Exercise exercise,
-    bool isDarkMode,
-    ColorScheme colorScheme,
-  ) {
-    return ElevatedButton(
-      onPressed: () => controller.addSeries(weekIndex, workoutIndex,
-          exercise.order - 1, exercise.type, context),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: colorScheme.primary,
-        foregroundColor: Colors.black,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-      child: Text(
-        'Aggiungi Nuova Serie',
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
-      ),
-    );
-  }
-
   Widget _buildAddExerciseButton(
     BuildContext context,
     bool isDarkMode,
@@ -375,58 +335,58 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     );
   }
 
-  void _showMoveExerciseDialog(
-    BuildContext context,
-    int weekIndex,
-    int sourceWorkoutIndex,
-    Exercise exercise,
-  ) {
-    final sourceExerciseIndex = exercise.order - 1;
-    final week = controller.program.weeks[weekIndex];
+ void _showMoveExerciseDialog(
+  BuildContext context,
+  int weekIndex,
+  int sourceWorkoutIndex,
+  Exercise exercise,
+) {
+  final sourceExerciseIndex = exercise.order - 1;
+  final week = controller.program.weeks[weekIndex];
 
-    showDialog<int>(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text('Seleziona l\'Allenamento di Destinazione'),
-          content: DropdownButtonFormField<int>(
-            value: null,
-            items: List.generate(
-              week.workouts.length,
-              (index) => DropdownMenuItem(
-                value: index,
-                child: Text('Allenamento ${week.workouts[index].order}'),
-              ),
-            ),
-            onChanged: (value) {
-              Navigator.pop(dialogContext, value);
-            },
-            decoration: const InputDecoration(
-              labelText: 'Allenamento di Destinazione',
+  showDialog<int>(
+    context: context,
+    builder: (BuildContext dialogContext) {
+      return AlertDialog(
+        title: const Text('Seleziona l\'Allenamento di Destinazione'),
+        content: DropdownButtonFormField<int>(
+          value: null,
+          items: List.generate(
+            week.workouts.length,
+            (index) => DropdownMenuItem(
+              value: index,
+              child: Text('Allenamento ${week.workouts[index].order}'),
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Annulla'),
-            ),
-          ],
-        );
-      },
-    ).then((destinationWorkoutIndex) {
-      if (destinationWorkoutIndex != null && destinationWorkoutIndex != sourceWorkoutIndex) {
-        controller.moveExercise(
-          weekIndex,
-          sourceWorkoutIndex,
-          sourceExerciseIndex,
-          weekIndex,
-          destinationWorkoutIndex,
-        );
-      }
-    });
-  }
+          onChanged: (value) {
+            Navigator.pop(dialogContext, value);
+          },
+          decoration: const InputDecoration(
+            labelText: 'Allenamento di Destinazione',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Annulla'),
+          ),
+        ],
+      );
+    },
+  ).then((destinationWorkoutIndex) {
+    if (destinationWorkoutIndex != null && destinationWorkoutIndex != sourceWorkoutIndex) {
+      controller.moveExercise(
+        weekIndex,
+        sourceWorkoutIndex,
+        sourceExerciseIndex,
+        weekIndex,
+        destinationWorkoutIndex,
+      );
+    }
+  });
+}
 
-void _addOrUpdateMaxRM(
+  void _addOrUpdateMaxRM(
     Exercise exercise,
     BuildContext context,
     ExerciseRecordService exerciseRecordService,
@@ -463,7 +423,7 @@ void _addOrUpdateMaxRM(
                 color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
               ),
             ),
-            content: _buildMaxRMInputFields(maxWeightController, repetitionsController, isDarkMode, colorScheme),
+content: _buildMaxRMInputFields(maxWeightController, repetitionsController, isDarkMode, colorScheme),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext, false),
@@ -605,64 +565,6 @@ void _addOrUpdateMaxRM(
     );
   }
 
-  void _createNewSuperSet(
-    BuildContext context,
-    bool isDarkMode,
-    ColorScheme colorScheme
-  ) {
-    showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: isDarkMode ? colorScheme.surface : colorScheme.surface,
-        title: Text(
-          'Nuovo Superset',
-          style: TextStyle(
-            color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
-          ),
-        ),
-        content: TextField(
-          autofocus: true,
-          style: TextStyle(
-            color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
-          ),
-          decoration: InputDecoration(
-            labelText: 'Nome Superset',
-            labelStyle: TextStyle(
-              color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
-            ),
-          ),
-          onSubmitted: (value) => Navigator.of(context).pop(value),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              'Annulla',
-              style: TextStyle(
-                color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final textFieldController = TextEditingController();
-              Navigator.of(context).pop(textFieldController.text);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isDarkMode ? colorScheme.primary : colorScheme.secondary,
-              foregroundColor: isDarkMode ? colorScheme.onPrimary : colorScheme.onSecondary,
-            ),
-            child: const Text('Crea'),
-          ),
-        ],
-      ),
-    ).then((superSetName) {
-      if (superSetName != null && superSetName.isNotEmpty) {
-        controller.createSuperSet(weekIndex, workoutIndex);
-      }
-    });
-  }
-
   void _showAddToSuperSetDialog(
     BuildContext context,
     Exercise exercise,
@@ -769,72 +671,6 @@ void _addOrUpdateMaxRM(
         }
       });
     }
-  }
-
-  void _showRemoveFromSuperSetDialog(
-    BuildContext context,
-    Exercise exercise,
-    bool isDarkMode,
-    ColorScheme colorScheme
-  ) {
-    final superSets = controller
-        .program.weeks[weekIndex].workouts[workoutIndex].superSets
-        .where((ss) => ss.exerciseIds.contains(exercise.id))
-        .toList();
-
-    if (superSets.isEmpty) {
-      return;
-    }
-
-    showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: isDarkMode ? colorScheme.surface : colorScheme.surface,
-        title: Text(
-          'Rimuovi dal Superset',
-          style: TextStyle(
-            color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
-          ),
-        ),
-        content: DropdownButtonFormField<String>(
-          value: null,
-          items: superSets.map((ss) {
-            return DropdownMenuItem<String>(
-              value: ss.id,
-              child: Text(
-                'Superset ${ss.id}',
-                style: TextStyle(
-                  color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
-                ),
-              ),
-            );
-          }).toList(),
-          onChanged: (value) => Navigator.of(context).pop(value),
-          decoration: InputDecoration(
-            hintText: 'Seleziona il Superset',
-            hintStyle: TextStyle(
-              color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Annulla',
-              style: TextStyle(
-                color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
-              ),
-            ),
-          ),
-        ],
-      ),
-    ).then((superSetId) {
-      if (superSetId != null) {
-        controller.removeExerciseFromSuperSet(
-            weekIndex, workoutIndex, superSetId, exercise.id!);
-      }
-    });
   }
 
   void _showSetProgressionScreen(
