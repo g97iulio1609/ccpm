@@ -1,11 +1,12 @@
 import 'package:alphanessone/Viewer/models/timer_model.dart';
+import 'package:alphanessone/Coaching/coaching_association.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../auth/auth_screen.dart';
 import '../UI/home_screen.dart';
-import '../programs_screen.dart';
+import '../Coaching/coaching_screen.dart';
 import '../user_programs.dart';
 import '../Viewer/UI/training_viewer.dart';
 import '../Viewer/UI/week_details.dart';
@@ -28,7 +29,7 @@ import '../nutrition/tracker/my_meals.dart';
 import '../store/inAppSubscriptions.dart';
 import '../exerciseManager/exercises_manager.dart';
 import '../providers/providers.dart';
-import '../nutrition/models&Services/meals_model.dart'; // Aggiunto import corretto per Meal
+import '../nutrition/models&Services/meals_model.dart';
 
 class AppRouter {
   static GoRouter router(WidgetRef ref) => GoRouter(
@@ -40,14 +41,14 @@ class AppRouter {
             path: '/',
             builder: (context, state) => const AuthWrapper(),
           ),
-          GoRoute(
+         GoRoute(
             path: '/programs_screen',
             builder: (context, state) {
               final userRole = ref.read(userRoleProvider);
-              if (userRole == 'admin') {
+              if (userRole == 'admin' || userRole == 'coach') {
                 return const ProgramsScreen();
               } else {
-                return const Center(child: Text('Accesso negato'));
+                return const Center(child: Text('Access denied'));
               }
             },
           ),
@@ -186,6 +187,10 @@ class AppRouter {
             ],
           ),
           GoRoute(
+            path: '/associations',
+            builder: (context, state) => const CoachAthleteAssociationScreen(),
+          ),
+          GoRoute(
             path: '/food_tracker',
             builder: (context, state) => const DailyFoodTracker(),
             routes: [
@@ -221,18 +226,12 @@ class AppRouter {
           GoRoute(
             path: '/users_dashboard',
             builder: (context, state) => const UsersDashboard(),
-            routes: [
-              GoRoute(
-                path: 'user_profile',
-                builder: (context, state) => UserProfile(userId: state.extra as String),
-              ),
-            ],
           ),
           GoRoute(
-            path: '/user_profile',
+            path: '/user_profile/:userId',
             builder: (context, state) {
-              final userId = FirebaseAuth.instance.currentUser?.uid;
-              return userId != null ? UserProfile(userId: userId) : const SizedBox();
+              final userId = state.pathParameters['userId'];
+              return UserProfile(userId: userId);
             },
           ),
         ],
@@ -254,11 +253,11 @@ class AuthWrapper extends ConsumerWidget {
           if (user == null) {
             return const AuthScreen();
           } else {
-            final userRole = ref.read(userRoleProvider);
             WidgetsBinding.instance.addPostFrameCallback((_) async {
               await ref.read(usersServiceProvider).fetchUserRole();
+              final userRole = ref.read(userRoleProvider);
               if (context.mounted) {
-                if (userRole == 'admin') {
+                if (userRole == 'admin' || userRole == 'coach') {
                   context.go('/programs_screen');
                 } else {
                   context.go('/user_programs/${user.uid}');

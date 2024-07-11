@@ -1,13 +1,25 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:alphanessone/services/exercise_record_services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+
 
 import '../models/user_model.dart';
 import '../providers/providers.dart';
+
+class UniqueNumberGenerator {
+  static String generate() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final random = Random.secure();
+    return List.generate(8, (index) => chars[random.nextInt(chars.length)]).join();
+  }
+}
 
 class UsersService {
   final Ref _ref;
@@ -128,28 +140,73 @@ class UsersService {
     return userDoc.exists ? UserModel.fromFirestore(userDoc) : null;
   }
 
+final FirebaseFunctions _functions = FirebaseFunctions.instance;
+
   Future<void> deleteUser(String userId) async {
     try {
-      // Elimina il documento dell'utente nella collection 'users'
-      await _firestore.collection('users').doc(userId).delete();
+      debugPrint('Iniziando il processo di eliminazione per l\'utente con ID: $userId');
 
-      // Elimina l'utente dall'autenticazione Firebase
-      User? user = _auth.currentUser;
-      if (user != null && user.uid == userId) {
-        await user.delete();
+      // Ottieni il ruolo dell'utente corrente
+      String currentUserRole = getCurrentUserRole();
+      debugPrint('Ruolo dell\'utente corrente: $currentUserRole');
+
+      debugPrint('Tentativo di ottenere il documento dell\'utente da Firestore');
+      // Ottieni il documento dell'utente da eliminare
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      
+      if (userDoc.exists) {
+        debugPrint('Documento dell\'utente trovato in Firestore');
+        if (currentUserRole == 'admin') {
+          debugPrint('Utente corrente è admin. Tentativo di chiamare la Cloud Function');
+          // Chiama la Cloud Function per eliminare l'utente
+          final result = await _functions.httpsCallable('deleteUser').call({'userId': userId});
+          debugPrint('Risultato della Cloud Function: ${result.data}');
+          if (result.data['success'] != true) {
+            throw Exception('Failed to delete user via Cloud Function');
+          }
+        } else {
+          debugPrint('Utente corrente non è admin. Verificando se sta eliminando il proprio account');
+          // Per utenti non-admin (ad es., utenti che eliminano il proprio account)
+          User? currentUser = _auth.currentUser;
+          if (currentUser != null && currentUser.uid == userId) {
+            debugPrint('Utente sta eliminando il proprio account');
+            // Elimina l'autenticazione dell'utente
+            await currentUser.delete();
+            debugPrint('Autenticazione dell\'utente eliminata');
+            
+            // Elimina il documento Firestore dell'utente
+            await _firestore.collection('users').doc(userId).delete();
+            debugPrint('Documento Firestore dell\'utente eliminato');
+            
+            // Disconnetti l'utente
+            await _auth.signOut();
+            debugPrint('Utente disconnesso');
+          } else {
+            throw Exception('Gli utenti non-admin possono eliminare solo il proprio account.');
+          }
+        }
+        
+        debugPrint('Aggiornamento dello stream degli utenti');
+        // Aggiorna lo stream degli utenti
+        final updatedUsers = _usersStreamController.value.where((user) => user.id != userId).toList();
+        _usersStreamController.add(updatedUsers);
+        debugPrint('Stream degli utenti aggiornato');
       } else {
-        throw Exception("User not authenticated or mismatched userId.");
+        debugPrint('Documento dell\'utente non trovato in Firestore');
+        throw Exception('Utente non trovato in Firestore.');
       }
+
+      debugPrint('Processo di eliminazione completato con successo per l\'utente con ID: $userId');
     } catch (e) {
-      throw Exception('Errore durante l\'eliminazione dell\'utente: $e');
+      debugPrint('Errore durante l\'eliminazione dell\'utente: $e');
+      throw Exception("Errore durante l'eliminazione dell'utente: $e");
     }
   }
-
   Future<void> updateUser(String userId, Map<String, dynamic> data) async {
     await _firestore.collection('users').doc(userId).update(data);
   }
 
-  Future<void> createUser({
+   Future<void> createUser({
     required String name,
     required String email,
     required String password,
@@ -161,17 +218,55 @@ class UsersService {
 
       User? newUser = userCredential.user;
       if (newUser != null) {
+        String? uniqueNumber;
+        if (role == 'coach') {
+          uniqueNumber = await _generateUniqueNumber();
+        }
+        
         await _firestore.collection('users').doc(newUser.uid).set({
           'name': name,
           'email': email,
           'role': role,
           'photoURL': '',
+          'uniqueNumber': uniqueNumber,
         });
         await _authForUserCreation!.signOut();
       }
     } catch (e) {
       throw Exception(e.toString());
     }
+  }
+
+  Future<String> _generateUniqueNumber() async {
+    String uniqueNumber;
+    bool isUnique = false;
+    do {
+      uniqueNumber = UniqueNumberGenerator.generate();
+      final querySnapshot = await _firestore
+          .collection('users')
+          .where('uniqueNumber', isEqualTo: uniqueNumber)
+          .get();
+      isUnique = querySnapshot.docs.isEmpty;
+    } while (!isUnique);
+    return uniqueNumber;
+  }
+
+  Future<String?> getUniqueNumber(String userId) async {
+    final userDoc = await _firestore.collection('users').doc(userId).get();
+    return userDoc.data()?['uniqueNumber'];
+  }
+
+  Future<UserModel?> getUserByUniqueNumber(String uniqueNumber) async {
+    final querySnapshot = await _firestore
+        .collection('users')
+        .where('uniqueNumber', isEqualTo: uniqueNumber)
+        .limit(1)
+        .get();
+    
+    if (querySnapshot.docs.isNotEmpty) {
+      return UserModel.fromFirestore(querySnapshot.docs.first);
+    }
+    return null;
   }
 
   void clearUserData() {

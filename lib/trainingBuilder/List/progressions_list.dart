@@ -320,43 +320,56 @@ Widget _buildSessionItem(
     ],
   );
 }
+
+ bool _isSwipeInProgress = false;
+
   Widget _buildSeriesItem(int weekIndex, int sessionIndex, int groupIndex, List<Series> seriesGroup, ProgressionControllers controllers, bool isDarkMode, ColorScheme colorScheme) {
-    return Slidable(
-      key: ValueKey('$weekIndex-$sessionIndex-$groupIndex'),
-      startActionPane: ActionPane(
-        motion: const ScrollMotion(),
-        children: [
-          SlidableAction(
-            onPressed: (_) => _addSeriesGroup(weekIndex, sessionIndex, groupIndex),
-            backgroundColor: Colors.blue,
-            foregroundColor: Colors.white,
-            icon: Icons.add,
-            label: 'Add',
+    return GestureDetector(
+      onHorizontalDragStart: (_) => setState(() => _isSwipeInProgress = true),
+      onHorizontalDragEnd: (_) => setState(() => _isSwipeInProgress = false),
+      onHorizontalDragCancel: () => setState(() => _isSwipeInProgress = false),
+      child: Slidable(
+        key: ValueKey('$weekIndex-$sessionIndex-$groupIndex'),
+        startActionPane: ActionPane(
+          motion: const ScrollMotion(),
+          children: [
+            SlidableAction(
+              onPressed: (_) => _addSeriesGroup(weekIndex, sessionIndex, groupIndex),
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              icon: Icons.add,
+              label: 'Add',
+            ),
+          ],
+        ),
+        endActionPane: ActionPane(
+          motion: const ScrollMotion(),
+          children: [
+            SlidableAction(
+              onPressed: (_) => _removeSeriesGroup(weekIndex, sessionIndex, groupIndex),
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              icon: Icons.delete,
+              label: 'Delete',
+            ),
+          ],
+        ),
+        child: AbsorbPointer(
+          absorbing: _isSwipeInProgress,
+          child: Container(
+            color: isDarkMode ? colorScheme.surface : Colors.white,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSeriesFields(weekIndex, sessionIndex, groupIndex, seriesGroup.first, controllers),
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
-        ],
-      ),
-      endActionPane: ActionPane(
-        motion: const ScrollMotion(),
-        children: [
-          SlidableAction(
-            onPressed: (_) => _removeSeriesGroup(weekIndex, sessionIndex, groupIndex),
-            backgroundColor: Colors.red,
-            foregroundColor: Colors.white,
-            icon: Icons.delete,
-            label: 'Delete',
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSeriesFields(weekIndex, sessionIndex, groupIndex, seriesGroup.first, controllers),
-          const SizedBox(height: 24),
-        ],
+        ),
       ),
     );
   }
-
 Widget _buildSeriesFields(int weekIndex, int sessionIndex, int groupIndex, Series series, ProgressionControllers controllers) {
   return Row(
     children: [
@@ -408,7 +421,8 @@ Widget _buildSeriesFields(int weekIndex, int sessionIndex, int groupIndex, Serie
     ],
   );
 }
-  Widget _buildTextField({
+
+Widget _buildTextField({
     required TextEditingController controller,
     required FocusNode focusNode,
     required String labelText,
@@ -426,10 +440,10 @@ Widget _buildSeriesFields(int weekIndex, int sessionIndex, int groupIndex, Serie
           focusNode: focusNode,
           keyboardType: keyboardType,
           textAlign: TextAlign.center,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
           decoration: InputDecoration(
             labelText: labelText,
-            labelStyle: const TextStyle(color: Colors.white),
+            labelStyle: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black54),
             filled: true,
             fillColor: isDarkMode ? colorScheme.surface : Colors.white,
             enabledBorder: OutlineInputBorder(
@@ -442,17 +456,22 @@ Widget _buildSeriesFields(int weekIndex, int sessionIndex, int groupIndex, Serie
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-color: isDarkMode ? colorScheme.primary : colorScheme.primary,
+                color: isDarkMode ? colorScheme.primary : colorScheme.primary,
                 width: 2,
               ),
             ),
           ),
-          onChanged: onChanged,
+          onChanged: (value) {
+            final cursorPosition = controller.selection.base.offset;
+            onChanged(value);
+            controller.selection = TextSelection.fromPosition(
+              TextPosition(offset: cursorPosition),
+            );
+          },
         ),
       ),
     );
   }
-
   void _updateSeries(int weekIndex, int sessionIndex, int groupIndex, {int? reps, int? sets, String? intensity, String? rpe, double? weight}) {
     final programController = ref.read(trainingProgramControllerProvider);
     final weekProgressions = _buildWeekProgressions(programController.program.weeks, widget.exercise!);

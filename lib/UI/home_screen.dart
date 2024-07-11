@@ -1,8 +1,8 @@
-import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
 import 'drawer.dart';
 import 'appBar_custom.dart';
 import 'package:alphanessone/providers/providers.dart';
@@ -20,16 +20,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await ref.read(usersServiceProvider).fetchUserRole();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(usersServiceProvider).fetchUserRole();
     });
   }
 
-  void _logout() async {
+  Future<void> _logout() async {
     try {
       await FirebaseAuth.instance.signOut();
       ref.read(usersServiceProvider).clearUserData();
-      context.go('/');
+      if (mounted) context.go('/');
     } catch (e) {
       debugPrint('Errore durante il logout: $e');
     }
@@ -54,7 +54,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ? CustomDrawer(
               isLargeScreen: isLargeScreen,
               userRole: userRole,
-              controller: controller,
               onLogout: _logout,
             )
           : null,
@@ -66,13 +65,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: CustomDrawer(
                 isLargeScreen: isLargeScreen,
                 userRole: userRole,
-                controller: controller,
                 onLogout: _logout,
               ),
             ),
-          Expanded(
-            child: widget.child,
-          ),
+          Expanded(child: widget.child),
         ],
       ),
     );

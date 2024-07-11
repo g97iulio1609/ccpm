@@ -207,13 +207,27 @@ class ExerciseController extends ChangeNotifier {
     );
   }
 
-  void moveExercise(TrainingProgram program, int sourceWeekIndex, int sourceWorkoutIndex, int sourceExerciseIndex, int destinationWeekIndex, int destinationWorkoutIndex) {
-    final exercise = program.weeks[sourceWeekIndex].workouts[sourceWorkoutIndex].exercises[sourceExerciseIndex];
-
-    program.weeks[sourceWeekIndex].workouts[sourceWorkoutIndex].exercises.removeAt(sourceExerciseIndex);
-
-    exercise.order = program.weeks[destinationWeekIndex].workouts[destinationWorkoutIndex].exercises.length + 1;
-
-    program.weeks[destinationWeekIndex].workouts[destinationWorkoutIndex].exercises.add(exercise);
+void moveExercise(TrainingProgram program, int sourceWeekIndex, int sourceWorkoutIndex, int sourceExerciseIndex, int destinationWeekIndex, int destinationWorkoutIndex) {
+  final sourceWorkout = program.weeks[sourceWeekIndex].workouts[sourceWorkoutIndex];
+  final destinationWorkout = program.weeks[destinationWeekIndex].workouts[destinationWorkoutIndex];
+  
+  // Rimuovi l'esercizio dall'allenamento di origine
+  final exercise = sourceWorkout.exercises.removeAt(sourceExerciseIndex);
+  
+  // Aggiorna gli ordini degli esercizi nell'allenamento di origine
+  for (int i = sourceExerciseIndex; i < sourceWorkout.exercises.length; i++) {
+    sourceWorkout.exercises[i].order = i + 1;
   }
+  
+  // Aggiungi l'esercizio all'allenamento di destinazione
+  exercise.order = destinationWorkout.exercises.length + 1;
+  destinationWorkout.exercises.add(exercise);
+  
+  // Aggiorna gli ordini degli esercizi nell'allenamento di destinazione
+  for (int i = 0; i < destinationWorkout.exercises.length; i++) {
+    destinationWorkout.exercises[i].order = i + 1;
+  }
+  
+  notifyListeners();
+}
 }

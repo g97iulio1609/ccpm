@@ -39,3 +39,4 @@ final exerciseRecordServiceProvider = Provider<ExerciseRecordService>((ref) {
 final measurementsServiceProvider = Provider<MeasurementsService>((ref) {
   return MeasurementsService(ref.watch(firebaseFirestoreProvider));
 });
+

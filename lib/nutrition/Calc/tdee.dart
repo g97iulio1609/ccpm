@@ -1,7 +1,21 @@
-import 'package:alphanessone/providers/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-// Assicurati di importare il pacchetto Firestore
+import 'package:alphanessone/providers/providers.dart';
+
+// Constants
+const Map<int, String> genderMap = {
+  0: 'Altro',
+  1: 'Maschio',
+  2: 'Femmina',
+};
+
+const Map<String, double> activityLevels = {
+  'Sedentary': 1.2,
+  'Lightly Active': 1.375,
+  'Moderately Active': 1.55,
+  'Very Active': 1.725,
+  'Extremely Active': 1.9,
+};
 
 class TDEEScreen extends ConsumerStatefulWidget {
   final String userId;
@@ -18,7 +32,7 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
   DateTime? _birthdate;
   int _height = 0;
   int _weight = 0;
-  String _gender = '';
+  int _gender = 0;
   double _activityLevel = 1.2;
   int _tdee = 0;
 
@@ -43,341 +57,287 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
     super.dispose();
   }
 
-  void _loadTDEEData() async {
-    final tdeeService = ref.read(tdeeServiceProvider);
-    final tdeeData = await tdeeService.getTDEEData(widget.userId);
+  Future<void> _loadTDEEData() async {
+    try {
+      final tdeeService = ref.read(tdeeServiceProvider);
+      final tdeeData = await tdeeService.getTDEEData(widget.userId);
 
-    debugPrint('Loaded TDEE Data: $tdeeData');
+      if (tdeeData != null) {
+        setState(() {
+          _birthdate = tdeeData['birthDate'] != null ? DateTime.parse(tdeeData['birthDate']) : null;
+          _height = tdeeData['height'] as int? ?? 0;
+          _weight = tdeeData['weight'] as int? ?? 0;
+          _gender = tdeeData['gender'] as int? ?? 0;
+          _activityLevel = tdeeData['activityLevel'] as double? ?? 1.2;
+          _tdee = tdeeData['tdee'] as int? ?? 0;
 
-    if (tdeeData != null) {
-      setState(() {
-        // Verifica se il campo birthDate esiste nei dati caricati
-        if (tdeeData.containsKey('birthDate') && tdeeData['birthDate'] != null) {
-          _birthdate = DateTime.parse(tdeeData['birthDate']);
-        } else {
-          _birthdate = null;
-        }
-
-        _height = tdeeData['height'] != null
-            ? (tdeeData['height'] is int
-                ? tdeeData['height']
-                : (tdeeData['height'] as num).toInt())
-            : 0;
-        _weight = tdeeData['weight'] != null
-            ? (tdeeData['weight'] is int
-                ? tdeeData['weight']
-                : (tdeeData['weight'] as num).toInt())
-            : 0;
-        _gender = tdeeData['gender'] ?? '';
-        _activityLevel = tdeeData['activityLevel'] != null
-            ? (tdeeData['activityLevel'] is double
-                ? tdeeData['activityLevel']
-                : (tdeeData['activityLevel'] as num).toDouble())
-            : 1.2;
-        _tdee = tdeeData['tdee'] != null
-            ? (tdeeData['tdee'] is int
-                ? tdeeData['tdee']
-                : (tdeeData['tdee'] as num).toInt())
-            : 0;
-
-        debugPrint('Parsed Data - Birthdate: $_birthdate, Height: $_height, Weight: $_weight, Gender: $_gender, Activity Level: $_activityLevel, TDEE: $_tdee');
-
-        _ageController.text = _birthdate != null
-            ? _calculateAge(_birthdate!).toString()
-            : '';
-        _heightController.text = _height.toString();
-        _weightController.text = _weight.toString();
-
-        debugPrint('Age Controller Text: ${_ageController.text}');
-      });
+          _ageController.text = _birthdate != null ? _calculateAge(_birthdate!).toString() : '';
+          _heightController.text = _height.toString();
+          _weightController.text = _weight.toString();
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading TDEE data: $e');
+      // Mostra un messaggio di errore all'utente
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Errore nel caricamento dei dati. Riprova più tardi.')),
+      );
     }
   }
 
-  void _calculateTDEE() async {
+  Future<void> _calculateTDEE() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
       if (_birthdate == null) {
-        debugPrint('Birthdate is null. Cannot calculate TDEE.');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Seleziona una data di nascita valida.')),
+        );
         return;
       }
 
       final age = _calculateAge(_birthdate!);
 
-      debugPrint('Calculating TDEE - Age: $age, Birthdate: $_birthdate');
-
       double bmr;
-      if (_gender == 'male') {
+      if (_gender == 1) { // Maschio
         bmr = 88.362 + (13.397 * _weight) + (4.799 * _height) - (5.677 * age);
-      } else {
+      } else if (_gender == 2) { // Femmina
         bmr = 447.593 + (9.247 * _weight) + (3.098 * _height) - (4.330 * age);
+      } else { // Altro o non specificato
+        bmr = (88.362 + 447.593) / 2 + (11.322 * _weight) + (3.9485 * _height) - (5.0035 * age);
       }
 
       _tdee = (bmr * _activityLevel).round();
 
-      final tdeeService = ref.read(tdeeServiceProvider);
-      await tdeeService.updateTDEEData(widget.userId, {
-        'birthDate': _birthdate!.toIso8601String(),
-        'height': _height,
-        'weight': _weight,
-        'gender': _gender,
-        'activityLevel': _activityLevel,
-        'tdee': _tdee,
-      });
+      try {
+        final tdeeService = ref.read(tdeeServiceProvider);
+        await tdeeService.updateTDEEData(widget.userId, {
+          'birthDate': _birthdate!.toIso8601String(),
+          'height': _height,
+          'weight': _weight,
+          'gender': _gender,
+          'activityLevel': _activityLevel,
+          'tdee': _tdee,
+        });
 
-      debugPrint('Updated TDEE Data - TDEE: $_tdee');
-
-      setState(() {});
+        setState(() {});
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('TDEE calcolato e salvato con successo!')),
+        );
+      } catch (e) {
+        debugPrint('Error saving TDEE data: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Errore nel salvataggio dei dati. Riprova più tardi.')),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Scaffold(
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Calculate your TDEE',
-                  style: textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Know your TDEE by entering basic details like age, weight, height, and activity level.',
-                  style: textTheme.bodyMedium,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Age',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  controller: _ageController,
-                  readOnly: true,
-                  onTap: () async {
-                    final pickedDate = await showDatePicker(
-                      context: context,
-                      initialDate: _birthdate ?? DateTime.now(),
-                      firstDate: DateTime(1900),
-                      lastDate: DateTime.now(),
-                    );
-                    if (pickedDate != null) {
-                      setState(() {
-                        _birthdate = pickedDate;
-                        _ageController.text = _calculateAge(_birthdate!).toString();
-                      });
-                    }
-                  },
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        key: UniqueKey(), // Aggiungi una chiave unica qui
-                        decoration: InputDecoration(
-                          labelText: "Height",
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        controller: _heightController,
-                        keyboardType: TextInputType.number,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your height';
-                          }
-                          return null;
-                        },
-                        onSaved: (value) => _height = int.parse(value!),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: DropdownButtonFormField(
-                        key: UniqueKey(), // Aggiungi una chiave unica qui
-                        decoration: InputDecoration(
-                          labelText: 'Units',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        value: 'cms',
-                        items: ['cms', 'ft/in'].map((unit) {
-                          return DropdownMenuItem(
-                            value: unit,
-                            child: Text(unit),
-                          );
-                        }).toList(),
-                        onChanged: (value) {},
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        key: UniqueKey(), // Aggiungi una chiave unica qui
-                        decoration: InputDecoration(
-                          labelText: "Weight",
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        controller: _weightController,
-                        keyboardType: TextInputType.number,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your weight';
-                          }
-                          return null;
-                        },
-                        onSaved: (value) => _weight = int.parse(value!),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: DropdownButtonFormField(
-                        key: UniqueKey(), // Aggiungi una chiave unica qui
-                        decoration: InputDecoration(
-                          labelText: 'Units',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        value: 'kg',
-                        items: ['kg', 'lbs'].map((unit) {
-                          return DropdownMenuItem(
-                            value: unit,
-                            child: Text(unit),
-                          );
-                        }).toList(),
-                        onChanged: (value) {},
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Gender',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  value: _gender.isNotEmpty ? _gender : null,
-                  items: ['male', 'female'].map((gender) {
-                    return DropdownMenuItem(
-                      value: gender,
-                      child: Text(gender),
-                    );
-                  }).toList(),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please select your gender';
-                    }
-                    return null;
-                  },
-                  onChanged: (value) {
-                    setState(() {
-                      _gender = value as String;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Activity Level',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  value: _activityLevel,
-                  items: {
-                    'Sedentary': 1.2,
-                    'Lightly Active': 1.375,
-                    'Moderately Active': 1.55,
-                    'Very Active': 1.725,
-                    'Extremely Active': 1.9,
-                  }.entries.map((entry) {
-                    return DropdownMenuItem(
-                      value: entry.value,
-                      child: Text(entry.key),
-                    );
-                  }).toList(),
-                  validator: (value) {
-                    if (value == null) {
-                      return 'Please select your activity level';
-                    }
-                    return null;
-                  },
-                  onChanged: (value) {
-                    setState(() {
-                      _activityLevel = value as double;
-                    });
-                  },
-                ),
-                const SizedBox(height: 32),
-                ElevatedButton(
-                  onPressed: _calculateTDEE,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Text(
-                    'Calculate my TDEE',
-                    style: textTheme.titleLarge?.copyWith(
-                      color: colorScheme.primary,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 32),
-                Text(
-                  'Your TDEE is: $_tdee',
-                  style: textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildInfoText(),
+              const SizedBox(height: 32),
+              _buildAgeField(),
+              const SizedBox(height: 16),
+              _buildHeightField(),
+              const SizedBox(height: 16),
+              _buildWeightField(),
+              const SizedBox(height: 16),
+              _buildGenderDropdown(),
+              const SizedBox(height: 16),
+              _buildActivityLevelDropdown(),
+              const SizedBox(height: 32),
+              _buildCalculateButton(),
+              const SizedBox(height: 32),
+              _buildTDEEResult(),
+            ],
           ),
         ),
       ),
     );
   }
 
+  Widget _buildInfoText() {
+    return Column(
+      children: [
+        Text(
+          'Calcola il tuo TDEE',
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Conosci il tuo TDEE inserendo dettagli di base come età, peso, altezza e livello di attività.',
+          style: Theme.of(context).textTheme.bodyMedium,
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAgeField() {
+    return TextFormField(
+      decoration: InputDecoration(
+        labelText: 'Età',
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      controller: _ageController,
+      readOnly: true,
+      onTap: () async {
+        final pickedDate = await showDatePicker(
+          context: context,
+          initialDate: _birthdate ?? DateTime.now(),
+          firstDate: DateTime(1900),
+          lastDate: DateTime.now(),
+        );
+        if (pickedDate != null) {
+          setState(() {
+            _birthdate = pickedDate;
+            _ageController.text = _calculateAge(_birthdate!).toString();
+          });
+        }
+      },
+    );
+  }
+
+  Widget _buildHeightField() {
+    return Row(
+      children: [
+        Expanded(
+          child: TextFormField(
+            decoration: InputDecoration(
+              labelText: "Altezza",
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            controller: _heightController,
+            keyboardType: TextInputType.number,
+            validator: (value) => value?.isEmpty ?? true ? 'Inserisci la tua altezza' : null,
+            onSaved: (value) => _height = int.parse(value!),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: DropdownButtonFormField(
+            decoration: InputDecoration(
+              labelText: 'Unità',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            value: 'cm',
+            items: ['cm', 'ft/in'].map((unit) => DropdownMenuItem(value: unit, child: Text(unit))).toList(),
+            onChanged: (value) {},
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWeightField() {
+    return Row(
+      children: [
+        Expanded(
+          child: TextFormField(
+            decoration: InputDecoration(
+              labelText: "Peso",
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            controller: _weightController,
+            keyboardType: TextInputType.number,
+            validator: (value) => value?.isEmpty ?? true ? 'Inserisci il tuo peso' : null,
+            onSaved: (value) => _weight = int.parse(value!),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: DropdownButtonFormField(
+            decoration: InputDecoration(
+              labelText: 'Unità',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            value: 'kg',
+            items: ['kg', 'lbs'].map((unit) => DropdownMenuItem(value: unit, child: Text(unit))).toList(),
+            onChanged: (value) {},
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGenderDropdown() {
+    return DropdownButtonFormField<int>(
+      decoration: InputDecoration(
+        labelText: 'Genere',
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      value: _gender,
+      items: genderMap.entries.map((entry) {
+        return DropdownMenuItem<int>(
+          value: entry.key,
+          child: Text(entry.value),
+        );
+      }).toList(),
+      validator: (value) => value == null ? 'Seleziona il tuo genere' : null,
+      onChanged: (value) => setState(() => _gender = value!),
+    );
+  }
+
+  Widget _buildActivityLevelDropdown() {
+    return DropdownButtonFormField<double>(
+      decoration: InputDecoration(
+        labelText: 'Livello di Attività',
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      value: _activityLevel,
+      items: activityLevels.entries.map((entry) {
+        return DropdownMenuItem<double>(
+          value: entry.value,
+          child: Text(entry.key),
+        );
+      }).toList(),
+      validator: (value) => value == null ? 'Seleziona il tuo livello di attività' : null,
+      onChanged: (value) => setState(() => _activityLevel = value!),
+    );
+  }
+
+Widget _buildCalculateButton() {
+  return ElevatedButton(
+    onPressed: _calculateTDEE,
+    style: ElevatedButton.styleFrom(
+      foregroundColor: Theme.of(context).colorScheme.onPrimary, // Testo nero
+      backgroundColor: Theme.of(context).colorScheme.primary, // Sfondo giallo
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    ),
+    child: Text(
+      'Calcola il mio TDEE',
+      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+        color: Theme.of(context).colorScheme.onPrimary,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+  );
+}
+
+  Widget _buildTDEEResult() {
+    return Text(
+      'Il tuo TDEE è: $_tdee',
+      style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+      textAlign: TextAlign.center,
+    );
+  }
+
   int _calculateAge(DateTime birthdate) {
-    DateTime currentDate = DateTime.now();
-    int age = currentDate.year - birthdate.year;
-    int month1 = currentDate.month;
-    int month2 = birthdate.month;
-    if (month2 > month1) {
+    final now = DateTime.now();
+    int age = now.year - birthdate.year;
+    if (now.month < birthdate.month || (now.month == birthdate.month && now.day < birthdate.day)) {
       age--;
-    } else if (month1 == month2) {
-      int day1 = currentDate.day;
-      int day2 = birthdate.day;
-      if (day2 > day1) {
-        age--;
-      }
     }
     return age;
   }

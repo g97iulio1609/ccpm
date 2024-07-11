@@ -19,7 +19,7 @@ class UserProgramsScreen extends HookConsumerWidget {
     return Scaffold(
       body: Column(
         children: [
-          if (userRole == 'admin' || userRole == 'client_premium')
+          if (userRole == 'admin' || userRole == 'client_premium' || userRole == 'coach')
             _buildAddProgramButton(context, userId),
           Expanded(
             child: _buildProgramList(context, ref, userId, userRole, firestoreService),
@@ -63,10 +63,13 @@ class UserProgramsScreen extends HookConsumerWidget {
       stream: _getProgramsStream(userId, userRole),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return const Text('Si è verificato un errore');
+          return Center(child: Text('Si è verificato un errore: ${snapshot.error}'));
         }
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
+        }
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Center(child: Text('Nessun programma trovato'));
         }
 
         final documents = snapshot.data!.docs;
@@ -83,6 +86,7 @@ class UserProgramsScreen extends HookConsumerWidget {
   Widget _buildProgramCard(BuildContext context, WidgetRef ref, DocumentSnapshot doc, String userId, String userRole, FirestoreService firestoreService) {
     final isHidden = doc['hide'] ?? false;
     final controller = ref.read(trainingProgramControllerProvider);
+    final mesocycleNumber = doc['mesocycleNumber'] ?? 1;
 
     return Card(
       elevation: 2,
@@ -93,21 +97,44 @@ class UserProgramsScreen extends HookConsumerWidget {
         onTap: () => context.go('/user_programs/$userId/training_viewer/${doc.id}'),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Text(
-                  doc['name'],
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      doc['name'],
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ),
+                  Text(
+                    'Mesociclo $mesocycleNumber',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                  ),
+                ],
               ),
-              if (userRole == 'admin')
-                IconButton(
-                  icon: Icon(isHidden ? Icons.visibility_off : Icons.visibility),
-                  onPressed: () => _toggleProgramVisibility(doc.id, isHidden),
+              if (isHidden && (userRole == 'admin' || userRole == 'coach') )
+                Text(
+                  'Nascosto',
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
-              if (userRole == 'admin' || userRole == 'client_premium')
-                _buildPopupMenu(context, doc, userId, controller, firestoreService),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (userRole == 'admin' || userRole == 'coach')
+                    IconButton(
+                      icon: Icon(isHidden ? Icons.visibility_off : Icons.visibility),
+                      onPressed: () => _toggleProgramVisibility(doc.id, isHidden),
+                    ),
+                  if (userRole == 'admin' || userRole == 'client_premium' || userRole=='coach')
+                    _buildPopupMenu(context, doc, userId, controller, firestoreService),
+                ],
+              ),
             ],
           ),
         ),
@@ -132,6 +159,18 @@ class UserProgramsScreen extends HookConsumerWidget {
         ),
       ],
     );
+  }
+
+  Stream<QuerySnapshot> _getProgramsStream(String userId, String userRole) {
+    Query query = FirebaseFirestore.instance
+        .collection('programs')
+        .where('athleteId', isEqualTo: userId);
+    
+    if (userRole != 'admin') {
+      query = query.where('hide', isNotEqualTo: true);
+    }
+    
+    return query.orderBy('mesocycleNumber', descending: false).snapshots();
   }
 
   Future<void> _addProgram(BuildContext context, String userId) async {
@@ -183,7 +222,7 @@ class UserProgramsScreen extends HookConsumerWidget {
     });
   }
 
-Future<void> _duplicateProgram(BuildContext context, String docId, TrainingProgramController controller) async {
+  Future<void> _duplicateProgram(BuildContext context, String docId, TrainingProgramController controller) async {
     String? newProgramName = await showDialog<String>(
       context: context,
       builder: (BuildContext context) {
@@ -211,17 +250,8 @@ Future<void> _duplicateProgram(BuildContext context, String docId, TrainingProgr
     );
 
     if (newProgramName != null && newProgramName.isNotEmpty) {
-      if (!context.mounted) return;
-      
       try {
-        final result = await controller.duplicateProgram(
-          docId, 
-          newProgramName, 
-          context,
-          // Assuming currentUserId is available in your widget, add it here
-          // currentUserId: widget.userId,
-        );
-        
+        final result = await controller.duplicateProgram(docId, newProgramName, context);
         if (context.mounted) {
           if (result != null) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -241,18 +271,6 @@ Future<void> _duplicateProgram(BuildContext context, String docId, TrainingProgr
         }
       }
     }
-  }
-
-  Stream<QuerySnapshot> _getProgramsStream(String userId, String userRole) {
-    final query = FirebaseFirestore.instance
-        .collection('programs')
-        .where('athleteId', isEqualTo: userId);
-    
-    if (userRole != 'admin') {
-      return query.where('hide', isEqualTo: false).snapshots();
-    }
-    
-    return query.snapshots();
   }
 }
 
