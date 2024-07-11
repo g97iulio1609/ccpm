@@ -315,8 +315,8 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
               if (currentRoute.startsWith('/user_programs/') &&
                   ref.read(previousRouteProvider) == '/programs_screen') {
                 context.go('/programs_screen');
-              } else {
-                context.pop();
+              } else if ((context).canPop())
+               { context.pop();
               }
             },
           ),

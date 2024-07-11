@@ -27,8 +27,7 @@ class UserProfileState extends ConsumerState<UserProfile> with SingleTickerProvi
   final List<String> _excludedFields = ['currentProgram', 'role', 'socialLinks', 'id', 'photoURL', 'gender'];
   final _debouncer = Debouncer(milliseconds: 1000);
   late TabController _tabController;
-  String? _snackBarMessage, _password, _photoURL;
-  Color? _snackBarColor;
+  String? _photoURL;
   int? _selectedGender;
   DateTime? _birthdate;
   bool _isLoading = true;
@@ -48,74 +47,73 @@ class UserProfileState extends ConsumerState<UserProfile> with SingleTickerProvi
       final userProfileData = userData.data() as Map<String, dynamic>?;
       
       if (userProfileData != null) {
-        userProfileData.forEach((key, value) {
-          if (!_excludedFields.contains(key)) {
-            _controllers[key] = TextEditingController(text: value?.toString() ?? '');
-          }
-        });
-        
+        _updateControllers(userProfileData);
         _selectedGender = userProfileData['gender'] as int?;
         _photoURL = userProfileData['photoURL'] as String?;
         _birthdate = userProfileData['birthdate'] != null ? (userProfileData['birthdate'] as Timestamp).toDate() : null;
       }
     } catch (e) {
-      _updateSnackBar('Error fetching user profile: $e', Colors.red);
+      _showSnackBar('Error fetching user profile: $e', Colors.red);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _updateControllers(Map<String, dynamic> data) {
+    data.forEach((key, value) {
+      if (!_excludedFields.contains(key)) {
+        _controllers[key] = TextEditingController(text: value?.toString() ?? '');
+      }
+    });
   }
 
   Future<void> _saveProfile(String field, dynamic value) async {
     try {
       String uid = widget.userId ?? FirebaseAuth.instance.currentUser!.uid;
       await ref.read(usersServiceProvider).updateUser(uid, {field: value});
-      _updateSnackBar('Profile saved successfully!', Colors.green);
+      _showSnackBar('Profile saved successfully!', Colors.green);
     } catch (e) {
-      _updateSnackBar('Error saving profile: $e', Colors.red);
+      _showSnackBar('Error saving profile: $e', Colors.red);
     }
   }
 
-  void _updateSnackBar(String message, Color color) {
-    setState(() {
-      _snackBarMessage = message;
-      _snackBarColor = color;
-    });
-  }
-
-  Future<void> _requestGalleryPermission() async {
-    PermissionStatus status = await Permission.photos.request();
-    if (status.isGranted) {
-      await _uploadProfilePicture();
-    } else {
-      _updateSnackBar('Gallery access ${status.isDenied ? 'denied' : 'restricted'}', Colors.red);
-    }
+  void _showSnackBar(String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(message),
+      backgroundColor: color,
+    ));
   }
 
   Future<void> _uploadProfilePicture() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    final status = await Permission.photos.request();
+    if (status.isGranted) {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
-    if (pickedFile != null) {
-      File file = File(pickedFile.path);
-      String uid = widget.userId ?? FirebaseAuth.instance.currentUser!.uid;
-      String fileExtension = file.path.split('.').last.toLowerCase();
+      if (pickedFile != null) {
+        File file = File(pickedFile.path);
+        String uid = widget.userId ?? FirebaseAuth.instance.currentUser!.uid;
+        String fileExtension = file.path.split('.').last.toLowerCase();
 
-      if (['jpg', 'png', 'jpeg'].contains(fileExtension)) {
-        try {
-          final storageRef = FirebaseStorage.instance.ref().child('user_profile_pictures/$uid.$fileExtension');
-          await storageRef.putFile(file);
-          final downloadURL = await storageRef.getDownloadURL();
-          await ref.read(usersServiceProvider).updateUser(uid, {'photoURL': downloadURL});
-          setState(() => _photoURL = downloadURL);
-          _updateSnackBar('Profile picture uploaded successfully!', Colors.green);
-        } catch (e) {
-          _updateSnackBar('Error uploading profile picture: $e', Colors.red);
+        if (['jpg', 'png', 'jpeg'].contains(fileExtension)) {
+          try {
+            final storageRef = FirebaseStorage.instance.ref().child('user_profile_pictures/$uid.$fileExtension');
+            await storageRef.putFile(file);
+            final downloadURL = await storageRef.getDownloadURL();
+            await ref.read(usersServiceProvider).updateUser(uid, {'photoURL': downloadURL});
+            setState(() => _photoURL = downloadURL);
+            _showSnackBar('Profile picture uploaded successfully!', Colors.green);
+          } catch (e) {
+            _showSnackBar('Error uploading profile picture: $e', Colors.red);
+          }
+        } else {
+          _showSnackBar('Unsupported image format. Please choose a JPG, PNG, or JPEG file.', Colors.red);
         }
       } else {
-        _updateSnackBar('Unsupported image format. Please choose a JPG, PNG, or JPEG file.', Colors.red);
+        _showSnackBar('No image selected.', Colors.red);
       }
     } else {
-      _updateSnackBar('No image selected.', Colors.red);
+      _showSnackBar('Gallery access denied', Colors.red);
     }
   }
 
@@ -124,52 +122,57 @@ class UserProfileState extends ConsumerState<UserProfile> with SingleTickerProvi
       String uid = widget.userId ?? FirebaseAuth.instance.currentUser!.uid;
       User? user = FirebaseAuth.instance.currentUser;
       if (user != null) {
+        bool isSelfDelete = uid == user.uid;
         await ref.read(usersServiceProvider).deleteUser(uid);
-        _updateSnackBar('User deleted successfully!', Colors.green);
-        if (mounted) context.go('/');
+        
+        if (isSelfDelete) {
+          await FirebaseAuth.instance.signOut();
+          if (mounted) {
+            _showSnackBar('Your account has been deleted successfully.', Colors.green);
+            context.go('/');
+          }
+        } else {
+          if (mounted) {
+            _showSnackBar('User deleted successfully!', Colors.green);
+            context.pop();
+          }
+        }
       } else {
         throw Exception("User not authenticated.");
       }
     } catch (e) {
-      _updateSnackBar('Error deleting user: $e', Colors.red);
+      _showSnackBar('Error deleting user: $e', Colors.red);
+    }
+  }
+
+  Future<void> _reauthenticateAndDelete(bool isGoogleUser) async {
+    try {
+      if (isGoogleUser) {
+        await _reauthenticateWithGoogle();
+      } else {
+        await _showPasswordDialog();
+      }
+      await _deleteUser();
+    } catch (e) {
+      _showSnackBar('Error during re-authentication: $e', Colors.red);
     }
   }
 
   Future<void> _reauthenticateWithGoogle() async {
-    try {
-      final GoogleSignIn googleSignIn = GoogleSignIn();
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-      if (googleUser == null) {
-        _updateSnackBar('Sign-in cancelled.', Colors.red);
-        return;
-      }
-
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      await FirebaseAuth.instance.currentUser?.reauthenticateWithCredential(credential);
-      await _deleteUser();
-    } catch (e) {
-      _updateSnackBar('Error during re-authentication: $e', Colors.red);
+    final GoogleSignIn googleSignIn = GoogleSignIn();
+    final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+    if (googleUser == null) {
+      _showSnackBar('Sign-in cancelled.', Colors.red);
+      return;
     }
-  }
 
-  Future<void> _reauthenticateWithPassword() async {
-    try {
-      User? user = FirebaseAuth.instance.currentUser;
-      if (user != null && _password != null) {
-        AuthCredential credential = EmailAuthProvider.credential(email: user.email!, password: _password!);
-        await user.reauthenticateWithCredential(credential);
-        await _deleteUser();
-      } else {
-        throw Exception("User not authenticated or password not provided.");
-      }
-    } catch (e) {
-      _updateSnackBar('Error during re-authentication: $e', Colors.red);
-    }
+    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+    final AuthCredential credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+
+    await FirebaseAuth.instance.currentUser?.reauthenticateWithCredential(credential);
   }
 
   Future<void> _showPasswordDialog() async {
@@ -191,16 +194,25 @@ class UserProfileState extends ConsumerState<UserProfile> with SingleTickerProvi
             ),
             TextButton(
               child: const Text('Confirm'),
-              onPressed: () {
-                _password = password;
+              onPressed: () async {
                 Navigator.of(context).pop();
-                _reauthenticateWithPassword();
+                await _reauthenticateWithPassword(password);
               },
             ),
           ],
         );
       },
     );
+  }
+
+  Future<void> _reauthenticateWithPassword(String password) async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      AuthCredential credential = EmailAuthProvider.credential(email: user.email!, password: password);
+      await user.reauthenticateWithCredential(credential);
+    } else {
+      throw Exception("User not authenticated or password not provided.");
+    }
   }
 
   void _showDeleteConfirmationDialog() {
@@ -220,11 +232,7 @@ class UserProfileState extends ConsumerState<UserProfile> with SingleTickerProvi
               onPressed: () {
                 Navigator.of(context).pop();
                 User? currentUser = FirebaseAuth.instance.currentUser;
-                if (_isGoogleUser(currentUser)) {
-                  _reauthenticateWithGoogle();
-                } else {
-                  _showPasswordDialog();
-                }
+                _reauthenticateAndDelete(_isGoogleUser(currentUser));
               },
             ),
           ],
@@ -246,22 +254,26 @@ class UserProfileState extends ConsumerState<UserProfile> with SingleTickerProvi
       child: TextFormField(
         controller: controller,
         style: const TextStyle(color: Colors.white),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: Colors.white),
-          ),
-          filled: true,
-          fillColor: Colors.white.withOpacity(0.1),
-        ),
+        decoration: _getInputDecoration(label),
         onChanged: (value) => _debouncer.run(() => _saveProfile(field, value)),
       ),
+    );
+  }
+
+  InputDecoration _getInputDecoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Colors.white),
+      ),
+      filled: true,
+      fillColor: Colors.white.withOpacity(0.1),
     );
   }
 
@@ -284,20 +296,7 @@ class UserProfileState extends ConsumerState<UserProfile> with SingleTickerProvi
           }
         },
         child: InputDecorator(
-          decoration: InputDecoration(
-            labelText: 'Birth date',
-            labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Colors.white),
-            ),
-            filled: true,
-            fillColor: Colors.white.withOpacity(0.1),
-          ),
+          decoration: _getInputDecoration('Birth date'),
           child: Text(
             _birthdate != null ? '${_calculateAge(_birthdate!)} years old (${_birthdate!.day}/${_birthdate!.month}/${_birthdate!.year})' : 'Select birth date',
             style: const TextStyle(color: Colors.white),
@@ -327,20 +326,7 @@ class UserProfileState extends ConsumerState<UserProfile> with SingleTickerProvi
             if (value != null) _saveProfile('gender', value);
           });
         },
-        decoration: InputDecoration(
-          labelText: 'Gender',
-          labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: Colors.white),
-          ),
-          filled: true,
-          fillColor: Colors.white.withOpacity(0.1),
-        ),
+        decoration: _getInputDecoration('Gender'),
         dropdownColor: Colors.grey[900],
         style: const TextStyle(color: Colors.white),
         items: genderMap.entries.map((entry) {
@@ -411,68 +397,71 @@ class UserProfileState extends ConsumerState<UserProfile> with SingleTickerProvi
     );
   }
 
+ Widget _buildProfilePicture() {
+    return GestureDetector(
+      onTap: _uploadProfilePicture,
+      child: Container(
+        width: 120,
+        height: 120,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white, width: 3),
+          color: Colors.grey[800],
+          image: _photoURL != null
+            ? DecorationImage(
+                image: NetworkImage(_photoURL!),
+                fit: BoxFit.cover,
+              )
+            : null,
+        ),
+        child: _photoURL == null
+          ? const Icon(Icons.person, size: 60, color: Colors.white)
+          : null,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (_snackBarMessage != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(_snackBarMessage!),
-            backgroundColor: _snackBarColor,
-          ));
-          _snackBarMessage = null;
-        }
-      });
-    }
-
     return Scaffold(
       backgroundColor: Colors.black,
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : CustomScrollView(
-              slivers: [
-                SliverAppBar(
-                  expandedHeight: 200.0,
-                  floating: false,
-                  pinned: true,
-                  flexibleSpace: FlexibleSpaceBar(
-                    title: const Text('User Profile'),
-                    background: GestureDetector(
-                      onTap: _requestGalleryPermission,
-                      child: _photoURL != null
-                          ? Image.network(_photoURL!, fit: BoxFit.cover)
-                          : Container(
-                              color: Colors.grey[800],
-                              child: const Icon(Icons.person, size: 100, color: Colors.white),
-                            ),
-                    ),
-                  ),
+        ? const Center(child: CircularProgressIndicator())
+        : Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 40, bottom: 20),
+                child: _buildProfilePicture(),
+              ),
+              Text(
+                _controllers['name']?.text ?? 'User',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
                 ),
-                SliverPersistentHeader(
-                  delegate: _SliverAppBarDelegate(
-                    TabBar(
-                      controller: _tabController,
-                      tabs: const [
-                        Tab(icon: Icon(Icons.person), text: "Personal"),
-                        Tab(icon: Icon(Icons.settings), text: "Account"),
-                        Tab(icon: Icon(Icons.fitness_center), text: "Fitness"),
-                      ],
-                    ),
-                  ),
-                  pinned: true,
+              ),
+              const SizedBox(height: 20),
+              TabBar(
+                controller: _tabController,
+                tabs: const [
+                  Tab(icon: Icon(Icons.person), text: "Personal"),
+                  Tab(icon: Icon(Icons.settings), text: "Account"),
+                  Tab(icon: Icon(Icons.fitness_center), text: "Fitness"),
+                ],
+              ),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildPersonalInfoTab(),
+                    _buildAccountSettingsTab(),
+                    _buildFitnessDataTab(),
+                  ],
                 ),
-                SliverFillRemaining(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildPersonalInfoTab(),
-                      _buildAccountSettingsTab(),
-                      _buildFitnessDataTab(),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
+          ),
     );
   }
 
@@ -487,37 +476,13 @@ class UserProfileState extends ConsumerState<UserProfile> with SingleTickerProvi
   }
 }
 
-class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
-  _SliverAppBarDelegate(this._tabBar);
-
-  final TabBar _tabBar;
-
-  @override
-  double get minExtent => _tabBar.preferredSize.height;
-  @override
-  double get maxExtent => _tabBar.preferredSize.height;
-
-  @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Container(
-      color: Colors.black,
-      child: _tabBar,
-    );
-  }
-
-  @override
-  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
-    return false;
-  }
-}
-
 class Debouncer {
   final int milliseconds;
   Timer? _timer;
 
   Debouncer({required this.milliseconds});
 
-  run(VoidCallback action) {
+  void run(VoidCallback action) {
     if (_timer != null) {
       _timer!.cancel();
     }

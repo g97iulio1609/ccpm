@@ -24,15 +24,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Users Dashboard'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person_add),
-            onPressed: _showCreateUserDialog,
-          ),
-        ],
-      ),
+    
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -53,7 +45,8 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
                   final users = snapshot.data ?? [];
                   return users.isEmpty
                       ? const Center(child: Text('No users found'))
-                      : UsersList(users: users, onDeleteUser: _showDeleteConfirmation);
+                      : UsersList(
+                          users: users, onDeleteUser: _showDeleteConfirmation);
                 },
               ),
             ),
@@ -77,45 +70,49 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
     );
   }
 
-  void _showDeleteConfirmation(UserModel user) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: const Text('Delete User'),
-        content: Text('Are you sure you want to delete ${user.name}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => _deleteUser(user),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-  }
+void _showDeleteConfirmation(UserModel user) {
+  showDialog(
+    context: context,
+    builder: (BuildContext dialogContext) => AlertDialog(
+      title: const Text('Elimina Utente'),
+      content: Text('Sei sicuro di voler eliminare ${user.name}?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(),
+          child: const Text('Annulla'),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            Navigator.of(dialogContext).pop(); // Chiudi il dialogo di conferma
+            await _deleteUser(user); // Elimina l'utente
+          },
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          child: const Text('Elimina'),
+        ),
+      ],
+    ),
+  );
+}
 
-  Future<void> _deleteUser(UserModel user) async {
-    try {
-      await _usersService.deleteUser(user.id);
-      if (mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User deleted successfully')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error deleting user: $e')),
-        );
-      }
+Future<void> _deleteUser(UserModel user) async {
+  try {
+    await _usersService.deleteUser(user.id);
+    if (mounted) {
+      // Mostra un messaggio di successo
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Utente ${user.name} eliminato con successo')),
+      );
+    }
+  } catch (e) {
+    if (mounted) {
+      // Mostra un messaggio di errore
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Errore durante l\'eliminazione dell\'utente: $e')),
+      );
     }
   }
+}
+
 }
 
 class UserSearchField extends StatelessWidget {
@@ -173,7 +170,8 @@ class UserCard extends StatelessWidget {
     return Card(
       child: ListTile(
         leading: CircleAvatar(
-          backgroundImage: user.photoURL.isNotEmpty ? NetworkImage(user.photoURL) : null,
+          backgroundImage:
+              user.photoURL.isNotEmpty ? NetworkImage(user.photoURL) : null,
           child: user.photoURL.isEmpty ? const Icon(Icons.person) : null,
         ),
         title: Text(user.name),
@@ -224,24 +222,28 @@ class _CreateUserDialogState extends ConsumerState<CreateUserDialog> {
             TextFormField(
               controller: _nameController,
               decoration: const InputDecoration(labelText: 'Name'),
-              validator: (value) => value!.isEmpty ? 'Please enter a name' : null,
+              validator: (value) =>
+                  value!.isEmpty ? 'Please enter a name' : null,
             ),
             TextFormField(
               controller: _emailController,
               decoration: const InputDecoration(labelText: 'Email'),
-              validator: (value) => value!.isEmpty ? 'Please enter an email' : null,
+              validator: (value) =>
+                  value!.isEmpty ? 'Please enter an email' : null,
             ),
             TextFormField(
               controller: _passwordController,
               decoration: const InputDecoration(labelText: 'Password'),
               obscureText: true,
-              validator: (value) => value!.isEmpty ? 'Please enter a password' : null,
+              validator: (value) =>
+                  value!.isEmpty ? 'Please enter a password' : null,
             ),
             DropdownButtonFormField<String>(
               value: _selectedRole,
               onChanged: (value) => setState(() => _selectedRole = value!),
               items: ['admin', 'client', 'coach']
-                  .map((role) => DropdownMenuItem(value: role, child: Text(role)))
+                  .map((role) =>
+                      DropdownMenuItem(value: role, child: Text(role)))
                   .toList(),
               decoration: const InputDecoration(labelText: 'Role'),
             ),
