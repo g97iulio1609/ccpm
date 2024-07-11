@@ -84,10 +84,10 @@ class CoachAthleteAssociationScreenState extends ConsumerState<CoachAthleteAssoc
             return AssociationTile(
               association: association,
               userRole: userRole,
-              onAccept: status == 'pending' && userRole == 'admin'
+              onAccept: status == 'pending' && (userRole == 'admin' || userRole == 'coach')
                   ? () => _respondToAssociation(association.id, true)
                   : null,
-              onReject: status == 'pending' && userRole == 'admin'
+              onReject: status == 'pending' && (userRole == 'admin' || userRole == 'coach')
                   ? () => _respondToAssociation(association.id, false)
                   : null,
               onRemove: status == 'accepted'
@@ -115,6 +115,7 @@ class CoachAthleteAssociationScreenState extends ConsumerState<CoachAthleteAssoc
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(accept ? 'Associazione accettata' : 'Associazione rifiutata')),
         );
+        ref.refresh(associationsStreamProvider);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Errore nella risposta alla richiesta di associazione.')),
@@ -131,6 +132,7 @@ class CoachAthleteAssociationScreenState extends ConsumerState<CoachAthleteAssoc
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Associazione rimossa con successo.')),
         );
+        ref.refresh(associationsStreamProvider);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Errore nella rimozione dell\'associazione.')),
@@ -172,7 +174,7 @@ class CoachSearchDialogState extends ConsumerState<CoachSearchDialog> {
             const SizedBox(height: 10),
             Flexible(
               child: SizedBox(
-                height: 200, // Fixed height for the ListView
+                height: 200,
                 child: ListView.builder(
                   shrinkWrap: true,
                   itemCount: _searchResults.length,
@@ -235,6 +237,7 @@ class CoachSearchDialogState extends ConsumerState<CoachSearchDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Richiesta di associazione inviata con successo.')),
         );
+        ref.refresh(associationsStreamProvider);
         Navigator.pop(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -245,7 +248,7 @@ class CoachSearchDialogState extends ConsumerState<CoachSearchDialog> {
   }
 }
 
-class AssociationTile extends ConsumerStatefulWidget {
+class AssociationTile extends ConsumerWidget {
   final Association association;
   final String userRole;
   final VoidCallback? onAccept;
@@ -262,25 +265,14 @@ class AssociationTile extends ConsumerStatefulWidget {
   });
 
   @override
-  AssociationTileState createState() => AssociationTileState();
-}
-
-class AssociationTileState extends ConsumerState<AssociationTile> {
-  late Future<UserModel?> _userFuture;
-
-  @override
-  void initState() {
-    super.initState();
+  Widget build(BuildContext context, WidgetRef ref) {
     final usersService = ref.read(usersServiceProvider);
-    _userFuture = widget.userRole == 'admin' 
-        ? usersService.getUserById(widget.association.athleteId)
-        : usersService.getUserById(widget.association.coachId);
-  }
+    final userFuture = userRole == 'admin' 
+        ? usersService.getUserById(association.athleteId)
+        : usersService.getUserById(association.coachId);
 
-  @override
-  Widget build(BuildContext context) {
     return FutureBuilder<UserModel?>(
-      future: _userFuture,
+      future: userFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const ListTile(title: Text('Caricamento...'));
@@ -290,27 +282,29 @@ class AssociationTileState extends ConsumerState<AssociationTile> {
         final userName = associatedUser?.displayName ?? associatedUser?.name ?? 'Utente sconosciuto';
         
         return ListTile(
-          title: Text(widget.userRole == 'admin' ? 'Atleta: $userName' : 'Coach: $userName'),
-          subtitle: Text('Stato: ${widget.association.status}'),
+          title: Text(userRole == 'admin' ? 'Atleta: $userName' : 'Coach: $userName'),
+          subtitle: Text('Stato: ${association.status}'),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (widget.onAccept != null)
+              if (association.status == 'pending' && 
+                  (userRole == 'admin' || userRole == 'coach'))
                 IconButton(
                   icon: const Icon(Icons.check),
-                  onPressed: widget.onAccept,
+                  onPressed: onAccept,
                   tooltip: 'Accetta',
                 ),
-              if (widget.onReject != null)
+              if (association.status == 'pending' && 
+                  (userRole == 'admin' || userRole == 'coach'))
                 IconButton(
                   icon: const Icon(Icons.close),
-                  onPressed: widget.onReject,
+                  onPressed: onReject,
                   tooltip: 'Rifiuta',
                 ),
-              if (widget.onRemove != null)
+              if (onRemove != null)
                 IconButton(
                   icon: const Icon(Icons.delete),
-                  onPressed: widget.onRemove,
+                  onPressed: onRemove,
                   tooltip: 'Rimuovi',
                 ),
             ],
@@ -373,7 +367,9 @@ class AssociationDetailsScreenState extends ConsumerState<AssociationDetailsScre
                 const SizedBox(height: 8),
                 Text('Stato: ${widget.association.status}', style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 16),
-                if (widget.association.status == 'pending' && ref.read(usersServiceProvider).getCurrentUserRole() == 'admin')
+                if (widget.association.status == 'pending' && 
+                    (ref.read(usersServiceProvider).getCurrentUserRole() == 'admin' || 
+                     ref.read(usersServiceProvider).getCurrentUserRole() == 'coach'))
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
@@ -410,11 +406,13 @@ class AssociationDetailsScreenState extends ConsumerState<AssociationDetailsScre
     if (mounted) {
       if (result) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(accept ? 'Associazione accettata' : 'Associazione rifiutata')),
+SnackBar(content: Text(accept ? 'Associazione accettata' : 'Associazione rifiutata')),
         );
+        ref.refresh(associationsStreamProvider);
         Navigator.pop(context);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Errore nella risposta alla richiesta di associazione.')),
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Errore nella risposta alla richiesta di associazione.')),
         );
       }
     }
@@ -428,6 +426,7 @@ class AssociationDetailsScreenState extends ConsumerState<AssociationDetailsScre
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Associazione rimossa con successo.')),
         );
+        ref.refresh(associationsStreamProvider);
         Navigator.pop(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

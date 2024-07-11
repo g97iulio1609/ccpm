@@ -47,20 +47,14 @@ class CoachingService {
   Stream<List<Association>> getUserAssociations(String userId) {
     return _firestore
         .collection('associations')
-        .where('coachId', isEqualTo: userId)
+        .where(Filter.or(
+          Filter('coachId', isEqualTo: userId),
+          Filter('athleteId', isEqualTo: userId),
+        ))
         .snapshots()
-        .map((snapshot) {
-          final coachAssociations = snapshot.docs.map((doc) => Association.fromFirestore(doc)).toList();
-          return _firestore
-              .collection('associations')
-              .where('athleteId', isEqualTo: userId)
-              .snapshots()
-              .map((snapshot) {
-                final athleteAssociations = snapshot.docs.map((doc) => Association.fromFirestore(doc)).toList();
-                return coachAssociations + athleteAssociations;
-              });
-        })
-        .asyncExpand((event) => event);
+        .map((snapshot) => snapshot.docs
+            .map((doc) => Association.fromFirestore(doc))
+            .toList());
   }
 
   Future<bool> requestAssociation(String coachId, String athleteId) async {
@@ -131,25 +125,22 @@ class CoachingService {
       return [];
     }
 
-    // Cerca per nome
     final nameQuerySnapshot = await _firestore
         .collection('users')
         .where('role', isEqualTo: 'coach')
-        .where('nameLowerCase', isGreaterThanOrEqualTo: query)
-        .where('nameLowerCase', isLessThan: query + 'z')
+        .where('name', isGreaterThanOrEqualTo: query)
+        .where('name', isLessThan: query + 'z')
         .limit(10)
         .get();
 
-    // Cerca per email
     final emailQuerySnapshot = await _firestore
         .collection('users')
         .where('role', isEqualTo: 'coach')
-        .where('emailLowerCase', isGreaterThanOrEqualTo: query)
-        .where('emailLowerCase', isLessThan: query + 'z')
+        .where('email', isGreaterThanOrEqualTo: query)
+        .where('email', isLessThan: query + 'z')
         .limit(10)
         .get();
 
-    // Combina i risultati
     final Set<String> uniqueIds = {};
     final List<UserModel> results = [];
 
@@ -160,7 +151,6 @@ class CoachingService {
       }
     }
 
-    // Ordina i risultati per rilevanza
     results.sort((a, b) {
       if (a.name.toLowerCase().startsWith(query)) {
         return -1;
@@ -182,13 +172,11 @@ class CoachingService {
       return false;  // Coach non trovato
     }
 
-    // Verifica se il coach ha bloccato le nuove associazioni
     final bool isBlocked = coachData['blockAssociations'] ?? false;
     if (isBlocked) {
       return false;
     }
 
-    // Verifica il numero di associazioni attuali del coach
     final associationsQuery = await _firestore
         .collection('associations')
         .where('coachId', isEqualTo: coachId)
@@ -197,7 +185,7 @@ class CoachingService {
         .get();
 
     final int? currentAssociations = associationsQuery.count;
-    final int maxAssociations = coachData['maxAssociations'] ?? 10;  // Imposta un limite predefinito
+    final int maxAssociations = coachData['maxAssociations'] ?? 10;
 
     return currentAssociations! < maxAssociations;
   }
