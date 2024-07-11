@@ -1,4 +1,5 @@
 import 'package:alphanessone/Viewer/models/timer_model.dart';
+import 'package:alphanessone/coaching_association.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -185,6 +186,11 @@ class AppRouter {
               ),
             ],
           ),
+
+          GoRoute(
+  path: '/associations',
+  builder: (context, state) => const CoachAthleteAssociationScreen(),
+),
           GoRoute(
             path: '/food_tracker',
             builder: (context, state) => const DailyFoodTracker(),

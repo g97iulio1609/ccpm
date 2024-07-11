@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:alphanessone/services/exercise_record_services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,14 @@ import 'package:firebase_core/firebase_core.dart';
 
 import '../models/user_model.dart';
 import '../providers/providers.dart';
+
+class UniqueNumberGenerator {
+  static String generate() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final random = Random.secure();
+    return List.generate(8, (index) => chars[random.nextInt(chars.length)]).join();
+  }
+}
 
 class UsersService {
   final Ref _ref;
@@ -149,7 +158,7 @@ class UsersService {
     await _firestore.collection('users').doc(userId).update(data);
   }
 
-  Future<void> createUser({
+   Future<void> createUser({
     required String name,
     required String email,
     required String password,
@@ -161,17 +170,55 @@ class UsersService {
 
       User? newUser = userCredential.user;
       if (newUser != null) {
+        String? uniqueNumber;
+        if (role == 'coach') {
+          uniqueNumber = await _generateUniqueNumber();
+        }
+        
         await _firestore.collection('users').doc(newUser.uid).set({
           'name': name,
           'email': email,
           'role': role,
           'photoURL': '',
+          'uniqueNumber': uniqueNumber,
         });
         await _authForUserCreation!.signOut();
       }
     } catch (e) {
       throw Exception(e.toString());
     }
+  }
+
+  Future<String> _generateUniqueNumber() async {
+    String uniqueNumber;
+    bool isUnique = false;
+    do {
+      uniqueNumber = UniqueNumberGenerator.generate();
+      final querySnapshot = await _firestore
+          .collection('users')
+          .where('uniqueNumber', isEqualTo: uniqueNumber)
+          .get();
+      isUnique = querySnapshot.docs.isEmpty;
+    } while (!isUnique);
+    return uniqueNumber;
+  }
+
+  Future<String?> getUniqueNumber(String userId) async {
+    final userDoc = await _firestore.collection('users').doc(userId).get();
+    return userDoc.data()?['uniqueNumber'];
+  }
+
+  Future<UserModel?> getUserByUniqueNumber(String uniqueNumber) async {
+    final querySnapshot = await _firestore
+        .collection('users')
+        .where('uniqueNumber', isEqualTo: uniqueNumber)
+        .limit(1)
+        .get();
+    
+    if (querySnapshot.docs.isNotEmpty) {
+      return UserModel.fromFirestore(querySnapshot.docs.first);
+    }
+    return null;
   }
 
   void clearUserData() {

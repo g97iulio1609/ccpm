@@ -38,6 +38,8 @@ class CustomDrawer extends ConsumerWidget {
     switch (menuItem) {
       case 'Coaching':
         return '/programs_screen';
+         case 'Association':
+        return '/associations';
       case 'I Miei Allenamenti':
         return '/user_programs/$userId';
       case 'Galleria Allenamenti':
@@ -77,6 +79,8 @@ class CustomDrawer extends ConsumerWidget {
     switch (menuItem) {
       case 'Coaching':
         return Icons.school;
+      case 'Association':
+        return Icons.school;
       case 'I Miei Allenamenti':
         return Icons.fitness_center;
       case 'Galleria Allenamenti':
@@ -113,6 +117,7 @@ class CustomDrawer extends ConsumerWidget {
   List<String> _getAdminMenuItems() {
     return [
       'Coaching',
+      'Association',
       'I Miei Allenamenti',
       'Abbonamenti',
       'Galleria Allenamenti',
@@ -132,6 +137,7 @@ class CustomDrawer extends ConsumerWidget {
   List<String> _getClientMenuItems() {
     return [
       'I Miei Allenamenti',
+      'Association',
       'Abbonamenti',
       'Esercizi',
       'Massimali',
