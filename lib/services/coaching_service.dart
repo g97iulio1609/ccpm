@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_model.dart';
 
@@ -72,7 +73,7 @@ class CoachingService {
       ).toMap());
       return true;
     } catch (e) {
-      print('Error requesting association: $e');
+      debugPrint('Error requesting association: $e');
       return false;
     }
   }
@@ -84,7 +85,7 @@ class CoachingService {
       });
       return true;
     } catch (e) {
-      print('Error responding to association: $e');
+      debugPrint('Error responding to association: $e');
       return false;
     }
   }
@@ -94,7 +95,7 @@ class CoachingService {
       await _firestore.collection('associations').doc(associationId).delete();
       return true;
     } catch (e) {
-      print('Error removing association: $e');
+      debugPrint('Error removing association: $e');
       return false;
     }
   }
@@ -108,7 +109,7 @@ class CoachingService {
       });
       return true;
     } catch (e) {
-      print('Error toggling block associations: $e');
+      debugPrint('Error toggling block associations: $e');
       return false;
     }
   }
@@ -118,7 +119,7 @@ class CoachingService {
       final userDoc = await _firestore.collection('users').doc(userId).get();
       return userDoc.data()?['blockAssociations'] ?? false;
     } catch (e) {
-      print('Error checking if association is blocked: $e');
+      debugPrint('Error checking if association is blocked: $e');
       return false;
     }
   }

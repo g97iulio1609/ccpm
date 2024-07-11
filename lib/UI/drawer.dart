@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,21 +10,15 @@ class CustomDrawer extends ConsumerWidget {
     super.key,
     required this.isLargeScreen,
     required this.userRole,
-    required this.controller,
     required this.onLogout,
   });
 
   final bool isLargeScreen;
   final String userRole;
-  final TrainingProgramController controller;
   final VoidCallback onLogout;
 
-  void _navigateTo(BuildContext context, String menuItem) {
-    final userId = FirebaseAuth.instance.currentUser?.uid;
-    final String? route = _getRouteForMenuItem(menuItem, userRole, userId);
-    final currentRoute = GoRouterState.of(context).uri.toString();
-
-    if (route != null && route != currentRoute) {
+  void _navigateTo(BuildContext context, String route) {
+    if (route != GoRouterState.of(context).uri.toString()) {
       context.go(route);
       if (!isLargeScreen) {
         Navigator.of(context).pop();
@@ -33,136 +26,89 @@ class CustomDrawer extends ConsumerWidget {
     }
   }
 
-  String? _getRouteForMenuItem(
-      String menuItem, String userRole, String? userId) {
-    switch (menuItem) {
-      case 'Coaching':
-        return '/programs_screen';
-         case 'Association':
-        return '/associations';
-      case 'I Miei Allenamenti':
-        return '/user_programs/$userId';
-      case 'Galleria Allenamenti':
-        return '/training_gallery';
-      case 'Esercizi':
-        return '/exercises_list';
-      case 'Massimali':
-        return '/maxrmdashboard';
-      case 'Profilo Utente':
-        return '/user_profile';
-      case 'TrainingProgram':
-        return '/training_program';
-      case 'Gestione Utenti':
-        return userRole == 'admin' ? '/users_dashboard' : null;
-      case 'Volume Allenamento':
-        return '/volume_dashboard';
-      case 'Fabbisogno Calorico':
-        return '/tdee';
-      case 'Food Tracker':
-        return '/food_tracker';
-      case 'Food Management':
-        return '/food_management';
-      case 'Calcolatore Macronutrienti':
-        return '/macros_selector';
-      case 'Misurazioni':
-        return '/measurements';
-      case 'Meals Preferiti':
-        return '/mymeals';
-      case 'Abbonamenti':
-        return '/subscriptions';
-      default:
-        return null;
-    }
+  String? _getRouteForMenuItem(String menuItem, String userRole, String? userId) {
+    final routes = {
+      'Coaching': '/programs_screen',
+      'Association': '/associations',
+      'I Miei Allenamenti': '/user_programs/$userId',
+      'Galleria Allenamenti': '/training_gallery',
+      'Esercizi': '/exercises_list',
+      'Massimali': '/maxrmdashboard',
+      'Profilo Utente': '/user_profile/$userId',
+      'Gestione Utenti': userRole == 'admin' ? '/users_dashboard' : null,
+      'Fabbisogno Calorico': '/tdee',
+      'Food Tracker': '/food_tracker',
+      'Food Management': '/food_management',
+      'Calcolatore Macronutrienti': '/macros_selector',
+      'Misurazioni': '/measurements',
+      'Meals Preferiti': '/mymeals',
+      'Abbonamenti': '/subscriptions',
+    };
+    return routes[menuItem];
   }
 
   IconData _getIconForMenuItem(String menuItem) {
-    switch (menuItem) {
-      case 'Coaching':
-        return Icons.school;
-      case 'Association':
-        return Icons.school;
-      case 'I Miei Allenamenti':
-        return Icons.fitness_center;
-      case 'Galleria Allenamenti':
-        return Icons.fitness_center;
-      case 'Esercizi':
-        return Icons.sports;
-      case 'Massimali':
-        return Icons.trending_up;
-      case 'Profilo Utente':
-        return Icons.person;
-      case 'TrainingProgram':
-        return Icons.schedule;
-      case 'Gestione Utenti':
-        return Icons.supervised_user_circle;
-      case 'Volume Allenamento':
-        return Icons.bar_chart;
-      case 'Fabbisogno Calorico':
-        return Icons.local_dining;
-      case 'Calcolatore Macronutrienti':
-        return Icons.calculate;
-      case 'Food Tracker':
-        return Icons.calculate;
-      case 'Food Management':
-        return Icons.calculate;
-      case 'Misurazioni':
-        return Icons.trending_up;
-      case 'Meals Preferiti':
-        return Icons.favorite;
-      default:
-        return Icons.menu;
-    }
+    final icons = {
+      'Coaching': Icons.school,
+      'Association': Icons.people,
+      'I Miei Allenamenti': Icons.fitness_center,
+      'Galleria Allenamenti': Icons.collections_bookmark,
+      'Esercizi': Icons.sports,
+      'Massimali': Icons.trending_up,
+      'Profilo Utente': Icons.person,
+      'Gestione Utenti': Icons.supervised_user_circle,
+      'Fabbisogno Calorico': Icons.local_dining,
+      'Calcolatore Macronutrienti': Icons.calculate,
+      'Food Tracker': Icons.restaurant_menu,
+      'Food Management': Icons.fastfood,
+      'Misurazioni': Icons.straighten,
+      'Meals Preferiti': Icons.favorite,
+      'Abbonamenti': Icons.subscriptions,
+    };
+    return icons[menuItem] ?? Icons.menu;
   }
 
-  List<String> _getAdminMenuItems() {
-    return [
-      'Coaching',
-      'Association',
-      'I Miei Allenamenti',
-      'Abbonamenti',
-      'Galleria Allenamenti',
-      'Esercizi',
-      'Massimali',
-      'Profilo Utente',
-      'Gestione Utenti',
-      'Fabbisogno Calorico',
-      'Calcolatore Macronutrienti',
-      'Food Tracker',
-      'Food Management',
-      'Misurazioni',
-      'Meals Preferiti'
+  List<String> _getMenuItems(String userRole) {
+    final adminItems = [
+      'Coaching', 'Association', 'I Miei Allenamenti', 'Abbonamenti',
+      'Galleria Allenamenti', 'Esercizi', 'Massimali', 'Profilo Utente',
+      'Gestione Utenti', 'Fabbisogno Calorico', 'Calcolatore Macronutrienti',
+      'Food Tracker', 'Food Management', 'Misurazioni', 'Meals Preferiti'
     ];
-  }
-
-  List<String> _getClientMenuItems() {
-    return [
-      'I Miei Allenamenti',
-      'Association',
-      'Abbonamenti',
-      'Esercizi',
-      'Massimali',
-      'Profilo Utente',
-      'Fabbisogno Calorico',
-      'Calcolatore Macronutrienti',
-      'Food Tracker',
-      'Misurazioni'
+    final clientItems = [
+      'I Miei Allenamenti', 'Association', 'Abbonamenti', 'Esercizi',
+      'Massimali', 'Profilo Utente', 'Fabbisogno Calorico',
+      'Calcolatore Macronutrienti', 'Food Tracker', 'Misurazioni'
     ];
+    return userRole == 'admin' ? adminItems : clientItems;
   }
 
-  Future<String?> getCurrentProgramId(WidgetRef ref) async {
+  Widget _buildMenuItem(BuildContext context, String menuItem, String userRole, bool isDarkMode) {
     final userId = FirebaseAuth.instance.currentUser?.uid;
-    if (userId != null) {
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .get();
-      return userDoc.data()?['currentProgram'] as String?;
-    }
-    return null;
+    final route = _getRouteForMenuItem(menuItem, userRole, userId);
+    final currentRoute = GoRouterState.of(context).uri.toString();
+    final isSelected = route == currentRoute;
+
+    return ListTile(
+      leading: Icon(
+        _getIconForMenuItem(menuItem),
+        color: isDarkMode ? Colors.white : Colors.grey[700],
+      ),
+      title: Text(
+        menuItem,
+        style: TextStyle(
+          color: isDarkMode ? Colors.white : Colors.grey[800],
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      onTap: route != null && !isSelected ? () => _navigateTo(context, route) : null,
+      hoverColor: isDarkMode ? Colors.grey[800] : Colors.grey[200],
+      selectedTileColor: isDarkMode ? Colors.grey[700] : Colors.grey[300],
+      selected: isSelected,
+    );
   }
 
-  Widget _buildWeekLinks(
-      BuildContext context, String programId, bool isDarkMode) {
+  Widget _buildWeekLinks(BuildContext context, String programId, bool isDarkMode) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('weeks')
@@ -170,91 +116,78 @@ class CustomDrawer extends ConsumerWidget {
           .orderBy('number')
           .snapshots(),
       builder: (context, weeksSnapshot) {
-        if (weeksSnapshot.hasData) {
-          final weeks = weeksSnapshot.data!.docs;
-          return ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: weeks.length,
-            itemBuilder: (context, index) {
-              final weekDoc = weeks[index];
-              return ExpansionTile(
-                leading: Icon(
-                  Icons.calendar_today,
-                  color: isDarkMode ? Colors.white : Colors.grey[700],
+        if (!weeksSnapshot.hasData) return const SizedBox.shrink();
+        
+        final weeks = weeksSnapshot.data!.docs;
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: weeks.length,
+          itemBuilder: (context, index) {
+            final weekDoc = weeks[index];
+            return ExpansionTile(
+              leading: Icon(
+                Icons.calendar_today,
+                color: isDarkMode ? Colors.white : Colors.grey[700],
+              ),
+              title: Text(
+                'Settimana ${weekDoc['number']}',
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white : Colors.grey[800],
+                  fontWeight: FontWeight.w500,
                 ),
-                title: Text(
-                  'Settimana ${weekDoc['number']}',
-                  style: TextStyle(
-                    color: isDarkMode ? Colors.white : Colors.grey[800],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                children: [
-                  StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance
-                        .collection('workouts')
-                        .where('weekId', isEqualTo: weekDoc.id)
-                        .orderBy('order')
-                        .snapshots(),
-                    builder: (context, workoutsSnapshot) {
-                      if (workoutsSnapshot.hasData) {
-                        final workouts = workoutsSnapshot.data!.docs;
-                        return ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: workouts.length,
-                          itemBuilder: (context, index) {
-                            final workoutDoc = workouts[index];
-                            final currentRoute =
-                                GoRouterState.of(context).uri.toString();
-                            final route =
-                                '/user_programs/${FirebaseAuth.instance.currentUser?.uid}/training_viewer/$programId/week_details/${weekDoc.id}/workout_details/${workoutDoc.id}';
+              ),
+              children: [
+                _buildWorkoutList(context, weekDoc.id, programId, isDarkMode),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
-                            return ListTile(
-                              title: Text(
-                                'Allenamento ${workoutDoc['order']}',
-                                style: TextStyle(
-                                  color: isDarkMode
-                                      ? Colors.white
-                                      : Colors.grey[800],
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              onTap: route != currentRoute
-                                  ? () {
-                                      context.go(route);
-                                      if (!isLargeScreen) {
-                                        Navigator.of(context).pop();
-                                      }
-                                    }
-                                  : null,
-                            );
-                          },
-                        );
-                      } else {
-                        return const SizedBox.shrink();
-                      }
-                    },
-                  ),
-                ],
-              );
-            },
-          );
-        } else {
-          return const SizedBox.shrink();
-        }
+  Widget _buildWorkoutList(BuildContext context, String weekId, String programId, bool isDarkMode) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('workouts')
+          .where('weekId', isEqualTo: weekId)
+          .orderBy('order')
+          .snapshots(),
+      builder: (context, workoutsSnapshot) {
+        if (!workoutsSnapshot.hasData) return const SizedBox.shrink();
+        
+        final workouts = workoutsSnapshot.data!.docs;
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: workouts.length,
+          itemBuilder: (context, index) {
+            final workoutDoc = workouts[index];
+            final userId = FirebaseAuth.instance.currentUser?.uid;
+            final route = '/user_programs/$userId/training_viewer/$programId/week_details/$weekId/workout_details/${workoutDoc.id}';
+            
+            return ListTile(
+              title: Text(
+                'Allenamento ${workoutDoc['order']}',
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white : Colors.grey[800],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              onTap: () => _navigateTo(context, route),
+            );
+          },
+        );
       },
     );
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final List<String> menuItems =
-        userRole == 'admin' ? _getAdminMenuItems() : _getClientMenuItems();
-    GoRouterState.of(context).uri.toString().contains('/training_program/');
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
+    final menuItems = _getMenuItems(userRole);
 
     return Drawer(
       child: Container(
@@ -269,8 +202,7 @@ class CustomDrawer extends ConsumerWidget {
                   Text('Menù', style: theme.textTheme.titleLarge),
                   if (!isLargeScreen)
                     IconButton(
-                      icon: Icon(Icons.close,
-                          color: isDarkMode ? Colors.white : Colors.black),
+                      icon: Icon(Icons.close, color: isDarkMode ? Colors.white : Colors.black),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                 ],
@@ -280,68 +212,35 @@ class CustomDrawer extends ConsumerWidget {
               child: ListView(
                 padding: EdgeInsets.zero,
                 children: [
-                  ...menuItems.map(
-                    (menuItem) {
-                      final route = _getRouteForMenuItem(menuItem, userRole,
-                          FirebaseAuth.instance.currentUser?.uid);
-                      final currentRoute =
-                          GoRouterState.of(context).uri.toString();
-                      final isSelected = route == currentRoute;
-
-                      return ListTile(
-                        leading: Icon(
-                          _getIconForMenuItem(menuItem),
-                          color: isDarkMode ? Colors.white : Colors.grey[700],
-                        ),
-                        title: Text(
-                          menuItem,
-                          style: TextStyle(
-                            color: isDarkMode ? Colors.white : Colors.grey[800],
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        onTap: !isSelected
-                            ? () => _navigateTo(context, menuItem)
-                            : null,
-                        hoverColor:
-                            isDarkMode ? Colors.grey[800] : Colors.grey[200],
-                        selectedTileColor:
-                            isDarkMode ? Colors.grey[700] : Colors.grey[300],
-                        selected: isSelected,
-                      );
-                    },
-                  ),
-                  FutureBuilder<String?>(
-                    future: getCurrentProgramId(ref),
+                  ...menuItems.map((menuItem) => _buildMenuItem(context, menuItem, userRole, isDarkMode)),
+                  FutureBuilder<DocumentSnapshot>(
+                    future: FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(FirebaseAuth.instance.currentUser?.uid)
+                        .get(),
                     builder: (context, snapshot) {
-                      if (snapshot.hasData && snapshot.data != null) {
-                        final programId = snapshot.data!;
-                        return _buildWeekLinks(context, programId, isDarkMode);
-                      } else {
-                        return const SizedBox.shrink();
+                      if (snapshot.hasData && snapshot.data!.exists) {
+                        final programId = snapshot.data!.get('currentProgram') as String?;
+                        if (programId != null) {
+                          return _buildWeekLinks(context, programId, isDarkMode);
+                        }
                       }
+                      return const SizedBox.shrink();
                     },
                   ),
                 ],
               ),
             ),
-            Divider(
-              height: 1,
-              color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
-            ),
+            const Divider(height: 1),
             Consumer(
-              builder: (context, ref, child) {
+              builder: (context, ref, _) {
                 final userName = ref.watch(userNameProvider);
                 final user = FirebaseAuth.instance.currentUser;
                 final displayName = user?.displayName ?? userName;
                 return ListTile(
                   leading: CircleAvatar(
-                    backgroundColor:
-                        isDarkMode ? Colors.grey[700] : Colors.grey[300],
-                    child: Icon(
-                      Icons.person,
-                      color: isDarkMode ? Colors.white : Colors.grey[800],
-                    ),
+                    backgroundColor: isDarkMode ? Colors.grey[700] : Colors.grey[300],
+                    child: Icon(Icons.person, color: isDarkMode ? Colors.white : Colors.grey[800]),
                   ),
                   title: Text(
                     displayName,
@@ -350,23 +249,12 @@ class CustomDrawer extends ConsumerWidget {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  onTap: () {
-                    _navigateTo(context, 'Profilo Utente');
-                    if (!isLargeScreen) {
-                      Navigator.of(context).pop();
-                    }
-                  },
-                  hoverColor: isDarkMode ? Colors.grey[800] : Colors.grey[200],
-                  selectedTileColor:
-                      isDarkMode ? Colors.grey[700] : Colors.grey[300],
+                  onTap: () => _navigateTo(context, '/user_profile/${user?.uid}'),
                 );
               },
             ),
             ListTile(
-              leading: Icon(
-                Icons.logout,
-                color: isDarkMode ? Colors.white : Colors.grey[700],
-              ),
+              leading: Icon(Icons.logout, color: isDarkMode ? Colors.white : Colors.grey[700]),
               title: Text(
                 'Logout',
                 style: TextStyle(
@@ -375,9 +263,6 @@ class CustomDrawer extends ConsumerWidget {
                 ),
               ),
               onTap: onLogout,
-              hoverColor: isDarkMode ? Colors.grey[800] : Colors.grey[200],
-              selectedTileColor:
-                  isDarkMode ? Colors.grey[700] : Colors.grey[300],
             ),
           ],
         ),

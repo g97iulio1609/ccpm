@@ -29,7 +29,7 @@ import '../nutrition/tracker/my_meals.dart';
 import '../store/inAppSubscriptions.dart';
 import '../exerciseManager/exercises_manager.dart';
 import '../providers/providers.dart';
-import '../nutrition/models&Services/meals_model.dart'; // Aggiunto import corretto per Meal
+import '../nutrition/models&Services/meals_model.dart';
 
 class AppRouter {
   static GoRouter router(WidgetRef ref) => GoRouter(
@@ -45,11 +45,9 @@ class AppRouter {
             path: '/programs_screen',
             builder: (context, state) {
               final userRole = ref.read(userRoleProvider);
-              if (userRole == 'admin') {
-                return const ProgramsScreen();
-              } else {
-                return const Center(child: Text('Accesso negato'));
-              }
+              return userRole == 'admin' 
+                ? const ProgramsScreen() 
+                : const Center(child: Text('Access denied'));
             },
           ),
           GoRoute(
@@ -186,11 +184,10 @@ class AppRouter {
               ),
             ],
           ),
-
           GoRoute(
-  path: '/associations',
-  builder: (context, state) => const CoachAthleteAssociationScreen(),
-),
+            path: '/associations',
+            builder: (context, state) => const CoachAthleteAssociationScreen(),
+          ),
           GoRoute(
             path: '/food_tracker',
             builder: (context, state) => const DailyFoodTracker(),
@@ -227,18 +224,12 @@ class AppRouter {
           GoRoute(
             path: '/users_dashboard',
             builder: (context, state) => const UsersDashboard(),
-            routes: [
-              GoRoute(
-                path: 'user_profile',
-                builder: (context, state) => UserProfile(userId: state.extra as String),
-              ),
-            ],
           ),
           GoRoute(
-            path: '/user_profile',
+            path: '/user_profile/:userId',
             builder: (context, state) {
-              final userId = FirebaseAuth.instance.currentUser?.uid;
-              return userId != null ? UserProfile(userId: userId) : const SizedBox();
+              final userId = state.pathParameters['userId'];
+              return UserProfile(userId: userId);
             },
           ),
         ],
@@ -264,11 +255,7 @@ class AuthWrapper extends ConsumerWidget {
             WidgetsBinding.instance.addPostFrameCallback((_) async {
               await ref.read(usersServiceProvider).fetchUserRole();
               if (context.mounted) {
-                if (userRole == 'admin') {
-                  context.go('/programs_screen');
-                } else {
-                  context.go('/user_programs/${user.uid}');
-                }
+                context.go(userRole == 'admin' ? '/programs_screen' : '/user_programs/${user.uid}');
               }
             });
             return const HomeScreen(child: SizedBox());

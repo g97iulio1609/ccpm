@@ -137,23 +137,24 @@ class UsersService {
     return userDoc.exists ? UserModel.fromFirestore(userDoc) : null;
   }
 
-  Future<void> deleteUser(String userId) async {
-    try {
-      // Elimina il documento dell'utente nella collection 'users'
-      await _firestore.collection('users').doc(userId).delete();
+Future<void> deleteUser(String userId) async {
+  try {
+    // Elimina il documento dell'utente nella collection 'users'
+    await _firestore.collection('users').doc(userId).delete();
 
-      // Elimina l'utente dall'autenticazione Firebase
-      User? user = _auth.currentUser;
-      if (user != null && user.uid == userId) {
-        await user.delete();
-      } else {
-        throw Exception("User not authenticated or mismatched userId.");
-      }
-    } catch (e) {
-      throw Exception('Errore durante l\'eliminazione dell\'utente: $e');
+    // Se l'utente corrente sta eliminando il proprio account, effettua il logout
+    User? currentUser = _auth.currentUser;
+    if (currentUser != null && currentUser.uid == userId) {
+      await _auth.signOut();
     }
-  }
 
+    // Aggiorna lo stream degli utenti
+    final updatedUsers = _usersStreamController.value.where((user) => user.id != userId).toList();
+    _usersStreamController.add(updatedUsers);
+  } catch (e) {
+    throw Exception('Errore durante l\'eliminazione dell\'utente: $e');
+  }
+}
   Future<void> updateUser(String userId, Map<String, dynamic> data) async {
     await _firestore.collection('users').doc(userId).update(data);
   }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/providers/providers.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Constants
 const Map<int, String> genderMap = {
@@ -21,7 +20,7 @@ const Map<String, double> activityLevels = {
 class TDEEScreen extends ConsumerStatefulWidget {
   final String userId;
 
-  const TDEEScreen({Key? key, required this.userId}) : super(key: key);
+  const TDEEScreen({super.key, required this.userId});
 
   @override
   _TDEEScreenState createState() => _TDEEScreenState();

@@ -1,59 +1,59 @@
-import 'package:alphanessone/models/user_model.dart';
-import 'package:alphanessone/services/users_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:alphanessone/models/user_model.dart';
 import 'package:alphanessone/providers/providers.dart';
+import 'package:alphanessone/services/users_services.dart';
 
-class UsersDashboard extends ConsumerWidget {
+class UsersDashboard extends ConsumerStatefulWidget {
   const UsersDashboard({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final usersService = ref.watch(usersServiceProvider);
-    final usersStream = usersService.getUsers();
+  ConsumerState<UsersDashboard> createState() => _UsersDashboardState();
+}
 
+class _UsersDashboardState extends ConsumerState<UsersDashboard> {
+  late UsersService _usersService;
+
+  @override
+  void initState() {
+    super.initState();
+    _usersService = ref.read(usersServiceProvider);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Users Dashboard'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person_add),
+            onPressed: _showCreateUserDialog,
+          ),
+        ],
+      ),
       body: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            UserSearchField(usersService: usersService),
-            const SizedBox(height: 24),
+            UserSearchField(usersService: _usersService),
+            const SizedBox(height: 16),
             Expanded(
               child: StreamBuilder<List<UserModel>>(
-                stream: usersStream,
+                stream: _usersService.getUsers(),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
-                    return Center(
-                      child: Text(
-                        'Error: ${snapshot.error}',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                    );
+                    return ErrorView(error: snapshot.error.toString());
                   }
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   }
                   final users = snapshot.data ?? [];
-                  return ListView.separated(
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: users.length,
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(height: 16),
-                    itemBuilder: (context, index) {
-                      final user = users[index];
-                      return UserCard(
-                        user: user,
-                        onTap: () => context.go('/users_dashboard/user_profile',
-                            extra: user.id),
-                        onDelete: () => usersService.deleteUser(user.id),
-                      );
-                    },
-                  );
+                  return users.isEmpty
+                      ? const Center(child: Text('No users found'))
+                      : UsersList(users: users, onDeleteUser: _showDeleteConfirmation);
                 },
               ),
             ),
@@ -63,239 +63,104 @@ class UsersDashboard extends ConsumerWidget {
     );
   }
 
-  void _showCreateUserDialog(BuildContext context, WidgetRef ref) {
-    final usersService = ref.read(usersServiceProvider);
-    final nameController = TextEditingController();
-    final emailController = TextEditingController();
-    final passwordController = TextEditingController();
-    String selectedRole = 'client';
-
+  void _showCreateUserDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Create User'),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: InputDecoration(
-                labelText: 'Name',
-                labelStyle: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.outline,
-                  ),
-                ),
-                filled: true,
-                fillColor: Theme.of(context).colorScheme.surface,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-              ),
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: emailController,
-              decoration: InputDecoration(
-                labelText: 'Email',
-                labelStyle: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.outline,
-                  ),
-                ),
-                filled: true,
-                fillColor: Theme.of(context).colorScheme.surface,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-              ),
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: passwordController,
-              decoration: InputDecoration(
-                labelText: 'Password',
-                labelStyle: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.outline,
-                  ),
-                ),
-                filled: true,
-                fillColor: Theme.of(context).colorScheme.surface,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-              ),
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-              obscureText: true,
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: selectedRole,
-              onChanged: (value) {
-                selectedRole = value!;
-              },
-              items: const [
-                DropdownMenuItem(value: 'admin', child: Text('Admin')),
-                DropdownMenuItem(value: 'client', child: Text('Client')),
-                DropdownMenuItem(value: 'coach', child: Text('Coach')),
-              ],
-              decoration: InputDecoration(
-                labelText: 'Role',
-                labelStyle: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.outline,
-                  ),
-                ),
-                filled: true,
-                fillColor: Theme.of(context).colorScheme.surface,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-              ),
-              dropdownColor: Theme.of(context).colorScheme.surface,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-          ],
-        ),
+      builder: (BuildContext context) => CreateUserDialog(
+        onUserCreated: () {
+          Navigator.of(context).pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('User created successfully')),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(UserModel user) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('Delete User'),
+        content: Text('Are you sure you want to delete ${user.name}?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancel',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
-              usersService.createUser(
-                name: nameController.text,
-                email: emailController.text,
-                password: passwordController.text,
-                role: selectedRole,
-              );
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Theme.of(context).colorScheme.onPrimary,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 16,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text('Create'),
+            onPressed: () => _deleteUser(user),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Delete'),
           ),
         ],
       ),
     );
   }
+
+  Future<void> _deleteUser(UserModel user) async {
+    try {
+      await _usersService.deleteUser(user.id);
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('User deleted successfully')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error deleting user: $e')),
+        );
+      }
+    }
+  }
 }
 
-class UserSearchField extends ConsumerStatefulWidget {
-  const UserSearchField({super.key, required this.usersService});
-
+class UserSearchField extends StatelessWidget {
   final UsersService usersService;
 
-  @override
-  _UserSearchFieldState createState() => _UserSearchFieldState();
-}
-
-class _UserSearchFieldState extends ConsumerState<UserSearchField> {
-  final _controller = TextEditingController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _resetFilter() {
-    _controller.clear();
-    widget.usersService.searchUsers('');
-  }
+  const UserSearchField({super.key, required this.usersService});
 
   @override
   Widget build(BuildContext context) {
     return TextField(
-      controller: _controller,
       decoration: InputDecoration(
         hintText: 'Search users',
-        hintStyle: TextStyle(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: Theme.of(context).colorScheme.outline,
-          ),
-        ),
-        filled: true,
-        fillColor: Theme.of(context).colorScheme.surface,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
-        ),
         prefixIcon: const Icon(Icons.search),
-        suffixIcon: _controller.text.isNotEmpty
-            ? IconButton(
-                icon: const Icon(Icons.clear),
-                onPressed: _resetFilter,
-                color: Theme.of(context).colorScheme.onSurface,
-              )
-            : null,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
       ),
-      style: TextStyle(
-        color: Theme.of(context).colorScheme.onSurface,
+      onChanged: usersService.searchUsers,
+    );
+  }
+}
+
+class UsersList extends StatelessWidget {
+  final List<UserModel> users;
+  final Function(UserModel) onDeleteUser;
+
+  const UsersList({super.key, required this.users, required this.onDeleteUser});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      itemCount: users.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      itemBuilder: (context, index) => UserCard(
+        user: users[index],
+        onTap: () => context.go('/user_profile/${users[index].id}'),
+        onDelete: () => onDeleteUser(users[index]),
       ),
-      onChanged: (value) {
-        if (value.isEmpty) {
-          _resetFilter();
-        } else {
-          widget.usersService.searchUsers(value);
-        }
-      },
     );
   }
 }
 
 class UserCard extends StatelessWidget {
+  final UserModel user;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
+
   const UserCard({
     super.key,
     required this.user,
@@ -303,84 +168,137 @@ class UserCard extends StatelessWidget {
     required this.onDelete,
   });
 
-  final UserModel user;
-  final VoidCallback onTap;
-  final VoidCallback onDelete;
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundImage: user.photoURL.isNotEmpty ? NetworkImage(user.photoURL) : null,
+          child: user.photoURL.isEmpty ? const Icon(Icons.person) : null,
+        ),
+        title: Text(user.name),
+        subtitle: Text('${user.email}\nRole: ${user.role}'),
+        trailing: IconButton(
+          icon: const Icon(Icons.delete),
+          onPressed: onDelete,
+        ),
+        onTap: onTap,
+      ),
+    );
+  }
+}
+
+class CreateUserDialog extends ConsumerStatefulWidget {
+  final VoidCallback onUserCreated;
+
+  const CreateUserDialog({super.key, required this.onUserCreated});
+
+  @override
+  ConsumerState<CreateUserDialog> createState() => _CreateUserDialogState();
+}
+
+class _CreateUserDialogState extends ConsumerState<CreateUserDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  String _selectedRole = 'client';
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      color: colorScheme.surface,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 30,
-                child: user.photoURL.isNotEmpty
-                    ? ClipOval(
-                        child: Image.network(
-                          user.photoURL,
-                          fit: BoxFit.cover,
-                          width: 60,
-                          height: 60,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(Icons.person);
-                          },
-                        ),
-                      )
-                    : const Icon(Icons.person),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      user.name,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      user.email,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Role: ${user.role}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontStyle: FontStyle.italic,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: onDelete,
-                color: colorScheme.onSurface,
-              ),
-            ],
-          ),
+    return AlertDialog(
+      title: const Text('Create User'),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: _nameController,
+              decoration: const InputDecoration(labelText: 'Name'),
+              validator: (value) => value!.isEmpty ? 'Please enter a name' : null,
+            ),
+            TextFormField(
+              controller: _emailController,
+              decoration: const InputDecoration(labelText: 'Email'),
+              validator: (value) => value!.isEmpty ? 'Please enter an email' : null,
+            ),
+            TextFormField(
+              controller: _passwordController,
+              decoration: const InputDecoration(labelText: 'Password'),
+              obscureText: true,
+              validator: (value) => value!.isEmpty ? 'Please enter a password' : null,
+            ),
+            DropdownButtonFormField<String>(
+              value: _selectedRole,
+              onChanged: (value) => setState(() => _selectedRole = value!),
+              items: ['admin', 'client', 'coach']
+                  .map((role) => DropdownMenuItem(value: role, child: Text(role)))
+                  .toList(),
+              decoration: const InputDecoration(labelText: 'Role'),
+            ),
+          ],
         ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: _createUser,
+          child: const Text('Create'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _createUser() async {
+    if (_formKey.currentState!.validate()) {
+      try {
+        await ref.read(usersServiceProvider).createUser(
+              name: _nameController.text,
+              email: _emailController.text,
+              password: _passwordController.text,
+              role: _selectedRole,
+            );
+        if (mounted) {
+          widget.onUserCreated();
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error creating user: $e')),
+          );
+        }
+      }
+    }
+  }
+}
+
+class ErrorView extends StatelessWidget {
+  final String error;
+
+  const ErrorView({super.key, required this.error});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 48, color: Colors.red),
+          const SizedBox(height: 16),
+          Text('Error: $error', style: Theme.of(context).textTheme.titleMedium),
+        ],
       ),
     );
   }
