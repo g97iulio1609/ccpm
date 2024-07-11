@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
-import 'user_type_ahead_field.dart'; // Assicurati di importare il file corretto
-import '../models/user_model.dart'; // Assicurati di importare il modello UserModel
+import '../user_type_ahead_field.dart'; // Assicurati di importare il file corretto
+import '../../models/user_model.dart'; // Assicurati di importare il modello UserModel
 
 final userListProvider = StateProvider<List<QueryDocumentSnapshot>>((ref) => []);
 final filteredUserListProvider = StateProvider<List<QueryDocumentSnapshot>>((ref) => []);

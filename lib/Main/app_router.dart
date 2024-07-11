@@ -1,12 +1,12 @@
 import 'package:alphanessone/Viewer/models/timer_model.dart';
-import 'package:alphanessone/coaching_association.dart';
+import 'package:alphanessone/Coaching/coaching_association.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../auth/auth_screen.dart';
 import '../UI/home_screen.dart';
-import '../coaching_screen.dart';
+import '../Coaching/coaching_screen.dart';
 import '../user_programs.dart';
 import '../Viewer/UI/training_viewer.dart';
 import '../Viewer/UI/week_details.dart';
