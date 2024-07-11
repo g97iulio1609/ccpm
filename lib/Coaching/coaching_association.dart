@@ -267,9 +267,9 @@ class AssociationTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final usersService = ref.read(usersServiceProvider);
-    final userFuture = userRole == 'admin' 
-        ? usersService.getUserById(association.athleteId)
-        : usersService.getUserById(association.coachId);
+    final userFuture = userRole == 'client' 
+        ? usersService.getUserById(association.coachId)
+        : usersService.getUserById(association.athleteId);
 
     return FutureBuilder<UserModel?>(
       future: userFuture,
@@ -282,7 +282,7 @@ class AssociationTile extends ConsumerWidget {
         final userName = associatedUser?.displayName ?? associatedUser?.name ?? 'Utente sconosciuto';
         
         return ListTile(
-          title: Text(userRole == 'admin' ? 'Atleta: $userName' : 'Coach: $userName'),
+          title: Text(userRole == 'client' ? 'Coach: $userName' : 'Atleta: $userName'),
           subtitle: Text('Stato: ${association.status}'),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
