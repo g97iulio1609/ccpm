@@ -73,10 +73,15 @@ class CoachingService {
   }
 
   Future<bool> respondToAssociation(String associationId, bool accept) async {
+    WriteBatch batch = _firestore.batch();
     try {
-      await _firestore.collection('associations').doc(associationId).update({
+      DocumentReference docRef = _firestore.collection('associations').doc(associationId);
+      batch.update(docRef, {
         'status': accept ? 'accepted' : 'rejected',
       });
+
+      // Esegui il batch
+      await batch.commit();
       return true;
     } catch (e) {
       debugPrint('Error responding to association: $e');
@@ -85,8 +90,13 @@ class CoachingService {
   }
 
   Future<bool> removeAssociation(String associationId) async {
+    WriteBatch batch = _firestore.batch();
     try {
-      await _firestore.collection('associations').doc(associationId).delete();
+      DocumentReference docRef = _firestore.collection('associations').doc(associationId);
+      batch.delete(docRef);
+
+      // Esegui il batch
+      await batch.commit();
       return true;
     } catch (e) {
       debugPrint('Error removing association: $e');
