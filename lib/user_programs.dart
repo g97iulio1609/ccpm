@@ -19,7 +19,7 @@ class UserProgramsScreen extends HookConsumerWidget {
     return Scaffold(
       body: Column(
         children: [
-          if (userRole == 'admin' || userRole == 'client_premium')
+          if (userRole == 'admin' || userRole == 'client_premium' || userRole == 'coach')
             _buildAddProgramButton(context, userId),
           Expanded(
             child: _buildProgramList(context, ref, userId, userRole, firestoreService),
@@ -117,7 +117,7 @@ class UserProgramsScreen extends HookConsumerWidget {
                   ),
                 ],
               ),
-              if (isHidden && userRole == 'admin')
+              if (isHidden && (userRole == 'admin' || userRole == 'coach') )
                 Text(
                   'Nascosto',
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
@@ -126,12 +126,12 @@ class UserProgramsScreen extends HookConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  if (userRole == 'admin')
+                  if (userRole == 'admin' || userRole == 'coach')
                     IconButton(
                       icon: Icon(isHidden ? Icons.visibility_off : Icons.visibility),
                       onPressed: () => _toggleProgramVisibility(doc.id, isHidden),
                     ),
-                  if (userRole == 'admin' || userRole == 'client_premium')
+                  if (userRole == 'admin' || userRole == 'client_premium' || userRole=='coach')
                     _buildPopupMenu(context, doc, userId, controller, firestoreService),
                 ],
               ),

@@ -6,15 +6,34 @@ import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import '../services/coaching_service.dart';
 
 // Providers
 final userServiceProvider = Provider<UsersService>((ref) {
   return UsersService(ref, FirebaseFirestore.instance, FirebaseAuth.instance);
 });
 
-final usersStreamProvider = StreamProvider<List<UserModel>>((ref) {
-  final service = ref.watch(userServiceProvider);
-  return service.getUsers();
+final filteredUsersStreamProvider = StreamProvider.autoDispose<List<UserModel>>((ref) async* {
+  final userService = ref.watch(userServiceProvider);
+  final coachingService = ref.watch(coachingServiceProvider);
+  final currentUserRole = userService.getCurrentUserRole();
+  final currentUserId = userService.getCurrentUserId();
+
+  if (currentUserRole == 'admin') {
+    yield* userService.getUsers();
+  } else if (currentUserRole == 'coach') {
+    final associations = await coachingService.getUserAssociations(currentUserId).first;
+    final acceptedAthleteIds = associations
+        .where((association) => association.status == 'accepted')
+        .map((association) => association.athleteId)
+        .toSet();
+
+    yield* userService.getUsers().map((users) => 
+      users.where((user) => acceptedAthleteIds.contains(user.id)).toList()
+    );
+  } else {
+    yield [];
+  }
 });
 
 class UserTypeAheadField extends ConsumerWidget {
@@ -33,14 +52,17 @@ class UserTypeAheadField extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final usersAsyncValue = ref.watch(usersStreamProvider);
+    final filteredUsersAsyncValue = ref.watch(filteredUsersStreamProvider);
 
-    return usersAsyncValue.when(
+    return filteredUsersAsyncValue.when(
       data: (users) {
         return TypeAheadField<UserModel>(
           suggestionsCallback: (pattern) async {
             onChanged(pattern);
-            return users.where((user) => user.name.toLowerCase().contains(pattern.toLowerCase())).toList();
+            return users.where((user) => 
+              user.name.toLowerCase().contains(pattern.toLowerCase()) ||
+              user.email.toLowerCase().contains(pattern.toLowerCase())
+            ).toList();
           },
           itemBuilder: (context, UserModel suggestion) {
             return ListTile(

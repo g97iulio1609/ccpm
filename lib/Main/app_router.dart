@@ -41,13 +41,15 @@ class AppRouter {
             path: '/',
             builder: (context, state) => const AuthWrapper(),
           ),
-          GoRoute(
+         GoRoute(
             path: '/programs_screen',
             builder: (context, state) {
               final userRole = ref.read(userRoleProvider);
-              return userRole == 'admin' 
-                ? const ProgramsScreen() 
-                : const Center(child: Text('Access denied'));
+              if (userRole == 'admin' || userRole == 'coach') {
+                return const ProgramsScreen();
+              } else {
+                return const Center(child: Text('Access denied'));
+              }
             },
           ),
           GoRoute(
@@ -251,11 +253,15 @@ class AuthWrapper extends ConsumerWidget {
           if (user == null) {
             return const AuthScreen();
           } else {
-            final userRole = ref.read(userRoleProvider);
             WidgetsBinding.instance.addPostFrameCallback((_) async {
               await ref.read(usersServiceProvider).fetchUserRole();
+              final userRole = ref.read(userRoleProvider);
               if (context.mounted) {
-                context.go(userRole == 'admin' ? '/programs_screen' : '/user_programs/${user.uid}');
+                if (userRole == 'admin' || userRole == 'coach') {
+                  context.go('/programs_screen');
+                } else {
+                  context.go('/user_programs/${user.uid}');
+                }
               }
             });
             return const HomeScreen(child: SizedBox());

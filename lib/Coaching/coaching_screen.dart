@@ -1,13 +1,15 @@
+import 'package:alphanessone/providers/providers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
-import '../user_type_ahead_field.dart'; // Assicurati di importare il file corretto
-import '../../models/user_model.dart'; // Assicurati di importare il modello UserModel
+import '../user_type_ahead_field.dart';
+import '../../models/user_model.dart';
+import '../../services/coaching_service.dart';
 
-final userListProvider = StateProvider<List<QueryDocumentSnapshot>>((ref) => []);
-final filteredUserListProvider = StateProvider<List<QueryDocumentSnapshot>>((ref) => []);
+final userListProvider = StateProvider<List<UserModel>>((ref) => []);
+final filteredUserListProvider = StateProvider<List<UserModel>>((ref) => []);
 
 class ProgramsScreen extends HookConsumerWidget {
   const ProgramsScreen({super.key});
@@ -17,24 +19,45 @@ class ProgramsScreen extends HookConsumerWidget {
     final TextEditingController typeAheadController = useTextEditingController();
     final FocusNode focusNode = useFocusNode();
     final filteredUserList = ref.watch(filteredUserListProvider);
+    final usersService = ref.watch(usersServiceProvider);
+    final coachingService = ref.watch(coachingServiceProvider);
+    final currentUserRole = usersService.getCurrentUserRole();
+    final currentUserId = usersService.getCurrentUserId();
 
     useEffect(() {
-      // Inizializzare lo stato con la lista completa degli utenti quando il widget viene creato
-      final subscription = FirebaseFirestore.instance.collection('users').snapshots().listen((snapshot) {
-        ref.read(userListProvider.notifier).state = snapshot.docs;
-        ref.read(filteredUserListProvider.notifier).state = snapshot.docs;
-      });
-      return subscription.cancel;
-    }, []); // La lista vuota indica che questo effetto viene eseguito solo una volta
+      Future<void> fetchUsers() async {
+        List<UserModel> users = [];
+        if (currentUserRole == 'admin') {
+          final snapshot = await FirebaseFirestore.instance.collection('users').get();
+          users = snapshot.docs.map((doc) => UserModel.fromFirestore(doc)).toList();
+        } else if (currentUserRole == 'coach') {
+          final associations = await coachingService.getUserAssociations(currentUserId).first;
+          for (var association in associations) {
+            if (association.status == 'accepted') {
+              final athlete = await usersService.getUserById(association.athleteId);
+              if (athlete != null) {
+                users.add(athlete);
+              }
+            }
+          }
+        }
+        ref.read(userListProvider.notifier).state = users;
+        ref.read(filteredUserListProvider.notifier).state = users;
+      }
+
+      fetchUsers();
+      return null;
+    }, []);
 
     void filterUsers(String pattern) {
       final allUsers = ref.read(userListProvider);
       if (pattern.isEmpty) {
         ref.read(filteredUserListProvider.notifier).state = allUsers;
       } else {
-        ref.read(filteredUserListProvider.notifier).state = allUsers.where((user) {
-          return user['name'].toLowerCase().contains(pattern.toLowerCase());
-        }).toList();
+        final filtered = allUsers
+            .where((user) => user.name.toLowerCase().contains(pattern.toLowerCase()))
+            .toList();
+        ref.read(filteredUserListProvider.notifier).state = filtered;
       }
     }
 
@@ -46,39 +69,46 @@ class ProgramsScreen extends HookConsumerWidget {
             child: UserTypeAheadField(
               controller: typeAheadController,
               focusNode: focusNode,
-              onSelected: (UserModel selectedUser) {
-                // Non è necessario filtrare qui, poiché il filtro è gestito dal campo di testo
-              },
+              onSelected: (UserModel selectedUser) {},
               onChanged: filterUsers,
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16.0),
-              itemCount: filteredUserList.length,
-              itemBuilder: (context, index) {
-                final user = filteredUserList[index];
-                final userName = user['name'];
-
-                return Card(
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                  margin: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: InkWell(
-                    onTap: () => context.go('/user_programs/${user.id}'),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Text(
-                        userName,
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
+            child: filteredUserList.isEmpty
+                ? Center(
+                    child: Text(
+                      currentUserRole == 'coach'
+                          ? 'Nessun atleta è stato associato'
+                          : 'Nessun utente trovato',
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16.0),
+                    itemCount: filteredUserList.length,
+                    itemBuilder: (context, index) {
+                      final user = filteredUserList[index];
+                      return Card(
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
+                        margin: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: InkWell(
+                          onTap: () {
+                            context.go('/user_programs/${user.id}');
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Text(
+                              user.name,
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),

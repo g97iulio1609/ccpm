@@ -76,11 +76,11 @@ class CustomDrawer extends ConsumerWidget {
       'Food Tracker', 'Food Management', 'Misurazioni', 'Meals Preferiti'
     ];
     final clientItems = [
-      'I Miei Allenamenti', 'Association', 'Abbonamenti', 'Esercizi',
+      'I Miei Allenamenti','Association', 'Abbonamenti', 'Esercizi',
       'Massimali', 'Profilo Utente', 'Fabbisogno Calorico',
       'Calcolatore Macronutrienti', 'Food Tracker', 'Misurazioni'
     ];
-    return userRole == 'admin' ? adminItems : clientItems;
+    return (userRole == 'admin' || userRole == 'coach') ? adminItems : clientItems;
   }
 
   Widget _buildMenuItem(BuildContext context, String menuItem, String userRole, bool isDarkMode) {
