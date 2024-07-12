@@ -109,13 +109,13 @@ class CoachAthleteAssociationScreenState extends ConsumerState<CoachAthleteAssoc
 
   Future<void> _respondToAssociation(String associationId, bool accept) async {
     final coachingService = ref.read(coachingServiceProvider);
-    final result = await coachingService.respondToAssociation(associationId, accept);
+    final result = await coachingService.respondToAssociation(userId, associationId, accept);  // Passa userId come coachId
     if (mounted) {
       if (result) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(accept ? 'Associazione accettata' : 'Associazione rifiutata')),
         );
-        ref.refresh(associationsStreamProvider);
+        ref.invalidate(associationsStreamProvider); // Utilizzare ref.invalidate per aggiornare lo stream
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Errore nella risposta alla richiesta di associazione.')),
@@ -126,13 +126,13 @@ class CoachAthleteAssociationScreenState extends ConsumerState<CoachAthleteAssoc
 
   Future<void> _removeAssociation(String associationId) async {
     final coachingService = ref.read(coachingServiceProvider);
-    final result = await coachingService.removeAssociation(associationId);
+    final result = await coachingService.removeAssociation(userId, associationId);  // Passa userId come coachId
     if (mounted) {
       if (result) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Associazione rimossa con successo.')),
         );
-        ref.refresh(associationsStreamProvider);
+        ref.invalidate(associationsStreamProvider); // Utilizzare ref.invalidate per aggiornare lo stream
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Errore nella rimozione dell\'associazione.')),
@@ -237,7 +237,7 @@ class CoachSearchDialogState extends ConsumerState<CoachSearchDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Richiesta di associazione inviata con successo.')),
         );
-        ref.refresh(associationsStreamProvider);
+        ref.invalidate(associationsStreamProvider); // Utilizzare ref.invalidate per aggiornare lo stream
         Navigator.pop(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -402,13 +402,13 @@ class AssociationDetailsScreenState extends ConsumerState<AssociationDetailsScre
 
   Future<void> _respondToAssociation(bool accept) async {
     final coachingService = ref.read(coachingServiceProvider);
-    final result = await coachingService.respondToAssociation(widget.association.id, accept);
+    final result = await coachingService.respondToAssociation(widget.association.coachId, widget.association.id, accept);
     if (mounted) {
       if (result) {
         ScaffoldMessenger.of(context).showSnackBar(
-SnackBar(content: Text(accept ? 'Associazione accettata' : 'Associazione rifiutata')),
+          SnackBar(content: Text(accept ? 'Associazione accettata' : 'Associazione rifiutata')),
         );
-        ref.refresh(associationsStreamProvider);
+        ref.invalidate(associationsStreamProvider); // Utilizzare ref.invalidate per aggiornare lo stream
         Navigator.pop(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -420,13 +420,13 @@ SnackBar(content: Text(accept ? 'Associazione accettata' : 'Associazione rifiuta
 
   Future<void> _removeAssociation() async {
     final coachingService = ref.read(coachingServiceProvider);
-    final result = await coachingService.removeAssociation(widget.association.id);
+    final result = await coachingService.removeAssociation(widget.association.coachId, widget.association.id);
     if (mounted) {
       if (result) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Associazione rimossa con successo.')),
         );
-        ref.refresh(associationsStreamProvider);
+        ref.invalidate(associationsStreamProvider); // Utilizzare ref.invalidate per aggiornare lo stream
         Navigator.pop(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
