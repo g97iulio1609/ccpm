@@ -56,19 +56,6 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
     );
   }
 
-  void _showCreateUserDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) => CreateUserDialog(
-        onUserCreated: () {
-          Navigator.of(context).pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('User created successfully')),
-          );
-        },
-      ),
-    );
-  }
 
 void _showDeleteConfirmation(UserModel user) {
   showDialog(

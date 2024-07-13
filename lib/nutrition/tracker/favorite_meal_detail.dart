@@ -151,17 +151,6 @@ class FavoriteMealDetailState extends ConsumerState<FavoriteMealDetail> {
     }
   }
 
-  void _deleteSelectedFoods() async {
-    final mealsService = ref.read(mealsServiceProvider);
-    for (final foodId in _selectedFoods) {
-      await mealsService.removeFoodFromFavoriteMeal(userId: widget.meal.userId, mealId: widget.meal.id!, myFoodId: foodId);
-    }
-    setState(() {
-      _selectedFoods.clear();
-      _isSelectionMode = false;
-    });
-  }
-
   void _removeFood(String foodId) async {
     final mealsService = ref.read(mealsServiceProvider);
     await mealsService.removeFoodFromFavoriteMeal(userId: widget.meal.userId, mealId: widget.meal.id!, myFoodId: foodId);
