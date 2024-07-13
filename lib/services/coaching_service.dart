@@ -46,9 +46,11 @@ class CoachingService {
 
   Stream<List<Association>> getUserAssociations(String userId) {
     return _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('coaching')
+        .collection('associations')
+        .where(Filter.or(
+          Filter('coachId', isEqualTo: userId),
+          Filter('athleteId', isEqualTo: userId),
+        ))
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => Association.fromFirestore(doc))
@@ -57,13 +59,8 @@ class CoachingService {
 
   Future<bool> requestAssociation(String coachId, String athleteId) async {
     try {
-      final associationRef = _firestore
-          .collection('users')
-          .doc(coachId)
-          .collection('coaching')
-          .doc();
-      await associationRef.set(Association(
-        id: associationRef.id,
+      await _firestore.collection('associations').add(Association(
+        id: '',
         coachId: coachId,
         athleteId: athleteId,
         status: 'pending',
@@ -75,18 +72,15 @@ class CoachingService {
     }
   }
 
-  Future<bool> respondToAssociation(String coachId, String associationId, bool accept) async {
+  Future<bool> respondToAssociation(String associationId, bool accept) async {
     WriteBatch batch = _firestore.batch();
     try {
-      DocumentReference docRef = _firestore
-          .collection('users')
-          .doc(coachId)
-          .collection('coaching')
-          .doc(associationId);
+      DocumentReference docRef = _firestore.collection('associations').doc(associationId);
       batch.update(docRef, {
         'status': accept ? 'accepted' : 'rejected',
       });
 
+      // Esegui il batch
       await batch.commit();
       return true;
     } catch (e) {
@@ -95,16 +89,13 @@ class CoachingService {
     }
   }
 
-  Future<bool> removeAssociation(String coachId, String associationId) async {
+  Future<bool> removeAssociation(String associationId) async {
     WriteBatch batch = _firestore.batch();
     try {
-      DocumentReference docRef = _firestore
-          .collection('users')
-          .doc(coachId)
-          .collection('coaching')
-          .doc(associationId);
+      DocumentReference docRef = _firestore.collection('associations').doc(associationId);
       batch.delete(docRef);
 
+      // Esegui il batch
       await batch.commit();
       return true;
     } catch (e) {
@@ -188,7 +179,7 @@ class CoachingService {
     final coachData = coachDoc.data() as Map<String, dynamic>?;
 
     if (coachData == null) {
-      return false; // Coach non trovato
+      return false;  // Coach non trovato
     }
 
     final bool isBlocked = coachData['blockAssociations'] ?? false;
@@ -197,16 +188,16 @@ class CoachingService {
     }
 
     final associationsQuery = await _firestore
-        .collection('users')
-        .doc(coachId)
-        .collection('coaching')
+        .collection('associations')
+        .where('coachId', isEqualTo: coachId)
         .where('status', isEqualTo: 'accepted')
+        .count()
         .get();
 
-    final int currentAssociations = associationsQuery.docs.length;
+    final int? currentAssociations = associationsQuery.count;
     final int maxAssociations = coachData['maxAssociations'] ?? 10;
 
-    return currentAssociations < maxAssociations;
+    return currentAssociations! < maxAssociations;
   }
 
   Future<UserModel?> getCoachDetails(String coachId) async {

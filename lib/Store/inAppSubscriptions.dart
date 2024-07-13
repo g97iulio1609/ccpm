@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'inAppSubscriptions_services.dart';
 
 class InAppSubscriptionsPage extends StatefulWidget {
+  const InAppSubscriptionsPage({super.key});
+
   @override
-  _InAppSubscriptionsPageState createState() => _InAppSubscriptionsPageState();
+  InAppSubscriptionsPageState createState() => InAppSubscriptionsPageState();
 }
 
-class _InAppSubscriptionsPageState extends State<InAppSubscriptionsPage> {
+class InAppSubscriptionsPageState extends State<InAppSubscriptionsPage> {
   final InAppPurchaseService _inAppPurchaseService = InAppPurchaseService();
   bool _loading = true;
   final TextEditingController _promoCodeController = TextEditingController();
@@ -24,11 +26,12 @@ class _InAppSubscriptionsPageState extends State<InAppSubscriptionsPage> {
       await _inAppPurchaseService.initStoreInfo();
     } catch (e) {
       debugPrint("Error during initialization: $e");
-      // Non impostare _error per evitare di mostrare errori all'utente
     }
-    setState(() {
-      _loading = false;
-    });
+    if (mounted) {
+      setState(() {
+        _loading = false;
+      });
+    }
   }
 
   @override
@@ -38,13 +41,19 @@ class _InAppSubscriptionsPageState extends State<InAppSubscriptionsPage> {
   }
 
   Future<void> _redeemPromoCode() async {
+    if (!mounted) return;
+    
     setState(() {
       _promoCodeError = null;
     });
     try {
       await _inAppPurchaseService.redeemPromoCode(_promoCodeController.text);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Promo code redeemed successfully!')));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Promo code redeemed successfully!')),
+      );
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _promoCodeError = e.toString();
       });
@@ -52,9 +61,9 @@ class _InAppSubscriptionsPageState extends State<InAppSubscriptionsPage> {
   }
 
   void _showPromoCodeDialog() {
-    showDialog(
+    showDialog<void>(
       context: context,
-      builder: (context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('Redeem Promo Code'),
           content: TextField(
@@ -68,13 +77,13 @@ class _InAppSubscriptionsPageState extends State<InAppSubscriptionsPage> {
             TextButton(
               child: const Text('Cancel'),
               onPressed: () {
-                Navigator.of(context).pop();
+                Navigator.of(dialogContext).pop();
               },
             ),
             TextButton(
               child: const Text('Redeem'),
               onPressed: () async {
-                Navigator.of(context).pop();
+                Navigator.of(dialogContext).pop();
                 await _redeemPromoCode();
               },
             ),

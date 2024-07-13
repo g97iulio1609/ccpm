@@ -150,7 +150,7 @@ class AppRouter {
           ),
           GoRoute(
             path: '/subscriptions',
-            builder: (context, state) => InAppSubscriptionsPage(),
+            builder: (context, state) => const InAppSubscriptionsPage(),
           ),
           GoRoute(
             path: '/measurements',

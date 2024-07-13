@@ -7,10 +7,10 @@ class ActiveSubscriptionsPage extends StatefulWidget {
   const ActiveSubscriptionsPage({super.key});
 
   @override
-  _ActiveSubscriptionsPageState createState() => _ActiveSubscriptionsPageState();
+  ActiveSubscriptionsPageState createState() => ActiveSubscriptionsPageState();
 }
 
-class _ActiveSubscriptionsPageState extends State<ActiveSubscriptionsPage> {
+class ActiveSubscriptionsPageState extends State<ActiveSubscriptionsPage> {
   final InAppPurchaseService _inAppPurchaseService = InAppPurchaseService();
   bool _loading = true;
 

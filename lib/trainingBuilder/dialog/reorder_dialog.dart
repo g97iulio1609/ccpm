@@ -7,10 +7,10 @@ class ReorderDialog extends StatefulWidget {
   const ReorderDialog({required this.items, required this.onReorder, super.key});
 
   @override
-  _ReorderDialogState createState() => _ReorderDialogState();
+  ReorderDialogState createState() => ReorderDialogState();
 }
 
-class _ReorderDialogState extends State<ReorderDialog> {
+class ReorderDialogState extends State<ReorderDialog> {
   late List<String> items;
 
   @override

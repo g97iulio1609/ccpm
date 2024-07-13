@@ -30,10 +30,10 @@ class ExerciseDetails extends StatefulWidget {
   });
 
   @override
-  _ExerciseDetailsState createState() => _ExerciseDetailsState();
+  ExerciseDetailsState createState() => ExerciseDetailsState();
 }
 
-class _ExerciseDetailsState extends State<ExerciseDetails> {
+class ExerciseDetailsState extends State<ExerciseDetails> {
   int currentSeriesIndex = 0;
   int currentSuperSetExerciseIndex = 0;
   final Map<String, Map<String, TextEditingController>> _repsControllers = {};

@@ -30,10 +30,10 @@ class SeriesDialog extends StatefulWidget {
   });
 
   @override
-  _SeriesDialogState createState() => _SeriesDialogState();
+  SeriesDialogState createState() => SeriesDialogState();
 }
 
-class _SeriesDialogState extends State<SeriesDialog> {
+class SeriesDialogState extends State<SeriesDialog> {
   late num latestMaxWeight;
 
   late TextEditingController _repsController;

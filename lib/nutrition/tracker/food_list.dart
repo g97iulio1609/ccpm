@@ -8,18 +8,24 @@ import '../models&Services/meals_model.dart' as meals;
 import '../models&Services/meals_services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+// Add this global key
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 class FoodList extends ConsumerStatefulWidget {
   final DateTime selectedDate;
 
   const FoodList({required this.selectedDate, super.key});
 
   @override
-  _FoodListState createState() => _FoodListState();
+  FoodListState createState() => FoodListState();
 }
 
-class _FoodListState extends ConsumerState<FoodList> {
-  final List<String> _selectedFoods = [];
-  bool _isSelectionMode = false;
+class FoodListState extends ConsumerState<FoodList> {
+  final List<String> selectedFoods = [];
+  bool isSelectionMode = false;
+
+  // Method to safely get the current context
+  BuildContext? get currentContext => navigatorKey.currentContext;
 
   @override
   Widget build(BuildContext context) {
@@ -34,10 +40,10 @@ class _FoodListState extends ConsumerState<FoodList> {
           if (snapshot.hasData) {
             final mealsList = snapshot.data!;
             return ListView(
-              children: _buildMealSections(context, ref, mealsList, userId),
+              children: buildMealSections(context, ref, mealsList, userId),
             );
           } else if (snapshot.hasError) {
-            return _buildError(context, snapshot.error.toString());
+            return buildError(context, snapshot.error.toString());
           } else {
             return const Center(child: CircularProgressIndicator());
           }
@@ -46,46 +52,46 @@ class _FoodListState extends ConsumerState<FoodList> {
     );
   }
 
-  List<Widget> _buildMealSections(BuildContext context, WidgetRef ref, List<meals.Meal> mealsList, String userId) {
+  List<Widget> buildMealSections(BuildContext context, WidgetRef ref, List<meals.Meal> mealsList, String userId) {
     final List<String> mealTypes = ['Breakfast', 'Lunch', 'Dinner'];
     List<Widget> mealSections = mealTypes
-        .map((mealType) => _buildMealSection(context, ref, mealType, _getMealByType(mealsList, mealType, userId), mealsList))
+        .map((mealType) => buildMealSection(context, ref, mealType, getMealByType(mealsList, mealType, userId), mealsList))
         .toList();
 
-    final snackMeals = _getSnackMeals(mealsList);
+    final snackMeals = getSnackMeals(mealsList);
     for (int i = 0; i < snackMeals.length; i++) {
-      mealSections.add(_buildMealSection(context, ref, 'Snack ${i + 1}', snackMeals[i], mealsList));
+      mealSections.add(buildMealSection(context, ref, 'Snack ${i + 1}', snackMeals[i], mealsList));
     }
 
-    mealSections.add(_buildAddSnackButton(context, ref, userId, mealsList.isNotEmpty ? mealsList.first.dailyStatsId : '', widget.selectedDate, snackMeals.length));
+    mealSections.add(buildAddSnackButton(context, ref, userId, mealsList.isNotEmpty ? mealsList.first.dailyStatsId : '', widget.selectedDate, snackMeals.length));
 
     return mealSections;
   }
 
-  meals.Meal _getMealByType(List<meals.Meal> mealsList, String mealType, String userId) {
+  meals.Meal getMealByType(List<meals.Meal> mealsList, String mealType, String userId) {
     return mealsList.firstWhere((meal) => meal.mealType == mealType, orElse: () => meals.Meal.emptyMeal(userId, mealsList.isNotEmpty ? mealsList.first.dailyStatsId : '', widget.selectedDate, mealType));
   }
 
-  List<meals.Meal> _getSnackMeals(List<meals.Meal> mealsList) {
+  List<meals.Meal> getSnackMeals(List<meals.Meal> mealsList) {
     return mealsList.where((meal) => meal.mealType.startsWith('Snack')).toList();
   }
 
-  Widget _buildMealSection(BuildContext context, WidgetRef ref, String mealName, meals.Meal meal, List<meals.Meal> mealsList) {
+  Widget buildMealSection(BuildContext context, WidgetRef ref, String mealName, meals.Meal meal, List<meals.Meal> mealsList) {
     return FutureBuilder<Map<String, double>>(
       future: ref.watch(mealsServiceProvider).getTotalNutrientsForMeal(meal.userId, meal.id!),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
-          return _buildMealCard(context, ref, mealName, meal, snapshot.data!);
+          return buildMealCard(context, ref, mealName, meal, snapshot.data!);
         } else if (snapshot.hasError) {
-          return _buildErrorCard(context, mealName, snapshot.error.toString());
+          return buildErrorCard(context, mealName, snapshot.error.toString());
         } else {
-          return _buildLoadingCard(context, mealName);
+          return buildLoadingCard(context, mealName);
         }
       },
     );
   }
 
-  Widget _buildMealCard(BuildContext context, WidgetRef ref, String mealName, meals.Meal meal, Map<String, double> totalNutrients) {
+  Widget buildMealCard(BuildContext context, WidgetRef ref, String mealName, meals.Meal meal, Map<String, double> totalNutrients) {
     final subtitle = 'C:${totalNutrients['carbs']?.toStringAsFixed(0)}g P:${totalNutrients['proteins']?.toStringAsFixed(0)}g F:${totalNutrients['fats']?.toStringAsFixed(0)}g, ${totalNutrients['calories']?.toStringAsFixed(0)}Kcal';
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -95,13 +101,13 @@ class _FoodListState extends ConsumerState<FoodList> {
         child: ExpansionTile(
           backgroundColor: Theme.of(context).colorScheme.surface.withOpacity(0.1),
           collapsedBackgroundColor: Theme.of(context).colorScheme.surface.withOpacity(0.1),
-          title: _buildMealTitle(context, mealName, subtitle, meal),
+          title: buildMealTitle(context, mealName, subtitle, meal),
           children: [
-            _buildFoodList(context, ref, meal),
+            buildFoodList(context, ref, meal),
             ListTile(
               title: Text('Add Food', style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.primary)),
               onTap: () {
-                _navigateToFoodSelector(context, meal);
+                navigateToFoodSelector(meal);
               },
             ),
           ],
@@ -110,7 +116,7 @@ class _FoodListState extends ConsumerState<FoodList> {
     );
   }
 
-  Widget _buildMealTitle(BuildContext context, String mealName, String subtitle, meals.Meal meal) {
+  Widget buildMealTitle(BuildContext context, String mealName, String subtitle, meals.Meal meal) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -122,14 +128,14 @@ class _FoodListState extends ConsumerState<FoodList> {
           ],
         ),
         PopupMenuButton<String>(
-          onSelected: (value) => _onMealMenuSelected(context, ref, value, meal),
-          itemBuilder: (BuildContext context) => _buildMealPopupMenuItems(),
+          onSelected: (value) => onMealMenuSelected(value, meal),
+          itemBuilder: (BuildContext context) => buildMealPopupMenuItems(),
         ),
       ],
     );
   }
 
-  List<PopupMenuEntry<String>> _buildMealPopupMenuItems() {
+  List<PopupMenuEntry<String>> buildMealPopupMenuItems() {
     return const [
       PopupMenuItem(value: 'duplicate', child: Text('Duplicate Meal')),
       PopupMenuItem(value: 'delete_all', child: Text('Delete All Foods')),
@@ -138,16 +144,16 @@ class _FoodListState extends ConsumerState<FoodList> {
     ];
   }
 
-  Widget _buildFoodList(BuildContext context, WidgetRef ref, meals.Meal meal) {
+  Widget buildFoodList(BuildContext context, WidgetRef ref, meals.Meal meal) {
     return StreamBuilder<List<macros.Food>>(
       stream: ref.watch(mealsServiceProvider).getFoodsForMealStream(userId: meal.userId, mealId: meal.id!),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           return Column(
-            children: snapshot.data!.map((food) => _buildFoodItem(context, ref, meal, food)).toList(),
+            children: snapshot.data!.map((food) => buildFoodItem(context, ref, meal, food)).toList(),
           );
         } else if (snapshot.hasError) {
-          return _buildErrorTile(context, snapshot.error.toString());
+          return buildErrorTile(context, snapshot.error.toString());
         } else {
           return const ListTile(title: CircularProgressIndicator());
         }
@@ -155,41 +161,41 @@ class _FoodListState extends ConsumerState<FoodList> {
     );
   }
 
-  Widget _buildFoodItem(BuildContext context, WidgetRef ref, meals.Meal meal, macros.Food food) {
-    final isSelected = _selectedFoods.contains(food.id);
+  Widget buildFoodItem(BuildContext context, WidgetRef ref, meals.Meal meal, macros.Food food) {
+    final isSelected = selectedFoods.contains(food.id);
 
     return GestureDetector(
-      onLongPress: () => _onFoodLongPress(food.id!),
-      onTap: () => _onFoodTap(context, meal, food.id!),
+      onLongPress: () => onFoodLongPress(food.id!),
+      onTap: () => onFoodTap(meal, food.id!),
       child: Container(
         color: isSelected ? Colors.grey.withOpacity(0.3) : Colors.transparent,
         child: Slidable(
           key: Key(food.id!),
           startActionPane: ActionPane(
             motion: const ScrollMotion(),
-            children: _buildSlidableStartActions(context, meal, food),
+            children: buildSlidableStartActions(meal, food),
           ),
           endActionPane: ActionPane(
             motion: const ScrollMotion(),
-            children: _buildSlidableEndActions(context, ref, meal, food),
+            children: buildSlidableEndActions(ref, meal, food),
           ),
-          child: _buildFoodListTile(context, food),
+          child: buildFoodListTile(context, food),
         ),
       ),
     );
   }
 
-  List<SlidableAction> _buildSlidableStartActions(BuildContext context, meals.Meal meal, macros.Food food) {
+  List<SlidableAction> buildSlidableStartActions(meals.Meal meal, macros.Food food) {
     return [
       SlidableAction(
-        onPressed: (_) => _navigateToFoodSelector(context, meal, food.id),
+        onPressed: (_) => navigateToFoodSelector(meal, food.id),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
         icon: Icons.edit,
         label: 'Edit',
       ),
       SlidableAction(
-        onPressed: (_) => _navigateToFoodSelector(context, meal),
+        onPressed: (_) => navigateToFoodSelector(meal),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
         icon: Icons.add,
@@ -198,7 +204,7 @@ class _FoodListState extends ConsumerState<FoodList> {
     ];
   }
 
-  List<SlidableAction> _buildSlidableEndActions(BuildContext context, WidgetRef ref, meals.Meal meal, macros.Food food) {
+  List<SlidableAction> buildSlidableEndActions(WidgetRef ref, meals.Meal meal, macros.Food food) {
     final mealsService = ref.read(mealsServiceProvider);
 
     return [
@@ -211,11 +217,11 @@ class _FoodListState extends ConsumerState<FoodList> {
       ),
       SlidableAction(
         onPressed: (_) async {
-          if (_selectedFoods.isNotEmpty) {
-            final mealsList = await _getAllMeals(meal.userId);
-            await _showMoveDialog(context, ref, mealsList);
+          if (selectedFoods.isNotEmpty) {
+            final mealsList = await getAllMeals(meal.userId);
+            await showMoveDialog(ref, mealsList);
           } else {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No foods selected')));
+            ScaffoldMessenger.of(currentContext!).showSnackBar(const SnackBar(content: Text('No foods selected')));
           }
         },
         backgroundColor: Colors.orange,
@@ -226,7 +232,7 @@ class _FoodListState extends ConsumerState<FoodList> {
     ];
   }
 
-  ListTile _buildFoodListTile(BuildContext context, macros.Food food) {
+  ListTile buildFoodListTile(BuildContext context, macros.Food food) {
     return ListTile(
       leading: Icon(Icons.fastfood, color: Theme.of(context).colorScheme.onSurface),
       title: Text(food.name, style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface)),
@@ -235,20 +241,20 @@ class _FoodListState extends ConsumerState<FoodList> {
         style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface),
       ),
       trailing: PopupMenuButton<String>(
-        onSelected: (value) => _onFoodMenuSelected(context, ref, value, food.id!),
-        itemBuilder: (BuildContext context) => _buildFoodPopupMenuItems(),
+        onSelected: (value) => onFoodMenuSelected(ref, value, food.id!),
+        itemBuilder: (BuildContext context) => buildFoodPopupMenuItems(),
       ),
     );
   }
 
-  List<PopupMenuEntry<String>> _buildFoodPopupMenuItems() {
+  List<PopupMenuEntry<String>> buildFoodPopupMenuItems() {
     return const [
       PopupMenuItem(value: 'edit', child: Text('Edit')),
       PopupMenuItem(value: 'delete', child: Text('Delete')),
     ];
   }
 
-  Widget _buildAddSnackButton(BuildContext context, WidgetRef ref, String userId, String dailyStatsId, DateTime date, int currentSnacksCount) {
+  Widget buildAddSnackButton(BuildContext context, WidgetRef ref, String userId, String dailyStatsId, DateTime date, int currentSnacksCount) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: ElevatedButton(
@@ -270,11 +276,11 @@ class _FoodListState extends ConsumerState<FoodList> {
     );
   }
 
-  Widget _buildError(BuildContext context, String error) {
+  Widget buildError(BuildContext context, String error) {
     return Center(child: Text('Error: $error', style: TextStyle(color: Theme.of(context).colorScheme.onError)));
   }
 
-  Widget _buildErrorCard(BuildContext context, String mealName, String error) {
+  Widget buildErrorCard(BuildContext context, String mealName, String error) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Card(
@@ -288,7 +294,7 @@ class _FoodListState extends ConsumerState<FoodList> {
     );
   }
 
-  Widget _buildLoadingCard(BuildContext context, String mealName) {
+  Widget buildLoadingCard(BuildContext context, String mealName) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Card(
@@ -302,13 +308,16 @@ class _FoodListState extends ConsumerState<FoodList> {
     );
   }
 
-  Widget _buildErrorTile(BuildContext context, String error) {
+  Widget buildErrorTile(BuildContext context, String error) {
     return ListTile(
       title: Text('Error: $error', style: TextStyle(color: Theme.of(context).colorScheme.onError)),
     );
   }
 
-  void _navigateToFoodSelector(BuildContext context, meals.Meal meal, [String? foodId]) {
+  void navigateToFoodSelector(meals.Meal meal, [String? foodId]) {
+    final context = currentContext;
+    if (context == null) return;
+
     context.push(
       Uri(
         path: '/food_tracker/food_selector',
@@ -317,26 +326,25 @@ class _FoodListState extends ConsumerState<FoodList> {
       extra: {
         'meal': meal.toMap(),
         'myFoodId': foodId,
-        'isFavoriteMeal': false,
-      },
+        'isFavoriteMeal': false,},
     );
   }
 
-  void _onMealMenuSelected(BuildContext context, WidgetRef ref, String value, meals.Meal meal) async {
+  void onMealMenuSelected(String value, meals.Meal meal) async {
     final mealsService = ref.read(mealsServiceProvider);
     if (value == 'duplicate') {
-      await _showDuplicateDialog(context, ref, meal);
+      await showDuplicateDialog(ref, meal);
     } else if (value == 'delete_all') {
-      await _confirmDeleteAllFoods(context, ref, meal);
+      await confirmDeleteAllFoods(ref, meal);
     } else if (value == 'save_as_favorite') {
-      final favoriteName = await _showFavoriteNameDialog(context);
+      final favoriteName = await showFavoriteNameDialog();
       if (favoriteName != null) {
         await mealsService.saveMealAsFavorite(meal.userId, meal.id!, favoriteName: favoriteName, dailyStatsId: meal.dailyStatsId);
       }
     } else if (value == 'apply_favorite') {
       final favoriteMeals = await mealsService.getFavoriteMeals(meal.userId);
       if (favoriteMeals.isNotEmpty) {
-        final selectedFavorite = await _showSelectFavoriteDialog(context, favoriteMeals);
+        final selectedFavorite = await showSelectFavoriteDialog(favoriteMeals);
         if (selectedFavorite != null) {
           await mealsService.applyFavoriteMealToCurrent(meal.userId, selectedFavorite.id!, meal.id!);
         }
@@ -344,11 +352,14 @@ class _FoodListState extends ConsumerState<FoodList> {
     }
   }
 
-  Future<void> _showDuplicateDialog(BuildContext context, WidgetRef ref, meals.Meal sourceMeal) async {
-    final mealsList = await _getAllMeals(sourceMeal.userId);
-    final selectedMeal = await _showSelectMealDialog(context, mealsList, 'Select Destination Meal');
+  Future<void> showDuplicateDialog(WidgetRef ref, meals.Meal sourceMeal) async {
+    final context = currentContext;
+    if (context == null) return;
+
+    final mealsList = await getAllMeals(sourceMeal.userId);
+    final selectedMeal = await showSelectMealDialog(mealsList, 'Select Destination Meal');
     if (selectedMeal != null) {
-      final overwriteExisting = await _showOverwriteDialog(context);
+      final overwriteExisting = await showOverwriteDialog();
       if (overwriteExisting != null) {
         await ref.read(mealsServiceProvider).duplicateMeal(
               userId: sourceMeal.userId,
@@ -360,7 +371,10 @@ class _FoodListState extends ConsumerState<FoodList> {
     }
   }
 
-  Future<meals.Meal?> _showSelectMealDialog(BuildContext context, List<meals.Meal> mealsList, String title) {
+  Future<meals.Meal?> showSelectMealDialog(List<meals.Meal> mealsList, String title) {
+    final context = currentContext;
+    if (context == null) return Future.value(null);
+
     return showDialog<meals.Meal>(
       context: context,
       builder: (BuildContext context) {
@@ -385,7 +399,10 @@ class _FoodListState extends ConsumerState<FoodList> {
     );
   }
 
-  Future<meals.Meal?> _showSelectFavoriteDialog(BuildContext context, List<meals.Meal> favoriteMeals) {
+  Future<meals.Meal?> showSelectFavoriteDialog(List<meals.Meal> favoriteMeals) {
+    final context = currentContext;
+    if (context == null) return Future.value(null);
+
     return showDialog<meals.Meal>(
       context: context,
       builder: (BuildContext context) {
@@ -410,7 +427,10 @@ class _FoodListState extends ConsumerState<FoodList> {
     );
   }
 
-  Future<bool?> _showOverwriteDialog(BuildContext context) {
+  Future<bool?> showOverwriteDialog() {
+    final context = currentContext;
+    if (context == null) return Future.value(null);
+
     return showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
@@ -426,8 +446,8 @@ class _FoodListState extends ConsumerState<FoodList> {
     );
   }
 
-  Future<void> _confirmDeleteAllFoods(BuildContext context, WidgetRef ref, meals.Meal meal) async {
-    final confirm = await _showConfirmationDialog(context, 'Delete All Foods', 'Are you sure you want to delete all foods in this meal?');
+  Future<void> confirmDeleteAllFoods(WidgetRef ref, meals.Meal meal) async {
+    final confirm = await showConfirmationDialog('Delete All Foods', 'Are you sure you want to delete all foods in this meal?');
     if (confirm == true) {
       final mealsService = ref.read(mealsServiceProvider);
       final foods = await mealsService.getFoodsForMeals(userId: meal.userId, mealId: meal.id!);
@@ -437,22 +457,27 @@ class _FoodListState extends ConsumerState<FoodList> {
     }
   }
 
-  Future<void> _showMoveDialog(BuildContext context, WidgetRef ref, List<meals.Meal> mealsList) async {
-    final selectedMeal = await _showSelectMealDialog(context, mealsList, 'Select Destination Meal');
+  Future<void> showMoveDialog(WidgetRef ref, List<meals.Meal> mealsList) async {
+    final selectedMeal = await showSelectMealDialog(mealsList, 'Select Destination Meal');
     if (selectedMeal != null) {
       await ref.read(mealsServiceProvider).moveFoods(
             userId: selectedMeal.userId,
-            foodIds: _selectedFoods,
+            foodIds: selectedFoods,
             targetMealId: selectedMeal.id!,
           );
-      setState(() {
-        _selectedFoods.clear();
-        _isSelectionMode = false;
-      });
+      if (mounted) {
+        setState(() {
+          selectedFoods.clear();
+          isSelectionMode = false;
+        });
+      }
     }
   }
 
-  Future<bool?> _showConfirmationDialog(BuildContext context, String title, String content) {
+  Future<bool?> showConfirmationDialog(String title, String content) {
+    final context = currentContext;
+    if (context == null) return Future.value(null);
+
     return showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
@@ -468,15 +493,18 @@ class _FoodListState extends ConsumerState<FoodList> {
     );
   }
 
-  Future<String?> _showFavoriteNameDialog(BuildContext context) {
-    final TextEditingController _nameController = TextEditingController();
+  Future<String?> showFavoriteNameDialog() {
+    final context = currentContext;
+    if (context == null) return Future.value(null);
+
+    final TextEditingController nameController = TextEditingController();
     return showDialog<String>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Save as Favorite', style: GoogleFonts.roboto()),
           content: TextField(
-            controller: _nameController,
+            controller: nameController,
             decoration: const InputDecoration(
               labelText: 'Favorite Name',
               hintText: 'Enter a name for this favorite meal',
@@ -484,14 +512,14 @@ class _FoodListState extends ConsumerState<FoodList> {
           ),
           actions: <Widget>[
             TextButton(onPressed: () => Navigator.of(context).pop(), child: Text('Cancel', style: GoogleFonts.roboto())),
-            TextButton(onPressed: () => Navigator.of(context).pop(_nameController.text), child: Text('Save', style: GoogleFonts.roboto())),
+            TextButton(onPressed: () => Navigator.of(context).pop(nameController.text), child: Text('Save', style: GoogleFonts.roboto())),
           ],
         );
       },
     );
   }
 
-  void _onFoodMenuSelected(BuildContext context, WidgetRef ref, String value, String foodId) async {
+  void onFoodMenuSelected(WidgetRef ref, String value, String foodId) async {
     if (value == 'edit') {
       final userService = ref.read(usersServiceProvider);
       final userId = userService.getCurrentUserId();
@@ -502,36 +530,39 @@ class _FoodListState extends ConsumerState<FoodList> {
         date: widget.selectedDate,
         mealType: '',
       );
-      _navigateToFoodSelector(context, meal, foodId);
+      navigateToFoodSelector(meal, foodId);
     } else if (value == 'delete') {
       final mealsService = ref.read(mealsServiceProvider);
       await mealsService.removeFoodFromMeal(userId: '', mealId: '', myFoodId: foodId);
     }
   }
 
-  void _onFoodLongPress(String foodId) {
+  void onFoodLongPress(String foodId) {
     setState(() {
-      _isSelectionMode = true;
-      _selectedFoods.add(foodId);
+      isSelectionMode = true;
+      selectedFoods.add(foodId);
     });
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selection mode enabled')));
-  }
-
-  void _onFoodTap(BuildContext context, meals.Meal meal, String foodId) {
-    if (_isSelectionMode) {
-      setState(() {
-        if (_selectedFoods.contains(foodId)) {
-          _selectedFoods.remove(foodId);
-        } else {
-          _selectedFoods.add(foodId);
-        }
-      });
-    } else {
-      _navigateToFoodSelector(context, meal, foodId);
+    final context = currentContext;
+    if (context != null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selection mode enabled')));
     }
   }
 
-  Future<List<meals.Meal>> _getAllMeals(String userId) async {
+  void onFoodTap(meals.Meal meal, String foodId) {
+    if (isSelectionMode) {
+      setState(() {
+        if (selectedFoods.contains(foodId)) {
+          selectedFoods.remove(foodId);
+        } else {
+          selectedFoods.add(foodId);
+        }
+      });
+    } else {
+      navigateToFoodSelector(meal, foodId);
+    }
+  }
+
+  Future<List<meals.Meal>> getAllMeals(String userId) async {
     final snapshot = await ref.read(mealsServiceProvider).getUserMealsByDate(userId: userId, date: widget.selectedDate).first;
     return snapshot;
   }

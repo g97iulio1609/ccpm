@@ -10,10 +10,10 @@ class TrainingViewer extends ConsumerStatefulWidget {
   const TrainingViewer({super.key, required this.programId, required this.userId});
 
   @override
-  _TrainingViewerState createState() => _TrainingViewerState();
+  TrainingViewerState createState() => TrainingViewerState();
 }
 
-class _TrainingViewerState extends ConsumerState<TrainingViewer> {
+class TrainingViewerState extends ConsumerState<TrainingViewer> {
   @override
   void initState() {
     super.initState();

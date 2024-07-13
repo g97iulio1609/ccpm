@@ -1,3 +1,4 @@
+// daily_food_selector.dart
 import 'package:alphanessone/UI/appBar_custom.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:flutter/material.dart';
@@ -11,10 +12,10 @@ class DailyFoodTracker extends ConsumerStatefulWidget {
   const DailyFoodTracker({super.key});
 
   @override
-  _DailyFoodTrackerState createState() => _DailyFoodTrackerState();
+  DailyFoodTrackerState createState() => DailyFoodTrackerState();
 }
 
-class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
+class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
   int _targetCalories = 2000;
   double _targetCarbs = 0;
   double _targetProteins = 0;
@@ -39,7 +40,7 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
 
   Future<void> _loadUserTDEEAndMacros() async {
     final tdeeService = ref.read(tdeeServiceProvider);
-        final userService = ref.read(usersServiceProvider);
+    final userService = ref.read(usersServiceProvider);
 
     final userId = userService.getCurrentUserId();
     final tdeeData = await tdeeService.getTDEEData(userId);
@@ -56,7 +57,7 @@ class _DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
       _targetProteins = macrosData['protein']!;
       _targetFats = macrosData['fat']!;
     });
-    }
+  }
 
   @override
   Widget build(BuildContext context) {

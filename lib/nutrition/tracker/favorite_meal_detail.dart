@@ -14,10 +14,10 @@ class FavoriteMealDetail extends ConsumerStatefulWidget {
   const FavoriteMealDetail({required this.meal, super.key});
 
   @override
-  _FavoriteMealDetailState createState() => _FavoriteMealDetailState();
+  FavoriteMealDetailState createState() => FavoriteMealDetailState();
 }
 
-class _FavoriteMealDetailState extends ConsumerState<FavoriteMealDetail> {
+class FavoriteMealDetailState extends ConsumerState<FavoriteMealDetail> {
   final List<String> _selectedFoods = [];
   bool _isSelectionMode = false;
 
