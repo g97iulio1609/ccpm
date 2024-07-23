@@ -134,9 +134,7 @@ class TrainingProgramController extends ChangeNotifier {
 
           exercise.series = updatedProgressions[weekIndex][workoutIndex].series;
 
-          if (exercise.weekProgressions == null) {
-            exercise.weekProgressions = [];
-          }
+          exercise.weekProgressions ??= [];
 
           while (exercise.weekProgressions.length <= weekIndex) {
             exercise.weekProgressions.add([]);

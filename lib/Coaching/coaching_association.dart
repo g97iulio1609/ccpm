@@ -115,7 +115,6 @@ class CoachAthleteAssociationScreenState extends ConsumerState<CoachAthleteAssoc
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(accept ? 'Associazione accettata' : 'Associazione rifiutata')),
         );
-        ref.refresh(associationsStreamProvider);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Errore nella risposta alla richiesta di associazione.')),
@@ -132,7 +131,6 @@ class CoachAthleteAssociationScreenState extends ConsumerState<CoachAthleteAssoc
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Associazione rimossa con successo.')),
         );
-        ref.refresh(associationsStreamProvider);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Errore nella rimozione dell\'associazione.')),
@@ -174,14 +172,14 @@ class CoachSearchDialogState extends ConsumerState<CoachSearchDialog> {
             const SizedBox(height: 10),
             Flexible(
               child: SizedBox(
-                height: 200,
+                height: 200, // Fixed height for the ListView
                 child: ListView.builder(
                   shrinkWrap: true,
                   itemCount: _searchResults.length,
                   itemBuilder: (context, index) {
                     final coach = _searchResults[index];
                     return ListTile(
-                      title: Text(coach.displayName ?? coach.name ?? 'Nome non disponibile'),
+                      title: Text(coach.displayName),
                       subtitle: Text(coach.email),
                       onTap: () => _requestAssociation(coach.id),
                     );
@@ -237,7 +235,6 @@ class CoachSearchDialogState extends ConsumerState<CoachSearchDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Richiesta di associazione inviata con successo.')),
         );
-        ref.refresh(associationsStreamProvider);
         Navigator.pop(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -248,7 +245,7 @@ class CoachSearchDialogState extends ConsumerState<CoachSearchDialog> {
   }
 }
 
-class AssociationTile extends ConsumerWidget {
+class AssociationTile extends ConsumerStatefulWidget {
   final Association association;
   final String userRole;
   final VoidCallback? onAccept;
@@ -265,14 +262,25 @@ class AssociationTile extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final usersService = ref.read(usersServiceProvider);
-    final userFuture = userRole == 'client' 
-        ? usersService.getUserById(association.coachId)
-        : usersService.getUserById(association.athleteId);
+  AssociationTileState createState() => AssociationTileState();
+}
 
+class AssociationTileState extends ConsumerState<AssociationTile> {
+  late Future<UserModel?> _userFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    final usersService = ref.read(usersServiceProvider);
+    _userFuture = widget.userRole == 'client' 
+        ? usersService.getUserById(widget.association.coachId)
+        : usersService.getUserById(widget.association.athleteId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return FutureBuilder<UserModel?>(
-      future: userFuture,
+      future: _userFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const ListTile(title: Text('Caricamento...'));
@@ -282,29 +290,29 @@ class AssociationTile extends ConsumerWidget {
         final userName = associatedUser?.displayName ?? associatedUser?.name ?? 'Utente sconosciuto';
         
         return ListTile(
-          title: Text(userRole == 'client' ? 'Coach: $userName' : 'Atleta: $userName'),
-          subtitle: Text('Stato: ${association.status}'),
+          title: Text(widget.userRole == 'client' ? 'Coach: $userName' : 'Atleta: $userName'),
+          subtitle: Text('Stato: ${widget.association.status}'),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (association.status == 'pending' && 
-                  (userRole == 'admin' || userRole == 'coach'))
+              if (widget.association.status == 'pending' && 
+                  (widget.userRole == 'admin' || widget.userRole == 'coach'))
                 IconButton(
                   icon: const Icon(Icons.check),
-                  onPressed: onAccept,
+                  onPressed: widget.onAccept,
                   tooltip: 'Accetta',
                 ),
-              if (association.status == 'pending' && 
-                  (userRole == 'admin' || userRole == 'coach'))
+              if (widget.association.status == 'pending' && 
+                  (widget.userRole == 'admin' || widget.userRole == 'coach'))
                 IconButton(
                   icon: const Icon(Icons.close),
-                  onPressed: onReject,
+                  onPressed: widget.onReject,
                   tooltip: 'Rifiuta',
                 ),
-              if (onRemove != null)
+              if (widget.onRemove != null)
                 IconButton(
                   icon: const Icon(Icons.delete),
-                  onPressed: onRemove,
+                  onPressed: widget.onRemove,
                   tooltip: 'Rimuovi',
                 ),
             ],
@@ -314,7 +322,6 @@ class AssociationTile extends ConsumerWidget {
     );
   }
 }
-
 class AssociationDetailsScreen extends ConsumerStatefulWidget {
   final Association association;
 
@@ -354,7 +361,7 @@ class AssociationDetailsScreenState extends ConsumerState<AssociationDetailsScre
             return const Center(child: Text('Utente non trovato'));
           }
 
-          final userName = associatedUser.displayName ?? associatedUser.name ?? 'Utente sconosciuto';
+          final userName = associatedUser.displayName;
 
           return Padding(
             padding: const EdgeInsets.all(16.0),
@@ -400,15 +407,14 @@ class AssociationDetailsScreenState extends ConsumerState<AssociationDetailsScre
     );
   }
 
-  Future<void> _respondToAssociation(bool accept) async {
+Future<void> _respondToAssociation(bool accept) async {
     final coachingService = ref.read(coachingServiceProvider);
     final result = await coachingService.respondToAssociation(widget.association.id, accept);
     if (mounted) {
       if (result) {
         ScaffoldMessenger.of(context).showSnackBar(
-SnackBar(content: Text(accept ? 'Associazione accettata' : 'Associazione rifiutata')),
+          SnackBar(content: Text(accept ? 'Associazione accettata' : 'Associazione rifiutata')),
         );
-        ref.refresh(associationsStreamProvider);
         Navigator.pop(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -426,7 +432,6 @@ SnackBar(content: Text(accept ? 'Associazione accettata' : 'Associazione rifiuta
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Associazione rimossa con successo.')),
         );
-        ref.refresh(associationsStreamProvider);
         Navigator.pop(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

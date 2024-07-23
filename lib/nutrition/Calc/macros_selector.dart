@@ -29,6 +29,10 @@ class MacrosNotifier extends StateNotifier<Map<String, double>> {
     _saveMacrosToFirebase(state);
   }
 
+  void setMacros(Map<String, double> macros) {
+    state = macros;
+  }
+
   Future<void> _saveMacrosToFirebase(Map<String, double> macros) async {
     final tdeeService = ref.read(tdeeServiceProvider);
     final userId = FirebaseAuth.instance.currentUser?.uid;
@@ -44,10 +48,10 @@ class MacrosSelector extends ConsumerStatefulWidget {
   const MacrosSelector({super.key, required this.userId});
 
   @override
-  _MacrosSelectorState createState() => _MacrosSelectorState();
+  MacrosSelectorState createState() => MacrosSelectorState();
 }
 
-class _MacrosSelectorState extends ConsumerState<MacrosSelector> {
+class MacrosSelectorState extends ConsumerState<MacrosSelector> {
   double _tdee = 0.0;
   double _weight = 0.0;
   bool _autoAdjustMacros = false;
@@ -98,7 +102,6 @@ class _MacrosSelectorState extends ConsumerState<MacrosSelector> {
     final tdeeService = ref.read(tdeeServiceProvider);
     final tdeeData = await tdeeService.getTDEEData(widget.userId);
 
-
     if (tdeeData != null) {
       setState(() {
         _tdee = (tdeeData['tdee'] ?? 0.0).toDouble();
@@ -107,8 +110,8 @@ class _MacrosSelectorState extends ConsumerState<MacrosSelector> {
 
       final userMacros = await tdeeService.getUserMacros(widget.userId);
 
-      // Convert the userMacros values to double explicitly
-      ref.read(macrosProvider.notifier).state = userMacros;
+      // Aggiorna lo stato dei macros attraverso un metodo di MacrosNotifier
+      ref.read(macrosProvider.notifier).setMacros(userMacros);
 
       _updateInputFields();
     }

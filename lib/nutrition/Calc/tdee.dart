@@ -23,10 +23,10 @@ class TDEEScreen extends ConsumerStatefulWidget {
   const TDEEScreen({super.key, required this.userId});
 
   @override
-  _TDEEScreenState createState() => _TDEEScreenState();
+  ConsumerState<TDEEScreen> createState() => TDEEScreenState();
 }
 
-class _TDEEScreenState extends ConsumerState<TDEEScreen> {
+class TDEEScreenState extends ConsumerState<TDEEScreen> {
   final _formKey = GlobalKey<FormState>();
 
   DateTime? _birthdate;
@@ -78,10 +78,11 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
       }
     } catch (e) {
       debugPrint('Error loading TDEE data: $e');
-      // Mostra un messaggio di errore all'utente
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Errore nel caricamento dei dati. Riprova più tardi.')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Errore nel caricamento dei dati. Riprova più tardi.')),
+        );
+      }
     }
   }
 
@@ -121,14 +122,18 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
         });
 
         setState(() {});
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('TDEE calcolato e salvato con successo!')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('TDEE calcolato e salvato con successo!')),
+          );
+        }
       } catch (e) {
         debugPrint('Error saving TDEE data: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Errore nel salvataggio dei dati. Riprova più tardi.')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Errore nel salvataggio dei dati. Riprova più tardi.')),
+          );
+        }
       }
     }
   }
@@ -306,24 +311,24 @@ class _TDEEScreenState extends ConsumerState<TDEEScreen> {
     );
   }
 
-Widget _buildCalculateButton() {
-  return ElevatedButton(
-    onPressed: _calculateTDEE,
-    style: ElevatedButton.styleFrom(
-      foregroundColor: Theme.of(context).colorScheme.onPrimary, // Testo nero
-      backgroundColor: Theme.of(context).colorScheme.primary, // Sfondo giallo
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-    ),
-    child: Text(
-      'Calcola il mio TDEE',
-      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-        color: Theme.of(context).colorScheme.onPrimary,
-        fontWeight: FontWeight.bold,
+  Widget _buildCalculateButton() {
+    return ElevatedButton(
+      onPressed: _calculateTDEE,
+      style: ElevatedButton.styleFrom(
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
-    ),
-  );
-}
+      child: Text(
+        'Calcola il mio TDEE',
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          color: Theme.of(context).colorScheme.onPrimary,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
 
   Widget _buildTDEEResult() {
     return Text(

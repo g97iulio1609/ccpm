@@ -14,10 +14,10 @@ class FavoriteMealDetail extends ConsumerStatefulWidget {
   const FavoriteMealDetail({required this.meal, super.key});
 
   @override
-  _FavoriteMealDetailState createState() => _FavoriteMealDetailState();
+  FavoriteMealDetailState createState() => FavoriteMealDetailState();
 }
 
-class _FavoriteMealDetailState extends ConsumerState<FavoriteMealDetail> {
+class FavoriteMealDetailState extends ConsumerState<FavoriteMealDetail> {
   final List<String> _selectedFoods = [];
   bool _isSelectionMode = false;
 
@@ -149,17 +149,6 @@ class _FavoriteMealDetailState extends ConsumerState<FavoriteMealDetail> {
         },
       );
     }
-  }
-
-  void _deleteSelectedFoods() async {
-    final mealsService = ref.read(mealsServiceProvider);
-    for (final foodId in _selectedFoods) {
-      await mealsService.removeFoodFromFavoriteMeal(userId: widget.meal.userId, mealId: widget.meal.id!, myFoodId: foodId);
-    }
-    setState(() {
-      _selectedFoods.clear();
-      _isSelectionMode = false;
-    });
   }
 
   void _removeFood(String foodId) async {

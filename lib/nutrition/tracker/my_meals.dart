@@ -17,7 +17,6 @@ class FavouritesMeals extends ConsumerWidget {
     final userId = userService.getCurrentUserId();
 
     return Scaffold(
- 
       body: FutureBuilder<List<meals.Meal>>(
         future: mealsService.getFavoriteMeals(userId),
         builder: (context, snapshot) {
@@ -53,7 +52,11 @@ class FavouritesMeals extends ConsumerWidget {
             onPressed: (_) async {
               final mealsService = ref.read(mealsServiceProvider);
               await mealsService.deleteFavoriteMeal(meal.userId, meal.id!);
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Favourite meal deleted')));
+              if (context.mounted) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Favourite meal deleted')));
+                });
+              }
             },
             backgroundColor: Colors.red,
             foregroundColor: Colors.white,
@@ -124,7 +127,11 @@ class FavouriteDays extends ConsumerWidget {
             onPressed: (_) async {
               final mealsService = ref.read(mealsServiceProvider);
               await mealsService.deleteFavoriteDay(day.userId, day.id!);
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Favourite day deleted')));
+              if (context.mounted) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Favourite day deleted')));
+                });
+              }
             },
             backgroundColor: Colors.red,
             foregroundColor: Colors.white,

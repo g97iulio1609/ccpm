@@ -9,10 +9,10 @@ class VolumeDashboard extends StatefulWidget {
   const VolumeDashboard({required this.program, super.key});
 
   @override
-  _VolumeDashboardState createState() => _VolumeDashboardState();
+  VolumeDashboardState createState() => VolumeDashboardState();
 }
 
-class _VolumeDashboardState extends State<VolumeDashboard> {
+class VolumeDashboardState extends State<VolumeDashboard> {
   String _selectedDataType = 'Volume';
   String? _selectedExercise;
   bool _showChart = false;

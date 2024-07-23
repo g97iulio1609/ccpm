@@ -1,15 +1,14 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:in_app_update/in_app_update.dart';
 
 class AppServices {
-  static final AppServices _instance = AppServices._internal();
-  factory AppServices() => _instance;
-  AppServices._internal();
+  AppServices._();
+  static final AppServices instance = AppServices._();
 
   final FirebaseRemoteConfig _remoteConfig = FirebaseRemoteConfig.instance;
-
   String? _minimumVersion;
 
   Future<void> initialize() async {
@@ -20,6 +19,7 @@ class AppServices {
       ));
       await _fetchRemoteConfig();
     } catch (e) {
+      debugPrint('Error initializing AppServices: $e');
     }
   }
 
@@ -28,6 +28,7 @@ class AppServices {
       await _remoteConfig.fetchAndActivate();
       _minimumVersion = _remoteConfig.getString('minimum_app_version');
     } catch (e) {
+      debugPrint('Error fetching remote config: $e');
     }
   }
 
@@ -40,35 +41,34 @@ class AppServices {
       final PackageInfo packageInfo = await PackageInfo.fromPlatform();
       final String currentVersion = packageInfo.version;
 
-
-      final List<int> currentVersionParts =
-          currentVersion.split('.').map(int.parse).toList();
-      final List<int> minimumVersionParts =
-          _minimumVersion!.split('.').map(int.parse).toList();
-
-      for (int i = 0; i < minimumVersionParts.length; i++) {
-        if (currentVersionParts.length <= i) {
-          return false;
-        }
-        if (currentVersionParts[i] > minimumVersionParts[i]) {
-          return true;
-        }
-        if (currentVersionParts[i] < minimumVersionParts[i]) {
-     //     debugPrint('Current app version is not supported');
-          return false;
-        }
-      }
-
-    //  debugPrint('Current app version is supported');
-      return true;
+      return _compareVersions(currentVersion, _minimumVersion!);
     } catch (e) {
-     // debugPrint('Error checking app version: $e');
-      return true;
+      debugPrint('Error checking app version: $e');
+      return true; // Assume supported if there's an error
     }
   }
 
+  bool _compareVersions(String currentVersion, String minimumVersion) {
+    final List<int> currentVersionParts = _parseVersion(currentVersion);
+    final List<int> minimumVersionParts = _parseVersion(minimumVersion);
+
+    for (int i = 0; i < minimumVersionParts.length; i++) {
+      if (currentVersionParts.length <= i) return false;
+      if (currentVersionParts[i] > minimumVersionParts[i]) return true;
+      if (currentVersionParts[i] < minimumVersionParts[i]) return false;
+    }
+
+    return true;
+  }
+
+  List<int> _parseVersion(String version) {
+    return version.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+  }
+
   Future<void> checkForUpdate() async {
-    if (Platform.isAndroid) {
+    if (!Platform.isAndroid) return;
+
+    try {
       if (_minimumVersion == null) {
         await _fetchRemoteConfig();
       }
@@ -76,32 +76,26 @@ class AppServices {
       final PackageInfo packageInfo = await PackageInfo.fromPlatform();
       final String currentVersion = packageInfo.version;
 
-      final List<int> currentVersionParts =
-          currentVersion.split('.').map(int.parse).toList();
-      final List<int> minimumVersionParts =
-          _minimumVersion!.split('.').map(int.parse).toList();
+      if (!_compareVersions(currentVersion, _minimumVersion!)) {
+        await _performUpdate();
+      }
+    } catch (e) {
+      debugPrint('Error checking for update: $e');
+    }
+  }
 
-      bool shouldUpdate = false;
-      for (int i = 0; i < minimumVersionParts.length; i++) {
-        if (currentVersionParts.length <= i ||
-            currentVersionParts[i] < minimumVersionParts[i]) {
-          shouldUpdate = true;
-          break;
+  Future<void> _performUpdate() async {
+    try {
+      final AppUpdateInfo info = await InAppUpdate.checkForUpdate();
+      if (info.updateAvailability == UpdateAvailability.updateAvailable) {
+        if (info.immediateUpdateAllowed) {
+          await InAppUpdate.performImmediateUpdate();
+        } else if (info.flexibleUpdateAllowed) {
+          await InAppUpdate.startFlexibleUpdate();
         }
       }
-
-      if (shouldUpdate) {
-        final AppUpdateInfo info = await InAppUpdate.checkForUpdate();
-        if (info.updateAvailability == UpdateAvailability.updateAvailable) {
-          if (info.immediateUpdateAllowed) {
-            await InAppUpdate.performImmediateUpdate();
-          } else if (info.flexibleUpdateAllowed) {
-            await InAppUpdate.startFlexibleUpdate();
-          }
-        } else {
-        }
-      } else {
-      }
+    } catch (e) {
+      debugPrint('Error performing update: $e');
     }
   }
 }

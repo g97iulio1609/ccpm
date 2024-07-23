@@ -14,10 +14,10 @@ class TimerPage extends ConsumerStatefulWidget {
   });
 
   @override
-  _TimerPageState createState() => _TimerPageState();
+  TimerPageState createState() => TimerPageState();
 }
 
-class _TimerPageState extends ConsumerState<TimerPage>
+class TimerPageState extends ConsumerState<TimerPage>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;

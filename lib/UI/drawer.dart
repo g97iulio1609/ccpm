@@ -43,6 +43,7 @@ class CustomDrawer extends ConsumerWidget {
       'Misurazioni': '/measurements',
       'Meals Preferiti': '/mymeals',
       'Abbonamenti': '/subscriptions',
+
     };
     return routes[menuItem];
   }
@@ -64,6 +65,7 @@ class CustomDrawer extends ConsumerWidget {
       'Misurazioni': Icons.straighten,
       'Meals Preferiti': Icons.favorite,
       'Abbonamenti': Icons.subscriptions,
+
     };
     return icons[menuItem] ?? Icons.menu;
   }

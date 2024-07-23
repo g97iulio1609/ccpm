@@ -13,10 +13,10 @@ class HomeScreen extends ConsumerStatefulWidget {
   final Widget child;
 
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  HomeScreenState createState() => HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();

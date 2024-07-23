@@ -35,73 +35,72 @@ class MaxRMDashboard extends HookConsumerWidget {
   const MaxRMDashboard({super.key});
 
   @override
-@override
-Widget build(BuildContext context, WidgetRef ref) {
-  final exercisesAsyncValue = ref.watch(exercisesStreamProvider);
-  final usersService = ref.watch(userServiceProvider);
-  final exerciseRecordService = ref.watch(exerciseRecordServiceProvider);
-  final selectedExerciseController = useState<ExerciseModel?>(null);
-  final exerciseNameController = useTextEditingController();
-  final maxWeightController = useTextEditingController();
-  final repetitionsController = useTextEditingController();
-  final keepWeight = ref.watch(keepWeightProvider);
-  final dateFormat = DateFormat('yyyy-MM-dd');
+  Widget build(BuildContext context, WidgetRef ref) {
+    final exercisesAsyncValue = ref.watch(exercisesStreamProvider);
+    final usersService = ref.watch(userServiceProvider);
+    final exerciseRecordService = ref.watch(exerciseRecordServiceProvider);
+    final selectedExerciseController = useState<ExerciseModel?>(null);
+    final exerciseNameController = useTextEditingController();
+    final maxWeightController = useTextEditingController();
+    final repetitionsController = useTextEditingController();
+    final keepWeight = ref.watch(keepWeightProvider);
+    final dateFormat = DateFormat('yyyy-MM-dd');
 
-  Future<void> addRecord({
-    required String exerciseId,
-    required String exerciseName,
-    required num maxWeight,
-    required int repetitions,
-  }) async {
-    String userId = usersService.getCurrentUserId();
-    await exerciseRecordService.addExerciseRecord(
-      userId: userId,
-      exerciseId: exerciseId,
-      exerciseName: exerciseName,
-      maxWeight: maxWeight,
-      repetitions: repetitions,
-      date: dateFormat.format(DateTime.now()),
-    );
-    debugPrint('Record added: $exerciseName, Max Weight: $maxWeight, Repetitions: $repetitions');
-  }
+    Future<void> addRecord({
+      required String exerciseId,
+      required String exerciseName,
+      required num maxWeight,
+      required int repetitions,
+    }) async {
+      String userId = usersService.getCurrentUserId();
+      await exerciseRecordService.addExerciseRecord(
+        userId: userId,
+        exerciseId: exerciseId,
+        exerciseName: exerciseName,
+        maxWeight: maxWeight,
+        repetitions: repetitions,
+        date: dateFormat.format(DateTime.now()),
+      );
+      debugPrint('Record added: $exerciseName, Max Weight: $maxWeight, Repetitions: $repetitions');
+    }
 
-  return Scaffold(
-    body: Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildExerciseTypeAheadField(exercisesAsyncValue, selectedExerciseController, exerciseNameController, context),
-          _buildTextFormField(
-            controller: maxWeightController,
-            labelText: 'Max weight lifted',
-            context: context,
-            keyboardType: TextInputType.number,
-          ),
-          _buildTextFormField(
-            controller: repetitionsController,
-            labelText: 'Number of repetitions',
-            context: context,
-            keyboardType: TextInputType.number,
-          ),
-          _buildKeepWeightSwitch(context, keepWeight, ref),
-          _buildAddRecordButton(
-            context,
-            selectedExerciseController,
-            maxWeightController,
-            repetitionsController,
-            addRecord,
-            exerciseRecordService,
-            usersService,
-            keepWeight,
-          ),
-          const SizedBox(height: 20), // Aggiungi questa linea per creare spazio
-          _buildAllExercisesMaxRMs(ref, usersService, exerciseRecordService, context),
-        ],
+    return Scaffold(
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildExerciseTypeAheadField(exercisesAsyncValue, selectedExerciseController, exerciseNameController, context),
+            _buildTextFormField(
+              controller: maxWeightController,
+              labelText: 'Max weight lifted',
+              context: context,
+              keyboardType: TextInputType.number,
+            ),
+            _buildTextFormField(
+              controller: repetitionsController,
+              labelText: 'Number of repetitions',
+              context: context,
+              keyboardType: TextInputType.number,
+            ),
+            _buildKeepWeightSwitch(context, keepWeight, ref),
+            _buildAddRecordButton(
+              context,
+              selectedExerciseController,
+              maxWeightController,
+              repetitionsController,
+              addRecord,
+              exerciseRecordService,
+              usersService,
+              keepWeight,
+            ),
+            const SizedBox(height: 20),
+            _buildAllExercisesMaxRMs(ref, usersService, exerciseRecordService, context),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildExerciseTypeAheadField(
     AsyncValue<List<ExerciseModel>> exercisesAsyncValue,
@@ -205,7 +204,7 @@ Widget build(BuildContext context, WidgetRef ref) {
     );
   }
 
-Widget _buildAddRecordButton(
+  Widget _buildAddRecordButton(
     BuildContext context,
     ValueNotifier<ExerciseModel?> selectedExerciseController,
     TextEditingController maxWeightController,
@@ -237,27 +236,25 @@ Widget _buildAddRecordButton(
               repetitions: 1,
             );
 
-            if (context.mounted) {
-              if (keepWeight) {
-                debugPrint('Updating intensity while keeping weight.');
-                await exerciseRecordService.updateIntensityForProgram(
-                  usersService.getCurrentUserId(),
-                  selectedExercise.id,
-                  maxWeight,
-                );
-              } else {
-                debugPrint('Updating weights based on new max weight.');
-                await exerciseRecordService.updateWeightsForProgram(
-                  usersService.getCurrentUserId(),
-                  selectedExercise.id,
-                  maxWeight,
-                );
-              }
-
-              maxWeightController.clear();
-              repetitionsController.clear();
-              selectedExerciseController.value = null;
+            if (keepWeight) {
+              debugPrint('Updating intensity while keeping weight.');
+              await exerciseRecordService.updateIntensityForProgram(
+                usersService.getCurrentUserId(),
+                selectedExercise.id,
+                maxWeight,
+              );
+            } else {
+              debugPrint('Updating weights based on new max weight.');
+              await exerciseRecordService.updateWeightsForProgram(
+                usersService.getCurrentUserId(),
+                selectedExercise.id,
+                maxWeight,
+              );
             }
+
+            maxWeightController.clear();
+            repetitionsController.clear();
+            selectedExerciseController.value = null;
           }
         },
         style: ElevatedButton.styleFrom(
@@ -306,7 +303,12 @@ Widget _buildAddRecordButton(
                     (ex) => ex.id == record?.exerciseId,
                     orElse: () => ExerciseModel(id: '', name: 'Exercise not found', type: '', muscleGroup: ''),
                   );
-                  return _buildExerciseCard(context, record, exercise, exerciseRecordService, usersService);
+                  return ExerciseCard(
+                    record: record!,
+                    exercise: exercise,
+                    exerciseRecordService: exerciseRecordService,
+                    usersService: usersService,
+                  );
                 },
               ),
             );
@@ -322,21 +324,31 @@ Widget _buildAddRecordButton(
       ),
     );
   }
+}
 
-  Widget _buildExerciseCard(
-    BuildContext context,
-    ExerciseRecord? record,
-    ExerciseModel exercise,
-    ExerciseRecordService exerciseRecordService,
-    UsersService usersService,
-  ) {
+class ExerciseCard extends StatelessWidget {
+  final ExerciseRecord record;
+  final ExerciseModel exercise;
+  final ExerciseRecordService exerciseRecordService;
+  final UsersService usersService;
+
+  const ExerciseCard({
+    super.key,
+    required this.record,
+    required this.exercise,
+    required this.exerciseRecordService,
+    required this.usersService,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       color: Theme.of(context).colorScheme.surface,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () => _showEditDialog(context, record, exercise, exerciseRecordService, usersService),
+        onTap: () => _showEditDialog(context),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -351,12 +363,12 @@ Widget _buildAddRecordButton(
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '${record?.maxWeight} kg x ${record?.repetitions} reps',
+                    '${record.maxWeight} kg x ${record.repetitions} reps',
                     style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    record!.date,
+                    record.date,
                     style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
                   ),
                 ],
@@ -365,12 +377,12 @@ Widget _buildAddRecordButton(
                 children: [
                   IconButton(
                     icon: const Icon(Icons.edit),
-                    onPressed: () => _showEditDialog(context, record, exercise, exerciseRecordService, usersService),
+                    onPressed: () => _showEditDialog(context),
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete),
-                    onPressed: () => _showDeleteDialog(context, record, exercise, exerciseRecordService, usersService),
+                    onPressed: () => _showDeleteDialog(context),
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ],
@@ -382,81 +394,78 @@ Widget _buildAddRecordButton(
     );
   }
 
-  void _showEditDialog(
-    BuildContext context,
-    ExerciseRecord record,
-    ExerciseModel exercise,
-    ExerciseRecordService exerciseRecordService,
-    UsersService usersService,
-  ) {
-    TextEditingController maxWeightController = TextEditingController(text: record.maxWeight.toString());
-    TextEditingController repetitionsController = TextEditingController(text: record.repetitions.toString());
-
+  void _showEditDialog(BuildContext context) {
     showDialog(
-      context: context,
-      builder: (BuildContext context) {
+      context: context,builder: (BuildContext dialogContext) {
         return EditRecordDialog(
           record: record,
           exercise: exercise,
           exerciseRecordService: exerciseRecordService,
           usersService: usersService,
-          maxWeightController: maxWeightController,
-          repetitionsController: repetitionsController,
         );
       },
     );
   }
 
-  void _showDeleteDialog(
-    BuildContext context,
-    ExerciseRecord record,
-    ExerciseModel exercise,
-    ExerciseRecordService exerciseRecordService,
-    UsersService usersService,
-  ) {
+  void _showDeleteDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: Text(
             'Confirmation',
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+            style: TextStyle(color: Theme.of(dialogContext).colorScheme.onSurface),
           ),
-          backgroundColor: Theme.of(context).colorScheme.surface,
+          backgroundColor: Theme.of(dialogContext).colorScheme.surface,
           content: Text(
             'Are you sure you want to delete this record?',
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+            style: TextStyle(color: Theme.of(dialogContext).colorScheme.onSurface),
           ),
           actions: <Widget>[
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text('Cancel', style: TextStyle(color: Theme.of(dialogContext).colorScheme.primary)),
             ),
             TextButton(
-              onPressed: () async {
-                await exerciseRecordService.deleteExerciseRecord(
-                  userId: usersService.getCurrentUserId(),
-                  exerciseId: exercise.id,
-                  recordId: record.id,
-                );
-                Navigator.of(context).pop();
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _performDelete(context);
               },
-              child: Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary)),
+              child: Text('Delete', style: TextStyle(color: Theme.of(dialogContext).colorScheme.onPrimary)),
             ),
           ],
         );
       },
     );
   }
+
+  void _performDelete(BuildContext context) async {
+    try {
+      await exerciseRecordService.deleteExerciseRecord(
+        userId: usersService.getCurrentUserId(),
+        exerciseId: exercise.id,
+        recordId: record.id,
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Record deleted successfully')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete record: $e')),
+        );
+      }
+    }
+  }
 }
 
-class EditRecordDialog extends StatefulWidget {
+class EditRecordDialog extends HookConsumerWidget {
   final ExerciseRecord record;
   final ExerciseModel exercise;
   final ExerciseRecordService exerciseRecordService;
   final UsersService usersService;
-  final TextEditingController maxWeightController;
-  final TextEditingController repetitionsController;
 
   const EditRecordDialog({
     super.key,
@@ -464,19 +473,14 @@ class EditRecordDialog extends StatefulWidget {
     required this.exercise,
     required this.exerciseRecordService,
     required this.usersService,
-    required this.maxWeightController,
-    required this.repetitionsController,
   });
 
   @override
-  _EditRecordDialogState createState() => _EditRecordDialogState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final maxWeightController = useTextEditingController(text: record.maxWeight.toString());
+    final repetitionsController = useTextEditingController(text: record.repetitions.toString());
+    final keepWeight = useState(false);
 
-class _EditRecordDialogState extends State<EditRecordDialog> {
-  bool keepWeight = false;
-
-  @override
-  Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(
         'Edit Record',
@@ -486,8 +490,8 @@ class _EditRecordDialogState extends State<EditRecordDialog> {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildDialogTextFormField(widget.maxWeightController, 'Max weight', context),
-          _buildDialogTextFormField(widget.repetitionsController, 'Repetitions', context),
+          _buildDialogTextFormField(maxWeightController, 'Max weight', context),
+          _buildDialogTextFormField(repetitionsController, 'Repetitions', context),
           Row(
             children: [
               Text(
@@ -495,11 +499,9 @@ class _EditRecordDialogState extends State<EditRecordDialog> {
                 style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
               ),
               Switch(
-                value: keepWeight,
+                value: keepWeight.value,
                 onChanged: (value) {
-                  setState(() {
-                    keepWeight = value;
-                  });
+                  keepWeight.value = value;
                 },
               ),
             ],
@@ -512,44 +514,9 @@ class _EditRecordDialogState extends State<EditRecordDialog> {
           child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
         ),
         TextButton(
-          onPressed: () async {
-            double newMaxWeight = double.parse(widget.maxWeightController.text);
-            int newRepetitions = int.parse(widget.repetitionsController.text);
-
-            if (newRepetitions > 1) {
-              newMaxWeight = (newMaxWeight / (1.0278 - (0.0278 * newRepetitions))).roundToDouble();
-              newRepetitions = 1;
-            }
-
-            await widget.exerciseRecordService.updateExerciseRecord(
-              userId: widget.usersService.getCurrentUserId(),
-              exerciseId: widget.exercise.id,
-              recordId: widget.record.id,
-              maxWeight: newMaxWeight,
-              repetitions: newRepetitions,
-            );
-
-            if (context.mounted) {
-              if (keepWeight) {
-                debugPrint('Updating intensity while keeping weight.');
-                await widget.exerciseRecordService.updateIntensityForProgram(
-                  widget.usersService.getCurrentUserId(),
-                  widget.exercise.id,
-                  newMaxWeight,
-                );
-              } else {
-                debugPrint('Updating weights based on new max weight.');
-                await widget.exerciseRecordService.updateWeightsForProgram(
-                  widget.usersService.getCurrentUserId(),
-                  widget.exercise.id,
-                  newMaxWeight,
-                );
-              }
-            }
-
-            if (context.mounted) {
-              Navigator.of(context).pop();
-            }
+          onPressed: () {
+            Navigator.of(context).pop();
+            _handleSave(context, maxWeightController.text, repetitionsController.text, keepWeight.value);
           },
           child: Text('Save', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
         ),
@@ -567,5 +534,53 @@ class _EditRecordDialogState extends State<EditRecordDialog> {
       keyboardType: TextInputType.number,
       style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
     );
+  }
+
+  void _handleSave(BuildContext context, String maxWeightText, String repetitionsText, bool keepWeight) async {
+    double newMaxWeight = double.parse(maxWeightText);
+    int newRepetitions = int.parse(repetitionsText);
+
+    if (newRepetitions > 1) {
+      newMaxWeight = (newMaxWeight / (1.0278 - (0.0278 * newRepetitions))).roundToDouble();
+      newRepetitions = 1;
+    }
+
+    try {
+      await exerciseRecordService.updateExerciseRecord(
+        userId: usersService.getCurrentUserId(),
+        exerciseId: exercise.id,
+        recordId: record.id,
+        maxWeight: newMaxWeight,
+        repetitions: newRepetitions,
+      );
+
+      if (keepWeight) {
+        debugPrint('Updating intensity while keeping weight.');
+        await exerciseRecordService.updateIntensityForProgram(
+          usersService.getCurrentUserId(),
+          exercise.id,
+          newMaxWeight,
+        );
+      } else {
+        debugPrint('Updating weights based on new max weight.');
+        await exerciseRecordService.updateWeightsForProgram(
+          usersService.getCurrentUserId(),
+          exercise.id,
+          newMaxWeight,
+        );
+      }
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Record updated successfully')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update record: $e')),
+        );
+      }
+    }
   }
 }

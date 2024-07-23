@@ -26,10 +26,10 @@ class SubmitButton extends ConsumerStatefulWidget {
   final ValueNotifier<String> userGender;
 
   @override
-  _SubmitButtonState createState() => _SubmitButtonState();
+  SubmitButtonState createState() => SubmitButtonState();
 }
 
-class _SubmitButtonState extends ConsumerState<SubmitButton> {
+class SubmitButtonState extends ConsumerState<SubmitButton> {
   @override
   Widget build(BuildContext context) {
     final userRole = ref.watch(userRoleProvider);

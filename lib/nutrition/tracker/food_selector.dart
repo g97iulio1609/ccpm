@@ -53,31 +53,39 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
     final mealsService = ref.read(mealsServiceProvider);
     final food = await mealsService.getMyFoodById(widget.meal.userId, foodId);
     if (food != null) {
-      setState(() {
-        _updateLoadedFood(food);
-        _updateMacronutrientValues(food);
-      });
+      if (mounted) {
+        setState(() {
+          _updateLoadedFood(food);
+          _updateMacronutrientValues(food);
+        });
+      }
       return food;
     } else {
-      setState(() {
-        _resetLoadedFood();
-      });
+      if (mounted) {
+        setState(() {
+          _resetLoadedFood();
+        });
+      }
       return null;
     }
   }
 
   void _updateLoadedFood(macros.Food food) {
-    _selectedFoodId = food.id!;
-    _loadedFood = food;
-    _originalFood = food;
-    _quantity = food.quantity ?? 100.0;
-    _unit = food.quantityUnit;
-    _quantityController.text = _quantity.toString();
+    setState(() {
+      _selectedFoodId = food.id!;
+      _loadedFood = food;
+      _originalFood = food;
+      _quantity = food.quantity ?? 100.0;
+      _unit = food.quantityUnit;
+      _quantityController.text = _quantity.toString();
+    });
   }
 
   void _resetLoadedFood() {
-    _selectedFoodId = '';
-    _loadedFood = null;
+    setState(() {
+      _selectedFoodId = '';
+      _loadedFood = null;
+    });
   }
 
   void _updateMacronutrientValues(macros.Food food) {
@@ -107,7 +115,9 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
     } catch (e) {
       debugPrint('saveFood: Error saving food: $e');
     } finally {
-      context.pop();
+      if (mounted) {
+        context.pop();
+      }
     }
   }
 

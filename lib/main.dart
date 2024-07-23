@@ -13,9 +13,9 @@ void main() async {
   
   await initializeNotifications();
   await requestNotificationPermission();
-  await AppServices().initialize();
+  await AppServices.instance.initialize();
 
-  final bool isVersionSupported = await AppServices().isAppVersionSupported();
+  final bool isVersionSupported = await AppServices.instance.isAppVersionSupported();
   if (isVersionSupported) {
     runApp(const ProviderScope(child: MyApp()));
   } else {
@@ -58,7 +58,7 @@ class UnsupportedVersionApp extends StatelessWidget {
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () async {
-                    await AppServices().checkForUpdate();
+                    await AppServices.instance.checkForUpdate();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,

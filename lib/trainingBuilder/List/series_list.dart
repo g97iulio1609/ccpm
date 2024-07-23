@@ -45,10 +45,10 @@ class TrainingProgramSeriesList extends ConsumerStatefulWidget {
   });
 
   @override
-  _TrainingProgramSeriesListState createState() => _TrainingProgramSeriesListState();
+  TrainingProgramSeriesListState createState() => TrainingProgramSeriesListState();
 }
 
-class _TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeriesList> {
+class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeriesList> {
   late num latestMaxWeight;
 
   @override
