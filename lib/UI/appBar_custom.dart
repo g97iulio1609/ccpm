@@ -40,8 +40,10 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
         return 'Coaching';
       case '/user_programs':
         return 'I Miei Allenamenti';
-      case '/exercises_list':
+         case '/exercises_list':
         return 'Esercizi';
+      case '/subscriptions':
+        return 'Abbonamenti';
       case '/maxrmdashboard':
         return 'Massimali';
       case '/user_profile':
