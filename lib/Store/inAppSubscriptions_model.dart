@@ -1,5 +1,3 @@
-import 'package:in_app_purchase/in_app_purchase.dart';
-
 enum SubscriptionStatus { active, canceled, gracePeriod, expired }
 
 class SubscriptionPlan {
@@ -43,6 +41,8 @@ class Product {
   final String title;
   final String description;
   final String price;
+  final double rawPrice;
+  final String currencyCode;
   final String? couponCode;
 
   Product({
@@ -50,6 +50,8 @@ class Product {
     required this.title,
     required this.description,
     required this.price,
+    required this.rawPrice,
+    required this.currencyCode,
     this.couponCode,
   });
 }

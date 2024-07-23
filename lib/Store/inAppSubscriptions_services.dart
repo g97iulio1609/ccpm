@@ -27,7 +27,7 @@ class InAppPurchaseService {
     }
     debugPrint("Store is available");
 
-    const Set<String> kIds = {'alphanessoneplussubscription'};
+    const Set<String> kIds = {'alphanessoneplussubscription', 'coachingalphaness'};
     debugPrint("Querying product details for IDs: $kIds");
     final ProductDetailsResponse response = await _inAppPurchase.queryProductDetails(kIds);
 
@@ -36,7 +36,24 @@ class InAppPurchaseService {
     }
 
     debugPrint("Products found: ${response.productDetails.map((pd) => pd.id).toList()}");
+    debugPrint("Products found: ${response.productDetails.map((pd) => pd.rawPrice).toList()}");
+
     _productDetails.addAll(response.productDetails);
+
+    // Grouping products by their IDs and sorting each group by their raw price
+    Map<String, List<ProductDetails>> groupedProducts = {};
+    for (var product in _productDetails) {
+      if (!groupedProducts.containsKey(product.id)) {
+        groupedProducts[product.id] = [];
+      }
+      groupedProducts[product.id]?.add(product);
+    }
+
+    for (var key in groupedProducts.keys) {
+      groupedProducts[key]?.sort((a, b) => a.rawPrice.compareTo(b.rawPrice));
+    }
+
+    _productDetailsByProductId = groupedProducts;
   }
 
   Future<void> makePurchase(ProductDetails productDetails) async {
@@ -88,4 +105,6 @@ class InAppPurchaseService {
 
   List<ProductDetails> get productDetails => _productDetails;
   List<Purchase> get purchases => _purchases;
+  Map<String, List<ProductDetails>> _productDetailsByProductId = {};
+  Map<String, List<ProductDetails>> get productDetailsByProductId => _productDetailsByProductId;
 }

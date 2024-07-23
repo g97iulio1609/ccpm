@@ -100,10 +100,38 @@ class InAppSubscriptionsPageState extends State<InAppSubscriptionsPage> {
     );
   }
 
+  String _getPlanTitle(int index, String productId) {
+    if (productId == 'alphanessoneplussubscription') {
+      switch (index) {
+        case 0:
+          return 'AlphanessOne+ Monthly Plan';
+        case 1:
+          return 'AlphanessOne+ Quarterly Plan';
+        case 2:
+          return 'AlphanessOne+ Semi-Annual Plan';
+           case 3:
+          return 'AlphanessOne+ Yearly Plan';
+        default:
+          return 'Subscription Plan';
+      }
+    } else if (productId == 'coachingalphaness') {
+      switch (index) {
+        case 0:
+          return 'Coaching 1:1 Monthly Plan';
+        case 1:
+          return 'Coaching 1:1 Quarterly Plan';
+          case 2:
+          return 'Coaching 1:1 Semi-Annual Plan';
+        default:
+          return 'Subscription Plan';
+      }
+    }
+    return 'Subscription Plan';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-    
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -119,52 +147,53 @@ class InAppSubscriptionsPageState extends State<InAppSubscriptionsPage> {
                   onPressed: _showPromoCodeDialog,
                 ),
                 const SizedBox(height: 24),
-                const Text(
-                  'Available Subscriptions',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                ..._inAppPurchaseService.productDetails.map((productDetails) {
-                  debugPrint("Displaying product: ${productDetails.id}");
-                  return Card(
-                    elevation: 4,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            productDetails.title,
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            productDetails.description,
-                            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                productDetails.price,
-                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
-                              ),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ..._inAppPurchaseService.productDetailsByProductId.entries.expand((entry) {
+                  final productDetailsList = entry.value;
+                  return productDetailsList.asMap().entries.map((mapEntry) {
+                    final index = mapEntry.key;
+                    final productDetails = mapEntry.value;
+                    debugPrint("Displaying product: ${productDetails.id}");
+                    String planTitle = _getPlanTitle(index, productDetails.id);
+                    return Card(
+                      elevation: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              planTitle,
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              productDetails.description,
+                              style: const TextStyle(fontSize: 14, color: Colors.white),
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  productDetails.price,
+                                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
                                 ),
-                                onPressed: () => _inAppPurchaseService.makePurchase(productDetails),
-                                child: const Text('Subscribe'),
-                              ),
-                            ],
-                          ),
-                        ],
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  ),
+                                  onPressed: () => _inAppPurchaseService.makePurchase(productDetails),
+                                  child: const Text('Subscribe'),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  );
+                    );
+                  }).toList();
                 }),
               ],
             ),
