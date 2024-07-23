@@ -1,5 +1,9 @@
 import 'dart:io';
+import 'package:alphanessone/Store/inAppSubscriptions_model.dart';
+import 'package:alphanessone/Store/inAppSubscriptions_services.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:flutter/foundation.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:in_app_update/in_app_update.dart';
 
@@ -9,6 +13,7 @@ class AppServices {
   AppServices._internal();
 
   final FirebaseRemoteConfig _remoteConfig = FirebaseRemoteConfig.instance;
+  final InAppPurchaseService _inAppPurchaseService = InAppPurchaseService();
 
   String? _minimumVersion;
 
@@ -19,7 +24,10 @@ class AppServices {
         minimumFetchInterval: const Duration(minutes: 1),
       ));
       await _fetchRemoteConfig();
+      await _inAppPurchaseService.initStoreInfo();
+      await checkSubscriptionStatus();
     } catch (e) {
+      debugPrint("Error initializing AppServices: $e");
     }
   }
 
@@ -28,6 +36,7 @@ class AppServices {
       await _remoteConfig.fetchAndActivate();
       _minimumVersion = _remoteConfig.getString('minimum_app_version');
     } catch (e) {
+      debugPrint("Error fetching remote config: $e");
     }
   }
 
@@ -39,7 +48,6 @@ class AppServices {
     try {
       final PackageInfo packageInfo = await PackageInfo.fromPlatform();
       final String currentVersion = packageInfo.version;
-
 
       final List<int> currentVersionParts =
           currentVersion.split('.').map(int.parse).toList();
@@ -54,15 +62,13 @@ class AppServices {
           return true;
         }
         if (currentVersionParts[i] < minimumVersionParts[i]) {
-     //     debugPrint('Current app version is not supported');
           return false;
         }
       }
 
-    //  debugPrint('Current app version is supported');
       return true;
     } catch (e) {
-     // debugPrint('Error checking app version: $e');
+      debugPrint('Error checking app version: $e');
       return true;
     }
   }
@@ -98,10 +104,31 @@ class AppServices {
           } else if (info.flexibleUpdateAllowed) {
             await InAppUpdate.startFlexibleUpdate();
           }
-        } else {
         }
-      } else {
       }
     }
+  }
+
+  // Metodi per gestire gli abbonamenti
+  Future<void> purchaseSubscription(String kId) async {
+    await _inAppPurchaseService.purchaseSubscription(kId);
+  }
+
+  Future<void> redeemPromoCode(String promoCode) async {
+    await _inAppPurchaseService.redeemPromoCode(promoCode);
+  }
+
+  Future<void> checkSubscriptionStatus() async {
+    await _inAppPurchaseService.checkSubscriptionStatus();
+  }
+
+  List<SubscriptionPlan> get availableSubscriptionPlans => _inAppPurchaseService.availablePlans;
+
+  List<Subscription> get activeSubscriptions => _inAppPurchaseService.activeSubscriptions;
+
+  Stream<List<PurchaseDetails>> get purchaseStream => _inAppPurchaseService.purchaseStream;
+
+  void handlePurchaseUpdate(PurchaseDetails purchaseDetails) {
+    _inAppPurchaseService.handlePurchaseUpdate(purchaseDetails);
   }
 }
