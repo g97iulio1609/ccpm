@@ -152,9 +152,14 @@ class FirestoreService {
     List<Week> weeks =
         weeksSnapshot.docs.map((doc) => Week.fromFirestore(doc)).toList();
 
+    // Esegui le query dei workout in parallelo
+    List<Future<void>> fetchWorkoutsFutures = [];
     for (Week week in weeks) {
-      week.workouts = await _fetchWorkouts(week.id!);
+      fetchWorkoutsFutures.add(_fetchWorkouts(week.id!).then((workouts) {
+        week.workouts = workouts;
+      }));
     }
+    await Future.wait(fetchWorkoutsFutures);
 
     return weeks;
   }
@@ -169,9 +174,14 @@ class FirestoreService {
     List<Workout> workouts =
         workoutsSnapshot.docs.map((doc) => Workout.fromFirestore(doc)).toList();
 
+    // Esegui le query degli esercizi in parallelo
+    List<Future<void>> fetchExercisesFutures = [];
     for (Workout workout in workouts) {
-      workout.exercises = await _fetchExercises(workout.id!);
+      fetchExercisesFutures.add(_fetchExercises(workout.id!).then((exercises) {
+        workout.exercises = exercises;
+      }));
     }
+    await Future.wait(fetchExercisesFutures);
 
     return workouts;
   }
@@ -190,9 +200,14 @@ class FirestoreService {
       return exercise;
     }).toList();
 
+    // Esegui le query delle serie in parallelo
+    List<Future<void>> fetchSeriesFutures = [];
     for (Exercise exercise in exercises) {
-      exercise.series = await _fetchSeries(exercise.id!);
+      fetchSeriesFutures.add(_fetchSeries(exercise.id!).then((series) {
+        exercise.series = series;
+      }));
     }
+    await Future.wait(fetchSeriesFutures);
 
     return exercises;
   }
