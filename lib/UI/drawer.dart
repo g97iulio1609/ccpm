@@ -43,7 +43,6 @@ class CustomDrawer extends ConsumerWidget {
       'Misurazioni': '/measurements',
       'Meals Preferiti': '/mymeals',
       'Abbonamenti': '/subscriptions',
-            'Store Dashboard': '/subscriptionsmanagement',
 
     };
     return routes[menuItem];
@@ -66,7 +65,6 @@ class CustomDrawer extends ConsumerWidget {
       'Misurazioni': Icons.straighten,
       'Meals Preferiti': Icons.favorite,
       'Abbonamenti': Icons.subscriptions,
-      'Store Dashboard': Icons.subscriptions,
 
     };
     return icons[menuItem] ?? Icons.menu;
@@ -74,7 +72,7 @@ class CustomDrawer extends ConsumerWidget {
 
   List<String> _getMenuItems(String userRole) {
     final adminItems = [
-      'Coaching', 'Association', 'I Miei Allenamenti', 'Abbonamenti','Store Dashboard',
+      'Coaching', 'Association', 'I Miei Allenamenti', 'Abbonamenti',
       'Galleria Allenamenti', 'Esercizi', 'Massimali', 'Profilo Utente',
       'Gestione Utenti', 'Fabbisogno Calorico', 'Calcolatore Macronutrienti',
       'Food Tracker', 'Food Management', 'Misurazioni', 'Meals Preferiti'
