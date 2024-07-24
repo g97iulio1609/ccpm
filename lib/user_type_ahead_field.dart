@@ -73,6 +73,7 @@ class UserTypeAheadField extends ConsumerWidget {
           onSelected: (UserModel suggestion) {
             controller.text = suggestion.name;
             onSelected(suggestion);
+            FocusScope.of(context).unfocus(); // Close the dropdown
           },
           emptyBuilder: (context) => const Padding(
             padding: EdgeInsets.all(8.0),
