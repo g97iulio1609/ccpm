@@ -28,7 +28,7 @@ final filteredUsersStreamProvider = StreamProvider.autoDispose<List<UserModel>>(
         .map((association) => association.athleteId)
         .toSet();
 
-    yield* userService.getUsers().map((users) => 
+    yield* userService.getUsers().map((users) =>
       users.where((user) => acceptedAthleteIds.contains(user.id)).toList()
     );
   } else {
@@ -59,7 +59,7 @@ class UserTypeAheadField extends ConsumerWidget {
         return TypeAheadField<UserModel>(
           suggestionsCallback: (pattern) async {
             onChanged(pattern);
-            return users.where((user) => 
+            return users.where((user) =>
               user.name.toLowerCase().contains(pattern.toLowerCase()) ||
               user.email.toLowerCase().contains(pattern.toLowerCase())
             ).toList();
@@ -84,7 +84,7 @@ class UserTypeAheadField extends ConsumerWidget {
           decorationBuilder: (context, child) {
             return Material(
               elevation: 4,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
               child: child,
             );
           },
@@ -97,9 +97,15 @@ class UserTypeAheadField extends ConsumerWidget {
               controller: controller,
               focusNode: focusNode,
               onChanged: onChanged,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
                 labelText: 'Search User',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+                fillColor: Theme.of(context).colorScheme.surface,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                prefixIcon: Icon(Icons.person, color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
             );
           },
