@@ -1,5 +1,7 @@
 import 'package:alphanessone/Viewer/models/timer_model.dart';
 import 'package:alphanessone/Coaching/coaching_association.dart';
+import 'package:alphanessone/exerciseManager/exercise_model.dart';
+import 'package:alphanessone/exercise_stats.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -223,6 +225,22 @@ class AppRouter {
           GoRoute(
             path: '/maxrmdashboard',
             builder: (context, state) => const MaxRMDashboard(),
+                      routes:[
+
+                        GoRoute(
+  path: 'exercise_stats/:exerciseId',
+  builder: (context, state) {
+    final exerciseId = state.pathParameters['exerciseId']!;
+    final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final exercise = state.extra as ExerciseModel;
+    return ExerciseStats(
+      exercise: exercise,
+      userId: userId,
+    );
+  },
+),
+                      ]
+
           ),
           GoRoute(
             path: '/users_dashboard',

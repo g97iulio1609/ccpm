@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:rxdart/rxdart.dart';
@@ -348,7 +349,9 @@ class ExerciseCard extends StatelessWidget {
       color: Theme.of(context).colorScheme.surface,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () => _showEditDialog(context),
+  onTap: () {
+  context.push('/maxrmdashboard/exercise_stats/${exercise.id}', extra: exercise);
+},
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
