@@ -349,32 +349,33 @@ class ExerciseCard extends StatelessWidget {
       color: Theme.of(context).colorScheme.surface,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-  onTap: () {
-  context.push('/maxrmdashboard/exercise_stats/${exercise.id}', extra: exercise);
-},
+        onTap: () {
+          context.push('/maxrmdashboard/exercise_stats/${exercise.id}', extra: exercise);
+        },
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    exercise.name,
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Theme.of(context).colorScheme.onSurface),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '${record.maxWeight} kg x ${record.repetitions} reps',
-                    style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    record.date,
-                    style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                  ),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      exercise.name,
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Theme.of(context).colorScheme.onSurface),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${record.maxWeight} kg x ${record.repetitions} reps',
+                      style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      record.date,
+                      style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    ),
+                  ],
+                ),
               ),
               Row(
                 children: [
@@ -399,7 +400,8 @@ class ExerciseCard extends StatelessWidget {
 
   void _showEditDialog(BuildContext context) {
     showDialog(
-      context: context,builder: (BuildContext dialogContext) {
+      context: context,
+      builder: (BuildContext dialogContext) {
         return EditRecordDialog(
           record: record,
           exercise: exercise,
