@@ -8,11 +8,13 @@ class AutoTypeField extends ConsumerWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
   final void Function(Food) onSelected;
+  final void Function(String) onChanged;
 
   const AutoTypeField({
     required this.controller,
     required this.focusNode,
     required this.onSelected,
+    required this.onChanged,
     super.key,
   });
 
@@ -22,6 +24,7 @@ class AutoTypeField extends ConsumerWidget {
 
     return TypeAheadField<Food>(
       suggestionsCallback: (pattern) async {
+        onChanged(pattern);
         try {
           return await macrosService.searchFoods(pattern).first;
         } catch (e) {
@@ -29,7 +32,6 @@ class AutoTypeField extends ConsumerWidget {
           return [];
         }
       },
-      debounceDuration: const Duration(milliseconds: 500),
       itemBuilder: (context, Food suggestion) {
         return ListTile(
           title: Text(suggestion.name),
@@ -42,14 +44,8 @@ class AutoTypeField extends ConsumerWidget {
       onSelected: (Food suggestion) {
         controller.text = suggestion.name;
         onSelected(suggestion);
+        FocusScope.of(context).unfocus(); // Close the dropdown
       },
-      errorBuilder: (context, error) => Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Text(
-          'Error: $error',
-          style: const TextStyle(color: Colors.red),
-        ),
-      ),
       emptyBuilder: (context) => const Padding(
         padding: EdgeInsets.all(8.0),
         child: Text('No items found'),
@@ -60,19 +56,28 @@ class AutoTypeField extends ConsumerWidget {
       decorationBuilder: (context, child) {
         return Material(
           elevation: 4,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           child: child,
         );
       },
+      offset: const Offset(0, 8),
+      constraints: const BoxConstraints(maxHeight: 200),
       controller: controller,
       focusNode: focusNode,
       builder: (context, suggestionsController, focusNode) {
         return TextField(
           controller: controller,
           focusNode: focusNode,
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
+          onChanged: onChanged,
+          decoration: InputDecoration(
             labelText: 'Search Food',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            filled: true,
+            fillColor: Theme.of(context).colorScheme.surface,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            prefixIcon: Icon(Icons.fastfood, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
         );
       },
