@@ -1,15 +1,12 @@
+import 'package:alphanessone/nutrition/tracker/food_selector.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import '../models&Services/macros_model.dart' as macros;
 import '../models&Services/meals_model.dart' as meals;
 import '../models&Services/meals_services.dart';
 import 'package:google_fonts/google_fonts.dart';
-
-// Add this global key
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 class FoodList extends ConsumerStatefulWidget {
   final DateTime selectedDate;
@@ -23,9 +20,6 @@ class FoodList extends ConsumerStatefulWidget {
 class FoodListState extends ConsumerState<FoodList> {
   final List<String> selectedFoods = [];
   bool isSelectionMode = false;
-
-  // Method to safely get the current context
-  BuildContext? get currentContext => navigatorKey.currentContext;
 
   @override
   Widget build(BuildContext context) {
@@ -221,7 +215,7 @@ class FoodListState extends ConsumerState<FoodList> {
             final mealsList = await getAllMeals(meal.userId);
             await showMoveDialog(ref, mealsList);
           } else {
-            ScaffoldMessenger.of(currentContext!).showSnackBar(const SnackBar(content: Text('No foods selected')));
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No foods selected')));
           }
         },
         backgroundColor: Colors.orange,
@@ -315,18 +309,15 @@ class FoodListState extends ConsumerState<FoodList> {
   }
 
   void navigateToFoodSelector(meals.Meal meal, [String? foodId]) {
-    final context = currentContext;
-    if (context == null) return;
-
-    context.push(
-      Uri(
-        path: '/food_tracker/food_selector',
-        queryParameters: foodId != null ? {'myFoodId': foodId} : null,
-      ).toString(),
-      extra: {
-        'meal': meal.toMap(),
-        'myFoodId': foodId,
-        'isFavoriteMeal': false,},
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FoodSelector(
+          meal: meal,
+          myFoodId: foodId,
+          isFavoriteMeal: false,
+        ),
+      ),
     );
   }
 
@@ -353,8 +344,6 @@ class FoodListState extends ConsumerState<FoodList> {
   }
 
   Future<void> showDuplicateDialog(WidgetRef ref, meals.Meal sourceMeal) async {
-    final context = currentContext;
-    if (context == null) return;
 
     final mealsList = await getAllMeals(sourceMeal.userId);
     final selectedMeal = await showSelectMealDialog(mealsList, 'Select Destination Meal');
@@ -372,9 +361,6 @@ class FoodListState extends ConsumerState<FoodList> {
   }
 
   Future<meals.Meal?> showSelectMealDialog(List<meals.Meal> mealsList, String title) {
-    final context = currentContext;
-    if (context == null) return Future.value(null);
-
     return showDialog<meals.Meal>(
       context: context,
       builder: (BuildContext context) {
@@ -400,9 +386,6 @@ class FoodListState extends ConsumerState<FoodList> {
   }
 
   Future<meals.Meal?> showSelectFavoriteDialog(List<meals.Meal> favoriteMeals) {
-    final context = currentContext;
-    if (context == null) return Future.value(null);
-
     return showDialog<meals.Meal>(
       context: context,
       builder: (BuildContext context) {
@@ -428,9 +411,6 @@ class FoodListState extends ConsumerState<FoodList> {
   }
 
   Future<bool?> showOverwriteDialog() {
-    final context = currentContext;
-    if (context == null) return Future.value(null);
-
     return showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
@@ -475,9 +455,6 @@ class FoodListState extends ConsumerState<FoodList> {
   }
 
   Future<bool?> showConfirmationDialog(String title, String content) {
-    final context = currentContext;
-    if (context == null) return Future.value(null);
-
     return showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
@@ -494,9 +471,6 @@ class FoodListState extends ConsumerState<FoodList> {
   }
 
   Future<String?> showFavoriteNameDialog() {
-    final context = currentContext;
-    if (context == null) return Future.value(null);
-
     final TextEditingController nameController = TextEditingController();
     return showDialog<String>(
       context: context,
@@ -542,10 +516,7 @@ class FoodListState extends ConsumerState<FoodList> {
       isSelectionMode = true;
       selectedFoods.add(foodId);
     });
-    final context = currentContext;
-    if (context != null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selection mode enabled')));
-    }
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selection mode enabled')));
   }
 
   void onFoodTap(meals.Meal meal, String foodId) {
