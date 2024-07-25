@@ -78,6 +78,7 @@ dependencies:
   riverpod: ^2.5.1
   cloud_functions: ^5.0.3
   collection: ^1.18.0
+  flutter_svg: ^2.0.10+1
 
   
 
@@ -134,7 +135,8 @@ flutter:
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
 
-
+  assets:
+    - assets/training_background.svg
 
 
 flutter_launcher_icons:
