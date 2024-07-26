@@ -28,7 +28,7 @@ import '../nutrition/tracker/food_selector.dart';
 import '../nutrition/tracker/favorite_meal_detail.dart';
 import '../nutrition/tracker/daily_food_tracker.dart';
 import '../nutrition/tracker/my_meals.dart';
-import '../store/inAppSubscriptions.dart';
+import '../store/inAppPurchase.dart';
 import '../exerciseManager/exercises_manager.dart';
 import '../providers/providers.dart';
 import '../nutrition/models&Services/meals_model.dart';

@@ -17,6 +17,8 @@ void main() async {
 
   final bool isVersionSupported = await AppServices.instance.isAppVersionSupported();
   if (isVersionSupported) {
+    // Controlla lo stato dell'abbonamento all'avvio dell'app
+    await AppServices.instance.checkSubscriptionStatus();
     runApp(const ProviderScope(child: MyApp()));
   } else {
     runApp(const UnsupportedVersionApp());

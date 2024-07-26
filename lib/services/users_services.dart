@@ -9,7 +9,6 @@ import 'package:rxdart/rxdart.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 
-
 import '../models/user_model.dart';
 import '../providers/providers.dart';
 
@@ -17,7 +16,8 @@ class UniqueNumberGenerator {
   static String generate() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     final random = Random.secure();
-    return List.generate(8, (index) => chars[random.nextInt(chars.length)]).join();
+    return List.generate(8, (index) => chars[random.nextInt(chars.length)])
+        .join();
   }
 }
 
@@ -61,7 +61,8 @@ class UsersService {
     _userChangesSubscription?.cancel();
     _userChangesSubscription =
         _firestore.collection('users').snapshots().listen((snapshot) {
-      final users = snapshot.docs.map((doc) => UserModel.fromFirestore(doc)).toList();
+      final users =
+          snapshot.docs.map((doc) => UserModel.fromFirestore(doc)).toList();
       _usersStreamController.add(_filterUsers(users));
     });
   }
@@ -107,6 +108,68 @@ class UsersService {
     }
   }
 
+  Future<void> updateUserRole(String userId, String newRole) async {
+    try {
+      await _firestore.collection('users').doc(userId).update({
+        'role': newRole,
+      });
+      debugPrint('User role updated successfully to: $newRole');
+    } catch (e) {
+      debugPrint('Error updating user role: $e');
+      throw Exception('Failed to update user role');
+    }
+  }
+
+  Future<void> updateUserSubscription(String userId, DateTime expiryDate,
+      String productId, String purchaseToken) async {
+    try {
+      await _firestore.collection('users').doc(userId).update({
+        'subscriptionExpiryDate': Timestamp.fromDate(expiryDate),
+        'productId': productId,
+        'purchaseToken': purchaseToken,
+      });
+      debugPrint(
+          'User subscription expiry date, product ID, and purchase token updated successfully.');
+    } catch (e) {
+      debugPrint('Error updating user subscription expiry date: $e');
+      throw Exception('Failed to update user subscription expiry date');
+    }
+  }
+
+  Future<void> checkAndExpireSubscriptions() async {
+    try {
+      final now = DateTime.now();
+      final users = await _firestore.collection('users').get();
+
+      for (var userDoc in users.docs) {
+        final userData = userDoc.data();
+        final expiryDate =
+            (userData['subscriptionExpiryDate'] as Timestamp?)?.toDate();
+        final currentRole = userData['role'] as String?;
+
+        if (expiryDate != null &&
+            expiryDate.isBefore(now) &&
+            (currentRole == 'client_premium' || currentRole == 'coach')) {
+          await updateUserRole(userDoc.id, 'client');
+          debugPrint(
+              'User ${userDoc.id} role reverted to client due to subscription expiry');
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking and expiring subscriptions: $e');
+      throw Exception('Failed to check and expire subscriptions');
+    }
+  }
+
+  Future<DateTime?> getUserSubscriptionExpiryDate(String userId) async {
+    final userDoc = await _firestore.collection('users').doc(userId).get();
+    return userDoc.data()?['subscriptionExpiryDate']?.toDate();
+  }
+
+  String getCurrentUserId() {
+    return _auth.currentUser?.uid ?? '';
+  }
+
   Future<void> fetchUserRole() async {
     final user = _auth.currentUser;
     if (user != null) {
@@ -119,14 +182,11 @@ class UsersService {
     return _ref.read(userRoleProvider);
   }
 
-  String getCurrentUserId() {
-    return _auth.currentUser?.uid ?? '';
-  }
-
   Future<void> setUserRole(String userId) async {
     final userDoc = await _firestore.collection('users').doc(userId).get();
     if (userDoc.exists) {
-      final String userRole = (userDoc.data() as Map<String, dynamic>)['role'] ?? 'client';
+      final String userRole =
+          (userDoc.data() as Map<String, dynamic>)['role'] ?? 'client';
       _ref.read(userRoleProvider.notifier).state = userRole;
     }
   }
@@ -140,32 +200,38 @@ class UsersService {
     return userDoc.exists ? UserModel.fromFirestore(userDoc) : null;
   }
 
-final FirebaseFunctions _functions = FirebaseFunctions.instance;
+  final FirebaseFunctions _functions = FirebaseFunctions.instance;
 
   Future<void> deleteUser(String userId) async {
     try {
-      debugPrint('Iniziando il processo di eliminazione per l\'utente con ID: $userId');
+      debugPrint(
+          'Iniziando il processo di eliminazione per l\'utente con ID: $userId');
 
       // Ottieni il ruolo dell'utente corrente
       String currentUserRole = getCurrentUserRole();
       debugPrint('Ruolo dell\'utente corrente: $currentUserRole');
 
-      debugPrint('Tentativo di ottenere il documento dell\'utente da Firestore');
+      debugPrint(
+          'Tentativo di ottenere il documento dell\'utente da Firestore');
       // Ottieni il documento dell'utente da eliminare
       final userDoc = await _firestore.collection('users').doc(userId).get();
-      
+
       if (userDoc.exists) {
         debugPrint('Documento dell\'utente trovato in Firestore');
         if (currentUserRole == 'admin') {
-          debugPrint('Utente corrente è admin. Tentativo di chiamare la Cloud Function');
+          debugPrint(
+              'Utente corrente è admin. Tentativo di chiamare la Cloud Function');
           // Chiama la Cloud Function per eliminare l'utente
-          final result = await _functions.httpsCallable('deleteUser').call({'userId': userId});
+          final result = await _functions
+              .httpsCallable('deleteUser')
+              .call({'userId': userId});
           debugPrint('Risultato della Cloud Function: ${result.data}');
           if (result.data['success'] != true) {
             throw Exception('Failed to delete user via Cloud Function');
           }
         } else {
-          debugPrint('Utente corrente non è admin. Verificando se sta eliminando il proprio account');
+          debugPrint(
+              'Utente corrente non è admin. Verificando se sta eliminando il proprio account');
           // Per utenti non-admin (ad es., utenti che eliminano il proprio account)
           User? currentUser = _auth.currentUser;
           if (currentUser != null && currentUser.uid == userId) {
@@ -173,22 +239,25 @@ final FirebaseFunctions _functions = FirebaseFunctions.instance;
             // Elimina l'autenticazione dell'utente
             await currentUser.delete();
             debugPrint('Autenticazione dell\'utente eliminata');
-            
+
             // Elimina il documento Firestore dell'utente
             await _firestore.collection('users').doc(userId).delete();
             debugPrint('Documento Firestore dell\'utente eliminato');
-            
+
             // Disconnetti l'utente
             await _auth.signOut();
             debugPrint('Utente disconnesso');
           } else {
-            throw Exception('Gli utenti non-admin possono eliminare solo il proprio account.');
+            throw Exception(
+                'Gli utenti non-admin possono eliminare solo il proprio account.');
           }
         }
-        
+
         debugPrint('Aggiornamento dello stream degli utenti');
         // Aggiorna lo stream degli utenti
-        final updatedUsers = _usersStreamController.value.where((user) => user.id != userId).toList();
+        final updatedUsers = _usersStreamController.value
+            .where((user) => user.id != userId)
+            .toList();
         _usersStreamController.add(updatedUsers);
         debugPrint('Stream degli utenti aggiornato');
       } else {
@@ -196,17 +265,19 @@ final FirebaseFunctions _functions = FirebaseFunctions.instance;
         throw Exception('Utente non trovato in Firestore.');
       }
 
-      debugPrint('Processo di eliminazione completato con successo per l\'utente con ID: $userId');
+      debugPrint(
+          'Processo di eliminazione completato con successo per l\'utente con ID: $userId');
     } catch (e) {
       debugPrint('Errore durante l\'eliminazione dell\'utente: $e');
       throw Exception("Errore durante l'eliminazione dell'utente: $e");
     }
   }
+
   Future<void> updateUser(String userId, Map<String, dynamic> data) async {
     await _firestore.collection('users').doc(userId).update(data);
   }
 
-   Future<void> createUser({
+  Future<void> createUser({
     required String name,
     required String email,
     required String password,
@@ -222,7 +293,7 @@ final FirebaseFunctions _functions = FirebaseFunctions.instance;
         if (role == 'coach') {
           uniqueNumber = await _generateUniqueNumber();
         }
-        
+
         await _firestore.collection('users').doc(newUser.uid).set({
           'name': name,
           'email': email,
@@ -262,7 +333,7 @@ final FirebaseFunctions _functions = FirebaseFunctions.instance;
         .where('uniqueNumber', isEqualTo: uniqueNumber)
         .limit(1)
         .get();
-    
+
     if (querySnapshot.docs.isNotEmpty) {
       return UserModel.fromFirestore(querySnapshot.docs.first);
     }
