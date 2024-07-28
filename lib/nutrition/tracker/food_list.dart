@@ -10,8 +10,9 @@ import 'package:google_fonts/google_fonts.dart';
 
 class FoodList extends ConsumerStatefulWidget {
   final DateTime selectedDate;
+  final String? userId;
 
-  const FoodList({required this.selectedDate, super.key});
+  const FoodList({required this.selectedDate, this.userId, super.key});
 
   @override
   FoodListState createState() => FoodListState();
@@ -22,29 +23,51 @@ class FoodListState extends ConsumerState<FoodList> {
   bool isSelectionMode = false;
 
   @override
+  void initState() {
+    super.initState();
+    _initializeData();
+  }
+
+  Future<void> _initializeData() async {
+    if (widget.userId != null) {
+      final mealsService = ref.read(mealsServiceProvider);
+      await mealsService.createDailyStatsIfNotExist(widget.userId!, widget.selectedDate);
+      await mealsService.createMealsIfNotExist(widget.userId!, widget.selectedDate);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final mealsService = ref.watch(mealsServiceProvider);
-    final userService = ref.watch(usersServiceProvider);
-    final userId = userService.getCurrentUserId();
+    final userId = widget.userId;
 
-    return Scaffold(
-      body: StreamBuilder<List<meals.Meal>>(
-        stream: mealsService.getUserMealsByDate(userId: userId, date: widget.selectedDate),
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            final mealsList = snapshot.data!;
-            return ListView(
-              children: buildMealSections(context, ref, mealsList, userId),
-            );
-          } else if (snapshot.hasError) {
-            return buildError(context, snapshot.error.toString());
-          } else {
-            return const Center(child: CircularProgressIndicator());
-          }
-        },
-      ),
+    if (userId == null) {
+      return const Center(child: Text('Please select a user.'));
+    }
+
+    return StreamBuilder<List<meals.Meal>>(
+      stream: mealsService.getUserMealsByDate(userId: userId, date: widget.selectedDate),
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          final mealsList = snapshot.data!;
+          return CustomScrollView(
+            slivers: [
+              SliverList(
+                delegate: SliverChildListDelegate(
+                  buildMealSections(context, ref, mealsList, userId),
+                ),
+              ),
+            ],
+          );
+        } else if (snapshot.hasError) {
+          return buildError(context, snapshot.error.toString());
+        } else {
+          return const Center(child: CircularProgressIndicator());
+        }
+      },
     );
   }
+
 
   List<Widget> buildMealSections(BuildContext context, WidgetRef ref, List<meals.Meal> mealsList, String userId) {
     final List<String> mealTypes = ['Breakfast', 'Lunch', 'Dinner'];
@@ -71,8 +94,12 @@ class FoodListState extends ConsumerState<FoodList> {
   }
 
   Widget buildMealSection(BuildContext context, WidgetRef ref, String mealName, meals.Meal meal, List<meals.Meal> mealsList) {
+    if (meal.userId == null || meal.id == null) {
+      return buildErrorCard(context, mealName, 'Meal data is not available.');
+    }
+
     return FutureBuilder<Map<String, double>>(
-      future: ref.watch(mealsServiceProvider).getTotalNutrientsForMeal(meal.userId, meal.id!),
+      future: ref.watch(mealsServiceProvider).getTotalNutrientsForMeal(meal.userId!, meal.id!),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           return buildMealCard(context, ref, mealName, meal, snapshot.data!);
@@ -140,7 +167,7 @@ class FoodListState extends ConsumerState<FoodList> {
 
   Widget buildFoodList(BuildContext context, WidgetRef ref, meals.Meal meal) {
     return StreamBuilder<List<macros.Food>>(
-      stream: ref.watch(mealsServiceProvider).getFoodsForMealStream(userId: meal.userId, mealId: meal.id!),
+      stream: ref.watch(mealsServiceProvider).getFoodsForMealStream(userId: meal.userId!, mealId: meal.id!),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           return Column(
@@ -203,7 +230,7 @@ class FoodListState extends ConsumerState<FoodList> {
 
     return [
       SlidableAction(
-        onPressed: (_) async => await mealsService.removeFoodFromMeal(userId: meal.userId, mealId: meal.id!, myFoodId: food.id!),
+        onPressed: (_) async => await mealsService.removeFoodFromMeal(userId: meal.userId!, mealId: meal.id!, myFoodId: food.id!),
         backgroundColor: Colors.red,
         foregroundColor: Colors.white,
         icon: Icons.delete,
@@ -212,7 +239,7 @@ class FoodListState extends ConsumerState<FoodList> {
       SlidableAction(
         onPressed: (_) async {
           if (selectedFoods.isNotEmpty) {
-            final mealsList = await getAllMeals(meal.userId);
+            final mealsList = await getAllMeals(meal.userId!);
             await showMoveDialog(ref, mealsList);
           } else {
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No foods selected')));
@@ -248,7 +275,7 @@ class FoodListState extends ConsumerState<FoodList> {
     ];
   }
 
-  Widget buildAddSnackButton(BuildContext context, WidgetRef ref, String userId, String dailyStatsId, DateTime date, int currentSnacksCount) {
+ Widget buildAddSnackButton(BuildContext context, WidgetRef ref, String userId, String dailyStatsId, DateTime date, int currentSnacksCount) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: ElevatedButton(
@@ -330,28 +357,27 @@ class FoodListState extends ConsumerState<FoodList> {
     } else if (value == 'save_as_favorite') {
       final favoriteName = await showFavoriteNameDialog();
       if (favoriteName != null) {
-        await mealsService.saveMealAsFavorite(meal.userId, meal.id!, favoriteName: favoriteName, dailyStatsId: meal.dailyStatsId);
+        await mealsService.saveMealAsFavorite(meal.userId!, meal.id!, favoriteName: favoriteName, dailyStatsId: meal.dailyStatsId);
       }
     } else if (value == 'apply_favorite') {
-      final favoriteMeals = await mealsService.getFavoriteMeals(meal.userId);
+      final favoriteMeals = await mealsService.getFavoriteMeals(meal.userId!);
       if (favoriteMeals.isNotEmpty) {
         final selectedFavorite = await showSelectFavoriteDialog(favoriteMeals);
         if (selectedFavorite != null) {
-          await mealsService.applyFavoriteMealToCurrent(meal.userId, selectedFavorite.id!, meal.id!);
+          await mealsService.applyFavoriteMealToCurrent(meal.userId!, selectedFavorite.id!, meal.id!);
         }
       }
     }
   }
 
   Future<void> showDuplicateDialog(WidgetRef ref, meals.Meal sourceMeal) async {
-
-    final mealsList = await getAllMeals(sourceMeal.userId);
+    final mealsList = await getAllMeals(sourceMeal.userId!);
     final selectedMeal = await showSelectMealDialog(mealsList, 'Select Destination Meal');
     if (selectedMeal != null) {
       final overwriteExisting = await showOverwriteDialog();
       if (overwriteExisting != null) {
         await ref.read(mealsServiceProvider).duplicateMeal(
-              userId: sourceMeal.userId,
+              userId: sourceMeal.userId!,
               sourceMealId: sourceMeal.id!,
               targetMealId: selectedMeal.id!,
               overwriteExisting: overwriteExisting,
@@ -430,9 +456,9 @@ class FoodListState extends ConsumerState<FoodList> {
     final confirm = await showConfirmationDialog('Delete All Foods', 'Are you sure you want to delete all foods in this meal?');
     if (confirm == true) {
       final mealsService = ref.read(mealsServiceProvider);
-      final foods = await mealsService.getFoodsForMeals(userId: meal.userId, mealId: meal.id!);
+      final foods = await mealsService.getFoodsForMeals(userId: meal.userId!, mealId: meal.id!);
       for (final food in foods) {
-        await mealsService.removeFoodFromMeal(userId: meal.userId, mealId: meal.id!, myFoodId: food.id!);
+        await mealsService.removeFoodFromMeal(userId: meal.userId!, mealId: meal.id!, myFoodId: food.id!);
       }
     }
   }
@@ -441,7 +467,7 @@ class FoodListState extends ConsumerState<FoodList> {
     final selectedMeal = await showSelectMealDialog(mealsList, 'Select Destination Meal');
     if (selectedMeal != null) {
       await ref.read(mealsServiceProvider).moveFoods(
-            userId: selectedMeal.userId,
+            userId: selectedMeal.userId!,
             foodIds: selectedFoods,
             targetMealId: selectedMeal.id!,
           );

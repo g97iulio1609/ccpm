@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
-import '../user_type_ahead_field.dart';
+import '../user_autocomplete.dart';
 import '../../models/user_model.dart';
 import '../../services/coaching_service.dart';
 

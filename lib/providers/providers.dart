@@ -1,3 +1,5 @@
+import 'package:alphanessone/models/measurement_model.dart';
+import 'package:alphanessone/providers/measurement_form_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -40,3 +42,16 @@ final measurementsServiceProvider = Provider<MeasurementsService>((ref) {
   return MeasurementsService(ref.watch(firebaseFirestoreProvider));
 });
 
+// Measurements-related providers
+final measurementsProvider = StreamProvider.family<List<MeasurementModel>, String>((ref, userId) {
+  final measurementsService = ref.watch(measurementsServiceProvider);
+  return measurementsService.getMeasurements(userId: userId);
+});
+
+final selectedComparisonsProvider = StateProvider<List<MeasurementModel>>((ref) {
+  return [];
+});
+
+final measurementFormProvider = StateNotifierProvider<MeasurementFormNotifier, MeasurementFormState>((ref) {
+  return MeasurementFormNotifier();
+});

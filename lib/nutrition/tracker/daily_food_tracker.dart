@@ -1,6 +1,7 @@
-// daily_food_selector.dart
 import 'package:alphanessone/UI/appBar_custom.dart';
+import 'package:alphanessone/models/user_model.dart';
 import 'package:alphanessone/providers/providers.dart';
+import 'package:alphanessone/user_autocomplete.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models&Services/meals_services.dart';
@@ -20,29 +21,42 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
   double _targetCarbs = 0;
   double _targetProteins = 0;
   double _targetFats = 0;
+  UserModel? _selectedUser;
+  final TextEditingController _userSearchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _initializeData();
     _loadUserTDEEAndMacros();
+    _initializeUserData();
   }
 
-  Future<void> _initializeData() async {
-    final userService = ref.read(usersServiceProvider);
-    final mealsService = ref.read(mealsServiceProvider);
-    final userId = userService.getCurrentUserId();
-    final currentYear = DateTime.now().year;
+  @override
+  void dispose() {
+    _userSearchController.dispose();
+    super.dispose();
+  }
 
-    await mealsService.createDailyStatsForYear(userId, currentYear);
-    await mealsService.createMealsForYear(userId, currentYear);
+  Future<void> _initializeUserData() async {
+    final userService = ref.read(usersServiceProvider);
+    final userId = _selectedUser?.id ?? userService.getCurrentUserId();
+    await _initializeData(userId);
+  }
+
+  Future<void> _initializeData(String userId) async {
+    final mealsService = ref.read(mealsServiceProvider);
+    final currentDate = ref.read(selectedDateProvider);
+    
+    await mealsService.createDailyStatsIfNotExist(userId, currentDate);
+    await mealsService.createMealsIfNotExist(userId, currentDate);
   }
 
   Future<void> _loadUserTDEEAndMacros() async {
-    final tdeeService = ref.read(tdeeServiceProvider);
     final userService = ref.read(usersServiceProvider);
-
-    final userId = userService.getCurrentUserId();
+    final userId = _selectedUser?.id ?? userService.getCurrentUserId();
+    
+    final tdeeService = ref.read(tdeeServiceProvider);
+    
     final tdeeData = await tdeeService.getTDEEData(userId);
     final macrosData = await tdeeService.getUserMacros(userId);
 
@@ -59,76 +73,113 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
     });
   }
 
-  @override
+   @override
   Widget build(BuildContext context) {
     final selectedDate = ref.watch(selectedDateProvider);
     final dailyStats = ref.watch(dailyStatsProvider(selectedDate));
-    selectedDate.isAtSameMomentAs(DateTime(
-      DateTime.now().year,
-      DateTime.now().month,
-      DateTime.now().day,
-    ));
 
     return Scaffold(
-      body: dailyStats.when(
-        data: (stats) {
-          return Column(
-            children: [
-              Container(
-                color: Theme.of(context).colorScheme.surface,
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(child: _buildMacroItem('Protein', stats.totalProtein, _targetProteins, Theme.of(context).colorScheme.tertiary)),
-                        const SizedBox(width: 8),
-                        Expanded(child: _buildMacroItem('Carbohydrates', stats.totalCarbs, _targetCarbs, Theme.of(context).colorScheme.secondary)),
-                        const SizedBox(width: 8),
-                        Expanded(child: _buildMacroItem('Fat', stats.totalFat, _targetFats, Theme.of(context).colorScheme.error)),
-                      ],
+      body: SafeArea(
+        child: Column(
+          children: [
+            if (_shouldShowUserSelector()) 
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: _buildUserSelector(),
+              ),
+            dailyStats.when(
+              data: (stats) => Expanded(
+                child: CustomScrollView(
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: _buildMacroSummary(stats),
                     ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          stats.totalCalories.toStringAsFixed(0),
-                          style: GoogleFonts.roboto(
-                            color: Theme.of(context).colorScheme.onSurface,
-                            fontSize: 24,
-                          ),
-                        ),
-                        Text(
-                          '${(_targetCalories - stats.totalCalories).toStringAsFixed(0)} Cal Remaining',
-                          style: GoogleFonts.roboto(
-                            color: Theme.of(context).colorScheme.onSurface,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      'of $_targetCalories Cal Goal',
-                      style: GoogleFonts.roboto(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontSize: 12,
+                    SliverFillRemaining(
+                      child: FoodList(
+                        selectedDate: selectedDate,
+                        userId: _selectedUser?.id ?? ref.read(usersServiceProvider).getCurrentUserId(),
                       ),
                     ),
                   ],
                 ),
               ),
-              Expanded(
-                child: FoodList(selectedDate: selectedDate),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => Center(child: Text('Error: $err')),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMacroSummary(meals.DailyStats stats) {
+    return Container(
+      color: Theme.of(context).colorScheme.surface,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(child: _buildMacroItem('Protein', stats.totalProtein, _targetProteins, Theme.of(context).colorScheme.tertiary)),
+              const SizedBox(width: 8),
+              Expanded(child: _buildMacroItem('Carbohydrates', stats.totalCarbs, _targetCarbs, Theme.of(context).colorScheme.secondary)),
+              const SizedBox(width: 8),
+              Expanded(child: _buildMacroItem('Fat', stats.totalFat, _targetFats, Theme.of(context).colorScheme.error)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                stats.totalCalories.toStringAsFixed(0),
+                style: GoogleFonts.roboto(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: 24,
+                ),
+              ),
+              Text(
+                '${(_targetCalories - stats.totalCalories).toStringAsFixed(0)} Cal Remaining',
+                style: GoogleFonts.roboto(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: 16,
+                ),
               ),
             ],
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error: $err')),
+          ),
+          Text(
+            'of $_targetCalories Cal Goal',
+            style: GoogleFonts.roboto(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontSize: 12,
+            ),
+          ),
+        ],
       ),
+    );
+  }
+
+  bool _shouldShowUserSelector() {
+    final userService = ref.read(usersServiceProvider);
+    final currentUserRole = userService.getCurrentUserRole();
+    return currentUserRole == 'admin' || currentUserRole == 'coach';
+  }
+
+  Widget _buildUserSelector() {
+    return UserTypeAheadField(
+      controller: _userSearchController,
+      focusNode: FocusNode(),
+      onSelected: (user) async {
+        setState(() {
+          _selectedUser = user;
+          _userSearchController.text = user.name;
+        });
+        await _initializeData(user.id);
+        await _loadUserTDEEAndMacros();
+      },
+      onChanged: (value) {},
     );
   }
 

@@ -14,7 +14,7 @@ import 'exerciseManager/exercise_model.dart';
 import 'exerciseManager/exercises_services.dart';
 import 'package:alphanessone/services/users_services.dart';
 import 'package:alphanessone/services/exercise_record_services.dart';
-import '../user_type_ahead_field.dart';
+import '../user_autocomplete.dart';
 
 // Providers
 final authProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
