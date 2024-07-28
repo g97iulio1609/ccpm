@@ -191,7 +191,7 @@ class _MeasurementCards extends ConsumerWidget {
           spacing: 16,
           runSpacing: 16,
           children: [
-            _buildMeasurementCard(context, ref, 'Weight', width, referenceMeasurement?.weight, 'kg', _getWeightStatus, _getComparisons(referenceMeasurement, (m) => m.weight)),
+            _buildMeasurementCard(context, ref, 'Weight', width, referenceMeasurement?.weight, 'kg', _getBodyFatStatus, _getComparisons(referenceMeasurement, (m) => m.weight)),
             _buildMeasurementCard(context, ref, 'Height', width, referenceMeasurement?.height, 'cm', (_) => 'Normal', _getComparisons(referenceMeasurement, (m) => m.height)),
             _buildMeasurementCard(context, ref, 'BMI', width, referenceMeasurement?.bmi, '', _getBMIStatus, _getComparisons(referenceMeasurement, (m) => m.bmi)),
             _buildMeasurementCard(context, ref, 'Body Fat', width, referenceMeasurement?.bodyFatPercentage, '%', _getBodyFatStatus, _getComparisons(referenceMeasurement, (m) => m.bodyFatPercentage)),
@@ -203,7 +203,7 @@ class _MeasurementCards extends ConsumerWidget {
     );
   }
 
-  Widget _buildMeasurementCard(BuildContext context, WidgetRef ref, String title, double width, double? currentValue, String unit, String Function(double) getStatus, List<MapEntry<String, double?>> comparisonValues) {
+     Widget _buildMeasurementCard(BuildContext context, WidgetRef ref, String title, double width, double? currentValue, String unit, String Function(double) getStatus, List<MapEntry<String, double?>> comparisonValues) {
     final theme = Theme.of(context);
 
     return SizedBox(
@@ -211,7 +211,10 @@ class _MeasurementCards extends ConsumerWidget {
       child: Card(
         elevation: 2,
         color: theme.colorScheme.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Colors.white, width: 0.5),
+        ),
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Column(
@@ -283,7 +286,7 @@ class _MeasurementCards extends ConsumerWidget {
         .toList();
   }
 
-  Color _getStatusColor(String status, ThemeData theme) {
+ Color _getStatusColor(String status, ThemeData theme) {
     switch (status.toLowerCase()) {
       case 'underweight':
       case 'very low':
@@ -350,7 +353,10 @@ class _MeasurementsTrend extends StatelessWidget {
     return Card(
       elevation: 2,
       color: theme.colorScheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: Colors.white, width: 0.5),  // aggiungi questa riga
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -562,10 +568,13 @@ class _MeasurementsList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    return Card(
+   return Card(
       elevation: 2,
       color: theme.colorScheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: Colors.white, width: 0.5),  // aggiungi questa riga
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
