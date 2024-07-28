@@ -363,21 +363,22 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
     }
 
   if (currentRoute == '/measurements') {
-      actions.add(
-        IconButton(
-          onPressed: () {
-            final userId = FirebaseAuth.instance.currentUser?.uid;
-            if (userId != null) {
-              MeasurementsPage.showAddMeasurementDialog(context, ref, userId);
-            }
-          },
-          icon: const Icon(Icons.add),
-        ),
-      );
-    }
+  actions.add(
+    IconButton(
+      onPressed: () {
+        final userId = FirebaseAuth.instance.currentUser?.uid;
+        if (userId != null) {
+          MeasurementsPage.showAddMeasurementDialog(context, ref, userId);
+        }
+      },
+      icon: const Icon(Icons.add),
+    ),
+  );
+}
 
     return actions;
   }
+
 }
 
 final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());
