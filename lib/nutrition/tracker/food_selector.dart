@@ -210,6 +210,9 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
                   _updateMacronutrientValues(food);
                 });
               },
+              onChanged: (String pattern) {
+                // Handle changes in the search field if necessary
+              },
             ),
             if (_selectedFoodId.isNotEmpty || widget.myFoodId != null)
               Expanded(child: _buildSelectedFoodDetails(context)),

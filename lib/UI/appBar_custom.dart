@@ -1,5 +1,7 @@
+import 'package:alphanessone/measurements/measurements.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,13 +14,15 @@ class CustomAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget
   const CustomAppBar({
     super.key,
     required this.userRole,
-    required this.controller,
+    this.controller,
     required this.isLargeScreen,
+    this.onAddMeasurement,
   });
 
   final String userRole;
-  final TrainingProgramController controller;
+  final TrainingProgramController? controller;
   final bool isLargeScreen;
+  final VoidCallback? onAddMeasurement;
 
   @override
   ConsumerState<CustomAppBar> createState() => _CustomAppBarState();
@@ -40,7 +44,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
         return 'Coaching';
       case '/user_programs':
         return 'I Miei Allenamenti';
-         case '/exercises_list':
+      case '/exercises_list':
         return 'Esercizi';
       case '/subscriptions':
         return 'Abbonamenti';
@@ -55,7 +59,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
       case '/volume_dashboard':
         return 'Volume Allenamento';
       case '/measurements':
-        return 'Misurazioni Antropometriche';
+        return 'Misurazioni';
       case '/tdee':
         return 'Fabbisogno Calorico';
       case '/macros_selector':
@@ -317,8 +321,8 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
               if (currentRoute.startsWith('/user_programs/') &&
                   ref.read(previousRouteProvider) == '/programs_screen') {
                 context.go('/programs_screen');
-              } else if ((context).canPop())
-               { context.pop();
+              } else if ((context).canPop()) {
+                context.pop();
               }
             },
           ),
@@ -347,16 +351,30 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
       );
     }
 
-   if (_isTrainingProgramRoute(currentRoute)) {
-  actions.add(
-    IconButton(
-      onPressed: () {
-        widget.controller.submitProgram(context);
-      },
-      icon: const Icon(Icons.save),
-    ),
-  );
-}
+    if (_isTrainingProgramRoute(currentRoute)) {
+      actions.add(
+        IconButton(
+          onPressed: () {
+            widget.controller?.submitProgram(context);
+          },
+          icon: const Icon(Icons.save),
+        ),
+      );
+    }
+
+  if (currentRoute == '/measurements') {
+      actions.add(
+        IconButton(
+          onPressed: () {
+            final userId = FirebaseAuth.instance.currentUser?.uid;
+            if (userId != null) {
+              MeasurementsPage.showAddMeasurementDialog(context, ref, userId);
+            }
+          },
+          icon: const Icon(Icons.add),
+        ),
+      );
+    }
 
     return actions;
   }

@@ -11,13 +11,16 @@
   "engines": {
     "node": "18"
   },
-  "main": "index.js",
+  "main": "index.mjs",
   "dependencies": {
     "firebase-admin": "^12.2.0",
-    "firebase-functions": "^5.0.1"
+    "firebase-functions": "^5.0.1",
+    "google-apis": "^1.0.0",
+    "googleapis": "^140.0.1"
   },
   "devDependencies": {
     "firebase-functions-test": "^3.1.0"
   },
-  "private": true
+  "private": true,
+  "type": "module"
 }

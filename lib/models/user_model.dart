@@ -4,11 +4,13 @@ class UserModel {
   final String id;
   final String name;
   final String displayName;
-
   final String email;
   final String role;
   final String photoURL;
-  final String? uniqueNumber; // Nuovo campo per il numero univoco
+  final String? uniqueNumber;
+  final DateTime? subscriptionExpiryDate;
+  final String? productId;
+  final String? purchaseToken;
 
   UserModel({
     required this.id,
@@ -18,6 +20,9 @@ class UserModel {
     required this.role,
     required this.photoURL,
     this.uniqueNumber,
+    this.subscriptionExpiryDate,
+    this.productId,
+    this.purchaseToken,
   });
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
@@ -30,6 +35,9 @@ class UserModel {
       role: data['role'] ?? 'client',
       photoURL: data['photoURL'] ?? '',
       uniqueNumber: data['uniqueNumber'],
+      subscriptionExpiryDate: (data['subscriptionExpiryDate'] as Timestamp?)?.toDate(),
+      productId: data['productId'],
+      purchaseToken: data['purchaseToken'],
     );
   }
 
@@ -41,6 +49,9 @@ class UserModel {
       'role': role,
       'photoURL': photoURL,
       'uniqueNumber': uniqueNumber,
+      'subscriptionExpiryDate': subscriptionExpiryDate != null ? Timestamp.fromDate(subscriptionExpiryDate!) : null,
+      'productId': productId,
+      'purchaseToken': purchaseToken,
     };
   }
 }

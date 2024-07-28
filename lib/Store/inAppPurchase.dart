@@ -1,15 +1,17 @@
+import 'package:alphanessone/providers/providers.dart';
 import 'package:flutter/material.dart';
-import 'inAppSubscriptions_services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'inAppPurchase_services.dart';
 
-class InAppSubscriptionsPage extends StatefulWidget {
+class InAppSubscriptionsPage extends ConsumerStatefulWidget {
   const InAppSubscriptionsPage({super.key});
 
   @override
   InAppSubscriptionsPageState createState() => InAppSubscriptionsPageState();
 }
 
-class InAppSubscriptionsPageState extends State<InAppSubscriptionsPage> {
-  final InAppPurchaseService _inAppPurchaseService = InAppPurchaseService();
+class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> {
+  late final InAppPurchaseService _inAppPurchaseService;
   bool _loading = true;
   final TextEditingController _promoCodeController = TextEditingController();
   String? _promoCodeError;
@@ -17,6 +19,9 @@ class InAppSubscriptionsPageState extends State<InAppSubscriptionsPage> {
   @override
   void initState() {
     super.initState();
+    // Inizializza InAppPurchaseService con UsersService
+    final usersService = ref.read(usersServiceProvider);
+    _inAppPurchaseService = InAppPurchaseService(usersService);
     _initialize();
   }
 
@@ -39,7 +44,6 @@ class InAppSubscriptionsPageState extends State<InAppSubscriptionsPage> {
     _promoCodeController.dispose();
     super.dispose();
   }
-
   Future<void> _redeemPromoCode() async {
     setState(() {
       _promoCodeError = null;

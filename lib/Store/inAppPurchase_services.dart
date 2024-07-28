@@ -1,12 +1,16 @@
+import 'package:alphanessone/services/users_services.dart';
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
-import 'inAppSubscriptions_model.dart';
+import 'inAppPurchase_model.dart';
 
 class InAppPurchaseService {
   final InAppPurchase _inAppPurchase = InAppPurchase.instance;
   final List<ProductDetails> _productDetails = [];
   final List<Purchase> _purchases = [];
+  final UsersService _usersService;
+
+  InAppPurchaseService(this._usersService);
 
   final Map<String, String> promoCodeToProductId = {
     'A1PROMO': 'alphanessoneplussubscription',
@@ -14,6 +18,12 @@ class InAppPurchaseService {
 
   final Map<String, String> subscriptionDurations = {
     'alphanessoneplussubscription': 'Monthly',
+    'coachingalphaness': 'Monthly',
+  };
+
+  final Map<String, String> productIdToRole = {
+    'alphanessoneplussubscription': 'client_premium',
+    'coachingalphaness': 'coach',
   };
 
   Stream<List<PurchaseDetails>> get purchaseStream => _inAppPurchase.purchaseStream;
@@ -40,7 +50,6 @@ class InAppPurchaseService {
 
     _productDetails.addAll(response.productDetails);
 
-    // Grouping products by their IDs and sorting each group by their raw price
     Map<String, List<ProductDetails>> groupedProducts = {};
     for (var product in _productDetails) {
       if (!groupedProducts.containsKey(product.id)) {
@@ -59,7 +68,7 @@ class InAppPurchaseService {
   Future<void> makePurchase(ProductDetails productDetails) async {
     final PurchaseParam purchaseParam = PurchaseParam(productDetails: productDetails);
     debugPrint("Initiating purchase for product: ${productDetails.id}");
-    _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
+    await _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
   }
 
   Future<void> redeemPromoCode(String promoCode) async {
@@ -86,20 +95,48 @@ class InAppPurchaseService {
     }
   }
 
-  void handlePurchaseUpdates(List<PurchaseDetails> purchaseDetailsList) {
-    for (var purchase in purchaseDetailsList) {
-      if (purchase.status == PurchaseStatus.purchased) {
-        debugPrint("Purchase completed: ${purchase.productID}");
+  Future<void> handlePurchaseUpdates(List<PurchaseDetails> purchaseDetailsList) async {
+    for (var purchaseDetails in purchaseDetailsList) {
+      if (purchaseDetails.status == PurchaseStatus.purchased) {
+        String? newRole = productIdToRole[purchaseDetails.productID];
+        if (newRole != null) {
+          await _usersService.updateUserRole(_usersService.getCurrentUserId(), newRole);
+        }
+
+        int durationInDays = _getDurationInDays(purchaseDetails.productID);
+        DateTime newExpiryDate = DateTime.now().add(Duration(days: durationInDays));
+        DateTime? currentExpiryDate = await _usersService.getUserSubscriptionExpiryDate(_usersService.getCurrentUserId());
+
+        if (currentExpiryDate != null && currentExpiryDate.isAfter(DateTime.now())) {
+          newExpiryDate = currentExpiryDate.add(Duration(days: durationInDays));
+        }
+
+        await _usersService.updateUserSubscription(
+          _usersService.getCurrentUserId(),
+          newExpiryDate,
+          purchaseDetails.productID,
+          purchaseDetails.purchaseID!,
+        );
+
         _purchases.add(Purchase(
-          productId: purchase.productID,
-          purchaseId: purchase.purchaseID!,
-          purchaseDate: DateTime.fromMillisecondsSinceEpoch(int.parse(purchase.transactionDate!)),
+          productId: purchaseDetails.productID,
+          purchaseId: purchaseDetails.purchaseID!,
+          purchaseDate: DateTime.fromMillisecondsSinceEpoch(int.parse(purchaseDetails.transactionDate!)),
         ));
       }
-      if (purchase.pendingCompletePurchase) {
-        debugPrint("Completing purchase: ${purchase.productID}");
-        _inAppPurchase.completePurchase(purchase);
+      if (purchaseDetails.pendingCompletePurchase) {
+        await _inAppPurchase.completePurchase(purchaseDetails);
       }
+    }
+  }
+
+  int _getDurationInDays(String productId) {
+    switch (productId) {
+      case 'alphanessoneplussubscription':
+      case 'coachingalphaness':
+        return 30; // Monthly subscription
+      default:
+        return 0;
     }
   }
 

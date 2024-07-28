@@ -42,22 +42,22 @@ class _MeasurementsChartState extends State<MeasurementsChart> {
             spots: data,
             isCurved: true,
             color: color,
-            barWidth: 5,
+            barWidth: 3,
             isStrokeCapRound: true,
             dotData: FlDotData(
               show: true,
               getDotPainter: (spot, percent, barData, index) {
                 return FlDotCirclePainter(
-                  radius: 5,
+                  radius: 4,
                   color: color,
                   strokeWidth: 2,
-                  strokeColor: Colors.white,
+                  strokeColor: Theme.of(context).colorScheme.surface,
                 );
               },
             ),
             belowBarData: BarAreaData(
               show: true,
-              color: color.withOpacity(0.2),
+              color: color.withOpacity(0.1),
             ),
           ),
         );
@@ -71,6 +71,8 @@ class _MeasurementsChartState extends State<MeasurementsChart> {
       }
     }
 
+    final interval = _calculateOptimalInterval(minY, maxY);
+
     return SizedBox(
       height: 400,
       child: LineChart(
@@ -78,60 +80,68 @@ class _MeasurementsChartState extends State<MeasurementsChart> {
           lineBarsData: lineBarsData,
           minX: minX,
           maxX: maxX,
-          minY: minY,
-          maxY: maxY,
+          minY: minY - ((maxY - minY) * 0.1),
+          maxY: maxY + ((maxY - minY) * 0.1),
           titlesData: FlTitlesData(
             leftTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
-                getTitlesWidget: (value, meta) {
-                  return Text('$value');
-                },
                 reservedSize: 40,
+                interval: interval,
+                getTitlesWidget: (value, meta) {
+                  return Text(
+                    value.toStringAsFixed(1),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onBackground,
+                      fontSize: 10,
+                    ),
+                  );
+                },
               ),
             ),
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
+                reservedSize: 30,
+                interval: (maxX - minX) / 5,
                 getTitlesWidget: (value, meta) {
                   final dateTime = DateTime.fromMillisecondsSinceEpoch(value.toInt());
-                  final date = DateFormat('MMM dd').format(dateTime);
+                  final date = DateFormat('MMM d').format(dateTime);
                   final matchingSpots = lineBarsData
                       .expand((barData) => barData.spots)
                       .where((spot) => spot.x == value);
                   return matchingSpots.isNotEmpty
                       ? SideTitleWidget(
                           axisSide: meta.axisSide,
-                          child: Text(date),
+                          child: Text(
+                            date,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onBackground,
+                              fontSize: 10,
+                            ),
+                          ),
                         )
                       : const SideTitleWidget(
                           axisSide: AxisSide.bottom,
                           child: Text(''),
                         );
                 },
-                reservedSize: 30,
-                interval: (maxX - minX) / 5,
               ),
             ),
-          ),
-          
-          borderData: FlBorderData(
-            show: true,
-            border: Border.all(
-              color: Colors.grey,
-              width: 1,
-            ),
+            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           ),
           gridData: FlGridData(
             show: true,
             drawVerticalLine: false,
             getDrawingHorizontalLine: (value) {
               return FlLine(
-                color: Colors.grey.withOpacity(0.5),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
                 strokeWidth: 1,
               );
             },
           ),
+          borderData: FlBorderData(show: false),
           lineTouchData: LineTouchData(
             enabled: true,
             touchTooltipData: LineTouchTooltipData(
@@ -143,7 +153,7 @@ class _MeasurementsChartState extends State<MeasurementsChart> {
                   final measurementName = _getMeasurementName(touchedSpot.barIndex);
                   return LineTooltipItem(
                     '$measurementName\n$formattedDate: $value',
-                    const TextStyle(color: Colors.white),
+                    TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   );
                 }).toList();
               },
@@ -179,5 +189,19 @@ class _MeasurementsChartState extends State<MeasurementsChart> {
       return selectedMeasurementsList[barIndex];
     }
     return '';
+  }
+
+  double _calculateOptimalInterval(double min, double max) {
+    final range = max - min;
+    if (range == 0) return min; // Avoid division by zero
+    const targetSteps = 5;
+    final roughInterval = range / targetSteps;
+    final magnitude = pow(10, (log(roughInterval) / ln10).floor());
+    final normalizedInterval = roughInterval / magnitude;
+    
+    if (normalizedInterval < 1.5) return magnitude.toDouble();
+    if (normalizedInterval < 3) return (2 * magnitude).toDouble();
+    if (normalizedInterval < 7) return (5 * magnitude).toDouble();
+    return (10 * magnitude).toDouble();
   }
 }

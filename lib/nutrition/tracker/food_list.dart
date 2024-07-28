@@ -1,20 +1,18 @@
+import 'package:alphanessone/nutrition/tracker/food_selector.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import '../models&Services/macros_model.dart' as macros;
 import '../models&Services/meals_model.dart' as meals;
 import '../models&Services/meals_services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// Add this global key
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-
 class FoodList extends ConsumerStatefulWidget {
   final DateTime selectedDate;
+  final String? userId;
 
-  const FoodList({required this.selectedDate, super.key});
+  const FoodList({required this.selectedDate, this.userId, super.key});
 
   @override
   FoodListState createState() => FoodListState();
@@ -24,33 +22,52 @@ class FoodListState extends ConsumerState<FoodList> {
   final List<String> selectedFoods = [];
   bool isSelectionMode = false;
 
-  // Method to safely get the current context
-  BuildContext? get currentContext => navigatorKey.currentContext;
+  @override
+  void initState() {
+    super.initState();
+    _initializeData();
+  }
+
+  Future<void> _initializeData() async {
+    if (widget.userId != null) {
+      final mealsService = ref.read(mealsServiceProvider);
+      await mealsService.createDailyStatsIfNotExist(widget.userId!, widget.selectedDate);
+      await mealsService.createMealsIfNotExist(widget.userId!, widget.selectedDate);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final mealsService = ref.watch(mealsServiceProvider);
-    final userService = ref.watch(usersServiceProvider);
-    final userId = userService.getCurrentUserId();
+    final userId = widget.userId;
 
-    return Scaffold(
-      body: StreamBuilder<List<meals.Meal>>(
-        stream: mealsService.getUserMealsByDate(userId: userId, date: widget.selectedDate),
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            final mealsList = snapshot.data!;
-            return ListView(
-              children: buildMealSections(context, ref, mealsList, userId),
-            );
-          } else if (snapshot.hasError) {
-            return buildError(context, snapshot.error.toString());
-          } else {
-            return const Center(child: CircularProgressIndicator());
-          }
-        },
-      ),
+    if (userId == null) {
+      return const Center(child: Text('Please select a user.'));
+    }
+
+    return StreamBuilder<List<meals.Meal>>(
+      stream: mealsService.getUserMealsByDate(userId: userId, date: widget.selectedDate),
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          final mealsList = snapshot.data!;
+          return CustomScrollView(
+            slivers: [
+              SliverList(
+                delegate: SliverChildListDelegate(
+                  buildMealSections(context, ref, mealsList, userId),
+                ),
+              ),
+            ],
+          );
+        } else if (snapshot.hasError) {
+          return buildError(context, snapshot.error.toString());
+        } else {
+          return const Center(child: CircularProgressIndicator());
+        }
+      },
     );
   }
+
 
   List<Widget> buildMealSections(BuildContext context, WidgetRef ref, List<meals.Meal> mealsList, String userId) {
     final List<String> mealTypes = ['Breakfast', 'Lunch', 'Dinner'];
@@ -77,6 +94,10 @@ class FoodListState extends ConsumerState<FoodList> {
   }
 
   Widget buildMealSection(BuildContext context, WidgetRef ref, String mealName, meals.Meal meal, List<meals.Meal> mealsList) {
+    if (meal.id == null) {
+      return buildErrorCard(context, mealName, 'Meal data is not available.');
+    }
+
     return FutureBuilder<Map<String, double>>(
       future: ref.watch(mealsServiceProvider).getTotalNutrientsForMeal(meal.userId, meal.id!),
       builder: (context, snapshot) {
@@ -221,7 +242,7 @@ class FoodListState extends ConsumerState<FoodList> {
             final mealsList = await getAllMeals(meal.userId);
             await showMoveDialog(ref, mealsList);
           } else {
-            ScaffoldMessenger.of(currentContext!).showSnackBar(const SnackBar(content: Text('No foods selected')));
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No foods selected')));
           }
         },
         backgroundColor: Colors.orange,
@@ -254,7 +275,7 @@ class FoodListState extends ConsumerState<FoodList> {
     ];
   }
 
-  Widget buildAddSnackButton(BuildContext context, WidgetRef ref, String userId, String dailyStatsId, DateTime date, int currentSnacksCount) {
+ Widget buildAddSnackButton(BuildContext context, WidgetRef ref, String userId, String dailyStatsId, DateTime date, int currentSnacksCount) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: ElevatedButton(
@@ -315,18 +336,15 @@ class FoodListState extends ConsumerState<FoodList> {
   }
 
   void navigateToFoodSelector(meals.Meal meal, [String? foodId]) {
-    final context = currentContext;
-    if (context == null) return;
-
-    context.push(
-      Uri(
-        path: '/food_tracker/food_selector',
-        queryParameters: foodId != null ? {'myFoodId': foodId} : null,
-      ).toString(),
-      extra: {
-        'meal': meal.toMap(),
-        'myFoodId': foodId,
-        'isFavoriteMeal': false,},
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FoodSelector(
+          meal: meal,
+          myFoodId: foodId,
+          isFavoriteMeal: false,
+        ),
+      ),
     );
   }
 
@@ -353,9 +371,6 @@ class FoodListState extends ConsumerState<FoodList> {
   }
 
   Future<void> showDuplicateDialog(WidgetRef ref, meals.Meal sourceMeal) async {
-    final context = currentContext;
-    if (context == null) return;
-
     final mealsList = await getAllMeals(sourceMeal.userId);
     final selectedMeal = await showSelectMealDialog(mealsList, 'Select Destination Meal');
     if (selectedMeal != null) {
@@ -372,9 +387,6 @@ class FoodListState extends ConsumerState<FoodList> {
   }
 
   Future<meals.Meal?> showSelectMealDialog(List<meals.Meal> mealsList, String title) {
-    final context = currentContext;
-    if (context == null) return Future.value(null);
-
     return showDialog<meals.Meal>(
       context: context,
       builder: (BuildContext context) {
@@ -400,9 +412,6 @@ class FoodListState extends ConsumerState<FoodList> {
   }
 
   Future<meals.Meal?> showSelectFavoriteDialog(List<meals.Meal> favoriteMeals) {
-    final context = currentContext;
-    if (context == null) return Future.value(null);
-
     return showDialog<meals.Meal>(
       context: context,
       builder: (BuildContext context) {
@@ -428,9 +437,6 @@ class FoodListState extends ConsumerState<FoodList> {
   }
 
   Future<bool?> showOverwriteDialog() {
-    final context = currentContext;
-    if (context == null) return Future.value(null);
-
     return showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
@@ -475,9 +481,6 @@ class FoodListState extends ConsumerState<FoodList> {
   }
 
   Future<bool?> showConfirmationDialog(String title, String content) {
-    final context = currentContext;
-    if (context == null) return Future.value(null);
-
     return showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
@@ -494,9 +497,6 @@ class FoodListState extends ConsumerState<FoodList> {
   }
 
   Future<String?> showFavoriteNameDialog() {
-    final context = currentContext;
-    if (context == null) return Future.value(null);
-
     final TextEditingController nameController = TextEditingController();
     return showDialog<String>(
       context: context,
@@ -542,10 +542,7 @@ class FoodListState extends ConsumerState<FoodList> {
       isSelectionMode = true;
       selectedFoods.add(foodId);
     });
-    final context = currentContext;
-    if (context != null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selection mode enabled')));
-    }
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selection mode enabled')));
   }
 
   void onFoodTap(meals.Meal meal, String foodId) {
