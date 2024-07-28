@@ -26,6 +26,27 @@ class MeasurementsPage extends ConsumerWidget {
       ),
     );
   }
+
+  static void showAddMeasurementDialog(BuildContext context, WidgetRef ref, String userId) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.9,
+        minChildSize: 0.5,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (_, controller) => _MeasurementForm(
+          scrollController: controller,
+          measurement: null,
+          userId: userId,
+        ),
+      ),
+    );
+  }
 }
 
 class _MeasurementsContent extends ConsumerWidget {
@@ -41,7 +62,6 @@ class _MeasurementsContent extends ConsumerWidget {
 
     return CustomScrollView(
       slivers: [
-        _buildAppBar(context, ref),
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -58,21 +78,6 @@ class _MeasurementsContent extends ConsumerWidget {
               ],
             ),
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAppBar(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    return SliverAppBar(
-      floating: true,
-      backgroundColor: theme.colorScheme.surface,
-      title: Text('Body Measurements', style: TextStyle(color: theme.colorScheme.onSurface)),
-      actions: [
-        IconButton(
-          icon: Icon(Icons.add, color: theme.colorScheme.primary),
-          onPressed: () => _showAddMeasurementDialog(context, ref, null),
         ),
       ],
     );
@@ -100,27 +105,6 @@ class _MeasurementsContent extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => _ComparisonSelectionDialog(measurements: measurements),
-    );
-  }
-
-  void _showAddMeasurementDialog(BuildContext context, WidgetRef ref, MeasurementModel? measurement) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
-      ),
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.9,
-        minChildSize: 0.5,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (_, controller) => _MeasurementForm(
-          scrollController: controller,
-          measurement: measurement,
-          userId: userId,
-        ),
-      ),
     );
   }
 }
@@ -340,7 +324,7 @@ class _MeasurementsTrend extends StatelessWidget {
     return FlTitlesData(
       leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
       topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
       bottomTitles: AxisTitles(
         sideTitles: SideTitles(
           showTitles: true,
@@ -357,8 +341,7 @@ rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
             }
             return const Text('');
           },
-          reservedSize: 30,
-        ),
+          reservedSize: 30),
       ),
     );
   }
@@ -589,11 +572,11 @@ class _MeasurementFormState extends ConsumerState<_MeasurementForm> {
   late final TextEditingController _bodyFatController;
   late final TextEditingController _waistController;
   late final TextEditingController _hipController;
-  late final TextEditingController _chestController; // Aggiunto
-  late final TextEditingController _bicepsController; // Aggiunto
+  late final TextEditingController _chestController;
+  late final TextEditingController _bicepsController;
   late DateTime _selectedDate;
 
-   @override
+  @override
   void initState() {
     super.initState();
     _formKey = GlobalKey<FormState>();
@@ -602,20 +585,20 @@ class _MeasurementFormState extends ConsumerState<_MeasurementForm> {
     _bodyFatController = TextEditingController(text: widget.measurement?.bodyFatPercentage.toString());
     _waistController = TextEditingController(text: widget.measurement?.waistCircumference.toString());
     _hipController = TextEditingController(text: widget.measurement?.hipCircumference.toString());
-    _chestController = TextEditingController(text: widget.measurement?.chestCircumference.toString()); // Aggiunto
-    _bicepsController = TextEditingController(text: widget.measurement?.bicepsCircumference.toString()); // Aggiunto
+    _chestController = TextEditingController(text: widget.measurement?.chestCircumference.toString());
+    _bicepsController = TextEditingController(text: widget.measurement?.bicepsCircumference.toString());
     _selectedDate = widget.measurement?.date ?? DateTime.now();
   }
 
-   @override
+  @override
   void dispose() {
     _weightController.dispose();
     _heightController.dispose();
     _bodyFatController.dispose();
     _waistController.dispose();
     _hipController.dispose();
-    _chestController.dispose(); // Aggiunto
-    _bicepsController.dispose(); // Aggiunto
+    _chestController.dispose();
+    _bicepsController.dispose();
     super.dispose();
   }
 
@@ -650,8 +633,8 @@ class _MeasurementFormState extends ConsumerState<_MeasurementForm> {
                   _buildTextField(_bodyFatController, 'Body Fat (%)'),
                   _buildTextField(_waistController, 'Waist (cm)'),
                   _buildTextField(_hipController, 'Hip (cm)'),
-                  _buildTextField(_chestController, 'Chest (cm)'), // Aggiunto
-                  _buildTextField(_bicepsController, 'Biceps (cm)'), // Aggiunto
+                  _buildTextField(_chestController, 'Chest (cm)'),
+                  _buildTextField(_bicepsController, 'Biceps (cm)'),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: _submitMeasurement,
@@ -746,7 +729,7 @@ class _MeasurementFormState extends ConsumerState<_MeasurementForm> {
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: theme.colorScheme.primary),
           ),
-contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),
         validator: (value) {
           if (value == null || value.isEmpty) {
@@ -758,7 +741,7 @@ contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     );
   }
 
- void _submitMeasurement() {
+void _submitMeasurement() {
     if (_formKey.currentState!.validate()) {
       final measurementsService = ref.read(measurementsServiceProvider);
       final weight = double.parse(_weightController.text);
@@ -766,8 +749,8 @@ contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       final bodyFat = double.parse(_bodyFatController.text);
       final waist = double.parse(_waistController.text);
       final hip = double.parse(_hipController.text);
-      final chest = double.parse(_chestController.text); // Aggiunto
-      final biceps = double.parse(_bicepsController.text); // Aggiunto
+      final chest = double.parse(_chestController.text);
+      final biceps = double.parse(_bicepsController.text);
 
       final bmi = weight / ((height / 100) * (height / 100));
 
@@ -785,8 +768,8 @@ contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             bodyFatPercentage: bodyFat,
             waistCircumference: waist,
             hipCircumference: hip,
-            chestCircumference: chest, // Aggiunto
-            bicepsCircumference: biceps, // Aggiunto
+            chestCircumference: chest,
+            bicepsCircumference: biceps,
           );
         } else {
           await measurementsService.updateMeasurement(
@@ -799,8 +782,8 @@ contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             bodyFatPercentage: bodyFat,
             waistCircumference: waist,
             hipCircumference: hip,
-            chestCircumference: chest, // Aggiunto
-            bicepsCircumference: biceps, // Aggiunto
+            chestCircumference: chest,
+            bicepsCircumference: biceps,
           );
         }
       }
