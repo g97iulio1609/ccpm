@@ -292,17 +292,36 @@ class _MeasurementsTrend extends StatelessWidget {
               height: 200,
               child: LineChart(
                 LineChartData(
-                  gridData: const FlGridData(show: false),
-                  titlesData: _buildTitlesData(theme),
-                  borderData: FlBorderData(show: false),
-                  lineBarsData: [
-                    _buildLineChartBarData(measurements, (m) => m.weight, theme.colorScheme.primary),
-                    _buildLineChartBarData(measurements, (m) => m.bodyFatPercentage, theme.colorScheme.secondary),
-                    _buildLineChartBarData(measurements, (m) => m.waistCircumference, theme.colorScheme.tertiary),
-                  ],
-                  minX: 0,
-                  maxX: (measurements.length - 1).toDouble(),
-                ),
+  gridData: const FlGridData(show: false),
+  titlesData: _buildTitlesData(theme),
+  borderData: FlBorderData(show: false),
+  lineBarsData: [
+    _buildLineChartBarData(measurements, (m) => m.weight, theme.colorScheme.primary),
+    _buildLineChartBarData(measurements, (m) => m.bodyFatPercentage, theme.colorScheme.secondary),
+    _buildLineChartBarData(measurements, (m) => m.waistCircumference, theme.colorScheme.tertiary),
+  ],
+  minX: 0,
+  maxX: (measurements.length - 1).toDouble(),
+  lineTouchData: LineTouchData(
+    touchTooltipData: LineTouchTooltipData(
+      tooltipRoundedRadius: 8,
+      getTooltipItems: (touchedSpots) {
+        return touchedSpots.map((LineBarSpot touchedSpot) {
+          final date = measurements[touchedSpot.x.toInt()].date;
+          final value = touchedSpot.y;
+          final measurementType = ['Weight', 'Body Fat', 'Waist'][touchedSpot.barIndex];
+          return LineTooltipItem(
+            '${DateFormat('dd/MM/yyyy').format(date)}\n$measurementType: ${value.toStringAsFixed(1)}',
+            TextStyle(color: theme.colorScheme.onSurface),
+          );
+        }).toList();
+      },
+    ),
+    handleBuiltInTouches: true,
+    getTouchLineStart: (data, index) => 0,
+  ),
+),
+
               ),
             ),
             const SizedBox(height: 8),
@@ -330,7 +349,7 @@ class _MeasurementsTrend extends StatelessWidget {
           showTitles: true,
           getTitlesWidget: (value, meta) {
             final index = value.toInt();
-            if (index >= 0 && index < measurements.length) {
+            if (index >= 0 && index < measurements.length && index % 2 == 0) {
               return Text(
                 DateFormat('dd/MM').format(measurements[index].date),
                 style: TextStyle(
@@ -341,7 +360,8 @@ class _MeasurementsTrend extends StatelessWidget {
             }
             return const Text('');
           },
-          reservedSize: 30),
+          reservedSize: 30,
+        ),
       ),
     );
   }
@@ -349,14 +369,25 @@ class _MeasurementsTrend extends StatelessWidget {
   LineChartBarData _buildLineChartBarData(List<MeasurementModel> measurements, double Function(MeasurementModel) getValue, Color color) {
     return LineChartBarData(
       spots: measurements.asMap().entries.map((entry) {
-        return FlSpot(entry.key.toDouble(), getValue(entry.value));
+        final value = getValue(entry.value);
+        return value != 0 ? FlSpot(entry.key.toDouble(), value) : FlSpot.nullSpot;
       }).toList(),
       isCurved: true,
       color: color,
       barWidth: 3,
       isStrokeCapRound: true,
-      dotData: const FlDotData(show: false),
-      belowBarData: BarAreaData(show: true, color: color.withOpacity(0.1)),
+      dotData: FlDotData(
+        show: true,
+        getDotPainter: (spot, percent, barData, index) {
+          return FlDotCirclePainter(
+            radius: 4,
+            color: color,
+            strokeWidth: 2,
+            strokeColor: Colors.white,
+          );
+        },
+      ),
+      belowBarData: BarAreaData(show: false),
     );
   }
 
@@ -367,7 +398,11 @@ class _MeasurementsTrend extends StatelessWidget {
         Container(
           width: 16,
           height: 16,
-          color: color,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 2),
+          ),
         ),
         const SizedBox(width: 4),
         Text(label),
