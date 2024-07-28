@@ -292,36 +292,57 @@ class _MeasurementsTrend extends StatelessWidget {
               height: 200,
               child: LineChart(
                 LineChartData(
-  gridData: const FlGridData(show: false),
-  titlesData: _buildTitlesData(theme),
-  borderData: FlBorderData(show: false),
-  lineBarsData: [
-    _buildLineChartBarData(measurements, (m) => m.weight, theme.colorScheme.primary),
-    _buildLineChartBarData(measurements, (m) => m.bodyFatPercentage, theme.colorScheme.secondary),
-    _buildLineChartBarData(measurements, (m) => m.waistCircumference, theme.colorScheme.tertiary),
-  ],
-  minX: 0,
-  maxX: (measurements.length - 1).toDouble(),
-  lineTouchData: LineTouchData(
-    touchTooltipData: LineTouchTooltipData(
-      tooltipRoundedRadius: 8,
-      getTooltipItems: (touchedSpots) {
-        return touchedSpots.map((LineBarSpot touchedSpot) {
-          final date = measurements[touchedSpot.x.toInt()].date;
-          final value = touchedSpot.y;
-          final measurementType = ['Weight', 'Body Fat', 'Waist'][touchedSpot.barIndex];
-          return LineTooltipItem(
-            '${DateFormat('dd/MM/yyyy').format(date)}\n$measurementType: ${value.toStringAsFixed(1)}',
-            TextStyle(color: theme.colorScheme.onSurface),
-          );
-        }).toList();
-      },
-    ),
-    handleBuiltInTouches: true,
-    getTouchLineStart: (data, index) => 0,
-  ),
-),
-
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: true,
+                    getDrawingHorizontalLine: (value) {
+                      return FlLine(
+                        color: theme.colorScheme.onSurface.withOpacity(0.1),
+                        strokeWidth: 1,
+                      );
+                    },
+                    getDrawingVerticalLine: (value) {
+                      return FlLine(
+                        color: theme.colorScheme.onSurface.withOpacity(0.1),
+                        strokeWidth: 1,
+                      );
+                    },
+                  ),
+                  titlesData: _buildTitlesData(theme),
+                  borderData: FlBorderData(
+                    show: true,
+                    border: Border.all(color: theme.colorScheme.onSurface.withOpacity(0.1), width: 1),
+                  ),
+                  lineBarsData: [
+                    _buildLineChartBarData(measurements, (m) => m.weight, theme.colorScheme.primary),
+                    _buildLineChartBarData(measurements, (m) => m.bodyFatPercentage, theme.colorScheme.secondary),
+                    _buildLineChartBarData(measurements, (m) => m.waistCircumference, theme.colorScheme.tertiary),
+                  ],
+                  minX: 0,
+                  maxX: (measurements.length - 1).toDouble(),
+                  minY: 0,
+                  maxY: measurements.map((m) => [m.weight, m.bodyFatPercentage, m.waistCircumference].reduce((a, b) => a > b ? a : b)).reduce((a, b) => a > b ? a : b) + 10,
+                  lineTouchData: LineTouchData(
+                    touchTooltipData: LineTouchTooltipData(
+                      tooltipRoundedRadius: 8,
+                      getTooltipItems: (touchedSpots) {
+                        return touchedSpots.map((LineBarSpot touchedSpot) {
+                          final date = measurements[touchedSpot.x.toInt()].date;
+                          final value = touchedSpot.y;
+                          final measurementType = ['Weight', 'Body Fat', 'Waist'][touchedSpot.barIndex];
+                          return LineTooltipItem(
+                            '${DateFormat('dd/MM/yyyy').format(date)}\n$measurementType: ${value.toStringAsFixed(1)}',
+                            TextStyle(color: theme.colorScheme.onSurface),
+                          );
+                        }).toList();
+                      },
+                      fitInsideHorizontally: true,
+                      fitInsideVertically: true,
+                    ),
+                    handleBuiltInTouches: true,
+                    getTouchLineStart: (data, index) => 0,
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 8),
@@ -341,7 +362,22 @@ class _MeasurementsTrend extends StatelessWidget {
 
   FlTitlesData _buildTitlesData(ThemeData theme) {
     return FlTitlesData(
-      leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+      leftTitles: AxisTitles(
+        sideTitles: SideTitles(
+          showTitles: true,
+          interval: 10, // Adjust this interval based on your range
+          getTitlesWidget: (value, meta) {
+            return Text(
+              value.toInt().toString(),
+              style: TextStyle(
+                color: theme.colorScheme.onSurface,
+                fontSize: 10,
+              ),
+            );
+          },
+          reservedSize: 40,
+        ),
+      ),
       topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
       rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
       bottomTitles: AxisTitles(
@@ -350,11 +386,14 @@ class _MeasurementsTrend extends StatelessWidget {
           getTitlesWidget: (value, meta) {
             final index = value.toInt();
             if (index >= 0 && index < measurements.length && index % 2 == 0) {
-              return Text(
-                DateFormat('dd/MM').format(measurements[index].date),
-                style: TextStyle(
-                  color: theme.colorScheme.onSurface,
-                  fontSize: 10,
+              return Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Text(
+                  DateFormat('dd/MM').format(measurements[index].date),
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurface,
+                    fontSize: 10,
+                  ),
                 ),
               );
             }
