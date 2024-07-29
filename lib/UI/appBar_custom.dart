@@ -1,3 +1,4 @@
+import 'package:alphanessone/maxrmdashboard.dart';
 import 'package:alphanessone/measurements/measurements.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
@@ -375,6 +376,17 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
     ),
   );
 }
+
+ if (currentRoute == '/maxrmdashboard') {
+      actions.add(
+        IconButton(
+          onPressed: () {
+            MaxRMDashboard.showAddMaxRMDialog(context, ref);
+          },
+          icon: const Icon(Icons.add),
+        ),
+      );
+    }
 
     return actions;
   }

@@ -37,7 +37,6 @@ class MeasurementsPage extends ConsumerStatefulWidget {
 }
 
 class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
-  String? selectedUserId;
   final TextEditingController _userSearchController = TextEditingController();
   final FocusNode _userSearchFocusNode = FocusNode();
 
@@ -48,9 +47,7 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
       final currentUserId = ref.read(usersServiceProvider).getCurrentUserId();
       final currentUserRole = ref.read(userRoleProvider);
       if (currentUserRole != 'admin' && currentUserRole != 'coach') {
-        setState(() {
-          selectedUserId = currentUserId;
-        });
+        ref.read(selectedUserIdProvider.notifier).state = currentUserId;
       }
     });
   }
@@ -66,6 +63,7 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final currentUserRole = ref.watch(userRoleProvider);
+    final selectedUserId = ref.watch(selectedUserIdProvider);
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
@@ -79,9 +77,7 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
                   controller: _userSearchController,
                   focusNode: _userSearchFocusNode,
                   onSelected: (UserModel user) {
-                    setState(() {
-                      selectedUserId = user.id;
-                    });
+                    ref.read(selectedUserIdProvider.notifier).state = user.id;
                   },
                   onChanged: (String value) {
                     // Handle onChanged if needed
@@ -90,7 +86,7 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
               ),
             Expanded(
               child: selectedUserId != null
-                  ? _buildMeasurementsContent(selectedUserId!)
+                  ? _buildMeasurementsContent(selectedUserId)
                   : currentUserRole == 'admin' || currentUserRole == 'coach'
                       ? const Center(child: Text('Please select a user'))
                       : _buildMeasurementsContent(
@@ -127,8 +123,11 @@ class _MeasurementsContent extends ConsumerWidget {
   final String userId;
   final int userGender; // 1 for male, 2 for female
 
-  const _MeasurementsContent(
-      {required this.measurements, required this.userId, required this.userGender});
+  const _MeasurementsContent({
+    required this.measurements,
+    required this.userId,
+    required this.userGender,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -146,9 +145,10 @@ class _MeasurementsContent extends ConsumerWidget {
                 _buildComparisonSelector(context, ref),
                 const SizedBox(height: 16),
                 _MeasurementCards(
-                    measurements: measurements,
-                    selectedComparisons: selectedComparisons,
-                    userGender: userGender),
+                  measurements: measurements,
+                  selectedComparisons: selectedComparisons,
+                  userGender: userGender,
+                ),
                 const SizedBox(height: 16),
                 _MeasurementsTrend(measurements: measurements),
                 const SizedBox(height: 16),
@@ -197,8 +197,11 @@ class _MeasurementCards extends ConsumerWidget {
   final List<MeasurementModel> selectedComparisons;
   final int userGender; // 1 for male, 2 for female
 
-  const _MeasurementCards(
-      {required this.measurements, required this.selectedComparisons, required this.userGender});
+  const _MeasurementCards({
+    required this.measurements,
+    required this.selectedComparisons,
+    required this.userGender,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -418,7 +421,7 @@ class _MeasurementCards extends ConsumerWidget {
       if (bodyFatPercentage < 6) return 'Essential Fat';
       if (bodyFatPercentage < 14) return 'Athletes';
       if (bodyFatPercentage < 18) return 'Fitness';
-      if (bodyFatPercentage < 25) return 'Normal';
+if (bodyFatPercentage < 25) return 'Normal';
       if (bodyFatPercentage < 32) return 'Overweight';
     } else if (gender == 2) {
       // Female
@@ -462,7 +465,6 @@ class _MeasurementsTrend extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // Verifica se ci sono misurazioni valide
     bool hasMeasurements = measurements.isNotEmpty &&
         measurements.any((m) =>
             (m.weight) > 0 ||
@@ -474,8 +476,7 @@ class _MeasurementsTrend extends StatelessWidget {
       color: theme.colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(
-            color: Colors.white, width: 0.5), // aggiungi questa riga
+        side: const BorderSide(color: Colors.white, width: 0.5),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -682,7 +683,7 @@ class _MeasurementsTrend extends StatelessWidget {
 
   double _calculateMaxY() {
     if (measurements.isEmpty) {
-      return 100; // Valore predefinito se non ci sono misurazioni
+      return 100;
     }
 
     List<double> validValues = measurements
@@ -691,7 +692,7 @@ class _MeasurementsTrend extends StatelessWidget {
         .toList();
 
     if (validValues.isEmpty) {
-      return 100; // Valore predefinito se non ci sono valori validi
+      return 100;
     }
 
     return validValues.reduce((a, b) => a > b ? a : b) + 10;
@@ -712,8 +713,7 @@ class _MeasurementsList extends ConsumerWidget {
       color: theme.colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(
-            color: Colors.white, width: 0.5), // aggiungi questa riga
+        side: const BorderSide(color: Colors.white, width: 0.5),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -1117,6 +1117,7 @@ class _MeasurementFormState extends ConsumerState<_MeasurementForm> {
   void _submitMeasurement() {
     if (_formKey.currentState!.validate()) {
       final measurementsService = ref.read(measurementsServiceProvider);
+      final selectedUserId = ref.read(selectedUserIdProvider) ?? widget.userId;
       final weight = double.tryParse(_weightController.text) ?? 0.0;
       final height = double.tryParse(_heightController.text) ?? 0.0;
       final bodyFat = double.tryParse(_bodyFatController.text) ?? 0.0;
@@ -1133,7 +1134,7 @@ class _MeasurementFormState extends ConsumerState<_MeasurementForm> {
       Future<void> performOperation() async {
         if (widget.measurement == null) {
           await measurementsService.addMeasurement(
-            userId: widget.userId,
+            userId: selectedUserId,
             date: _selectedDate,
             weight: weight,
             height: height,
@@ -1146,7 +1147,7 @@ class _MeasurementFormState extends ConsumerState<_MeasurementForm> {
           );
         } else {
           await measurementsService.updateMeasurement(
-            userId: widget.userId,
+            userId: selectedUserId,
             measurementId: widget.measurement!.id,
             date: _selectedDate,
             weight: weight,

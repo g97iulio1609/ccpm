@@ -1,3 +1,4 @@
+import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/services/users_services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -73,6 +74,8 @@ class UserTypeAheadField extends ConsumerWidget {
           onSelected: (UserModel suggestion) {
             controller.text = suggestion.name;
             onSelected(suggestion);
+                        ref.read(selectedUserIdProvider.notifier).state = suggestion.id;
+
             FocusScope.of(context).unfocus(); // Close the dropdown
           },
           emptyBuilder: (context) => const Padding(
