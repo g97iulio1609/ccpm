@@ -104,12 +104,20 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
 
   Widget _buildMeasurementsContent(String userId) {
     final measurementsAsyncValue = ref.watch(measurementsProvider(userId));
+    final userAsyncValue = ref.watch(userProvider(userId));
 
-    return measurementsAsyncValue.when(
+    return userAsyncValue.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stackTrace) => Center(child: Text('Error: $error')),
-      data: (measurements) =>
-          _MeasurementsContent(measurements: measurements, userId: userId),
+      data: (user) => measurementsAsyncValue.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stackTrace) => Center(child: Text('Error: $error')),
+        data: (measurements) => _MeasurementsContent(
+          measurements: measurements,
+          userId: userId,
+          userGender: user!.gender,
+        ),
+      ),
     );
   }
 }
@@ -117,9 +125,10 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
 class _MeasurementsContent extends ConsumerWidget {
   final List<MeasurementModel> measurements;
   final String userId;
+  final int userGender; // 1 for male, 2 for female
 
   const _MeasurementsContent(
-      {required this.measurements, required this.userId});
+      {required this.measurements, required this.userId, required this.userGender});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -138,7 +147,8 @@ class _MeasurementsContent extends ConsumerWidget {
                 const SizedBox(height: 16),
                 _MeasurementCards(
                     measurements: measurements,
-                    selectedComparisons: selectedComparisons),
+                    selectedComparisons: selectedComparisons,
+                    userGender: userGender),
                 const SizedBox(height: 16),
                 _MeasurementsTrend(measurements: measurements),
                 const SizedBox(height: 16),
@@ -185,9 +195,10 @@ class _MeasurementsContent extends ConsumerWidget {
 class _MeasurementCards extends ConsumerWidget {
   final List<MeasurementModel> measurements;
   final List<MeasurementModel> selectedComparisons;
+  final int userGender; // 1 for male, 2 for female
 
   const _MeasurementCards(
-      {required this.measurements, required this.selectedComparisons});
+      {required this.measurements, required this.selectedComparisons, required this.userGender});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -211,7 +222,7 @@ class _MeasurementCards extends ConsumerWidget {
                 referenceMeasurement?.weight,
                 'kg',
                 (value) => _getWeightStatus(
-                    referenceMeasurement?.bodyFatPercentage ?? 0),
+                    referenceMeasurement?.bodyFatPercentage ?? 0, userGender),
                 _getComparisons(referenceMeasurement, (m) => m.weight)),
             _buildMeasurementCard(
                 context,
@@ -401,12 +412,22 @@ class _MeasurementCards extends ConsumerWidget {
     }
   }
 
-  String _getWeightStatus(double bodyFatPercentage) {
-    if (bodyFatPercentage < 6) return 'Essential Fat';
-    if (bodyFatPercentage < 14) return 'Athletes';
-    if (bodyFatPercentage < 18) return 'Fitness';
-    if (bodyFatPercentage < 25) return 'Normal';
-    if (bodyFatPercentage < 32) return 'Overweight';
+  String _getWeightStatus(double bodyFatPercentage, int gender) {
+    if (gender == 1) {
+      // Male
+      if (bodyFatPercentage < 6) return 'Essential Fat';
+      if (bodyFatPercentage < 14) return 'Athletes';
+      if (bodyFatPercentage < 18) return 'Fitness';
+      if (bodyFatPercentage < 25) return 'Normal';
+      if (bodyFatPercentage < 32) return 'Overweight';
+    } else if (gender == 2) {
+      // Female
+      if (bodyFatPercentage < 16) return 'Essential Fat';
+      if (bodyFatPercentage < 20) return 'Athletes';
+      if (bodyFatPercentage < 24) return 'Fitness';
+      if (bodyFatPercentage < 31) return 'Normal';
+      if (bodyFatPercentage < 39) return 'Overweight';
+    }
     return 'Obese';
   }
 

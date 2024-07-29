@@ -7,6 +7,7 @@ class UserModel {
   final String email;
   final String role;
   final String photoURL;
+  final int gender; // Added gender field
   final String? uniqueNumber;
   final DateTime? subscriptionExpiryDate;
   final String? productId;
@@ -19,6 +20,7 @@ class UserModel {
     required this.email,
     required this.role,
     required this.photoURL,
+    required this.gender, // Added gender field
     this.uniqueNumber,
     this.subscriptionExpiryDate,
     this.productId,
@@ -34,6 +36,7 @@ class UserModel {
       email: data['email'] ?? '',
       role: data['role'] ?? 'client',
       photoURL: data['photoURL'] ?? '',
+      gender: data['gender'] ?? 0, // Added gender field with default value
       uniqueNumber: data['uniqueNumber'],
       subscriptionExpiryDate: (data['subscriptionExpiryDate'] as Timestamp?)?.toDate(),
       productId: data['productId'],
@@ -48,6 +51,7 @@ class UserModel {
       'email': email,
       'role': role,
       'photoURL': photoURL,
+      'gender': gender, // Added gender field
       'uniqueNumber': uniqueNumber,
       'subscriptionExpiryDate': subscriptionExpiryDate != null ? Timestamp.fromDate(subscriptionExpiryDate!) : null,
       'productId': productId,
