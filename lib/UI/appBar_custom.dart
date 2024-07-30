@@ -1,3 +1,4 @@
+import 'package:alphanessone/exerciseManager/exercises_manager.dart';
 import 'package:alphanessone/maxrmdashboard.dart';
 import 'package:alphanessone/measurements/measurements.dart';
 import 'package:alphanessone/providers/providers.dart';
@@ -388,6 +389,16 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
       );
     }
 
+if (currentRoute == '/exercises_list') {
+  actions.add(
+    IconButton(
+      onPressed: () {
+        ExercisesManager.showAddExerciseBottomSheet(context, ref);
+      },
+      icon: const Icon(Icons.add),
+    ),
+  );
+}
     return actions;
   }
 
