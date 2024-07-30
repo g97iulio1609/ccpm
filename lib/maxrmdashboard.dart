@@ -565,87 +565,90 @@ class _MaxRMForm extends HookConsumerWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         return SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: IntrinsicHeight(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  left: 16,
-                  right: 16,
-                  top: 16,
-                  bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-                ),
-                child: Form(
-                  key: formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 16,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+            ),
+            child: Form(
+              key: formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Add New Max RM',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildExerciseTypeAheadField(
+                    exercisesAsyncValue,
+                    selectedExerciseController,
+                    exerciseNameController,
+                    context,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    controller: maxWeightController,
+                    labelText: 'Max weight lifted',
+                    keyboardType: TextInputType.number,
+                    focusNode: maxWeightFocusNode,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    controller: repetitionsController,
+                    labelText: 'Number of repetitions',
+                    keyboardType: TextInputType.number,
+                    focusNode: repetitionsFocusNode,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildDatePicker(context, selectedDate),
+                  const SizedBox(height: 16),
+                  Row(
                     children: [
                       Text(
-                        'Add New Max RM',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
+                        'Keep current weight',
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                       ),
-                      const SizedBox(height: 16),
-                      _buildExerciseTypeAheadField(
-                        exercisesAsyncValue,
-                        selectedExerciseController,
-                        exerciseNameController,
-                        context,
+                      Switch(
+                        value: keepWeight.value,
+                        onChanged: (value) {
+                          keepWeight.value = value;
+                        },
                       ),
-                      const SizedBox(height: 16),
-                      _buildTextField(
-                        controller: maxWeightController,
-                        labelText: 'Max weight lifted',
-                        keyboardType: TextInputType.number,
-                        focusNode: maxWeightFocusNode,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildTextField(
-                        controller: repetitionsController,
-                        labelText: 'Number of repetitions',
-                        keyboardType: TextInputType.number,
-                        focusNode: repetitionsFocusNode,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildDatePicker(context, selectedDate),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Text(
-                            'Keep current weight',
-                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                          ),
-                          Switch(
-                            value: keepWeight.value,
-                            onChanged: (value) {
-                              keepWeight.value = value;
-                            },
-                          ),
-                        ],
-                      ),
-                      const Spacer(),
-                      Center(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            if (formKey.currentState!.validate()) {
-                              final exerciseId = selectedExerciseController.value?.id ?? '';
-                              final exerciseName = exerciseNameController.text;
-                              final maxWeight = num.tryParse(maxWeightController.text) ?? 0;
-                              final repetitions = int.tryParse(repetitionsController.text) ?? 0;
-                              final selectedUserId = ref.read(selectedUserIdProvider);
-                              onSubmit(exerciseId, exerciseName, maxWeight, repetitions, selectedDate.value, keepWeight.value, selectedUserId);
-                            }
-                          },
-                          child: const Text('Add Max RM'),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 24),
+                  Center(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (formKey.currentState!.validate()) {
+                          final exerciseId = selectedExerciseController.value?.id ?? '';
+                          final exerciseName = exerciseNameController.text;
+                          final maxWeight = num.tryParse(maxWeightController.text) ?? 0;
+                          final repetitions = int.tryParse(repetitionsController.text) ?? 0;
+                          final selectedUserId = ref.read(selectedUserIdProvider);
+                          onSubmit(exerciseId, exerciseName, maxWeight, repetitions, selectedDate.value, keepWeight.value, selectedUserId);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFFD700), // Yellow color
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Add Max RM', style: TextStyle(fontSize: 16)),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -653,6 +656,7 @@ class _MaxRMForm extends HookConsumerWidget {
       },
     );
   }
+
 
   Widget _buildExerciseTypeAheadField(
     AsyncValue<List<ExerciseModel>> exercisesAsyncValue,
