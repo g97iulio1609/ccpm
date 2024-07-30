@@ -144,16 +144,9 @@ class ExercisesList extends HookConsumerWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
       ),
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.9,
-        minChildSize: 0.5,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (_, controller) => _ExerciseForm(
-          scrollController: controller,
-          exercise: exercise,
-          userId: ref.read(usersServiceProvider).getCurrentUserId(),
-        ),
+      builder: (context) => _ExerciseForm(
+        exercise: exercise,
+        userId: ref.read(usersServiceProvider).getCurrentUserId(),
       ),
     );
   }
@@ -298,12 +291,10 @@ class ExerciseCard extends StatelessWidget {
 }
 
 class _ExerciseForm extends HookConsumerWidget {
-  final ScrollController scrollController;
   final ExerciseModel? exercise;
   final String userId;
 
   const _ExerciseForm({
-    required this.scrollController,
     this.exercise,
     required this.userId,
   });
@@ -316,137 +307,143 @@ class _ExerciseForm extends HookConsumerWidget {
     final selectedMuscleGroup = useState<String?>(exercise?.muscleGroup);
     final selectedExerciseType = useState<String?>(exercise?.type);
 
-    return SingleChildScrollView(
-      controller: scrollController,
-      child: Padding(
-        padding: EdgeInsets.only(
-          left: 16,
-          right: 16,
-          top: 16,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              exercise == null ? 'Add New Exercise' : 'Edit Exercise',
-              style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface),
-            ),
-            const SizedBox(height: 16),
-            Form(
-              key: formKey.value,
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: nameController,
-                    decoration: InputDecoration(
-                      labelText: 'Exercise Name',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+    return MediaQuery.removePadding(
+      context: context,
+      removeTop: true,
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                exercise == null ? 'Add New Exercise' : 'Edit Exercise',
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface),
+              ),
+              const SizedBox(height: 16),
+              Form(
+                key: formKey.value,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: nameController,
+                      decoration: InputDecoration(
+                        labelText: 'Exercise Name',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter an exercise name';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final muscleGroupsStream =
+                            ref.watch(muscleGroupsProvider);
+                        return muscleGroupsStream.when(
+                          data: (muscleGroups) => DropdownButtonFormField<String>(
+                            decoration: InputDecoration(
+                              labelText: 'Muscle Group',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            value: selectedMuscleGroup.value,
+                            items: muscleGroups.map((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
+                            onChanged: (newValue) {
+                              selectedMuscleGroup.value = newValue;
+                            },
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please select a muscle group';
+                              }
+                              return null;
+                            },
+                          ),
+                          loading: () => const CircularProgressIndicator(),
+                          error: (_, __) => const Text('Failed to load muscle groups'),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final exerciseTypesStream =
+                            ref.watch(exerciseTypesProvider);
+                        return exerciseTypesStream.when(
+                          data: (exerciseTypes) => DropdownButtonFormField<String>(
+                            decoration: InputDecoration(
+                              labelText: 'Exercise Type',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            value: selectedExerciseType.value,
+                            items: exerciseTypes.map((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
+                            onChanged: (newValue) {
+                              selectedExerciseType.value = newValue;
+                            },
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please select an exercise type';
+                              }
+                              return null;
+                            },
+                          ),
+                          loading: () => const CircularProgressIndicator(),
+                          error: (_, __) => const Text('Failed to load exercise types'),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                     onPressed: () {
+                          if (formKey.value.currentState!.validate()) {
+                            _submitExercise(ref, context, nameController.text, selectedMuscleGroup.value!, selectedExerciseType.value!);
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: theme.colorScheme.primary,
+                          foregroundColor: theme.colorScheme.onPrimary,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30)),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 16, horizontal: 32),
+                        ),
+                        child: Text(exercise == null ? 'Add' : 'Update'),
                       ),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter an exercise name';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  Consumer(
-                    builder: (context, ref, child) {
-                      final muscleGroupsStream =
-                          ref.watch(muscleGroupsProvider);
-                      return muscleGroupsStream.when(
-                        data: (muscleGroups) => DropdownButtonFormField<String>(
-                          decoration: InputDecoration(
-                            labelText: 'Muscle Group',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          value: selectedMuscleGroup.value,
-                          items: muscleGroups.map((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value),
-                            );
-                          }).toList(),
-                          onChanged: (newValue) {
-                            selectedMuscleGroup.value = newValue;
-                          },
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please select a muscle group';
-                            }
-                            return null;
-                          },
-                        ),
-                        loading: () => const CircularProgressIndicator(),
-                        error: (_, __) => const Text('Failed to load muscle groups'),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  Consumer(
-                    builder: (context, ref, child) {
-                      final exerciseTypesStream =
-                          ref.watch(exerciseTypesProvider);
-                      return exerciseTypesStream.when(
-                        data: (exerciseTypes) => DropdownButtonFormField<String>(
-                          decoration: InputDecoration(
-                            labelText: 'Exercise Type',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          value: selectedExerciseType.value,
-                          items: exerciseTypes.map((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value),
-                            );
-                          }).toList(),
-                          onChanged: (newValue) {
-                            selectedExerciseType.value = newValue;
-                          },
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please select an exercise type';
-                            }
-                            return null;
-                          },
-                        ),
-                        loading: () => const CircularProgressIndicator(),
-                        error: (_, __) => const Text('Failed to load exercise types'),
-);
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () {
-                      if (formKey.value.currentState!.validate()) {
-                        _submitExercise(ref, context, nameController.text, selectedMuscleGroup.value!, selectedExerciseType.value!);
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.colorScheme.primary,
-                      foregroundColor: theme.colorScheme.onPrimary,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30)),
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 16, horizontal: 32),
-                    ),
-                    child: Text(exercise == null ? 'Add' : 'Update'),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -490,16 +487,9 @@ class ExercisesManager extends ConsumerWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
       ),
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.9,
-        minChildSize: 0.5,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (_, controller) => _ExerciseForm(
-          scrollController: controller,
-          exercise: null,
-          userId: ref.read(usersServiceProvider).getCurrentUserId(),
-        ),
+      builder: (context) => _ExerciseForm(
+        exercise: null,
+        userId: ref.read(usersServiceProvider).getCurrentUserId(),
       ),
     );
   }
