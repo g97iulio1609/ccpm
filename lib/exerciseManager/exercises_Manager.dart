@@ -24,89 +24,11 @@ class ExercisesList extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final exercisesService = ref.watch(exercisesServiceProvider);
-    final muscleGroupsStream = ref.watch(muscleGroupsProvider);
-    final exerciseTypesStream = ref.watch(exerciseTypesProvider);
     final searchText = useState('');
     final selectedMuscleGroup = useState<String?>(null);
     final selectedExerciseType = useState<String?>(null);
-    final TextEditingController nameController = useTextEditingController();
-    final editingExerciseId = useState<String?>(null);
-
-    ExerciseModel? exerciseToEdit;
-    ExerciseModel? exerciseToDelete;
-
-    void addOrEditExercise() {
-      final data = {
-        'name': nameController.text.trim(),
-        'muscleGroup': selectedMuscleGroup.value,
-        'type': selectedExerciseType.value
-      };
-
-      final currentUserRole = ref.read(userRoleProvider);
-      final currentUserId = ref.read(userNameProvider.notifier).state;
-
-      if (editingExerciseId.value != null) {
-        if (currentUserRole == 'admin' ||
-            (exerciseToEdit?.userId == currentUserId)) {
-          exercisesService.updateExercise(
-            editingExerciseId.value!,
-            data['name']!,
-            data['muscleGroup']!,
-            data['type']!,
-          );
-        }
-      } else if (nameController.text.trim().isNotEmpty &&
-          selectedMuscleGroup.value != null &&
-          selectedExerciseType.value != null) {
-        exercisesService.addExercise(
-          data['name']!,
-          data['muscleGroup']!,
-          data['type']!,
-          currentUserId,
-        );
-      }
-
-      nameController.clear();
-      selectedMuscleGroup.value = null;
-      selectedExerciseType.value = null;
-      editingExerciseId.value = null;
-      exerciseToEdit = null;
-      exerciseToDelete = null;
-    }
-
-    Future<void> editExercise(ExerciseModel exercise) async {
-      exerciseToEdit = exercise;
-      nameController.text = exercise.name;
-      selectedMuscleGroup.value = exercise.muscleGroup;
-      selectedExerciseType.value = exercise.type;
-      editingExerciseId.value = exercise.id;
-    }
-
-    Future<void> deleteExercise(String id) async {
-      final currentUserRole = ref.read(userRoleProvider);
-      final currentUserId = ref.read(userNameProvider.notifier).state;
-
-      if (currentUserRole == 'admin' ||
-          (exerciseToDelete?.userId == currentUserId)) {
-        await exercisesService.deleteExercise(id);
-      }
-    }
-
-    Future<void> approveExercise(String id) async {
-      final currentUserRole = ref.read(userRoleProvider);
-
-      if (currentUserRole == 'admin') {
-        await exercisesService.approveExercise(id);
-      }
-    }
-
-    Future<void> rejectExercise(String id) async {
-      final currentUserRole = ref.read(userRoleProvider);
-
-      if (currentUserRole == 'admin') {
-        await exercisesService.deleteExercise(id);
-      }
-    }
+    final currentUserRole = ref.watch(userRoleProvider);
+    final currentUserId = ref.read(usersServiceProvider).getCurrentUserId();
 
     return Scaffold(
       body: Padding(
@@ -114,112 +36,6 @@ class ExercisesList extends HookConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 24),
-            TextField(
-              controller: nameController,
-              decoration: InputDecoration(
-                hintText: editingExerciseId.value != null
-                    ? 'Edit Exercise'
-                    : 'New Exercise',
-                hintStyle: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: addOrEditExercise,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide:
-                      BorderSide(color: Theme.of(context).colorScheme.outline),
-                ),
-                filled: true,
-                fillColor: Theme.of(context).colorScheme.surface,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              ),
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-            ),
-            const SizedBox(height: 16),
-            muscleGroupsStream.when(
-              data: (muscleGroups) => DropdownButtonFormField<String>(
-                decoration: InputDecoration(
-                  hintText: 'Muscle Group',
-                  hintStyle: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                        color: Theme.of(context).colorScheme.outline),
-                  ),
-                  filled: true,
-                  fillColor: Theme.of(context).colorScheme.surface,
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                ),
-                value: selectedMuscleGroup.value,
-                items: muscleGroups
-                    .toSet()
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(
-                      value,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                  );
-                }).toList(),
-                onChanged: (newValue) {
-                  selectedMuscleGroup.value = newValue;
-                },
-                dropdownColor: Theme.of(context).colorScheme.surface,
-              ),
-              loading: () => const SizedBox(),
-              error: (error, stack) => const SizedBox(),
-            ),
-            const SizedBox(height: 16),
-            exerciseTypesStream.when(
-              data: (exerciseTypes) => DropdownButtonFormField<String>(
-                decoration: InputDecoration(
-                  hintText: 'Exercise Type',
-                  hintStyle: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                        color: Theme.of(context).colorScheme.outline),
-                  ),
-                  filled: true,
-                  fillColor: Theme.of(context).colorScheme.surface,
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                ),
-                value: selectedExerciseType.value,
-                items: exerciseTypes
-                    .toSet()
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(
-                      value,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                  );
-                }).toList(),
-                onChanged: (newValue) {
-                  selectedExerciseType.value = newValue;
-                },
-                dropdownColor: Theme.of(context).colorScheme.surface,
-              ),
-              loading: () => const SizedBox(),
-              error: (error, stack) => const SizedBox(),
-            ),
             const SizedBox(height: 24),
             TextField(
               onChanged: (value) => searchText.value = value,
@@ -248,29 +64,17 @@ class ExercisesList extends HookConsumerWidget {
                 builder: (context, snapshot) {
                   if (snapshot.hasData) {
                     final exercises = snapshot.data!;
-                    final pendingExercises = exercises
-                        .where(
-                          (exercise) =>
-                              exercise.status == 'pending' &&
-                              (exercise.userId ==
-                                      ref.read(userNameProvider.notifier).state ||
-                                  ref.read(userRoleProvider) == 'admin'),
-                        )
+                    final filteredExercises = exercises
+                        .where((exercise) =>
+                            exercise.name
+                                .toLowerCase()
+                                .contains(searchText.value.toLowerCase()) &&
+                            (selectedMuscleGroup.value == null ||
+                                exercise.muscleGroup ==
+                                    selectedMuscleGroup.value) &&
+                            (selectedExerciseType.value == null ||
+                                exercise.type == selectedExerciseType.value))
                         .toList();
-                    final approvedExercises = exercises
-                        .where(
-                          (exercise) =>
-                              exercise.status == 'approved' &&
-                              exercise.name
-                                  .toLowerCase()
-                                  .contains(searchText.value.toLowerCase()),
-                        )
-                        .toList();
-
-                    final filteredExercises = [
-                      ...pendingExercises,
-                      ...approvedExercises,
-                    ];
 
                     if (filteredExercises.isEmpty) {
                       return Center(
@@ -292,20 +96,19 @@ class ExercisesList extends HookConsumerWidget {
                           padding: const EdgeInsets.only(bottom: 16),
                           child: ExerciseCard(
                             exercise: exercise,
-                            isAdmin: ref.read(userRoleProvider) == 'admin',
-                            canEdit: ref.read(userRoleProvider) == 'admin' ||
-                                exercise.userId ==
-                                    ref.read(userNameProvider.notifier).state,
-                            canDelete: ref.read(userRoleProvider) == 'admin' ||
-                                exercise.userId ==
-                                    ref.read(userNameProvider.notifier).state,
-                            onEdit: () => editExercise(exercise),
-                            onDelete: () {
-                              exerciseToDelete = exercise;
-                              deleteExercise(exercise.id);
-                            },
-                            onApprove: () => approveExercise(exercise.id),
-                            onReject: () => rejectExercise(exercise.id),
+                            isAdmin: currentUserRole == 'admin',
+                            canEdit: currentUserRole == 'admin' ||
+                                exercise.userId == currentUserId,
+                            canDelete: currentUserRole == 'admin' ||
+                                exercise.userId == currentUserId,
+                            onEdit: () => _showEditExerciseBottomSheet(
+                                context, ref, exercise),
+                            onDelete: () => _showDeleteConfirmationDialog(
+                                context, ref, exercise),
+                            onApprove: () =>
+                                exercisesService.approveExercise(exercise.id),
+                            onReject: () =>
+                                exercisesService.deleteExercise(exercise.id),
                           ),
                         );
                       },
@@ -330,6 +133,55 @@ class ExercisesList extends HookConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+
+  void _showEditExerciseBottomSheet(
+      BuildContext context, WidgetRef ref, ExerciseModel exercise) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
+      ),
+      builder: (context) => _ExerciseForm(
+        exercise: exercise,
+        userId: ref.read(usersServiceProvider).getCurrentUserId(),
+      ),
+    );
+  }
+
+  void _showDeleteConfirmationDialog(
+      BuildContext context, WidgetRef ref, ExerciseModel exercise) {
+    final theme = Theme.of(context);
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: theme.colorScheme.surface,
+          title: Text('Confirm Deletion',
+              style: TextStyle(color: theme.colorScheme.onSurface)),
+          content: Text('Are you sure you want to delete this exercise?',
+              style: TextStyle(color: theme.colorScheme.onSurface)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Cancel',
+                  style: TextStyle(color: theme.colorScheme.primary)),
+            ),
+            TextButton(
+              onPressed: () {
+                ref
+                    .read(exercisesServiceProvider)
+                    .deleteExercise(exercise.id);
+                Navigator.of(context).pop();
+              },
+              child: Text('Delete',
+                  style: TextStyle(color: theme.colorScheme.error)),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -433,6 +285,211 @@ class ExerciseCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ExerciseForm extends HookConsumerWidget {
+  final ExerciseModel? exercise;
+  final String userId;
+
+  const _ExerciseForm({
+    this.exercise,
+    required this.userId,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final formKey = useState(GlobalKey<FormState>());
+    final nameController = useTextEditingController(text: exercise?.name);
+    final selectedMuscleGroup = useState<String?>(exercise?.muscleGroup);
+    final selectedExerciseType = useState<String?>(exercise?.type);
+
+    return MediaQuery.removePadding(
+      context: context,
+      removeTop: true,
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                exercise == null ? 'Add New Exercise' : 'Edit Exercise',
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface),
+              ),
+              const SizedBox(height: 16),
+              Form(
+                key: formKey.value,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: nameController,
+                      decoration: InputDecoration(
+                        labelText: 'Exercise Name',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter an exercise name';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final muscleGroupsStream =
+                            ref.watch(muscleGroupsProvider);
+                        return muscleGroupsStream.when(
+                          data: (muscleGroups) => DropdownButtonFormField<String>(
+                            decoration: InputDecoration(
+                              labelText: 'Muscle Group',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            value: selectedMuscleGroup.value,
+                            items: muscleGroups.map((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
+                            onChanged: (newValue) {
+                              selectedMuscleGroup.value = newValue;
+                            },
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please select a muscle group';
+                              }
+                              return null;
+                            },
+                          ),
+                          loading: () => const CircularProgressIndicator(),
+                          error: (_, __) => const Text('Failed to load muscle groups'),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final exerciseTypesStream =
+                            ref.watch(exerciseTypesProvider);
+                        return exerciseTypesStream.when(
+                          data: (exerciseTypes) => DropdownButtonFormField<String>(
+                            decoration: InputDecoration(
+                              labelText: 'Exercise Type',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            value: selectedExerciseType.value,
+                            items: exerciseTypes.map((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
+                            onChanged: (newValue) {
+                              selectedExerciseType.value = newValue;
+                            },
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please select an exercise type';
+                              }
+                              return null;
+                            },
+                          ),
+                          loading: () => const CircularProgressIndicator(),
+                          error: (_, __) => const Text('Failed to load exercise types'),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                     onPressed: () {
+                          if (formKey.value.currentState!.validate()) {
+                            _submitExercise(ref, context, nameController.text, selectedMuscleGroup.value!, selectedExerciseType.value!);
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: theme.colorScheme.primary,
+                          foregroundColor: theme.colorScheme.onPrimary,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30)),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 16, horizontal: 32),
+                        ),
+                        child: Text(exercise == null ? 'Add' : 'Update'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _submitExercise(WidgetRef ref, BuildContext context, String name, String muscleGroup, String exerciseType) {
+    final exercisesService = ref.read(exercisesServiceProvider);
+    
+    if (exercise == null) {
+      exercisesService.addExercise(
+        name,
+        muscleGroup,
+        exerciseType,
+        userId,
+      );
+    } else {
+      exercisesService.updateExercise(
+        exercise!.id,
+        name,
+        muscleGroup,
+        exerciseType,
+      );
+    }
+    
+    Navigator.of(context).pop();
+  }
+}
+
+class ExercisesManager extends ConsumerWidget {
+  const ExercisesManager({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return const ExercisesList();
+  }
+
+  static void showAddExerciseBottomSheet(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
+      ),
+      builder: (context) => _ExerciseForm(
+        exercise: null,
+        userId: ref.read(usersServiceProvider).getCurrentUserId(),
       ),
     );
   }

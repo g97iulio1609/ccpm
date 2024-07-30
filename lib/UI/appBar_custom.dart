@@ -1,3 +1,5 @@
+import 'package:alphanessone/exerciseManager/exercises_manager.dart';
+import 'package:alphanessone/maxrmdashboard.dart';
 import 'package:alphanessone/measurements/measurements.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
@@ -363,21 +365,43 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
     }
 
   if (currentRoute == '/measurements') {
+  actions.add(
+    IconButton(
+      onPressed: () {
+        final userId = FirebaseAuth.instance.currentUser?.uid;
+        if (userId != null) {
+          MeasurementsPage.showAddMeasurementDialog(context, ref, userId);
+        }
+      },
+      icon: const Icon(Icons.add),
+    ),
+  );
+}
+
+ if (currentRoute == '/maxrmdashboard') {
       actions.add(
         IconButton(
           onPressed: () {
-            final userId = FirebaseAuth.instance.currentUser?.uid;
-            if (userId != null) {
-              MeasurementsPage.showAddMeasurementDialog(context, ref, userId);
-            }
+            MaxRMDashboard.showAddMaxRMDialog(context, ref);
           },
           icon: const Icon(Icons.add),
         ),
       );
     }
 
+if (currentRoute == '/exercises_list') {
+  actions.add(
+    IconButton(
+      onPressed: () {
+        ExercisesManager.showAddExerciseBottomSheet(context, ref);
+      },
+      icon: const Icon(Icons.add),
+    ),
+  );
+}
     return actions;
   }
+
 }
 
 final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());

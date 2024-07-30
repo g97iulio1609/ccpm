@@ -15,6 +15,7 @@ import 'exerciseManager/exercises_services.dart';
 import 'package:alphanessone/services/users_services.dart';
 import 'package:alphanessone/services/exercise_record_services.dart';
 import '../user_autocomplete.dart';
+import '../providers/providers.dart';
 
 // Providers
 final authProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
@@ -49,19 +50,13 @@ class MaxRMDashboard extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final exercisesAsyncValue = ref.watch(exercisesStreamProvider);
+    ref.watch(exercisesStreamProvider);
     final usersService = ref.watch(userServiceProvider);
     final coachingService = ref.watch(coachingServiceProvider);
     final exerciseRecordService = ref.watch(exerciseRecordServiceProvider);
-    final selectedExerciseController = useState<ExerciseModel?>(null);
-    final exerciseNameController = useTextEditingController();
-    final maxWeightController = useTextEditingController();
-    final repetitionsController = useTextEditingController();
-    final keepWeight = ref.watch(keepWeightProvider);
-    final dateFormat = DateFormat('yyyy-MM-dd');
     final currentUserRole = ref.watch(currentUserRoleProvider);
     final selectedUserController = useTextEditingController();
-    final selectedUser = useState<UserModel?>(null);
+    final selectedUserId = ref.watch(selectedUserIdProvider);
 
     useEffect(() {
       Future<void> fetchUsers() async {
@@ -98,24 +93,6 @@ class MaxRMDashboard extends HookConsumerWidget {
       }
     }
 
-    Future<void> addRecord({
-      required String exerciseId,
-      required String exerciseName,
-      required num maxWeight,
-      required int repetitions,
-    }) async {
-      String userId = selectedUser.value?.id ?? usersService.getCurrentUserId();
-      await exerciseRecordService.addExerciseRecord(
-        userId: userId,
-        exerciseId: exerciseId,
-        exerciseName: exerciseName,
-        maxWeight: maxWeight,
-        repetitions: repetitions,
-        date: dateFormat.format(DateTime.now()),
-      );
-      debugPrint('Record added: $exerciseName, Max Weight: $maxWeight, Repetitions: $repetitions');
-    }
-
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -127,45 +104,559 @@ class MaxRMDashboard extends HookConsumerWidget {
                 controller: selectedUserController,
                 focusNode: FocusNode(),
                 onSelected: (UserModel user) {
-                  selectedUser.value = user;
+                  ref.read(selectedUserIdProvider.notifier).state = user.id;
                 },
                 onChanged: filterUsers,
               ),
               const SizedBox(height: 8),
             ],
-            _buildExerciseTypeAheadField(exercisesAsyncValue, selectedExerciseController, exerciseNameController, context),
-            const SizedBox(height: 8),
-            _buildTextFormField(
-              controller: maxWeightController,
-              labelText: 'Max weight lifted',
-              context: context,
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 8),
-            _buildTextFormField(
-              controller: repetitionsController,
-              labelText: 'Number of repetitions',
-              context: context,
-              keyboardType: TextInputType.number,
-            ),
-            _buildKeepWeightSwitch(context, keepWeight, ref),
-            _buildAddRecordButton(
-              context,
-              selectedExerciseController,
-              maxWeightController,
-              repetitionsController,
-              addRecord,
-              exerciseRecordService,
-              usersService,
-              keepWeight,
-            ),
-            const SizedBox(height: 20),
-            _buildAllExercisesMaxRMs(ref, usersService, exerciseRecordService, context, selectedUser.value),
+            _buildAllExercisesMaxRMs(ref, usersService, exerciseRecordService, context, selectedUserId),
           ],
         ),
       ),
     );
   }
+
+  Widget _buildAllExercisesMaxRMs(
+    WidgetRef ref,
+    UsersService usersService,
+    ExerciseRecordService exerciseRecordService,
+    BuildContext context,
+    String? selectedUserId,
+  ) {
+    final exercisesAsyncValue = ref.watch(exercisesStreamProvider);
+    final userId = selectedUserId ?? usersService.getCurrentUserId();
+
+    return exercisesAsyncValue.when(
+      data: (exercises) {
+        List<Stream<ExerciseRecord?>> exerciseRecordStreams = exercises.map((exercise) {
+          return exerciseRecordService
+              .getExerciseRecords(userId: userId, exerciseId: exercise.id)
+              .map((records) => records.isNotEmpty ? records.reduce((a, b) => a.date.compareTo(b.date) > 0 ? a : b) : null);
+        }).toList();
+
+        return StreamBuilder<List<ExerciseRecord?>>(
+          stream: CombineLatestStream.list(exerciseRecordStreams),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            var latestRecords = snapshot.data ?? [];
+            latestRecords = latestRecords.where((record) => record != null).toList();
+
+            return Expanded(
+              child: ListView.builder(
+                itemCount: latestRecords.length,
+                itemBuilder: (context, index) {
+                  var record = latestRecords[index];
+                  ExerciseModel exercise = exercises.firstWhere(
+                    (ex) => ex.id == record?.exerciseId,
+                    orElse: () => ExerciseModel(id: '', name: 'Exercise not found', type: '', muscleGroup: ''),
+                  );
+                  return ExerciseCard(
+                    record: record!,
+                    exercise: exercise,
+                    exerciseRecordService: exerciseRecordService,
+                    usersService: usersService,
+                  );
+                },
+              ),
+            );
+          },
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(
+        child: Text(
+          'Error loading max RMs: $error',
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+        ),
+      ),
+    );
+  }
+
+  static void showAddMaxRMDialog(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
+      ),
+      builder: (context) => _MaxRMForm(
+        onSubmit: (exerciseId, exerciseName, maxWeight, repetitions, date, keepWeight, selectedUserId) async {
+          final exerciseRecordService = ref.read(exerciseRecordServiceProvider);
+          final usersService = ref.read(userServiceProvider);
+          final userId = selectedUserId ?? usersService.getCurrentUserId();
+
+          await exerciseRecordService.addExerciseRecord(
+            userId: userId,
+            exerciseId: exerciseId,
+            exerciseName: exerciseName,
+            maxWeight: maxWeight,
+            repetitions: repetitions,
+            date: DateFormat('yyyy-MM-dd').format(date),
+          );
+
+          if (keepWeight) {
+            await exerciseRecordService.updateIntensityForProgram(
+              userId,
+              exerciseId,
+              maxWeight,
+            );
+          } else {
+            await exerciseRecordService.updateWeightsForProgram(
+              userId,
+              exerciseId,
+              maxWeight,
+            );
+          }
+
+          if (context.mounted) {
+            Navigator.of(context).pop();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Max RM added successfully')),
+            );
+          }
+        },
+      ),
+    );
+  }
+}
+
+class ExerciseCard extends ConsumerWidget {
+  final ExerciseRecord record;
+  final ExerciseModel exercise;
+  final ExerciseRecordService exerciseRecordService;
+  final UsersService usersService;
+
+  const ExerciseCard({
+    super.key,
+    required this.record,
+    required this.exercise,
+    required this.exerciseRecordService,
+    required this.usersService,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedUserId = ref.watch(selectedUserIdProvider);
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: Theme.of(context).colorScheme.surface,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          context.push(
+            '/maxrmdashboard/exercise_stats/${exercise.id}',
+            extra: {
+              'exercise': exercise,
+              'userId': selectedUserId ?? usersService.getCurrentUserId(),
+            },
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      exercise.name,
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Theme.of(context).colorScheme.onSurface),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${record.maxWeight} kg x ${record.repetitions} reps',
+                      style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      record.date,
+                      style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit),
+                    onPressed: () => _showEditDialog(context, ref),
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete),
+                    onPressed: () => _showDeleteDialog(context, ref),
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showEditDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return EditRecordDialog(
+          record: record,
+          exercise: exercise,
+          exerciseRecordService: exerciseRecordService,
+          usersService: usersService,
+        );
+      },
+    );
+  }
+
+  void _showDeleteDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text(
+            'Confirmation',
+            style: TextStyle(color: Theme.of(dialogContext).colorScheme.onSurface),
+          ),
+          backgroundColor: Theme.of(dialogContext).colorScheme.surface,
+          content: Text(
+            'Are you sure you want to delete this record?',
+            style: TextStyle(color: Theme.of(dialogContext).colorScheme.onSurface),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text('Cancel', style: TextStyle(color: Theme.of(dialogContext).colorScheme.primary)),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _performDelete(context, ref);
+              },
+              child: Text('Delete', style: TextStyle(color: Theme.of(dialogContext).colorScheme.error)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _performDelete(BuildContext context, WidgetRef ref) async {
+    final selectedUserId = ref.read(selectedUserIdProvider);
+    try {
+      await exerciseRecordService.deleteExerciseRecord(
+        userId: selectedUserId ?? usersService.getCurrentUserId(),
+        exerciseId: exercise.id,
+        recordId: record.id,
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Record deleted successfully')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete record: $e')),
+        );
+      }
+    }
+  }
+}
+
+class EditRecordDialog extends HookConsumerWidget {
+  final ExerciseRecord record;
+  final ExerciseModel exercise;
+  final ExerciseRecordService exerciseRecordService;
+  final UsersService usersService;
+
+  const EditRecordDialog({
+    super.key,
+    required this.record,
+    required this.exercise,
+    required this.exerciseRecordService,
+    required this.usersService,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final maxWeightController = useTextEditingController(text: record.maxWeight.toString());
+    final repetitionsController = useTextEditingController(text: record.repetitions.toString());
+    final keepWeight = useState(false);
+    final selectedDate = useState(DateTime.parse(record.date));
+
+    return AlertDialog(
+      title: Text(
+        'Edit Record',
+style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+      ),
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildDialogTextFormField(maxWeightController, 'Max weight', context),
+            _buildDialogTextFormField(repetitionsController, 'Repetitions', context),
+            _buildDatePicker(context, selectedDate),
+            Row(
+              children: [
+                Text(
+                  'Keep current weight',
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                ),
+                Switch(
+                  value: keepWeight.value,
+                  onChanged: (value) {
+                    keepWeight.value = value;
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+        ),
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+            _handleSave(context, ref, maxWeightController.text, repetitionsController.text, selectedDate.value, keepWeight.value);
+          },
+          child: Text('Save', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDialogTextFormField(TextEditingController controller, String labelText, BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: labelText,
+          labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        keyboardType: TextInputType.number,
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+      ),
+    );
+  }
+
+  Widget _buildDatePicker(BuildContext context, ValueNotifier<DateTime> selectedDate) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: InkWell(
+        onTap: () async {
+          final DateTime? picked = await showDatePicker(
+            context: context,
+            initialDate: selectedDate.value,
+            firstDate: DateTime(2000),
+            lastDate: DateTime.now(),
+          );
+          if (picked != null && picked != selectedDate.value) {
+            selectedDate.value = picked;
+          }
+        },
+        child: InputDecorator(
+          decoration: InputDecoration(
+            labelText: 'Date',
+            labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                DateFormat('dd/MM/yyyy').format(selectedDate.value),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+              ),
+              Icon(Icons.calendar_today, color: Theme.of(context).colorScheme.onSurface),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _handleSave(BuildContext context, WidgetRef ref, String maxWeightText, String repetitionsText, DateTime selectedDate, bool keepWeight) async {
+    final selectedUserId = ref.read(selectedUserIdProvider);
+    double newMaxWeight = double.parse(maxWeightText);
+    int newRepetitions = int.parse(repetitionsText);
+
+    if (newRepetitions > 1) {
+      newMaxWeight = (newMaxWeight / (1.0278 - (0.0278 * newRepetitions))).roundToDouble();
+      newRepetitions = 1;
+    }
+
+    try {
+      await exerciseRecordService.updateExerciseRecord(
+        userId: selectedUserId ?? usersService.getCurrentUserId(),
+        exerciseId: exercise.id,
+        recordId: record.id,
+        maxWeight: newMaxWeight,
+        repetitions: newRepetitions,
+      );
+
+      if (keepWeight) {
+        debugPrint('Updating intensity while keeping weight.');
+        await exerciseRecordService.updateIntensityForProgram(
+          selectedUserId ?? usersService.getCurrentUserId(),
+          exercise.id,
+          newMaxWeight,
+        );
+      } else {
+        debugPrint('Updating weights based on new max weight.');
+        await exerciseRecordService.updateWeightsForProgram(
+          selectedUserId ?? usersService.getCurrentUserId(),
+          exercise.id,
+          newMaxWeight,
+        );
+      }
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Record updated successfully')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update record: $e')),
+        );
+      }
+    }
+  }
+}
+
+class _MaxRMForm extends HookConsumerWidget {
+  final Function(String, String, num, int, DateTime, bool, String?) onSubmit;
+
+  const _MaxRMForm({
+    required this.onSubmit,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final exercisesAsyncValue = ref.watch(exercisesStreamProvider);
+    final selectedExerciseController = useState<ExerciseModel?>(null);
+    final exerciseNameController = useTextEditingController();
+    final maxWeightController = useTextEditingController();
+    final repetitionsController = useTextEditingController();
+    final keepWeight = useState(false);
+    final selectedDate = useState(DateTime.now());
+    final formKey = GlobalKey<FormState>();
+
+    final maxWeightFocusNode = useFocusNode();
+    final repetitionsFocusNode = useFocusNode();
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 16,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+            ),
+            child: Form(
+              key: formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Add New Max RM',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildExerciseTypeAheadField(
+                    exercisesAsyncValue,
+                    selectedExerciseController,
+                    exerciseNameController,
+                    context,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    controller: maxWeightController,
+                    labelText: 'Max weight lifted',
+                    keyboardType: TextInputType.number,
+                    focusNode: maxWeightFocusNode,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    controller: repetitionsController,
+                    labelText: 'Number of repetitions',
+                    keyboardType: TextInputType.number,
+                    focusNode: repetitionsFocusNode,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildDatePicker(context, selectedDate),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Text(
+                        'Keep current weight',
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                      ),
+                      Switch(
+                        value: keepWeight.value,
+                        onChanged: (value) {
+                          keepWeight.value = value;
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Center(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (formKey.currentState!.validate()) {
+                          final exerciseId = selectedExerciseController.value?.id ?? '';
+                          final exerciseName = exerciseNameController.text;
+                          final maxWeight = num.tryParse(maxWeightController.text) ?? 0;
+                          final repetitions = int.tryParse(repetitionsController.text) ?? 0;
+                          final selectedUserId = ref.read(selectedUserIdProvider);
+                          onSubmit(exerciseId, exerciseName, maxWeight, repetitions, selectedDate.value, keepWeight.value, selectedUserId);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFFD700), // Yellow color
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Add Max RM', style: TextStyle(fontSize: 16)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
 
   Widget _buildExerciseTypeAheadField(
     AsyncValue<List<ExerciseModel>> exercisesAsyncValue,
@@ -189,7 +680,7 @@ class MaxRMDashboard extends HookConsumerWidget {
             exerciseNameController.text = suggestion.name;
           },
           emptyBuilder: (context) => const SizedBox.shrink(),
-          hideWithKeyboard: true,
+          hideWithKeyboard: false,
           hideOnSelect: true,
           retainOnLoading: false,
           decorationBuilder: (context, child) {
@@ -226,443 +717,55 @@ class MaxRMDashboard extends HookConsumerWidget {
     );
   }
 
-  Widget _buildTextFormField({
+  Widget _buildTextField({
     required TextEditingController controller,
     required String labelText,
-    required BuildContext context,
     TextInputType keyboardType = TextInputType.text,
+    required FocusNode focusNode,
   }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextFormField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: labelText,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          filled: true,
-          fillColor: Theme.of(context).colorScheme.surface,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        ),
-        keyboardType: keyboardType,
-        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-      ),
-    );
-  }
-
-  Widget _buildKeepWeightSwitch(BuildContext context, bool keepWeight, WidgetRef ref) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          'Keep current weight',
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-        ),
-        Switch(
-          value: keepWeight,
-          onChanged: (value) {
-            ref.read(keepWeightProvider.notifier).state = value;
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAddRecordButton(
-    BuildContext context,
-    ValueNotifier<ExerciseModel?> selectedExerciseController,
-    TextEditingController maxWeightController,
-    TextEditingController repetitionsController,
-    Future<void> Function({
-      required String exerciseId,
-      required String exerciseName,
-      required num maxWeight,
-      required int repetitions,
-    }) addRecord,
-    ExerciseRecordService exerciseRecordService,
-    UsersService usersService,
-    bool keepWeight,
-  ) {
-    return Center(
-      child: ElevatedButton(
-        onPressed: () async {
-          final int repetitions = int.tryParse(repetitionsController.text) ?? 0;
-          double maxWeight = double.tryParse(maxWeightController.text) ?? 0;
-          if (repetitions > 1) {
-            maxWeight = (maxWeight / (1.0278 - (0.0278 * repetitions))).roundToDouble();
-          }
-          final ExerciseModel? selectedExercise = selectedExerciseController.value;
-          if (selectedExercise != null && maxWeight > 0) {
-            await addRecord(
-              exerciseId: selectedExercise.id,
-              exerciseName: selectedExercise.name,
-              maxWeight: maxWeight,
-              repetitions: 1,
-            );
-
-            if (keepWeight) {
-              debugPrint('Updating intensity while keeping weight.');
-              await exerciseRecordService.updateIntensityForProgram(
-                usersService.getCurrentUserId(),
-                selectedExercise.id,
-                maxWeight,
-              );
-            } else {
-              debugPrint('Updating weights based on new max weight.');
-              await exerciseRecordService.updateWeightsForProgram(
-                usersService.getCurrentUserId(),
-                selectedExercise.id,
-                maxWeight,
-              );
-            }
-
-            maxWeightController.clear();
-            repetitionsController.clear();
-            selectedExerciseController.value = null;
-          }
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          foregroundColor: Theme.of(context).colorScheme.onPrimary,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-        child: const Text('Add Record'),
-      ),
-    );
-  }
-
-  Widget _buildAllExercisesMaxRMs(
-    WidgetRef ref,
-    UsersService usersService,
-    ExerciseRecordService exerciseRecordService,
-    BuildContext context,
-    UserModel? selectedUser,
-  ) {
-    final exercisesAsyncValue = ref.watch(exercisesStreamProvider);
-    final userId = selectedUser?.id ?? usersService.getCurrentUserId();
-
-    return exercisesAsyncValue.when(
-      data: (exercises) {
-        List<Stream<ExerciseRecord?>> exerciseRecordStreams = exercises.map((exercise) {
-          return exerciseRecordService
-              .getExerciseRecords(userId: userId, exerciseId: exercise.id)
-              .map((records) => records.isNotEmpty ? records.reduce((a, b) => a.date.compareTo(b.date) > 0 ? a : b) : null);
-        }).toList();
-
-        return StreamBuilder<List<ExerciseRecord?>>(
-          stream: CombineLatestStream.list(exerciseRecordStreams),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            var latestRecords = snapshot.data ?? [];
-            latestRecords = latestRecords.where((record) => record != null).toList();
-
-            return Expanded(
-              child: ListView.builder(
-                itemCount: latestRecords.length,
-                itemBuilder: (context, index) {
-                  var record = latestRecords[index];
-                  ExerciseModel exercise = exercises.firstWhere(
-                    (ex) => ex.id == record?.exerciseId,
-                    orElse: () => ExerciseModel(id: '', name: 'Exercise not found', type: '', muscleGroup: ''),
-                  );
-                  return ExerciseCard(
-                    record: record!,
-                    exercise: exercise,
-                    exerciseRecordService: exerciseRecordService,
-                    usersService: usersService,
-                    selectedUser: selectedUser, // Aggiunto passaggio di selectedUser
-                  );
-                },
-              ),
-            );
-          },
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(
-        child: Text(
-          'Error loading max RMs: $error',
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-        ),
-      ),
-    );
-  }
-}
-
-class ExerciseCard extends StatelessWidget {
-  final ExerciseRecord record;
-  final ExerciseModel exercise;
-  final ExerciseRecordService exerciseRecordService;
-  final UsersService usersService;
-  final UserModel? selectedUser; // Aggiunto questo campo
-
-  const ExerciseCard({
-    super.key,
-    required this.record,
-    required this.exercise,
-    required this.exerciseRecordService,
-    required this.usersService,
-    this.selectedUser, // Aggiunto questo campo
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      color: Theme.of(context).colorScheme.surface,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          context.push(
-            '/maxrmdashboard/exercise_stats/${exercise.id}',
-            extra: {
-              'exercise': exercise,
-              'userId': selectedUser?.id ?? usersService.getCurrentUserId(), // Passaggio dell'ID utente qui
-            },
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      exercise.name,
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Theme.of(context).colorScheme.onSurface),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${record.maxWeight} kg x ${record.repetitions} reps',
-                      style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      record.date,
-                      style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                    ),
-                  ],
-                ),
-              ),
-              Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () => _showEditDialog(context),
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () => _showDeleteDialog(context),
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showEditDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return EditRecordDialog(
-          record: record,
-          exercise: exercise,
-          exerciseRecordService: exerciseRecordService,
-          usersService: usersService,
-          selectedUser: selectedUser, // Aggiunto passaggio di selectedUser
-        );
-      },
-    );
-  }
-
-  void _showDeleteDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: Text(
-            'Confirmation',
-            style: TextStyle(color: Theme.of(dialogContext).colorScheme.onSurface),
-          ),
-          backgroundColor: Theme.of(dialogContext).colorScheme.surface,
-          content: Text(
-            'Are you sure you want to delete this record?',
-            style: TextStyle(color: Theme.of(dialogContext).colorScheme.onSurface),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text('Cancel', style: TextStyle(color: Theme.of(dialogContext).colorScheme.primary)),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                _performDelete(context);
-              },
-              child: Text('Delete', style: TextStyle(color: Theme.of(dialogContext).colorScheme.onPrimary)),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _performDelete(BuildContext context) async {
-    try {
-      await exerciseRecordService.deleteExerciseRecord(
-        userId: usersService.getCurrentUserId(),
-        exerciseId: exercise.id,
-        recordId: record.id,
-      );
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Record deleted successfully')),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to delete record: $e')),
-        );
-      }
-    }
-  }
-}
-
-class EditRecordDialog extends HookConsumerWidget {
-  final ExerciseRecord record;
-  final ExerciseModel exercise;
-  final ExerciseRecordService exerciseRecordService;
-  final UsersService usersService;
-  final UserModel? selectedUser; // Aggiunto questo campo
-
-  const EditRecordDialog({
-    super.key,
-    required this.record,
-    required this.exercise,
-    required this.exerciseRecordService,
-    required this.usersService,
-    this.selectedUser, // Aggiunto questo campo
-  });
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final maxWeightController = useTextEditingController(text: record.maxWeight.toString());
-    final repetitionsController = useTextEditingController(text: record.repetitions.toString());
-    final keepWeight = useState(false);
-
-    return AlertDialog(
-      title: Text(
-        'Edit Record',
-        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-      ),
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildDialogTextFormField(maxWeightController, 'Max weight', context),
-          _buildDialogTextFormField(repetitionsController, 'Repetitions', context),
-          Row(
-            children: [
-              Text(
-                'Keep current weight',
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-              ),
-              Switch(
-                value: keepWeight.value,
-                onChanged: (value) {
-                  keepWeight.value = value;
-                },
-              ),
-            ],
-          ),
-        ],
-      ),
-      actions: <Widget>[
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-        ),
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-            _handleSave(context, maxWeightController.text, repetitionsController.text, keepWeight.value);
-          },
-          child: Text('Save', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDialogTextFormField(TextEditingController controller, String labelText, BuildContext context) {
     return TextFormField(
       controller: controller,
+      focusNode: focusNode,
       decoration: InputDecoration(
         labelText: labelText,
-        labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
-      keyboardType: TextInputType.number,
-      style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+      keyboardType: keyboardType,
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please enter $labelText';
+        }
+        return null;
+      },
     );
   }
 
-  void _handleSave(BuildContext context, String maxWeightText, String repetitionsText, bool keepWeight) async {
-    double newMaxWeight = double.parse(maxWeightText);
-    int newRepetitions = int.parse(repetitionsText);
-
-    if (newRepetitions > 1) {
-      newMaxWeight = (newMaxWeight / (1.0278 - (0.0278 * newRepetitions))).roundToDouble();
-      newRepetitions = 1;
-    }
-
-    try {
-      await exerciseRecordService.updateExerciseRecord(
-        userId: usersService.getCurrentUserId(),
-        exerciseId: exercise.id,
-        recordId: record.id,
-        maxWeight: newMaxWeight,
-        repetitions: newRepetitions,
-      );
-
-      if (keepWeight) {
-        debugPrint('Updating intensity while keeping weight.');
-        await exerciseRecordService.updateIntensityForProgram(
-          usersService.getCurrentUserId(),
-          exercise.id,
-          newMaxWeight,
+  Widget _buildDatePicker(BuildContext context, ValueNotifier<DateTime> selectedDate) {
+    return InkWell(
+      onTap: () async {
+        final DateTime? picked = await showDatePicker(
+          context: context,
+          initialDate: selectedDate.value,
+          firstDate: DateTime(2000),
+          lastDate: DateTime.now(),
         );
-      } else {
-        debugPrint('Updating weights based on new max weight.');
-        await exerciseRecordService.updateWeightsForProgram(
-          usersService.getCurrentUserId(),
-          exercise.id,
-          newMaxWeight,
-        );
-      }
-
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Record updated successfully')),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update record: $e')),
-        );
-      }
-    }
+        if (picked != null && picked != selectedDate.value) {
+          selectedDate.value = picked;
+        }
+      },
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: 'Date',
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(DateFormat('dd/MM/yyyy').format(selectedDate.value)),
+            const Icon(Icons.calendar_today),
+          ],
+        ),
+      ),
+    );
   }
 }

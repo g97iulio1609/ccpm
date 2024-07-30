@@ -1,4 +1,5 @@
 import 'package:alphanessone/models/measurement_model.dart';
+import 'package:alphanessone/models/user_model.dart';
 import 'package:alphanessone/providers/measurement_form_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,6 +12,11 @@ import '../services/measurements_services.dart';
 // User-related providers
 final userNameProvider = StateProvider<String>((ref) => '');
 final userRoleProvider = StateProvider<String>((ref) => '');
+// Add this provider
+final userProvider = FutureProvider.family<UserModel?, String>((ref, userId) async {
+  final usersService = ref.watch(usersServiceProvider);
+  return await usersService.getUserById(userId);
+});
 
 // Firebase-related providers
 final firebaseAuthProvider = Provider<FirebaseAuth>((ref) {
@@ -29,6 +35,8 @@ final usersServiceProvider = Provider<UsersService>((ref) {
     ref.watch(firebaseAuthProvider),
   );
 });
+
+final selectedUserIdProvider = StateProvider<String?>((ref) => null);
 
 final tdeeServiceProvider = Provider<TDEEService>((ref) {
   return TDEEService(ref.watch(firebaseFirestoreProvider));
@@ -55,3 +63,4 @@ final selectedComparisonsProvider = StateProvider<List<MeasurementModel>>((ref) 
 final measurementFormProvider = StateNotifierProvider<MeasurementFormNotifier, MeasurementFormState>((ref) {
   return MeasurementFormNotifier();
 });
+

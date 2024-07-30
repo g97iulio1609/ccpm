@@ -168,15 +168,12 @@ class AppRouter {
                 path: '/subscriptions',
                 builder: (context, state) => const InAppSubscriptionsPage(),
               ),
-              GoRoute(
-                path: '/measurements',
-                builder: (context, state) {
-                  final userId = FirebaseAuth.instance.currentUser?.uid;
-                  return userId != null
-                      ? MeasurementsPage(userId: userId)
-                      : const SizedBox();
-                },
-              ),
+            GoRoute(
+  path: '/measurements',
+  builder: (context, state) {
+    return const MeasurementsPage();
+  },
+),
               GoRoute(
                 path: '/tdee',
                 builder: (context, state) {

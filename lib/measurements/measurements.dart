@@ -1,33 +1,20 @@
+import 'package:alphanessone/user_autocomplete.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:alphanessone/models/measurement_model.dart';
 import 'package:alphanessone/providers/providers.dart';
+import 'package:alphanessone/models/user_model.dart';
 
-class MeasurementsPage extends ConsumerWidget {
-  final String userId;
-
-  const MeasurementsPage({super.key, required this.userId});
+class MeasurementsPage extends ConsumerStatefulWidget {
+  const MeasurementsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final measurementsAsyncValue = ref.watch(measurementsProvider(userId));
-    final theme = Theme.of(context);
+  ConsumerState<MeasurementsPage> createState() => _MeasurementsPageState();
 
-    return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      body: SafeArea(
-        child: measurementsAsyncValue.when(
-          loading: () => Center(child: CircularProgressIndicator(color: theme.colorScheme.primary)),
-          error: (error, stackTrace) => Center(child: Text('Error: $error', style: TextStyle(color: theme.colorScheme.error))),
-          data: (measurements) => _MeasurementsContent(measurements: measurements, userId: userId),
-        ),
-      ),
-    );
-  }
-
-  static void showAddMeasurementDialog(BuildContext context, WidgetRef ref, String userId) {
+  static void showAddMeasurementDialog(
+      BuildContext context, WidgetRef ref, String userId) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -49,11 +36,98 @@ class MeasurementsPage extends ConsumerWidget {
   }
 }
 
+class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
+  final TextEditingController _userSearchController = TextEditingController();
+  final FocusNode _userSearchFocusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final currentUserId = ref.read(usersServiceProvider).getCurrentUserId();
+      final currentUserRole = ref.read(userRoleProvider);
+      if (currentUserRole != 'admin' && currentUserRole != 'coach') {
+        ref.read(selectedUserIdProvider.notifier).state = currentUserId;
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _userSearchController.dispose();
+    _userSearchFocusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final currentUserRole = ref.watch(userRoleProvider);
+    final selectedUserId = ref.watch(selectedUserIdProvider);
+
+    return Scaffold(
+      backgroundColor: theme.colorScheme.surface,
+      body: SafeArea(
+        child: Column(
+          children: [
+            if (currentUserRole == 'admin' || currentUserRole == 'coach')
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: UserTypeAheadField(
+                  controller: _userSearchController,
+                  focusNode: _userSearchFocusNode,
+                  onSelected: (UserModel user) {
+                    ref.read(selectedUserIdProvider.notifier).state = user.id;
+                  },
+                  onChanged: (String value) {
+                    // Handle onChanged if needed
+                  },
+                ),
+              ),
+            Expanded(
+              child: selectedUserId != null
+                  ? _buildMeasurementsContent(selectedUserId)
+                  : currentUserRole == 'admin' || currentUserRole == 'coach'
+                      ? const Center(child: Text('Please select a user'))
+                      : _buildMeasurementsContent(
+                          ref.read(usersServiceProvider).getCurrentUserId()),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMeasurementsContent(String userId) {
+    final measurementsAsyncValue = ref.watch(measurementsProvider(userId));
+    final userAsyncValue = ref.watch(userProvider(userId));
+
+    return userAsyncValue.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stackTrace) => Center(child: Text('Error: $error')),
+      data: (user) => measurementsAsyncValue.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stackTrace) => Center(child: Text('Error: $error')),
+        data: (measurements) => _MeasurementsContent(
+          measurements: measurements,
+          userId: userId,
+          userGender: user!.gender,
+        ),
+      ),
+    );
+  }
+}
+
 class _MeasurementsContent extends ConsumerWidget {
   final List<MeasurementModel> measurements;
   final String userId;
+  final int userGender; // 1 for male, 2 for female
 
-  const _MeasurementsContent({required this.measurements, required this.userId});
+  const _MeasurementsContent({
+    required this.measurements,
+    required this.userId,
+    required this.userGender,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -70,7 +144,11 @@ class _MeasurementsContent extends ConsumerWidget {
               children: [
                 _buildComparisonSelector(context, ref),
                 const SizedBox(height: 16),
-                _MeasurementCards(measurements: measurements, selectedComparisons: selectedComparisons),
+                _MeasurementCards(
+                  measurements: measurements,
+                  selectedComparisons: selectedComparisons,
+                  userGender: userGender,
+                ),
                 const SizedBox(height: 16),
                 _MeasurementsTrend(measurements: measurements),
                 const SizedBox(height: 16),
@@ -88,7 +166,11 @@ class _MeasurementsContent extends ConsumerWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text('Compare measurements:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+        Text('Compare measurements:',
+            style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.onSurface)),
         ElevatedButton(
           onPressed: () => _showComparisonSelectionDialog(context, ref),
           style: ElevatedButton.styleFrom(
@@ -104,7 +186,8 @@ class _MeasurementsContent extends ConsumerWidget {
   void _showComparisonSelectionDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (context) => _ComparisonSelectionDialog(measurements: measurements),
+      builder: (context) =>
+          _ComparisonSelectionDialog(measurements: measurements),
     );
   }
 }
@@ -112,8 +195,13 @@ class _MeasurementsContent extends ConsumerWidget {
 class _MeasurementCards extends ConsumerWidget {
   final List<MeasurementModel> measurements;
   final List<MeasurementModel> selectedComparisons;
+  final int userGender; // 1 for male, 2 for female
 
-  const _MeasurementCards({required this.measurements, required this.selectedComparisons});
+  const _MeasurementCards({
+    required this.measurements,
+    required this.selectedComparisons,
+    required this.userGender,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -129,19 +217,79 @@ class _MeasurementCards extends ConsumerWidget {
           spacing: 16,
           runSpacing: 16,
           children: [
-            _buildMeasurementCard(context, ref, 'Weight', width, referenceMeasurement?.weight, 'kg', _getWeightStatus, _getComparisons(referenceMeasurement, (m) => m.weight)),
-            _buildMeasurementCard(context, ref, 'Height', width, referenceMeasurement?.height, 'cm', (_) => 'Normal', _getComparisons(referenceMeasurement, (m) => m.height)),
-            _buildMeasurementCard(context, ref, 'BMI', width, referenceMeasurement?.bmi, '', _getBMIStatus, _getComparisons(referenceMeasurement, (m) => m.bmi)),
-            _buildMeasurementCard(context, ref, 'Body Fat', width, referenceMeasurement?.bodyFatPercentage, '%', _getBodyFatStatus, _getComparisons(referenceMeasurement, (m) => m.bodyFatPercentage)),
-            _buildMeasurementCard(context, ref, 'Waist', width, referenceMeasurement?.waistCircumference, 'cm', _getWaistStatus, _getComparisons(referenceMeasurement, (m) => m.waistCircumference)),
-            _buildMeasurementCard(context, ref, 'Hip', width, referenceMeasurement?.hipCircumference, 'cm', (_) => 'Normal', _getComparisons(referenceMeasurement, (m) => m.hipCircumference)),
+            _buildMeasurementCard(
+                context,
+                ref,
+                'Weight',
+                width,
+                referenceMeasurement?.weight,
+                'kg',
+                (value) => _getWeightStatus(
+                    referenceMeasurement?.bodyFatPercentage ?? 0, userGender),
+                _getComparisons(referenceMeasurement, (m) => m.weight)),
+            _buildMeasurementCard(
+                context,
+                ref,
+                'Height',
+                width,
+                referenceMeasurement?.height,
+                'cm',
+                (_) => 'Normal',
+                _getComparisons(referenceMeasurement, (m) => m.height)),
+            _buildMeasurementCard(
+                context,
+                ref,
+                'BMI',
+                width,
+                referenceMeasurement?.bmi,
+                '',
+                _getBMIStatus,
+                _getComparisons(referenceMeasurement, (m) => m.bmi)),
+            _buildMeasurementCard(
+                context,
+                ref,
+                'Body Fat',
+                width,
+                referenceMeasurement?.bodyFatPercentage,
+                '%',
+                _getBodyFatStatus,
+                _getComparisons(
+                    referenceMeasurement, (m) => m.bodyFatPercentage)),
+            _buildMeasurementCard(
+                context,
+                ref,
+                'Waist',
+                width,
+                referenceMeasurement?.waistCircumference,
+                'cm',
+                _getWaistStatus,
+                _getComparisons(
+                    referenceMeasurement, (m) => m.waistCircumference)),
+            _buildMeasurementCard(
+                context,
+                ref,
+                'Hip',
+                width,
+                referenceMeasurement?.hipCircumference,
+                'cm',
+                (_) => 'Normal',
+                _getComparisons(
+                    referenceMeasurement, (m) => m.hipCircumference)),
           ],
         );
       },
     );
   }
 
-  Widget _buildMeasurementCard(BuildContext context, WidgetRef ref, String title, double width, double? currentValue, String unit, String Function(double) getStatus, List<MapEntry<String, double?>> comparisonValues) {
+  Widget _buildMeasurementCard(
+      BuildContext context,
+      WidgetRef ref,
+      String title,
+      double width,
+      double? currentValue,
+      String unit,
+      String Function(double) getStatus,
+      List<MapEntry<String, double?>> comparisonValues) {
     final theme = Theme.of(context);
 
     return SizedBox(
@@ -149,21 +297,37 @@ class _MeasurementCards extends ConsumerWidget {
       child: Card(
         elevation: 2,
         color: theme.colorScheme.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Colors.white, width: 0.5),
+        ),
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+              Text(title,
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurface)),
               const SizedBox(height: 8),
               if (currentValue != null) ...[
-                Text('${currentValue.toStringAsFixed(1)} $unit', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
-                Text(getStatus(currentValue), style: TextStyle(color: _getStatusColor(getStatus(currentValue), theme), fontSize: 16)),
+                Text('${currentValue.toStringAsFixed(1)} $unit',
+                    style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface)),
+                Text(getStatus(currentValue),
+                    style: TextStyle(
+                        color: _getStatusColor(getStatus(currentValue), theme),
+                        fontSize: 16)),
                 const SizedBox(height: 8),
-                ...comparisonValues.map((entry) => _buildComparisonRow(context, ref, entry, currentValue, unit)),
+                ...comparisonValues.map((entry) => _buildComparisonRow(
+                    context, ref, entry, currentValue, unit)),
               ] else
-                Text('No data available', style: TextStyle(color: theme.colorScheme.onSurface)),
+                Text('No data available',
+                    style: TextStyle(color: theme.colorScheme.onSurface)),
             ],
           ),
         ),
@@ -171,7 +335,8 @@ class _MeasurementCards extends ConsumerWidget {
     );
   }
 
-  Widget _buildComparisonRow(BuildContext context, WidgetRef ref, MapEntry<String, double?> entry, double currentValue, String unit) {
+  Widget _buildComparisonRow(BuildContext context, WidgetRef ref,
+      MapEntry<String, double?> entry, double currentValue, String unit) {
     final theme = Theme.of(context);
     final comparisonDate = entry.key;
     final comparisonValue = entry.value;
@@ -184,12 +349,19 @@ class _MeasurementCards extends ConsumerWidget {
             Expanded(
               child: Text(
                 '$comparisonDate: ${difference.toStringAsFixed(1)} $unit',
-                style: TextStyle(color: difference < 0 ? theme.colorScheme.tertiary : theme.colorScheme.error, fontWeight: FontWeight.bold, fontSize: 14),
+                style: TextStyle(
+                    color: difference < 0
+                        ? theme.colorScheme.tertiary
+                        : theme.colorScheme.error,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14),
               ),
             ),
             GestureDetector(
               onTap: () => _removeComparison(ref, comparisonDate),
-              child: Icon(Icons.close, size: 16, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+              child: Icon(Icons.close,
+                  size: 16,
+                  color: theme.colorScheme.onSurface.withOpacity(0.5)),
             ),
           ],
         ),
@@ -211,13 +383,16 @@ class _MeasurementCards extends ConsumerWidget {
         : (measurements.isNotEmpty ? measurements.first : null);
   }
 
-  List<MapEntry<String, double?>> _getComparisons(MeasurementModel? referenceMeasurement, double Function(MeasurementModel) getValue) {
+  List<MapEntry<String, double?>> _getComparisons(
+      MeasurementModel? referenceMeasurement,
+      double Function(MeasurementModel) getValue) {
     if (referenceMeasurement == null || selectedComparisons.isEmpty) {
       return [];
     }
     return selectedComparisons
         .where((m) => m.date != referenceMeasurement.date)
-        .map((m) => MapEntry(DateFormat('dd/MM/yyyy').format(m.date), getValue(m)))
+        .map((m) =>
+            MapEntry(DateFormat('dd/MM/yyyy').format(m.date), getValue(m)))
         .toList();
   }
 
@@ -240,10 +415,22 @@ class _MeasurementCards extends ConsumerWidget {
     }
   }
 
-  String _getWeightStatus(double value) {
-    if (value < 18.5) return 'Underweight';
-    if (value < 25) return 'Normal';
-    if (value < 30) return 'Overweight';
+  String _getWeightStatus(double bodyFatPercentage, int gender) {
+    if (gender == 1) {
+      // Male
+      if (bodyFatPercentage < 6) return 'Essential Fat';
+      if (bodyFatPercentage < 14) return 'Athletes';
+      if (bodyFatPercentage < 18) return 'Fitness';
+if (bodyFatPercentage < 25) return 'Normal';
+      if (bodyFatPercentage < 32) return 'Overweight';
+    } else if (gender == 2) {
+      // Female
+      if (bodyFatPercentage < 16) return 'Essential Fat';
+      if (bodyFatPercentage < 20) return 'Athletes';
+      if (bodyFatPercentage < 24) return 'Fitness';
+      if (bodyFatPercentage < 31) return 'Normal';
+      if (bodyFatPercentage < 39) return 'Overweight';
+    }
     return 'Obese';
   }
 
@@ -277,83 +464,125 @@ class _MeasurementsTrend extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    bool hasMeasurements = measurements.isNotEmpty &&
+        measurements.any((m) =>
+            (m.weight) > 0 ||
+            (m.bodyFatPercentage) > 0 ||
+            (m.waistCircumference) > 0);
+
     return Card(
       elevation: 2,
       color: theme.colorScheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: Colors.white, width: 0.5),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Measurement Trends', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+            Text('Measurement Trends',
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface)),
             const SizedBox(height: 16),
-            SizedBox(
-              height: 200,
-              child: LineChart(
-                LineChartData(
-                  gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: true,
-                    getDrawingHorizontalLine: (value) {
-                      return FlLine(
-                        color: theme.colorScheme.onSurface.withOpacity(0.1),
-                        strokeWidth: 1,
-                      );
-                    },
-                    getDrawingVerticalLine: (value) {
-                      return FlLine(
-                        color: theme.colorScheme.onSurface.withOpacity(0.1),
-                        strokeWidth: 1,
-                      );
-                    },
-                  ),
-                  titlesData: _buildTitlesData(theme),
-                  borderData: FlBorderData(
-                    show: true,
-                    border: Border.all(color: theme.colorScheme.onSurface.withOpacity(0.1), width: 1),
-                  ),
-                  lineBarsData: [
-                    _buildLineChartBarData(measurements, (m) => m.weight, theme.colorScheme.primary),
-                    _buildLineChartBarData(measurements, (m) => m.bodyFatPercentage, theme.colorScheme.secondary),
-                    _buildLineChartBarData(measurements, (m) => m.waistCircumference, theme.colorScheme.tertiary),
-                  ],
-                  minX: 0,
-                  maxX: (measurements.length - 1).toDouble(),
-                  minY: 0,
-                  maxY: measurements.map((m) => [m.weight, m.bodyFatPercentage, m.waistCircumference].reduce((a, b) => a > b ? a : b)).reduce((a, b) => a > b ? a : b) + 10,
-                  lineTouchData: LineTouchData(
-                    touchTooltipData: LineTouchTooltipData(
-                      tooltipRoundedRadius: 8,
-                      getTooltipItems: (touchedSpots) {
-                        return touchedSpots.map((LineBarSpot touchedSpot) {
-                          final date = measurements[touchedSpot.x.toInt()].date;
-                          final value = touchedSpot.y;
-                          final measurementType = ['Weight', 'Body Fat', 'Waist'][touchedSpot.barIndex];
-                          return LineTooltipItem(
-                            '${DateFormat('dd/MM/yyyy').format(date)}\n$measurementType: ${value.toStringAsFixed(1)}',
-                            TextStyle(color: theme.colorScheme.onSurface),
-                          );
-                        }).toList();
+            if (hasMeasurements)
+              SizedBox(
+                height: 200,
+                child: LineChart(
+                  LineChartData(
+                    gridData: FlGridData(
+                      show: true,
+                      drawVerticalLine: true,
+                      getDrawingHorizontalLine: (value) {
+                        return FlLine(
+                          color: theme.colorScheme.onSurface.withOpacity(0.1),
+                          strokeWidth: 1,
+                        );
                       },
-                      fitInsideHorizontally: true,
-                      fitInsideVertically: true,
+                      getDrawingVerticalLine: (value) {
+                        return FlLine(
+                          color: theme.colorScheme.onSurface.withOpacity(0.1),
+                          strokeWidth: 1,
+                        );
+                      },
                     ),
-                    handleBuiltInTouches: true,
-                    getTouchLineStart: (data, index) => 0,
+                    titlesData: _buildTitlesData(theme),
+                    borderData: FlBorderData(
+                      show: true,
+                      border: Border.all(
+                          color: theme.colorScheme.onSurface.withOpacity(0.1),
+                          width: 1),
+                    ),
+                    lineBarsData: [
+                      _buildLineChartBarData(measurements, (m) => m.weight,
+                          theme.colorScheme.primary),
+                      _buildLineChartBarData(
+                          measurements,
+                          (m) => m.bodyFatPercentage,
+                          theme.colorScheme.secondary),
+                      _buildLineChartBarData(
+                          measurements,
+                          (m) => m.waistCircumference,
+                          theme.colorScheme.tertiary),
+                    ],
+                    minX: 0,
+                    maxX: (measurements.length - 1).toDouble(),
+                    minY: 0,
+                    maxY: _calculateMaxY(),
+                    lineTouchData: LineTouchData(
+                      touchTooltipData: LineTouchTooltipData(
+                        tooltipRoundedRadius: 8,
+                        getTooltipItems: (touchedSpots) {
+                          return touchedSpots.map((LineBarSpot touchedSpot) {
+                            final date =
+                                measurements[touchedSpot.x.toInt()].date;
+                            final value = touchedSpot.y;
+                            final measurementType = [
+                              'Weight',
+                              'Body Fat',
+                              'Waist'
+                            ][touchedSpot.barIndex];
+                            return LineTooltipItem(
+                              '${DateFormat('dd/MM/yyyy').format(date)}\n$measurementType: ${value.toStringAsFixed(1)}',
+                              TextStyle(color: theme.colorScheme.onSurface),
+                            );
+                          }).toList();
+                        },
+                        fitInsideHorizontally: true,
+                        fitInsideVertically: true,
+                      ),
+                      handleBuiltInTouches: true,
+                      getTouchLineStart: (data, index) => 0,
+                    ),
+                  ),
+                ),
+              )
+            else
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    'Non ci sono ancora registrazioni di misurazioni. Aggiungi nuove misurazioni per visualizzare il grafico.',
+                    style: TextStyle(
+                        color: theme.colorScheme.onSurface, fontSize: 16),
+                    textAlign: TextAlign.center,
                   ),
                 ),
               ),
-            ),
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              children: [
-                _buildLegendItem('Weight', theme.colorScheme.primary),
-                _buildLegendItem('Body Fat', theme.colorScheme.secondary),
-                _buildLegendItem('Waist', theme.colorScheme.tertiary),
-              ],
-            ),
+            if (hasMeasurements)
+              Wrap(
+                spacing: 8,
+                children: [
+                  _buildLegendItem('Weight', theme.colorScheme.primary),
+                  _buildLegendItem('Body Fat', theme.colorScheme.secondary),
+                  _buildLegendItem('Waist', theme.colorScheme.tertiary),
+                ],
+              ),
           ],
         ),
       ),
@@ -365,7 +594,7 @@ class _MeasurementsTrend extends StatelessWidget {
       leftTitles: AxisTitles(
         sideTitles: SideTitles(
           showTitles: true,
-          interval: 10, // Adjust this interval based on your range
+          interval: 10,
           getTitlesWidget: (value, meta) {
             return Text(
               value.toInt().toString(),
@@ -405,11 +634,14 @@ class _MeasurementsTrend extends StatelessWidget {
     );
   }
 
-  LineChartBarData _buildLineChartBarData(List<MeasurementModel> measurements, double Function(MeasurementModel) getValue, Color color) {
+  LineChartBarData _buildLineChartBarData(List<MeasurementModel> measurements,
+      double? Function(MeasurementModel) getValue, Color color) {
     return LineChartBarData(
       spots: measurements.asMap().entries.map((entry) {
         final value = getValue(entry.value);
-        return value != 0 ? FlSpot(entry.key.toDouble(), value) : FlSpot.nullSpot;
+        return value != null && value > 0
+            ? FlSpot(entry.key.toDouble(), value)
+            : FlSpot.nullSpot;
       }).toList(),
       isCurved: true,
       color: color,
@@ -448,6 +680,23 @@ class _MeasurementsTrend extends StatelessWidget {
       ],
     );
   }
+
+  double _calculateMaxY() {
+    if (measurements.isEmpty) {
+      return 100;
+    }
+
+    List<double> validValues = measurements
+        .expand((m) => [m.weight, m.bodyFatPercentage, m.waistCircumference])
+        .where((value) => value > 0)
+        .toList();
+
+    if (validValues.isEmpty) {
+      return 100;
+    }
+
+    return validValues.reduce((a, b) => a > b ? a : b) + 10;
+  }
 }
 
 class _MeasurementsList extends ConsumerWidget {
@@ -462,13 +711,20 @@ class _MeasurementsList extends ConsumerWidget {
     return Card(
       elevation: 2,
       color: theme.colorScheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: Colors.white, width: 0.5),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Measurement History', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+            Text('Measurement History',
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface)),
             const SizedBox(height: 16),
             ListView.builder(
               shrinkWrap: true,
@@ -477,18 +733,26 @@ class _MeasurementsList extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final measurement = measurements[index];
                 return ListTile(
-                  title: Text(DateFormat('dd/MM/yyyy').format(measurement.date), style: TextStyle(color: theme.colorScheme.onSurface)),
-                  subtitle: Text('Weight: ${measurement.weight.toStringAsFixed(1)} kg, Body Fat: ${measurement.bodyFatPercentage.toStringAsFixed(1)}%', style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.7))),
+                  title: Text(DateFormat('dd/MM/yyyy').format(measurement.date),
+                      style: TextStyle(color: theme.colorScheme.onSurface)),
+                  subtitle: Text(
+                      'Weight: ${measurement.weight.toStringAsFixed(1)} kg, Body Fat: ${measurement.bodyFatPercentage.toStringAsFixed(1)}%',
+                      style: TextStyle(
+                          color: theme.colorScheme.onSurface.withOpacity(0.7))),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        icon: Icon(Icons.edit, color: theme.colorScheme.primary),
-                        onPressed: () => _showEditMeasurementDialog(context, ref, measurement),
+                        icon:
+                            Icon(Icons.edit, color: theme.colorScheme.primary),
+                        onPressed: () => _showEditMeasurementDialog(
+                            context, ref, measurement),
                       ),
                       IconButton(
-                        icon: Icon(Icons.delete, color: theme.colorScheme.error),
-                        onPressed: () => _showDeleteConfirmationDialog(context, ref, measurement),
+                        icon:
+                            Icon(Icons.delete, color: theme.colorScheme.error),
+                        onPressed: () => _showDeleteConfirmationDialog(
+                            context, ref, measurement),
                       ),
                     ],
                   ),
@@ -501,7 +765,8 @@ class _MeasurementsList extends ConsumerWidget {
     );
   }
 
-  void _showEditMeasurementDialog(BuildContext context, WidgetRef ref, MeasurementModel measurement) {
+  void _showEditMeasurementDialog(
+      BuildContext context, WidgetRef ref, MeasurementModel measurement) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -524,29 +789,34 @@ class _MeasurementsList extends ConsumerWidget {
     );
   }
 
-  void _showDeleteConfirmationDialog(BuildContext context, WidgetRef ref, MeasurementModel measurement) {
+  void _showDeleteConfirmationDialog(
+      BuildContext context, WidgetRef ref, MeasurementModel measurement) {
     final theme = Theme.of(context);
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           backgroundColor: theme.colorScheme.surface,
-          title: Text('Confirm Deletion', style: TextStyle(color: theme.colorScheme.onSurface)),
-          content: Text('Are you sure you want to delete this measurement?', style: TextStyle(color: theme.colorScheme.onSurface)),
+          title: Text('Confirm Deletion',
+              style: TextStyle(color: theme.colorScheme.onSurface)),
+          content: Text('Are you sure you want to delete this measurement?',
+              style: TextStyle(color: theme.colorScheme.onSurface)),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancel', style: TextStyle(color: theme.colorScheme.primary)),
+              child: Text('Cancel',
+                  style: TextStyle(color: theme.colorScheme.primary)),
             ),
             TextButton(
               onPressed: () {
                 ref.read(measurementsServiceProvider).deleteMeasurement(
-                  userId: userId,
-                  measurementId: measurement.id,
-                );
+                      userId: userId,
+                      measurementId: measurement.id,
+                    );
                 Navigator.of(context).pop();
               },
-              child: Text('Delete', style: TextStyle(color: theme.colorScheme.error)),
+              child: Text('Delete',
+                  style: TextStyle(color: theme.colorScheme.error)),
             ),
           ],
         );
@@ -561,16 +831,19 @@ class _ComparisonSelectionDialog extends ConsumerStatefulWidget {
   const _ComparisonSelectionDialog({required this.measurements});
 
   @override
-  _ComparisonSelectionDialogState createState() => _ComparisonSelectionDialogState();
+  _ComparisonSelectionDialogState createState() =>
+      _ComparisonSelectionDialogState();
 }
 
-class _ComparisonSelectionDialogState extends ConsumerState<_ComparisonSelectionDialog> {
+class _ComparisonSelectionDialogState
+    extends ConsumerState<_ComparisonSelectionDialog> {
   late List<MeasurementModel> selectedTemp;
 
   @override
   void initState() {
     super.initState();
-    selectedTemp = List<MeasurementModel>.from(ref.read(selectedComparisonsProvider));
+    selectedTemp =
+        List<MeasurementModel>.from(ref.read(selectedComparisonsProvider));
   }
 
   @override
@@ -578,20 +851,26 @@ class _ComparisonSelectionDialogState extends ConsumerState<_ComparisonSelection
     final theme = Theme.of(context);
     return AlertDialog(
       backgroundColor: theme.colorScheme.surface,
-      title: Text('Select measurements', style: TextStyle(color: theme.colorScheme.onSurface)),
+      title: Text('Select measurements',
+          style: TextStyle(color: theme.colorScheme.onSurface)),
       content: SingleChildScrollView(
         child: Column(
           children: widget.measurements.map((measurement) {
             return CheckboxListTile(
-              title: Text(DateFormat('dd/MM/yyyy').format(measurement.date), style: TextStyle(color: theme.colorScheme.onSurface)),
-              subtitle: Text('Weight: ${measurement.weight.toStringAsFixed(1)} kg', style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.7))),
+              title: Text(DateFormat('dd/MM/yyyy').format(measurement.date),
+                  style: TextStyle(color: theme.colorScheme.onSurface)),
+              subtitle: Text(
+                  'Weight: ${measurement.weight.toStringAsFixed(1)} kg',
+                  style: TextStyle(
+                      color: theme.colorScheme.onSurface.withOpacity(0.7))),
               value: selectedTemp.contains(measurement),
               onChanged: (bool? selected) {
                 setState(() {
                   if (selected == true && !selectedTemp.contains(measurement)) {
                     selectedTemp.add(measurement);
                   } else if (selected == false) {
-                    if (selectedTemp.length > 1 || measurement != selectedTemp.first) {
+                    if (selectedTemp.length > 1 ||
+                        measurement != selectedTemp.first) {
                       selectedTemp.remove(measurement);
                     }
                   }
@@ -606,7 +885,8 @@ class _ComparisonSelectionDialogState extends ConsumerState<_ComparisonSelection
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: Text('Cancel', style: TextStyle(color: theme.colorScheme.primary)),
+          child: Text('Cancel',
+              style: TextStyle(color: theme.colorScheme.primary)),
         ),
         ElevatedButton(
           onPressed: () {
@@ -654,13 +934,20 @@ class _MeasurementFormState extends ConsumerState<_MeasurementForm> {
   void initState() {
     super.initState();
     _formKey = GlobalKey<FormState>();
-    _weightController = TextEditingController(text: widget.measurement?.weight.toString());
-    _heightController = TextEditingController(text: widget.measurement?.height.toString());
-    _bodyFatController = TextEditingController(text: widget.measurement?.bodyFatPercentage.toString());
-    _waistController = TextEditingController(text: widget.measurement?.waistCircumference.toString());
-    _hipController = TextEditingController(text: widget.measurement?.hipCircumference.toString());
-    _chestController = TextEditingController(text: widget.measurement?.chestCircumference.toString());
-    _bicepsController = TextEditingController(text: widget.measurement?.bicepsCircumference.toString());
+    _weightController = TextEditingController(
+        text: widget.measurement?.weight.toString() ?? '');
+    _heightController = TextEditingController(
+        text: widget.measurement?.height.toString() ?? '');
+    _bodyFatController = TextEditingController(
+        text: widget.measurement?.bodyFatPercentage.toString() ?? '');
+    _waistController = TextEditingController(
+        text: widget.measurement?.waistCircumference.toString() ?? '');
+    _hipController = TextEditingController(
+        text: widget.measurement?.hipCircumference.toString() ?? '');
+    _chestController = TextEditingController(
+        text: widget.measurement?.chestCircumference.toString() ?? '');
+    _bicepsController = TextEditingController(
+        text: widget.measurement?.bicepsCircumference.toString() ?? '');
     _selectedDate = widget.measurement?.date ?? DateTime.now();
   }
 
@@ -693,8 +980,13 @@ class _MeasurementFormState extends ConsumerState<_MeasurementForm> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              widget.measurement == null ? 'Add New Measurement' : 'Edit Measurement',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+              widget.measurement == null
+                  ? 'Add New Measurement'
+                  : 'Edit Measurement',
+              style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface),
             ),
             const SizedBox(height: 16),
             Form(
@@ -715,8 +1007,10 @@ class _MeasurementFormState extends ConsumerState<_MeasurementForm> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: theme.colorScheme.primary,
                       foregroundColor: theme.colorScheme.onPrimary,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30)),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 16, horizontal: 32),
                     ),
                     child: Text(widget.measurement == null ? 'Add' : 'Update'),
                   ),
@@ -763,18 +1057,21 @@ class _MeasurementFormState extends ConsumerState<_MeasurementForm> {
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: theme.colorScheme.onSurface.withOpacity(0.3)),
+              borderSide: BorderSide(
+                  color: theme.colorScheme.onSurface.withOpacity(0.3)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: theme.colorScheme.primary),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(DateFormat('dd/MM/yyyy').format(_selectedDate), style: TextStyle(color: theme.colorScheme.onSurface)),
+              Text(DateFormat('dd/MM/yyyy').format(_selectedDate),
+                  style: TextStyle(color: theme.colorScheme.onSurface)),
               Icon(Icons.calendar_today, color: theme.colorScheme.onSurface),
             ],
           ),
@@ -797,13 +1094,15 @@ class _MeasurementFormState extends ConsumerState<_MeasurementForm> {
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: theme.colorScheme.onSurface.withOpacity(0.3)),
+            borderSide:
+                BorderSide(color: theme.colorScheme.onSurface.withOpacity(0.3)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: theme.colorScheme.primary),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),
         validator: (value) {
           if (value == null || value.isEmpty) {
@@ -815,18 +1114,19 @@ class _MeasurementFormState extends ConsumerState<_MeasurementForm> {
     );
   }
 
-void _submitMeasurement() {
+  void _submitMeasurement() {
     if (_formKey.currentState!.validate()) {
       final measurementsService = ref.read(measurementsServiceProvider);
-      final weight = double.parse(_weightController.text);
-      final height = double.parse(_heightController.text);
-      final bodyFat = double.parse(_bodyFatController.text);
-      final waist = double.parse(_waistController.text);
-      final hip = double.parse(_hipController.text);
-      final chest = double.parse(_chestController.text);
-      final biceps = double.parse(_bicepsController.text);
+      final selectedUserId = ref.read(selectedUserIdProvider) ?? widget.userId;
+      final weight = double.tryParse(_weightController.text) ?? 0.0;
+      final height = double.tryParse(_heightController.text) ?? 0.0;
+      final bodyFat = double.tryParse(_bodyFatController.text) ?? 0.0;
+      final waist = double.tryParse(_waistController.text) ?? 0.0;
+      final hip = double.tryParse(_hipController.text) ?? 0.0;
+      final chest = double.tryParse(_chestController.text) ?? 0.0;
+      final biceps = double.tryParse(_bicepsController.text) ?? 0.0;
 
-      final bmi = weight / ((height / 100) * (height / 100));
+      final bmi = height > 0 ? weight / ((height / 100) * (height / 100)) : 0.0;
 
       // Store the context before the async gap
       final currentContext = context;
@@ -834,7 +1134,7 @@ void _submitMeasurement() {
       Future<void> performOperation() async {
         if (widget.measurement == null) {
           await measurementsService.addMeasurement(
-            userId: widget.userId,
+            userId: selectedUserId,
             date: _selectedDate,
             weight: weight,
             height: height,
@@ -847,7 +1147,7 @@ void _submitMeasurement() {
           );
         } else {
           await measurementsService.updateMeasurement(
-            userId: widget.userId,
+            userId: selectedUserId,
             measurementId: widget.measurement!.id,
             date: _selectedDate,
             weight: weight,
