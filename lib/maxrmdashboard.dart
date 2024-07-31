@@ -17,7 +17,7 @@ import 'package:alphanessone/services/exercise_record_services.dart';
 import '../user_autocomplete.dart';
 import '../providers/providers.dart';
 
-// Providers
+// Providers file (providers.dart)
 final authProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
 final exercisesStreamProvider = StreamProvider<List<ExerciseModel>>((ref) {
   final service = ref.watch(exercisesServiceProvider);
@@ -45,6 +45,7 @@ final currentUserRoleProvider = StateProvider<String>((ref) {
 final userListProvider = StateProvider<List<UserModel>>((ref) => []);
 final filteredUserListProvider = StateProvider<List<UserModel>>((ref) => []);
 
+// Main widget
 class MaxRMDashboard extends HookConsumerWidget {
   const MaxRMDashboard({super.key});
 
@@ -57,30 +58,13 @@ class MaxRMDashboard extends HookConsumerWidget {
     final selectedUserController = useTextEditingController();
     final selectedUserId = ref.watch(selectedUserIdProvider);
 
-    // Use useState to manage the state of whether user fetching is complete
     final userFetchComplete = useState(false);
 
     useEffect(() {
       Future<void> fetchUsers() async {
-        // Only fetch users if the current user is an admin or coach
         if (currentUserRole == 'admin' || currentUserRole == 'coach') {
-          List<UserModel> users = [];
           try {
-            if (currentUserRole == 'admin') {
-              final snapshot = await FirebaseFirestore.instance.collection('users').get();
-              users = snapshot.docs.map((doc) => UserModel.fromFirestore(doc)).toList();
-            } else if (currentUserRole == 'coach') {
-              final associations = await coachingService.getUserAssociations(usersService.getCurrentUserId()).first;
-              for (var association in associations) {
-                if (association.status == 'accepted') {
-                  final athlete = await usersService.getUserById(association.athleteId);
-                  if (athlete != null) {
-                    users.add(athlete);
-                  }
-                }
-              }
-            }
-            // Update states safely
+            List<UserModel> users = await _fetchUsersByRole(currentUserRole, usersService, coachingService);
             ref.read(userListProvider.notifier).state = users;
             ref.read(filteredUserListProvider.notifier).state = users;
           } catch (e, stackTrace) {
@@ -88,7 +72,6 @@ class MaxRMDashboard extends HookConsumerWidget {
             debugPrintStack(stackTrace: stackTrace);
           }
         }
-        // Mark user fetching as complete
         userFetchComplete.value = true;
       }
 
@@ -96,16 +79,13 @@ class MaxRMDashboard extends HookConsumerWidget {
       return null;
     }, [currentUserRole]);
 
-    // Only filter users if the current user is an admin or coach
     void filterUsers(String pattern) {
       if (currentUserRole == 'admin' || currentUserRole == 'coach') {
         final allUsers = ref.read(userListProvider);
-        if (pattern.isEmpty) {
-          ref.read(filteredUserListProvider.notifier).state = allUsers;
-        } else {
-          final filtered = allUsers.where((user) => user.name.toLowerCase().contains(pattern.toLowerCase())).toList();
-          ref.read(filteredUserListProvider.notifier).state = filtered;
-        }
+        final filtered = pattern.isEmpty
+            ? allUsers
+            : allUsers.where((user) => user.name.toLowerCase().contains(pattern.toLowerCase())).toList();
+        ref.read(filteredUserListProvider.notifier).state = filtered;
       }
     }
 
@@ -131,6 +111,26 @@ class MaxRMDashboard extends HookConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<List<UserModel>> _fetchUsersByRole(
+      String role, UsersService usersService, CoachingService coachingService) async {
+    List<UserModel> users = [];
+    if (role == 'admin') {
+      final snapshot = await FirebaseFirestore.instance.collection('users').get();
+      users = snapshot.docs.map((doc) => UserModel.fromFirestore(doc)).toList();
+    } else if (role == 'coach') {
+      final associations = await coachingService.getUserAssociations(usersService.getCurrentUserId()).first;
+      for (var association in associations) {
+        if (association.status == 'accepted') {
+          final athlete = await usersService.getUserById(association.athleteId);
+          if (athlete != null) {
+            users.add(athlete);
+          }
+        }
+      }
+    }
+    return users;
   }
 
   Widget _buildAllExercisesMaxRMs(
@@ -412,7 +412,7 @@ class EditRecordDialog extends HookConsumerWidget {
     return AlertDialog(
       title: Text(
         'Edit Record',
-style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
       ),
       backgroundColor: Theme.of(context).colorScheme.surface,
       content: SingleChildScrollView(
