@@ -50,7 +50,6 @@ class MaxRMDashboard extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(exercisesStreamProvider);
     final usersService = ref.watch(userServiceProvider);
     final coachingService = ref.watch(coachingServiceProvider);
     final exerciseRecordService = ref.watch(exerciseRecordServiceProvider);
@@ -58,38 +57,55 @@ class MaxRMDashboard extends HookConsumerWidget {
     final selectedUserController = useTextEditingController();
     final selectedUserId = ref.watch(selectedUserIdProvider);
 
+    // Use useState to manage the state of whether user fetching is complete
+    final userFetchComplete = useState(false);
+
     useEffect(() {
       Future<void> fetchUsers() async {
-        List<UserModel> users = [];
-        if (currentUserRole == 'admin') {
-          final snapshot = await FirebaseFirestore.instance.collection('users').get();
-          users = snapshot.docs.map((doc) => UserModel.fromFirestore(doc)).toList();
-        } else if (currentUserRole == 'coach') {
-          final associations = await coachingService.getUserAssociations(usersService.getCurrentUserId()).first;
-          for (var association in associations) {
-            if (association.status == 'accepted') {
-              final athlete = await usersService.getUserById(association.athleteId);
-              if (athlete != null) {
-                users.add(athlete);
+        // Only fetch users if the current user is an admin or coach
+        if (currentUserRole == 'admin' || currentUserRole == 'coach') {
+          List<UserModel> users = [];
+          try {
+            if (currentUserRole == 'admin') {
+              final snapshot = await FirebaseFirestore.instance.collection('users').get();
+              users = snapshot.docs.map((doc) => UserModel.fromFirestore(doc)).toList();
+            } else if (currentUserRole == 'coach') {
+              final associations = await coachingService.getUserAssociations(usersService.getCurrentUserId()).first;
+              for (var association in associations) {
+                if (association.status == 'accepted') {
+                  final athlete = await usersService.getUserById(association.athleteId);
+                  if (athlete != null) {
+                    users.add(athlete);
+                  }
+                }
               }
             }
+            // Update states safely
+            ref.read(userListProvider.notifier).state = users;
+            ref.read(filteredUserListProvider.notifier).state = users;
+          } catch (e, stackTrace) {
+            debugPrint('Error fetching users: $e');
+            debugPrintStack(stackTrace: stackTrace);
           }
         }
-        ref.read(userListProvider.notifier).state = users;
-        ref.read(filteredUserListProvider.notifier).state = users;
+        // Mark user fetching as complete
+        userFetchComplete.value = true;
       }
 
       fetchUsers();
       return null;
-    }, []);
+    }, [currentUserRole]);
 
+    // Only filter users if the current user is an admin or coach
     void filterUsers(String pattern) {
-      final allUsers = ref.read(userListProvider);
-      if (pattern.isEmpty) {
-        ref.read(filteredUserListProvider.notifier).state = allUsers;
-      } else {
-        final filtered = allUsers.where((user) => user.name.toLowerCase().contains(pattern.toLowerCase())).toList();
-        ref.read(filteredUserListProvider.notifier).state = filtered;
+      if (currentUserRole == 'admin' || currentUserRole == 'coach') {
+        final allUsers = ref.read(userListProvider);
+        if (pattern.isEmpty) {
+          ref.read(filteredUserListProvider.notifier).state = allUsers;
+        } else {
+          final filtered = allUsers.where((user) => user.name.toLowerCase().contains(pattern.toLowerCase())).toList();
+          ref.read(filteredUserListProvider.notifier).state = filtered;
+        }
       }
     }
 
@@ -99,7 +115,7 @@ class MaxRMDashboard extends HookConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (currentUserRole == 'admin' || currentUserRole == 'coach') ...[
+            if ((currentUserRole == 'admin' || currentUserRole == 'coach') && userFetchComplete.value) ...[
               UserTypeAheadField(
                 controller: selectedUserController,
                 focusNode: FocusNode(),
