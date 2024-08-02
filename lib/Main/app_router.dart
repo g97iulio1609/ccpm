@@ -1,7 +1,7 @@
 import 'package:alphanessone/Viewer/models/timer_model.dart';
 import 'package:alphanessone/Coaching/coaching_association.dart';
 import 'package:alphanessone/exerciseManager/exercise_model.dart';
-import 'package:alphanessone/exercise_stats.dart';
+import 'package:alphanessone/ExerciseRecords/exercise_stats.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -17,7 +17,7 @@ import '../Viewer/UI/exercise_details.dart';
 import '../Viewer/UI/timer.dart';
 import '../trainingBuilder/training_program.dart';
 import '../training_gallery.dart';
-import '../maxRMDashboard.dart';
+import 'package:alphanessone/ExerciseRecords/maxrmdashboard.dart';
 import '../user_profile.dart';
 import '../users_dashboard.dart';
 import '../measurements/measurements.dart';

@@ -1,5 +1,5 @@
 import 'package:alphanessone/trainingBuilder/dialog/exercise_dialog.dart';
-import 'package:alphanessone/services/exercise_record_services.dart';
+import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
 import 'package:alphanessone/trainingBuilder/models/progressions_model.dart';
 import 'package:alphanessone/trainingBuilder/models/series_model.dart';

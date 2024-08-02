@@ -1,4 +1,4 @@
-import 'package:alphanessone/services/exercise_record_services.dart';
+import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 import 'package:alphanessone/trainingBuilder/models/series_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

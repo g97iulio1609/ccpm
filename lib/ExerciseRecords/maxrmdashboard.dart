@@ -10,12 +10,12 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:rxdart/rxdart.dart';
-import 'exerciseManager/exercise_model.dart';
-import 'exerciseManager/exercises_services.dart';
+import '../exerciseManager/exercise_model.dart';
+import '../exerciseManager/exercises_services.dart';
 import 'package:alphanessone/services/users_services.dart';
-import 'package:alphanessone/services/exercise_record_services.dart';
-import '../user_autocomplete.dart';
-import '../providers/providers.dart';
+import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
+import '../../user_autocomplete.dart';
+import '../../providers/providers.dart';
 
 // Providers file (providers.dart)
 final authProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);

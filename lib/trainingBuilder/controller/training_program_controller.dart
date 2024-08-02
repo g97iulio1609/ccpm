@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:alphanessone/trainingBuilder/models/training_model.dart';
 import '../services/training_services.dart';
-import 'package:alphanessone/services/exercise_record_services.dart';
+import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 import 'package:alphanessone/services/users_services.dart';
 import 'week_controller.dart';
 import 'workout_controller.dart';
