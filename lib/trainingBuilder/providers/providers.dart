@@ -1,18 +1,12 @@
-import 'package:alphanessone/Viewer/services/week_services.dart';
-import 'package:alphanessone/trainingBuilder/models/training_model.dart';
-import 'package:alphanessone/trainingBuilder/services/exercise_service.dart';
-import 'package:alphanessone/trainingBuilder/services/series_service.dart';
-import 'package:alphanessone/trainingBuilder/services/training_services.dart';
-import 'package:alphanessone/trainingBuilder/services/workout_service.dart';
+import 'package:alphanessone/Viewer/services/training_program_services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:alphanessone/trainingBuilder/models/training_model.dart';
 
+// Unified service provider
+final trainingProgramServicesProvider = Provider<TrainingProgramServices>((ref) => TrainingProgramServices());
 
-// Providers for each service
-final firestoreServiceProvider = Provider<FirestoreService>((ref) {
-  return FirestoreService();
-});
-
-
+// TrainingProgram state provider
 final trainingProgramStateProvider = StateNotifierProvider<TrainingProgramStateNotifier, TrainingProgram>((ref) {
   return TrainingProgramStateNotifier(TrainingProgram());
 });
@@ -25,18 +19,20 @@ class TrainingProgramStateNotifier extends StateNotifier<TrainingProgram> {
   }
 }
 
-final weekServiceProvider = Provider<WeekService>((ref) {
-  return WeekService();
+// Helper providers for specific service methods
+final fetchTrainingWeeksProvider = FutureProvider.family<List<Map<String, dynamic>>, String>((ref, programId) async {
+  final services = ref.watch(trainingProgramServicesProvider);
+  return services.fetchTrainingWeeks(programId);
 });
 
-final workoutServiceProvider = Provider<TrainingWorkoutService>((ref) {
-  return TrainingWorkoutService();
+final getWorkoutsProvider = StreamProvider.family<QuerySnapshot, String>((ref, weekId) {
+  final services = ref.watch(trainingProgramServicesProvider);
+  return services.getWorkouts(weekId);
 });
 
-final exerciseServiceProvider = Provider<ExerciseService>((ref) {
-  return ExerciseService();
+final fetchExercisesProvider = FutureProvider.family<List<Map<String, dynamic>>, String>((ref, workoutId) async {
+  final services = ref.watch(trainingProgramServicesProvider);
+  return services.fetchExercises(workoutId);
 });
 
-final seriesServiceProvider = Provider<SeriesService>((ref) {
-  return SeriesService();
-});
+// You can add more helper providers for other service methods as needed

@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/week_details_provider.dart';
+import '../providers/training_program_provider.dart';
 
 class WeekDetails extends ConsumerWidget {
   final String programId;
@@ -18,7 +18,7 @@ class WeekDetails extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final weekService = ref.watch(weekServiceProvider);
+    final weekService = ref.watch(trainingProgramServicesProvider);
 
     return Scaffold(
    

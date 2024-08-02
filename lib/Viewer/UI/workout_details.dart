@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../services/workout_services.dart';
-import '../providers/workout_provider.dart';
+import '../services/training_program_services.dart';
+import '../providers/training_program_provider.dart';
 
 class WorkoutDetails extends ConsumerStatefulWidget {
   final String programId;
@@ -25,7 +25,7 @@ class WorkoutDetails extends ConsumerStatefulWidget {
 }
 
 class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
-  final WorkoutService _workoutService = WorkoutService();
+  final TrainingProgramServices _workoutService = TrainingProgramServices();
 
   @override
   void initState() {
