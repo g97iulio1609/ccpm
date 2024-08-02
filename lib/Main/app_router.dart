@@ -246,7 +246,6 @@ class AppRouter {
     GoRoute(
       path: 'exercise_stats/:exerciseId',
       builder: (context, state) {
-        final exerciseId = state.pathParameters['exerciseId']!;
         final extra = state.extra as Map<String, dynamic>;
         final exercise = extra['exercise'] as ExerciseModel;
         final userId = extra['userId'] as String;

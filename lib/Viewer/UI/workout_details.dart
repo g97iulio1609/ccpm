@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -26,13 +28,16 @@ class WorkoutDetails extends ConsumerStatefulWidget {
 
 class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   final TrainingProgramServices _workoutService = TrainingProgramServices();
+  final List<StreamSubscription> _subscriptions = [];
 
   @override
   void initState() {
     super.initState();
     Future.microtask(() {
-      ref.read(workoutIdProvider.notifier).state = widget.workoutId;
-      _fetchExercises();
+      if (mounted) {
+        ref.read(workoutIdProvider.notifier).state = widget.workoutId;
+        _fetchExercises();
+      }
     });
   }
 
@@ -41,13 +46,25 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     super.didUpdateWidget(oldWidget);
     if (widget.workoutId != oldWidget.workoutId) {
       Future.microtask(() {
-        ref.read(workoutIdProvider.notifier).state = widget.workoutId;
-        _fetchExercises();
+        if (mounted) {
+          ref.read(workoutIdProvider.notifier).state = widget.workoutId;
+          _fetchExercises();
+        }
       });
     }
   }
 
+  @override
+  void dispose() {
+    for (final subscription in _subscriptions) {
+      subscription.cancel();
+    }
+    super.dispose();
+  }
+
   Future<void> _fetchExercises() async {
+    if (!mounted) return;
+
     ref.read(loadingProvider.notifier).state = true;
     try {
       final exercises = await _workoutService.fetchExercises(widget.workoutId);
@@ -60,7 +77,10 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
             .collection('series')
             .where('exerciseId', isEqualTo: exercise['id'])
             .orderBy('order');
-        seriesQuery.snapshots().listen((querySnapshot) {
+
+        final subscription = seriesQuery.snapshots().listen((querySnapshot) {
+          if (!mounted) return;
+
           final updatedExercises = ref.read(exercisesProvider.notifier).state;
           final index =
               updatedExercises.indexWhere((e) => e['id'] == exercise['id']);
@@ -74,6 +94,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
             }
           }
         });
+
+        _subscriptions.add(subscription);
       }
     } catch (e) {
       // Handle error
@@ -92,26 +114,28 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     return Scaffold(
       body: loading
           ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              padding: const EdgeInsets.all(16.0),
-              itemCount: exercises.length,
-              itemBuilder: (context, index) {
-                final exercise = exercises[index];
-                final superSetId = exercise['superSetId'];
+          : exercises.isEmpty
+              ? const Center(child: Text('No exercises found'))
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16.0),
+                  itemCount: exercises.length,
+                  itemBuilder: (context, index) {
+                    final exercise = exercises[index];
+                    final superSetId = exercise['superSetId'];
 
-                if (superSetId != null) {
-                  final groupedExercises = groupExercisesBySuperSet(exercises);
-                  final superSetExercises = groupedExercises[superSetId]!;
-                  if (superSetExercises.first == exercise) {
-                    return buildSuperSetCard(superSetExercises, context);
-                  } else {
-                    return Container();
-                  }
-                } else {
-                  return buildSingleExerciseCard(exercise, context);
-                }
-              },
-            ),
+                    if (superSetId != null) {
+                      final groupedExercises = groupExercisesBySuperSet(exercises);
+                      final superSetExercises = groupedExercises[superSetId];
+                      if (superSetExercises != null && superSetExercises.first == exercise) {
+                        return buildSuperSetCard(superSetExercises, context);
+                      } else {
+                        return Container();
+                      }
+                    } else {
+                      return buildSingleExerciseCard(exercise, context);
+                    }
+                  },
+                ),
     );
   }
 
@@ -137,6 +161,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       decoration: BoxDecoration(
         color: isDarkMode ? colorScheme.surface : colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white, width: 0.5),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -190,6 +215,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
             ? Theme.of(context).colorScheme.surface
             : Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white, width: 0.5),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -248,6 +274,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
 
     return GestureDetector(
       onTap: () {
+        if (!mounted) return;
+
         final exercise = superSetExercises[firstNotDoneExerciseIndex];
         final firstNotDoneSeriesIndex =
             exercise['series'].indexWhere((series) => series['done'] != true);
@@ -419,6 +447,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
             child: series != null
                 ? GestureDetector(
                     onTap: () async {
+                      if (!mounted) return;
+
                       final seriesId = series['id'].toString();
                       final done = series['done'] == true ? false : true;
                       final reps = series['reps'] ?? 0;
@@ -475,6 +505,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
 
     return GestureDetector(
       onTap: () {
+        if (!mounted) return;
+
         context.go(
           '/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${exercise['id']}',
           extra: {
@@ -514,7 +546,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
 
       return GestureDetector(
         onTap: () => showEditSeriesDialog(
-            seriesData['id'].toString(), seriesData, context),
+            seriesData['id']?.toString() ?? '', seriesData, context),
         child: Column(
           children: [
             Row(
@@ -569,6 +601,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       flex: flex,
       child: GestureDetector(
         onTap: () async {
+          if (!mounted) return;
+
           final seriesId = seriesData['id'].toString();
           final done = seriesData['done'] == true ? false : true;
           final reps = seriesData['reps'] ?? 0;
@@ -592,7 +626,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     );
   }
 
- Future<void> showEditSeriesDialog(String seriesId,
+  Future<void> showEditSeriesDialog(String seriesId,
       Map<String, dynamic> series, BuildContext context) async {
     final repsController =
         TextEditingController(text: series['reps']?.toString() ?? '');
