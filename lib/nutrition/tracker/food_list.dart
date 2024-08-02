@@ -1,4 +1,3 @@
-import 'package:alphanessone/nutrition/tracker/food_selector.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,13 +5,18 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import '../models&Services/macros_model.dart' as macros;
 import '../models&Services/meals_model.dart' as meals;
 import '../models&Services/meals_services.dart';
+import 'autotype.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class FoodList extends ConsumerStatefulWidget {
   final DateTime selectedDate;
   final String? userId;
 
-  const FoodList({required this.selectedDate, this.userId, super.key});
+  const FoodList({
+    required this.selectedDate,
+    this.userId,
+    super.key,
+  });
 
   @override
   FoodListState createState() => FoodListState();
@@ -67,7 +71,6 @@ class FoodListState extends ConsumerState<FoodList> {
       },
     );
   }
-
 
   List<Widget> buildMealSections(BuildContext context, WidgetRef ref, List<meals.Meal> mealsList, String userId) {
     final List<String> mealTypes = ['Breakfast', 'Lunch', 'Dinner'];
@@ -128,7 +131,7 @@ class FoodListState extends ConsumerState<FoodList> {
             ListTile(
               title: Text('Add Food', style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.primary)),
               onTap: () {
-                navigateToFoodSelector(meal);
+                showFoodSelectorBottomSheet(context, ref, meal);
               },
             ),
           ],
@@ -187,14 +190,14 @@ class FoodListState extends ConsumerState<FoodList> {
 
     return GestureDetector(
       onLongPress: () => onFoodLongPress(food.id!),
-      onTap: () => onFoodTap(meal, food.id!),
+      onTap: () => onFoodTap(context, ref, meal, food.id!),
       child: Container(
         color: isSelected ? Colors.grey.withOpacity(0.3) : Colors.transparent,
         child: Slidable(
           key: Key(food.id!),
           startActionPane: ActionPane(
             motion: const ScrollMotion(),
-            children: buildSlidableStartActions(meal, food),
+            children: buildSlidableStartActions(context, ref, meal, food),
           ),
           endActionPane: ActionPane(
             motion: const ScrollMotion(),
@@ -206,17 +209,17 @@ class FoodListState extends ConsumerState<FoodList> {
     );
   }
 
-  List<SlidableAction> buildSlidableStartActions(meals.Meal meal, macros.Food food) {
+  List<SlidableAction> buildSlidableStartActions(BuildContext context, WidgetRef ref, meals.Meal meal, macros.Food food) {
     return [
       SlidableAction(
-        onPressed: (_) => navigateToFoodSelector(meal, food.id),
+        onPressed: (_) => showFoodSelectorBottomSheet(context, ref, meal, myFoodId: food.id),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
         icon: Icons.edit,
         label: 'Edit',
       ),
       SlidableAction(
-        onPressed: (_) => navigateToFoodSelector(meal),
+        onPressed: (_) => showFoodSelectorBottomSheet(context, ref, meal),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
         icon: Icons.add,
@@ -275,7 +278,7 @@ class FoodListState extends ConsumerState<FoodList> {
     ];
   }
 
- Widget buildAddSnackButton(BuildContext context, WidgetRef ref, String userId, String dailyStatsId, DateTime date, int currentSnacksCount) {
+  Widget buildAddSnackButton(BuildContext context, WidgetRef ref, String userId, String dailyStatsId, DateTime date, int currentSnacksCount) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: ElevatedButton(
@@ -322,7 +325,7 @@ class FoodListState extends ConsumerState<FoodList> {
         color: Colors.transparent,
         elevation: 0,
         child: ExpansionTile(
-          title: Text(mealName, style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface)),
+title: Text(mealName, style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface)),
           children: const [ListTile(title: CircularProgressIndicator())],
         ),
       ),
@@ -332,19 +335,6 @@ class FoodListState extends ConsumerState<FoodList> {
   Widget buildErrorTile(BuildContext context, String error) {
     return ListTile(
       title: Text('Error: $error', style: TextStyle(color: Theme.of(context).colorScheme.onError)),
-    );
-  }
-
-  void navigateToFoodSelector(meals.Meal meal, [String? foodId]) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => FoodSelector(
-          meal: meal,
-          myFoodId: foodId,
-          isFavoriteMeal: false,
-        ),
-      ),
     );
   }
 
@@ -530,7 +520,7 @@ class FoodListState extends ConsumerState<FoodList> {
         date: widget.selectedDate,
         mealType: '',
       );
-      navigateToFoodSelector(meal, foodId);
+      showFoodSelectorBottomSheet(context, ref, meal, myFoodId: foodId);
     } else if (value == 'delete') {
       final mealsService = ref.read(mealsServiceProvider);
       await mealsService.removeFoodFromMeal(userId: '', mealId: '', myFoodId: foodId);
@@ -545,7 +535,7 @@ class FoodListState extends ConsumerState<FoodList> {
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selection mode enabled')));
   }
 
-  void onFoodTap(meals.Meal meal, String foodId) {
+  void onFoodTap(BuildContext context, WidgetRef ref, meals.Meal meal, String foodId) {
     if (isSelectionMode) {
       setState(() {
         if (selectedFoods.contains(foodId)) {
@@ -555,12 +545,224 @@ class FoodListState extends ConsumerState<FoodList> {
         }
       });
     } else {
-      navigateToFoodSelector(meal, foodId);
+      showFoodSelectorBottomSheet(context, ref, meal, myFoodId: foodId);
     }
   }
 
   Future<List<meals.Meal>> getAllMeals(String userId) async {
     final snapshot = await ref.read(mealsServiceProvider).getUserMealsByDate(userId: userId, date: widget.selectedDate).first;
     return snapshot;
+  }
+
+  void showFoodSelectorBottomSheet(BuildContext context, WidgetRef ref, meals.Meal meal, {String? myFoodId}) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
+      ),
+      builder: (context) => FoodSelector(
+        meal: meal,
+        myFoodId: myFoodId,
+        onSave: () {
+          setState(() {});
+        },
+      ),
+    );
+  }
+}
+
+class FoodSelector extends ConsumerStatefulWidget {
+  final meals.Meal meal;
+  final String? myFoodId;
+  final VoidCallback? onSave;
+
+  const FoodSelector({
+    required this.meal,
+    this.myFoodId,
+    this.onSave,
+    super.key,
+  });
+
+  @override
+  FoodSelectorState createState() => FoodSelectorState();
+}
+
+class FoodSelectorState extends ConsumerState<FoodSelector> {
+  final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _quantityController = TextEditingController(text: '100');
+  double _quantity = 100.0;
+  String _unit = 'g';
+
+  macros.Food? _loadedFood;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.myFoodId != null) {
+      _loadFoodData(widget.myFoodId!);
+    }
+  }
+
+  Future<void> _loadFoodData(String foodId) async {
+    final mealsService = ref.read(mealsServiceProvider);
+    final food = await mealsService.getMyFoodById(widget.meal.userId, foodId);
+    if (food != null && mounted) {
+      setState(() {
+        _loadedFood = food;
+        _quantity = food.quantity ?? 100.0;
+        _unit = food.quantityUnit;
+        _quantityController.text = _quantity.toString();
+      });
+    }
+  }
+
+  Future<void> _saveFood() async {
+    try {
+      final mealsService = ref.read(mealsServiceProvider);
+      if (_loadedFood != null) {
+        final adjustedFood = _createAdjustedFood(_loadedFood!);
+
+        if (widget.myFoodId == null) {
+          await mealsService.addFoodToMeal(
+            userId: widget.meal.userId,
+            mealId: widget.meal.id!,
+            food: adjustedFood,
+            quantity: _quantity,
+          );
+        } else {
+          await mealsService.updateMyFood(
+            userId: widget.meal.userId,
+            myFoodId: widget.myFoodId!,
+            updatedFood: adjustedFood,
+          );
+        }
+
+        widget.onSave?.call();
+      }
+    } catch (e) {
+      debugPrint('saveFood: Error saving food: $e');
+    } finally {
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    }
+  }
+
+  macros.Food _createAdjustedFood(macros.Food food) {
+    return food.copyWith(
+      kcal: food.kcal * _quantity / 100,
+      carbs: food.carbs * _quantity / 100,
+      fat: food.fat * _quantity / 100,
+      protein: food.protein * _quantity / 100,
+      quantity: _quantity,
+      quantityUnit: _unit,
+      mealId: widget.meal.id!,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 16,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.myFoodId == null ? 'Add Food' : 'Edit Food',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16),
+            AutoTypeField(
+              controller: _searchController,
+              focusNode: FocusNode(),
+              onSelected: (macros.Food food) {
+                setState(() {
+                  _loadedFood = food;
+                  _quantity = 100.0;
+                  _unit = 'g';
+                  _quantityController.text = '100';
+                });
+              },
+              onChanged: (String pattern) {
+                // Handle changes in the search field if necessary
+              },
+            ),
+            if (_loadedFood != null) ...[
+              const SizedBox(height: 16),
+              Text(_loadedFood!.name, style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              _buildQuantityInput(),
+              const SizedBox(height: 16),
+              _buildMacroNutrients(),
+            ],
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _loadedFood != null ? _saveFood : null,
+                child: Text(widget.myFoodId == null ? 'Add' : 'Update'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuantityInput() {
+    return Row(
+      children: [
+        Expanded(
+          child: TextField(
+         controller: _quantityController,
+            decoration: const InputDecoration(labelText: 'Quantity'),
+            keyboardType: TextInputType.number,
+            onChanged: (value) {
+              setState(() {
+                _quantity = double.tryParse(value) ?? 100.0;
+              });
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        DropdownButton<String>(
+          value: _unit,
+          items: <String>['g', 'ml', 'oz'].map((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value),
+            );
+          }).toList(),
+          onChanged: (String? newValue) {
+            setState(() {
+              _unit = newValue!;
+            });
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMacroNutrients() {
+    if (_loadedFood == null) return const SizedBox.shrink();
+
+    final adjustmentFactor = _quantity / 100;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Protein: ${(_loadedFood!.protein * adjustmentFactor).toStringAsFixed(2)}g'),
+        Text('Carbohydrates: ${(_loadedFood!.carbs * adjustmentFactor).toStringAsFixed(2)}g'),
+        Text('Fat: ${(_loadedFood!.fat * adjustmentFactor).toStringAsFixed(2)}g'),
+        Text('Calories: ${(_loadedFood!.kcal * adjustmentFactor).toStringAsFixed(2)}kcal'),
+      ],
+    );
   }
 }

@@ -1,13 +1,13 @@
+import 'package:alphanessone/measurements/measurements_provider.dart';
 import 'package:alphanessone/models/measurement_model.dart';
 import 'package:alphanessone/models/user_model.dart';
-import 'package:alphanessone/providers/measurement_form_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/users_services.dart';
 import '../services/tdee_services.dart';
-import '../services/exercise_record_services.dart';
-import '../services/measurements_services.dart';
+import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
+import '../measurements/measurements_services.dart';
 
 // User-related providers
 final userNameProvider = StateProvider<String>((ref) => '');

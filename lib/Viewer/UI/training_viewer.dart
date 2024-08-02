@@ -24,7 +24,7 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
   Future<void> fetchTrainingWeeks() async {
     ref.read(trainingLoadingProvider.notifier).state = true;
     try {
-      final weeks = await ref.read(trainingServiceProvider).fetchTrainingWeeks(widget.programId);
+      final weeks = await ref.read(trainingProgramServicesProvider).fetchTrainingWeeks(widget.programId);
       if (mounted) {
         ref.read(trainingWeeksProvider.notifier).state = weeks;
       }

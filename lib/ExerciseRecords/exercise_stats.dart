@@ -1,12 +1,13 @@
 import 'dart:math';
-
+import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../models/exercise_record.dart';
-import '../exerciseManager/exercise_model.dart';
-import 'providers/providers.dart';
+import '../../models/exercise_record.dart';
+import '../../exerciseManager/exercise_model.dart';
+import '../providers/providers.dart';
 
 class ExerciseStats extends HookConsumerWidget {
   final ExerciseModel exercise;
@@ -65,7 +66,7 @@ class ExerciseStats extends HookConsumerWidget {
                     const SizedBox(height: 24),
                     if (records.length > 1) _buildPerformanceChart(records, context),
                     const SizedBox(height: 24),
-                    _buildRecordList(records, context),
+                    _buildRecordList(records, context, ref),
                   ],
                 ),
               ),
@@ -275,7 +276,7 @@ class ExerciseStats extends HookConsumerWidget {
     return (10 * magnitude).toDouble();
   }
 
-  Widget _buildRecordList(List<ExerciseRecord> records, BuildContext context) {
+  Widget _buildRecordList(List<ExerciseRecord> records, BuildContext context, WidgetRef ref) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -303,18 +304,259 @@ class ExerciseStats extends HookConsumerWidget {
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
                 subtitle: Text(DateFormat('MMMM d, yyyy').format(DateTime.parse(record.date)),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                trailing: index == 0 ? Text(
-                  'Latest',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.green,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ) : null,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit),
+                      onPressed: () => _showEditDialog(context, ref, record),
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: () => _showDeleteDialog(context, ref, record),
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ],
+                ),
               ),
             );
           },
         ),
       ],
     );
+  }
+
+  void _showEditDialog(BuildContext context, WidgetRef ref, ExerciseRecord record) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return EditRecordDialog(
+          record: record,
+          exercise: exercise,
+          exerciseRecordService: ref.read(exerciseRecordServiceProvider),
+          userId: userId,
+        );
+      },
+    );
+  }
+
+  void _showDeleteDialog(BuildContext context, WidgetRef ref, ExerciseRecord record) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text(
+            'Confirmation',
+            style: TextStyle(color: Theme.of(dialogContext).colorScheme.onSurface),
+          ),
+          backgroundColor: Theme.of(dialogContext).colorScheme.surface,
+          content: Text(
+            'Are you sure you want to delete this record?',
+            style: TextStyle(color: Theme.of(dialogContext).colorScheme.onSurface),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text('Cancel', style: TextStyle(color: Theme.of(dialogContext).colorScheme.primary)),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _performDelete(context, ref, record);
+              },
+              child: Text('Delete', style: TextStyle(color: Theme.of(dialogContext).colorScheme.error)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _performDelete(BuildContext context, WidgetRef ref, ExerciseRecord record) async {
+    try {
+      await ref.read(exerciseRecordServiceProvider).deleteExerciseRecord(
+        userId: userId,
+        exerciseId: exercise.id,
+        recordId: record.id,
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Record deleted successfully')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete record: $e')),
+        );
+      }
+    }
+  }
+}
+
+class EditRecordDialog extends HookConsumerWidget {
+  final ExerciseRecord record;
+  final ExerciseModel exercise;
+  final ExerciseRecordService exerciseRecordService;
+  final String userId;
+
+  const EditRecordDialog({
+    super.key,
+    required this.record,
+    required this.exercise,
+    required this.exerciseRecordService,
+    required this.userId,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final maxWeightController = useTextEditingController(text: record.maxWeight.toString());
+    final repetitionsController = useTextEditingController(text: record.repetitions.toString());
+    final keepWeight = useState(false);
+    final selectedDate = useState(DateTime.parse(record.date));
+
+    return AlertDialog(
+      title: Text(
+        'Edit Record',
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+      ),
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildDialogTextFormField(maxWeightController, 'Max weight', context),
+            _buildDialogTextFormField(repetitionsController, 'Repetitions', context),
+            _buildDatePicker(context, selectedDate),
+            Row(
+              children: [
+                Text(
+                  'Keep current weight',
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                ),
+                Switch(
+                  value: keepWeight.value,
+                  onChanged: (value) {
+                    keepWeight.value = value;
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+        ),
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+            _handleSave(context, ref, maxWeightController.text, repetitionsController.text, selectedDate.value, keepWeight.value);
+          },
+          child: Text('Save', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDialogTextFormField(TextEditingController controller, String labelText, BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: labelText,
+          labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        keyboardType: TextInputType.number,
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+      ),
+    );
+  }
+
+  Widget _buildDatePicker(BuildContext context, ValueNotifier<DateTime> selectedDate) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: InkWell(
+        onTap: () async {
+          final DateTime? picked = await showDatePicker(
+            context: context,
+            initialDate: selectedDate.value,
+            firstDate: DateTime(2000),
+            lastDate: DateTime.now(),
+          );
+          if (picked != null && picked != selectedDate.value) {
+            selectedDate.value = picked;
+          }
+        },
+        child: InputDecorator(
+          decoration: InputDecoration(
+            labelText: 'Date',
+            labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                DateFormat('dd/MM/yyyy').format(selectedDate.value),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+              ),
+              Icon(Icons.calendar_today, color: Theme.of(context).colorScheme.onSurface),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _handleSave(BuildContext context, WidgetRef ref, String maxWeightText, String repetitionsText, DateTime selectedDate, bool keepWeight) async {
+    double newMaxWeight = double.parse(maxWeightText);
+    int newRepetitions = int.parse(repetitionsText);
+
+    if (newRepetitions > 1) {
+      newMaxWeight = (newMaxWeight / (1.0278 - (0.0278 * newRepetitions))).roundToDouble();
+      newRepetitions = 1;
+    }
+
+    try {
+      await exerciseRecordService.updateExerciseRecord(
+        userId: userId,
+        exerciseId: exercise.id,
+        recordId: record.id,
+        maxWeight: newMaxWeight,
+        repetitions: newRepetitions,
+      );
+
+      if (keepWeight) {
+        await exerciseRecordService.updateIntensityForProgram(
+          userId,
+          exercise.id,
+          newMaxWeight,
+        );
+      } else {
+        await exerciseRecordService.updateWeightsForProgram(
+          userId,
+          exercise.id,
+          newMaxWeight,
+        );
+      }
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Record updated successfully')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update record: $e')),
+        );
+      }
+    }
   }
 }

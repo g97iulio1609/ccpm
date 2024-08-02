@@ -1,5 +1,5 @@
 import 'package:alphanessone/exerciseManager/exercises_manager.dart';
-import 'package:alphanessone/maxrmdashboard.dart';
+import 'package:alphanessone/ExerciseRecords/maxrmdashboard.dart';
 import 'package:alphanessone/measurements/measurements.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';

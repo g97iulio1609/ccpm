@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:math';
-import 'package:alphanessone/services/exercise_record_services.dart';
+import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

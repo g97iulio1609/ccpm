@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../models/timer_model.dart';
-import '../providers/timer_provider.dart';
+import '../providers/training_program_provider.dart';
 
 class TimerPage extends ConsumerStatefulWidget {
   final TimerModel timerModel;
@@ -26,7 +26,7 @@ class TimerPageState extends ConsumerState<TimerPage>
   @override
   void initState() {
     super.initState();
-    _initializeController(); // Assicurati di inizializzare prima
+    _initializeController();
     Future.microtask(() {
       ref.read(timerModelProvider.notifier).state = widget.timerModel;
       ref.read(remainingSecondsProvider.notifier).state =
@@ -55,55 +55,58 @@ class TimerPageState extends ConsumerState<TimerPage>
     });
   }
 
-void _handleNextSeries() {
-  _timer.cancel();
-  final timerModel = ref.read(timerModelProvider);
-  if (timerModel != null) {
-    final newSuperSetExerciseIndex = (timerModel.superSetExerciseIndex + 1) % timerModel.superSetExercises.length;
-    final nextSeriesIndex = newSuperSetExerciseIndex == 0
-        ? timerModel.currentSeriesIndex + 1
-        : timerModel.currentSeriesIndex;
+  void _handleNextSeries() {
+    _timer.cancel();
+    final timerModel = ref.read(timerModelProvider);
+    if (timerModel != null) {
+      final newSuperSetExerciseIndex = (timerModel.superSetExerciseIndex ) % timerModel.superSetExercises.length;
+      final nextSeriesIndex = newSuperSetExerciseIndex == 0
+          ? timerModel.currentSeriesIndex 
+          : timerModel.currentSeriesIndex;
 
-    if (nextSeriesIndex < timerModel.totalSeries) {
-      final result = {
-        'startIndex': nextSeriesIndex,
-        'superSetExerciseIndex': 0, // Reset the super set exercise index
-      };
-      context.pop(result);
+      if (nextSeriesIndex < timerModel.totalSeries) {
+        final result = {
+          'startIndex': nextSeriesIndex,
+          'superSetExerciseIndex': newSuperSetExerciseIndex,
+        };
+        context.pop(result);
+      } else {
+        // All series completed, navigate back to workout details
+        context.go(
+          '/user_programs/${timerModel.userId}/training_viewer/${timerModel.programId}/week_details/${timerModel.weekId}/workout_details/${timerModel.workoutId}',
+        );
+      }
     } else {
-      context.go(
-        '/user_programs/${timerModel.userId}/training_viewer/${timerModel.programId}/week_details/${timerModel.weekId}/workout_details/${timerModel.workoutId}',
-      );
+      // Handle null timerModel case
+      context.pop(); // Fallback to just popping the current route
     }
-  } else {
-    // Handle null timerModel case
   }
-}
 
-void _skipRestTime() {
-  _timer.cancel();
-  final timerModel = ref.read(timerModelProvider);
-  if (timerModel != null) {
-    final newSuperSetExerciseIndex = (timerModel.superSetExerciseIndex + 1) % timerModel.superSetExercises.length;
-    final nextSeriesIndex = newSuperSetExerciseIndex == 0
-        ? timerModel.currentSeriesIndex + 1
-        : timerModel.currentSeriesIndex;
+  void _skipRestTime() {
+    _timer.cancel();
+    final timerModel = ref.read(timerModelProvider);
+    if (timerModel != null) {
+      final newSuperSetExerciseIndex = (timerModel.superSetExerciseIndex) % timerModel.superSetExercises.length;
+      final nextSeriesIndex = newSuperSetExerciseIndex == 0
+          ? timerModel.currentSeriesIndex 
+          : timerModel.currentSeriesIndex;
 
-    if (nextSeriesIndex < timerModel.totalSeries) {
-      final result = {
-        'startIndex': nextSeriesIndex,
-        'superSetExerciseIndex': 0, // Reset the super set exercise index
-      };
-      context.pop(result);
+      if (nextSeriesIndex < timerModel.totalSeries) {
+        final result = {
+          'startIndex': nextSeriesIndex,
+          'superSetExerciseIndex': newSuperSetExerciseIndex, // Corrected to newSuperSetExerciseIndex
+        };
+        context.pop(result);
+      } else {
+        context.go(
+          '/user_programs/${timerModel.userId}/training_viewer/${timerModel.programId}/week_details/${timerModel.weekId}/workout_details/${timerModel.workoutId}',
+        );
+      }
     } else {
-      context.go(
-        '/user_programs/${timerModel.userId}/training_viewer/${timerModel.programId}/week_details/${timerModel.weekId}/workout_details/${timerModel.workoutId}',
-      );
+      // Handle null timerModel case
+      context.pop(); // Fallback to just popping the current route
     }
-  } else {
-    // Handle null timerModel case
   }
-}
 
   @override
   void dispose() {

@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'package:alphanessone/services/exercise_record_services.dart';
+import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 
 double roundWeight(double weight, String? exerciseType) {
   // Imposta un valore predefinito per exerciseType se è null o una stringa vuota
