@@ -5,23 +5,23 @@ class TDEEService {
 
   TDEEService(this._firestore);
 
-Future<Map<String, dynamic>?> getTDEEData(String userId) async {
-  final userDoc = await _firestore.collection('users').doc(userId).get();
-  if (userDoc.exists) {
-    final userData = userDoc.data() as Map<String, dynamic>;
-    return {
-      'birthDate': userData['birthDate'],
-      'height': userData['height'],
-      'weight': userData['weight'],
-      'gender': userData['gender'],
-      'activityLevel': userData['activityLevel'],
-      'tdee': userData['tdee'],
-    };
-  } else {
-    // Se l'utente non esiste, restituisci null
-    return null;
+  Future<Map<String, dynamic>?> getTDEEData(String userId) async {
+    final userDoc = await _firestore.collection('users').doc(userId).get();
+    if (userDoc.exists) {
+      final userData = userDoc.data() as Map<String, dynamic>;
+      return {
+        'birthDate': userData['birthDate'],
+        'height': userData['height']?.toDouble() ?? 0.0,
+        'weight': userData['weight']?.toDouble() ?? 0.0,
+        'gender': userData['gender'],
+        'activityLevel': userData['activityLevel'],
+        'tdee': userData['tdee']?.toDouble() ?? 0.0,
+      };
+    } else {
+      // If the user does not exist, return null
+      return null;
+    }
   }
-}
 
   Future<void> updateTDEEData(String userId, Map<String, dynamic> tdeeData) async {
     await _firestore.collection('users').doc(userId).update(tdeeData);

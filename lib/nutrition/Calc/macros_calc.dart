@@ -5,36 +5,37 @@ class MacrosCalculator {
 
   static Map<String, double> calculateMacrosFromPercentages(
     double tdee, Map<String, double> macroPercentages) {
-  final macros = <String, double>{};
-  final totalPercentage = macroPercentages.values.fold(0.0, (sum, percentage) => sum + percentage);
+    final macros = <String, double>{};
+    final totalPercentage = macroPercentages.values.fold(0.0, (sum, percentage) => sum + percentage);
 
-  if (totalPercentage != 100) {
-    final unsetMacros = ['carbs', 'protein', 'fat']
-        .where((macro) => !macroPercentages.containsKey(macro))
-        .toList();
+    if (totalPercentage != 100) {
+      final unsetMacros = ['carbs', 'protein', 'fat']
+          .where((macro) => !macroPercentages.containsKey(macro))
+          .toList();
 
-    if (unsetMacros.isNotEmpty) {
-      final distributedPercentage = (100 - totalPercentage) / unsetMacros.length;
-      for (final macro in unsetMacros) {
-        macroPercentages[macro] = distributedPercentage;
-      }
-    } else {
-      final factor = 100 / totalPercentage;
-      for (final macro in macroPercentages.keys) {
-        macroPercentages[macro] = macroPercentages[macro]! * factor;
+      if (unsetMacros.isNotEmpty) {
+        final distributedPercentage = (100 - totalPercentage) / unsetMacros.length;
+        for (final macro in unsetMacros) {
+          macroPercentages[macro] = distributedPercentage;
+        }
+      } else {
+        final factor = 100 / totalPercentage;
+        for (final macro in macroPercentages.keys) {
+          macroPercentages[macro] = macroPercentages[macro]! * factor;
+        }
       }
     }
+
+    for (final macro in macroPercentages.keys) {
+      final percentage = macroPercentages[macro]!;
+      final calories = tdee * percentage / 100;
+      final grams = calculateGramsFromCalories(macro, calories);
+      macros[macro] = grams;
+    }
+
+    return macros;
   }
 
-  for (final macro in macroPercentages.keys) {
-    final percentage = macroPercentages[macro]!;
-    final calories = tdee * percentage / 100;
-    final grams = calculateGramsFromCalories(macro, calories);
-    macros[macro] = grams;
-  }
-
-  return macros;
-}
   static Map<String, double> calculateMacrosFromGramsPerKg(
       double tdee, double weight, Map<String, double> macroGramsPerKg) {
     final macros = <String, double>{};
@@ -51,36 +52,43 @@ class MacrosCalculator {
 
     _adjustMacroPercentages(macroPercentages);
 
+    // Recalculate grams based on adjusted percentages
+    for (final macro in macroPercentages.keys) {
+      final adjustedCalories = tdee * macroPercentages[macro]! / 100;
+      macros[macro] = calculateGramsFromCalories(macro, adjustedCalories);
+    }
+
     return macros;
   }
-static Map<String, double> calculatePercentagesFromGrams(
+
+  static Map<String, double> calculatePercentagesFromGrams(
     double tdee, Map<String, double> macroGrams) {
-  final macroPercentages = <String, double>{};
+    final macroPercentages = <String, double>{};
   
-  for (final macro in macroGrams.keys) {
-    final grams = macroGrams[macro]!;
-    final calories = calculateCaloriesFromGrams(macro, grams);
-    final percentage = calories / tdee * 100;
-    macroPercentages[macro] = percentage;
+    for (final macro in macroGrams.keys) {
+      final grams = macroGrams[macro]!;
+      final calories = calculateCaloriesFromGrams(macro, grams);
+      final percentage = calories / tdee * 100;
+      macroPercentages[macro] = percentage;
+    }
+
+    _adjustMacroPercentages(macroPercentages);
+
+    return macroPercentages;
   }
 
-  _adjustMacroPercentages(macroPercentages);
-
-  return macroPercentages;
-}
-
-static Map<String, double> calculatePercentagesFromGramsPerKg(
+  static Map<String, double> calculatePercentagesFromGramsPerKg(
     double tdee, double weight, Map<String, double> macroGramsPerKg) {
-  final macroGrams = <String, double>{};
+    final macroGrams = <String, double>{};
 
-  for (final macro in macroGramsPerKg.keys) {
-    final gramsPerKg = macroGramsPerKg[macro]!;
-    final grams = gramsPerKg * weight;
-    macroGrams[macro] = grams;
+    for (final macro in macroGramsPerKg.keys) {
+      final gramsPerKg = macroGramsPerKg[macro]!;
+      final grams = gramsPerKg * weight;
+      macroGrams[macro] = grams;
+    }
+
+    return calculatePercentagesFromGrams(tdee, macroGrams);
   }
-
-  return calculatePercentagesFromGrams(tdee, macroGrams);
-}
 
   static Map<String, double> calculateMacrosFromGrams(
       double tdee, Map<String, double> macroGrams) {
@@ -126,33 +134,26 @@ static Map<String, double> calculatePercentagesFromGramsPerKg(
     }
   }
 
-static void _adjustMacroPercentages(Map<String, double> macroPercentages) {
-  final totalPercentage = macroPercentages.values.fold(0.0, (sum, percentage) => sum + percentage);
+  static void _adjustMacroPercentages(Map<String, double> macroPercentages) {
+    final totalPercentage = macroPercentages.values.fold(0.0, (sum, percentage) => sum + percentage);
 
-  if (totalPercentage != 100) {
-    final unsetMacros = ['carbs', 'protein', 'fat'].where((macro) => !macroPercentages.containsKey(macro)).toList();
+    if (totalPercentage != 100) {
+      final unsetMacros = ['carbs', 'protein', 'fat'].where((macro) => !macroPercentages.containsKey(macro)).toList();
 
-    if (unsetMacros.isNotEmpty) {
-      final excessPercentage = totalPercentage - 100;
-      final distributedPercentage = excessPercentage / unsetMacros.length;
+      if (unsetMacros.isNotEmpty) {
+        final remainingPercentage = 100 - totalPercentage;
+        final distributedPercentage = remainingPercentage / unsetMacros.length;
 
-      for (final macro in unsetMacros) {
-        macroPercentages[macro] = distributedPercentage;
+        for (final macro in unsetMacros) {
+          macroPercentages[macro] = distributedPercentage;
+        }
+      } else {
+        // Adjust percentages proportionally
+        final factor = 100 / totalPercentage;
+        for (final macro in macroPercentages.keys) {
+          macroPercentages[macro] = macroPercentages[macro]! * factor;
+        }
       }
-    } else {
-      final sortedMacros = macroPercentages.entries.toList()
-        ..sort((a, b) => a.value.compareTo(b.value));
-
-      var remainingPercentage = 100.0;
-      for (var i = 0; i < sortedMacros.length - 1; i++) {
-        final macro = sortedMacros[i];
-        final clampedPercentage = macro.value.clamp(0, remainingPercentage).toDouble();
-        macroPercentages[macro.key] = clampedPercentage;
-        remainingPercentage -= clampedPercentage;
-      }
-
-      macroPercentages[sortedMacros.last.key] = remainingPercentage;
     }
   }
-}
 }
