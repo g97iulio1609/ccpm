@@ -98,6 +98,12 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
     'fat': {},
   };
 
+  final Map<String, TextEditingController> _calorieControllers = {
+    'carbs': TextEditingController(),
+    'protein': TextEditingController(),
+    'fat': TextEditingController(),
+  };
+
   bool _autoAdjustMacros = true;
 
   @override
@@ -135,6 +141,9 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
       for (var focusNode in focusNodeMap.values) {
         focusNode.dispose();
       }
+    }
+    for (var controller in _calorieControllers.values) {
+      controller.dispose();
     }
     super.dispose();
   }
@@ -178,6 +187,7 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
       if (!_focusNodes[macro]![MacroUpdateType.percentage]!.hasFocus) {
         _setControllerValue(_controllers[macro]![MacroUpdateType.percentage], percentage.toStringAsFixed(1));
       }
+      _setControllerValue(_calorieControllers[macro], calories.toStringAsFixed(1));
     }
   }
 
@@ -246,6 +256,8 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
             ),
             const SizedBox(height: 16),
             ..._buildMacroInputs(macroName),
+            const SizedBox(height: 16),
+            _buildCalorieField(macroName),
           ],
         ),
       ),
@@ -289,6 +301,17 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
         FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
       ],
       onChanged: onChanged,
+    );
+  }
+
+  Widget _buildCalorieField(String macroName) {
+    return TextFormField(
+      controller: _calorieControllers[macroName],
+      decoration: InputDecoration(
+        labelText: '${macroName.capitalize()} Calories',
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      readOnly: true,
     );
   }
 
