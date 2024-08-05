@@ -31,6 +31,7 @@ class UserProfileState extends ConsumerState<UserProfile> with SingleTickerProvi
   int? _selectedGender;
   DateTime? _birthdate;
   bool _isLoading = true;
+  String? _lastMeasurementId;
 
   @override
   void initState() {
@@ -51,6 +52,15 @@ class UserProfileState extends ConsumerState<UserProfile> with SingleTickerProvi
         _selectedGender = userProfileData['gender'] as int?;
         _photoURL = userProfileData['photoURL'] as String?;
         _birthdate = userProfileData['birthdate'] != null ? (userProfileData['birthdate'] as Timestamp).toDate() : null;
+
+        // Fetch the most recent weight measurement
+        final measurementsService = ref.read(measurementsServiceProvider);
+        final measurements = await measurementsService.getMeasurements(userId: uid).first;
+        if (measurements.isNotEmpty) {
+          final mostRecentMeasurement = measurements.first;
+          _lastMeasurementId = mostRecentMeasurement.id;
+          _controllers['weight']?.text = mostRecentMeasurement.weight.toString();
+        }
       }
     } catch (e) {
       _showSnackBar('Error fetching user profile: $e', Colors.red);
@@ -70,10 +80,51 @@ class UserProfileState extends ConsumerState<UserProfile> with SingleTickerProvi
   Future<void> _saveProfile(String field, dynamic value) async {
     try {
       String uid = widget.userId ?? FirebaseAuth.instance.currentUser!.uid;
-      await ref.read(usersServiceProvider).updateUser(uid, {field: value});
+      if (field == 'weight') {
+        await _updateWeight(uid, value);
+      } else {
+        await ref.read(usersServiceProvider).updateUser(uid, {field: value});
+      }
       _showSnackBar('Profile saved successfully!', Colors.green);
     } catch (e) {
       _showSnackBar('Error saving profile: $e', Colors.red);
+    }
+  }
+
+  Future<void> _updateWeight(String uid, String weightValue) async {
+    final measurementsService = ref.read(measurementsServiceProvider);
+    final weight = double.parse(weightValue);
+    
+    if (_lastMeasurementId != null) {
+      // Update the last measurement
+      final lastMeasurement = (await measurementsService.getMeasurements(userId: uid).first).first;
+      await measurementsService.updateMeasurement(
+        userId: uid,
+        measurementId: _lastMeasurementId!,
+        date: DateTime.now(),
+        weight: weight,
+        height: lastMeasurement.height,
+        bmi: lastMeasurement.bmi,
+        bodyFatPercentage: lastMeasurement.bodyFatPercentage,
+        waistCircumference: lastMeasurement.waistCircumference,
+        hipCircumference: lastMeasurement.hipCircumference,
+        chestCircumference: lastMeasurement.chestCircumference,
+        bicepsCircumference: lastMeasurement.bicepsCircumference,
+      );
+    } else {
+      // Add a new measurement if there's no previous one
+      _lastMeasurementId = await measurementsService.addMeasurement(
+        userId: uid,
+        date: DateTime.now(),
+        weight: weight,
+        height: 0,
+        bmi: 0,
+        bodyFatPercentage: 0,
+        waistCircumference: 0,
+        hipCircumference: 0,
+        chestCircumference: 0,
+        bicepsCircumference: 0,
+      );
     }
   }
 
@@ -337,8 +388,7 @@ class UserProfileState extends ConsumerState<UserProfile> with SingleTickerProvi
         }).toList(),
         hint: Text('Select gender', style: TextStyle(color: Colors.white.withOpacity(0.7))),
       ),
-    );
-  }
+    );}
 
   Widget _buildPersonalInfoTab() {
     return SingleChildScrollView(
