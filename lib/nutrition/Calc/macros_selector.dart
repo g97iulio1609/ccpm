@@ -148,19 +148,24 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
     super.dispose();
   }
 
-  Future<void> _loadUserData() async {
+   Future<void> _loadUserData() async {
     final tdeeService = ref.read(tdeeServiceProvider);
+    final measurementsService = ref.read(measurementsServiceProvider);  // Add this line
     final tdeeData = await tdeeService.getTDEEData(widget.userId);
     final userMacros = await tdeeService.getUserMacros(widget.userId);
+
+    // Fetch the most recent weight measurement
+    final measurements = await measurementsService.getMeasurements(userId: widget.userId).first;
+    final mostRecentWeight = measurements.isNotEmpty ? measurements.first.weight : 0.0;
 
     if (tdeeData != null) {
       ref.read(userDataProvider.notifier).updateUserData(
         tdee: tdeeData['tdee'] ?? 0.0,
-        weight: tdeeData['weight'] ?? 0.0,
+        weight: mostRecentWeight,  // Use the fetched weight here
       );
       ref.read(macrosProvider.notifier).updateMacros(
         ref.read(userDataProvider).tdee,
-        ref.read(userDataProvider).weight,
+        mostRecentWeight,  // Use the fetched weight here
         userMacros,
         MacroUpdateType.grams,
       );

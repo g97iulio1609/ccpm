@@ -156,4 +156,11 @@ class MacrosCalculator {
       }
     }
   }
+  static double calculateTotalCalories(Map<String, double> macros) {
+  double totalCalories = 0;
+  macros.forEach((macro, grams) {
+    totalCalories += calculateCaloriesFromGrams(macro, grams);
+  });
+  return totalCalories;
+}
 }
