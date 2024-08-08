@@ -1,26 +1,15 @@
-import 'package:alphanessone/providers/providers.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'macros_calc.dart';
+import 'package:alphanessone/providers/providers.dart';
+import 'package:fl_chart/fl_chart.dart';
 
-// Provider for user data
-final userDataProvider = StateNotifierProvider<UserDataNotifier, UserData>((ref) {
-  return UserDataNotifier();
-});
-
-// Provider for macros
-final macrosProvider = StateNotifierProvider<MacrosNotifier, Map<String, double>>((ref) {
-  return MacrosNotifier(ref);
-});
-
-// UserData class
+// Domain Models
 class UserData {
   final double tdee;
   final double weight;
 
-  UserData({this.tdee = 0.0, this.weight = 0.0});
+  UserData({required this.tdee, required this.weight});
 
   UserData copyWith({double? tdee, double? weight}) {
     return UserData(
@@ -30,37 +19,65 @@ class UserData {
   }
 }
 
-// UserDataNotifier class
+class MacroData {
+  final double carbs;
+  final double protein;
+  final double fat;
+
+  MacroData({required this.carbs, required this.protein, required this.fat});
+
+  MacroData copyWith({double? carbs, double? protein, double? fat}) {
+    return MacroData(
+      carbs: carbs ?? this.carbs,
+      protein: protein ?? this.protein,
+      fat: fat ?? this.fat,
+    );
+  }
+
+  Map<String, double> toMap() {
+    return {'carbs': carbs, 'protein': protein, 'fat': fat};
+  }
+
+  factory MacroData.fromMap(Map<String, double> map) {
+    return MacroData(
+      carbs: map['carbs'] ?? 0,
+      protein: map['protein'] ?? 0,
+      fat: map['fat'] ?? 0,
+    );
+  }
+}
+
+// Enums
+enum MacroUpdateType { percentage, gramsPerKg, grams }
+
+// Providers
+final userDataProvider = StateNotifierProvider<UserDataNotifier, UserData>(
+    (ref) => UserDataNotifier());
+
+final macrosProvider = StateNotifierProvider<MacrosNotifier, MacroData>(
+    (ref) => MacrosNotifier(ref));
+
+// Notifiers
 class UserDataNotifier extends StateNotifier<UserData> {
-  UserDataNotifier() : super(UserData());
+  UserDataNotifier() : super(UserData(tdee: 0, weight: 0));
 
   void updateUserData({double? tdee, double? weight}) {
     state = state.copyWith(tdee: tdee, weight: weight);
   }
 }
 
-// MacrosNotifier class
-class MacrosNotifier extends StateNotifier<Map<String, double>> {
-  final StateNotifierProviderRef<MacrosNotifier, Map<String, double>> ref;
+class MacrosNotifier extends StateNotifier<MacroData> {
+  final StateNotifierProviderRef<MacrosNotifier, MacroData> ref;
 
-  MacrosNotifier(this.ref) : super({'carbs': 0, 'protein': 0, 'fat': 0});
+  MacrosNotifier(this.ref) : super(MacroData(carbs: 0, protein: 0, fat: 0));
 
-  void updateMacros(double tdee, double weight, Map<String, double> values, MacroUpdateType type) {
-    debugPrint('weight:$weight');
-    Map<String, double> newMacros;
-    switch (type) {
-      case MacroUpdateType.percentage:
-        newMacros = MacrosCalculator.calculateMacrosFromPercentages(tdee, values);
-        break;
-      case MacroUpdateType.gramsPerKg:
-        newMacros = MacrosCalculator.calculateMacrosFromGramsPerKg(tdee, weight, values);
-        break;
-      case MacroUpdateType.grams:
-        newMacros = MacrosCalculator.calculateMacrosFromGrams(tdee, values);
-        break;
-    }
+  void updateMacros(MacroData newMacros) {
     state = newMacros;
-    _saveMacrosToFirebase(newMacros);
+    _saveMacrosToFirebase({
+      'carbs': double.parse(newMacros.carbs.toStringAsFixed(2)),
+      'protein': double.parse(newMacros.protein.toStringAsFixed(2)),
+      'fat': double.parse(newMacros.fat.toStringAsFixed(2)),
+    });
   }
 
   Future<void> _saveMacrosToFirebase(Map<String, double> macros) async {
@@ -72,10 +89,43 @@ class MacrosNotifier extends StateNotifier<Map<String, double>> {
   }
 }
 
-// MacroUpdateType enum
-enum MacroUpdateType { percentage, gramsPerKg, grams }
 
-// MacrosSelector widget
+// Utilities
+class MacrosCalculator {
+  static const double carbsCaloriesPerGram = 4;
+  static const double proteinCaloriesPerGram = 4;
+  static const double fatCaloriesPerGram = 9;
+
+  static MacroData calculateMacrosFromPercentages(
+      double tdee, MacroData percentages) {
+    double carbsCalories = tdee * percentages.carbs / 100;
+    double proteinCalories = tdee * percentages.protein / 100;
+    double fatCalories = tdee * percentages.fat / 100;
+
+    return MacroData(
+      carbs: carbsCalories / carbsCaloriesPerGram,
+      protein: proteinCalories / proteinCaloriesPerGram,
+      fat: fatCalories / fatCaloriesPerGram,
+    );
+  }
+
+  static MacroData calculateMacrosFromGramsPerKg(
+      double weight, MacroData gramsPerKg) {
+    return MacroData(
+      carbs: gramsPerKg.carbs * weight,
+      protein: gramsPerKg.protein * weight,
+      fat: gramsPerKg.fat * weight,
+    );
+  }
+
+  static double calculateTotalCalories(MacroData macros) {
+    return macros.carbs * carbsCaloriesPerGram +
+        macros.protein * proteinCaloriesPerGram +
+        macros.fat * fatCaloriesPerGram;
+  }
+}
+
+// UI Components
 class MacrosSelector extends ConsumerStatefulWidget {
   final String userId;
 
@@ -86,48 +136,32 @@ class MacrosSelector extends ConsumerStatefulWidget {
 }
 
 class MacrosSelectorState extends ConsumerState<MacrosSelector> {
-  final Map<String, Map<MacroUpdateType, TextEditingController>> _controllers = {
-    'carbs': {},
-    'protein': {},
-    'fat': {},
-  };
-
-  final Map<String, Map<MacroUpdateType, FocusNode>> _focusNodes = {
-    'carbs': {},
-    'protein': {},
-    'fat': {},
-  };
-
-  final Map<String, TextEditingController> _calorieControllers = {
-    'carbs': TextEditingController(),
-    'protein': TextEditingController(),
-    'fat': TextEditingController(),
-  };
-
+  late MacroUpdateType _currentUpdateType;
+  late MacroData _tempMacros;
+  late MacroData _tempMacrosPercentages;
   bool _autoAdjustMacros = true;
+
+  final Map<String, Map<MacroUpdateType, TextEditingController>> _controllers =
+      {
+    'carbs': {},
+    'protein': {},
+    'fat': {},
+  };
 
   @override
   void initState() {
     super.initState();
-    for (var macro in _controllers.keys) {
+    _currentUpdateType = MacroUpdateType.grams;
+    _initializeControllers();
+    _loadUserData();
+  }
+
+  void _initializeControllers() {
+    for (var macro in ['carbs', 'protein', 'fat']) {
       for (var type in MacroUpdateType.values) {
         _controllers[macro]![type] = TextEditingController();
-        _focusNodes[macro]![type] = FocusNode();
-        _focusNodes[macro]![type]!.addListener(() {
-          if (!_focusNodes[macro]![type]!.hasFocus) {
-            final controller = _controllers[macro]![type]!;
-            final value = controller.text;
-            if (type == MacroUpdateType.gramsPerKg) {
-              if (value.isNotEmpty) {
-                final formattedValue = double.parse(value).toStringAsFixed(2);
-                controller.text = formattedValue;
-              }
-            }
-          }
-        });
       }
     }
-    _loadUserData();
   }
 
   @override
@@ -137,277 +171,531 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
         controller.dispose();
       }
     }
-    for (var focusNodeMap in _focusNodes.values) {
-      for (var focusNode in focusNodeMap.values) {
-        focusNode.dispose();
-      }
-    }
-    for (var controller in _calorieControllers.values) {
-      controller.dispose();
-    }
     super.dispose();
   }
 
-   Future<void> _loadUserData() async {
+  Future<void> _loadUserData() async {
     final tdeeService = ref.read(tdeeServiceProvider);
-    final measurementsService = ref.read(measurementsServiceProvider);  // Add this line
+    final measurementsService = ref.read(measurementsServiceProvider);
     final tdeeData = await tdeeService.getTDEEData(widget.userId);
     final userMacros = await tdeeService.getUserMacros(widget.userId);
 
-    // Fetch the most recent weight measurement
-    final measurements = await measurementsService.getMeasurements(userId: widget.userId).first;
-    final mostRecentWeight = measurements.isNotEmpty ? measurements.first.weight : 0.0;
+    final measurements =
+        await measurementsService.getMeasurements(userId: widget.userId).first;
+    final mostRecentWeight =
+        measurements.isNotEmpty ? measurements.first.weight : 0.0;
 
     if (tdeeData != null) {
       ref.read(userDataProvider.notifier).updateUserData(
-        tdee: tdeeData['tdee'] ?? 0.0,
-        weight: mostRecentWeight,  // Use the fetched weight here
-      );
-      ref.read(macrosProvider.notifier).updateMacros(
-        ref.read(userDataProvider).tdee,
-        mostRecentWeight,  // Use the fetched weight here
-        userMacros,
-        MacroUpdateType.grams,
-      );
+            tdee: tdeeData['tdee'] ?? 0.0,
+            weight: mostRecentWeight,
+          );
+      ref
+          .read(macrosProvider.notifier)
+          .updateMacros(MacroData.fromMap(userMacros));
     }
+
+    setState(() {
+      _tempMacros = ref.read(macrosProvider);
+      _tempMacrosPercentages = _calculatePercentagesFromGrams(_tempMacros);
+    });
     _updateInputFields();
   }
 
-  void _updateInputFields() {
-    final macros = ref.read(macrosProvider);
-    final userData = ref.read(userDataProvider);
-
-    for (final macro in macros.keys) {
-      final grams = macros[macro]!;
-      final gramsPerKg = userData.weight > 0 ? grams / userData.weight : 0.0;
-      final calories = MacrosCalculator.calculateCaloriesFromGrams(macro, grams);
-      final percentage = userData.tdee > 0 ? (calories / userData.tdee * 100) : 0.0;
-
-      if (!_focusNodes[macro]![MacroUpdateType.grams]!.hasFocus) {
-        _setControllerValue(_controllers[macro]![MacroUpdateType.grams], grams.toStringAsFixed(1));
-      }
-      if (!_focusNodes[macro]![MacroUpdateType.gramsPerKg]!.hasFocus) {
-        _setControllerValue(_controllers[macro]![MacroUpdateType.gramsPerKg], gramsPerKg.toStringAsFixed(2));
-      }
-      if (!_focusNodes[macro]![MacroUpdateType.percentage]!.hasFocus) {
-        _setControllerValue(_controllers[macro]![MacroUpdateType.percentage], percentage.toStringAsFixed(1));
-      }
-      _setControllerValue(_calorieControllers[macro], calories.toStringAsFixed(1));
-    }
+  MacroData _calculatePercentagesFromGrams(MacroData macrosGrams) {
+    double totalCalories = MacrosCalculator.calculateTotalCalories(macrosGrams);
+    return MacroData(
+      carbs: (macrosGrams.carbs *
+              MacrosCalculator.carbsCaloriesPerGram /
+              totalCalories *
+              100)
+          .roundToDouble(),
+      protein: (macrosGrams.protein *
+              MacrosCalculator.proteinCaloriesPerGram /
+              totalCalories *
+              100)
+          .roundToDouble(),
+      fat: (macrosGrams.fat *
+              MacrosCalculator.fatCaloriesPerGram /
+              totalCalories *
+              100)
+          .roundToDouble(),
+    );
   }
 
-  void _setControllerValue(TextEditingController? controller, String value) {
-    if (controller != null && controller.text != value) {
-      controller.value = TextEditingValue(
-        text: value,
-        selection: TextSelection.fromPosition(TextPosition(offset: value.length)),
-      );
-    }
+ void _updateInputFields() {
+  final userData = ref.read(userDataProvider);
+    
+  void updateController(String macro, MacroUpdateType type, double value) {
+    _controllers[macro]![type]?.text = value.toStringAsFixed(2);
   }
+
+  switch (_currentUpdateType) {
+    case MacroUpdateType.grams:
+      updateController('carbs', _currentUpdateType, _tempMacros.carbs);
+      updateController('protein', _currentUpdateType, _tempMacros.protein);
+      updateController('fat', _currentUpdateType, _tempMacros.fat);
+      break;
+    case MacroUpdateType.gramsPerKg:
+      if (userData.weight > 0) {
+        updateController('carbs', _currentUpdateType, _tempMacros.carbs / userData.weight);
+        updateController('protein', _currentUpdateType, _tempMacros.protein / userData.weight);
+        updateController('fat', _currentUpdateType, _tempMacros.fat / userData.weight);
+      }
+      break;
+    case MacroUpdateType.percentage:
+      updateController('carbs', _currentUpdateType, _tempMacrosPercentages.carbs);
+      updateController('protein', _currentUpdateType, _tempMacrosPercentages.protein);
+      updateController('fat', _currentUpdateType, _tempMacrosPercentages.fat);
+      break;
+  }
+
+  setState(() {});
+}
 
   @override
   Widget build(BuildContext context) {
+    final userData = ref.watch(userDataProvider);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Select Your Macronutrient Ratio',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-            textAlign: TextAlign.center,
-          ),
+          const SizedBox(height: 24),
+          _buildMacroChart(_tempMacros),
+          const SizedBox(height: 48),
+          _buildUpdateTypeSelector(),
+          const SizedBox(height: 24),
+          _buildMacroInputs(_tempMacros, userData),
           const SizedBox(height: 24),
           _buildAutoAdjustSwitch(),
-          const SizedBox(height: 16),
-          ..._controllers.keys.map((macro) => _buildMacroSection(context, macro)),
-          const SizedBox(height: 32),
-          Text(
-            'Macronutrient Breakdown',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          _buildMacroBreakdown(context),
+          const SizedBox(height: 24),
         ],
       ),
     );
   }
 
-  Widget _buildAutoAdjustSwitch() {
-    return SwitchListTile(
-      title: const Text('Auto Adjust Macros'),
-      value: _autoAdjustMacros,
-      onChanged: (value) {
-        setState(() {
-          _autoAdjustMacros = value;
-        });
-      },
+  Widget _buildMacroChart(MacroData macros) {
+    return SizedBox(
+      height: 250,
+      child: Stack(
+        children: [
+          PieChart(
+            PieChartData(
+              sections: [
+                PieChartSectionData(
+                  color: Colors.orange,
+                  value: macros.carbs,
+                  title: '${macros.carbs.toStringAsFixed(1)}g',
+                  radius: 100,
+                  titleStyle: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                PieChartSectionData(
+                  color: Colors.blue,
+                  value: macros.protein,
+                  title: '${macros.protein.toStringAsFixed(1)}g',
+                  radius: 100,
+                  titleStyle: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                PieChartSectionData(
+                  color: Colors.green,
+                  value: macros.fat,
+                  title: '${macros.fat.toStringAsFixed(1)}g',
+                  radius: 100,
+                  titleStyle: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+              sectionsSpace: 2,
+              centerSpaceRadius: 50,
+            ),
+          ),
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Total',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                  ),
+                ),
+                Text(
+                  '${MacrosCalculator.calculateTotalCalories(macros).toStringAsFixed(0)} kcal',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildMacroSection(BuildContext context, String macroName) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+  Widget _buildUpdateTypeSelector() {
+    return Center(
+      child: SegmentedButton<MacroUpdateType>(
+        segments: const [
+          ButtonSegment<MacroUpdateType>(
+              value: MacroUpdateType.grams, label: Text('Grams')),
+          ButtonSegment<MacroUpdateType>(
+              value: MacroUpdateType.gramsPerKg, label: Text('g/kg')),
+          ButtonSegment<MacroUpdateType>(
+              value: MacroUpdateType.percentage, label: Text('Percentage')),
+        ],
+        selected: {_currentUpdateType},
+        onSelectionChanged: (Set<MacroUpdateType> newSelection) {
+          setState(() {
+            _currentUpdateType = newSelection.first;
+            _updateInputFields();
+          });
+        },
+      ),
+    );
+  }
+
+  Widget _buildMacroInputs(MacroData macros, UserData userData) {
+    return Column(
+      children: ['carbs', 'protein', 'fat'].map((macro) {
+        final value = _getDisplayValue(macro, userData);
+        final calories = _getCalories(macro, macros);
+        final percentage = userData.tdee > 0
+            ? (calories / userData.tdee * 100).clamp(0, 100)
+            : 0.0;
+        final maxValue = _getSliderMax(
+            macro, userData, MacrosCalculator.calculateTotalCalories(macros));
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              macroName.capitalize(),
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              macro.capitalize(),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 16),
-            ..._buildMacroInputs(macroName),
-            const SizedBox(height: 16),
-            _buildCalorieField(macroName),
-          ],
-        ),
-      ),
-    );
-  }
-
-  List<Widget> _buildMacroInputs(String macroName) {
-    return MacroUpdateType.values.map((type) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 16),
-        child: _buildTextField(
-          controller: _controllers[macroName]![type],
-          focusNode: _focusNodes[macroName]![type],
-          labelText: type.toString().split('.').last.capitalize(),
-          hintText: 'Enter ${type.toString().split('.').last}',
-          onChanged: (value) => _updateMacro(macroName, type, value),
-          type: type,
-        ),
-      );
-    }).toList();
-  }
-
-  Widget _buildTextField({
-    required TextEditingController? controller,
-    required FocusNode? focusNode,
-    required String labelText,
-    required String hintText,
-    required ValueChanged<String> onChanged,
-    MacroUpdateType? type,
-  }) {
-    return TextFormField(
-      controller: controller,
-      focusNode: focusNode,
-      decoration: InputDecoration(
-        labelText: labelText,
-        hintText: hintText,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-      keyboardType: TextInputType.number,
-      inputFormatters: [
-        FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-      ],
-      onChanged: onChanged,
-    );
-  }
-
-  Widget _buildCalorieField(String macroName) {
-    return TextFormField(
-      controller: _calorieControllers[macroName],
-      decoration: InputDecoration(
-        labelText: '${macroName.capitalize()} Calories',
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-      readOnly: true,
-    );
-  }
-
-  void _updateMacro(String macroName, MacroUpdateType type, String value) {
-    final numericValue = double.tryParse(value) ?? 0.0;
-    final userData = ref.read(userDataProvider);
-    final currentMacros = ref.read(macrosProvider);
-    
-    Map<String, double> updatedMacros = Map.from(currentMacros);
-
-    switch (type) {
-      case MacroUpdateType.percentage:
-        _updateFromPercentage(macroName, numericValue, updatedMacros);
-        break;
-      case MacroUpdateType.gramsPerKg:
-        updatedMacros[macroName] = numericValue * userData.weight;
-        break;
-      case MacroUpdateType.grams:
-        _updateFromGrams(macroName, numericValue, updatedMacros, userData.tdee);
-        break;
-    }
-
-    ref.read(macrosProvider.notifier).updateMacros(userData.tdee, userData.weight, updatedMacros, type);
-    _updateInputFields();
-  }
-
-  void _updateFromPercentage(String macroName, double percentage, Map<String, double> updatedMacros) {
-    if (_autoAdjustMacros) {
-      updatedMacros[macroName] = percentage;
-      final otherMacros = updatedMacros.keys.where((m) => m != macroName).toList();
-      final remainingPercentage = 100 - percentage;
-      final adjustedValue = remainingPercentage / 2;
-      for (var macro in otherMacros) {
-        updatedMacros[macro] = adjustedValue;
-      }
-    } else {
-      updatedMacros[macroName] = percentage;
-    }
-  }
-
-  void _updateFromGrams(String macroName, double grams, Map<String, double> updatedMacros, double tdee) {
-    final calories = MacrosCalculator.calculateCaloriesFromGrams(macroName, grams);
-    
-    if (_autoAdjustMacros) {
-      updatedMacros[macroName] = grams;
-      final otherMacros = updatedMacros.keys.where((m) => m != macroName).toList();
-      final remainingCalories = tdee - calories;
-      
-      if (remainingCalories <= 0) {
-        for (var macro in otherMacros) {
-          updatedMacros[macro] = 1;
-        }
-      } else {
-        final caloriesPerMacro = remainingCalories / 2;
-        for (var macro in otherMacros) {
-          updatedMacros[macro] = MacrosCalculator.calculateGramsFromCalories(macro, caloriesPerMacro);
-        }
-      }
-    } else {
-      updatedMacros[macroName] = grams;
-    }
-  }
-
-  Widget _buildMacroBreakdown(BuildContext context) {
-    final macros = ref.watch(macrosProvider);
-
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: macros.entries.map((entry) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(entry.key.capitalize(), style: Theme.of(context).textTheme.titleMedium),
-                  Text(
-                    '${entry.value.toStringAsFixed(1)} g',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            Row(
+              children: [
+                Expanded(
+                  flex: 7,
+                  child: Slider(
+                    value: value.clamp(0, maxValue),
+                    min: 0,
+                    max: maxValue,
+                    divisions: maxValue > 0 ? (maxValue * 100).toInt() : null,
+                    activeColor: _getMacroColor(macro),
+                    onChanged: (newValue) {
+                      _updateMacro(macro, newValue, userData);
+                    },
                   ),
-                ],
-              ),
-            );
-          }).toList(),
+                ),
+                Expanded(
+                  flex: 3,
+                  child: TextField(
+                    controller: _controllers[macro]![_currentUpdateType],
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      suffixText: _getSuffixText(),
+                      border: const OutlineInputBorder(),
+                    ),
+                    onChanged: (value) =>
+                        _handleTextFieldChange(macro, value, userData),
+                  ),
+                ),
+              ],
+            ),
+            Text(
+                '${calories.toStringAsFixed(0)} kcal (${percentage.toStringAsFixed(1)}%)'),
+            const SizedBox(height: 16),
+          ],
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildAutoAdjustSwitch() {
+    return Column(
+      children: [
+        SwitchListTile(
+          title: const Text('Auto Adjust Macros'),
+          value: _autoAdjustMacros,
+          onChanged: (value) {
+            setState(() {
+              _autoAdjustMacros = value;
+            });
+          },
         ),
+        ElevatedButton(
+          onPressed: _applyChanges,
+          child: const Text('Apply Changes'),
+        ),
+      ],
+    );
+  }
+
+  double _getDisplayValue(String macro, UserData userData) {
+    switch (_currentUpdateType) {
+      case MacroUpdateType.grams:
+        return _getMacroValue(_tempMacros, macro);
+      case MacroUpdateType.gramsPerKg:
+        return userData.weight > 0
+            ? _getMacroValue(_tempMacros, macro) / userData.weight
+            : 0.0;
+      case MacroUpdateType.percentage:
+        return _getMacroValue(_tempMacrosPercentages, macro);
+    }
+  }
+
+  void _updateMacro(String macro, double value, UserData userData) {
+    setState(() {
+      switch (_currentUpdateType) {
+        case MacroUpdateType.grams:
+          _tempMacros = _setMacroValue(_tempMacros, macro, value);
+          _tempMacrosPercentages = _calculatePercentagesFromGrams(_tempMacros);
+          break;
+        case MacroUpdateType.gramsPerKg:
+          _tempMacros =
+              _setMacroValue(_tempMacros, macro, value * userData.weight);
+          _tempMacrosPercentages = _calculatePercentagesFromGrams(_tempMacros);
+          break;
+        case MacroUpdateType.percentage:
+          _tempMacrosPercentages =
+              _setMacroValue(_tempMacrosPercentages, macro, value);
+          _tempMacros = MacrosCalculator.calculateMacrosFromPercentages(
+              userData.tdee, _tempMacrosPercentages);
+          break;
+      }
+
+      _updateInputFields();
+    });
+  }
+
+ void _applyChanges() {
+    final userData = ref.read(userDataProvider);
+    MacroData finalMacros;
+
+    if (_currentUpdateType == MacroUpdateType.percentage) {
+      if (_autoAdjustMacros) {
+        _tempMacrosPercentages = _adjustMacroPercentages(_tempMacrosPercentages);
+      }
+      finalMacros = MacrosCalculator.calculateMacrosFromPercentages(userData.tdee, _tempMacrosPercentages);
+    } else if (_currentUpdateType == MacroUpdateType.gramsPerKg) {
+      // No need to multiply by weight, as _tempMacros already contains the correct gram values
+      finalMacros = _tempMacros;
+      if (_autoAdjustMacros) {
+        finalMacros = _adjustMacros(finalMacros, userData.tdee);
+      }
+    } else {
+      if (_autoAdjustMacros) {
+        finalMacros = _adjustMacros(_tempMacros, userData.tdee);
+      } else {
+        finalMacros = _tempMacros;
+      }
+    }
+
+    // Round the macro values to two decimal places and ensure correct format
+    finalMacros = MacroData(
+      carbs: double.parse(finalMacros.carbs.toStringAsFixed(2)),
+      protein: double.parse(finalMacros.protein.toStringAsFixed(2)),
+      fat: double.parse(finalMacros.fat.toStringAsFixed(2)),
+    );
+
+    setState(() {
+      _tempMacros = finalMacros;
+      _tempMacrosPercentages = _calculatePercentagesFromGrams(finalMacros);
+    });
+
+    ref.read(macrosProvider.notifier).updateMacros(finalMacros);
+
+    _updateInputFields();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(_autoAdjustMacros 
+          ? 'Macros auto-adjusted and applied' 
+          : 'Changes applied'),
+        duration: const Duration(seconds: 2),
       ),
     );
+  }
+
+
+  MacroData _adjustMacroPercentages(MacroData percentages) {
+    double total = percentages.carbs + percentages.protein + percentages.fat;
+    if (total.roundToDouble() == 100) {
+      return percentages; // No adjustment needed
+    }
+
+    double factor = 100 / total;
+    return MacroData(
+      carbs: percentages.carbs * factor,
+      protein: percentages.protein * factor,
+      fat: percentages.fat * factor,
+    );
+  }
+
+  MacroData _adjustMacros(MacroData macros, double tdee) {
+    final totalCalories = MacrosCalculator.calculateTotalCalories(macros);
+    final remainingCalories = tdee - totalCalories;
+
+    if (remainingCalories.abs() < 1) {
+      return macros; // No adjustment needed if the difference is less than 1 calorie
+    }
+
+    double totalCarbsCalories =
+        macros.carbs * MacrosCalculator.carbsCaloriesPerGram;
+    double totalProteinCalories =
+        macros.protein * MacrosCalculator.proteinCaloriesPerGram;
+    double totalFatCalories = macros.fat * MacrosCalculator.fatCaloriesPerGram;
+
+    // Adjust each macro proportionally to its original contribution to the total calories
+    double carbsRatio = totalCarbsCalories / totalCalories;
+    double proteinRatio = totalProteinCalories / totalCalories;
+    double fatRatio = totalFatCalories / totalCalories;
+
+    double newCarbsCalories =
+        totalCarbsCalories + remainingCalories * carbsRatio;
+    double newProteinCalories =
+        totalProteinCalories + remainingCalories * proteinRatio;
+    double newFatCalories = totalFatCalories + remainingCalories * fatRatio;
+
+    double newCarbs = (newCarbsCalories / MacrosCalculator.carbsCaloriesPerGram)
+        .clamp(0, double.infinity);
+    double newProtein =
+        (newProteinCalories / MacrosCalculator.proteinCaloriesPerGram)
+            .clamp(0, double.infinity);
+    double newFat = (newFatCalories / MacrosCalculator.fatCaloriesPerGram)
+        .clamp(0, double.infinity);
+
+    return MacroData(carbs: newCarbs, protein: newProtein, fat: newFat);
+  }
+
+  double _getSliderMax(String macro, UserData userData, double totalCalories) {
+    double remainingCalories =
+        userData.tdee - totalCalories + _getCalories(macro, _tempMacros);
+    double maxForMacro = _calculateGramsFromCalories(macro, remainingCalories);
+
+    switch (_currentUpdateType) {
+      case MacroUpdateType.grams:
+        return maxForMacro;
+      case MacroUpdateType.gramsPerKg:
+        return userData.weight > 0 ? maxForMacro / userData.weight : 10.0;
+      case MacroUpdateType.percentage:
+        return 100.0;
+    }
+  }
+
+  String _getSuffixText() {
+    switch (_currentUpdateType) {
+      case MacroUpdateType.grams:
+        return 'g';
+      case MacroUpdateType.gramsPerKg:
+        return 'g/kg';
+      case MacroUpdateType.percentage:
+        return '%';
+    }
+  }
+
+  Color _getMacroColor(String macroName) {
+    switch (macroName) {
+      case 'carbs':
+        return Colors.orange;
+      case 'protein':
+        return Colors.blue;
+      case 'fat':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  void _handleTextFieldChange(String macro, String value, UserData userData) {
+    final cursorPosition =
+        _controllers[macro]![_currentUpdateType]!.selection.base.offset;
+    String cleanedValue = value.replaceAll(RegExp(r'[^0-9.]'), '');
+    final parts = cleanedValue.split('.');
+    if (parts.length > 2) {
+      cleanedValue = '${parts[0]}.${parts.sublist(1).join('')}';
+    }
+
+    double? newValue = double.tryParse(cleanedValue);
+    if (newValue != null) {
+      _updateMacro(macro, newValue, userData);
+    }
+
+    _controllers[macro]![_currentUpdateType]!.value = TextEditingValue(
+      text: cleanedValue,
+      selection: TextSelection.collapsed(offset: cursorPosition),
+    );
+  }
+
+  double _getMacroValue(MacroData macros, String macro) {
+    switch (macro) {
+      case 'carbs':
+        return macros.carbs;
+      case 'protein':
+        return macros.protein;
+      case 'fat':
+        return macros.fat;
+      default:
+        throw ArgumentError('Invalid macro: $macro');
+    }
+  }
+
+  MacroData _setMacroValue(MacroData macros, String macro, double value) {
+    switch (macro) {
+      case 'carbs':
+        return macros.copyWith(carbs: value);
+      case 'protein':
+        return macros.copyWith(protein: value);
+      case 'fat':
+        return macros.copyWith(fat: value);
+      default:
+        throw ArgumentError('Invalid macro: $macro');
+    }
+  }
+
+  double _getCalories(String macro, MacroData macros) {
+    switch (macro) {
+      case 'carbs':
+        return macros.carbs * MacrosCalculator.carbsCaloriesPerGram;
+      case 'protein':
+        return macros.protein * MacrosCalculator.proteinCaloriesPerGram;
+      case 'fat':
+        return macros.fat * MacrosCalculator.fatCaloriesPerGram;
+      default:
+        throw ArgumentError('Invalid macro: $macro');
+    }
+  }
+
+  double _calculateGramsFromCalories(String macro, double calories) {
+    switch (macro) {
+      case 'carbs':
+        return calories / MacrosCalculator.carbsCaloriesPerGram;
+      case 'protein':
+        return calories / MacrosCalculator.proteinCaloriesPerGram;
+      case 'fat':
+        return calories / MacrosCalculator.fatCaloriesPerGram;
+      default:
+        throw ArgumentError('Invalid macro: $macro');
+    }
   }
 }
 
