@@ -56,24 +56,19 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
     final userId = _selectedUser?.id ?? userService.getCurrentUserId();
     
     final tdeeService = ref.read(tdeeServiceProvider);
-    
-    final tdeeData = await tdeeService.getTDEEData(userId);
-    final macrosData = await tdeeService.getUserMacros(userId);
+    final nutritionData = await tdeeService.getMostRecentNutritionData(userId);
 
-    if (tdeeData != null && tdeeData['tdee'] != null) {
+    if (nutritionData != null) {
       setState(() {
-        _targetCalories = tdeeData['tdee'].round();
+        _targetCalories = (nutritionData['tdee'] ?? 2000).round();
+        _targetCarbs = nutritionData['carbs'] ?? 0.0;
+        _targetProteins = nutritionData['protein'] ?? 0.0;
+        _targetFats = nutritionData['fat'] ?? 0.0;
       });
     }
-
-    setState(() {
-      _targetCarbs = macrosData['carbs']!;
-      _targetProteins = macrosData['protein']!;
-      _targetFats = macrosData['fat']!;
-    });
   }
 
-   @override
+  @override
   Widget build(BuildContext context) {
     final selectedDate = ref.watch(selectedDateProvider);
     final dailyStats = ref.watch(dailyStatsProvider(selectedDate));

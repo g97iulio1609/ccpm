@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -38,11 +39,11 @@ class MacroData {
     return {'carbs': carbs, 'protein': protein, 'fat': fat};
   }
 
-  factory MacroData.fromMap(Map<String, double> map) {
+  factory MacroData.fromMap(Map<String, dynamic> map) {
     return MacroData(
-      carbs: map['carbs'] ?? 0,
-      protein: map['protein'] ?? 0,
-      fat: map['fat'] ?? 0,
+      carbs: map['carbs']?.toDouble() ?? 0,
+      protein: map['protein']?.toDouble() ?? 0,
+      fat: map['fat']?.toDouble() ?? 0,
     );
   }
 }
@@ -73,22 +74,23 @@ class MacrosNotifier extends StateNotifier<MacroData> {
 
   void updateMacros(MacroData newMacros) {
     state = newMacros;
+    final userData = ref.read(userDataProvider);
     _saveMacrosToFirebase({
       'carbs': double.parse(newMacros.carbs.toStringAsFixed(2)),
       'protein': double.parse(newMacros.protein.toStringAsFixed(2)),
       'fat': double.parse(newMacros.fat.toStringAsFixed(2)),
+      'tdee': userData.tdee,
     });
   }
 
-  Future<void> _saveMacrosToFirebase(Map<String, double> macros) async {
+  Future<void> _saveMacrosToFirebase(Map<String, dynamic> data) async {
     final tdeeService = ref.read(tdeeServiceProvider);
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId != null) {
-      await tdeeService.updateMacros(userId, macros);
+      await tdeeService.saveNutritionData(userId, data);
     }
   }
 }
-
 
 // Utilities
 class MacrosCalculator {
@@ -136,13 +138,13 @@ class MacrosSelector extends ConsumerStatefulWidget {
 }
 
 class MacrosSelectorState extends ConsumerState<MacrosSelector> {
-  late MacroUpdateType _currentUpdateType;
   late MacroData _tempMacros;
   late MacroData _tempMacrosPercentages;
+  MacroUpdateType _currentUpdateType = MacroUpdateType.grams;
   bool _autoAdjustMacros = true;
+  bool _isLoading = true;
 
-  final Map<String, Map<MacroUpdateType, TextEditingController>> _controllers =
-      {
+  final Map<String, Map<MacroUpdateType, TextEditingController>> _controllers = {
     'carbs': {},
     'protein': {},
     'fat': {},
@@ -151,7 +153,8 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
   @override
   void initState() {
     super.initState();
-    _currentUpdateType = MacroUpdateType.grams;
+    _tempMacros = MacroData(carbs: 0, protein: 0, fat: 0);
+    _tempMacrosPercentages = MacroData(carbs: 0, protein: 0, fat: 0);
     _initializeControllers();
     _loadUserData();
   }
@@ -159,103 +162,117 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
   void _initializeControllers() {
     for (var macro in ['carbs', 'protein', 'fat']) {
       for (var type in MacroUpdateType.values) {
-        _controllers[macro]![type] = TextEditingController();
+        _controllers[macro]![type] = TextEditingController(text: '0.00');
       }
     }
-  }
-
-  @override
-  void dispose() {
-    for (var controllerMap in _controllers.values) {
-      for (var controller in controllerMap.values) {
-        controller.dispose();
-      }
-    }
-    super.dispose();
   }
 
   Future<void> _loadUserData() async {
-    final tdeeService = ref.read(tdeeServiceProvider);
-    final measurementsService = ref.read(measurementsServiceProvider);
-    final tdeeData = await tdeeService.getTDEEData(widget.userId);
-    final userMacros = await tdeeService.getUserMacros(widget.userId);
+    setState(() => _isLoading = true);
+    debugPrint('_loadUserData chiamato');
+    
+    try {
+      ref.read(tdeeServiceProvider);
+      final measurementsService = ref.read(measurementsServiceProvider);
+      final nutritionData = await _getMostRecentNutritionData(widget.userId);
+      debugPrint('nutritionData $nutritionData');
+      
+      final measurements = await measurementsService.getMeasurements(userId: widget.userId).first;
+      final mostRecentWeight = measurements.isNotEmpty ? measurements.first.weight : 0.0;
 
-    final measurements =
-        await measurementsService.getMeasurements(userId: widget.userId).first;
-    final mostRecentWeight =
-        measurements.isNotEmpty ? measurements.first.weight : 0.0;
-
-    if (tdeeData != null) {
-      ref.read(userDataProvider.notifier).updateUserData(
-            tdee: tdeeData['tdee'] ?? 0.0,
+      if (nutritionData != null) {
+        debugPrint('nutritionData non è null');
+        ref.read(userDataProvider.notifier).updateUserData(
+            tdee: nutritionData['tdee']?.toDouble() ?? 0.0,
             weight: mostRecentWeight,
-          );
-      ref
-          .read(macrosProvider.notifier)
-          .updateMacros(MacroData.fromMap(userMacros));
-    }
+        );
 
-    setState(() {
-      _tempMacros = ref.read(macrosProvider);
-      _tempMacrosPercentages = _calculatePercentagesFromGrams(_tempMacros);
-    });
-    _updateInputFields();
+        final macroData = MacroData(
+          carbs: nutritionData['carbs']?.toDouble() ?? 0.0,
+          protein: nutritionData['protein']?.toDouble() ?? 0.0,
+          fat: nutritionData['fat']?.toDouble() ?? 0.0,
+        );
+
+        debugPrint('MacroData creato: ${macroData.toMap()}');
+
+        if (!mounted) return;
+
+        setState(() {
+          _tempMacros = macroData;
+          _tempMacrosPercentages = _calculatePercentagesFromGrams(macroData);
+          _isLoading = false;
+        });
+
+        ref.read(macrosProvider.notifier).updateMacros(macroData);
+        _updateInputFields();
+      } else {
+        debugPrint('Nessun dato di nutrizione trovato per l\'utente.');
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      debugPrint('Errore durante il caricamento dei dati: $e');
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<Map<String, dynamic>?> _getMostRecentNutritionData(String userId) async {
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('mynutrition')
+        .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(todayStart))
+        .orderBy('date', descending: true)
+        .limit(1)
+        .get();
+        
+    if (querySnapshot.docs.isNotEmpty) {
+      return querySnapshot.docs.first.data();
+    }
+    return null;
   }
 
   MacroData _calculatePercentagesFromGrams(MacroData macrosGrams) {
     double totalCalories = MacrosCalculator.calculateTotalCalories(macrosGrams);
+    if (totalCalories == 0) return MacroData(carbs: 0, protein: 0, fat: 0);
     return MacroData(
-      carbs: (macrosGrams.carbs *
-              MacrosCalculator.carbsCaloriesPerGram /
-              totalCalories *
-              100)
-          .roundToDouble(),
-      protein: (macrosGrams.protein *
-              MacrosCalculator.proteinCaloriesPerGram /
-              totalCalories *
-              100)
-          .roundToDouble(),
-      fat: (macrosGrams.fat *
-              MacrosCalculator.fatCaloriesPerGram /
-              totalCalories *
-              100)
-          .roundToDouble(),
+      carbs: (macrosGrams.carbs * MacrosCalculator.carbsCaloriesPerGram / totalCalories * 100).roundToDouble(),
+      protein: (macrosGrams.protein * MacrosCalculator.proteinCaloriesPerGram / totalCalories * 100).roundToDouble(),
+      fat: (macrosGrams.fat * MacrosCalculator.fatCaloriesPerGram / totalCalories * 100).roundToDouble(),
     );
   }
 
- void _updateInputFields() {
-  final userData = ref.read(userDataProvider);
-    
-  void updateController(String macro, MacroUpdateType type, double value) {
-    _controllers[macro]![type]?.text = value.toStringAsFixed(2);
-  }
+  void _updateInputFields() {
+    debugPrint('_updateInputFields chiamato');
+    final userData = ref.read(userDataProvider);
 
-  switch (_currentUpdateType) {
-    case MacroUpdateType.grams:
-      updateController('carbs', _currentUpdateType, _tempMacros.carbs);
-      updateController('protein', _currentUpdateType, _tempMacros.protein);
-      updateController('fat', _currentUpdateType, _tempMacros.fat);
-      break;
-    case MacroUpdateType.gramsPerKg:
+    void updateController(String macro, MacroUpdateType type, double value) {
+      _controllers[macro]![type]?.text = value.toStringAsFixed(2);
+      debugPrint('Controller aggiornato - Macro: $macro, Tipo: $type, Valore: ${value.toStringAsFixed(2)}');
+    }
+
+    for (var macro in ['carbs', 'protein', 'fat']) {
+      updateController(macro, MacroUpdateType.grams, _getMacroValue(_tempMacros, macro));
+      updateController(macro, MacroUpdateType.percentage, _getMacroValue(_tempMacrosPercentages, macro));
       if (userData.weight > 0) {
-        updateController('carbs', _currentUpdateType, _tempMacros.carbs / userData.weight);
-        updateController('protein', _currentUpdateType, _tempMacros.protein / userData.weight);
-        updateController('fat', _currentUpdateType, _tempMacros.fat / userData.weight);
+        updateController(macro, MacroUpdateType.gramsPerKg, _getMacroValue(_tempMacros, macro) / userData.weight);
       }
-      break;
-    case MacroUpdateType.percentage:
-      updateController('carbs', _currentUpdateType, _tempMacrosPercentages.carbs);
-      updateController('protein', _currentUpdateType, _tempMacrosPercentages.protein);
-      updateController('fat', _currentUpdateType, _tempMacrosPercentages.fat);
-      break;
-  }
+    }
 
-  setState(() {});
-}
+    setState(() {});
+    debugPrint('_updateInputFields completato');
+  }
 
   @override
   Widget build(BuildContext context) {
-    final userData = ref.watch(userDataProvider);
+    debugPrint('Build chiamato - _tempMacros: ${_tempMacros.toMap()}');
+    debugPrint('Build chiamato - _tempMacrosPercentages: ${_tempMacrosPercentages.toMap()}');
+    
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
@@ -267,7 +284,7 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
           const SizedBox(height: 48),
           _buildUpdateTypeSelector(),
           const SizedBox(height: 24),
-          _buildMacroInputs(_tempMacros, userData),
+          _buildMacroInputs(_tempMacros, ref.watch(userDataProvider)),
           const SizedBox(height: 24),
           _buildAutoAdjustSwitch(),
           const SizedBox(height: 24),
@@ -372,7 +389,7 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
     );
   }
 
-  Widget _buildMacroInputs(MacroData macros, UserData userData) {
+Widget _buildMacroInputs(MacroData macros, UserData userData) {
     return Column(
       children: ['carbs', 'protein', 'fat'].map((macro) {
         final value = _getDisplayValue(macro, userData);
@@ -487,7 +504,8 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
     });
   }
 
- void _applyChanges() {
+
+  void _applyChanges() async {
     final userData = ref.read(userDataProvider);
     MacroData finalMacros;
 
@@ -497,7 +515,6 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
       }
       finalMacros = MacrosCalculator.calculateMacrosFromPercentages(userData.tdee, _tempMacrosPercentages);
     } else if (_currentUpdateType == MacroUpdateType.gramsPerKg) {
-      // No need to multiply by weight, as _tempMacros already contains the correct gram values
       finalMacros = _tempMacros;
       if (_autoAdjustMacros) {
         finalMacros = _adjustMacros(finalMacros, userData.tdee);
@@ -510,7 +527,6 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
       }
     }
 
-    // Round the macro values to two decimal places and ensure correct format
     finalMacros = MacroData(
       carbs: double.parse(finalMacros.carbs.toStringAsFixed(2)),
       protein: double.parse(finalMacros.protein.toStringAsFixed(2)),
@@ -526,21 +542,77 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
 
     _updateInputFields();
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(_autoAdjustMacros 
-          ? 'Macros auto-adjusted and applied' 
-          : 'Changes applied'),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
+    // Save data to Firestore
+    try {
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId != null) {
+        final firestore = FirebaseFirestore.instance;
+        final now = DateTime.now();
+        final todayStart = DateTime(now.year, now.month, now.day);
 
+        final querySnapshot = await firestore
+            .collection('users')
+            .doc(userId)
+            .collection('mynutrition')
+            .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(todayStart))
+            .orderBy('date', descending: true)
+            .limit(1)
+            .get();
+
+        final nutritionData = {
+          'carbs': finalMacros.carbs,
+          'protein': finalMacros.protein,
+          'fat': finalMacros.fat,
+          'tdee': userData.tdee,
+          'weight': userData.weight,
+          'date': Timestamp.now(),
+        };
+
+        if (querySnapshot.docs.isNotEmpty) {
+          // Update existing document
+          await firestore
+              .collection('users')
+              .doc(userId)
+              .collection('mynutrition')
+              .doc(querySnapshot.docs.first.id)
+              .update(nutritionData);
+        } else {
+          // Create new document
+          await firestore
+              .collection('users')
+              .doc(userId)
+              .collection('mynutrition')
+              .add(nutritionData);
+        }
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(_autoAdjustMacros 
+                ? 'Macros auto-adjusted, applied, and saved' 
+                : 'Changes applied and saved'),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error saving nutrition data: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error saving data. Please try again.'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
 
   MacroData _adjustMacroPercentages(MacroData percentages) {
     double total = percentages.carbs + percentages.protein + percentages.fat;
     if (total.roundToDouble() == 100) {
-      return percentages; // No adjustment needed
+      return percentages;
     }
 
     double factor = 100 / total;
@@ -556,7 +628,7 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
     final remainingCalories = tdee - totalCalories;
 
     if (remainingCalories.abs() < 1) {
-      return macros; // No adjustment needed if the difference is less than 1 calorie
+      return macros;
     }
 
     double totalCarbsCalories =
@@ -565,7 +637,6 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
         macros.protein * MacrosCalculator.proteinCaloriesPerGram;
     double totalFatCalories = macros.fat * MacrosCalculator.fatCaloriesPerGram;
 
-    // Adjust each macro proportionally to its original contribution to the total calories
     double carbsRatio = totalCarbsCalories / totalCalories;
     double proteinRatio = totalProteinCalories / totalCalories;
     double fatRatio = totalFatCalories / totalCalories;
@@ -696,6 +767,16 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
       default:
         throw ArgumentError('Invalid macro: $macro');
     }
+  }
+
+  @override
+  void dispose() {
+    for (var controllerMap in _controllers.values) {
+      for (var controller in controllerMap.values) {
+        controller.dispose();
+      }
+    }
+    super.dispose();
   }
 }
 
