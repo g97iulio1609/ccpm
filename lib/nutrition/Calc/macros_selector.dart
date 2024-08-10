@@ -459,10 +459,22 @@ Widget _buildMacroInputs(MacroData macros, UserData userData) {
             });
           },
         ),
-        ElevatedButton(
-          onPressed: _applyChanges,
-          child: const Text('Apply Changes'),
-        ),
+       ElevatedButton(
+  onPressed: _applyChanges,
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Theme.of(context).colorScheme.primary,
+    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+    textStyle: const TextStyle(
+      fontSize: 16,
+      fontWeight: FontWeight.bold,
+    ),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(8),
+    ),
+  ),
+  child: const Text('Apply Changes'),
+)
       ],
     );
   }
