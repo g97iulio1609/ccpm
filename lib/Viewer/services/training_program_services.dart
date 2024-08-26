@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class TrainingProgramServices {
@@ -109,4 +110,28 @@ class TrainingProgramServices {
       await batch.commit();
     }
   }
+
+
+ Future<String> fetchWeekName(String weekId) async {
+    try {
+      final weekDoc = await FirebaseFirestore.instance.collection('weeks').doc(weekId).get();
+      final number = weekDoc.data()?['number']?.toString() ?? '';
+      return number.isNotEmpty ? 'Settimana $number' : 'Settimana';
+    } catch (e) {
+      debugPrint('Error fetching workout name: $e');
+      return 'Settimana';
+    }
+  }
+
+   Future<String> fetchWorkoutName(String workoutId) async {
+    try {
+      final workoutDoc = await FirebaseFirestore.instance.collection('workouts').doc(workoutId).get();
+      final order = workoutDoc.data()?['order']?.toString() ?? '';
+      return order.isNotEmpty ? 'Allenamento $order' : 'Allenamento';
+    } catch (e) {
+      debugPrint('Error fetching workout name: $e');
+      return 'Allenamento';
+    }
+  }
+
 }

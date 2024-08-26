@@ -55,7 +55,7 @@ dependencies:
   numberpicker: ^2.1.2
   fl_chart: ^0.68.0
   js: ^0.7.1
-  material_color_utilities: ^0.8.0
+  material_color_utilities: ^0.11.1
   meta: ^1.11.0
   vm_service:
   flutter_slidable: ^3.1.0
@@ -80,6 +80,7 @@ dependencies:
   collection: ^1.18.0
   flutter_svg: ^2.0.10+1
   in_app_purchase_storekit: ^0.3.17+2
+  uuid: ^4.4.2
 
   
 

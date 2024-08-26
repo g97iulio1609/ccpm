@@ -43,7 +43,6 @@ class CustomDrawer extends ConsumerWidget {
       'Misurazioni': '/measurements',
       'Meals Preferiti': '/mymeals',
       'Abbonamenti': '/subscriptions',
-
     };
     return routes[menuItem];
   }
@@ -65,7 +64,6 @@ class CustomDrawer extends ConsumerWidget {
       'Misurazioni': Icons.straighten,
       'Meals Preferiti': Icons.favorite,
       'Abbonamenti': Icons.subscriptions,
-
     };
     return icons[menuItem] ?? Icons.menu;
   }
@@ -78,39 +76,49 @@ class CustomDrawer extends ConsumerWidget {
       'Food Tracker', 'Food Management', 'Misurazioni', 'Meals Preferiti'
     ];
     final clientItems = [
-      'I Miei Allenamenti','Association', 'Abbonamenti', 'Esercizi',
+      'I Miei Allenamenti', 'Association', 'Abbonamenti', 'Esercizi',
       'Massimali', 'Profilo Utente', 'Fabbisogno Calorico',
       'Calcolatore Macronutrienti', 'Food Tracker', 'Misurazioni'
     ];
     return (userRole == 'admin' || userRole == 'coach') ? adminItems : clientItems;
   }
 
-  Widget _buildMenuItem(BuildContext context, String menuItem, String userRole, bool isDarkMode) {
+  Widget _buildMenuItem(BuildContext context, String menuItem, String userRole, ThemeData theme) {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     final route = _getRouteForMenuItem(menuItem, userRole, userId);
     final currentRoute = GoRouterState.of(context).uri.toString();
     final isSelected = route == currentRoute;
 
-    return ListTile(
-      leading: Icon(
-        _getIconForMenuItem(menuItem),
-        color: isDarkMode ? Colors.white : Colors.grey[700],
-      ),
-      title: Text(
-        menuItem,
-        style: TextStyle(
-          color: isDarkMode ? Colors.white : Colors.grey[800],
-          fontWeight: FontWeight.w500,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          color: isSelected ? theme.colorScheme.primaryContainer : Colors.transparent,
+        ),
+        child: ListTile(
+          leading: Icon(
+            _getIconForMenuItem(menuItem),
+            color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+          ),
+          title: Text(
+            menuItem,
+            style: TextStyle(
+              color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+          onTap: route != null ? () => _navigateTo(context, route) : null,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
         ),
       ),
-      onTap: route != null && !isSelected ? () => _navigateTo(context, route) : null,
-      hoverColor: isDarkMode ? Colors.grey[800] : Colors.grey[200],
-      selectedTileColor: isDarkMode ? Colors.grey[700] : Colors.grey[300],
-      selected: isSelected,
     );
   }
 
-  Widget _buildWeekLinks(BuildContext context, String programId, bool isDarkMode) {
+  Widget _buildWeekLinks(BuildContext context, String programId, ThemeData theme) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('weeks')
@@ -127,21 +135,24 @@ class CustomDrawer extends ConsumerWidget {
           itemCount: weeks.length,
           itemBuilder: (context, index) {
             final weekDoc = weeks[index];
-            return ExpansionTile(
-              leading: Icon(
-                Icons.calendar_today,
-                color: isDarkMode ? Colors.white : Colors.grey[700],
-              ),
-              title: Text(
-                'Settimana ${weekDoc['number']}',
-                style: TextStyle(
-                  color: isDarkMode ? Colors.white : Colors.grey[800],
-                  fontWeight: FontWeight.w500,
+            return Theme(
+              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              child: ExpansionTile(
+                leading: Icon(
+                  Icons.calendar_today,
+                  color: theme.colorScheme.primary,
                 ),
+                title: Text(
+                  'Settimana ${weekDoc['number']}',
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurface,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                children: [
+                  _buildWorkoutList(context, weekDoc.id, programId, theme),
+                ],
               ),
-              children: [
-                _buildWorkoutList(context, weekDoc.id, programId, isDarkMode),
-              ],
             );
           },
         );
@@ -149,7 +160,7 @@ class CustomDrawer extends ConsumerWidget {
     );
   }
 
-  Widget _buildWorkoutList(BuildContext context, String weekId, String programId, bool isDarkMode) {
+  Widget _buildWorkoutList(BuildContext context, String weekId, String programId, ThemeData theme) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('workouts')
@@ -170,11 +181,12 @@ class CustomDrawer extends ConsumerWidget {
             final route = '/user_programs/$userId/training_viewer/$programId/week_details/$weekId/workout_details/${workoutDoc.id}';
             
             return ListTile(
+              contentPadding: const EdgeInsets.only(left: 32),
               title: Text(
                 'Allenamento ${workoutDoc['order']}',
                 style: TextStyle(
-                  color: isDarkMode ? Colors.white : Colors.grey[800],
-                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
               onTap: () => _navigateTo(context, route),
@@ -188,85 +200,86 @@ class CustomDrawer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
     final menuItems = _getMenuItems(userRole);
 
     return Drawer(
+      elevation: 0,
       child: Container(
-        color: isDarkMode ? Colors.grey[900] : Colors.grey[200],
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.fromLTRB(16.0, 48.0, 16.0, 16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Menù', style: theme.textTheme.titleLarge),
-                  if (!isLargeScreen)
-                    IconButton(
-                      icon: Icon(Icons.close, color: isDarkMode ? Colors.white : Colors.black),
-                      onPressed: () => Navigator.of(context).pop(),
+        color: theme.colorScheme.surface,
+        child: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  children: [
+                    ...menuItems.map((menuItem) => _buildMenuItem(context, menuItem, userRole, theme)),
+                    const SizedBox(height: 16),
+                    const Divider(),
+                    const SizedBox(height: 16),
+                    Center(
+                      child: Text(
+                        'Programma Corrente',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView(
-                padding: EdgeInsets.zero,
-                children: [
-                  ...menuItems.map((menuItem) => _buildMenuItem(context, menuItem, userRole, isDarkMode)),
-                  FutureBuilder<DocumentSnapshot>(
-                    future: FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(FirebaseAuth.instance.currentUser?.uid)
-                        .get(),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasData && snapshot.data!.exists) {
-                        final programId = snapshot.data!.get('currentProgram') as String?;
-                        if (programId != null) {
-                          return _buildWeekLinks(context, programId, isDarkMode);
+                    const SizedBox(height: 8),
+                    FutureBuilder<DocumentSnapshot>(
+                      future: FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(FirebaseAuth.instance.currentUser?.uid)
+                          .get(),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData && snapshot.data!.exists) {
+                          final programId = snapshot.data!.get('currentProgram') as String?;
+                          if (programId != null) {
+                            return _buildWeekLinks(context, programId, theme);
+                          }
                         }
-                      }
-                      return const SizedBox.shrink();
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-            Consumer(
-              builder: (context, ref, _) {
-                final userName = ref.watch(userNameProvider);
-                final user = FirebaseAuth.instance.currentUser;
-                final displayName = user?.displayName ?? userName;
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: isDarkMode ? Colors.grey[700] : Colors.grey[300],
-                    child: Icon(Icons.person, color: isDarkMode ? Colors.white : Colors.grey[800]),
-                  ),
-                  title: Text(
-                    displayName,
-                    style: TextStyle(
-                      color: isDarkMode ? Colors.white : Colors.grey[800],
-                      fontWeight: FontWeight.w500,
+                        return const SizedBox.shrink();
+                      },
                     ),
-                  ),
-                  onTap: () => _navigateTo(context, '/user_profile/${user?.uid}'),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.logout, color: isDarkMode ? Colors.white : Colors.grey[700]),
-              title: Text(
-                'Logout',
-                style: TextStyle(
-                  color: isDarkMode ? Colors.white : Colors.grey[800],
-                  fontWeight: FontWeight.w500,
+                  ],
                 ),
               ),
-              onTap: onLogout,
-            ),
-          ],
+              const Divider(height: 1),
+              Consumer(
+                builder: (context, ref, _) {
+                  final userName = ref.watch(userNameProvider);
+                  final user = FirebaseAuth.instance.currentUser;
+                  final displayName = user?.displayName ?? userName;
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: theme.colorScheme.primaryContainer,
+                      child: Icon(Icons.person, color: theme.colorScheme.onPrimaryContainer),
+                    ),
+                    title: Text(
+                      displayName,
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurface,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    onTap: () => _navigateTo(context, '/user_profile/${user?.uid}'),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.logout, color: theme.colorScheme.error),
+                title: Text(
+                  'Logout',
+                  style: TextStyle(
+                    color: theme.colorScheme.error,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                onTap: onLogout,
+              ),
+            ],
+          ),
         ),
       ),
     );

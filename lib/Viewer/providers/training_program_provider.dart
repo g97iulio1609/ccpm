@@ -19,6 +19,11 @@ final workoutIdProvider = StateProvider<String>((ref) => '');
 final exercisesProvider = StateProvider<List<Map<String, dynamic>>>((ref) => []);
 final loadingProvider = StateProvider<bool>((ref) => false);
 
+// New provider for current workout name
+final currentWorkoutNameProvider = StateProvider<String>((ref) => 'Allenamento');
+final currentWeekNameProvider = StateProvider<String>((ref) => 'Settimana');
+
+
 // Helper providers for specific service methods
 final fetchTrainingWeeksProvider = FutureProvider.family<List<Map<String, dynamic>>, String>((ref, programId) async {
   final services = ref.watch(trainingProgramServicesProvider);

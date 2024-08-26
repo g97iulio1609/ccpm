@@ -4,8 +4,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numberpicker/numberpicker.dart';
 import '../models/timer_model.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class ExerciseDetails extends StatefulWidget {
+final currentExerciseNameProvider = StateProvider<String>((ref) => '');
+
+class ExerciseDetails extends ConsumerStatefulWidget {
   final String userId;
   final String programId;
   final String weekId;
@@ -30,10 +33,10 @@ class ExerciseDetails extends StatefulWidget {
   });
 
   @override
-  ExerciseDetailsState createState() => ExerciseDetailsState();
+  ConsumerState<ExerciseDetails> createState() => ExerciseDetailsState();
 }
 
-class ExerciseDetailsState extends State<ExerciseDetails> {
+class ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
   int currentSeriesIndex = 0;
   int currentSuperSetExerciseIndex = 0;
   final Map<String, Map<String, TextEditingController>> _repsControllers = {};
@@ -47,6 +50,9 @@ class ExerciseDetailsState extends State<ExerciseDetails> {
     super.initState();
     _initControllers();
     _setCurrentSeriesIndex();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateCurrentExerciseName();
+    });
   }
 
   void _initControllers() {
@@ -69,6 +75,12 @@ class ExerciseDetailsState extends State<ExerciseDetails> {
     currentSeriesIndex = widget.startIndex < currentSeriesList.length
         ? widget.startIndex
         : currentSeriesList.length - 1;
+  }
+
+  void _updateCurrentExerciseName() {
+    final currentExercise = widget.superSetExercises[currentSuperSetExerciseIndex];
+    final exerciseName = '${currentExercise['name']} ${currentExercise['variant'] ?? ''}';
+    ref.read(currentExerciseNameProvider.notifier).state = exerciseName;
   }
 
   Future<void> _updateSeriesData(String exerciseId, String seriesId,
@@ -153,7 +165,6 @@ class ExerciseDetailsState extends State<ExerciseDetails> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
     final colorScheme = theme.colorScheme;
     final currentExercise =
         widget.superSetExercises[currentSuperSetExerciseIndex];
@@ -172,12 +183,11 @@ class ExerciseDetailsState extends State<ExerciseDetails> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _buildSeriesIndicator(theme, isDarkMode, colorScheme),
+                  _buildSeriesIndicator(theme, colorScheme),
                   const SizedBox(height: 24),
                   if (currentSeries != null) ...[
                     _buildInputFields(
                       theme,
-                      isDarkMode,
                       colorScheme,
                       currentExercise,
                       currentSeries,
@@ -190,9 +200,7 @@ class ExerciseDetailsState extends State<ExerciseDetails> {
                     Text(
                       'Next: ${widget.superSetExercises[currentSuperSetExerciseIndex + 1]['name']}',
                       style: theme.textTheme.titleLarge?.copyWith(
-                        color: isDarkMode
-                            ? colorScheme.onSurface
-                            : colorScheme.onSurface,
+                        color: colorScheme.onSurface,
                         fontWeight: FontWeight.bold,
                       ),
                       textAlign: TextAlign.center,
@@ -200,17 +208,15 @@ class ExerciseDetailsState extends State<ExerciseDetails> {
                   const SizedBox(height: 32),
                   _buildRestTimeSelector(
                     theme,
-                    isDarkMode,
                     colorScheme,
                     colorScheme.primary,
                   ),
                   const SizedBox(height: 32),
-                  _buildEmomSwitch(theme, isDarkMode, colorScheme),
+                  _buildEmomSwitch(theme, colorScheme),
                   const SizedBox(height: 40),
                   if (currentSeries != null)
                     _buildNextButton(
                       theme,
-                      isDarkMode,
                       colorScheme,
                       colorScheme.primary,
                       currentExercise,
@@ -226,58 +232,28 @@ class ExerciseDetailsState extends State<ExerciseDetails> {
     );
   }
 
-  Widget _buildSeriesIndicator(
-      ThemeData theme, bool isDarkMode, ColorScheme colorScheme) {
-    final exerciseNames = widget.superSetExercises
-        .map((exercise) => '${exercise['name']} ${exercise['variant'] ?? ''}')
-        .toList();
-
+  Widget _buildSeriesIndicator(ThemeData theme, ColorScheme colorScheme) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDarkMode ? colorScheme.surface : colorScheme.primary,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
-        children: [
-          Text(
-            widget.superSetExercises.length > 1
-                ? 'Super Set ${currentSeriesIndex + 1}'
-                : 'Set ${currentSeriesIndex + 1} / ${widget.seriesList.length}',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              color: isDarkMode ? colorScheme.onSurface : colorScheme.onPrimary,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          ...exerciseNames.map((exerciseName) {
-            final isCurrentExercise = exerciseNames.indexOf(exerciseName) ==
-                currentSuperSetExerciseIndex;
-            return Text(
-              exerciseName,
-              style: theme.textTheme.titleLarge?.copyWith(
-                color: isCurrentExercise
-                    ? (isDarkMode
-                        ? colorScheme.onSurface
-                        : colorScheme.onPrimary)
-                    : (isDarkMode
-                            ? colorScheme.onSurface
-                            : colorScheme.onPrimary)
-                        .withOpacity(0.6),
-                fontWeight:
-                    isCurrentExercise ? FontWeight.bold : FontWeight.normal,
-              ),
-              textAlign: TextAlign.center,
-            );
-          }),
-        ],
+      child: Text(
+        widget.superSetExercises.length > 1
+            ? 'Super Set ${currentSeriesIndex + 1}'
+            : 'Set ${currentSeriesIndex + 1} / ${widget.seriesList.length}',
+        style: theme.textTheme.headlineSmall?.copyWith(
+          color: colorScheme.onSurface,
+          fontWeight: FontWeight.bold,
+        ),
+        textAlign: TextAlign.center,
       ),
     );
   }
-
+  
   Widget _buildInputFields(
     ThemeData theme,
-    bool isDarkMode,
     ColorScheme colorScheme,
     Map<String, dynamic> currentExercise,
     Map<String, dynamic> currentSeries,
@@ -292,7 +268,6 @@ class ExerciseDetailsState extends State<ExerciseDetails> {
             _repsControllers[currentExercise['id']]![currentSeries['id']]!,
             TextInputType.number,
             FilteringTextInputFormatter.digitsOnly,
-            isDarkMode,
             colorScheme,
           ),
         ),
@@ -304,7 +279,6 @@ class ExerciseDetailsState extends State<ExerciseDetails> {
             _weightControllers[currentExercise['id']]![currentSeries['id']]!,
             const TextInputType.numberWithOptions(decimal: true),
             FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*')),
-            isDarkMode,
             colorScheme,
           ),
         ),
@@ -318,33 +292,36 @@ class ExerciseDetailsState extends State<ExerciseDetails> {
     TextEditingController controller,
     TextInputType keyboardType,
     TextInputFormatter inputFormatter,
-    bool isDarkMode,
     ColorScheme colorScheme, {
     bool isEnabled = true,
   }) {
-    return Expanded(
-      child: TextField(
-        controller: controller,
-        enabled: isEnabled,
-        keyboardType: keyboardType,
-        inputFormatters: [inputFormatter],
-        textAlign: TextAlign.center,
-        style: theme.textTheme.titleLarge?.copyWith(
-          color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
+    return TextField(
+      controller: controller,
+      enabled: isEnabled,
+      keyboardType: keyboardType,
+      inputFormatters: [inputFormatter],
+      textAlign: TextAlign.center,
+      style: theme.textTheme.titleLarge?.copyWith(
+        color: colorScheme.onSurface,
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: theme.textTheme.titleMedium?.copyWith(
+          color: colorScheme.onSurface.withOpacity(0.6),
         ),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: theme.textTheme.titleMedium?.copyWith(
-            color: isDarkMode
-                ? colorScheme.onSurface.withOpacity(0.6)
-                : colorScheme.onSurface.withOpacity(0.6),
-          ),
-          filled: true,
-          fillColor: isDarkMode ? colorScheme.surface : colorScheme.surface,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none,
-          ),
+        filled: true,
+        fillColor: colorScheme.surface,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Colors.white, width: 1),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Colors.white, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Colors.white, width: 2),
         ),
       ),
     );
@@ -352,14 +329,13 @@ class ExerciseDetailsState extends State<ExerciseDetails> {
 
   Widget _buildRestTimeSelector(
     ThemeData theme,
-    bool isDarkMode,
     ColorScheme colorScheme,
     Color primaryColor,
   ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDarkMode ? colorScheme.surface : primaryColor,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -372,7 +348,6 @@ class ExerciseDetailsState extends State<ExerciseDetails> {
             0,
             59,
             (value) => setState(() => _minutes = value),
-            isDarkMode,
             colorScheme,
           ),
           const SizedBox(width: 16),
@@ -383,7 +358,6 @@ class ExerciseDetailsState extends State<ExerciseDetails> {
             0,
             59,
             (value) => setState(() => _seconds = value),
-            isDarkMode,
             colorScheme,
           ),
         ],
@@ -397,24 +371,21 @@ class ExerciseDetailsState extends State<ExerciseDetails> {
     int minValue,
     int maxValue,
     ValueChanged<int> onChanged,
-    bool isDarkMode,
     ColorScheme colorScheme,
   ) {
     return Container(
       width: 90,
       height: 130,
       decoration: BoxDecoration(
-        color: isDarkMode ? colorScheme.surface : colorScheme.surface,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDarkMode ? Colors.white : Colors.white,
+          color: Colors.white,
           width: 0.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: isDarkMode
-                ? Colors.black.withOpacity(0.2)
-                : Colors.grey.withOpacity(0.2),
+            color: Colors.black.withOpacity(0.2),
             blurRadius: 6,
             offset: const Offset(0, 3),
           ),
@@ -427,23 +398,19 @@ class ExerciseDetailsState extends State<ExerciseDetails> {
         onChanged: onChanged,
         itemHeight: 45,
         textStyle: theme.textTheme.titleLarge?.copyWith(
-          color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
+          color: colorScheme.onSurface,
         ),
-selectedTextStyle: theme.textTheme.titleLarge?.copyWith(
-          color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
+        selectedTextStyle: theme.textTheme.titleLarge?.copyWith(
+          color: colorScheme.onSurface,
           fontWeight: FontWeight.bold,
         ),
         decoration: BoxDecoration(
           border: Border(
             top: BorderSide(
-              color: isDarkMode
-                  ? colorScheme.onSurface.withOpacity(0.2)
-                  : Colors.grey.withOpacity(0.2),
+              color: colorScheme.onSurface.withOpacity(0.2),
             ),
             bottom: BorderSide(
-              color: isDarkMode
-                  ? colorScheme.onSurface.withOpacity(0.2)
-                  : Colors.grey.withOpacity(0.2),
+              color: colorScheme.onSurface.withOpacity(0.2),
             ),
           ),
         ),
@@ -458,18 +425,15 @@ selectedTextStyle: theme.textTheme.titleLarge?.copyWith(
     int minValue,
     int maxValue,
     ValueChanged<int> onChanged,
-    bool isDarkMode,
     ColorScheme colorScheme,
   ) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(
+      Text(
           label,
           style: theme.textTheme.titleMedium?.copyWith(
-            color: isDarkMode
-                ? colorScheme.onSurface.withOpacity(0.6)
-                : colorScheme.onSurface.withOpacity(0.6),
+            color: colorScheme.onSurface.withOpacity(0.6),
           ),
           textAlign: TextAlign.center,
         ),
@@ -480,23 +444,20 @@ selectedTextStyle: theme.textTheme.titleLarge?.copyWith(
           minValue,
           maxValue,
           onChanged,
-          isDarkMode,
           colorScheme,
         ),
       ],
     );
   }
 
-  Widget _buildEmomSwitch(
-      ThemeData theme, bool isDarkMode, ColorScheme colorScheme) {
+  Widget _buildEmomSwitch(ThemeData theme, ColorScheme colorScheme) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
           'EMOM Mode',
           style: theme.textTheme.titleLarge?.copyWith(
-            color:
-                isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
+            color: colorScheme.onSurface,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -504,16 +465,10 @@ selectedTextStyle: theme.textTheme.titleLarge?.copyWith(
         Switch(
           value: _isEmomMode,
           onChanged: (value) => setState(() => _isEmomMode = value),
-          activeColor: isDarkMode ? colorScheme.primary : colorScheme.secondary,
-          activeTrackColor: isDarkMode
-              ? colorScheme.primary.withOpacity(0.5)
-              : colorScheme.secondary.withOpacity(0.5),
-          inactiveThumbColor: isDarkMode
-              ? colorScheme.onSurface.withOpacity(0.5)
-              : Colors.grey.withOpacity(0.5),
-          inactiveTrackColor: isDarkMode
-              ? colorScheme.onSurface.withOpacity(0.2)
-              : Colors.grey.withOpacity(0.2),
+          activeColor: colorScheme.primary,
+          activeTrackColor: colorScheme.primary.withOpacity(0.5),
+          inactiveThumbColor: colorScheme.onSurface.withOpacity(0.5),
+          inactiveTrackColor: colorScheme.onSurface.withOpacity(0.2),
         ),
       ],
     );
@@ -521,7 +476,6 @@ selectedTextStyle: theme.textTheme.titleLarge?.copyWith(
 
   Widget _buildNextButton(
     ThemeData theme,
-    bool isDarkMode,
     ColorScheme colorScheme,
     Color primaryColor,
     Map<String, dynamic> currentExercise,
@@ -541,8 +495,7 @@ selectedTextStyle: theme.textTheme.titleLarge?.copyWith(
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: primaryColor,
-        foregroundColor:
-            isDarkMode ? colorScheme.onPrimary : colorScheme.onPrimaryContainer,
+        foregroundColor: Colors.black,
         padding: const EdgeInsets.symmetric(vertical: 20),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -554,6 +507,7 @@ selectedTextStyle: theme.textTheme.titleLarge?.copyWith(
         style: theme.textTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.bold,
           fontSize: 18,
+          color: Colors.black,
         ),
       ),
     );
@@ -564,9 +518,13 @@ selectedTextStyle: theme.textTheme.titleLarge?.copyWith(
       if (currentSuperSetExerciseIndex < widget.superSetExercises.length - 1) {
         currentSuperSetExerciseIndex++;
       } else {
-        currentSuperSetExerciseIndex = 0; // Reset the super set exercise index
+        currentSuperSetExerciseIndex = 0;
         currentSeriesIndex++;
       }
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateCurrentExerciseName();
     });
 
     if (currentSuperSetExerciseIndex == 0) {

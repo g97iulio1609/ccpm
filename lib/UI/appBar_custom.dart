@@ -1,3 +1,4 @@
+import 'package:alphanessone/Viewer/providers/training_program_provider.dart';
 import 'package:alphanessone/exerciseManager/exercises_manager.dart';
 import 'package:alphanessone/ExerciseRecords/maxrmdashboard.dart';
 import 'package:alphanessone/measurements/measurements.dart';
@@ -11,6 +12,7 @@ import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:alphanessone/nutrition/models&Services/meals_model.dart' as meals;
 import 'package:alphanessone/nutrition/models&Services/meals_services.dart';
+import 'package:alphanessone/Viewer/UI/exercise_details.dart';
 
 class CustomAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
   const CustomAppBar({
@@ -40,7 +42,15 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
     initializeDateFormatting('it_IT', null);
   }
 
-  String _getTitleForRoute(String currentPath) {
+   String _getTitleForRoute(String currentPath) {
+    if (currentPath.contains('/exercise_details/')) {
+      return ref.watch(currentExerciseNameProvider);
+    } else if (currentPath.contains('/workout_details/')) {
+      return ref.watch(currentWorkoutNameProvider);
+    } else if (currentPath.contains('/week_details/')) {
+      return ref.watch(currentWeekNameProvider);
+    }
+
     switch (currentPath) {
       case '/programs_screen':
         return 'Coaching';
@@ -197,7 +207,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
       if (favoriteName != null && mounted) {
         await mealsService.saveDayAsFavorite(userId, selectedDate, favoriteName: favoriteName);
       }
-    } else if (value == 'apply_favorite_day') {
+} else if (value == 'apply_favorite_day') {
       final favoriteDays = await mealsService.getFavoriteDays(userId);
       if (favoriteDays.isNotEmpty && mounted) {
         final selectedFavorite = await _showFavoriteDaySelectionDialog(favoriteDays);
@@ -273,10 +283,12 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
       title: _isDailyFoodTrackerRoute(currentRoute)
           ? _buildDateSelector(selectedDate)
           : Text(_getTitleForRoute(currentRoute)),
-      backgroundColor: Colors.transparent,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       foregroundColor: Theme.of(context).colorScheme.onSurface,
       leading: isBackButtonVisible ? _buildLeadingButtons(currentRoute) : null,
       actions: _buildActions(currentRoute),
+      elevation: 0,
+      scrolledUnderElevation: 0,
     );
   }
 
@@ -364,21 +376,21 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
       );
     }
 
-  if (currentRoute == '/measurements') {
-  actions.add(
-    IconButton(
-      onPressed: () {
-        final userId = FirebaseAuth.instance.currentUser?.uid;
-        if (userId != null) {
-          MeasurementsPage.showAddMeasurementDialog(context, ref, userId);
-        }
-      },
-      icon: const Icon(Icons.add),
-    ),
-  );
-}
+    if (currentRoute == '/measurements') {
+      actions.add(
+        IconButton(
+          onPressed: () {
+            final userId = FirebaseAuth.instance.currentUser?.uid;
+            if (userId != null) {
+              MeasurementsPage.showAddMeasurementDialog(context, ref, userId);
+            }
+          },
+          icon: const Icon(Icons.add),
+        ),
+      );
+    }
 
- if (currentRoute == '/maxrmdashboard') {
+    if (currentRoute == '/maxrmdashboard') {
       actions.add(
         IconButton(
           onPressed: () {
@@ -389,19 +401,18 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
       );
     }
 
-if (currentRoute == '/exercises_list') {
-  actions.add(
-    IconButton(
-      onPressed: () {
-        ExercisesManager.showAddExerciseBottomSheet(context, ref);
-      },
-      icon: const Icon(Icons.add),
-    ),
-  );
-}
+    if (currentRoute == '/exercises_list') {
+      actions.add(
+        IconButton(
+          onPressed: () {
+            ExercisesManager.showAddExerciseBottomSheet(context, ref);
+          },
+          icon: const Icon(Icons.add),
+        ),
+      );
+    }
     return actions;
   }
-
 }
 
 final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());

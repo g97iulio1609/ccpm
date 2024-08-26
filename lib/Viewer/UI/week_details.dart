@@ -4,26 +4,49 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/training_program_provider.dart';
 
-class WeekDetails extends ConsumerWidget {
+class WeekDetails extends ConsumerStatefulWidget {
   final String programId;
   final String weekId;
   final String userId;
 
   const WeekDetails({
-    super.key,
+    Key? key,
     required this.programId,
     required this.weekId,
     required this.userId,
-  });
+  }) : super(key: key);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<WeekDetails> createState() => _WeekDetailsState();
+}
+
+class _WeekDetailsState extends ConsumerState<WeekDetails> {
+  bool _isInitialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isInitialized) {
+      _initializeWeekName();
+      _isInitialized = true;
+    }
+  }
+
+  Future<void> _initializeWeekName() async {
+    final weekService = ref.read(trainingProgramServicesProvider);
+    final weekName = await weekService.fetchWeekName(widget.weekId);
+    if (mounted) {
+      ref.read(currentWeekNameProvider.notifier).state = weekName;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final weekService = ref.watch(trainingProgramServicesProvider);
 
     return Scaffold(
-   
       body: StreamBuilder<QuerySnapshot>(
-        stream: weekService.getWorkouts(weekId),
+        stream: weekService.getWorkouts(widget.weekId),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
@@ -52,7 +75,7 @@ class WeekDetails extends ConsumerWidget {
                 onTap: () {
                   if (workoutId != null) {
                     context.go(
-                      '/user_programs/$userId/training_viewer/$programId/week_details/$weekId/workout_details/$workoutId',
+                      '/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/$workoutId',
                     );
                   }
                 },
@@ -71,11 +94,11 @@ class WorkoutCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const WorkoutCard({
-    super.key,
+    Key? key,
     required this.workoutOrder,
     required this.workoutDescription,
     required this.onTap,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

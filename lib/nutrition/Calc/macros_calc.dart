@@ -4,7 +4,7 @@ class MacrosCalculator {
   static const double fatCaloriesPerGram = 9;
 
   static Map<String, double> calculateMacrosFromPercentages(
-    double tdee, Map<String, double> macroPercentages) {
+      double tdee, Map<String, double> macroPercentages) {
     final macros = <String, double>{};
     final totalPercentage = macroPercentages.values.fold(0.0, (sum, percentage) => sum + percentage);
 
@@ -62,9 +62,9 @@ class MacrosCalculator {
   }
 
   static Map<String, double> calculatePercentagesFromGrams(
-    double tdee, Map<String, double> macroGrams) {
+      double tdee, Map<String, double> macroGrams) {
     final macroPercentages = <String, double>{};
-  
+
     for (final macro in macroGrams.keys) {
       final grams = macroGrams[macro]!;
       final calories = calculateCaloriesFromGrams(macro, grams);
@@ -78,7 +78,7 @@ class MacrosCalculator {
   }
 
   static Map<String, double> calculatePercentagesFromGramsPerKg(
-    double tdee, double weight, Map<String, double> macroGramsPerKg) {
+      double tdee, double weight, Map<String, double> macroGramsPerKg) {
     final macroGrams = <String, double>{};
 
     for (final macro in macroGramsPerKg.keys) {
@@ -156,11 +156,12 @@ class MacrosCalculator {
       }
     }
   }
+
   static double calculateTotalCalories(Map<String, double> macros) {
-  double totalCalories = 0;
-  macros.forEach((macro, grams) {
-    totalCalories += calculateCaloriesFromGrams(macro, grams);
-  });
-  return totalCalories;
-}
+    double totalCalories = 0;
+    macros.forEach((macro, grams) {
+      totalCalories += calculateCaloriesFromGrams(macro, grams);
+    });
+    return totalCalories;
+  }
 }

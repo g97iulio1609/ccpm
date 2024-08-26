@@ -1,46 +1,97 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 
 class TDEEService {
   final FirebaseFirestore _firestore;
 
   TDEEService(this._firestore);
 
-  Future<Map<String, dynamic>?> getTDEEData(String userId) async {
-    final userDoc = await _firestore.collection('users').doc(userId).get();
-    if (userDoc.exists) {
-      final userData = userDoc.data() as Map<String, dynamic>;
-      return {
-        'birthDate': userData['birthDate'],
-        'height': userData['height']?.toDouble() ?? 0.0,
-        'weight': userData['weight']?.toDouble() ?? 0.0,
-        'gender': userData['gender'],
-        'activityLevel': userData['activityLevel'],
-        'tdee': userData['tdee']?.toDouble() ?? 0.0,
-      };
-    } else {
-      // If the user does not exist, return null
-      return null;
+  Future<Map<String, dynamic>?> getMostRecentNutritionData(String userId) async {
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+
+    final querySnapshot = await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('mynutrition')
+        .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(todayStart))
+        .orderBy('date', descending: true)
+        .limit(1)
+        .get();
+
+    if (querySnapshot.docs.isNotEmpty) {
+      return querySnapshot.docs.first.data();
+    }
+    return null;
+  }
+
+Future<void> saveNutritionData(String userId, Map<String, dynamic> data) async {
+    final DateTime now = DateTime.now();
+    final DateTime todayStart = DateTime(now.year, now.month, now.day);
+
+    // Calculate macronutrients based on TDEE
+    final tdee = data['tdee'] as int;
+    final carbs = _roundToTwoDecimals((tdee * 0.5) / 4);
+    final protein = _roundToTwoDecimals((tdee * 0.3) / 4);
+    final fat = _roundToTwoDecimals((tdee * 0.2) / 9);
+
+    // Ensure the values are saved as numbers (double) with 2 decimal places
+    final nutritionData = {
+      'carbs': carbs,
+      'protein': protein,
+      'fat': fat,
+      'tdee': tdee.toDouble(),
+      'weight': _roundToTwoDecimals(data['weight']),
+      'activityLevel': data['activityLevel'],
+      'date': Timestamp.now(),
+    };
+
+    try {
+      final existingDocs = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('mynutrition')
+          .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(todayStart))
+          .orderBy('date', descending: true)
+          .limit(1)
+          .get();
+
+      if (existingDocs.docs.isNotEmpty) {
+        // Update the most recent document for today
+        final docId = existingDocs.docs.first.id;
+        await _firestore
+            .collection('users')
+            .doc(userId)
+            .collection('mynutrition')
+            .doc(docId)
+            .update(nutritionData)
+            .then((_) => debugPrint('Nutrition data updated successfully for docId: $docId'))
+            .catchError((error) => debugPrint('Failed to update document: $error'));
+      } else {
+        // Create a new document for today
+        await _firestore
+            .collection('users')
+            .doc(userId)
+            .collection('mynutrition')
+            .add(nutritionData)
+            .then((docRef) => debugPrint('New nutrition data added with ID: ${docRef.id}'))
+            .catchError((error) => debugPrint('Failed to add new document: $error'));
+      }
+    } catch (e) {
+      debugPrint('Error saving nutrition data: $e');
     }
   }
 
-  Future<void> updateTDEEData(String userId, Map<String, dynamic> tdeeData) async {
-    await _firestore.collection('users').doc(userId).update(tdeeData);
-  }
-
-  Future<void> updateMacros(String userId, Map<String, double> macros) async {
-    await _firestore.collection('users').doc(userId).update(macros);
-  }
-
-  Future<Map<String, double>> getUserMacros(String userId) async {
-    final userDoc = await _firestore.collection('users').doc(userId).get();
-    if (userDoc.exists) {
-      final userData = userDoc.data() as Map<String, dynamic>;
-      return {
-        'carbs': userData['carbs']?.toDouble() ?? 0.0,
-        'protein': userData['protein']?.toDouble() ?? 0.0,
-        'fat': userData['fat']?.toDouble() ?? 0.0,
-      };
+  // Helper function to round to two decimal places
+  double _roundToTwoDecimals(dynamic value) {
+    if (value is int) {
+      return value.toDouble();
     }
-    return {'carbs': 0.0, 'protein': 0.0, 'fat': 0.0};
+    if (value is double) {
+      return double.parse((value).toStringAsFixed(2));
+    }
+    throw ArgumentError('Value must be int or double');
   }
 }
+
+

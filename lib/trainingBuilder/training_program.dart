@@ -9,6 +9,7 @@ import 'package:alphanessone/trainingBuilder/List/week_list.dart';
 import 'package:alphanessone/trainingBuilder/List/workout_list.dart';
 import 'package:alphanessone/trainingBuilder/List/exercises_list.dart';
 import 'package:alphanessone/providers/providers.dart';
+import 'package:alphanessone/trainingBuilder/training_volume_dashboard.dart';
 
 class TrainingProgramPage extends HookConsumerWidget {
   final String programId;
@@ -187,6 +188,23 @@ class TrainingProgramPage extends HookConsumerWidget {
                           ],
                         ),
                         const SizedBox(height: 32),
+                        ElevatedButton.icon(
+                          onPressed: () => _navigateToVolumeDashboard(context),
+                          icon: const Icon(Icons.dashboard),
+                          label: const Text(
+                            'Dashboard Volume di Allenamento',
+                            style: TextStyle(fontSize: 18),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.black,
+                            backgroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
                         const Text(
                           'Settimane del Programma',
                           style: TextStyle(
@@ -260,6 +278,15 @@ class TrainingProgramPage extends HookConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AthleteSelectionDialog(controller: controller),
+    );
+  }
+
+  void _navigateToVolumeDashboard(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TrainingVolumeDashboard(programId: programId,  userId: userId,),
+      ),
     );
   }
 }

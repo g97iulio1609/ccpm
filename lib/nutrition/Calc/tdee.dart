@@ -30,8 +30,8 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
   final _formKey = GlobalKey<FormState>();
 
   DateTime? _birthdate;
-  int _height = 0;
-  int _weight = 0;
+  double _height = 0;
+  double _weight = 0;
   int _gender = 0;
   double _activityLevel = 1.2;
   int _tdee = 0;
@@ -59,23 +59,38 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
 
   Future<void> _loadTDEEData() async {
     try {
+      final usersService = ref.read(usersServiceProvider);
+      final measurementsService = ref.read(measurementsServiceProvider);
       final tdeeService = ref.read(tdeeServiceProvider);
-      final tdeeData = await tdeeService.getTDEEData(widget.userId);
 
-      if (tdeeData != null) {
-        setState(() {
-          _birthdate = tdeeData['birthDate'] != null ? DateTime.parse(tdeeData['birthDate']) : null;
-          _height = tdeeData['height'] as int? ?? 0;
-          _weight = tdeeData['weight'] as int? ?? 0;
-          _gender = tdeeData['gender'] as int? ?? 0;
-          _activityLevel = tdeeData['activityLevel'] as double? ?? 1.2;
-          _tdee = tdeeData['tdee'] as int? ?? 0;
-
-          _ageController.text = _birthdate != null ? _calculateAge(_birthdate!).toString() : '';
-          _heightController.text = _height.toString();
-          _weightController.text = _weight.toString();
-        });
+      // Get user data
+      final user = await usersService.getUserById(widget.userId);
+      if (user != null) {
+        _birthdate = user.birthdate;
+        _height = user.height ?? 0;
+        _gender = user.gender;
       }
+
+      // Get most recent measurement
+      final measurements = await measurementsService.getMeasurements(userId: widget.userId).first;
+      if (measurements.isNotEmpty) {
+        final recentMeasurement = measurements.first;
+        _weight = recentMeasurement.weight;
+      }
+
+      // Get most recent nutrition data
+      final nutritionData = await tdeeService.getMostRecentNutritionData(widget.userId);
+      if (nutritionData != null) {
+        _activityLevel = nutritionData['activityLevel'] as double? ?? 1.2;
+        _tdee = (nutritionData['tdee'] as num?)?.toInt() ?? 0;
+        _weight = nutritionData['weight'] as double? ?? _weight;
+      }
+
+      setState(() {
+        _ageController.text = _birthdate != null ? _calculateAge(_birthdate!).toString() : '';
+        _heightController.text = _height.toString();
+        _weightController.text = _weight.toString();
+      });
     } catch (e) {
       debugPrint('Error loading TDEE data: $e');
       if (mounted) {
@@ -86,7 +101,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
     }
   }
 
-  Future<void> _calculateTDEE() async {
+ Future<void> _calculateTDEE() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
@@ -110,21 +125,34 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
 
       _tdee = (bmr * _activityLevel).round();
 
+      // Calculate macronutrients (example distribution: 40% carbs, 30% protein, 30% fat)
+      double carbs = (_tdee * 0.4) / 4; // 4 calories per gram of carbs
+      double protein = (_tdee * 0.3) / 4; // 4 calories per gram of protein
+      double fat = (_tdee * 0.3) / 9; // 9 calories per gram of fat
+
+      // Round to 2 decimal places using a helper function
+      carbs = _roundToTwoDecimals(carbs);
+      protein = _roundToTwoDecimals(protein);
+      fat = _roundToTwoDecimals(fat);
+
       try {
         final tdeeService = ref.read(tdeeServiceProvider);
-        await tdeeService.updateTDEEData(widget.userId, {
-          'birthDate': _birthdate!.toIso8601String(),
+        await tdeeService.saveNutritionData(widget.userId, {
+          'birthdate': _birthdate!.toIso8601String(),
           'height': _height,
           'weight': _weight,
           'gender': _gender,
           'activityLevel': _activityLevel,
           'tdee': _tdee,
+          'carbs': carbs,
+          'protein': protein,
+          'fat': fat,
         });
 
         setState(() {});
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('TDEE calcolato e salvato con successo!')),
+            const SnackBar(content: Text('TDEE e macronutrienti calcolati e salvati con successo!')),
           );
         }
       } catch (e) {
@@ -138,6 +166,10 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
     }
   }
 
+  // Helper function to round to two decimal places
+  double _roundToTwoDecimals(double value) {
+    return double.parse((value).toStringAsFixed(2));
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -214,64 +246,28 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
   }
 
   Widget _buildHeightField() {
-    return Row(
-      children: [
-        Expanded(
-          child: TextFormField(
-            decoration: InputDecoration(
-              labelText: "Altezza",
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            controller: _heightController,
-            keyboardType: TextInputType.number,
-            validator: (value) => value?.isEmpty ?? true ? 'Inserisci la tua altezza' : null,
-            onSaved: (value) => _height = int.parse(value!),
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: DropdownButtonFormField(
-            decoration: InputDecoration(
-              labelText: 'Unità',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            value: 'cm',
-            items: ['cm', 'ft/in'].map((unit) => DropdownMenuItem(value: unit, child: Text(unit))).toList(),
-            onChanged: (value) {},
-          ),
-        ),
-      ],
+    return TextFormField(
+      decoration: InputDecoration(
+        labelText: "Altezza (cm)",
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      controller: _heightController,
+      keyboardType: TextInputType.number,
+      validator: (value) => value?.isEmpty ?? true ? 'Inserisci la tua altezza' : null,
+      onSaved: (value) => _height = double.parse(value!),
     );
   }
 
   Widget _buildWeightField() {
-    return Row(
-      children: [
-        Expanded(
-          child: TextFormField(
-            decoration: InputDecoration(
-              labelText: "Peso",
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            controller: _weightController,
-            keyboardType: TextInputType.number,
-            validator: (value) => value?.isEmpty ?? true ? 'Inserisci il tuo peso' : null,
-            onSaved: (value) => _weight = int.parse(value!),
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: DropdownButtonFormField(
-            decoration: InputDecoration(
-              labelText: 'Unità',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            value: 'kg',
-            items: ['kg', 'lbs'].map((unit) => DropdownMenuItem(value: unit, child: Text(unit))).toList(),
-            onChanged: (value) {},
-          ),
-        ),
-      ],
+    return TextFormField(
+      decoration: InputDecoration(
+        labelText: "Peso (kg)",
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      controller: _weightController,
+      keyboardType: TextInputType.number,
+      validator: (value) => value?.isEmpty ?? true ? 'Inserisci il tuo peso' : null,
+      onSaved: (value) => _weight = double.parse(value!),
     );
   }
 
