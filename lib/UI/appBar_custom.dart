@@ -11,6 +11,7 @@ import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:alphanessone/nutrition/models&Services/meals_model.dart' as meals;
 import 'package:alphanessone/nutrition/models&Services/meals_services.dart';
+import 'package:alphanessone/Viewer/UI/exercise_details.dart';
 
 class CustomAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
   const CustomAppBar({
@@ -41,6 +42,10 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
   }
 
   String _getTitleForRoute(String currentPath) {
+    if (currentPath.contains('/exercise_details/')) {
+      return ref.watch(currentExerciseNameProvider);
+    }
+
     switch (currentPath) {
       case '/programs_screen':
         return 'Coaching';
@@ -273,10 +278,12 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
       title: _isDailyFoodTrackerRoute(currentRoute)
           ? _buildDateSelector(selectedDate)
           : Text(_getTitleForRoute(currentRoute)),
-      backgroundColor: Colors.transparent,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       foregroundColor: Theme.of(context).colorScheme.onSurface,
       leading: isBackButtonVisible ? _buildLeadingButtons(currentRoute) : null,
       actions: _buildActions(currentRoute),
+      elevation: 0,
+      scrolledUnderElevation: 0,
     );
   }
 
@@ -364,21 +371,21 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
       );
     }
 
-  if (currentRoute == '/measurements') {
-  actions.add(
-    IconButton(
-      onPressed: () {
-        final userId = FirebaseAuth.instance.currentUser?.uid;
-        if (userId != null) {
-          MeasurementsPage.showAddMeasurementDialog(context, ref, userId);
-        }
-      },
-      icon: const Icon(Icons.add),
-    ),
-  );
-}
+    if (currentRoute == '/measurements') {
+      actions.add(
+        IconButton(
+          onPressed: () {
+            final userId = FirebaseAuth.instance.currentUser?.uid;
+            if (userId != null) {
+              MeasurementsPage.showAddMeasurementDialog(context, ref, userId);
+            }
+          },
+          icon: const Icon(Icons.add),
+        ),
+      );
+    }
 
- if (currentRoute == '/maxrmdashboard') {
+    if (currentRoute == '/maxrmdashboard') {
       actions.add(
         IconButton(
           onPressed: () {
@@ -389,19 +396,18 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
       );
     }
 
-if (currentRoute == '/exercises_list') {
-  actions.add(
-    IconButton(
-      onPressed: () {
-        ExercisesManager.showAddExerciseBottomSheet(context, ref);
-      },
-      icon: const Icon(Icons.add),
-    ),
-  );
-}
+    if (currentRoute == '/exercises_list') {
+      actions.add(
+        IconButton(
+          onPressed: () {
+            ExercisesManager.showAddExerciseBottomSheet(context, ref);
+          },
+          icon: const Icon(Icons.add),
+        ),
+      );
+    }
     return actions;
   }
-
 }
 
 final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());

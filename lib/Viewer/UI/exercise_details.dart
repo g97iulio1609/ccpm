@@ -4,8 +4,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import 'package:numberpicker/numberpicker.dart';
 import '../models/timer_model.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class ExerciseDetails extends StatefulWidget {
+final currentExerciseNameProvider = StateProvider<String>((ref) => '');
+
+class ExerciseDetails extends ConsumerStatefulWidget {
   final String userId;
   final String programId;
   final String weekId;
@@ -30,10 +33,10 @@ class ExerciseDetails extends StatefulWidget {
   });
 
   @override
-  ExerciseDetailsState createState() => ExerciseDetailsState();
+  ConsumerState<ExerciseDetails> createState() => ExerciseDetailsState();
 }
 
-class ExerciseDetailsState extends State<ExerciseDetails> {
+class ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
   int currentSeriesIndex = 0;
   int currentSuperSetExerciseIndex = 0;
   final Map<String, Map<String, TextEditingController>> _repsControllers = {};
@@ -47,6 +50,9 @@ class ExerciseDetailsState extends State<ExerciseDetails> {
     super.initState();
     _initControllers();
     _setCurrentSeriesIndex();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateCurrentExerciseName();
+    });
   }
 
   void _initControllers() {
@@ -69,6 +75,12 @@ class ExerciseDetailsState extends State<ExerciseDetails> {
     currentSeriesIndex = widget.startIndex < currentSeriesList.length
         ? widget.startIndex
         : currentSeriesList.length - 1;
+  }
+
+  void _updateCurrentExerciseName() {
+    final currentExercise = widget.superSetExercises[currentSuperSetExerciseIndex];
+    final exerciseName = '${currentExercise['name']} ${currentExercise['variant'] ?? ''}';
+    ref.read(currentExerciseNameProvider.notifier).state = exerciseName;
   }
 
   Future<void> _updateSeriesData(String exerciseId, String seriesId,
@@ -221,48 +233,25 @@ class ExerciseDetailsState extends State<ExerciseDetails> {
   }
 
   Widget _buildSeriesIndicator(ThemeData theme, ColorScheme colorScheme) {
-    final exerciseNames = widget.superSetExercises
-        .map((exercise) => '${exercise['name']} ${exercise['variant'] ?? ''}')
-        .toList();
-
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
-        children: [
-          Text(
-            widget.superSetExercises.length > 1
-                ? 'Super Set ${currentSeriesIndex + 1}'
-                : 'Set ${currentSeriesIndex + 1} / ${widget.seriesList.length}',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              color: colorScheme.onSurface,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          ...exerciseNames.map((exerciseName) {
-            final isCurrentExercise = exerciseNames.indexOf(exerciseName) ==
-                currentSuperSetExerciseIndex;
-            return Text(
-              exerciseName,
-              style: theme.textTheme.titleLarge?.copyWith(
-                color: isCurrentExercise
-                    ? colorScheme.onSurface
-                    : colorScheme.onSurface.withOpacity(0.6),
-                fontWeight:
-                    isCurrentExercise ? FontWeight.bold : FontWeight.normal,
-              ),
-              textAlign: TextAlign.center,
-            );
-          }),
-        ],
+      child: Text(
+        widget.superSetExercises.length > 1
+            ? 'Super Set ${currentSeriesIndex + 1}'
+            : 'Set ${currentSeriesIndex + 1} / ${widget.seriesList.length}',
+        style: theme.textTheme.headlineSmall?.copyWith(
+          color: colorScheme.onSurface,
+          fontWeight: FontWeight.bold,
+        ),
+        textAlign: TextAlign.center,
       ),
     );
   }
-
+  
   Widget _buildInputFields(
     ThemeData theme,
     ColorScheme colorScheme,
@@ -325,19 +314,15 @@ class ExerciseDetailsState extends State<ExerciseDetails> {
           fillColor: colorScheme.surface,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(
-                color: Colors.white, width: 1), // Aggiunto bordo bianco sottile
+            borderSide: const BorderSide(color: Colors.white, width: 1),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(
-                color: Colors.white, width: 1), // Aggiunto bordo bianco sottile
+            borderSide: const BorderSide(color: Colors.white, width: 1),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(
-                color: Colors.white,
-                width: 2), // Bordo bianco più spesso quando focalizzato
+            borderSide: const BorderSide(color: Colors.white, width: 2),
           ),
         ),
       ),
@@ -417,7 +402,7 @@ class ExerciseDetailsState extends State<ExerciseDetails> {
         textStyle: theme.textTheme.titleLarge?.copyWith(
           color: colorScheme.onSurface,
         ),
-        selectedTextStyle: theme.textTheme.titleLarge?.copyWith(
+selectedTextStyle: theme.textTheme.titleLarge?.copyWith(
           color: colorScheme.onSurface,
           fontWeight: FontWeight.bold,
         ),
@@ -512,7 +497,7 @@ class ExerciseDetailsState extends State<ExerciseDetails> {
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: primaryColor,
-        foregroundColor: Colors.black, // Cambiato in nero
+        foregroundColor: Colors.black,
         padding: const EdgeInsets.symmetric(vertical: 20),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -524,7 +509,7 @@ class ExerciseDetailsState extends State<ExerciseDetails> {
         style: theme.textTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.bold,
           fontSize: 18,
-          color: Colors.black, // Assicuriamoci che il testo sia nero
+          color: Colors.black,
         ),
       ),
     );
@@ -535,9 +520,13 @@ class ExerciseDetailsState extends State<ExerciseDetails> {
       if (currentSuperSetExerciseIndex < widget.superSetExercises.length - 1) {
         currentSuperSetExerciseIndex++;
       } else {
-        currentSuperSetExerciseIndex = 0; // Reset the super set exercise index
+        currentSuperSetExerciseIndex = 0;
         currentSeriesIndex++;
       }
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateCurrentExerciseName();
     });
 
     if (currentSuperSetExerciseIndex == 0) {
