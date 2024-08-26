@@ -1,3 +1,4 @@
+import 'package:alphanessone/Viewer/providers/training_program_provider.dart';
 import 'package:alphanessone/exerciseManager/exercises_manager.dart';
 import 'package:alphanessone/ExerciseRecords/maxrmdashboard.dart';
 import 'package:alphanessone/measurements/measurements.dart';
@@ -44,6 +45,8 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
   String _getTitleForRoute(String currentPath) {
     if (currentPath.contains('/exercise_details/')) {
       return ref.watch(currentExerciseNameProvider);
+    } else if (currentPath.contains('/workout_details/')) {
+      return ref.watch(currentWorkoutNameProvider);
     }
 
     switch (currentPath) {
@@ -202,7 +205,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
       if (favoriteName != null && mounted) {
         await mealsService.saveDayAsFavorite(userId, selectedDate, favoriteName: favoriteName);
       }
-    } else if (value == 'apply_favorite_day') {
+} else if (value == 'apply_favorite_day') {
       final favoriteDays = await mealsService.getFavoriteDays(userId);
       if (favoriteDays.isNotEmpty && mounted) {
         final selectedFavorite = await _showFavoriteDaySelectionDialog(favoriteDays);

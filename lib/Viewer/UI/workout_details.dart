@@ -28,6 +28,7 @@ class WorkoutDetails extends ConsumerStatefulWidget {
 class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   final TrainingProgramServices _workoutService = TrainingProgramServices();
   final List<StreamSubscription> _subscriptions = [];
+  bool _isInitialized = false;
 
   @override
   void initState() {
@@ -36,9 +37,10 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   }
 
   @override
-  void didUpdateWidget(covariant WorkoutDetails oldWidget) {
+  void didUpdateWidget(WorkoutDetails oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.workoutId != oldWidget.workoutId) {
+      _isInitialized = false;
       _initializeWorkout();
     }
   }
@@ -52,17 +54,30 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   }
 
   void _initializeWorkout() {
-    // Use a microtask to ensure this runs after the widget is fully mounted
-    Future.microtask(() {
-      if (mounted) {
-        _updateWorkoutId();
-        _fetchExercises();
-      }
-    });
+    if (!_isInitialized) {
+      Future.microtask(() {
+        if (mounted) {
+          _updateWorkoutId();
+          _fetchExercises();
+          _updateWorkoutName();
+          _isInitialized = true;
+        }
+      });
+    }
   }
 
   void _updateWorkoutId() {
     ref.read(workoutIdProvider.notifier).state = widget.workoutId;
+  }
+
+  void _updateWorkoutName() async {
+    final currentName = ref.read(currentWorkoutNameProvider);
+    if (currentName != widget.workoutId) {
+      final workoutName = await _workoutService.fetchWorkoutName(widget.workoutId);
+      if (mounted) {
+        ref.read(currentWorkoutNameProvider.notifier).state = workoutName;
+      }
+    }
   }
 
   Future<void> _fetchExercises() async {
@@ -86,7 +101,6 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       }
     }
   }
-
 
   void _subscribeToSeriesUpdates(Map<String, dynamic> exercise) {
     final seriesQuery = FirebaseFirestore.instance
@@ -384,8 +398,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: series != null
-                ? GestureDetector(
-                    onTap: () => _toggleSeriesDone(series),
+                ? GestureDetector(onTap: () => _toggleSeriesDone(series),
                     child: Icon(
                       series['done'] == true ? Icons.check_circle : Icons.cancel,
                       color: series['done'] == true ? colorScheme.primary : colorScheme.onSurfaceVariant,
@@ -400,7 +413,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
 
   Widget _buildExerciseName(Map<String, dynamic> exercise, BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Text("${exercise['name']} ${exercise['variant'] ?? ''}",
+    return Text(
+      "${exercise['name']} ${exercise['variant'] ?? ''}",
       style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
             color: colorScheme.onSurface,
