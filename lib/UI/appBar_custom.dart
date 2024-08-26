@@ -42,11 +42,13 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
     initializeDateFormatting('it_IT', null);
   }
 
-  String _getTitleForRoute(String currentPath) {
+   String _getTitleForRoute(String currentPath) {
     if (currentPath.contains('/exercise_details/')) {
       return ref.watch(currentExerciseNameProvider);
     } else if (currentPath.contains('/workout_details/')) {
       return ref.watch(currentWorkoutNameProvider);
+    } else if (currentPath.contains('/week_details/')) {
+      return ref.watch(currentWeekNameProvider);
     }
 
     switch (currentPath) {

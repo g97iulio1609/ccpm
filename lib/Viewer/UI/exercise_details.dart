@@ -295,35 +295,33 @@ class ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
     ColorScheme colorScheme, {
     bool isEnabled = true,
   }) {
-    return Expanded(
-      child: TextField(
-        controller: controller,
-        enabled: isEnabled,
-        keyboardType: keyboardType,
-        inputFormatters: [inputFormatter],
-        textAlign: TextAlign.center,
-        style: theme.textTheme.titleLarge?.copyWith(
-          color: colorScheme.onSurface,
+    return TextField(
+      controller: controller,
+      enabled: isEnabled,
+      keyboardType: keyboardType,
+      inputFormatters: [inputFormatter],
+      textAlign: TextAlign.center,
+      style: theme.textTheme.titleLarge?.copyWith(
+        color: colorScheme.onSurface,
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: theme.textTheme.titleMedium?.copyWith(
+          color: colorScheme.onSurface.withOpacity(0.6),
         ),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: theme.textTheme.titleMedium?.copyWith(
-            color: colorScheme.onSurface.withOpacity(0.6),
-          ),
-          filled: true,
-          fillColor: colorScheme.surface,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: Colors.white, width: 1),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: Colors.white, width: 1),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: Colors.white, width: 2),
-          ),
+        filled: true,
+        fillColor: colorScheme.surface,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Colors.white, width: 1),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Colors.white, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Colors.white, width: 2),
         ),
       ),
     );
@@ -402,7 +400,7 @@ class ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
         textStyle: theme.textTheme.titleLarge?.copyWith(
           color: colorScheme.onSurface,
         ),
-selectedTextStyle: theme.textTheme.titleLarge?.copyWith(
+        selectedTextStyle: theme.textTheme.titleLarge?.copyWith(
           color: colorScheme.onSurface,
           fontWeight: FontWeight.bold,
         ),
@@ -432,7 +430,7 @@ selectedTextStyle: theme.textTheme.titleLarge?.copyWith(
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(
+      Text(
           label,
           style: theme.textTheme.titleMedium?.copyWith(
             color: colorScheme.onSurface.withOpacity(0.6),
