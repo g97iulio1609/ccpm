@@ -43,7 +43,6 @@ class CustomDrawer extends ConsumerWidget {
       'Misurazioni': '/measurements',
       'Meals Preferiti': '/mymeals',
       'Abbonamenti': '/subscriptions',
-
     };
     return routes[menuItem];
   }
@@ -65,7 +64,6 @@ class CustomDrawer extends ConsumerWidget {
       'Misurazioni': Icons.straighten,
       'Meals Preferiti': Icons.favorite,
       'Abbonamenti': Icons.subscriptions,
-
     };
     return icons[menuItem] ?? Icons.menu;
   }
@@ -85,7 +83,7 @@ class CustomDrawer extends ConsumerWidget {
     return (userRole == 'admin' || userRole == 'coach') ? adminItems : clientItems;
   }
 
-  Widget _buildMenuItem(BuildContext context, String menuItem, String userRole, bool isDarkMode) {
+  Widget _buildMenuItem(BuildContext context, String menuItem, String userRole) {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     final route = _getRouteForMenuItem(menuItem, userRole, userId);
     final currentRoute = GoRouterState.of(context).uri.toString();
@@ -94,23 +92,23 @@ class CustomDrawer extends ConsumerWidget {
     return ListTile(
       leading: Icon(
         _getIconForMenuItem(menuItem),
-        color: isDarkMode ? Colors.white : Colors.grey[700],
+        color: Colors.white,
       ),
       title: Text(
         menuItem,
-        style: TextStyle(
-          color: isDarkMode ? Colors.white : Colors.grey[800],
+        style: const TextStyle(
+          color: Colors.white,
           fontWeight: FontWeight.w500,
         ),
       ),
       onTap: route != null && !isSelected ? () => _navigateTo(context, route) : null,
-      hoverColor: isDarkMode ? Colors.grey[800] : Colors.grey[200],
-      selectedTileColor: isDarkMode ? Colors.grey[700] : Colors.grey[300],
+      hoverColor: Colors.grey[800],
+      selectedTileColor: Colors.grey[700],
       selected: isSelected,
     );
   }
 
-  Widget _buildWeekLinks(BuildContext context, String programId, bool isDarkMode) {
+  Widget _buildWeekLinks(BuildContext context, String programId) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('weeks')
@@ -128,19 +126,19 @@ class CustomDrawer extends ConsumerWidget {
           itemBuilder: (context, index) {
             final weekDoc = weeks[index];
             return ExpansionTile(
-              leading: Icon(
+              leading: const Icon(
                 Icons.calendar_today,
-                color: isDarkMode ? Colors.white : Colors.grey[700],
+                color: Colors.white,
               ),
               title: Text(
                 'Settimana ${weekDoc['number']}',
-                style: TextStyle(
-                  color: isDarkMode ? Colors.white : Colors.grey[800],
+                style: const TextStyle(
+                  color: Colors.white,
                   fontWeight: FontWeight.w500,
                 ),
               ),
               children: [
-                _buildWorkoutList(context, weekDoc.id, programId, isDarkMode),
+                _buildWorkoutList(context, weekDoc.id, programId),
               ],
             );
           },
@@ -149,7 +147,7 @@ class CustomDrawer extends ConsumerWidget {
     );
   }
 
-  Widget _buildWorkoutList(BuildContext context, String weekId, String programId, bool isDarkMode) {
+  Widget _buildWorkoutList(BuildContext context, String weekId, String programId) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('workouts')
@@ -172,8 +170,8 @@ class CustomDrawer extends ConsumerWidget {
             return ListTile(
               title: Text(
                 'Allenamento ${workoutDoc['order']}',
-                style: TextStyle(
-                  color: isDarkMode ? Colors.white : Colors.grey[800],
+                style: const TextStyle(
+                  color: Colors.white,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -188,12 +186,11 @@ class CustomDrawer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
     final menuItems = _getMenuItems(userRole);
 
     return Drawer(
       child: Container(
-        color: isDarkMode ? Colors.grey[900] : Colors.grey[200],
+        color: Colors.grey[900],
         child: Column(
           children: [
             Container(
@@ -201,10 +198,10 @@ class CustomDrawer extends ConsumerWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Menù', style: theme.textTheme.titleLarge),
+                  Text('Menù', style: theme.textTheme.titleLarge?.copyWith(color: Colors.white)),
                   if (!isLargeScreen)
                     IconButton(
-                      icon: Icon(Icons.close, color: isDarkMode ? Colors.white : Colors.black),
+                      icon: const Icon(Icons.close, color: Colors.white),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                 ],
@@ -214,7 +211,7 @@ class CustomDrawer extends ConsumerWidget {
               child: ListView(
                 padding: EdgeInsets.zero,
                 children: [
-                  ...menuItems.map((menuItem) => _buildMenuItem(context, menuItem, userRole, isDarkMode)),
+                  ...menuItems.map((menuItem) => _buildMenuItem(context, menuItem, userRole)),
                   FutureBuilder<DocumentSnapshot>(
                     future: FirebaseFirestore.instance
                         .collection('users')
@@ -224,7 +221,7 @@ class CustomDrawer extends ConsumerWidget {
                       if (snapshot.hasData && snapshot.data!.exists) {
                         final programId = snapshot.data!.get('currentProgram') as String?;
                         if (programId != null) {
-                          return _buildWeekLinks(context, programId, isDarkMode);
+                          return _buildWeekLinks(context, programId);
                         }
                       }
                       return const SizedBox.shrink();
@@ -233,7 +230,7 @@ class CustomDrawer extends ConsumerWidget {
                 ],
               ),
             ),
-            const Divider(height: 1),
+            const Divider(height: 1, color: Colors.white54),
             Consumer(
               builder: (context, ref, _) {
                 final userName = ref.watch(userNameProvider);
@@ -241,13 +238,13 @@ class CustomDrawer extends ConsumerWidget {
                 final displayName = user?.displayName ?? userName;
                 return ListTile(
                   leading: CircleAvatar(
-                    backgroundColor: isDarkMode ? Colors.grey[700] : Colors.grey[300],
-                    child: Icon(Icons.person, color: isDarkMode ? Colors.white : Colors.grey[800]),
+                    backgroundColor: Colors.grey[700],
+                    child: const Icon(Icons.person, color: Colors.white),
                   ),
                   title: Text(
                     displayName,
-                    style: TextStyle(
-                      color: isDarkMode ? Colors.white : Colors.grey[800],
+                    style: const TextStyle(
+                      color: Colors.white,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -256,11 +253,11 @@ class CustomDrawer extends ConsumerWidget {
               },
             ),
             ListTile(
-              leading: Icon(Icons.logout, color: isDarkMode ? Colors.white : Colors.grey[700]),
-              title: Text(
+              leading: const Icon(Icons.logout, color: Colors.white),
+              title: const Text(
                 'Logout',
                 style: TextStyle(
-                  color: isDarkMode ? Colors.white : Colors.grey[800],
+                  color: Colors.white,
                   fontWeight: FontWeight.w500,
                 ),
               ),

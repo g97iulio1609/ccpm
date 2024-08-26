@@ -35,7 +35,6 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     final athleteId = controller.athleteIdController.text;
     final dateFormat = DateFormat('yyyy-MM-dd');
     final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
     final colorScheme = theme.colorScheme;
 
     return ListView.builder(
@@ -43,10 +42,10 @@ class TrainingProgramExerciseList extends ConsumerWidget {
       itemCount: exercises.length + 1,
       itemBuilder: (context, index) {
         if (index == exercises.length) {
-          return _buildAddExerciseButton(context, isDarkMode, colorScheme);
+          return _buildAddExerciseButton(context, colorScheme);
         }
         return _buildExerciseCard(context, exercises[index], exerciseRecordService,
-            athleteId, dateFormat, isDarkMode, colorScheme);
+            athleteId, dateFormat, colorScheme);
       },
     );
   }
@@ -57,7 +56,6 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     ExerciseRecordService exerciseRecordService,
     String athleteId,
     DateFormat dateFormat,
-    bool isDarkMode,
     ColorScheme colorScheme,
   ) {
     final superSets = controller
@@ -103,7 +101,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
               margin: const EdgeInsets.only(bottom: 20),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDarkMode ? colorScheme.surface : colorScheme.surface,
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
@@ -123,7 +121,6 @@ class TrainingProgramExerciseList extends ConsumerWidget {
                       athleteId,
                       dateFormat,
                       latestMaxWeight,
-                      isDarkMode,
                       colorScheme),
                   if (superSets.isNotEmpty)
                     Padding(
@@ -161,7 +158,6 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     String athleteId,
     DateFormat dateFormat,
     num latestMaxWeight,
-    bool isDarkMode,
     ColorScheme colorScheme,
   ) {
     return Row(
@@ -196,7 +192,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
         ),
         
         _buildExercisePopupMenu(context, exercise, exerciseRecordService, athleteId,
-            dateFormat, latestMaxWeight, isDarkMode, colorScheme),
+            dateFormat, latestMaxWeight, colorScheme),
       ],
     );
   }
@@ -208,17 +204,16 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     String athleteId,
     DateFormat dateFormat,
     num latestMaxWeight,
-    bool isDarkMode,
     ColorScheme colorScheme,
   ) {
     return PopupMenuButton(
-      color: isDarkMode ? colorScheme.surface : colorScheme.surface,
+      color: colorScheme.surface,
       itemBuilder: (context) => [
         PopupMenuItem(
           child: Text(
             'Modifica',
             style: TextStyle(
-              color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
+              color: colorScheme.onSurface,
             ),
           ),
           onTap: () => controller.editExercise(
@@ -228,17 +223,17 @@ class TrainingProgramExerciseList extends ConsumerWidget {
           child: Text(
             'Aggiorna Max RM',
             style: TextStyle(
-              color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
+              color: colorScheme.onSurface,
             ),
           ),
           onTap: () => _addOrUpdateMaxRM(exercise, context, exerciseRecordService,
-              athleteId, dateFormat, isDarkMode, colorScheme),
+              athleteId, dateFormat, colorScheme),
         ),
         PopupMenuItem(
           child: Text(
             'Riordina Esercizi',
             style: TextStyle(
-              color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
+              color: colorScheme.onSurface,
             ),
           ),
           onTap: () => _showReorderExercisesDialog(context, weekIndex, workoutIndex),
@@ -247,18 +242,18 @@ class TrainingProgramExerciseList extends ConsumerWidget {
           child: Text(
             'Aggiungi al Superset',
             style: TextStyle(
-              color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
+              color: colorScheme.onSurface,
             ),
           ),
           onTap: () => _showAddToSuperSetDialog(
-              context, exercise, isDarkMode, colorScheme),
+              context, exercise, colorScheme),
         ),
         if (exercise.superSetId != null)
           PopupMenuItem(
             child: Text(
               'Rimuovi dal Superset',
               style: TextStyle(
-                color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
+                color: colorScheme.onSurface,
               ),
             ),
             onTap: () => controller.removeExerciseFromSuperSet(
@@ -268,17 +263,17 @@ class TrainingProgramExerciseList extends ConsumerWidget {
           child: Text(
             'Imposta Progressione',
             style: TextStyle(
-              color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
+              color: colorScheme.onSurface,
             ),
           ),
           onTap: () => _showSetProgressionScreen(
-              context, exercise, latestMaxWeight, isDarkMode, colorScheme),
+              context, exercise, latestMaxWeight, colorScheme),
         ),
         PopupMenuItem(
           child: Text(
             'Duplica Esercizio',
             style: TextStyle(
-              color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
+              color: colorScheme.onSurface,
             ),
           ),
           onTap: () => controller.duplicateExercise(
@@ -288,7 +283,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
           child: Text(
             'Sposta Esercizio',
             style: TextStyle(
-              color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
+              color: colorScheme.onSurface,
             ),
           ),
           onTap: () => _showMoveExerciseDialog(context, weekIndex, workoutIndex, exercise),
@@ -297,7 +292,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
           child: Text(
             'Elimina',
             style: TextStyle(
-              color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
+              color: colorScheme.onSurface,
             ),
           ),
           onTap: () => controller.removeExercise(
@@ -309,7 +304,6 @@ class TrainingProgramExerciseList extends ConsumerWidget {
 
   Widget _buildAddExerciseButton(
     BuildContext context,
-    bool isDarkMode,
     ColorScheme colorScheme,
   ) {
     return Padding(
@@ -392,7 +386,6 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     ExerciseRecordService exerciseRecordService,
     String athleteId,
     DateFormat dateFormat,
-    bool isDarkMode,
     ColorScheme colorScheme,
   ) {
     exerciseRecordService.getLatestExerciseRecord(
@@ -416,29 +409,29 @@ class TrainingProgramExerciseList extends ConsumerWidget {
         context: context,
         builder: (BuildContext dialogContext) {
           return AlertDialog(
-            backgroundColor: isDarkMode ? colorScheme.surface : colorScheme.surface,
+            backgroundColor: colorScheme.surface,
             title: Text(
               'Aggiorna Max RM',
               style: TextStyle(
-                color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
+                color: colorScheme.onSurface,
               ),
             ),
-content: _buildMaxRMInputFields(maxWeightController, repetitionsController, isDarkMode, colorScheme),
+            content: _buildMaxRMInputFields(maxWeightController, repetitionsController, colorScheme),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext, false),
                 child: Text(
                   'Annulla',
                   style: TextStyle(
-                    color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
+                    color: colorScheme.onSurface,
                   ),
                 ),
               ),
               ElevatedButton(
                 onPressed: () => Navigator.pop(dialogContext, true),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isDarkMode ? colorScheme.primary : colorScheme.secondary,
-                  foregroundColor: isDarkMode ? colorScheme.onPrimary : colorScheme.onSecondary,
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: colorScheme.onPrimary,
                 ),
                 child: const Text('Salva'),
               ),
@@ -453,8 +446,7 @@ content: _buildMaxRMInputFields(maxWeightController, repetitionsController, isDa
             exercise,
             maxWeightController,
             repetitionsController,
-            exerciseRecordService,
-            dateFormat,
+            exerciseRecordService,dateFormat,
             exercise.type,
           );
         }
@@ -465,7 +457,6 @@ content: _buildMaxRMInputFields(maxWeightController, repetitionsController, isDa
   Widget _buildMaxRMInputFields(
     TextEditingController maxWeightController,
     TextEditingController repetitionsController,
-    bool isDarkMode,
     ColorScheme colorScheme,
   ) {
     return Column(
@@ -485,12 +476,12 @@ content: _buildMaxRMInputFields(maxWeightController, repetitionsController, isDa
             }),
           ],
           style: TextStyle(
-            color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
+            color: colorScheme.onSurface,
           ),
           decoration: InputDecoration(
             labelText: 'Peso Massimo',
             labelStyle: TextStyle(
-              color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
+              color: colorScheme.onSurface,
             ),
           ),
         ),
@@ -498,12 +489,12 @@ content: _buildMaxRMInputFields(maxWeightController, repetitionsController, isDa
           controller: repetitionsController,
           keyboardType: TextInputType.number,
           style: TextStyle(
-            color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
+            color: colorScheme.onSurface,
           ),
           decoration: InputDecoration(
             labelText: 'Ripetizioni',
             labelStyle: TextStyle(
-              color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
+              color: colorScheme.onSurface,
             ),
           ),
         ),
@@ -568,7 +559,6 @@ content: _buildMaxRMInputFields(maxWeightController, repetitionsController, isDa
   void _showAddToSuperSetDialog(
     BuildContext context,
     Exercise exercise,
-    bool isDarkMode,
     ColorScheme colorScheme,
   ) {
     String? selectedSuperSetId;
@@ -590,11 +580,11 @@ content: _buildMaxRMInputFields(maxWeightController, repetitionsController, isDa
           return StatefulBuilder(
             builder: (BuildContext builderContext, setState) {
               return AlertDialog(
-                backgroundColor: isDarkMode ? colorScheme.surface : colorScheme.surface,
+                backgroundColor: colorScheme.surface,
                 title: Text(
                   'Aggiungi al Superset',
                   style: TextStyle(
-                    color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
+                    color: colorScheme.onSurface,
                   ),
                 ),
                 content: DropdownButtonFormField<String>(
@@ -605,7 +595,7 @@ content: _buildMaxRMInputFields(maxWeightController, repetitionsController, isDa
                       child: Text(
                         ss.name ?? '',
                         style: TextStyle(
-                          color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
+                          color: colorScheme.onSurface,
                         ),
                       ),
                     );
@@ -618,7 +608,7 @@ content: _buildMaxRMInputFields(maxWeightController, repetitionsController, isDa
                   decoration: InputDecoration(
                     hintText: 'Seleziona il Superset',
                     hintStyle: TextStyle(
-                      color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -628,7 +618,7 @@ content: _buildMaxRMInputFields(maxWeightController, repetitionsController, isDa
                     child: Text(
                       'Annulla',
                       style: TextStyle(
-                        color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
+                        color: colorScheme.onSurface,
                       ),
                     ),
                   ),
@@ -642,7 +632,7 @@ content: _buildMaxRMInputFields(maxWeightController, repetitionsController, isDa
                       child: Text(
                         'Crea Nuovo Superset',
                         style: TextStyle(
-                          color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
+                          color: colorScheme.onSurface,
                         ),
                       ),
                     ),
@@ -651,7 +641,7 @@ content: _buildMaxRMInputFields(maxWeightController, repetitionsController, isDa
                     child: Text(
                       'Aggiungi',
                       style: TextStyle(
-                        color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurface,
+                        color: colorScheme.onSurface,
                       ),
                     ),
                   ),
@@ -677,7 +667,6 @@ content: _buildMaxRMInputFields(maxWeightController, repetitionsController, isDa
     BuildContext context,
     Exercise exercise,
     num latestMaxWeight,
-    bool isDarkMode,
     ColorScheme colorScheme,
   ) {
     Navigator.push<Exercise>(
