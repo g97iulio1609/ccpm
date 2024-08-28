@@ -246,7 +246,7 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
         itemBuilder: (context) => [
           PopupMenuItem(
             child: const Text('Modifica'),
-            onTap: () => _showEditSeriesDialog([series]),
+            onTap: () => _showEditSeriesDialog([series], isIndividualEdit: true),
           ),
           PopupMenuItem(
             child: const Text('Elimina'),
@@ -285,7 +285,7 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
     );
   }
 
-  void _showEditSeriesDialog(List<Series>? seriesGroup) {
+  void _showEditSeriesDialog(List<Series>? seriesGroup, {bool isIndividualEdit = false}) {
     final exercise = widget.controller.program.weeks[widget.weekIndex]
         .workouts[widget.workoutIndex].exercises[widget.exerciseIndex];
 
@@ -301,10 +301,13 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
         currentSeriesGroup: seriesGroup,
         latestMaxWeight: latestMaxWeight,
         weightNotifier: ValueNotifier<double>(0.0),
+        isIndividualEdit: isIndividualEdit,
       ),
     ).then((updatedSeries) {
       if (updatedSeries != null) {
-        if (seriesGroup != null) {
+        if (isIndividualEdit) {
+          _updateIndividualSeries(seriesGroup!, updatedSeries[0]);
+        } else if (seriesGroup != null) {
           _updateSeriesGroup(seriesGroup, updatedSeries as List<Series>);
         } else {
           _addNewSeries(updatedSeries as List<Series>);
@@ -332,6 +335,16 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
     widget.controller.updateSeries(widget.weekIndex, widget.workoutIndex, widget.exerciseIndex, exercise.series);
   }
 
+  void _updateIndividualSeries(List<Series> seriesGroup, Series updatedSeries) {
+    final exercise = widget.controller.program.weeks[widget.weekIndex]
+        .workouts[widget.workoutIndex].exercises[widget.exerciseIndex];
+    final index = exercise.series.indexOf(seriesGroup.first);
+    if (index != -1) {
+      exercise.series[index] = updatedSeries;
+      widget.controller.updateSeries(widget.weekIndex, widget.workoutIndex, widget.exerciseIndex, exercise.series);
+    }
+  }
+
   void _addNewSeries(List<Series> newSeries) {
     final exercise = widget.controller.program.weeks[widget.weekIndex]
         .workouts[widget.workoutIndex].exercises[widget.exerciseIndex];
@@ -346,6 +359,4 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
 
     widget.controller.updateSeries(widget.weekIndex, widget.workoutIndex, widget.exerciseIndex, exercise.series);
   }
-
- 
 }

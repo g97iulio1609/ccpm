@@ -16,6 +16,7 @@ class SeriesDialog extends StatefulWidget {
   final List<Series>? currentSeriesGroup;
   final num latestMaxWeight;
   final ValueNotifier<double> weightNotifier;
+  final bool isIndividualEdit;
 
   const SeriesDialog({
     required this.exerciseRecordService,
@@ -27,6 +28,7 @@ class SeriesDialog extends StatefulWidget {
     this.currentSeriesGroup,
     required this.latestMaxWeight,
     required this.weightNotifier,
+    this.isIndividualEdit = false,
     super.key,
   });
 
@@ -47,7 +49,7 @@ class SeriesDialogState extends State<SeriesDialog> {
     if (widget.currentSeriesGroup != null && widget.currentSeriesGroup!.isNotEmpty) {
       Series firstSeries = widget.currentSeriesGroup!.first;
       _repsController = TextEditingController(text: firstSeries.reps.toString());
-      _setsController = TextEditingController(text: widget.currentSeriesGroup!.length.toString());
+      _setsController = TextEditingController(text: widget.isIndividualEdit ? '1' : widget.currentSeriesGroup!.length.toString());
       _intensityController = TextEditingController(text: firstSeries.intensity.toString());
       _rpeController = TextEditingController(text: firstSeries.rpe.toString());
       _weightController = TextEditingController(text: firstSeries.weight.toString());
@@ -73,7 +75,9 @@ class SeriesDialogState extends State<SeriesDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.currentSeriesGroup != null ? 'Modifica Gruppo Serie' : 'Aggiungi Serie'),
+      title: Text(widget.currentSeriesGroup != null 
+        ? (widget.isIndividualEdit ? 'Modifica Serie' : 'Modifica Gruppo Serie') 
+        : 'Aggiungi Serie'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -84,11 +88,12 @@ class SeriesDialogState extends State<SeriesDialog> {
               decoration: const InputDecoration(labelText: 'Reps'),
               onChanged: (_) => _updateRelatedFields(),
             ),
-            TextField(
-              controller: _setsController,
-              keyboardType: TextInputType.text,
-              decoration: const InputDecoration(labelText: 'Sets'),
-            ),
+            if (!widget.isIndividualEdit)
+              TextField(
+                controller: _setsController,
+                keyboardType: TextInputType.text,
+                decoration: const InputDecoration(labelText: 'Sets'),
+              ),
             TextField(
               controller: _intensityController,
               keyboardType: TextInputType.text,
@@ -166,43 +171,53 @@ class SeriesDialogState extends State<SeriesDialog> {
     Navigator.pop(context, series);
   }
 
-List<Series> _createSeries() {
-    final reps = _parseIntList(_repsController.text);
-    final sets = _parseIntList(_setsController.text);
-    final intensity = _parseStringList(_intensityController.text);
-    final rpe = _parseStringList(_rpeController.text);
-    final weight = _calculateWeights(intensity);
-
-    List<Series> newSeries = RangeSeriesTranslator.translateRangeToSeries(
-      reps, 
-      sets, 
-      intensity, 
-      rpe, 
-      weight,
-      widget.exercise.series.length + 1
-    );
-
-    // Se 'sets' non è un range, ma un singolo valore, aggiusta il numero di serie
-    if (sets.length == 1 && sets[0] > 1) {
-      int totalSets = sets[0];
-      newSeries = List.generate(totalSets, (index) => 
-        newSeries[0].copyWith(
-          serieId: index < newSeries.length ? newSeries[index].serieId : null,
-          order: widget.exercise.series.length + index + 1
-        )
+  List<Series> _createSeries() {
+    if (widget.isIndividualEdit && widget.currentSeriesGroup != null && widget.currentSeriesGroup!.isNotEmpty) {
+      // Modifica individuale di un set esistente
+      Series updatedSeries = widget.currentSeriesGroup!.first.copyWith(
+        reps: int.tryParse(_repsController.text) ?? 0,
+        intensity: _intensityController.text,
+        rpe: _rpeController.text,
+        weight: double.tryParse(_weightController.text) ?? 0.0,
       );
-    }
+      return [updatedSeries];
+    } else {
+      // Creazione di nuove serie o modifica di gruppo
+      final reps = _parseIntList(_repsController.text);
+      final sets = _parseIntList(_setsController.text);
+      final intensity = _parseStringList(_intensityController.text);
+      final rpe = _parseStringList(_rpeController.text);
+      final weight = _calculateWeights(intensity);
 
-    if (widget.currentSeriesGroup != null) {
-      // Preserve the original serieId for existing series
-      for (int i = 0; i < newSeries.length && i < widget.currentSeriesGroup!.length; i++) {
-        newSeries[i].serieId = widget.currentSeriesGroup![i].serieId;
+      List<Series> newSeries = RangeSeriesTranslator.translateRangeToSeries(
+        reps, 
+        sets, 
+        intensity, 
+        rpe, 
+        weight,
+        widget.exercise.series.length + 1
+      );
+
+      if (sets.length == 1 && sets[0] > 1) {
+        int totalSets = sets[0];
+        newSeries = List.generate(totalSets, (index) => 
+          newSeries[0].copyWith(
+            serieId: index < newSeries.length ? newSeries[index].serieId : null,
+            order: widget.exercise.series.length + index + 1
+          )
+        );
       }
-    }
 
-    return newSeries;
+      if (widget.currentSeriesGroup != null) {
+        for (int i = 0; i < newSeries.length && i < widget.currentSeriesGroup!.length; i++) {
+          newSeries[i].serieId = widget.currentSeriesGroup![i].serieId;
+        }
+      }
+
+      return newSeries;
+    }
   }
-  
+
   List<double> _calculateWeights(List<String> intensities) {
     return intensities.map((intensity) {
       double intensityValue = double.tryParse(intensity) ?? 0.0;
