@@ -44,7 +44,7 @@ class SeriesController extends ChangeNotifier {
       context: context,
       builder: (context) => SeriesDialog(
         exerciseRecordService: exerciseRecordService,
-        athleteId: exercise.exerciseId ?? '',
+athleteId: exercise.exerciseId ?? '',
         exerciseId: exercise.exerciseId ?? '',
         weekIndex: weekIndex,
         exercise: exercise,
@@ -117,7 +117,7 @@ class SeriesController extends ChangeNotifier {
 
     final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     final totalIndex = groupIndex * 1 + seriesIndex;
-    
+
     if (totalIndex < 0 || totalIndex >= exercise.series.length) {
       debugPrint('Invalid series index');
       return;
@@ -170,7 +170,7 @@ class SeriesController extends ChangeNotifier {
     }
 
     final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
-    
+
     if (oldIndex < 0 || oldIndex >= exercise.series.length ||
         newIndex < 0 || newIndex > exercise.series.length) {
       debugPrint('Invalid oldIndex or newIndex');

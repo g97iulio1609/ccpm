@@ -1,3 +1,4 @@
+import 'package:alphanessone/trainingBuilder/models/range_series_translator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
@@ -34,8 +35,6 @@ class SeriesDialog extends StatefulWidget {
 }
 
 class SeriesDialogState extends State<SeriesDialog> {
-  late num latestMaxWeight;
-
   late TextEditingController _repsController;
   late TextEditingController _setsController;
   late TextEditingController _intensityController;
@@ -45,8 +44,6 @@ class SeriesDialogState extends State<SeriesDialog> {
   @override
   void initState() {
     super.initState();
-    latestMaxWeight = widget.latestMaxWeight;
-
     _repsController = TextEditingController(
         text: widget.currentSeries?.reps.toString() ?? '');
     _setsController = TextEditingController(
@@ -56,7 +53,7 @@ class SeriesDialogState extends State<SeriesDialog> {
     _rpeController =
         TextEditingController(text: widget.currentSeries?.rpe.toString() ?? '');
     _weightController = TextEditingController(
-        text: widget.currentSeries?.weight.toStringAsFixed(2) ?? '');
+        text: widget.currentSeries?.weight.toString() ?? '');
   }
 
   @override
@@ -72,107 +69,39 @@ class SeriesDialogState extends State<SeriesDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(
-          widget.currentSeries != null ? 'Modifica Serie' : 'Aggiungi Serie'),
+      title: Text(widget.currentSeries != null ? 'Modifica Serie' : 'Aggiungi Serie'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: _repsController,
-              keyboardType: TextInputType.number,
+              keyboardType: TextInputType.text,
               decoration: const InputDecoration(labelText: 'Reps'),
-              onChanged: (_) => SeriesUtils.updateRPE(
-                  _repsController,
-                  _weightController,
-                  _rpeController,
-                  _intensityController,
-                  widget.latestMaxWeight),
+              onChanged: (_) => _updateRelatedFields(),
             ),
             TextField(
               controller: _setsController,
-              keyboardType: TextInputType.number,
+              keyboardType: TextInputType.text,
               decoration: const InputDecoration(labelText: 'Sets'),
             ),
             TextField(
               controller: _intensityController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
-                TextInputFormatter.withFunction((oldValue, newValue) {
-                  final text = newValue.text.replaceAll(',', '.');
-                  return newValue.copyWith(
-                    text: text,
-                    selection: TextSelection.collapsed(offset: text.length),
-                  );
-                }),
-              ],
+              keyboardType: TextInputType.text,
               decoration: const InputDecoration(labelText: 'Intensità (%)'),
-              onChanged: (value) {
-                SeriesUtils.updateWeightFromIntensity(
-                    _weightController,
-                    _intensityController,
-                    widget.exerciseType,
-                    widget.latestMaxWeight,
-                    widget.weightNotifier);
-              },
+              onChanged: (_) => _updateRelatedFields(),
             ),
             TextField(
               controller: _rpeController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
-                TextInputFormatter.withFunction((oldValue, newValue) {
-                  final text = newValue.text.replaceAll(',', '.');
-                  return newValue.copyWith(
-                    text: text,
-                    selection: TextSelection.collapsed(offset: text.length),
-                  );
-                }),
-              ],
+              keyboardType: TextInputType.text,
               decoration: const InputDecoration(labelText: 'RPE'),
-              onChanged: (_) => SeriesUtils.updateWeightFromRPE(
-                  _repsController,
-                  _weightController,
-                  _rpeController,
-                  _intensityController,
-                  widget.exerciseType,
-                  widget.latestMaxWeight,
-                  widget.weightNotifier),
+              onChanged: (_) => _updateRelatedFields(),
             ),
             TextField(
               controller: _weightController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
-                TextInputFormatter.withFunction((oldValue, newValue) {
-                  final text = newValue.text.replaceAll(',', '.');
-                  return newValue.copyWith(
-                    text: text,
-                    selection: TextSelection.collapsed(offset: text.length),
-                  );
-                }),
-              ],
+              keyboardType: TextInputType.text,
               decoration: const InputDecoration(labelText: 'Peso (kg)'),
-              onChanged: (value) {
-                final newWeight = double.tryParse(value) ?? 0;
-                widget.weightNotifier.value = newWeight;
-                SeriesUtils.updateIntensityFromWeight(
-                  _weightController,
-                  _intensityController,
-                  latestMaxWeight.toDouble(),
-                );
-                SeriesUtils.updateRPE(
-                  _repsController,
-                  _weightController,
-                  _rpeController,
-                  _intensityController,
-                  latestMaxWeight,
-                );
-              },
+              onChanged: (_) => _updateRelatedFields(),
             ),
           ],
         ),
@@ -183,42 +112,118 @@ class SeriesDialogState extends State<SeriesDialog> {
           child: const Text('Annulla'),
         ),
         TextButton(
-          onPressed: () {
-            final reps = int.tryParse(_repsController.text) ?? 0;
-            final sets = int.tryParse(_setsController.text) ?? 1;
-            final intensity = _intensityController.text;
-            final rpe = _rpeController.text;
-            final weight = double.tryParse(_weightController.text) ?? 0;
-
-            if (widget.currentSeries != null) {
-              widget.currentSeries!.reps = reps;
-              widget.currentSeries!.sets = sets;
-              widget.currentSeries!.intensity = intensity;
-              widget.currentSeries!.rpe = rpe;
-              widget.currentSeries!.weight = weight;
-              Navigator.pop(context, [widget.currentSeries!]);
-            } else {
-              final series = List.generate(
-                sets,
-                (index) => Series(
-                  serieId: '',
-                  reps: reps,
-                  sets: 1,
-                  intensity: intensity,
-                  rpe: rpe,
-                  weight: weight,
-                  order: widget.exercise.series.length + index + 1,
-                  done: false,
-                  reps_done: 0,
-                  weight_done: 0.0,
-                ),
-              );
-              Navigator.pop(context, series);
-            }
-          },
+          onPressed: _handleSubmit,
           child: Text(widget.currentSeries != null ? 'Salva' : 'Aggiungi'),
         ),
       ],
     );
   }
+
+  void _updateRelatedFields() {
+    if (!_isRangeInput()) {
+      SeriesUtils.updateRPE(
+        _repsController,
+        _weightController,
+        _rpeController,
+        _intensityController,
+        widget.latestMaxWeight,
+      );
+      
+      SeriesUtils.updateWeightFromIntensity(
+        _weightController,
+        _intensityController,
+        widget.exerciseType,
+        widget.latestMaxWeight,
+        widget.weightNotifier,
+      );
+      
+      SeriesUtils.updateWeightFromRPE(
+        _repsController,
+        _weightController,
+        _rpeController,
+        _intensityController,
+        widget.exerciseType,
+        widget.latestMaxWeight,
+        widget.weightNotifier,
+      );
+    }
+  }
+
+  bool _isRangeInput() {
+    return _repsController.text.contains('-') ||
+           _setsController.text.contains('-') ||
+           _intensityController.text.contains('-') ||
+           _rpeController.text.contains('-') ||
+           _weightController.text.contains('-');
+  }
+
+  void _handleSubmit() {
+    if (_isRangeInput()) {
+      final translatedSeries = _createSeriesFromRangeInput();
+      Navigator.pop(context, translatedSeries);
+    } else {
+      final series = _createSeriesFromInput();
+      Navigator.pop(context, [series]);
+    }
+  }
+
+List<Series> _createSeriesFromRangeInput() {
+  final reps = _parseIntList(_repsController.text);
+  final sets = _parseIntList(_setsController.text);
+  final intensity = _parseStringList(_intensityController.text);
+  final rpe = _parseStringList(_rpeController.text);
+  final weight = _parseDoubleList(_weightController.text);
+
+  // Trova la lunghezza massima tra tutte le liste
+  final maxLength = [reps.length, sets.length, intensity.length, rpe.length, weight.length]
+      .reduce((a, b) => a > b ? a : b);
+
+  // Estendi ogni lista alla lunghezza massima ripetendo l'ultimo elemento
+  reps.addAll(List.filled(maxLength - reps.length, reps.last));
+  sets.addAll(List.filled(maxLength - sets.length, sets.last));
+  intensity.addAll(List.filled(maxLength - intensity.length, intensity.last));
+  rpe.addAll(List.filled(maxLength - rpe.length, rpe.last));
+  weight.addAll(List.filled(maxLength - weight.length, weight.last));
+
+  return RangeSeriesTranslator.translateRangeToSeries(
+    reps, 
+    sets, 
+    intensity, 
+    rpe, 
+    weight,
+    widget.exercise.series.length + 1
+  );
+}
+
+List<int> _parseIntList(String input) {
+  final list = input.split('-').map((e) => int.tryParse(e.trim()) ?? 0).toList();
+  return list.isEmpty ? [0] : list;
+}
+
+List<String> _parseStringList(String input) {
+  final list = input.split('-').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+  return list.isEmpty ? ['0'] : list;
+}
+
+List<double> _parseDoubleList(String input) {
+  final list = input.split('-').map((e) => double.tryParse(e.trim()) ?? 0.0).toList();
+  return list.isEmpty ? [0.0] : list;
+}
+
+  Series _createSeriesFromInput() {
+    return Series(
+      serieId: widget.currentSeries?.serieId ?? '',
+      reps: int.tryParse(_repsController.text) ?? 0,
+      sets: int.tryParse(_setsController.text) ?? 1,
+      intensity: _intensityController.text,
+      rpe: _rpeController.text,
+      weight: double.tryParse(_weightController.text) ?? 0,
+      order: widget.currentSeries?.order ?? (widget.exercise.series.length + 1),
+      done: widget.currentSeries?.done ?? false,
+      reps_done: widget.currentSeries?.reps_done ?? 0,
+      weight_done: widget.currentSeries?.weight_done ?? 0.0,
+    );
+  }
+
+
 }

@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Series {
   String? id;
-  String? serieId;
+  String serieId;
   int reps;
   int sets;
   String intensity;
@@ -31,15 +31,15 @@ class Series {
     return Series(
       id: map['id'],
       serieId: map['serieId'] ?? '',
-      reps: int.tryParse(map['reps']?.toString() ?? '0') ?? 0,
-      sets: int.tryParse(map['sets']?.toString() ?? '0') ?? 0,
-      intensity: map['intensity'] ?? '',
-      rpe: map['rpe'] ?? '',
-      weight: map['weight']?.toDouble() ?? 0.0,
-      order: int.tryParse(map['order']?.toString() ?? '0') ?? 0,
+      reps: map['reps'] ?? 0,
+      sets: map['sets'] ?? 1,
+      intensity: map['intensity'] ?? '0',
+      rpe: map['rpe'] ?? '0',
+      weight: (map['weight'] ?? 0.0).toDouble(),
+      order: map['order'] ?? 0,
       done: map['done'] ?? false,
-      reps_done: int.tryParse(map['reps_done']?.toString() ?? '0') ?? 0,
-      weight_done: map['weight_done']?.toDouble() ?? 0.0,
+      reps_done: map['reps_done'] ?? 0,
+      weight_done: (map['weight_done'] ?? 0.0).toDouble(),
     );
   }
 
@@ -74,21 +74,22 @@ class Series {
     return Series(
       id: doc.id,
       serieId: data['serieId'] ?? '',
-      reps: int.tryParse(data['reps']?.toString() ?? '0') ?? 0,
-      sets: int.tryParse(data['sets']?.toString() ?? '0') ?? 0,
-      intensity: data['intensity'] ?? '',
-      rpe: data['rpe'] ?? '',
-      weight: data['weight']?.toDouble() ?? 0.0,
-      order: int.tryParse(data['order']?.toString() ?? '0') ?? 0,
+      reps: data['reps'] ?? 0,
+      sets: data['sets'] ?? 1,
+      intensity: data['intensity'] ?? '0',
+      rpe: data['rpe'] ?? '0',
+      weight: (data['weight'] ?? 0.0).toDouble(),
+      order: data['order'] ?? 0,
       done: data['done'] ?? false,
-      reps_done: int.tryParse(data['reps_done']?.toString() ?? '0') ?? 0,
-      weight_done: data['weight_done']?.toDouble() ?? 0.0,
+      reps_done: data['reps_done'] ?? 0,
+      weight_done: (data['weight_done'] ?? 0.0).toDouble(),
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,'serieId': serieId,
+      'id': id,
+      'serieId': serieId,
       'reps': reps,
       'sets': sets,
       'intensity': intensity,
@@ -103,17 +104,54 @@ class Series {
 
   Map<String, dynamic> toFirestore() {
     return {
+      'serieId': serieId,
       'reps': reps,
       'sets': sets,
       'intensity': intensity,
       'rpe': rpe,
       'weight': weight,
-      'id': id,
-      'serieId': serieId,
       'order': order,
       'done': done,
       'reps_done': reps_done,
       'weight_done': weight_done,
     };
+  }
+
+  @override
+  String toString() {
+    return 'Series(id: $id, serieId: $serieId, reps: $reps, sets: $sets, intensity: $intensity, rpe: $rpe, weight: $weight, order: $order, done: $done, reps_done: $reps_done, weight_done: $weight_done)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+  
+    return other is Series &&
+      other.id == id &&
+      other.serieId == serieId &&
+      other.reps == reps &&
+      other.sets == sets &&
+      other.intensity == intensity &&
+      other.rpe == rpe &&
+      other.weight == weight &&
+      other.order == order &&
+      other.done == done &&
+      other.reps_done == reps_done &&
+      other.weight_done == weight_done;
+  }
+
+  @override
+  int get hashCode {
+    return id.hashCode ^
+      serieId.hashCode ^
+      reps.hashCode ^
+      sets.hashCode ^
+      intensity.hashCode ^
+      rpe.hashCode ^
+      weight.hashCode ^
+      order.hashCode ^
+      done.hashCode ^
+      reps_done.hashCode ^
+      weight_done.hashCode;
   }
 }
