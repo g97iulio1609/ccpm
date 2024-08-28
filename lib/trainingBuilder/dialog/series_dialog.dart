@@ -1,4 +1,7 @@
+import 'dart:math';
+
 import 'package:alphanessone/trainingBuilder/models/range_series_translator.dart';
+import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
@@ -19,6 +22,7 @@ class SeriesDialog extends StatefulWidget {
   final bool isIndividualEdit;
 
   const SeriesDialog({
+    Key? key,
     required this.exerciseRecordService,
     required this.athleteId,
     required this.exerciseId,
@@ -29,8 +33,7 @@ class SeriesDialog extends StatefulWidget {
     required this.latestMaxWeight,
     required this.weightNotifier,
     this.isIndividualEdit = false,
-    super.key,
-  });
+  }) : super(key: key);
 
   @override
   SeriesDialogState createState() => SeriesDialogState();
@@ -129,7 +132,9 @@ class SeriesDialogState extends State<SeriesDialog> {
   }
 
   void _updateRelatedFields() {
-    if (!_isRangeInput()) {
+    if (_isRangeInput()) {
+      _updateWeightForIntensityRange();
+    } else {
       SeriesUtils.updateRPE(
         _repsController,
         _weightController,
@@ -158,6 +163,20 @@ class SeriesDialogState extends State<SeriesDialog> {
     }
   }
 
+  void _updateWeightForIntensityRange() {
+    final intensities = _parseStringList(_intensityController.text);
+    final weights = _calculateWeightsForIntensityRange(intensities);
+    _weightController.text = weights.join('-');
+  }
+
+  List<String> _calculateWeightsForIntensityRange(List<String> intensities) {
+    return intensities.map((intensity) {
+      double intensityValue = double.tryParse(intensity) ?? 0.0;
+      double weight = (widget.latestMaxWeight * intensityValue / 100).roundToDouble();
+      return SeriesUtils.roundWeight(weight, widget.exerciseType).toString();
+    }).toList();
+  }
+
   bool _isRangeInput() {
     return _repsController.text.contains('-') ||
            _setsController.text.contains('-') ||
@@ -171,72 +190,69 @@ class SeriesDialogState extends State<SeriesDialog> {
     Navigator.pop(context, series);
   }
 
-  List<Series> _createSeries() {
-    if (widget.isIndividualEdit && widget.currentSeriesGroup != null && widget.currentSeriesGroup!.isNotEmpty) {
-      // Modifica individuale di un set esistente
-      Series updatedSeries = widget.currentSeriesGroup!.first.copyWith(
-        reps: int.tryParse(_repsController.text) ?? 0,
-        intensity: _intensityController.text,
-        rpe: _rpeController.text,
-        weight: double.tryParse(_weightController.text) ?? 0.0,
-      );
-      return [updatedSeries];
-    } else {
-      // Creazione di nuove serie o modifica di gruppo
-      final reps = _parseIntList(_repsController.text);
-      final sets = _parseIntList(_setsController.text);
-      final intensity = _parseStringList(_intensityController.text);
-      final rpe = _parseStringList(_rpeController.text);
-      final weight = _calculateWeights(intensity);
+List<Series> _createSeries() {
+  if (widget.isIndividualEdit && widget.currentSeriesGroup != null && widget.currentSeriesGroup!.isNotEmpty) {
+    // Modifica individuale di un set esistente
+    Series updatedSeries = widget.currentSeriesGroup!.first.copyWith(
+      reps: int.tryParse(_repsController.text) ?? 0,
+      intensity: _intensityController.text,
+      rpe: _rpeController.text,
+      weight: double.tryParse(_weightController.text) ?? 0.0,
+    );
+    return [updatedSeries];
+  } else {
+    // Creazione di nuove serie o modifica di gruppo
+    final reps = _parseIntList(_repsController.text);
+    final sets = _parseIntList(_setsController.text);
+    final intensity = _parseStringList(_intensityController.text);
+    final rpe = _parseStringList(_rpeController.text);
+    final weight = _parseDoubleList(_weightController.text);
 
-      List<Series> newSeries = RangeSeriesTranslator.translateRangeToSeries(
-        reps, 
-        sets, 
-        intensity, 
-        rpe, 
-        weight,
-        widget.exercise.series.length + 1
-      );
+    List<Series> newSeries = [];
+    int currentOrder = widget.exercise.series.length + 1;
 
-      if (sets.length == 1 && sets[0] > 1) {
-        int totalSets = sets[0];
-        newSeries = List.generate(totalSets, (index) => 
-          newSeries[0].copyWith(
-            serieId: index < newSeries.length ? newSeries[index].serieId : null,
-            order: widget.exercise.series.length + index + 1
-          )
-        );
+    for (int i = 0; i < reps.length; i++) {
+      int currentSets = i < sets.length ? sets[i] : sets.last;
+      for (int j = 0; j < currentSets; j++) {
+        newSeries.add(Series(
+          serieId: generateRandomId(16),
+          reps: reps[i],
+          sets: 1,
+          intensity: i < intensity.length ? intensity[i] : intensity.last,
+          rpe: i < rpe.length ? rpe[i] : rpe.last,
+          weight: i < weight.length ? weight[i] : weight.last,
+          order: currentOrder++,
+          done: false,
+          reps_done: 0,
+          weight_done: 0.0,
+        ));
       }
-
-      if (widget.currentSeriesGroup != null) {
-        for (int i = 0; i < newSeries.length && i < widget.currentSeriesGroup!.length; i++) {
-          newSeries[i].serieId = widget.currentSeriesGroup![i].serieId;
-        }
-      }
-
-      return newSeries;
     }
-  }
 
-  List<double> _calculateWeights(List<String> intensities) {
-    return intensities.map((intensity) {
-      double intensityValue = double.tryParse(intensity) ?? 0.0;
-      return (widget.latestMaxWeight * intensityValue / 100).roundToDouble();
-    }).toList();
-  }
+    if (widget.currentSeriesGroup != null) {
+      for (int i = 0; i < newSeries.length && i < widget.currentSeriesGroup!.length; i++) {
+        newSeries[i] = newSeries[i].copyWith(serieId: widget.currentSeriesGroup![i].serieId);
+      }
+    }
 
-  List<int> _parseIntList(String input) {
-    final list = input.split('-').map((e) => int.tryParse(e.trim()) ?? 0).toList();
-    return list.isEmpty ? [0] : list;
+    return newSeries;
   }
+}
 
-  List<String> _parseStringList(String input) {
-    final list = input.split('-').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-    return list.isEmpty ? ['0'] : list;
-  }
 
-  List<double> _parseDoubleList(String input) {
-    final list = input.split('-').map((e) => double.tryParse(e.trim()) ?? 0.0).toList();
-    return list.isEmpty ? [0.0] : list;
-  }
+List<int> _parseIntList(String input) {
+  final list = input.split('-').map((e) => int.tryParse(e.trim()) ?? 0).toList();
+  return list.isEmpty ? [0] : list;
+}
+
+List<String> _parseStringList(String input) {
+  final list = input.split('-').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+  return list.isEmpty ? ['0'] : list;
+}
+
+List<double> _parseDoubleList(String input) {
+  final list = input.split('-').map((e) => double.tryParse(e.trim()) ?? 0.0).toList();
+  return list.isEmpty ? [0.0] : list;
+}
+
 }
