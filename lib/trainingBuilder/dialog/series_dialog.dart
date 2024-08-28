@@ -128,7 +128,7 @@ class SeriesDialogState extends State<SeriesDialog> {
         _intensityController,
         widget.latestMaxWeight,
       );
-      
+
       SeriesUtils.updateWeightFromIntensity(
         _weightController,
         _intensityController,
@@ -136,7 +136,7 @@ class SeriesDialogState extends State<SeriesDialog> {
         widget.latestMaxWeight,
         widget.weightNotifier,
       );
-      
+
       SeriesUtils.updateWeightFromRPE(
         _repsController,
         _weightController,
@@ -158,72 +158,42 @@ class SeriesDialogState extends State<SeriesDialog> {
   }
 
   void _handleSubmit() {
-    if (_isRangeInput()) {
-      final translatedSeries = _createSeriesFromRangeInput();
-      Navigator.pop(context, translatedSeries);
-    } else {
-      final series = _createSeriesFromInput();
-      Navigator.pop(context, [series]);
-    }
+    final series = _createSeries();
+    Navigator.pop(context, series);
   }
 
-List<Series> _createSeriesFromRangeInput() {
-  final reps = _parseIntList(_repsController.text);
-  final sets = _parseIntList(_setsController.text);
-  final intensity = _parseStringList(_intensityController.text);
-  final rpe = _parseStringList(_rpeController.text);
-  final weight = _parseDoubleList(_weightController.text);
+  List<Series> _createSeries() {
+    final reps = _parseIntList(_repsController.text);
+    final sets = _parseIntList(_setsController.text);
+    final intensity = _parseStringList(_intensityController.text);
+    final rpe = _parseStringList(_rpeController.text);
+    final weight = _calculateWeights(intensity);
 
-  // Trova la lunghezza massima tra tutte le liste
-  final maxLength = [reps.length, sets.length, intensity.length, rpe.length, weight.length]
-      .reduce((a, b) => a > b ? a : b);
-
-  // Estendi ogni lista alla lunghezza massima ripetendo l'ultimo elemento
-  reps.addAll(List.filled(maxLength - reps.length, reps.last));
-  sets.addAll(List.filled(maxLength - sets.length, sets.last));
-  intensity.addAll(List.filled(maxLength - intensity.length, intensity.last));
-  rpe.addAll(List.filled(maxLength - rpe.length, rpe.last));
-  weight.addAll(List.filled(maxLength - weight.length, weight.last));
-
-  return RangeSeriesTranslator.translateRangeToSeries(
-    reps, 
-    sets, 
-    intensity, 
-    rpe, 
-    weight,
-    widget.exercise.series.length + 1
-  );
-}
-
-List<int> _parseIntList(String input) {
-  final list = input.split('-').map((e) => int.tryParse(e.trim()) ?? 0).toList();
-  return list.isEmpty ? [0] : list;
-}
-
-List<String> _parseStringList(String input) {
-  final list = input.split('-').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-  return list.isEmpty ? ['0'] : list;
-}
-
-List<double> _parseDoubleList(String input) {
-  final list = input.split('-').map((e) => double.tryParse(e.trim()) ?? 0.0).toList();
-  return list.isEmpty ? [0.0] : list;
-}
-
-  Series _createSeriesFromInput() {
-    return Series(
-      serieId: widget.currentSeries?.serieId ?? '',
-      reps: int.tryParse(_repsController.text) ?? 0,
-      sets: int.tryParse(_setsController.text) ?? 1,
-      intensity: _intensityController.text,
-      rpe: _rpeController.text,
-      weight: double.tryParse(_weightController.text) ?? 0,
-      order: widget.currentSeries?.order ?? (widget.exercise.series.length + 1),
-      done: widget.currentSeries?.done ?? false,
-      reps_done: widget.currentSeries?.reps_done ?? 0,
-      weight_done: widget.currentSeries?.weight_done ?? 0.0,
+    return RangeSeriesTranslator.translateRangeToSeries(
+      reps, 
+      sets, 
+      intensity, 
+      rpe, 
+      weight,
+      widget.exercise.series.length + 1
     );
   }
 
+  List<double> _calculateWeights(List<String> intensities) {
+    return intensities.map((intensity) {
+      double intensityValue = double.tryParse(intensity) ?? 0.0;
+      return (widget.latestMaxWeight * intensityValue / 100).roundToDouble();
+    }).toList();
+  }
+
+  List<int> _parseIntList(String input) {
+    final list = input.split('-').map((e) => int.tryParse(e.trim()) ?? 0).toList();
+    return list.isEmpty ? [0] : list;
+  }
+
+  List<String> _parseStringList(String input) {
+    final list = input.split('-').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    return list.isEmpty ? ['0'] : list;
+  }
 
 }

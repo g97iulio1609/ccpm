@@ -1,7 +1,6 @@
 import 'package:alphanessone/trainingBuilder/models/series_model.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 
-
 class RangeSeriesTranslator {
   static List<Series> translateRangeToSeries(
     List<int> reps,
@@ -14,15 +13,27 @@ class RangeSeriesTranslator {
     List<Series> translatedSeries = [];
     int currentOrder = startOrder;
 
-    for (int i = 0; i < reps.length; i++) {
-      for (int j = 0; j < (sets[i] > 0 ? sets[i] : 1); j++) {
+    bool isSetRange = sets.length > 1;
+    int totalSets = isSetRange ? sets.reduce((a, b) => a + b) : sets[0];
+
+    int maxLength = [reps.length, intensity.length, rpe.length, weight.length]
+        .reduce((a, b) => a > b ? a : b);
+
+    for (int i = 0; i < maxLength; i++) {
+      int currentReps = i < reps.length ? reps[i] : reps.last;
+      int currentSets = isSetRange ? (i < sets.length ? sets[i] : sets.last) : 1;
+      String currentIntensity = i < intensity.length ? intensity[i] : intensity.last;
+      String currentRpe = i < rpe.length ? rpe[i] : rpe.last;
+      double currentWeight = i < weight.length ? weight[i] : weight.last;
+
+      for (int j = 0; j < (isSetRange ? currentSets : 1); j++) {
         translatedSeries.add(Series(
           serieId: generateRandomId(16),
-          reps: reps[i],
-          sets: 1,
-          intensity: intensity[i],
-          rpe: rpe[i],
-          weight: weight[i],
+          reps: currentReps,
+          sets: isSetRange ? 1 : totalSets,
+          intensity: currentIntensity,
+          rpe: currentRpe,
+          weight: currentWeight,
           order: currentOrder++,
           done: false,
           reps_done: 0,
