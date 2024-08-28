@@ -19,7 +19,7 @@ class SeriesDialog extends StatefulWidget {
   final bool isIndividualEdit;
 
   const SeriesDialog({
-    Key? key,
+    super.key,
     required this.exerciseRecordService,
     required this.athleteId,
     required this.exerciseId,
@@ -30,7 +30,7 @@ class SeriesDialog extends StatefulWidget {
     required this.latestMaxWeight,
     required this.weightNotifier,
     this.isIndividualEdit = false,
-  }) : super(key: key);
+  });
 
   @override
   SeriesDialogState createState() => SeriesDialogState();
