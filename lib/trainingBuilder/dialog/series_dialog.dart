@@ -1,9 +1,6 @@
-import 'dart:math';
 
-import 'package:alphanessone/trainingBuilder/models/range_series_translator.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 import 'package:alphanessone/trainingBuilder/series_utils.dart';
 import 'package:alphanessone/trainingBuilder/models/series_model.dart';
@@ -190,53 +187,55 @@ class SeriesDialogState extends State<SeriesDialog> {
     Navigator.pop(context, series);
   }
 
+
 List<Series> _createSeries() {
-  if (widget.isIndividualEdit && widget.currentSeriesGroup != null && widget.currentSeriesGroup!.isNotEmpty) {
-    // Modifica individuale di un set esistente
-    Series updatedSeries = widget.currentSeriesGroup!.first.copyWith(
-      reps: int.tryParse(_repsController.text) ?? 0,
-      intensity: _intensityController.text,
-      rpe: _rpeController.text,
-      weight: double.tryParse(_weightController.text) ?? 0.0,
-    );
-    return [updatedSeries];
-  } else {
-    // Creazione di nuove serie o modifica di gruppo
-    final reps = _parseIntList(_repsController.text);
-    final sets = _parseIntList(_setsController.text);
-    final intensity = _parseStringList(_intensityController.text);
-    final rpe = _parseStringList(_rpeController.text);
-    final weight = _parseDoubleList(_weightController.text);
+  final reps = _parseIntList(_repsController.text);
+  final sets = _parseIntList(_setsController.text);
+  final intensity = _parseStringList(_intensityController.text);
+  final rpe = _parseStringList(_rpeController.text);
+  final weight = _parseDoubleList(_weightController.text);
 
-    List<Series> newSeries = [];
-    int currentOrder = widget.exercise.series.length + 1;
+  List<Series> newSeries = [];
+  int currentOrder = widget.exercise.series.length + 1;
 
-    for (int i = 0; i < reps.length; i++) {
-      int currentSets = i < sets.length ? sets[i] : sets.last;
-      for (int j = 0; j < currentSets; j++) {
-        newSeries.add(Series(
+  bool isModifyingExisting = widget.currentSeriesGroup != null && widget.currentSeriesGroup!.isNotEmpty;
+  int existingSeriesCount = isModifyingExisting ? widget.currentSeriesGroup!.length : 0;
+
+  for (int i = 0; i < reps.length; i++) {
+    int currentSets = i < sets.length ? sets[i] : sets.last;
+    for (int j = 0; j < currentSets; j++) {
+      Series newSerie;
+      if (isModifyingExisting && newSeries.length < existingSeriesCount) {
+        // Modifica una serie esistente
+        newSerie = widget.currentSeriesGroup![newSeries.length].copyWith(
+          reps: reps[i],
+          sets: 1,
+          intensity: i < intensity.length ? intensity[i] : intensity.last,
+          rpe: i < rpe.length ? rpe[i] : rpe.last,
+          weight: i < weight.length ? weight[i] : weight.last,
+          order: currentOrder,
+        );
+      } else {
+        // Crea una nuova serie
+        newSerie = Series(
           serieId: generateRandomId(16),
           reps: reps[i],
           sets: 1,
           intensity: i < intensity.length ? intensity[i] : intensity.last,
           rpe: i < rpe.length ? rpe[i] : rpe.last,
           weight: i < weight.length ? weight[i] : weight.last,
-          order: currentOrder++,
+          order: currentOrder,
           done: false,
           reps_done: 0,
           weight_done: 0.0,
-        ));
+        );
       }
+      newSeries.add(newSerie);
+      currentOrder++;
     }
-
-    if (widget.currentSeriesGroup != null) {
-      for (int i = 0; i < newSeries.length && i < widget.currentSeriesGroup!.length; i++) {
-        newSeries[i] = newSeries[i].copyWith(serieId: widget.currentSeriesGroup![i].serieId);
-      }
-    }
-
-    return newSeries;
   }
+
+  return newSeries;
 }
 
 
@@ -254,5 +253,4 @@ List<double> _parseDoubleList(String input) {
   final list = input.split('-').map((e) => double.tryParse(e.trim()) ?? 0.0).toList();
   return list.isEmpty ? [0.0] : list;
 }
-
 }
