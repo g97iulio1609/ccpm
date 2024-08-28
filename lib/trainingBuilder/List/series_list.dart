@@ -298,7 +298,7 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
         exerciseType: widget.exerciseType,
         weekIndex: widget.weekIndex,
         exercise: exercise,
-        currentSeries: seriesGroup?.first,
+        currentSeriesGroup: seriesGroup,
         latestMaxWeight: latestMaxWeight,
         weightNotifier: ValueNotifier<double>(0.0),
       ),
@@ -318,18 +318,16 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
         .workouts[widget.workoutIndex].exercises[widget.exerciseIndex];
     final seriesIndex = exercise.series.indexOf(oldSeriesGroup.first);
 
-    // Remove extra series if needed
-    for (int i = updatedSeries.length; i < oldSeriesGroup.length; i++) {
-      widget.controller.program.trackToDeleteSeries.add(oldSeriesGroup[i].serieId!);
-    }
+    // Rimuovi le serie vecchie
+    exercise.series.removeRange(seriesIndex, seriesIndex + oldSeriesGroup.length);
 
-    // Update order for new series
-    for (int i = 0; i < updatedSeries.length; i++) {
-      updatedSeries[i].order = seriesIndex + i + 1;
-    }
+    // Inserisci le nuove serie
+    exercise.series.insertAll(seriesIndex, updatedSeries);
 
-    // Replace old series with updated ones
-    exercise.series.replaceRange(seriesIndex, seriesIndex + oldSeriesGroup.length, updatedSeries);
+    // Aggiorna l'ordine delle serie
+    for (int i = 0; i < exercise.series.length; i++) {
+      exercise.series[i].order = i + 1;
+    }
 
     widget.controller.updateSeries(widget.weekIndex, widget.workoutIndex, widget.exerciseIndex, exercise.series);
   }
@@ -338,13 +336,16 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
     final exercise = widget.controller.program.weeks[widget.weekIndex]
         .workouts[widget.workoutIndex].exercises[widget.exerciseIndex];
 
-    // Update order for new series
-    for (int i = 0; i < newSeries.length; i++) {
-      newSeries[i].order = exercise.series.length + i + 1;
-    }
-
+    // Aggiungi le nuove serie
     exercise.series.addAll(newSeries);
+
+    // Aggiorna l'ordine delle serie
+    for (int i = 0; i < exercise.series.length; i++) {
+      exercise.series[i].order = i + 1;
+    }
 
     widget.controller.updateSeries(widget.weekIndex, widget.workoutIndex, widget.exerciseIndex, exercise.series);
   }
+
+ 
 }

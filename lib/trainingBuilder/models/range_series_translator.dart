@@ -26,11 +26,11 @@ class RangeSeriesTranslator {
       String currentRpe = i < rpe.length ? rpe[i] : rpe.last;
       double currentWeight = i < weight.length ? weight[i] : weight.last;
 
-      for (int j = 0; j < (isSetRange ? currentSets : 1); j++) {
+      for (int j = 0; j < (isSetRange ? currentSets : totalSets); j++) {
         translatedSeries.add(Series(
           serieId: generateRandomId(16),
           reps: currentReps,
-          sets: isSetRange ? 1 : totalSets,
+          sets: 1,
           intensity: currentIntensity,
           rpe: currentRpe,
           weight: currentWeight,

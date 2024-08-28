@@ -13,7 +13,7 @@ class SeriesDialog extends StatefulWidget {
   final int weekIndex;
   final Exercise exercise;
   final String exerciseType;
-  final Series? currentSeries;
+  final List<Series>? currentSeriesGroup;
   final num latestMaxWeight;
   final ValueNotifier<double> weightNotifier;
 
@@ -24,7 +24,7 @@ class SeriesDialog extends StatefulWidget {
     required this.exerciseType,
     required this.weekIndex,
     required this.exercise,
-    this.currentSeries,
+    this.currentSeriesGroup,
     required this.latestMaxWeight,
     required this.weightNotifier,
     super.key,
@@ -44,16 +44,20 @@ class SeriesDialogState extends State<SeriesDialog> {
   @override
   void initState() {
     super.initState();
-    _repsController = TextEditingController(
-        text: widget.currentSeries?.reps.toString() ?? '');
-    _setsController = TextEditingController(
-        text: widget.currentSeries?.sets.toString() ?? '1');
-    _intensityController = TextEditingController(
-        text: widget.currentSeries?.intensity.toString() ?? '');
-    _rpeController =
-        TextEditingController(text: widget.currentSeries?.rpe.toString() ?? '');
-    _weightController = TextEditingController(
-        text: widget.currentSeries?.weight.toString() ?? '');
+    if (widget.currentSeriesGroup != null && widget.currentSeriesGroup!.isNotEmpty) {
+      Series firstSeries = widget.currentSeriesGroup!.first;
+      _repsController = TextEditingController(text: firstSeries.reps.toString());
+      _setsController = TextEditingController(text: widget.currentSeriesGroup!.length.toString());
+      _intensityController = TextEditingController(text: firstSeries.intensity.toString());
+      _rpeController = TextEditingController(text: firstSeries.rpe.toString());
+      _weightController = TextEditingController(text: firstSeries.weight.toString());
+    } else {
+      _repsController = TextEditingController();
+      _setsController = TextEditingController(text: '1');
+      _intensityController = TextEditingController();
+      _rpeController = TextEditingController();
+      _weightController = TextEditingController();
+    }
   }
 
   @override
@@ -69,7 +73,7 @@ class SeriesDialogState extends State<SeriesDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.currentSeries != null ? 'Modifica Serie' : 'Aggiungi Serie'),
+      title: Text(widget.currentSeriesGroup != null ? 'Modifica Gruppo Serie' : 'Aggiungi Serie'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -113,7 +117,7 @@ class SeriesDialogState extends State<SeriesDialog> {
         ),
         TextButton(
           onPressed: _handleSubmit,
-          child: Text(widget.currentSeries != null ? 'Salva' : 'Aggiungi'),
+          child: Text(widget.currentSeriesGroup != null ? 'Salva' : 'Aggiungi'),
         ),
       ],
     );
@@ -162,14 +166,14 @@ class SeriesDialogState extends State<SeriesDialog> {
     Navigator.pop(context, series);
   }
 
-  List<Series> _createSeries() {
+List<Series> _createSeries() {
     final reps = _parseIntList(_repsController.text);
     final sets = _parseIntList(_setsController.text);
     final intensity = _parseStringList(_intensityController.text);
     final rpe = _parseStringList(_rpeController.text);
     final weight = _calculateWeights(intensity);
 
-    return RangeSeriesTranslator.translateRangeToSeries(
+    List<Series> newSeries = RangeSeriesTranslator.translateRangeToSeries(
       reps, 
       sets, 
       intensity, 
@@ -177,8 +181,28 @@ class SeriesDialogState extends State<SeriesDialog> {
       weight,
       widget.exercise.series.length + 1
     );
-  }
 
+    // Se 'sets' non è un range, ma un singolo valore, aggiusta il numero di serie
+    if (sets.length == 1 && sets[0] > 1) {
+      int totalSets = sets[0];
+      newSeries = List.generate(totalSets, (index) => 
+        newSeries[0].copyWith(
+          serieId: index < newSeries.length ? newSeries[index].serieId : null,
+          order: widget.exercise.series.length + index + 1
+        )
+      );
+    }
+
+    if (widget.currentSeriesGroup != null) {
+      // Preserve the original serieId for existing series
+      for (int i = 0; i < newSeries.length && i < widget.currentSeriesGroup!.length; i++) {
+        newSeries[i].serieId = widget.currentSeriesGroup![i].serieId;
+      }
+    }
+
+    return newSeries;
+  }
+  
   List<double> _calculateWeights(List<String> intensities) {
     return intensities.map((intensity) {
       double intensityValue = double.tryParse(intensity) ?? 0.0;
@@ -196,4 +220,8 @@ class SeriesDialogState extends State<SeriesDialog> {
     return list.isEmpty ? ['0'] : list;
   }
 
+  List<double> _parseDoubleList(String input) {
+    final list = input.split('-').map((e) => double.tryParse(e.trim()) ?? 0.0).toList();
+    return list.isEmpty ? [0.0] : list;
+  }
 }
