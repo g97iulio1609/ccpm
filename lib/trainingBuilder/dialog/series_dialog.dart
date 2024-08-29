@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 import 'package:alphanessone/trainingBuilder/series_utils.dart';
 import 'package:alphanessone/trainingBuilder/models/series_model.dart';
 import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
+import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 
 class SeriesDialog extends StatefulWidget {
   final ExerciseRecordService exerciseRecordService;
@@ -12,170 +12,55 @@ class SeriesDialog extends StatefulWidget {
   final int weekIndex;
   final Exercise exercise;
   final String exerciseType;
-  final Series? currentSeries;
+  final List<Series>? currentSeriesGroup;
   final num latestMaxWeight;
   final ValueNotifier<double> weightNotifier;
+  final bool isIndividualEdit;
 
   const SeriesDialog({
+    super.key,
     required this.exerciseRecordService,
     required this.athleteId,
     required this.exerciseId,
     required this.exerciseType,
     required this.weekIndex,
     required this.exercise,
-    this.currentSeries,
+    this.currentSeriesGroup,
     required this.latestMaxWeight,
     required this.weightNotifier,
-    super.key,
+    this.isIndividualEdit = false,
   });
 
   @override
-  SeriesDialogState createState() => SeriesDialogState();
+  State<SeriesDialog> createState() => _SeriesDialogState();
 }
 
-class SeriesDialogState extends State<SeriesDialog> {
-  late num latestMaxWeight;
-
-  late TextEditingController _repsController;
-  late TextEditingController _setsController;
-  late TextEditingController _intensityController;
-  late TextEditingController _rpeController;
-  late TextEditingController _weightController;
+class _SeriesDialogState extends State<SeriesDialog> {
+  late final SeriesFormController _formController;
 
   @override
   void initState() {
     super.initState();
-    latestMaxWeight = widget.latestMaxWeight;
-
-    _repsController = TextEditingController(
-        text: widget.currentSeries?.reps.toString() ?? '');
-    _setsController = TextEditingController(
-        text: widget.currentSeries?.sets.toString() ?? '1');
-    _intensityController = TextEditingController(
-        text: widget.currentSeries?.intensity.toString() ?? '');
-    _rpeController =
-        TextEditingController(text: widget.currentSeries?.rpe.toString() ?? '');
-    _weightController = TextEditingController(
-        text: widget.currentSeries?.weight.toStringAsFixed(2) ?? '');
+    _formController = SeriesFormController(
+      currentSeriesGroup: widget.currentSeriesGroup,
+      isIndividualEdit: widget.isIndividualEdit,
+      latestMaxWeight: widget.latestMaxWeight,
+      exerciseType: widget.exerciseType,
+    );
   }
 
   @override
   void dispose() {
-    _repsController.dispose();
-    _setsController.dispose();
-    _intensityController.dispose();
-    _rpeController.dispose();
-    _weightController.dispose();
+    _formController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(
-          widget.currentSeries != null ? 'Modifica Serie' : 'Aggiungi Serie'),
+      title: Text(_getDialogTitle()),
       content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _repsController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Reps'),
-              onChanged: (_) => SeriesUtils.updateRPE(
-                  _repsController,
-                  _weightController,
-                  _rpeController,
-                  _intensityController,
-                  widget.latestMaxWeight),
-            ),
-            TextField(
-              controller: _setsController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Sets'),
-            ),
-            TextField(
-              controller: _intensityController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
-                TextInputFormatter.withFunction((oldValue, newValue) {
-                  final text = newValue.text.replaceAll(',', '.');
-                  return newValue.copyWith(
-                    text: text,
-                    selection: TextSelection.collapsed(offset: text.length),
-                  );
-                }),
-              ],
-              decoration: const InputDecoration(labelText: 'Intensità (%)'),
-              onChanged: (value) {
-                SeriesUtils.updateWeightFromIntensity(
-                    _weightController,
-                    _intensityController,
-                    widget.exerciseType,
-                    widget.latestMaxWeight,
-                    widget.weightNotifier);
-              },
-            ),
-            TextField(
-              controller: _rpeController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
-                TextInputFormatter.withFunction((oldValue, newValue) {
-                  final text = newValue.text.replaceAll(',', '.');
-                  return newValue.copyWith(
-                    text: text,
-                    selection: TextSelection.collapsed(offset: text.length),
-                  );
-                }),
-              ],
-              decoration: const InputDecoration(labelText: 'RPE'),
-              onChanged: (_) => SeriesUtils.updateWeightFromRPE(
-                  _repsController,
-                  _weightController,
-                  _rpeController,
-                  _intensityController,
-                  widget.exerciseType,
-                  widget.latestMaxWeight,
-                  widget.weightNotifier),
-            ),
-            TextField(
-              controller: _weightController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
-                TextInputFormatter.withFunction((oldValue, newValue) {
-                  final text = newValue.text.replaceAll(',', '.');
-                  return newValue.copyWith(
-                    text: text,
-                    selection: TextSelection.collapsed(offset: text.length),
-                  );
-                }),
-              ],
-              decoration: const InputDecoration(labelText: 'Peso (kg)'),
-              onChanged: (value) {
-                final newWeight = double.tryParse(value) ?? 0;
-                widget.weightNotifier.value = newWeight;
-                SeriesUtils.updateIntensityFromWeight(
-                  _weightController,
-                  _intensityController,
-                  latestMaxWeight.toDouble(),
-                );
-                SeriesUtils.updateRPE(
-                  _repsController,
-                  _weightController,
-                  _rpeController,
-                  _intensityController,
-                  latestMaxWeight,
-                );
-              },
-            ),
-          ],
-        ),
+        child: SeriesForm(controller: _formController),
       ),
       actions: [
         TextButton(
@@ -183,42 +68,286 @@ class SeriesDialogState extends State<SeriesDialog> {
           child: const Text('Annulla'),
         ),
         TextButton(
-          onPressed: () {
-            final reps = int.tryParse(_repsController.text) ?? 0;
-            final sets = int.tryParse(_setsController.text) ?? 1;
-            final intensity = _intensityController.text;
-            final rpe = _rpeController.text;
-            final weight = double.tryParse(_weightController.text) ?? 0;
-
-            if (widget.currentSeries != null) {
-              widget.currentSeries!.reps = reps;
-              widget.currentSeries!.sets = sets;
-              widget.currentSeries!.intensity = intensity;
-              widget.currentSeries!.rpe = rpe;
-              widget.currentSeries!.weight = weight;
-              Navigator.pop(context, [widget.currentSeries!]);
-            } else {
-              final series = List.generate(
-                sets,
-                (index) => Series(
-                  serieId: '',
-                  reps: reps,
-                  sets: 1,
-                  intensity: intensity,
-                  rpe: rpe,
-                  weight: weight,
-                  order: widget.exercise.series.length + index + 1,
-                  done: false,
-                  reps_done: 0,
-                  weight_done: 0.0,
-                ),
-              );
-              Navigator.pop(context, series);
-            }
-          },
-          child: Text(widget.currentSeries != null ? 'Salva' : 'Aggiungi'),
+          onPressed: _handleSubmit,
+          child: Text(widget.currentSeriesGroup != null ? 'Salva' : 'Aggiungi'),
         ),
       ],
     );
+  }
+
+  String _getDialogTitle() {
+    if (widget.currentSeriesGroup != null) {
+      return widget.isIndividualEdit ? 'Modifica Serie' : 'Modifica Gruppo Serie';
+    }
+    return 'Aggiungi Serie';
+  }
+
+  void _handleSubmit() {
+    final series = _formController.createSeries(widget.exercise.series.length);
+    Navigator.pop(context, series);
+  }
+}
+
+class SeriesForm extends StatelessWidget {
+  final SeriesFormController controller;
+
+  const SeriesForm({super.key, required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildTextField(controller.repsController, 'Reps', controller.repsNode),
+        if (!controller.isIndividualEdit)
+          _buildTextField(controller.setsController, 'Sets', controller.setsNode),
+        _buildTextField(controller.intensityController, 'Intensità (%)', controller.intensityNode),
+        _buildTextField(controller.rpeController, 'RPE', controller.rpeNode),
+        _buildTextField(controller.weightController, 'Peso (kg)', controller.weightNode),
+      ],
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String label, FocusNode focusNode) {
+    return TextField(
+      controller: controller,
+      focusNode: focusNode,
+      keyboardType: TextInputType.text,
+      decoration: InputDecoration(labelText: label),
+      onChanged: (_) => this.controller.updateRelatedFields(),
+    );
+  }
+}
+
+class SeriesFormController {
+  final TextEditingController repsController;
+  final TextEditingController setsController;
+  final TextEditingController intensityController;
+  final TextEditingController rpeController;
+  final TextEditingController weightController;
+
+  final FocusNode repsNode;
+  final FocusNode setsNode;
+  final FocusNode intensityNode;
+  final FocusNode rpeNode;
+  final FocusNode weightNode;
+
+  String _lastEditedField = '';
+  final bool isIndividualEdit;
+  final num latestMaxWeight;
+  final String exerciseType;
+
+  SeriesFormController({
+    List<Series>? currentSeriesGroup,
+    required this.isIndividualEdit,
+    required this.latestMaxWeight,
+    required this.exerciseType,
+  }) : repsController = TextEditingController(),
+       setsController = TextEditingController(),
+       intensityController = TextEditingController(),
+       rpeController = TextEditingController(),
+       weightController = TextEditingController(),
+       repsNode = FocusNode(),
+       setsNode = FocusNode(),
+       intensityNode = FocusNode(),
+       rpeNode = FocusNode(),
+       weightNode = FocusNode() {
+    _initializeControllers(currentSeriesGroup);
+    _setupFocusListeners();
+  }
+
+  void _initializeControllers(List<Series>? currentSeriesGroup) {
+    if (currentSeriesGroup != null && currentSeriesGroup.isNotEmpty) {
+      repsController.text = _getGroupedValue(currentSeriesGroup, (s) => s.reps.toString());
+      setsController.text = isIndividualEdit ? '1' : currentSeriesGroup.length.toString();
+      intensityController.text = _getGroupedValue(currentSeriesGroup, (s) => s.intensity);
+      rpeController.text = _getGroupedValue(currentSeriesGroup, (s) => s.rpe);
+      weightController.text = _getGroupedValue(currentSeriesGroup, (s) => s.weight.toString());
+    } else {
+      setsController.text = '1';
+    }
+  }
+
+  String _getGroupedValue(List<Series> series, String Function(Series) getValue) {
+    var values = series.map(getValue).toSet().toList();
+    return values.length == 1 ? values.first : values.join('-');
+  }
+
+  void _setupFocusListeners() {
+    repsNode.addListener(() => _onFocusChange(repsNode, 'reps'));
+    setsNode.addListener(() => _onFocusChange(setsNode, 'sets'));
+    intensityNode.addListener(() => _onFocusChange(intensityNode, 'intensity'));
+    rpeNode.addListener(() => _onFocusChange(rpeNode, 'rpe'));
+    weightNode.addListener(() => _onFocusChange(weightNode, 'weight'));
+  }
+
+  void _onFocusChange(FocusNode node, String fieldName) {
+    if (node.hasFocus) {
+      _lastEditedField = fieldName;
+    }
+  }
+
+  void updateRelatedFields() {
+    if (_isRangeInput()) {
+      _updateFieldsForRangeInput();
+    } else {
+      _updateFieldsForSingleInput();
+    }
+  }
+
+  bool _isRangeInput() {
+    return repsController.text.contains('-') ||
+           setsController.text.contains('-') ||
+           intensityController.text.contains('-') ||
+           rpeController.text.contains('-') ||
+           weightController.text.contains('-');
+  }
+
+  void _updateFieldsForRangeInput() {
+    switch (_lastEditedField) {
+      case 'weight':
+        _updateIntensityForWeightRange();
+        break;
+      case 'intensity':
+        _updateWeightForIntensityRange();
+        break;
+      case 'rpe':
+        _updateWeightForRPERange();
+        break;
+    }
+  }
+
+  void _updateFieldsForSingleInput() {
+    final reps = int.tryParse(repsController.text) ?? 0;
+    final weight = double.tryParse(weightController.text) ?? 0.0;
+    final intensity = double.tryParse(intensityController.text) ?? 0.0;
+    final rpe = double.tryParse(rpeController.text) ?? 0.0;
+
+    switch (_lastEditedField) {
+      case 'weight':
+        if (weight > 0) {
+          intensityController.text = SeriesUtils.calculateIntensityFromWeight(weight, latestMaxWeight).toStringAsFixed(2);
+          rpeController.text = SeriesUtils.calculateRPE(weight, latestMaxWeight, reps)?.toStringAsFixed(1) ?? '';
+        }
+        break;
+      case 'intensity':
+        if (intensity > 0) {
+          final calculatedWeight = SeriesUtils.calculateWeightFromIntensity(latestMaxWeight.toDouble(), intensity);
+          weightController.text = SeriesUtils.roundWeight(calculatedWeight, exerciseType).toStringAsFixed(2);
+          rpeController.text = SeriesUtils.calculateRPE(calculatedWeight, latestMaxWeight, reps)?.toStringAsFixed(1) ?? '';
+        }
+        break;
+      case 'rpe':
+        if (rpe > 0) {
+          final percentage = SeriesUtils.getRPEPercentage(rpe, reps);
+          final calculatedWeight = latestMaxWeight.toDouble() * percentage;
+          weightController.text = SeriesUtils.roundWeight(calculatedWeight, exerciseType).toStringAsFixed(2);
+          intensityController.text = SeriesUtils.calculateIntensityFromWeight(calculatedWeight, latestMaxWeight).toStringAsFixed(2);
+        }
+        break;
+    }
+  }
+
+  void _updateIntensityForWeightRange() {
+    final weights = _parseDoubleList(weightController.text);
+    final intensities = weights.map((weight) =>
+      SeriesUtils.calculateIntensityFromWeight(weight, latestMaxWeight).toStringAsFixed(2)
+    ).toList();
+    intensityController.text = intensities.join('-');
+  }
+
+  void _updateWeightForIntensityRange() {
+    final intensities = _parseDoubleList(intensityController.text);
+    final weights = intensities.map((intensity) {
+      final calculatedWeight = SeriesUtils.calculateWeightFromIntensity(latestMaxWeight.toDouble(), intensity);
+      return SeriesUtils.roundWeight(calculatedWeight, exerciseType).toStringAsFixed(2);
+    }).toList();
+    weightController.text = weights.join('-');
+  }
+
+  void _updateWeightForRPERange() {
+    final rpes = _parseDoubleList(rpeController.text);
+    final reps = int.tryParse(repsController.text) ?? 0;
+    final weights = rpes.map((rpe) {
+      final percentage = SeriesUtils.getRPEPercentage(rpe, reps);
+      final calculatedWeight = latestMaxWeight.toDouble() * percentage;
+      return SeriesUtils.roundWeight(calculatedWeight, exerciseType).toStringAsFixed(2);
+    }).toList();
+    weightController.text = weights.join('-');
+  }
+
+  List<Series> createSeries(int currentSeriesCount) {
+    final reps = _parseIntList(repsController.text);
+    final sets = _parseIntList(setsController.text);
+    final intensity = _parseStringList(intensityController.text);
+    final rpe = _parseStringList(rpeController.text);
+    final weight = _parseDoubleList(weightController.text);
+
+    List<Series> newSeries = [];
+    int currentOrder = currentSeriesCount + 1;
+
+    bool isSetsRange = sets.length > 1;
+    int totalSets = isSetsRange ? sets.reduce((a, b) => a + b) : sets[0];
+
+    int listIndex = 0;
+
+    if (isSetsRange) {
+      for (int i = 0; i < sets.length; i++) {
+        for (int j = 0; j < sets[i]; j++) {
+          newSeries.add(_createSerie(reps, intensity, rpe, weight, currentOrder++, listIndex));
+        }
+        listIndex++;
+      }
+    } else {
+      for (int i = 0; i < totalSets; i++) {
+        newSeries.add(_createSerie(reps, intensity, rpe, weight, currentOrder++, listIndex));
+        listIndex++;
+      }
+    }
+
+    return newSeries;
+  }
+
+  Series _createSerie(List<int> reps, List<String> intensity, List<String> rpe, List<double> weight, int order, int listIndex) {
+    return Series(
+      serieId: generateRandomId(16),
+      reps: reps[listIndex % reps.length],
+      sets: 1,
+      intensity: intensity[listIndex % intensity.length],
+      rpe: rpe[listIndex % rpe.length],
+      weight: weight[listIndex % weight.length],
+      order: order,
+      done: false,
+      reps_done: 0,
+      weight_done: 0.0,
+    );
+  }
+
+  List<int> _parseIntList(String input) {
+    final list = input.split('-').map((e) => int.tryParse(e.trim()) ?? 0).toList();
+    return list.isEmpty ? [0] : list;
+  }
+
+  List<String> _parseStringList(String input) {
+    final list = input.split('-').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    return list.isEmpty ? ['0'] : list;
+  }
+
+  List<double> _parseDoubleList(String input) {
+    final list = input.split('-').map((e) => double.tryParse(e.trim()) ?? 0.0).toList();
+    return list.isEmpty ? [0.0] : list;
+  }
+
+  void dispose() {
+    repsController.dispose();
+    setsController.dispose();
+    intensityController.dispose();
+    rpeController.dispose();
+    weightController.dispose();
+    repsNode.dispose();
+    setsNode.dispose();
+    intensityNode.dispose();
+    rpeNode.dispose();
+    weightNode.dispose();
   }
 }

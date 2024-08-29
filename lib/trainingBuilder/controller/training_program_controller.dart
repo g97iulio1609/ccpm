@@ -274,11 +274,11 @@ class TrainingProgramController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> editSeries(int weekIndex, int workoutIndex, int exerciseIndex, Series currentSeries, BuildContext context, String exerciseType, num latestMaxWeight) async {
-    await _seriesController.editSeries(_program, weekIndex, workoutIndex, exerciseIndex, currentSeries, context, latestMaxWeight);
+ Future<void> editSeries(int weekIndex, int workoutIndex, int exerciseIndex, List<Series> currentSeriesGroup, BuildContext context, String exerciseType, num latestMaxWeight) async {
+    await _seriesController.editSeries(_program, weekIndex, workoutIndex, exerciseIndex, currentSeriesGroup, context, latestMaxWeight);
     notifyListeners();
   }
-
+  
   void removeSeries(int weekIndex, int workoutIndex, int exerciseIndex, int groupIndex, int seriesIndex) {
     _seriesController.removeSeries(_program, weekIndex, workoutIndex, exerciseIndex, groupIndex, seriesIndex);
     notifyListeners();
