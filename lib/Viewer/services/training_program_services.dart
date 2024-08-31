@@ -3,13 +3,49 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class TrainingProgramServices {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   // Exercise Service
   Future<void> updateSeriesData(String seriesId, int? repsDone, double? weightDone) async {
-    await FirebaseFirestore.instance.collection('series').doc(seriesId).update({
+    await _firestore.collection('series').doc(seriesId).update({
       'done': repsDone != null && weightDone != null,
       'reps_done': repsDone,
       'weight_done': weightDone,
     });
+  }
+
+  Future<void> updateSeriesWithMaxValues(
+    String seriesId,
+    int reps,
+    int? maxReps,
+    double weight,
+    double? maxWeight,
+    int repsDone,
+    double weightDone,
+  ) async {
+    bool isDone = _isSeriesDone(reps, maxReps, weight, maxWeight, repsDone, weightDone);
+    
+    await _firestore.collection('series').doc(seriesId).update({
+      'reps': reps,
+      'maxReps': maxReps,
+      'weight': weight,
+      'maxWeight': maxWeight,
+      'reps_done': repsDone,
+      'weight_done': weightDone,
+      'done': isDone,
+    });
+  }
+
+  bool _isSeriesDone(int reps, int? maxReps, double weight, double? maxWeight, int repsDone, double weightDone) {
+    bool repsCompleted = maxReps != null
+        ? repsDone >= reps && repsDone <= maxReps
+        : repsDone >= reps;
+
+    bool weightCompleted = maxWeight != null
+        ? weightDone >= weight && weightDone <= maxWeight
+        : weightDone >= weight;
+
+    return repsCompleted && weightCompleted;
   }
 
   // Timer Service
@@ -42,7 +78,7 @@ class TrainingProgramServices {
 
   // Training Service
   Future<List<Map<String, dynamic>>> fetchTrainingWeeks(String programId) async {
-    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+    QuerySnapshot querySnapshot = await _firestore
         .collection('weeks')
         .where('programId', isEqualTo: programId)
         .orderBy('number')
@@ -55,7 +91,7 @@ class TrainingProgramServices {
 
   // Week Service
   Stream<QuerySnapshot> getWorkouts(String weekId) {
-    return FirebaseFirestore.instance
+    return _firestore
         .collection('workouts')
         .where('weekId', isEqualTo: weekId)
         .orderBy('order')
@@ -64,7 +100,7 @@ class TrainingProgramServices {
 
   // Workout Service
   Future<List<Map<String, dynamic>>> fetchExercises(String workoutId) async {
-    final exercisesSnapshot = await FirebaseFirestore.instance
+    final exercisesSnapshot = await _firestore
         .collection('exercisesWorkout')
         .where('workoutId', isEqualTo: workoutId)
         .orderBy('order')
@@ -74,7 +110,7 @@ class TrainingProgramServices {
 
     for (final doc in exercisesSnapshot.docs) {
       final exerciseId = doc.id;
-      final seriesSnapshot = await FirebaseFirestore.instance
+      final seriesSnapshot = await _firestore
           .collection('series')
           .where('exerciseId', isEqualTo: exerciseId)
           .orderBy('order')
@@ -92,16 +128,19 @@ class TrainingProgramServices {
   }
 
   Future<void> updateSeries(String seriesId, int repsDone, double weightDone) async {
-    final seriesRef = FirebaseFirestore.instance.collection('series').doc(seriesId);
+    final seriesRef = _firestore.collection('series').doc(seriesId);
     final seriesDoc = await seriesRef.get();
     final seriesData = seriesDoc.data();
 
     if (seriesData != null) {
       final reps = seriesData['reps'] ?? 0;
+      final maxReps = seriesData['maxReps'];
       final weight = (seriesData['weight'] ?? 0.0).toDouble();
-      final done = repsDone >= reps && weightDone >= weight;
+      final maxWeight = seriesData['maxWeight'];
 
-      final batch = FirebaseFirestore.instance.batch();
+      final done = _isSeriesDone(reps, maxReps, weight, maxWeight, repsDone, weightDone);
+
+      final batch = _firestore.batch();
       batch.update(seriesRef, {
         'reps_done': repsDone,
         'weight_done': weightDone,
@@ -111,10 +150,9 @@ class TrainingProgramServices {
     }
   }
 
-
- Future<String> fetchWeekName(String weekId) async {
+  Future<String> fetchWeekName(String weekId) async {
     try {
-      final weekDoc = await FirebaseFirestore.instance.collection('weeks').doc(weekId).get();
+      final weekDoc = await _firestore.collection('weeks').doc(weekId).get();
       final number = weekDoc.data()?['number']?.toString() ?? '';
       return number.isNotEmpty ? 'Settimana $number' : 'Settimana';
     } catch (e) {
@@ -123,9 +161,9 @@ class TrainingProgramServices {
     }
   }
 
-   Future<String> fetchWorkoutName(String workoutId) async {
+  Future<String> fetchWorkoutName(String workoutId) async {
     try {
-      final workoutDoc = await FirebaseFirestore.instance.collection('workouts').doc(workoutId).get();
+      final workoutDoc = await _firestore.collection('workouts').doc(workoutId).get();
       final order = workoutDoc.data()?['order']?.toString() ?? '';
       return order.isNotEmpty ? 'Allenamento $order' : 'Allenamento';
     } catch (e) {
@@ -134,4 +172,99 @@ class TrainingProgramServices {
     }
   }
 
+  Future<void> updateTrainingProgram(Map<String, dynamic> programData) async {
+    final programId = programData['id'];
+    if (programId == null) {
+      throw Exception('Program ID is null');
+    }
+
+    await _firestore.collection('trainingPrograms').doc(programId).update(programData);
+  }
+
+  Future<void> deleteTrainingProgram(String programId) async {
+    await _firestore.collection('trainingPrograms').doc(programId).delete();
+  }
+
+  Future<Map<String, dynamic>> fetchTrainingProgram(String programId) async {
+    final docSnapshot = await _firestore.collection('trainingPrograms').doc(programId).get();
+    if (!docSnapshot.exists) {
+      throw Exception('Training program not found');
+    }
+    return docSnapshot.data()!;
+  }
+
+  Future<List<Map<String, dynamic>>> fetchUserTrainingPrograms(String userId) async {
+    final querySnapshot = await _firestore
+        .collection('trainingPrograms')
+        .where('userId', isEqualTo: userId)
+        .get();
+
+    return querySnapshot.docs
+        .map((doc) => {'id': doc.id, ...doc.data()})
+        .toList();
+  }
+
+  Future<void> createTrainingProgram(Map<String, dynamic> programData) async {
+    await _firestore.collection('trainingPrograms').add(programData);
+  }
+
+  Future<void> updateExercise(String exerciseId, Map<String, dynamic> exerciseData) async {
+    await _firestore.collection('exercisesWorkout').doc(exerciseId).update(exerciseData);
+  }
+
+  Future<void> deleteExercise(String exerciseId) async {
+    await _firestore.collection('exercisesWorkout').doc(exerciseId).delete();
+  }
+
+  Future<Map<String, dynamic>> fetchExercise(String exerciseId) async {
+    final docSnapshot = await _firestore.collection('exercisesWorkout').doc(exerciseId).get();
+    if (!docSnapshot.exists) {
+      throw Exception('Exercise not found');
+    }
+    return docSnapshot.data()!;
+  }
+
+  Future<void> createExercise(Map<String, dynamic> exerciseData) async {
+    await _firestore.collection('exercisesWorkout').add(exerciseData);
+  }
+
+  Future<void> updateWorkout(String workoutId, Map<String, dynamic> workoutData) async {
+    await _firestore.collection('workouts').doc(workoutId).update(workoutData);
+  }
+
+  Future<void> deleteWorkout(String workoutId) async {
+    await _firestore.collection('workouts').doc(workoutId).delete();
+  }
+
+  Future<Map<String, dynamic>> fetchWorkout(String workoutId) async {
+    final docSnapshot = await _firestore.collection('workouts').doc(workoutId).get();
+    if (!docSnapshot.exists) {
+      throw Exception('Workout not found');
+    }
+    return docSnapshot.data()!;
+  }
+
+  Future<void> createWorkout(Map<String, dynamic> workoutData) async {
+    await _firestore.collection('workouts').add(workoutData);
+  }
+
+  Future<void> updateWeek(String weekId, Map<String, dynamic> weekData) async {
+    await _firestore.collection('weeks').doc(weekId).update(weekData);
+  }
+
+  Future<void> deleteWeek(String weekId) async {
+    await _firestore.collection('weeks').doc(weekId).delete();
+  }
+
+  Future<Map<String, dynamic>> fetchWeek(String weekId) async {
+    final docSnapshot = await _firestore.collection('weeks').doc(weekId).get();
+    if (!docSnapshot.exists) {
+      throw Exception('Week not found');
+    }
+    return docSnapshot.data()!;
+  }
+
+  Future<void> createWeek(Map<String, dynamic> weekData) async {
+    await _firestore.collection('weeks').add(weekData);
+  }
 }

@@ -36,7 +36,7 @@ class SeriesController extends ChangeNotifier {
     }
   }
 
- Future<List<Series>?> _showSeriesDialog(BuildContext context, Exercise exercise,
+  Future<List<Series>?> _showSeriesDialog(BuildContext context, Exercise exercise,
       int weekIndex, List<Series>? currentSeriesGroup, String? exerciseType, num? latestMaxWeight) async {
     if (!context.mounted) return null;
 
@@ -56,8 +56,7 @@ class SeriesController extends ChangeNotifier {
     );
   }
 
-
-Future<void> editSeries(TrainingProgram program, int weekIndex, int workoutIndex,
+  Future<void> editSeries(TrainingProgram program, int weekIndex, int workoutIndex,
       int exerciseIndex, List<Series> currentSeriesGroup, BuildContext context, num latestMaxWeight) async {
     if (!_isValidIndex(program, weekIndex, workoutIndex, exerciseIndex)) {
       debugPrint('Invalid indices provided');
@@ -80,13 +79,13 @@ Future<void> editSeries(TrainingProgram program, int weekIndex, int workoutIndex
     if (updatedSeriesList != null && updatedSeriesList.isNotEmpty) {
       final startIndex = exercise.series.indexOf(currentSeriesGroup.first);
       if (startIndex != -1) {
-        // Rimuovi le serie vecchie
+        // Remove old series
         exercise.series.removeRange(startIndex, startIndex + currentSeriesGroup.length);
 
-        // Inserisci le nuove serie
+        // Insert new series
         exercise.series.insertAll(startIndex, updatedSeriesList);
 
-        // Aggiorna l'ordine delle serie
+        // Update series order
         for (int i = 0; i < exercise.series.length; i++) {
           exercise.series[i].order = i + 1;
         }
@@ -97,6 +96,7 @@ Future<void> editSeries(TrainingProgram program, int weekIndex, int workoutIndex
       }
     }
   }
+
   void removeAllSeriesForExercise(TrainingProgram program, int weekIndex,
       int workoutIndex, int exerciseIndex) {
     if (!_isValidIndex(program, weekIndex, workoutIndex, exerciseIndex)) {
@@ -161,7 +161,7 @@ Future<void> editSeries(TrainingProgram program, int weekIndex, int workoutIndex
     }
 
     final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
-    for (int i = startIndex; i < exercise.series.length; i++) {
+for (int i = startIndex; i < exercise.series.length; i++) {
       exercise.series[i].order = i + 1;
     }
   }
@@ -195,5 +195,99 @@ Future<void> editSeries(TrainingProgram program, int weekIndex, int workoutIndex
     return weekIndex >= 0 && weekIndex < program.weeks.length &&
            workoutIndex >= 0 && workoutIndex < program.weeks[weekIndex].workouts.length &&
            exerciseIndex >= 0 && exerciseIndex < program.weeks[weekIndex].workouts[workoutIndex].exercises.length;
+  }
+
+  Future<void> updateSeriesWeights(TrainingProgram program, int weekIndex,
+      int workoutIndex, int exerciseIndex) async {
+    if (!_isValidIndex(program, weekIndex, workoutIndex, exerciseIndex)) {
+      debugPrint('Invalid indices provided');
+      return;
+    }
+
+    await SeriesUtils.updateSeriesWeights(
+        program, weekIndex, workoutIndex, exerciseIndex, exerciseRecordService);
+    notifyListeners();
+  }
+
+  List<Series> _groupSeries(List<Series> series) {
+    final groupedSeries = <Series>[];
+    Series? currentGroup;
+
+    for (final series in series) {
+      if (currentGroup == null ||
+          series.reps != currentGroup.reps ||
+          series.maxReps != currentGroup.maxReps ||
+          series.weight != currentGroup.weight ||
+          series.maxWeight != currentGroup.maxWeight) {
+        currentGroup = series.copyWith(sets: 1);
+        groupedSeries.add(currentGroup);
+      } else {
+        currentGroup.sets += 1;
+        if (series.maxSets != null) {
+          currentGroup.maxSets = (currentGroup.maxSets ?? 0) + 1;
+        }
+      }
+    }
+
+    return groupedSeries;
+  }
+
+  List<Series> _ungroupSeries(List<Series> groupedSeries) {
+    final ungroupedSeries = <Series>[];
+
+    for (final group in groupedSeries) {
+      for (int i = 0; i < group.sets; i++) {
+        ungroupedSeries.add(group.copyWith(
+          sets: 1,
+          maxSets: null,
+          order: ungroupedSeries.length + 1,
+        ));
+      }
+    }
+
+    return ungroupedSeries;
+  }
+
+  Future<void> updateSeriesRange(TrainingProgram program, int weekIndex, int workoutIndex,
+      int exerciseIndex, int seriesIndex, String field, dynamic value, dynamic maxValue) async {
+    if (!_isValidIndex(program, weekIndex, workoutIndex, exerciseIndex)) {
+      debugPrint('Invalid indices provided');
+      return;
+    }
+
+    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+    if (seriesIndex < 0 || seriesIndex >= exercise.series.length) {
+      debugPrint('Invalid series index');
+      return;
+    }
+
+    final series = exercise.series[seriesIndex];
+    switch (field) {
+      case 'reps':
+        series.reps = value;
+        series.maxReps = maxValue;
+        break;
+      case 'sets':
+        series.sets = value;
+        series.maxSets = maxValue;
+        break;
+      case 'intensity':
+        series.intensity = value;
+        series.maxIntensity = maxValue;
+        break;
+      case 'rpe':
+        series.rpe = value;
+        series.maxRpe = maxValue;
+        break;
+      case 'weight':
+        series.weight = value;
+        series.maxWeight = maxValue;
+        break;
+      default:
+        debugPrint('Invalid field: $field');
+        return;
+    }
+
+    await updateSeriesWeights(program, weekIndex, workoutIndex, exerciseIndex);
   }
 }

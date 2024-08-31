@@ -13,6 +13,13 @@ class Series {
   int reps_done;
   double weight_done;
 
+  // New fields for ranges
+  int? maxReps;
+  int? maxSets;
+  String? maxIntensity;
+  String? maxRpe;
+  double? maxWeight;
+
   Series({
     this.id,
     required this.serieId,
@@ -25,6 +32,11 @@ class Series {
     this.done = false,
     this.reps_done = 0,
     this.weight_done = 0.0,
+    this.maxReps,
+    this.maxSets,
+    this.maxIntensity,
+    this.maxRpe,
+    this.maxWeight,
   });
 
   factory Series.fromMap(Map<String, dynamic> map) {
@@ -40,6 +52,11 @@ class Series {
       done: map['done'] ?? false,
       reps_done: map['reps_done'] ?? 0,
       weight_done: (map['weight_done'] ?? 0.0).toDouble(),
+      maxReps: map['maxReps'],
+      maxSets: map['maxSets'],
+      maxIntensity: map['maxIntensity'],
+      maxRpe: map['maxRpe'],
+      maxWeight: map['maxWeight']?.toDouble(),
     );
   }
 
@@ -54,6 +71,11 @@ class Series {
     bool? done,
     int? reps_done,
     double? weight_done,
+    int? maxReps,
+    int? maxSets,
+    String? maxIntensity,
+    String? maxRpe,
+    double? maxWeight,
   }) {
     return Series(
       serieId: serieId ?? this.serieId,
@@ -66,6 +88,11 @@ class Series {
       done: done ?? this.done,
       reps_done: reps_done ?? this.reps_done,
       weight_done: weight_done ?? this.weight_done,
+      maxReps: maxReps ?? this.maxReps,
+      maxSets: maxSets ?? this.maxSets,
+      maxIntensity: maxIntensity ?? this.maxIntensity,
+      maxRpe: maxRpe ?? this.maxRpe,
+      maxWeight: maxWeight ?? this.maxWeight,
     );
   }
 
@@ -83,6 +110,11 @@ class Series {
       done: data['done'] ?? false,
       reps_done: data['reps_done'] ?? 0,
       weight_done: (data['weight_done'] ?? 0.0).toDouble(),
+      maxReps: data['maxReps'],
+      maxSets: data['maxSets'],
+      maxIntensity: data['maxIntensity'],
+      maxRpe: data['maxRpe'],
+      maxWeight: data['maxWeight']?.toDouble(),
     );
   }
 
@@ -99,6 +131,11 @@ class Series {
       'done': done,
       'reps_done': reps_done,
       'weight_done': weight_done,
+      'maxReps': maxReps,
+      'maxSets': maxSets,
+      'maxIntensity': maxIntensity,
+      'maxRpe': maxRpe,
+      'maxWeight': maxWeight,
     };
   }
 
@@ -114,18 +151,23 @@ class Series {
       'done': done,
       'reps_done': reps_done,
       'weight_done': weight_done,
+      'maxReps': maxReps,
+      'maxSets': maxSets,
+      'maxIntensity': maxIntensity,
+      'maxRpe': maxRpe,
+      'maxWeight': maxWeight,
     };
   }
 
   @override
   String toString() {
-    return 'Series(id: $id, serieId: $serieId, reps: $reps, sets: $sets, intensity: $intensity, rpe: $rpe, weight: $weight, order: $order, done: $done, reps_done: $reps_done, weight_done: $weight_done)';
+    return 'Series(id: $id, serieId: $serieId, reps: $reps, sets: $sets, intensity: $intensity, rpe: $rpe, weight: $weight, order: $order, done: $done, reps_done: $reps_done, weight_done: $weight_done, maxReps: $maxReps, maxSets: $maxSets, maxIntensity: $maxIntensity, maxRpe: $maxRpe, maxWeight: $maxWeight)';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-  
+
     return other is Series &&
       other.id == id &&
       other.serieId == serieId &&
@@ -137,7 +179,12 @@ class Series {
       other.order == order &&
       other.done == done &&
       other.reps_done == reps_done &&
-      other.weight_done == weight_done;
+      other.weight_done == weight_done &&
+      other.maxReps == maxReps &&
+      other.maxSets == maxSets &&
+      other.maxIntensity == maxIntensity &&
+      other.maxRpe == maxRpe &&
+      other.maxWeight == maxWeight;
   }
 
   @override
@@ -152,6 +199,11 @@ class Series {
       order.hashCode ^
       done.hashCode ^
       reps_done.hashCode ^
-      weight_done.hashCode;
+      weight_done.hashCode ^
+      maxReps.hashCode ^
+      maxSets.hashCode ^
+      maxIntensity.hashCode ^
+      maxRpe.hashCode ^
+      maxWeight.hashCode;
   }
 }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:alphanessone/providers/providers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -256,12 +257,12 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   Widget _buildSuperSetStartButton(List<Map<String, dynamic>> superSetExercises, BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final allSeriesCompleted = superSetExercises.every((exercise) =>
-        exercise['series'].every((series) => series['done'] == true));
+        exercise['series'].every((series) => _isSeriesDone(series)));
 
     if (allSeriesCompleted) return const SizedBox.shrink();
 
     final firstNotDoneExerciseIndex = superSetExercises.indexWhere((exercise) =>
-        exercise['series'].any((series) => series['done'] != true));
+        exercise['series'].any((series) => !_isSeriesDone(series)));
 
     return GestureDetector(
       onTap: () => _navigateToExerciseDetails(superSetExercises[firstNotDoneExerciseIndex], superSetExercises),
@@ -371,7 +372,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
                 ? GestureDetector(
                     onTap: () => _showEditSeriesDialog(series['id'].toString(), series, context),
                     child: Text(
-                      "${series[field]}/${series['${field}_done'] ?? ''}",
+                      _formatSeriesValue(series, field),
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                             color: colorScheme.onSurface,
                           ),
@@ -398,14 +399,14 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: series != null
-                ? GestureDetector(onTap: () => _toggleSeriesDone(series),
+                ? GestureDetector(
+                    onTap: () => _toggleSeriesDone(series),
                     child: Icon(
-                      series['done'] == true ? Icons.check_circle : Icons.cancel,
-                      color: series['done'] == true ? colorScheme.primary : colorScheme.onSurfaceVariant,
+                      _isSeriesDone(series) ? Icons.check_circle : Icons.cancel,
+                      color: _isSeriesDone(series) ? colorScheme.primary : colorScheme.onSurfaceVariant,
                     ),
                   )
-                : const SizedBox(),
-          );
+                : const SizedBox(),);
         }).toList(),
       ),
     );
@@ -426,7 +427,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   Widget _buildStartButton(Map<String, dynamic> exercise, int firstNotDoneSeriesIndex, bool isContinueMode, BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final series = exercise['series'];
-    final allSeriesCompleted = series.every((series) => series['done'] == true);
+    final allSeriesCompleted = series.every((series) => _isSeriesDone(series));
 
     if (allSeriesCompleted) {
       return const SizedBox.shrink();
@@ -481,22 +482,33 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
 
   Widget _buildSeriesDataText(String field, Map<String, dynamic> seriesData, BuildContext context, int flex) {
     final colorScheme = Theme.of(context).colorScheme;
-    final value = seriesData[field];
-    final valueDone = seriesData['${field}_done'];
-    final unit = field == 'reps' ? 'R' : 'Kg';
-
-    String text = valueDone == null || valueDone == 0 ? '$value$unit' : '$value/$valueDone$unit';
-
     return Expanded(
       flex: flex,
       child: Text(
-        text,
+        _formatSeriesValue(seriesData, field),
         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: colorScheme.onSurface,
             ),
         textAlign: TextAlign.center,
       ),
     );
+  }
+
+  String _formatSeriesValue(Map<String, dynamic> seriesData, String field) {
+    final value = seriesData[field];
+    final maxValue = seriesData['max${field.capitalize()}'];
+    final valueDone = seriesData['${field}_done'];
+    final unit = field == 'reps' ? 'R' : 'Kg';
+
+    String text = maxValue != null && maxValue != value
+        ? '$value-$maxValue$unit'
+        : '$value$unit';
+
+    if (valueDone != null && valueDone != 0) {
+      text += '/$valueDone$unit';
+    }
+
+    return text;
   }
 
   Widget _buildSeriesDoneIcon(Map<String, dynamic> seriesData, BuildContext context, int flex) {
@@ -506,8 +518,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       child: GestureDetector(
         onTap: () => _toggleSeriesDone(seriesData),
         child: Icon(
-          seriesData['done'] == true ? Icons.check_circle : Icons.cancel,
-          color: seriesData['done'] == true ? colorScheme.primary : colorScheme.onSurface,
+          _isSeriesDone(seriesData) ? Icons.check_circle : Icons.cancel,
+          color: _isSeriesDone(seriesData) ? colorScheme.primary : colorScheme.onSurface,
         ),
       ),
     );
@@ -528,25 +540,75 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     );
   }
 
-  Future<void> _showEditSeriesDialog(String seriesId, Map<String, dynamic> series, BuildContext context) async {
-    final repsController = TextEditingController(text: series['reps']?.toString() ?? '');
-    final weightController = TextEditingController(text: series['weight']?.toString() ?? '');
+Future<void> _showEditSeriesDialog(String seriesId, Map<String, dynamic> series, BuildContext context) async {
+  final userRole = ref.read(userRoleProvider);
+  final isCoachOrAdmin = userRole == 'coach' || userRole == 'admin';
 
-    return showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text('Modifica Serie'),
-          content: Column(
+  final repsController = TextEditingController(text: series['reps']?.toString() ?? '');
+  final maxRepsController = TextEditingController(text: series['maxReps']?.toString() ?? '');
+  final weightController = TextEditingController(text: series['weight']?.toString() ?? '');
+  final maxWeightController = TextEditingController(text: series['maxWeight']?.toString() ?? '');
+  final repsDoneController = TextEditingController(text: series['reps_done']?.toString() ?? '');
+  final weightDoneController = TextEditingController(text: series['weight_done']?.toString() ?? '');
+
+  return showDialog(
+    context: context,
+    builder: (BuildContext dialogContext) {
+      return AlertDialog(
+        title: const Text('Modifica Serie'),
+        content: SingleChildScrollView(
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (isCoachOrAdmin) ...[
+                TextField(
+                  controller: repsController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Reps'),
+                ),
+                TextField(
+                  controller: maxRepsController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Max Reps'),
+                ),
+                TextField(
+                  controller: weightController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
+                    TextInputFormatter.withFunction((oldValue, newValue) {
+                      final text = newValue.text.replaceAll(',', '.');
+                      return newValue.copyWith(
+                        text: text,
+                        selection: TextSelection.collapsed(offset: text.length),
+                      );
+                    }),
+                  ],
+                  decoration: const InputDecoration(labelText: 'Peso (kg)'),
+                ),
+                TextField(
+                  controller: maxWeightController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
+                    TextInputFormatter.withFunction((oldValue, newValue) {
+                      final text = newValue.text.replaceAll(',', '.');
+                      return newValue.copyWith(
+                        text: text,
+                        selection: TextSelection.collapsed(offset: text.length),
+                      );
+                    }),
+                  ],
+                  decoration: const InputDecoration(labelText: 'Max Peso (kg)'),
+                ),
+              ],
               TextField(
-                controller: repsController,
+                controller: repsDoneController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Reps'),
+                decoration: const InputDecoration(labelText: 'Reps Svolte'),
               ),
               TextField(
-                controller: weightController,
+                controller: weightDoneController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
@@ -558,46 +620,116 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
                     );
                   }),
                 ],
-                decoration: const InputDecoration(labelText: 'Peso (kg)'),
+                decoration: const InputDecoration(labelText: 'Peso Svolto (kg)'),
               ),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Annulla'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final repsDone = int.tryParse(repsController.text) ?? 0;
-                final weightDone = double.tryParse(weightController.text.replaceAll(',', '.')) ?? 0.0;
-                Navigator.pop(dialogContext);
-                _workoutService.updateSeries(seriesId, repsDone, weightDone);
-              },
-              child: const Text('Salva'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Annulla'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final repsDone = int.tryParse(repsDoneController.text) ?? 0;
+              final weightDone = double.tryParse(weightDoneController.text.replaceAll(',', '.')) ?? 0.0;
 
-  int _findFirstNotDoneSeriesIndex(List<Map<String, dynamic>> series) {
-    return series.indexWhere((serie) => serie['done'] != true);
+              if (isCoachOrAdmin) {
+                final reps = int.tryParse(repsController.text) ?? 0;
+                final maxReps = int.tryParse(maxRepsController.text);
+                final weight = double.tryParse(weightController.text.replaceAll(',', '.')) ?? 0.0;
+                final maxWeight = double.tryParse(maxWeightController.text.replaceAll(',', '.'));
+
+                _workoutService.updateSeriesWithMaxValues(
+                  seriesId,
+                  reps,
+                  maxReps,
+                  weight,
+                  maxWeight,
+                  repsDone,
+                  weightDone,
+                );
+              } else {
+                _workoutService.updateSeriesData(seriesId, repsDone, weightDone);
+              }
+
+              Navigator.pop(dialogContext);
+            },
+            child: const Text('Salva'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+  bool _isSeriesDone(Map<String, dynamic> seriesData) {
+    final repsDone = seriesData['reps_done'] ?? 0;
+    final weightDone = seriesData['weight_done'] ?? 0.0;
+    final reps = seriesData['reps'] ?? 0;
+    final maxReps = seriesData['maxReps'];
+    final weight = seriesData['weight'] ?? 0.0;
+    final maxWeight = seriesData['maxWeight'];
+
+    bool repsCompleted;
+    bool weightCompleted;
+
+    if (maxReps != null) {
+      repsCompleted = repsDone >= reps && repsDone <= maxReps;
+    } else {
+      repsCompleted = repsDone >= reps;
+    }
+
+    if (maxWeight != null) {
+      weightCompleted = weightDone >= weight && weightDone <= maxWeight;
+    } else {
+      weightCompleted = weightDone >= weight;
+    }
+
+    return repsCompleted && weightCompleted;
   }
 
   void _toggleSeriesDone(Map<String, dynamic> series) async {
     if (!mounted) return;
 
     final seriesId = series['id'].toString();
-    final done = series['done'] == true ? false : true;
+    final currentlyDone = _isSeriesDone(series);
     final reps = series['reps'] ?? 0;
+    final maxReps = series['maxReps'];
     final weight = series['weight'] ?? 0.0;
+    final maxWeight = series['maxWeight'];
 
-    await _workoutService.updateSeries(
-      seriesId,
-      done ? reps : 0,
-      done ? weight.toDouble() : 0.0,
-    );
+    if (!currentlyDone) {
+      await _workoutService.updateSeriesWithMaxValues(
+        seriesId,
+        reps,
+        maxReps,
+        weight,
+        maxWeight,
+        maxReps ?? reps,
+        maxWeight ?? weight,
+      );
+    } else {
+      await _workoutService.updateSeriesWithMaxValues(
+        seriesId,
+        reps,
+        maxReps,
+        weight,
+        maxWeight,
+        0,
+        0.0,
+      );
+    }
+  }
+
+  int _findFirstNotDoneSeriesIndex(List<Map<String, dynamic>> series) {
+    return series.indexWhere((serie) => !_isSeriesDone(serie));
+  }
+}
+
+extension StringExtension on String {
+  String capitalize() {
+    return "${this[0].toUpperCase()}${substring(1)}";
   }
 }
