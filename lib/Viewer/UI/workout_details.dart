@@ -405,8 +405,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
                       _isSeriesDone(series) ? Icons.check_circle : Icons.cancel,
                       color: _isSeriesDone(series) ? colorScheme.primary : colorScheme.onSurfaceVariant,
                     ),
-                  )
-                : const SizedBox(),);
+                  ): const SizedBox(),
+          );
         }).toList(),
       ),
     );
@@ -540,39 +540,75 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     );
   }
 
-Future<void> _showEditSeriesDialog(String seriesId, Map<String, dynamic> series, BuildContext context) async {
-  final userRole = ref.read(userRoleProvider);
-  final isCoachOrAdmin = userRole == 'coach' || userRole == 'admin';
+  Future<void> _showEditSeriesDialog(String seriesId, Map<String, dynamic> series, BuildContext context) async {
+    final userRole = ref.read(userRoleProvider);
+    final isCoachOrAdmin = userRole == 'coach' || userRole == 'admin';
 
-  final repsController = TextEditingController(text: series['reps']?.toString() ?? '');
-  final maxRepsController = TextEditingController(text: series['maxReps']?.toString() ?? '');
-  final weightController = TextEditingController(text: series['weight']?.toString() ?? '');
-  final maxWeightController = TextEditingController(text: series['maxWeight']?.toString() ?? '');
-  final repsDoneController = TextEditingController(text: series['reps_done']?.toString() ?? '');
-  final weightDoneController = TextEditingController(text: series['weight_done']?.toString() ?? '');
+    final repsController = TextEditingController(text: series['reps']?.toString() ?? '');
+    final maxRepsController = TextEditingController(text: series['maxReps']?.toString() ?? '');
+    final weightController = TextEditingController(text: series['weight']?.toString() ?? '');
+    final maxWeightController = TextEditingController(text: series['maxWeight']?.toString() ?? '');
+    final repsDoneController = TextEditingController(text: series['reps_done']?.toString() ?? series['reps']?.toString() ?? '');
+    final weightDoneController = TextEditingController(text: series['weight_done']?.toString() ?? series['weight']?.toString() ?? '');
 
-  return showDialog(
-    context: context,
-    builder: (BuildContext dialogContext) {
-      return AlertDialog(
-        title: const Text('Modifica Serie'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (isCoachOrAdmin) ...[
+    return showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Modifica Serie'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isCoachOrAdmin) ...[
+                  TextField(
+                    controller: repsController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'Reps'),
+                  ),
+                  TextField(
+                    controller: maxRepsController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'Max Reps'),
+                  ),
+                  TextField(
+                    controller: weightController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
+                      TextInputFormatter.withFunction((oldValue, newValue) {
+                        final text = newValue.text.replaceAll(',', '.');
+                        return newValue.copyWith(
+                          text: text,
+                          selection: TextSelection.collapsed(offset: text.length),
+                        );
+                      }),
+                    ],
+                    decoration: const InputDecoration(labelText: 'Peso (kg)'),
+                  ),
+                  TextField(
+                    controller: maxWeightController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
+                      TextInputFormatter.withFunction((oldValue, newValue) {
+                        final text = newValue.text.replaceAll(',', '.');
+                        return newValue.copyWith(
+                          text: text,
+                          selection: TextSelection.collapsed(offset: text.length),
+                        );
+                      }),
+                    ],
+                    decoration: const InputDecoration(labelText: 'Max Peso (kg)'),
+                  ),
+                ],
                 TextField(
-                  controller: repsController,
+                  controller: repsDoneController,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Reps'),
+                  decoration: const InputDecoration(labelText: 'Reps Svolte'),
                 ),
                 TextField(
-                  controller: maxRepsController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Max Reps'),
-                ),
-                TextField(
-                  controller: weightController,
+                  controller: weightDoneController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
@@ -584,85 +620,49 @@ Future<void> _showEditSeriesDialog(String seriesId, Map<String, dynamic> series,
                       );
                     }),
                   ],
-                  decoration: const InputDecoration(labelText: 'Peso (kg)'),
-                ),
-                TextField(
-                  controller: maxWeightController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
-                    TextInputFormatter.withFunction((oldValue, newValue) {
-                      final text = newValue.text.replaceAll(',', '.');
-                      return newValue.copyWith(
-                        text: text,
-                        selection: TextSelection.collapsed(offset: text.length),
-                      );
-                    }),
-                  ],
-                  decoration: const InputDecoration(labelText: 'Max Peso (kg)'),
+                  decoration: const InputDecoration(labelText: 'Peso Svolto (kg)'),
                 ),
               ],
-              TextField(
-                controller: repsDoneController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Reps Svolte'),
-              ),
-              TextField(
-                controller: weightDoneController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
-                  TextInputFormatter.withFunction((oldValue, newValue) {
-                    final text = newValue.text.replaceAll(',', '.');
-                    return newValue.copyWith(
-                      text: text,
-                      selection: TextSelection.collapsed(offset: text.length),
-                    );
-                  }),
-                ],
-                decoration: const InputDecoration(labelText: 'Peso Svolto (kg)'),
-              ),
-            ],
+            ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Annulla'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final repsDone = int.tryParse(repsDoneController.text) ?? 0;
-              final weightDone = double.tryParse(weightDoneController.text.replaceAll(',', '.')) ?? 0.0;
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Annulla'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final repsDone = int.tryParse(repsDoneController.text) ?? 0;
+                final weightDone = double.tryParse(weightDoneController.text.replaceAll(',', '.')) ?? 0.0;
 
-              if (isCoachOrAdmin) {
-                final reps = int.tryParse(repsController.text) ?? 0;
-                final maxReps = int.tryParse(maxRepsController.text);
-                final weight = double.tryParse(weightController.text.replaceAll(',', '.')) ?? 0.0;
-                final maxWeight = double.tryParse(maxWeightController.text.replaceAll(',', '.'));
+                if (isCoachOrAdmin) {
+                  final reps = int.tryParse(repsController.text) ?? 0;
+                  final maxReps = int.tryParse(maxRepsController.text);
+                  final weight = double.tryParse(weightController.text.replaceAll(',', '.')) ?? 0.0;
+                  final maxWeight = double.tryParse(maxWeightController.text.replaceAll(',', '.'));
 
-                _workoutService.updateSeriesWithMaxValues(
-                  seriesId,
-                  reps,
-                  maxReps,
-                  weight,
-                  maxWeight,
-                  repsDone,
-                  weightDone,
-                );
-              } else {
-                _workoutService.updateSeriesData(seriesId, repsDone, weightDone);
-              }
+                  _workoutService.updateSeriesWithMaxValues(
+                    seriesId,
+                    reps,
+                    maxReps,
+                    weight,
+                    maxWeight,
+                    repsDone,
+                    weightDone,
+                  );
+                } else {
+                  _workoutService.updateSeriesData(seriesId, repsDone, weightDone);
+                }
 
-              Navigator.pop(dialogContext);
-            },
-            child: const Text('Salva'),
-          ),
-        ],
-      );
-    },
-  );
-}
+                Navigator.pop(dialogContext);
+              },
+              child: const Text('Salva'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   bool _isSeriesDone(Map<String, dynamic> seriesData) {
     final repsDone = seriesData['reps_done'] ?? 0;
@@ -672,20 +672,13 @@ Future<void> _showEditSeriesDialog(String seriesId, Map<String, dynamic> series,
     final weight = seriesData['weight'] ?? 0.0;
     final maxWeight = seriesData['maxWeight'];
 
-    bool repsCompleted;
-    bool weightCompleted;
+    bool repsCompleted = maxReps != null
+        ? repsDone >= reps && (repsDone <= maxReps || repsDone > maxReps)
+        : repsDone >= reps;
 
-    if (maxReps != null) {
-      repsCompleted = repsDone >= reps && repsDone <= maxReps;
-    } else {
-      repsCompleted = repsDone >= reps;
-    }
-
-    if (maxWeight != null) {
-      weightCompleted = weightDone >= weight && weightDone <= maxWeight;
-    } else {
-      weightCompleted = weightDone >= weight;
-    }
+    bool weightCompleted = maxWeight != null
+        ? weightDone >= weight && (weightDone <= maxWeight || weightDone > maxWeight)
+        : weightDone >= weight;
 
     return repsCompleted && weightCompleted;
   }
