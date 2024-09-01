@@ -19,7 +19,7 @@ class SeriesDialog extends StatefulWidget {
   final bool isIndividualEdit;
 
   const SeriesDialog({
-    Key? key,
+    super.key,
     required this.exerciseRecordService,
     required this.athleteId,
     required this.exerciseId,
@@ -30,7 +30,7 @@ class SeriesDialog extends StatefulWidget {
     required this.latestMaxWeight,
     required this.weightNotifier,
     this.isIndividualEdit = false,
-  }) : super(key: key);
+  });
 
   @override
   State<SeriesDialog> createState() => _SeriesDialogState();
@@ -92,7 +92,7 @@ class _SeriesDialogState extends State<SeriesDialog> {
 class SeriesForm extends StatelessWidget {
   final SeriesFormController controller;
 
-  const SeriesForm({Key? key, required this.controller}) : super(key: key);
+  const SeriesForm({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -300,7 +300,7 @@ class SeriesFormController {
     try {
       return double.parse(value);
     } catch (e) {
-      print('Error parsing double: $value');
+      debugPrint('Error parsing double: $value');
       return 0.0;
     }
   }
