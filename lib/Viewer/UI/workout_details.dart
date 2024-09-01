@@ -501,21 +501,18 @@ String _formatSeriesValue(Map<String, dynamic> seriesData, String field) {
   final isDone = seriesData['done'] == true;
   final unit = field == 'reps' ? 'R' : 'Kg';
 
-  if (field == 'weight' && (isDone || (valueDone != null && valueDone != 0))) {
+  // Se la serie è completata o il valore "done" è presente e non zero, mostra solo il valore "done"
+  if (isDone || (valueDone != null && valueDone != 0)) {
     return '$valueDone$unit';
   }
 
+  // Altrimenti, mostra il valore previsto (o il range se c'è un valore massimo)
   String text = maxValue != null && maxValue != value
       ? '$value-$maxValue$unit'
       : '$value$unit';
 
-  if (valueDone != null && valueDone != 0 && !isDone) {
-    text += '/$valueDone$unit';
-  }
-
   return text;
 }
-
   Widget _buildSeriesDoneIcon(Map<String, dynamic> seriesData, BuildContext context, int flex) {
     final colorScheme = Theme.of(context).colorScheme;
     return Expanded(
