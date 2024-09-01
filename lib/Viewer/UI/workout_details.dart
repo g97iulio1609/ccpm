@@ -683,38 +683,38 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     return repsCompleted && weightCompleted;
   }
 
-  void _toggleSeriesDone(Map<String, dynamic> series) async {
-    if (!mounted) return;
+void _toggleSeriesDone(Map<String, dynamic> series) async {
+  if (!mounted) return;
 
-    final seriesId = series['id'].toString();
-    final currentlyDone = _isSeriesDone(series);
-    final reps = series['reps'] ?? 0;
-    final maxReps = series['maxReps'];
-    final weight = series['weight'] ?? 0.0;
-    final maxWeight = series['maxWeight'];
+  final seriesId = series['id'].toString();
+  final currentlyDone = _isSeriesDone(series);
+  final reps = series['reps'] ?? 0;
+  final maxReps = series['maxReps'];
+  final weight = (series['weight'] ?? 0.0).toDouble();
+  final maxWeight = series['maxWeight']?.toDouble();
 
-    if (!currentlyDone) {
-      await _workoutService.updateSeriesWithMaxValues(
-        seriesId,
-        reps,
-        maxReps,
-        weight,
-        maxWeight,
-        maxReps ?? reps,
-        maxWeight ?? weight,
-      );
-    } else {
-      await _workoutService.updateSeriesWithMaxValues(
-        seriesId,
-        reps,
-        maxReps,
-        weight,
-        maxWeight,
-        0,
-        0.0,
-      );
-    }
+  if (!currentlyDone) {
+    await _workoutService.updateSeriesWithMaxValues(
+      seriesId,
+      reps,
+      maxReps,
+      weight,
+      maxWeight,
+      maxReps ?? reps,
+      maxWeight ?? weight,
+    );
+  } else {
+    await _workoutService.updateSeriesWithMaxValues(
+      seriesId,
+      reps,
+      maxReps,
+      weight,
+      maxWeight,
+      0,
+      0.0,
+    );
   }
+}
 
   int _findFirstNotDoneSeriesIndex(List<Map<String, dynamic>> series) {
     return series.indexWhere((serie) => !_isSeriesDone(serie));

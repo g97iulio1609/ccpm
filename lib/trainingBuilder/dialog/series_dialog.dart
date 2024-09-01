@@ -322,7 +322,7 @@ class SeriesFormController {
   }
 
   List<List<double>> _parseComplexValues(String input) {
-    if (input.isEmpty) {
+    if (input.isEmpty || input == '-' || input == '/') {
       return [[0.0]];
     }
 
@@ -334,7 +334,7 @@ class SeriesFormController {
   }
 
   List<double> _parseIntervalValues(String input) {
-    if (input.isEmpty) {
+    if (input.isEmpty || input == '-' || input == '/') {
       return [0.0];
     }
 
@@ -342,14 +342,13 @@ class SeriesFormController {
     return parts.map((part) => _parseDouble(part.trim())).toList();
   }
 
-  double _parseDouble(String value) {
-    try {
-      return double.parse(value);
-    } catch (e) {
-      print('Error parsing double: $value');
+   double _parseDouble(String value) {
+    if (value.isEmpty || value == '-' || value == '/') {
       return 0.0;
     }
+    return double.tryParse(value) ?? 0.0;
   }
+
 
   void updateRelatedFields() {
     if (_isComplexInput()) {
@@ -361,19 +360,31 @@ class SeriesFormController {
     }
   }
 
+  bool _isValidInput(String input) {
+    return input.isNotEmpty && input != '-' && input != '/';
+  }
+
   void _updateFieldsForComplexInput() {
     switch (_lastEditedField) {
       case 'weight':
-        _updateIntensityAndRPEForComplexWeight();
+        if (_isValidInput(weightController.text)) {
+          _updateIntensityAndRPEForComplexWeight();
+        }
         break;
       case 'intensity':
-        _updateWeightAndRPEForComplexIntensity();
+        if (_isValidInput(intensityController.text)) {
+          _updateWeightAndRPEForComplexIntensity();
+        }
         break;
       case 'rpe':
-        _updateWeightAndIntensityForComplexRPE();
+        if (_isValidInput(rpeController.text)) {
+          _updateWeightAndIntensityForComplexRPE();
+        }
         break;
     }
-  }void _updateIntensityAndRPEForComplexWeight() {
+  }
+
+  void _updateIntensityAndRPEForComplexWeight() {
     final weights = _parseComplexValues(weightController.text);
     final reps = _parseComplexValues(repsController.text);
     final intensities = weights.map((weightGroup) =>
@@ -437,13 +448,19 @@ class SeriesFormController {
   void _updateFieldsForIntervalInput() {
     switch (_lastEditedField) {
       case 'weight':
-        _updateIntensityAndRPEForWeightInterval();
+        if (_isValidInput(weightController.text)) {
+          _updateIntensityAndRPEForWeightInterval();
+        }
         break;
       case 'intensity':
-        _updateWeightAndRPEForIntensityInterval();
+        if (_isValidInput(intensityController.text)) {
+          _updateWeightAndRPEForIntensityInterval();
+        }
         break;
       case 'rpe':
-        _updateWeightAndIntensityForRPEInterval();
+        if (_isValidInput(rpeController.text)) {
+          _updateWeightAndIntensityForRPEInterval();
+        }
         break;
     }
   }
@@ -492,9 +509,9 @@ class SeriesFormController {
 
   void _updateFieldsForSingleInput() {
     final reps = int.tryParse(repsController.text) ?? 0;
-    final weight = double.tryParse(weightController.text) ?? 0.0;
-    final intensity = double.tryParse(intensityController.text) ?? 0.0;
-    final rpe = double.tryParse(rpeController.text) ?? 0.0;
+    final weight = _parseDouble(weightController.text);
+    final intensity = _parseDouble(intensityController.text);
+    final rpe = _parseDouble(rpeController.text);
 
     switch (_lastEditedField) {
       case 'weight':
@@ -511,7 +528,15 @@ class SeriesFormController {
         }
         break;
       case 'rpe':
-        if (rpe > 0) {
+        if (rpe > 0 && reps > 0) {
+          final percentage = SeriesUtils.getRPEPercentage(rpe, reps);
+          final calculatedWeight = latestMaxWeight.toDouble() * percentage;
+          weightController.text = SeriesUtils.roundWeight(calculatedWeight, exerciseType).toStringAsFixed(2);
+          intensityController.text = SeriesUtils.calculateIntensityFromWeight(calculatedWeight, latestMaxWeight).toStringAsFixed(2);
+        }
+        break;
+      case 'reps':
+        if (rpe > 0 && reps > 0) {
           final percentage = SeriesUtils.getRPEPercentage(rpe, reps);
           final calculatedWeight = latestMaxWeight.toDouble() * percentage;
           weightController.text = SeriesUtils.roundWeight(calculatedWeight, exerciseType).toStringAsFixed(2);
