@@ -19,7 +19,7 @@ class SeriesDialog extends StatefulWidget {
   final bool isIndividualEdit;
 
   const SeriesDialog({
-    super.key,
+    Key? key,
     required this.exerciseRecordService,
     required this.athleteId,
     required this.exerciseId,
@@ -30,7 +30,7 @@ class SeriesDialog extends StatefulWidget {
     required this.latestMaxWeight,
     required this.weightNotifier,
     this.isIndividualEdit = false,
-  });
+  }) : super(key: key);
 
   @override
   State<SeriesDialog> createState() => _SeriesDialogState();
@@ -92,7 +92,7 @@ class _SeriesDialogState extends State<SeriesDialog> {
 class SeriesForm extends StatelessWidget {
   final SeriesFormController controller;
 
-  const SeriesForm({super.key, required this.controller});
+  const SeriesForm({Key? key, required this.controller}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -199,19 +199,65 @@ class SeriesFormController {
   }
 
   List<Series> createSeries(int currentSeriesCount) {
-    if (_isMultiSeriesInput()) {
-      return _createMultipleSeries(currentSeriesCount);
-    } else {
+    if (_isComplexInput()) {
+      return _createComplexSeries(currentSeriesCount);
+    } else if (_isIntervalInput()) {
       return _createIntervalSeries(currentSeriesCount);
+    } else {
+      return _createSimpleSeries(currentSeriesCount);
     }
   }
 
-  bool _isMultiSeriesInput() {
+  bool _isComplexInput() {
     return repsController.text.contains('-') ||
            setsController.text.contains('-') ||
            intensityController.text.contains('-') ||
            rpeController.text.contains('-') ||
            weightController.text.contains('-');
+  }
+
+  bool _isIntervalInput() {
+    return repsController.text.contains('/') ||
+           intensityController.text.contains('/') ||
+           rpeController.text.contains('/') ||
+           weightController.text.contains('/');
+  }
+
+  List<Series> _createComplexSeries(int currentSeriesCount) {
+    final reps = _parseComplexValues(repsController.text);
+    final sets = _parseComplexValues(setsController.text);
+    final intensity = _parseComplexValues(intensityController.text);
+    final rpe = _parseComplexValues(rpeController.text);
+    final weight = _parseComplexValues(weightController.text);
+
+    int totalSets = sets.length == 1 ? sets[0][0].toInt() : sets.map((s) => s[0].toInt()).reduce((a, b) => a + b);
+    List<Series> newSeries = [];
+    int currentOrder = currentSeriesCount + 1;
+
+    for (int i = 0; i < reps.length; i++) {
+      int currentSets = sets.length == 1 ? (totalSets ~/ reps.length) : sets[i][0].toInt();
+      for (int j = 0; j < currentSets; j++) {
+        newSeries.add(Series(
+          serieId: generateRandomId(16),
+          reps: reps[i][0].toInt(),
+          sets: 1,
+          intensity: intensity[i][0].toString(),
+          rpe: rpe.length > i ? rpe[i][0].toString() : '',
+          weight: weight[i][0],
+          order: currentOrder++,
+          done: false,
+          reps_done: 0,
+          weight_done: 0.0,
+          maxReps: reps[i].length > 1 ? reps[i][1].toInt() : null,
+          maxSets: null,
+          maxIntensity: intensity[i].length > 1 ? intensity[i][1].toString() : null,
+          maxRpe: rpe.length > i && rpe[i].length > 1 ? rpe[i][1].toString() : null,
+          maxWeight: weight[i].length > 1 ? weight[i][1] : null,
+        ));
+      }
+    }
+
+    return newSeries;
   }
 
   List<Series> _createIntervalSeries(int currentSeriesCount) {
@@ -247,27 +293,24 @@ class SeriesFormController {
     return newSeries;
   }
 
-  List<Series> _createMultipleSeries(int currentSeriesCount) {
-    final reps = _parseMultipleValues(repsController.text);
-    final sets = _parseMultipleValues(setsController.text);
-    final intensity = _parseMultipleValues(intensityController.text);
-    final rpe = _parseMultipleValues(rpeController.text);
-    final weight = _parseMultipleValues(weightController.text);
-
-    int maxLength = [reps.length, sets.length, intensity.length, rpe.length, weight.length]
-        .reduce((a, b) => a > b ? a : b);
+  List<Series> _createSimpleSeries(int currentSeriesCount) {
+    final reps = int.tryParse(repsController.text) ?? 0;
+    final sets = int.tryParse(setsController.text) ?? 1;
+    final intensity = intensityController.text;
+    final rpe = rpeController.text;
+    final weight = double.tryParse(weightController.text) ?? 0.0;
 
     List<Series> newSeries = [];
     int currentOrder = currentSeriesCount + 1;
 
-    for (int i = 0; i < maxLength; i++) {
+    for (int i = 0; i < sets; i++) {
       newSeries.add(Series(
         serieId: generateRandomId(16),
-        reps: i < reps.length ? reps[i].toInt() : reps.last.toInt(),
-        sets: i < sets.length ? sets[i].toInt() : sets.last.toInt(),
-        intensity: i < intensity.length ? intensity[i].toString() : intensity.last.toString(),
-        rpe: i < rpe.length ? rpe[i].toString() : rpe.last.toString(),
-        weight: i < weight.length ? weight[i] : weight.last,
+        reps: reps,
+        sets: 1,
+        intensity: intensity,
+        rpe: rpe,
+        weight: weight,
         order: currentOrder++,
         done: false,
         reps_done: 0,
@@ -276,6 +319,18 @@ class SeriesFormController {
     }
 
     return newSeries;
+  }
+
+  List<List<double>> _parseComplexValues(String input) {
+    if (input.isEmpty) {
+      return [[0.0]];
+    }
+
+    List<String> groups = input.split('-');
+    return groups.map((group) {
+      List<String> parts = group.split('/');
+      return parts.map((part) => _parseDouble(part.trim())).toList();
+    }).toList();
   }
 
   List<double> _parseIntervalValues(String input) {
@@ -287,27 +342,18 @@ class SeriesFormController {
     return parts.map((part) => _parseDouble(part.trim())).toList();
   }
 
-  List<double> _parseMultipleValues(String input) {
-    if (input.isEmpty) {
-      return [0.0];
-    }
-
-    List<String> parts = input.split('-');
-    return parts.map((part) => _parseDouble(part.trim())).toList();
-  }
-
   double _parseDouble(String value) {
     try {
       return double.parse(value);
     } catch (e) {
-      debugPrint('Error parsing double: $value');
+      print('Error parsing double: $value');
       return 0.0;
     }
   }
 
   void updateRelatedFields() {
-    if (_isMultiSeriesInput()) {
-      _updateFieldsForMultiSeriesInput();
+    if (_isComplexInput()) {
+      _updateFieldsForComplexInput();
     } else if (_isIntervalInput()) {
       _updateFieldsForIntervalInput();
     } else {
@@ -315,67 +361,74 @@ class SeriesFormController {
     }
   }
 
-  bool _isIntervalInput() {
-    return repsController.text.contains('/') ||
-           intensityController.text.contains('/') ||
-           rpeController.text.contains('/') ||
-           weightController.text.contains('/');
-  }
-
-  void _updateFieldsForMultiSeriesInput() {
+  void _updateFieldsForComplexInput() {
     switch (_lastEditedField) {
       case 'weight':
-        _updateIntensityAndRPEForMultiWeight();
+        _updateIntensityAndRPEForComplexWeight();
         break;
       case 'intensity':
-        _updateWeightAndRPEForMultiIntensity();
+        _updateWeightAndRPEForComplexIntensity();
         break;
       case 'rpe':
-        _updateWeightAndIntensityForMultiRPE();
+        _updateWeightAndIntensityForComplexRPE();
         break;
     }
-  }
-
-  void _updateIntensityAndRPEForMultiWeight() {
-    final weights = _parseMultipleValues(weightController.text);
-    final reps = _parseMultipleValues(repsController.text);
-    final intensities = weights.map((weight) =>
-      SeriesUtils.calculateIntensityFromWeight(weight, latestMaxWeight).toStringAsFixed(2)
+  }void _updateIntensityAndRPEForComplexWeight() {
+    final weights = _parseComplexValues(weightController.text);
+    final reps = _parseComplexValues(repsController.text);
+    final intensities = weights.map((weightGroup) =>
+      weightGroup.map((weight) =>
+        SeriesUtils.calculateIntensityFromWeight(weight, latestMaxWeight).toStringAsFixed(2)
+      ).join('/')
     ).toList();
     final rpes = List.generate(weights.length, (index) {
-      final repsValue = index < reps.length ? reps[index].toInt() : reps.last.toInt();
-      return SeriesUtils.calculateRPE(weights[index], latestMaxWeight, repsValue)?.toStringAsFixed(1) ?? '';
+      final repsGroup = index < reps.length ? reps[index] : reps.last;
+      return weights[index].map((weight) {
+        final repsValue = repsGroup[0].toInt();
+        return SeriesUtils.calculateRPE(weight, latestMaxWeight, repsValue)?.toStringAsFixed(1) ?? '';
+      }).join('/');
     });
     intensityController.text = intensities.join('-');
     rpeController.text = rpes.join('-');
   }
 
-  void _updateWeightAndRPEForMultiIntensity() {
-    final intensities = _parseMultipleValues(intensityController.text);
-    final reps = _parseMultipleValues(repsController.text);
-    final weights = intensities.map((intensity) {
-      final calculatedWeight = SeriesUtils.calculateWeightFromIntensity(latestMaxWeight.toDouble(), intensity);
-      return SeriesUtils.roundWeight(calculatedWeight, exerciseType).toStringAsFixed(2);
-    }).toList();
+  void _updateWeightAndRPEForComplexIntensity() {
+    final intensities = _parseComplexValues(intensityController.text);
+    final reps = _parseComplexValues(repsController.text);
+    final weights = intensities.map((intensityGroup) =>
+      intensityGroup.map((intensity) {
+        final calculatedWeight = SeriesUtils.calculateWeightFromIntensity(latestMaxWeight.toDouble(), intensity);
+        return SeriesUtils.roundWeight(calculatedWeight, exerciseType).toStringAsFixed(2);
+      }).join('/')
+    ).toList();
     final rpes = List.generate(intensities.length, (index) {
-      final repsValue = index < reps.length ? reps[index].toInt() : reps.last.toInt();
-      return SeriesUtils.calculateRPE(double.parse(weights[index]), latestMaxWeight, repsValue)?.toStringAsFixed(1) ?? '';
+      final repsGroup = index < reps.length ? reps[index] : reps.last;
+      return intensities[index].map((intensity) {
+        final weight = SeriesUtils.calculateWeightFromIntensity(latestMaxWeight.toDouble(), intensity);
+        final repsValue = repsGroup[0].toInt();
+        return SeriesUtils.calculateRPE(weight, latestMaxWeight, repsValue)?.toStringAsFixed(1) ?? '';
+      }).join('/');
     });
     weightController.text = weights.join('-');
     rpeController.text = rpes.join('-');
   }
 
-void _updateWeightAndIntensityForMultiRPE() {
-    final rpes = _parseMultipleValues(rpeController.text);
-    final reps = _parseMultipleValues(repsController.text);
+  void _updateWeightAndIntensityForComplexRPE() {
+    final rpes = _parseComplexValues(rpeController.text);
+    final reps = _parseComplexValues(repsController.text);
     final weights = List.generate(rpes.length, (index) {
-      final repsValue = index < reps.length ? reps[index].toInt() : reps.last.toInt();
-      final percentage = SeriesUtils.getRPEPercentage(rpes[index], repsValue);
-      final calculatedWeight = latestMaxWeight.toDouble() * percentage;
-      return SeriesUtils.roundWeight(calculatedWeight, exerciseType).toStringAsFixed(2);
+      final repsGroup = index < reps.length ? reps[index] : reps.last;
+      return rpes[index].map((rpe) {
+        final repsValue = repsGroup[0].toInt();
+        final percentage = SeriesUtils.getRPEPercentage(rpe, repsValue);
+        final calculatedWeight = latestMaxWeight.toDouble() * percentage;
+        return SeriesUtils.roundWeight(calculatedWeight, exerciseType).toStringAsFixed(2);
+      }).join('/');
     });
-    final intensities = weights.map((weight) =>
-      SeriesUtils.calculateIntensityFromWeight(double.parse(weight), latestMaxWeight).toStringAsFixed(2)
+    final intensities = weights.map((weightGroup) =>
+      weightGroup.split('/').map((weight) =>
+        SeriesUtils.calculateIntensityFromWeight(double.parse(weight), latestMaxWeight).toStringAsFixed(2)
+      ).join('/')
     ).toList();
     weightController.text = weights.join('-');
     intensityController.text = intensities.join('-');
@@ -384,35 +437,45 @@ void _updateWeightAndIntensityForMultiRPE() {
   void _updateFieldsForIntervalInput() {
     switch (_lastEditedField) {
       case 'weight':
-        _updateIntensityForWeightInterval();
+        _updateIntensityAndRPEForWeightInterval();
         break;
       case 'intensity':
-        _updateWeightForIntensityInterval();
+        _updateWeightAndRPEForIntensityInterval();
         break;
       case 'rpe':
-        _updateWeightForRPEInterval();
+        _updateWeightAndIntensityForRPEInterval();
         break;
     }
   }
 
-  void _updateIntensityForWeightInterval() {
+  void _updateIntensityAndRPEForWeightInterval() {
     final weights = _parseIntervalValues(weightController.text);
+    final reps = int.tryParse(repsController.text.split('/')[0]) ?? 0;
     final intensities = weights.map((weight) =>
       SeriesUtils.calculateIntensityFromWeight(weight, latestMaxWeight).toStringAsFixed(2)
     ).toList();
+    final rpes = weights.map((weight) =>
+      SeriesUtils.calculateRPE(weight, latestMaxWeight, reps)?.toStringAsFixed(1) ?? ''
+    ).toList();
     intensityController.text = intensities.join('/');
+    rpeController.text = rpes.join('/');
   }
 
-  void _updateWeightForIntensityInterval() {
+  void _updateWeightAndRPEForIntensityInterval() {
     final intensities = _parseIntervalValues(intensityController.text);
+    final reps = int.tryParse(repsController.text.split('/')[0]) ?? 0;
     final weights = intensities.map((intensity) {
       final calculatedWeight = SeriesUtils.calculateWeightFromIntensity(latestMaxWeight.toDouble(), intensity);
       return SeriesUtils.roundWeight(calculatedWeight, exerciseType).toStringAsFixed(2);
     }).toList();
+    final rpes = weights.map((weight) =>
+      SeriesUtils.calculateRPE(double.parse(weight), latestMaxWeight, reps)?.toStringAsFixed(1) ?? ''
+    ).toList();
     weightController.text = weights.join('/');
+    rpeController.text = rpes.join('/');
   }
 
-  void _updateWeightForRPEInterval() {
+  void _updateWeightAndIntensityForRPEInterval() {
     final rpes = _parseIntervalValues(rpeController.text);
     final reps = int.tryParse(repsController.text.split('/')[0]) ?? 0;
     final weights = rpes.map((rpe) {
@@ -420,7 +483,11 @@ void _updateWeightAndIntensityForMultiRPE() {
       final calculatedWeight = latestMaxWeight.toDouble() * percentage;
       return SeriesUtils.roundWeight(calculatedWeight, exerciseType).toStringAsFixed(2);
     }).toList();
+    final intensities = weights.map((weight) =>
+      SeriesUtils.calculateIntensityFromWeight(double.parse(weight), latestMaxWeight).toStringAsFixed(2)
+    ).toList();
     weightController.text = weights.join('/');
+    intensityController.text = intensities.join('/');
   }
 
   void _updateFieldsForSingleInput() {
