@@ -494,22 +494,27 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     );
   }
 
-  String _formatSeriesValue(Map<String, dynamic> seriesData, String field) {
-    final value = seriesData[field];
-    final maxValue = seriesData['max${field.capitalize()}'];
-    final valueDone = seriesData['${field}_done'];
-    final unit = field == 'reps' ? 'R' : 'Kg';
+String _formatSeriesValue(Map<String, dynamic> seriesData, String field) {
+  final value = seriesData[field];
+  final maxValue = seriesData['max${field.capitalize()}'];
+  final valueDone = seriesData['${field}_done'];
+  final isDone = seriesData['done'] == true;
+  final unit = field == 'reps' ? 'R' : 'Kg';
 
-    String text = maxValue != null && maxValue != value
-        ? '$value-$maxValue$unit'
-        : '$value$unit';
-
-    if (valueDone != null && valueDone != 0) {
-      text += '/$valueDone$unit';
-    }
-
-    return text;
+  if (field == 'weight' && (isDone || (valueDone != null && valueDone != 0))) {
+    return '$valueDone$unit';
   }
+
+  String text = maxValue != null && maxValue != value
+      ? '$value-$maxValue$unit'
+      : '$value$unit';
+
+  if (valueDone != null && valueDone != 0 && !isDone) {
+    text += '/$valueDone$unit';
+  }
+
+  return text;
+}
 
   Widget _buildSeriesDoneIcon(Map<String, dynamic> seriesData, BuildContext context, int flex) {
     final colorScheme = Theme.of(context).colorScheme;
