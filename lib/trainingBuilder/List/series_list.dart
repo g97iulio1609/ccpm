@@ -130,40 +130,40 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
     );
   }
 
-  List<dynamic> _groupSeries(List<Series> series) {
-  final groupedSeries = <dynamic>[];
-  List<Series> currentGroup = [];
+List<dynamic> _groupSeries(List<Series> series) {
+    final groupedSeries = <dynamic>[];
+    List<Series> currentGroup = [];
 
-  for (int i = 0; i < series.length; i++) {
-    final currentSeries = series[i];
-    if (i == 0 || !_areSeriesEqual(currentSeries, series[i - 1])) {
-      if (currentGroup.isNotEmpty) {
-        groupedSeries.add(currentGroup);
-        currentGroup = [];
+    for (int i = 0; i < series.length; i++) {
+      final currentSeries = series[i];
+      if (i == 0 || !_areSeriesEqual(currentSeries, series[i - 1])) {
+        if (currentGroup.isNotEmpty) {
+          groupedSeries.add(currentGroup);
+          currentGroup = [];
+        }
+        currentGroup.add(currentSeries);
+      } else {
+        currentGroup.add(currentSeries);
       }
-      currentGroup.add(currentSeries);
-    } else {
-      currentGroup.add(currentSeries);
     }
+
+    if (currentGroup.isNotEmpty) {
+      groupedSeries.add(currentGroup);
+    }
+
+    return groupedSeries;
   }
 
-  if (currentGroup.isNotEmpty) {
-    groupedSeries.add(currentGroup);
+  bool _areSeriesEqual(Series a, Series b) {
+    return a.reps == b.reps &&
+        a.maxReps == b.maxReps &&
+        a.intensity == b.intensity &&
+        a.maxIntensity == b.maxIntensity &&
+        a.rpe == b.rpe &&
+        a.maxRpe == b.maxRpe &&
+        a.weight == b.weight &&
+        a.maxWeight == b.maxWeight;
   }
-
-  return groupedSeries;
-}
-
-bool _areSeriesEqual(Series a, Series b) {
-  return a.reps == b.reps &&
-      a.maxReps == b.maxReps &&
-      a.intensity == b.intensity &&
-      a.maxIntensity == b.maxIntensity &&
-      a.rpe == b.rpe &&
-      a.maxRpe == b.maxRpe &&
-      a.weight == b.weight &&
-      a.maxWeight == b.maxWeight;
-}
 
   Widget _buildSeriesGroupCard(
     BuildContext context,
@@ -291,7 +291,7 @@ bool _areSeriesEqual(Series a, Series b) {
     return '$sets set(s), $reps reps x $weight kg';
   }
 
-String _formatRange(String minValue, String? maxValue) {
+  String _formatRange(String minValue, String? maxValue) {
     if (maxValue != null && maxValue != minValue) {
       return '$minValue-$maxValue';
     }
@@ -333,44 +333,35 @@ String _formatRange(String minValue, String? maxValue) {
         weightNotifier: ValueNotifier<double>(0.0),
         isIndividualEdit: isIndividualEdit,
       ),
-    ).then((updatedSeries) {
-      if (updatedSeries != null) {
-        if (isIndividualEdit) {
-          _updateIndividualSeries(seriesGroup!, updatedSeries[0]);
-        } else if (seriesGroup != null) {
-          _updateSeriesGroup(seriesGroup, updatedSeries as List<Series>);
-        } else {
-          _addNewSeries(updatedSeries as List<Series>);
+    ).then((result) {
+      if (result != null) {
+        if (result['action'] == 'update') {
+          _updateExistingSeries(result['originalGroup'], result['series']);
+        } else if (result['action'] == 'add') {
+          _addNewSeries(result['series']);
         }
       }
     });
   }
 
-  void _updateSeriesGroup(List<Series> oldSeriesGroup, List<Series> updatedSeries) {
+  void _updateExistingSeries(List<Series> oldSeriesGroup, List<Series> updatedSeries) {
     final exercise = widget.controller.program.weeks[widget.weekIndex]
         .workouts[widget.workoutIndex].exercises[widget.exerciseIndex];
-    final seriesIndex = exercise.series.indexOf(oldSeriesGroup.first);
-
-    // Remove old series
-    exercise.series.removeRange(seriesIndex, seriesIndex + oldSeriesGroup.length);
-
-    // Insert new series
-    exercise.series.insertAll(seriesIndex, updatedSeries);
-
-    // Update series order
-    for (int i = 0; i < exercise.series.length; i++) {
-      exercise.series[i].order = i + 1;
-    }
-
-    widget.controller.updateSeries(widget.weekIndex, widget.workoutIndex, widget.exerciseIndex, exercise.series);
-  }
-
-  void _updateIndividualSeries(List<Series> seriesGroup, Series updatedSeries) {
-    final exercise = widget.controller.program.weeks[widget.weekIndex]
-        .workouts[widget.workoutIndex].exercises[widget.exerciseIndex];
-    final index = exercise.series.indexOf(seriesGroup.first);
-    if (index != -1) {
-      exercise.series[index] = updatedSeries;
+    
+    // Trova l'indice di inizio del gruppo di serie da aggiornare
+    final startIndex = exercise.series.indexWhere((s) => s.serieId == oldSeriesGroup.first.serieId);
+    if (startIndex != -1) {
+      // Rimuovi le vecchie serie
+      exercise.series.removeRange(startIndex, startIndex + oldSeriesGroup.length);
+      
+      // Inserisci le serie aggiornate
+      exercise.series.insertAll(startIndex, updatedSeries);
+      
+      // Aggiorna gli ordini delle serie
+      for (int i = 0; i < exercise.series.length; i++) {
+        exercise.series[i].order = i + 1;
+      }
+      
       widget.controller.updateSeries(widget.weekIndex, widget.workoutIndex, widget.exerciseIndex, exercise.series);
     }
   }
@@ -379,10 +370,8 @@ String _formatRange(String minValue, String? maxValue) {
     final exercise = widget.controller.program.weeks[widget.weekIndex]
         .workouts[widget.workoutIndex].exercises[widget.exerciseIndex];
 
-    // Add new series
     exercise.series.addAll(newSeries);
 
-    // Update series order
     for (int i = 0; i < exercise.series.length; i++) {
       exercise.series[i].order = i + 1;
     }

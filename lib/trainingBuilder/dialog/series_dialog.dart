@@ -19,7 +19,7 @@ class SeriesDialog extends StatefulWidget {
   final bool isIndividualEdit;
 
   const SeriesDialog({
-    Key? key,
+    super.key,
     required this.exerciseRecordService,
     required this.athleteId,
     required this.exerciseId,
@@ -30,7 +30,7 @@ class SeriesDialog extends StatefulWidget {
     required this.latestMaxWeight,
     required this.weightNotifier,
     this.isIndividualEdit = false,
-  }) : super(key: key);
+  });
 
   @override
   State<SeriesDialog> createState() => _SeriesDialogState();
@@ -84,15 +84,28 @@ class _SeriesDialogState extends State<SeriesDialog> {
   }
 
   void _handleSubmit() {
-    final series = _formController.createSeries(widget.exercise.series.length);
-    Navigator.pop(context, series);
+    final updatedSeries = _formController.createSeries(widget.exercise.series.length);
+    if (widget.currentSeriesGroup != null) {
+      // Modifica delle serie esistenti
+      Navigator.pop(context, {
+        'action': 'update',
+        'series': updatedSeries,
+        'originalGroup': widget.currentSeriesGroup,
+      });
+    } else {
+      // Aggiunta di nuove serie
+      Navigator.pop(context, {
+        'action': 'add',
+        'series': updatedSeries,
+      });
+    }
   }
 }
 
 class SeriesForm extends StatelessWidget {
   final SeriesFormController controller;
 
-  const SeriesForm({Key? key, required this.controller}) : super(key: key);
+  const SeriesForm({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -143,9 +156,10 @@ class SeriesFormController {
   final bool isIndividualEdit;
   final num latestMaxWeight;
   final String exerciseType;
+  final List<Series>? currentSeriesGroup;
 
   SeriesFormController({
-    List<Series>? currentSeriesGroup,
+    this.currentSeriesGroup,
     required this.isIndividualEdit,
     required this.latestMaxWeight,
     required this.exerciseType,
@@ -233,12 +247,14 @@ class SeriesFormController {
     int totalSets = sets.length == 1 ? sets[0][0].toInt() : sets.map((s) => s[0].toInt()).reduce((a, b) => a + b);
     List<Series> newSeries = [];
     int currentOrder = currentSeriesCount + 1;
+    List<String?> existingIds = isIndividualEdit ? [] : currentSeriesGroup?.map((s) => s.serieId).toList() ?? [];
 
     for (int i = 0; i < reps.length; i++) {
       int currentSets = sets.length == 1 ? (totalSets ~/ reps.length) : sets[i][0].toInt();
       for (int j = 0; j < currentSets; j++) {
+        String serieId = existingIds.isNotEmpty ? existingIds.removeAt(0) ?? generateRandomId(16) : generateRandomId(16);
         newSeries.add(Series(
-          serieId: generateRandomId(16),
+          serieId: serieId,
           reps: reps[i][0].toInt(),
           sets: 1,
           intensity: intensity[i][0].toString(),
@@ -269,10 +285,12 @@ class SeriesFormController {
 
     List<Series> newSeries = [];
     int currentOrder = currentSeriesCount + 1;
+    List<String?> existingIds = isIndividualEdit ? [] : currentSeriesGroup?.map((s) => s.serieId).toList() ?? [];
 
     for (int i = 0; i < sets; i++) {
+      String serieId = existingIds.isNotEmpty ? existingIds.removeAt(0) ?? generateRandomId(16) : generateRandomId(16);
       newSeries.add(Series(
-        serieId: generateRandomId(16),
+        serieId: serieId,
         reps: reps[0].toInt(),
         sets: 1,
         intensity: intensity[0].toString(),
@@ -302,10 +320,12 @@ class SeriesFormController {
 
     List<Series> newSeries = [];
     int currentOrder = currentSeriesCount + 1;
+    List<String?> existingIds = isIndividualEdit ? [] : currentSeriesGroup?.map((s) => s.serieId).toList() ?? [];
 
     for (int i = 0; i < sets; i++) {
+      String serieId = existingIds.isNotEmpty ? existingIds.removeAt(0) ?? generateRandomId(16) : generateRandomId(16);
       newSeries.add(Series(
-        serieId: generateRandomId(16),
+        serieId: serieId,
         reps: reps,
         sets: 1,
         intensity: intensity,
@@ -329,8 +349,7 @@ class SeriesFormController {
     List<String> groups = input.split('-');
     return groups.map((group) {
       List<String> parts = group.split('/');
-      return parts.map((part) => _parseDouble(part.trim())).toList();
-    }).toList();
+      return parts.map((part) => _parseDouble(part.trim())).toList();}).toList();
   }
 
   List<double> _parseIntervalValues(String input) {
@@ -342,13 +361,12 @@ class SeriesFormController {
     return parts.map((part) => _parseDouble(part.trim())).toList();
   }
 
-   double _parseDouble(String value) {
+  double _parseDouble(String value) {
     if (value.isEmpty || value == '-' || value == '/') {
       return 0.0;
     }
     return double.tryParse(value) ?? 0.0;
   }
-
 
   void updateRelatedFields() {
     if (_isComplexInput()) {

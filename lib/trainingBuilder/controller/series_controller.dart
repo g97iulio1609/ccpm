@@ -67,7 +67,7 @@ class SeriesController extends ChangeNotifier {
 
     if (!context.mounted) return;
 
-    final updatedSeriesList = await _showSeriesDialog(
+    final updatedSeries = await _showSeriesDialog(
       context,
       exercise,
       weekIndex,
@@ -76,14 +76,18 @@ class SeriesController extends ChangeNotifier {
       latestMaxWeight,
     );
 
-    if (updatedSeriesList != null && updatedSeriesList.isNotEmpty) {
+    if (updatedSeries != null) {
       final startIndex = exercise.series.indexOf(currentSeriesGroup.first);
       if (startIndex != -1) {
-        // Remove old series
-        exercise.series.removeRange(startIndex, startIndex + currentSeriesGroup.length);
+        // Remove old series from database
+        for (var series in currentSeriesGroup) {
+          if (series.serieId != null) {
+            program.trackToDeleteSeries.add(series.serieId!);
+          }
+        }
 
-        // Insert new series
-        exercise.series.insertAll(startIndex, updatedSeriesList);
+        // Replace old series with updated ones
+        exercise.series.replaceRange(startIndex, startIndex + currentSeriesGroup.length, updatedSeries);
 
         // Update series order
         for (int i = 0; i < exercise.series.length; i++) {
@@ -96,7 +100,7 @@ class SeriesController extends ChangeNotifier {
       }
     }
   }
-
+  
   void removeAllSeriesForExercise(TrainingProgram program, int weekIndex,
       int workoutIndex, int exerciseIndex) {
     if (!_isValidIndex(program, weekIndex, workoutIndex, exerciseIndex)) {
