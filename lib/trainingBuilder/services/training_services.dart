@@ -362,6 +362,12 @@ class FirestoreService {
         'done': series.done,
         'reps_done': series.reps_done,
         'weight_done': series.weight_done,
+        //new interval
+        'maxReps': series.maxReps,
+        'maxSets': series.maxSets,
+        'maxIntensity': series.maxIntensity,
+        'maxRpe': series.maxRpe,
+        'maxWeight': series.maxWeight,
       },
       SetOptions(merge: true),
     );

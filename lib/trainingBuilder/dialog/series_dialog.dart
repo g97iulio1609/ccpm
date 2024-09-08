@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 import 'package:alphanessone/trainingBuilder/series_utils.dart';
 import 'package:alphanessone/trainingBuilder/models/series_model.dart';
@@ -83,8 +84,21 @@ class _SeriesDialogState extends State<SeriesDialog> {
   }
 
   void _handleSubmit() {
-    final series = _formController.createSeries(widget.exercise.series.length);
-    Navigator.pop(context, series);
+    final updatedSeries = _formController.createSeries(widget.exercise.series.length);
+    if (widget.currentSeriesGroup != null) {
+      // Modifica delle serie esistenti
+      Navigator.pop(context, {
+        'action': 'update',
+        'series': updatedSeries,
+        'originalGroup': widget.currentSeriesGroup,
+      });
+    } else {
+      // Aggiunta di nuove serie
+      Navigator.pop(context, {
+        'action': 'add',
+        'series': updatedSeries,
+      });
+    }
   }
 }
 
@@ -98,22 +112,28 @@ class SeriesForm extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _buildTextField(controller.repsController, 'Reps', controller.repsNode),
+        _buildRangeTextField(controller.repsController, 'Reps', controller.repsNode),
         if (!controller.isIndividualEdit)
-          _buildTextField(controller.setsController, 'Sets', controller.setsNode),
-        _buildTextField(controller.intensityController, 'Intensità (%)', controller.intensityNode),
-        _buildTextField(controller.rpeController, 'RPE', controller.rpeNode),
-        _buildTextField(controller.weightController, 'Peso (kg)', controller.weightNode),
+          _buildRangeTextField(controller.setsController, 'Sets', controller.setsNode),
+        _buildRangeTextField(controller.intensityController, 'Intensità (%)', controller.intensityNode),
+        _buildRangeTextField(controller.rpeController, 'RPE', controller.rpeNode),
+        _buildRangeTextField(controller.weightController, 'Peso (kg)', controller.weightNode),
       ],
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label, FocusNode focusNode) {
+  Widget _buildRangeTextField(TextEditingController controller, String label, FocusNode focusNode) {
     return TextField(
       controller: controller,
       focusNode: focusNode,
       keyboardType: TextInputType.text,
-      decoration: InputDecoration(labelText: label),
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'[0-9./-]')),
+      ],
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: 'Valore singolo, Min/Max o Serie1-Serie2-...',
+      ),
       onChanged: (_) => this.controller.updateRelatedFields(),
     );
   }
@@ -136,9 +156,10 @@ class SeriesFormController {
   final bool isIndividualEdit;
   final num latestMaxWeight;
   final String exerciseType;
+  final List<Series>? currentSeriesGroup;
 
   SeriesFormController({
-    List<Series>? currentSeriesGroup,
+    this.currentSeriesGroup,
     required this.isIndividualEdit,
     required this.latestMaxWeight,
     required this.exerciseType,
@@ -158,18 +179,22 @@ class SeriesFormController {
 
   void _initializeControllers(List<Series>? currentSeriesGroup) {
     if (currentSeriesGroup != null && currentSeriesGroup.isNotEmpty) {
-      repsController.text = _getGroupedValue(currentSeriesGroup, (s) => s.reps.toString());
+      repsController.text = _getGroupedValue(currentSeriesGroup, (s) => s.reps.toString(), (s) => s.maxReps?.toString());
       setsController.text = isIndividualEdit ? '1' : currentSeriesGroup.length.toString();
-      intensityController.text = _getGroupedValue(currentSeriesGroup, (s) => s.intensity);
-      rpeController.text = _getGroupedValue(currentSeriesGroup, (s) => s.rpe);
-      weightController.text = _getGroupedValue(currentSeriesGroup, (s) => s.weight.toString());
+      intensityController.text = _getGroupedValue(currentSeriesGroup, (s) => s.intensity, (s) => s.maxIntensity);
+      rpeController.text = _getGroupedValue(currentSeriesGroup, (s) => s.rpe, (s) => s.maxRpe);
+      weightController.text = _getGroupedValue(currentSeriesGroup, (s) => s.weight.toString(), (s) => s.maxWeight?.toString());
     } else {
       setsController.text = '1';
     }
   }
 
-  String _getGroupedValue(List<Series> series, String Function(Series) getValue) {
-    var values = series.map(getValue).toSet().toList();
+  String _getGroupedValue(List<Series> series, String Function(Series) getValue, String? Function(Series) getMaxValue) {
+    var values = series.map((s) {
+      String value = getValue(s);
+      String? maxValue = getMaxValue(s);
+      return maxValue != null && maxValue != value ? '$value/$maxValue' : value;
+    }).toSet().toList();
     return values.length == 1 ? values.first : values.join('-');
   }
 
@@ -187,15 +212,17 @@ class SeriesFormController {
     }
   }
 
-  void updateRelatedFields() {
-    if (_isRangeInput()) {
-      _updateFieldsForRangeInput();
+  List<Series> createSeries(int currentSeriesCount) {
+    if (_isComplexInput()) {
+      return _createComplexSeries(currentSeriesCount);
+    } else if (_isIntervalInput()) {
+      return _createIntervalSeries(currentSeriesCount);
     } else {
-      _updateFieldsForSingleInput();
+      return _createSimpleSeries(currentSeriesCount);
     }
   }
 
-  bool _isRangeInput() {
+  bool _isComplexInput() {
     return repsController.text.contains('-') ||
            setsController.text.contains('-') ||
            intensityController.text.contains('-') ||
@@ -203,25 +230,306 @@ class SeriesFormController {
            weightController.text.contains('-');
   }
 
-  void _updateFieldsForRangeInput() {
+  bool _isIntervalInput() {
+    return repsController.text.contains('/') ||
+           intensityController.text.contains('/') ||
+           rpeController.text.contains('/') ||
+           weightController.text.contains('/');
+  }
+
+  List<Series> _createComplexSeries(int currentSeriesCount) {
+    final reps = _parseComplexValues(repsController.text);
+    final sets = _parseComplexValues(setsController.text);
+    final intensity = _parseComplexValues(intensityController.text);
+    final rpe = _parseComplexValues(rpeController.text);
+    final weight = _parseComplexValues(weightController.text);
+
+    int totalSets = sets.length == 1 ? sets[0][0].toInt() : sets.map((s) => s[0].toInt()).reduce((a, b) => a + b);
+    List<Series> newSeries = [];
+    int currentOrder = currentSeriesCount + 1;
+    List<String?> existingIds = isIndividualEdit ? [] : currentSeriesGroup?.map((s) => s.serieId).toList() ?? [];
+
+    for (int i = 0; i < reps.length; i++) {
+      int currentSets = sets.length == 1 ? (totalSets ~/ reps.length) : sets[i][0].toInt();
+      for (int j = 0; j < currentSets; j++) {
+        String serieId = existingIds.isNotEmpty ? existingIds.removeAt(0) ?? generateRandomId(16) : generateRandomId(16);
+        newSeries.add(Series(
+          serieId: serieId,
+          reps: reps[i][0].toInt(),
+          sets: 1,
+          intensity: intensity[i][0].toString(),
+          rpe: rpe.length > i ? rpe[i][0].toString() : '',
+          weight: weight[i][0],
+          order: currentOrder++,
+          done: false,
+          reps_done: 0,
+          weight_done: 0.0,
+          maxReps: reps[i].length > 1 ? reps[i][1].toInt() : null,
+          maxSets: null,
+          maxIntensity: intensity[i].length > 1 ? intensity[i][1].toString() : null,
+          maxRpe: rpe.length > i && rpe[i].length > 1 ? rpe[i][1].toString() : null,
+          maxWeight: weight[i].length > 1 ? weight[i][1] : null,
+        ));
+      }
+    }
+
+    return newSeries;
+  }
+
+  List<Series> _createIntervalSeries(int currentSeriesCount) {
+    final reps = _parseIntervalValues(repsController.text);
+    final sets = int.tryParse(setsController.text) ?? 1;
+    final intensity = _parseIntervalValues(intensityController.text);
+    final rpe = _parseIntervalValues(rpeController.text);
+    final weight = _parseIntervalValues(weightController.text);
+
+    List<Series> newSeries = [];
+    int currentOrder = currentSeriesCount + 1;
+    List<String?> existingIds = isIndividualEdit ? [] : currentSeriesGroup?.map((s) => s.serieId).toList() ?? [];
+
+    for (int i = 0; i < sets; i++) {
+      String serieId = existingIds.isNotEmpty ? existingIds.removeAt(0) ?? generateRandomId(16) : generateRandomId(16);
+      newSeries.add(Series(
+        serieId: serieId,
+        reps: reps[0].toInt(),
+        sets: 1,
+        intensity: intensity[0].toString(),
+        rpe: rpe[0].toString(),
+        weight: weight[0],
+        order: currentOrder++,
+        done: false,
+        reps_done: 0,
+        weight_done: 0.0,
+        maxReps: reps.length > 1 ? reps[1].toInt() : null,
+        maxSets: null,
+        maxIntensity: intensity.length > 1 ? intensity[1].toString() : null,
+        maxRpe: rpe.length > 1 ? rpe[1].toString() : null,
+        maxWeight: weight.length > 1 ? weight[1] : null,
+      ));
+    }
+
+    return newSeries;
+  }
+
+  List<Series> _createSimpleSeries(int currentSeriesCount) {
+    final reps = int.tryParse(repsController.text) ?? 0;
+    final sets = int.tryParse(setsController.text) ?? 1;
+    final intensity = intensityController.text;
+    final rpe = rpeController.text;
+    final weight = double.tryParse(weightController.text) ?? 0.0;
+
+    List<Series> newSeries = [];
+    int currentOrder = currentSeriesCount + 1;
+    List<String?> existingIds = isIndividualEdit ? [] : currentSeriesGroup?.map((s) => s.serieId).toList() ?? [];
+
+    for (int i = 0; i < sets; i++) {
+      String serieId = existingIds.isNotEmpty ? existingIds.removeAt(0) ?? generateRandomId(16) : generateRandomId(16);
+      newSeries.add(Series(
+        serieId: serieId,
+        reps: reps,
+        sets: 1,
+        intensity: intensity,
+        rpe: rpe,
+        weight: weight,
+        order: currentOrder++,
+        done: false,
+        reps_done: 0,
+        weight_done: 0.0,
+      ));
+    }
+
+    return newSeries;
+  }
+
+  List<List<double>> _parseComplexValues(String input) {
+    if (input.isEmpty || input == '-' || input == '/') {
+      return [[0.0]];
+    }
+
+    List<String> groups = input.split('-');
+    return groups.map((group) {
+      List<String> parts = group.split('/');
+      return parts.map((part) => _parseDouble(part.trim())).toList();}).toList();
+  }
+
+  List<double> _parseIntervalValues(String input) {
+    if (input.isEmpty || input == '-' || input == '/') {
+      return [0.0];
+    }
+
+    List<String> parts = input.split('/');
+    return parts.map((part) => _parseDouble(part.trim())).toList();
+  }
+
+  double _parseDouble(String value) {
+    if (value.isEmpty || value == '-' || value == '/') {
+      return 0.0;
+    }
+    return double.tryParse(value) ?? 0.0;
+  }
+
+  void updateRelatedFields() {
+    if (_isComplexInput()) {
+      _updateFieldsForComplexInput();
+    } else if (_isIntervalInput()) {
+      _updateFieldsForIntervalInput();
+    } else {
+      _updateFieldsForSingleInput();
+    }
+  }
+
+  bool _isValidInput(String input) {
+    return input.isNotEmpty && input != '-' && input != '/';
+  }
+
+  void _updateFieldsForComplexInput() {
     switch (_lastEditedField) {
       case 'weight':
-        _updateIntensityForWeightRange();
+        if (_isValidInput(weightController.text)) {
+          _updateIntensityAndRPEForComplexWeight();
+        }
         break;
       case 'intensity':
-        _updateWeightForIntensityRange();
+        if (_isValidInput(intensityController.text)) {
+          _updateWeightAndRPEForComplexIntensity();
+        }
         break;
       case 'rpe':
-        _updateWeightForRPERange();
+        if (_isValidInput(rpeController.text)) {
+          _updateWeightAndIntensityForComplexRPE();
+        }
         break;
     }
   }
 
+  void _updateIntensityAndRPEForComplexWeight() {
+    final weights = _parseComplexValues(weightController.text);
+    final reps = _parseComplexValues(repsController.text);
+    final intensities = weights.map((weightGroup) =>
+      weightGroup.map((weight) =>
+        SeriesUtils.calculateIntensityFromWeight(weight, latestMaxWeight).toStringAsFixed(2)
+      ).join('/')
+    ).toList();
+    final rpes = List.generate(weights.length, (index) {
+      final repsGroup = index < reps.length ? reps[index] : reps.last;
+      return weights[index].map((weight) {
+        final repsValue = repsGroup[0].toInt();
+        return SeriesUtils.calculateRPE(weight, latestMaxWeight, repsValue)?.toStringAsFixed(1) ?? '';
+      }).join('/');
+    });
+    intensityController.text = intensities.join('-');
+    rpeController.text = rpes.join('-');
+  }
+
+  void _updateWeightAndRPEForComplexIntensity() {
+    final intensities = _parseComplexValues(intensityController.text);
+    final reps = _parseComplexValues(repsController.text);
+    final weights = intensities.map((intensityGroup) =>
+      intensityGroup.map((intensity) {
+        final calculatedWeight = SeriesUtils.calculateWeightFromIntensity(latestMaxWeight.toDouble(), intensity);
+        return SeriesUtils.roundWeight(calculatedWeight, exerciseType).toStringAsFixed(2);
+      }).join('/')
+    ).toList();
+    final rpes = List.generate(intensities.length, (index) {
+      final repsGroup = index < reps.length ? reps[index] : reps.last;
+      return intensities[index].map((intensity) {
+        final weight = SeriesUtils.calculateWeightFromIntensity(latestMaxWeight.toDouble(), intensity);
+        final repsValue = repsGroup[0].toInt();
+        return SeriesUtils.calculateRPE(weight, latestMaxWeight, repsValue)?.toStringAsFixed(1) ?? '';
+      }).join('/');
+    });
+    weightController.text = weights.join('-');
+    rpeController.text = rpes.join('-');
+  }
+
+  void _updateWeightAndIntensityForComplexRPE() {
+    final rpes = _parseComplexValues(rpeController.text);
+    final reps = _parseComplexValues(repsController.text);
+    final weights = List.generate(rpes.length, (index) {
+      final repsGroup = index < reps.length ? reps[index] : reps.last;
+      return rpes[index].map((rpe) {
+        final repsValue = repsGroup[0].toInt();
+        final percentage = SeriesUtils.getRPEPercentage(rpe, repsValue);
+        final calculatedWeight = latestMaxWeight.toDouble() * percentage;
+        return SeriesUtils.roundWeight(calculatedWeight, exerciseType).toStringAsFixed(2);
+      }).join('/');
+    });
+    final intensities = weights.map((weightGroup) =>
+      weightGroup.split('/').map((weight) =>
+        SeriesUtils.calculateIntensityFromWeight(double.parse(weight), latestMaxWeight).toStringAsFixed(2)
+      ).join('/')
+    ).toList();
+    weightController.text = weights.join('-');
+    intensityController.text = intensities.join('-');
+  }
+
+  void _updateFieldsForIntervalInput() {
+    switch (_lastEditedField) {
+      case 'weight':
+        if (_isValidInput(weightController.text)) {
+          _updateIntensityAndRPEForWeightInterval();
+        }
+        break;
+      case 'intensity':
+        if (_isValidInput(intensityController.text)) {
+          _updateWeightAndRPEForIntensityInterval();
+        }
+        break;
+      case 'rpe':
+        if (_isValidInput(rpeController.text)) {
+          _updateWeightAndIntensityForRPEInterval();
+        }
+        break;
+    }
+  }
+
+  void _updateIntensityAndRPEForWeightInterval() {
+    final weights = _parseIntervalValues(weightController.text);
+    final reps = int.tryParse(repsController.text.split('/')[0]) ?? 0;
+    final intensities = weights.map((weight) =>
+      SeriesUtils.calculateIntensityFromWeight(weight, latestMaxWeight).toStringAsFixed(2)
+    ).toList();
+    final rpes = weights.map((weight) =>
+      SeriesUtils.calculateRPE(weight, latestMaxWeight, reps)?.toStringAsFixed(1) ?? ''
+    ).toList();
+    intensityController.text = intensities.join('/');
+    rpeController.text = rpes.join('/');
+  }
+
+  void _updateWeightAndRPEForIntensityInterval() {
+    final intensities = _parseIntervalValues(intensityController.text);
+    final reps = int.tryParse(repsController.text.split('/')[0]) ?? 0;
+    final weights = intensities.map((intensity) {
+      final calculatedWeight = SeriesUtils.calculateWeightFromIntensity(latestMaxWeight.toDouble(), intensity);
+      return SeriesUtils.roundWeight(calculatedWeight, exerciseType).toStringAsFixed(2);
+    }).toList();
+    final rpes = weights.map((weight) =>
+      SeriesUtils.calculateRPE(double.parse(weight), latestMaxWeight, reps)?.toStringAsFixed(1) ?? ''
+    ).toList();
+    weightController.text = weights.join('/');
+    rpeController.text = rpes.join('/');
+  }
+
+  void _updateWeightAndIntensityForRPEInterval() {
+    final rpes = _parseIntervalValues(rpeController.text);
+    final reps = int.tryParse(repsController.text.split('/')[0]) ?? 0;
+    final weights = rpes.map((rpe) {
+      final percentage = SeriesUtils.getRPEPercentage(rpe, reps);
+      final calculatedWeight = latestMaxWeight.toDouble() * percentage;
+      return SeriesUtils.roundWeight(calculatedWeight, exerciseType).toStringAsFixed(2);
+    }).toList();
+    final intensities = weights.map((weight) =>
+      SeriesUtils.calculateIntensityFromWeight(double.parse(weight), latestMaxWeight).toStringAsFixed(2)
+    ).toList();
+    weightController.text = weights.join('/');
+    intensityController.text = intensities.join('/');
+  }
+
   void _updateFieldsForSingleInput() {
     final reps = int.tryParse(repsController.text) ?? 0;
-    final weight = double.tryParse(weightController.text) ?? 0.0;
-    final intensity = double.tryParse(intensityController.text) ?? 0.0;
-    final rpe = double.tryParse(rpeController.text) ?? 0.0;
+    final weight = _parseDouble(weightController.text);
+    final intensity = _parseDouble(intensityController.text);
+    final rpe = _parseDouble(rpeController.text);
 
     switch (_lastEditedField) {
       case 'weight':
@@ -238,7 +546,15 @@ class SeriesFormController {
         }
         break;
       case 'rpe':
-        if (rpe > 0) {
+        if (rpe > 0 && reps > 0) {
+          final percentage = SeriesUtils.getRPEPercentage(rpe, reps);
+          final calculatedWeight = latestMaxWeight.toDouble() * percentage;
+          weightController.text = SeriesUtils.roundWeight(calculatedWeight, exerciseType).toStringAsFixed(2);
+          intensityController.text = SeriesUtils.calculateIntensityFromWeight(calculatedWeight, latestMaxWeight).toStringAsFixed(2);
+        }
+        break;
+      case 'reps':
+        if (rpe > 0 && reps > 0) {
           final percentage = SeriesUtils.getRPEPercentage(rpe, reps);
           final calculatedWeight = latestMaxWeight.toDouble() * percentage;
           weightController.text = SeriesUtils.roundWeight(calculatedWeight, exerciseType).toStringAsFixed(2);
@@ -246,96 +562,6 @@ class SeriesFormController {
         }
         break;
     }
-  }
-
-  void _updateIntensityForWeightRange() {
-    final weights = _parseDoubleList(weightController.text);
-    final intensities = weights.map((weight) =>
-      SeriesUtils.calculateIntensityFromWeight(weight, latestMaxWeight).toStringAsFixed(2)
-    ).toList();
-    intensityController.text = intensities.join('-');
-  }
-
-  void _updateWeightForIntensityRange() {
-    final intensities = _parseDoubleList(intensityController.text);
-    final weights = intensities.map((intensity) {
-      final calculatedWeight = SeriesUtils.calculateWeightFromIntensity(latestMaxWeight.toDouble(), intensity);
-      return SeriesUtils.roundWeight(calculatedWeight, exerciseType).toStringAsFixed(2);
-    }).toList();
-    weightController.text = weights.join('-');
-  }
-
-  void _updateWeightForRPERange() {
-    final rpes = _parseDoubleList(rpeController.text);
-    final reps = int.tryParse(repsController.text) ?? 0;
-    final weights = rpes.map((rpe) {
-      final percentage = SeriesUtils.getRPEPercentage(rpe, reps);
-      final calculatedWeight = latestMaxWeight.toDouble() * percentage;
-      return SeriesUtils.roundWeight(calculatedWeight, exerciseType).toStringAsFixed(2);
-    }).toList();
-    weightController.text = weights.join('-');
-  }
-
-  List<Series> createSeries(int currentSeriesCount) {
-    final reps = _parseIntList(repsController.text);
-    final sets = _parseIntList(setsController.text);
-    final intensity = _parseStringList(intensityController.text);
-    final rpe = _parseStringList(rpeController.text);
-    final weight = _parseDoubleList(weightController.text);
-
-    List<Series> newSeries = [];
-    int currentOrder = currentSeriesCount + 1;
-
-    bool isSetsRange = sets.length > 1;
-    int totalSets = isSetsRange ? sets.reduce((a, b) => a + b) : sets[0];
-
-    int listIndex = 0;
-
-    if (isSetsRange) {
-      for (int i = 0; i < sets.length; i++) {
-        for (int j = 0; j < sets[i]; j++) {
-          newSeries.add(_createSerie(reps, intensity, rpe, weight, currentOrder++, listIndex));
-        }
-        listIndex++;
-      }
-    } else {
-      for (int i = 0; i < totalSets; i++) {
-        newSeries.add(_createSerie(reps, intensity, rpe, weight, currentOrder++, listIndex));
-        listIndex++;
-      }
-    }
-
-    return newSeries;
-  }
-
-  Series _createSerie(List<int> reps, List<String> intensity, List<String> rpe, List<double> weight, int order, int listIndex) {
-    return Series(
-      serieId: generateRandomId(16),
-      reps: reps[listIndex % reps.length],
-      sets: 1,
-      intensity: intensity[listIndex % intensity.length],
-      rpe: rpe[listIndex % rpe.length],
-      weight: weight[listIndex % weight.length],
-      order: order,
-      done: false,
-      reps_done: 0,
-      weight_done: 0.0,
-    );
-  }
-
-  List<int> _parseIntList(String input) {
-    final list = input.split('-').map((e) => int.tryParse(e.trim()) ?? 0).toList();
-    return list.isEmpty ? [0] : list;
-  }
-
-  List<String> _parseStringList(String input) {
-    final list = input.split('-').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-    return list.isEmpty ? ['0'] : list;
-  }
-
-  List<double> _parseDoubleList(String input) {
-    final list = input.split('-').map((e) => double.tryParse(e.trim()) ?? 0.0).toList();
-    return list.isEmpty ? [0.0] : list;
   }
 
   void dispose() {

@@ -124,23 +124,18 @@ class SeriesUtils {
   }
 
  static double roundWeight(double weight, String? exerciseType) {
-    // Imposta un valore predefinito per exerciseType se è null o una stringa vuota
     final effectiveExerciseType =
         exerciseType?.isNotEmpty == true ? exerciseType : 'Default';
     switch (effectiveExerciseType) {
       case 'Manubri':
-        // Arrotonda al numero pari più vicino
         return (weight / 2).round() * 2.0;
       case 'Bilanciere':
-        // Gestisci il caso in cui weight è 0
         if (weight == 0) {
           return 0;
         } else {
-          // Mantieni il comportamento esistente
           return (weight / 2.5).round() * 2.5;
         }
       default:
-        // Arrotonda al numero pari più vicino
         final roundedWeight = double.parse((weight).toStringAsFixed(1));
         return (roundedWeight / 2).round() * 2.0;
     }
@@ -291,7 +286,7 @@ class SeriesUtils {
         latestMaxWeight = latestRecord.maxWeight;
       }
     }).catchError((error) {
-      // Gestisci l'errore
+      // Handle error
     });
     return latestMaxWeight;
   }
@@ -300,7 +295,7 @@ class SeriesUtils {
     TextEditingController weightController,
     TextEditingController intensityController,
     String exerciseType,
-    num latestMaxWeight, // Utilizza il parametro latestMaxWeight corretto
+    num latestMaxWeight,
     ValueNotifier<double> weightNotifier,
   ) {
     final intensity = double.tryParse(intensityController.text) ?? 0;
@@ -313,7 +308,7 @@ class SeriesUtils {
   static void updateIntensityFromWeight(
     TextEditingController weightController,
     TextEditingController intensityController,
-    num latestMaxWeight, // Utilizza il parametro latestMaxWeight
+    num latestMaxWeight,
   ) {
     final weight = double.tryParse(weightController.text) ?? 0;
     if (weight > 0 && latestMaxWeight > 0) {
@@ -324,7 +319,7 @@ class SeriesUtils {
     }
   }
 
-  static void updateWeightFromRPE(
+ static void updateWeightFromRPE(
       TextEditingController repsController,
       TextEditingController weightController,
       TextEditingController rpeController,
@@ -364,7 +359,6 @@ class SeriesUtils {
       intensityController.text = intensity.toStringAsFixed(2);
     } else {
      rpeController.clear();
-    //  intensityController.clear();
     }
   }
 
@@ -412,6 +406,55 @@ class SeriesUtils {
             series.weight, latestMaxWeight.toDouble(), series.reps);
         series.rpe = rpe != null ? rpe.toStringAsFixed(1) : '';
       }
+    }
+  }
+
+  static String calculateIntensityRange(double minWeight, double maxWeight, num latestMaxWeight) {
+    if (latestMaxWeight == 0) return '0';
+    final minIntensity = (minWeight / latestMaxWeight) * 100;
+    final maxIntensity = (maxWeight / latestMaxWeight) * 100;
+    return '${minIntensity.toStringAsFixed(2)}/${maxIntensity.toStringAsFixed(2)}';
+  }
+
+  static List<double> calculateWeightRange(String intensityRange, num latestMaxWeight) {
+    final parts = intensityRange.split('/');
+    if (parts.length == 2) {
+      final minIntensity = double.parse(parts[0]);
+      final maxIntensity = double.parse(parts[1]);
+      final minWeight = calculateWeightFromIntensity(latestMaxWeight.toDouble(), minIntensity);
+      final maxWeight = calculateWeightFromIntensity(latestMaxWeight.toDouble(), maxIntensity);
+      return [minWeight, maxWeight];
+    } else {
+      final intensity = double.parse(intensityRange);
+      final weight = calculateWeightFromIntensity(latestMaxWeight.toDouble(), intensity);
+      return [weight, weight];
+    }
+  }
+
+  static String? calculateRPERange(double minWeight, double maxWeight, num latestMaxWeight, int reps) {
+    final minRPE = calculateRPE(minWeight, latestMaxWeight, reps);
+    final maxRPE = calculateRPE(maxWeight, latestMaxWeight, reps);
+    if (minRPE != null && maxRPE != null) {
+      return '${minRPE.toStringAsFixed(1)}/${maxRPE.toStringAsFixed(1)}';
+    }
+    return null;
+  }
+
+  static List<double> calculateWeightRangeFromRPE(String rpeRange, int reps, num latestMaxWeight) {
+    final parts = rpeRange.split('/');
+    if (parts.length == 2) {
+      final minRPE = double.parse(parts[0]);
+      final maxRPE = double.parse(parts[1]);
+      final minPercentage = getRPEPercentage(minRPE, reps);
+      final maxPercentage = getRPEPercentage(maxRPE, reps);
+      final minWeight = latestMaxWeight.toDouble() * minPercentage;
+      final maxWeight = latestMaxWeight.toDouble() * maxPercentage;
+      return [minWeight, maxWeight];
+    } else {
+      final rpe = double.parse(rpeRange);
+      final percentage = getRPEPercentage(rpe, reps);
+      final weight = latestMaxWeight.toDouble() * percentage;
+      return [weight, weight];
     }
   }
 }

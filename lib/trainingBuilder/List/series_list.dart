@@ -40,8 +40,8 @@ class TrainingProgramSeriesList extends ConsumerStatefulWidget {
     required this.workoutIndex,
     required this.exerciseIndex,
     required this.exerciseType,
-    super.key,
-  });
+    Key? key,
+  }) : super(key: key);
 
   @override
   TrainingProgramSeriesListState createState() => TrainingProgramSeriesListState();
@@ -130,19 +130,39 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
     );
   }
 
-  List<dynamic> _groupSeries(List<Series> series) {
+List<dynamic> _groupSeries(List<Series> series) {
     final groupedSeries = <dynamic>[];
+    List<Series> currentGroup = [];
+
     for (int i = 0; i < series.length; i++) {
       final currentSeries = series[i];
-      if (i == 0 ||
-          currentSeries.reps != series[i - 1].reps ||
-          currentSeries.weight != series[i - 1].weight) {
-        groupedSeries.add([currentSeries]);
+      if (i == 0 || !_areSeriesEqual(currentSeries, series[i - 1])) {
+        if (currentGroup.isNotEmpty) {
+          groupedSeries.add(currentGroup);
+          currentGroup = [];
+        }
+        currentGroup.add(currentSeries);
       } else {
-        (groupedSeries.last as List<Series>).add(currentSeries);
+        currentGroup.add(currentSeries);
       }
     }
+
+    if (currentGroup.isNotEmpty) {
+      groupedSeries.add(currentGroup);
+    }
+
     return groupedSeries;
+  }
+
+  bool _areSeriesEqual(Series a, Series b) {
+    return a.reps == b.reps &&
+        a.maxReps == b.maxReps &&
+        a.intensity == b.intensity &&
+        a.maxIntensity == b.maxIntensity &&
+        a.rpe == b.rpe &&
+        a.maxRpe == b.maxRpe &&
+        a.weight == b.weight &&
+        a.maxWeight == b.maxWeight;
   }
 
   Widget _buildSeriesGroupCard(
@@ -160,7 +180,7 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
         ref.read(expansionStateProvider.notifier).toggleExpansionState(key);
       },
       title: Text(
-        '${seriesGroup.length} serie${seriesGroup.length > 1 ? 's' : ''}, ${series.reps} reps x ${series.weight} kg',
+        '${seriesGroup.length} serie${seriesGroup.length > 1 ? 's' : ''}, ${_formatSeriesInfo(series)}',
         style: Theme.of(context).textTheme.bodyLarge,
       ),
       trailing: _buildSeriesGroupPopupMenu(context, seriesGroup, groupIndex),
@@ -238,10 +258,10 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
       [int? groupIndex, int? seriesIndex, VoidCallback? onRemove, String? exerciseType]) {
     return ListTile(
       title: Text(
-        '${series.reps} reps x ${series.weight} kg',
+        _formatSeriesInfo(series),
         style: Theme.of(context).textTheme.bodyLarge,
       ),
-      subtitle: Text('RPE: ${series.rpe}, Intensity: ${series.intensity}'),
+      subtitle: Text('RPE: ${_formatRange(series.rpe, series.maxRpe)}, Intensity: ${_formatRange(series.intensity, series.maxIntensity)}'),
       trailing: PopupMenuButton(
         itemBuilder: (context) => [
           PopupMenuItem(
@@ -264,13 +284,23 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
     );
   }
 
+  String _formatSeriesInfo(Series series) {
+    final reps = _formatRange(series.reps.toString(), series.maxReps?.toString());
+    final sets = _formatRange(series.sets.toString(), series.maxSets?.toString());
+    final weight = _formatRange(series.weight.toString(), series.maxWeight?.toString());
+    return '$sets set(s), $reps reps x $weight kg';
+  }
+
+  String _formatRange(String minValue, String? maxValue) {
+    if (maxValue != null && maxValue != minValue) {
+      return '$minValue-$maxValue';
+    }
+    return minValue;
+  }
+
   void _showReorderSeriesDialog(List<Series> series) {
     final seriesNames = series.map((s) {
-      if (s.sets == 1) {
-        return 'Series ${s.order}: ${s.reps} reps x ${s.weight} kg';
-      } else {
-        return 'Series Group ${s.order}: ${s.sets} sets, ${s.reps} reps x ${s.weight} kg';
-      }
+      return 'Series ${s.order}: ${_formatSeriesInfo(s)}';
     }).toList();
 
     showDialog(
@@ -303,44 +333,35 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
         weightNotifier: ValueNotifier<double>(0.0),
         isIndividualEdit: isIndividualEdit,
       ),
-    ).then((updatedSeries) {
-      if (updatedSeries != null) {
-        if (isIndividualEdit) {
-          _updateIndividualSeries(seriesGroup!, updatedSeries[0]);
-        } else if (seriesGroup != null) {
-          _updateSeriesGroup(seriesGroup, updatedSeries as List<Series>);
-        } else {
-          _addNewSeries(updatedSeries as List<Series>);
+    ).then((result) {
+      if (result != null) {
+        if (result['action'] == 'update') {
+          _updateExistingSeries(result['originalGroup'], result['series']);
+        } else if (result['action'] == 'add') {
+          _addNewSeries(result['series']);
         }
       }
     });
   }
 
-  void _updateSeriesGroup(List<Series> oldSeriesGroup, List<Series> updatedSeries) {
+  void _updateExistingSeries(List<Series> oldSeriesGroup, List<Series> updatedSeries) {
     final exercise = widget.controller.program.weeks[widget.weekIndex]
         .workouts[widget.workoutIndex].exercises[widget.exerciseIndex];
-    final seriesIndex = exercise.series.indexOf(oldSeriesGroup.first);
-
-    // Rimuovi le serie vecchie
-    exercise.series.removeRange(seriesIndex, seriesIndex + oldSeriesGroup.length);
-
-    // Inserisci le nuove serie
-    exercise.series.insertAll(seriesIndex, updatedSeries);
-
-    // Aggiorna l'ordine delle serie
-    for (int i = 0; i < exercise.series.length; i++) {
-      exercise.series[i].order = i + 1;
-    }
-
-    widget.controller.updateSeries(widget.weekIndex, widget.workoutIndex, widget.exerciseIndex, exercise.series);
-  }
-
-  void _updateIndividualSeries(List<Series> seriesGroup, Series updatedSeries) {
-    final exercise = widget.controller.program.weeks[widget.weekIndex]
-        .workouts[widget.workoutIndex].exercises[widget.exerciseIndex];
-    final index = exercise.series.indexOf(seriesGroup.first);
-    if (index != -1) {
-      exercise.series[index] = updatedSeries;
+    
+    // Trova l'indice di inizio del gruppo di serie da aggiornare
+    final startIndex = exercise.series.indexWhere((s) => s.serieId == oldSeriesGroup.first.serieId);
+    if (startIndex != -1) {
+      // Rimuovi le vecchie serie
+      exercise.series.removeRange(startIndex, startIndex + oldSeriesGroup.length);
+      
+      // Inserisci le serie aggiornate
+      exercise.series.insertAll(startIndex, updatedSeries);
+      
+      // Aggiorna gli ordini delle serie
+      for (int i = 0; i < exercise.series.length; i++) {
+        exercise.series[i].order = i + 1;
+      }
+      
       widget.controller.updateSeries(widget.weekIndex, widget.workoutIndex, widget.exerciseIndex, exercise.series);
     }
   }
@@ -349,10 +370,8 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
     final exercise = widget.controller.program.weeks[widget.weekIndex]
         .workouts[widget.workoutIndex].exercises[widget.exerciseIndex];
 
-    // Aggiungi le nuove serie
     exercise.series.addAll(newSeries);
 
-    // Aggiorna l'ordine delle serie
     for (int i = 0; i < exercise.series.length; i++) {
       exercise.series[i].order = i + 1;
     }
