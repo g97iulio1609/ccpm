@@ -1,0 +1,168 @@
+[debug] [2024-09-08T13:11:42.604Z] ----------------------------------------------------------------------
+[debug] [2024-09-08T13:11:42.605Z] Command:       /Users/giulioleone/.nvm/versions/node/v18.20.4/bin/node /Users/giulioleone/.nvm/versions/node/v18.20.4/bin/firebase deploy
+[debug] [2024-09-08T13:11:42.605Z] CLI Version:   13.16.0
+[debug] [2024-09-08T13:11:42.605Z] Platform:      darwin
+[debug] [2024-09-08T13:11:42.605Z] Node Version:  v18.20.4
+[debug] [2024-09-08T13:11:42.608Z] Time:          Sun Sep 08 2024 15:11:42 GMT+0200 (Ora legale dell’Europa centrale)
+[debug] [2024-09-08T13:11:42.608Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2024-09-08T13:11:42.643Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2024-09-08T13:11:42.643Z] > authorizing via signed-in user (giulio97.leone@gmail.com)
+[debug] [2024-09-08T13:11:42.643Z] [iam] checking project alphaness-322423 for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2024-09-08T13:11:42.644Z] > refreshing access token with scopes: []
+[debug] [2024-09-08T13:11:42.645Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2024-09-08T13:11:42.645Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2024-09-08T13:11:42.883Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2024-09-08T13:11:42.884Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2024-09-08T13:11:42.903Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/alphaness-322423:testIamPermissions [none]
+[debug] [2024-09-08T13:11:42.903Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/alphaness-322423:testIamPermissions x-goog-quota-user=projects/alphaness-322423
+[debug] [2024-09-08T13:11:42.904Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/alphaness-322423:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2024-09-08T13:11:44.098Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/alphaness-322423:testIamPermissions 200
+[debug] [2024-09-08T13:11:44.098Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/alphaness-322423:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2024-09-08T13:11:44.099Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/alphaness-322423/serviceAccounts/alphaness-322423@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2024-09-08T13:11:44.099Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/alphaness-322423/serviceAccounts/alphaness-322423@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2024-09-08T13:11:45.571Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/alphaness-322423/serviceAccounts/alphaness-322423@appspot.gserviceaccount.com:testIamPermissions 200
+[debug] [2024-09-08T13:11:45.571Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/alphaness-322423/serviceAccounts/alphaness-322423@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2024-09-08T13:11:45.574Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/alphaness-322423 [none]
+[debug] [2024-09-08T13:11:45.990Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/alphaness-322423 200
+[debug] [2024-09-08T13:11:45.990Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/alphaness-322423 {"projectId":"alphaness-322423","projectNumber":"179277367624","displayName":"Alphaness","name":"projects/alphaness-322423","resources":{"hostingSite":"alphaness-322423","storageBucket":"alphaness-322423.appspot.com","locationId":"europe-west"},"state":"ACTIVE","etag":"1_eff4cd42-3cbf-466e-a7e7-4445f4754544"}
+[info] 
+   Thank you for trying our experimental support for Flutter Web on Firebase Hosting.
+   While this integration is maintained by Googlers it is not a supported Firebase product.
+   Issues filed on GitHub will be addressed on a best-effort basis by maintainers and other community members.
+
+   Documentation: https://firebase.google.com/docs/hosting/frameworks/frameworks-overview
+   File a bug: https://github.com/firebase/firebase-tools/issues/new?template=bug_report.md
+   Submit a feature request: https://github.com/firebase/firebase-tools/issues/new?template=feature_request.md
+
+   We'd love to learn from you. Express your interest in helping us shape the future of Firebase Hosting: https://goo.gle/41enW5X
+
+[debug] [2024-09-08T13:12:36.101Z] [web frameworks] effective firebase.json:  {
+  "hosting": [
+    {
+      "source": ".",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "frameworksBackend": {
+        "region": "europe-west1"
+      },
+      "site": "alphaness-322423",
+      "rewrites": [],
+      "redirects": [],
+      "headers": [],
+      "cleanUrls": true,
+      "public": ".firebase/alphaness-322423/hosting",
+      "webFramework": "flutter"
+    }
+  ],
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ]
+}
+[info] 
+[info] === Deploying to 'alphaness-322423'...
+[info] 
+[info] i  deploying functions, hosting 
+[debug] [2024-09-08T13:12:36.104Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/alphaness-322423 [none]
+[debug] [2024-09-08T13:12:36.874Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/alphaness-322423 200
+[debug] [2024-09-08T13:12:36.874Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/alphaness-322423 {"projectId":"alphaness-322423","projectNumber":"179277367624","displayName":"Alphaness","name":"projects/alphaness-322423","resources":{"hostingSite":"alphaness-322423","storageBucket":"alphaness-322423.appspot.com","locationId":"europe-west"},"state":"ACTIVE","etag":"1_eff4cd42-3cbf-466e-a7e7-4445f4754544"}
+[info] i  functions: preparing codebase default for deployment 
+[info] i  functions: ensuring required API cloudfunctions.googleapis.com is enabled... 
+[info] i  functions: ensuring required API cloudbuild.googleapis.com is enabled... 
+[info] i  artifactregistry: ensuring required API artifactregistry.googleapis.com is enabled... 
+[debug] [2024-09-08T13:12:36.878Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/alphaness-322423/services/cloudfunctions.googleapis.com [none]
+[debug] [2024-09-08T13:12:36.879Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/alphaness-322423/services/cloudfunctions.googleapis.com x-goog-quota-user=projects/alphaness-322423
+[debug] [2024-09-08T13:12:36.881Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/alphaness-322423/services/runtimeconfig.googleapis.com [none]
+[debug] [2024-09-08T13:12:36.881Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/alphaness-322423/services/runtimeconfig.googleapis.com x-goog-quota-user=projects/alphaness-322423
+[debug] [2024-09-08T13:12:36.884Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/alphaness-322423/services/cloudbuild.googleapis.com [none]
+[debug] [2024-09-08T13:12:36.884Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/alphaness-322423/services/cloudbuild.googleapis.com x-goog-quota-user=projects/alphaness-322423
+[debug] [2024-09-08T13:12:36.886Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/alphaness-322423/services/artifactregistry.googleapis.com [none]
+[debug] [2024-09-08T13:12:36.886Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/alphaness-322423/services/artifactregistry.googleapis.com x-goog-quota-user=projects/alphaness-322423
+[debug] [2024-09-08T13:12:37.872Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/alphaness-322423/services/runtimeconfig.googleapis.com 200
+[debug] [2024-09-08T13:12:37.873Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/alphaness-322423/services/runtimeconfig.googleapis.com [omitted]
+[debug] [2024-09-08T13:12:37.935Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/alphaness-322423/services/cloudfunctions.googleapis.com 200
+[debug] [2024-09-08T13:12:37.935Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/alphaness-322423/services/cloudfunctions.googleapis.com [omitted]
+[info] ✔  functions: required API cloudfunctions.googleapis.com is enabled 
+[debug] [2024-09-08T13:12:38.189Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/alphaness-322423/services/artifactregistry.googleapis.com 200
+[debug] [2024-09-08T13:12:38.189Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/alphaness-322423/services/artifactregistry.googleapis.com [omitted]
+[info] ✔  artifactregistry: required API artifactregistry.googleapis.com is enabled 
+[debug] [2024-09-08T13:12:38.703Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/alphaness-322423/services/cloudbuild.googleapis.com 200
+[debug] [2024-09-08T13:12:38.703Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/alphaness-322423/services/cloudbuild.googleapis.com [omitted]
+[info] ✔  functions: required API cloudbuild.googleapis.com is enabled 
+[debug] [2024-09-08T13:12:38.704Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/alphaness-322423/adminSdkConfig [none]
+[debug] [2024-09-08T13:12:39.192Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/alphaness-322423/adminSdkConfig 200
+[debug] [2024-09-08T13:12:39.192Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/alphaness-322423/adminSdkConfig {"projectId":"alphaness-322423","storageBucket":"alphaness-322423.appspot.com","locationId":"europe-west"}
+[debug] [2024-09-08T13:12:39.192Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/alphaness-322423/configs [none]
+[debug] [2024-09-08T13:12:39.841Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/alphaness-322423/configs 200
+[debug] [2024-09-08T13:12:39.842Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/alphaness-322423/configs {"configs":[{"name":"projects/alphaness-322423/configs/openai"},{"name":"projects/alphaness-322423/configs/stripe"}]}
+[debug] [2024-09-08T13:12:39.843Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/alphaness-322423/configs/openai/variables [none]
+[debug] [2024-09-08T13:12:39.847Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/alphaness-322423/configs/stripe/variables [none]
+[debug] [2024-09-08T13:12:40.420Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/alphaness-322423/configs/openai/variables 200
+[debug] [2024-09-08T13:12:40.420Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/alphaness-322423/configs/openai/variables {"variables":[{"name":"projects/alphaness-322423/configs/openai/variables/key","updateTime":"2024-02-08T12:35:08.526507682Z"}]}
+[debug] [2024-09-08T13:12:40.421Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/alphaness-322423/configs/openai/variables/key [none]
+[debug] [2024-09-08T13:12:40.456Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/alphaness-322423/configs/stripe/variables 200
+[debug] [2024-09-08T13:12:40.457Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/alphaness-322423/configs/stripe/variables {"variables":[{"name":"projects/alphaness-322423/configs/stripe/variables/secret","updateTime":"2024-02-04T13:59:05.190349227Z"}]}
+[debug] [2024-09-08T13:12:40.457Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/alphaness-322423/configs/stripe/variables/secret [none]
+[debug] [2024-09-08T13:12:40.673Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/alphaness-322423/configs/openai/variables/key 200
+[debug] [2024-09-08T13:12:40.673Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/alphaness-322423/configs/openai/variables/key {"name":"projects/alphaness-322423/configs/openai/variables/key","updateTime":"2024-02-08T12:35:08.526507682Z","text":"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"}
+[debug] [2024-09-08T13:12:41.000Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/alphaness-322423/configs/stripe/variables/secret 200
+[debug] [2024-09-08T13:12:41.001Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/alphaness-322423/configs/stripe/variables/secret {"name":"projects/alphaness-322423/configs/stripe/variables/secret","updateTime":"2024-02-04T13:59:05.190349227Z","text":"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"}
+[debug] [2024-09-08T13:12:41.006Z] Validating nodejs source
+[warn] ⚠  functions: package.json indicates an outdated version of firebase-functions. Please upgrade using npm install --save firebase-functions@latest in your functions directory. 
+[debug] [2024-09-08T13:12:41.742Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "18"
+  },
+  "main": "index.mjs",
+  "dependencies": {
+    "firebase-admin": "^12.2.0",
+    "firebase-functions": "^5.0.1",
+    "google-apis": "^1.0.0",
+    "googleapis": "^140.0.1"
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^3.1.0"
+  },
+  "private": true,
+  "type": "module"
+}
+[debug] [2024-09-08T13:12:41.742Z] Building nodejs source
+[info] i  functions: Loading and analyzing source code for codebase default to determine what to deploy 
+[debug] [2024-09-08T13:12:41.743Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-09-08T13:12:41.749Z] Found firebase-functions binary at '/Users/giulioleone/alphaness-one/alphanessflutter/alphanessone/AlphanessOne/functions/node_modules/.bin/firebase-functions'
+[info] Serving at port 8766
+
+[debug] [2024-09-08T13:12:42.901Z] Got response from /__/functions.yaml {"endpoints":{"checkAndUpdateSubscription":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":10,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","labels":{},"scheduleTrigger":{"schedule":"every 24 hours","retryConfig":{"retryCount":null,"maxDoublings":null,"maxRetrySeconds":null,"minBackoffSeconds":null,"maxBackoffSeconds":null},"timeZone":null},"entryPoint":"checkAndUpdateSubscription"},"deleteUser":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":1,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","labels":{},"callableTrigger":{},"entryPoint":"deleteUser"}},"specVersion":"v1alpha1","requiredAPIs":[{"api":"cloudscheduler.googleapis.com","reason":"Needed for scheduled functions."}]}
+[info] i  functions: preparing functions directory for uploading... 
+[info] i  functions: packaged /Users/giulioleone/alphaness-one/alphanessflutter/alphanessone/AlphanessOne/functions (66.21 KB) for uploading 
+[debug] [2024-09-08T13:12:42.984Z] >>> [apiv2][query] GET https://cloudfunctions.googleapis.com/v1/projects/alphaness-322423/locations/-/functions [none]
+[debug] [2024-09-08T13:12:43.690Z] <<< [apiv2][status] GET https://cloudfunctions.googleapis.com/v1/projects/alphaness-322423/locations/-/functions 200
+[debug] [2024-09-08T13:12:43.690Z] <<< [apiv2][body] GET https://cloudfunctions.googleapis.com/v1/projects/alphaness-322423/locations/-/functions {}
+[debug] [2024-09-08T13:12:43.691Z] >>> [apiv2][query] GET https://cloudfunctions.googleapis.com/v2/projects/alphaness-322423/locations/-/functions filter=environment%3D%22GEN_2%22
+[debug] [2024-09-08T13:12:46.526Z] <<< [apiv2][status] GET https://cloudfunctions.googleapis.com/v2/projects/alphaness-322423/locations/-/functions 200
+[debug] [2024-09-08T13:12:46.526Z] <<< [apiv2][body] GET https://cloudfunctions.googleapis.com/v2/projects/alphaness-322423/locations/-/functions {"functions":[{"name":"projects/alphaness-322423/locations/us-central1/functions/deleteUser","buildConfig":{"build":"projects/179277367624/locations/us-central1/builds/c3ccb4f0-2495-4f78-aaf3-f4ca101e0269","runtime":"nodejs18","entryPoint":"deleteUser","source":{"storageSource":{"bucket":"gcf-v2-sources-179277367624-us-central1","object":"deleteUser/function-source.zip","generation":"1725119924850788"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""},"dockerRepository":"projects/alphaness-322423/locations/us-central1/repositories/gcf-artifacts","sourceProvenance":{"resolvedStorageSource":{"bucket":"gcf-v2-sources-179277367624-us-central1","object":"deleteUser/function-source.zip","generation":"1725119924850788"}},"dockerRegistry":"ARTIFACT_REGISTRY","automaticUpdatePolicy":{}},"serviceConfig":{"service":"projects/alphaness-322423/locations/us-central1/services/deleteuser","timeoutSeconds":60,"environmentVariables":{"FIREBASE_CONFIG":"{\"projectId\":\"alphaness-322423\",\"storageBucket\":\"alphaness-322423.appspot.com\",\"locationId\":\"europe-west\"}","GCLOUD_PROJECT":"alphaness-322423","EVENTARC_CLOUD_EVENT_SOURCE":"projects/alphaness-322423/locations/us-central1/services/deleteUser","FUNCTION_TARGET":"deleteUser","LOG_EXECUTION_ID":"true","FUNCTION_SIGNATURE_TYPE":"http"},"maxInstanceCount":1,"ingressSettings":"ALLOW_ALL","uri":"https://deleteuser-bsq5qd5zyq-uc.a.run.app","serviceAccountEmail":"179277367624-compute@developer.gserviceaccount.com","availableMemory":"256Mi","allTrafficOnLatestRevision":true,"revision":"deleteuser-00002-rug","maxInstanceRequestConcurrency":80,"availableCpu":"1"},"state":"ACTIVE","updateTime":"2024-08-31T15:58:57.457575171Z","labels":{"firebase-functions-hash":"f3d4b177bd1688952b5d60bacd0bd81c68c8d189","deployment-tool":"cli-firebase","deployment-callable":"true"},"environment":"GEN_2","url":"https://us-central1-alphaness-322423.cloudfunctions.net/deleteUser","createTime":"2024-07-26T14:20:15.874477783Z"},{"name":"projects/alphaness-322423/locations/us-central1/functions/checkAndUpdateSubscription","buildConfig":{"build":"projects/179277367624/locations/us-central1/builds/c3ccb4f0-2495-4f78-aaf3-f4ca101e0269","runtime":"nodejs18","entryPoint":"checkAndUpdateSubscription","source":{"storageSource":{"bucket":"gcf-v2-sources-179277367624-us-central1","object":"checkAndUpdateSubscription/function-source.zip","generation":"1725119867882883"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""},"dockerRepository":"projects/alphaness-322423/locations/us-central1/repositories/gcf-artifacts","sourceProvenance":{"resolvedStorageSource":{"bucket":"gcf-v2-sources-179277367624-us-central1","object":"checkAndUpdateSubscription/function-source.zip","generation":"1725119867882883"}},"dockerRegistry":"ARTIFACT_REGISTRY","automaticUpdatePolicy":{}},"serviceConfig":{"service":"projects/alphaness-322423/locations/us-central1/services/checkandupdatesubscription","timeoutSeconds":60,"environmentVariables":{"FIREBASE_CONFIG":"{\"projectId\":\"alphaness-322423\",\"storageBucket\":\"alphaness-322423.appspot.com\",\"locationId\":\"europe-west\"}","GCLOUD_PROJECT":"alphaness-322423","EVENTARC_CLOUD_EVENT_SOURCE":"projects/alphaness-322423/locations/us-central1/services/checkAndUpdateSubscription","FUNCTION_TARGET":"checkAndUpdateSubscription","LOG_EXECUTION_ID":"true"},"maxInstanceCount":10,"ingressSettings":"ALLOW_ALL","uri":"https://checkandupdatesubscription-bsq5qd5zyq-uc.a.run.app","serviceAccountEmail":"179277367624-compute@developer.gserviceaccount.com","availableMemory":"256Mi","allTrafficOnLatestRevision":true,"revision":"checkandupdatesubscription-00002-mon","maxInstanceRequestConcurrency":80,"availableCpu":"1"},"state":"ACTIVE","updateTime":"2024-08-31T15:58:56.828189948Z","labels":{"firebase-functions-hash":"f3d4b177bd1688952b5d60bacd0bd81c68c8d189","deployment-tool":"cli-firebase","deployment-scheduled":"true"},"environment":"GEN_2","url":"https://us-central1-alphaness-322423.cloudfunctions.net/checkAndUpdateSubscription","createTime":"2024-07-26T14:19:11.130080867Z"}]}
+[info] i  functions: ensuring required API cloudscheduler.googleapis.com is enabled... 
+[debug] [2024-09-08T13:12:46.541Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/alphaness-322423/services/cloudscheduler.googleapis.com [none]
+[debug] [2024-09-08T13:12:46.541Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/alphaness-322423/services/cloudscheduler.googleapis.com x-goog-quota-user=projects/alphaness-322423
