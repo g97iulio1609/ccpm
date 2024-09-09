@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'package:alphanessone/providers/providers.dart';
+import 'package:alphanessone/trainingBuilder/dialog/exercise_dialog.dart';
+import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
+import 'package:alphanessone/trainingBuilder/series_utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/training_program_services.dart';
 import '../providers/training_program_provider.dart';
+
 
 class WorkoutDetails extends ConsumerStatefulWidget {
   final String programId;
@@ -131,6 +135,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   Widget build(BuildContext context) {
     final loading = ref.watch(loadingProvider);
     final exercises = ref.watch(exercisesProvider);
+    final exerciseRecordService = ref.watch(exerciseRecordServiceProvider);
 
     return Scaffold(
       body: loading
@@ -402,7 +407,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
                 ? GestureDetector(
                     onTap: () => _toggleSeriesDone(series),
                     child: Icon(
-                      _isSeriesDone(series) ? Icons.check_circle : Icons.cancel,
+_isSeriesDone(series) ? Icons.check_circle : Icons.cancel,
                       color: _isSeriesDone(series) ? colorScheme.primary : colorScheme.onSurfaceVariant,
                     ),
                   ): const SizedBox(),
@@ -414,13 +419,16 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
 
   Widget _buildExerciseName(Map<String, dynamic> exercise, BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Text(
-      "${exercise['name']} ${exercise['variant'] ?? ''}",
-      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: colorScheme.onSurface,
-          ),
-      textAlign: TextAlign.center,
+    return GestureDetector(
+      onTap: () => _showChangeExerciseDialog(context, exercise),
+      child: Text(
+        "${exercise['name']} ${exercise['variant'] ?? ''}",
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: colorScheme.onSurface,
+            ),
+        textAlign: TextAlign.center,
+      ),
     );
   }
 
@@ -494,25 +502,24 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     );
   }
 
-String _formatSeriesValue(Map<String, dynamic> seriesData, String field) {
-  final value = seriesData[field];
-  final maxValue = seriesData['max${field.capitalize()}'];
-  final valueDone = seriesData['${field}_done'];
-  final isDone = seriesData['done'] == true;
-  final unit = field == 'reps' ? 'R' : 'Kg';
+  String _formatSeriesValue(Map<String, dynamic> seriesData, String field) {
+    final value = seriesData[field];
+    final maxValue = seriesData['max${field.capitalize()}'];
+    final valueDone = seriesData['${field}_done'];
+    final isDone = seriesData['done'] == true;
+    final unit = field == 'reps' ? 'R' : 'Kg';
 
-  // Se la serie è completata o il valore "done" è presente e non zero, mostra solo il valore "done"
-  if (isDone || (valueDone != null && valueDone != 0)) {
-    return '$valueDone$unit';
+    if (isDone || (valueDone != null && valueDone != 0)) {
+      return '$valueDone$unit';
+    }
+
+    String text = maxValue != null && maxValue != value
+        ? '$value-$maxValue$unit'
+        : '$value$unit';
+
+    return text;
   }
 
-  // Altrimenti, mostra il valore previsto (o il range se c'è un valore massimo)
-  String text = maxValue != null && maxValue != value
-      ? '$value-$maxValue$unit'
-      : '$value$unit';
-
-  return text;
-}
   Widget _buildSeriesDoneIcon(Map<String, dynamic> seriesData, BuildContext context, int flex) {
     final colorScheme = Theme.of(context).colorScheme;
     return Expanded(
@@ -541,6 +548,114 @@ String _formatSeriesValue(Map<String, dynamic> seriesData, String field) {
       },
     );
   }
+
+void _showChangeExerciseDialog(BuildContext context, Map<String, dynamic> currentExercise) {
+  final exerciseRecordService = ref.read(exerciseRecordServiceProvider);
+  
+  showDialog(
+    context: context,
+    builder: (BuildContext dialogContext) {
+      return ExerciseDialog(
+        exerciseRecordService: exerciseRecordService,
+        athleteId: widget.userId,
+        exercise: Exercise(
+          id: currentExercise['id'] ?? '',
+          exerciseId: currentExercise['exerciseId'] ?? '',
+          name: currentExercise['name'] ?? '',
+          type: currentExercise['type'] ?? '',
+          variant: currentExercise['variant'] ?? '',
+          order: currentExercise['order'] ?? 0,
+          series: [],
+          weekProgressions: [],
+        ),
+      );
+    },
+  ).then((newExercise) {
+    if (newExercise != null) {
+      _updateExercise(currentExercise, newExercise as Exercise);
+    }
+  });
+}
+
+Future<void> _updateExercise(Map<String, dynamic> currentExercise, Exercise newExercise) async {
+  final exerciseIndex = ref.read(exercisesProvider.notifier).state
+      .indexWhere((e) => e['id'] == currentExercise['id']);
+
+  if (exerciseIndex != -1) {
+    final updatedExercises = List<Map<String, dynamic>>.from(ref.read(exercisesProvider));
+    updatedExercises[exerciseIndex] = {
+      ...updatedExercises[exerciseIndex],
+      'name': newExercise.name,
+      'exerciseId': newExercise.exerciseId ?? '',
+      'type': newExercise.type,
+      'variant': newExercise.variant,
+    };
+
+    ref.read(exercisesProvider.notifier).state = updatedExercises;
+
+    await _recalculateWeights(updatedExercises[exerciseIndex], newExercise.exerciseId ?? '');
+
+    await _workoutService.updateExercise(currentExercise['id'], {
+      'name': newExercise.name,
+      'exerciseId': newExercise.exerciseId ?? '',
+      'type': newExercise.type,
+      'variant': newExercise.variant,
+    });
+  }
+}
+
+Future<void> _recalculateWeights(Map<String, dynamic> exercise, String newExerciseId) async {
+  final exerciseRecordService = ref.read(exerciseRecordServiceProvider);
+  final newExerciseMaxWeight = await SeriesUtils.getLatestMaxWeight(
+    exerciseRecordService,
+    widget.userId,
+    newExerciseId
+  );
+  
+  final series = exercise['series'] as List<Map<String, dynamic>>;
+
+  for (var serie in series) {
+    final minIntensity = double.tryParse(serie['intensity']?.toString() ?? '0') ?? 0;
+    final maxIntensity = double.tryParse(serie['maxIntensity']?.toString() ?? '0');
+
+    // Calcolo di weight
+    final newWeight = SeriesUtils.calculateWeightFromIntensity(newExerciseMaxWeight.toDouble(), minIntensity);
+    final roundedWeight = SeriesUtils.roundWeight(newWeight, exercise['type'] ?? '');
+
+    // Calcolo di maxWeight
+    double? newMaxWeight;
+    if (maxIntensity != null) {
+      final calculatedMaxWeight = SeriesUtils.calculateWeightFromIntensity(newExerciseMaxWeight.toDouble(), maxIntensity);
+      newMaxWeight = SeriesUtils.roundWeight(calculatedMaxWeight, exercise['type'] ?? '');
+    }
+
+    // Calcolo del nuovo RPE
+    final newRpe = SeriesUtils.calculateRPE(roundedWeight, newExerciseMaxWeight, serie['reps'])?.toStringAsFixed(1) ?? '';
+    final newMaxRpe = newMaxWeight != null 
+      ? SeriesUtils.calculateRPE(newMaxWeight, newExerciseMaxWeight, serie['reps'])?.toStringAsFixed(1) 
+      : null;
+
+    final newIntensity = maxIntensity != null ? '$minIntensity/$maxIntensity' : minIntensity.toString();
+    final newRpeRange = newMaxRpe != null ? '$newRpe/$newMaxRpe' : newRpe;
+
+    await _workoutService.updateSeriesForExerciseChange(
+      serie['id'] ?? '',
+      weight: roundedWeight,
+      maxWeight: newMaxWeight,
+      reps: serie['reps'],
+      intensity: newIntensity,
+      rpe: newRpeRange,
+    );
+
+    // Aggiorna i valori locali
+    serie['weight'] = roundedWeight;
+    serie['maxWeight'] = newMaxWeight;
+    serie['intensity'] = newIntensity;
+    serie['rpe'] = newRpeRange;
+  }
+
+  setState(() {});
+}
 
   Future<void> _showEditSeriesDialog(String seriesId, Map<String, dynamic> series, BuildContext context) async {
     final userRole = ref.read(userRoleProvider);
@@ -685,38 +800,38 @@ String _formatSeriesValue(Map<String, dynamic> seriesData, String field) {
     return repsCompleted && weightCompleted;
   }
 
-void _toggleSeriesDone(Map<String, dynamic> series) async {
-  if (!mounted) return;
+  void _toggleSeriesDone(Map<String, dynamic> series) async {
+    if (!mounted) return;
 
-  final seriesId = series['id'].toString();
-  final currentlyDone = _isSeriesDone(series);
-  final reps = series['reps'] ?? 0;
-  final maxReps = series['maxReps'];
-  final weight = (series['weight'] ?? 0.0).toDouble();
-  final maxWeight = series['maxWeight']?.toDouble();
+    final seriesId = series['id'].toString();
+    final currentlyDone = _isSeriesDone(series);
+    final reps = series['reps'] ?? 0;
+    final maxReps = series['maxReps'];
+    final weight = (series['weight'] ?? 0.0).toDouble();
+    final maxWeight = series['maxWeight']?.toDouble();
 
-  if (!currentlyDone) {
-    await _workoutService.updateSeriesWithMaxValues(
-      seriesId,
-      reps,
-      maxReps,
-      weight,
-      maxWeight,
-      maxReps ?? reps,
-      maxWeight ?? weight,
-    );
-  } else {
-    await _workoutService.updateSeriesWithMaxValues(
-      seriesId,
-      reps,
-      maxReps,
-      weight,
-      maxWeight,
-      0,
-      0.0,
-    );
+    if (!currentlyDone) {
+await _workoutService.updateSeriesWithMaxValues(
+        seriesId,
+        reps,
+        maxReps,
+        weight,
+        maxWeight,
+        maxReps ?? reps,
+        maxWeight ?? weight,
+      );
+    } else {
+      await _workoutService.updateSeriesWithMaxValues(
+        seriesId,
+        reps,
+        maxReps,
+        weight,
+        maxWeight,
+        0,
+        0.0,
+      );
+    }
   }
-}
 
   int _findFirstNotDoneSeriesIndex(List<Map<String, dynamic>> series) {
     return series.indexWhere((serie) => !_isSeriesDone(serie));

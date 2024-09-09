@@ -76,6 +76,30 @@ class TrainingProgramServices {
     );
   }
 
+Future<void> updateSeriesForExerciseChange(String seriesId, {
+  required double weight,
+  double? maxWeight,
+  required int reps,
+  required String intensity,
+  required String rpe,
+}) async {
+  final updateData = {
+    'weight': weight,
+    'reps': reps,
+    'intensity': intensity,
+    'rpe': rpe,
+    'reps_done': 0,
+    'weight_done': 0.0,
+    'done': false,
+  };
+
+  if (maxWeight != null) {
+    updateData['maxWeight'] = maxWeight;
+  }
+
+  await FirebaseFirestore.instance.collection('series').doc(seriesId).update(updateData);
+}
+
   // Training Service
   Future<List<Map<String, dynamic>>> fetchTrainingWeeks(String programId) async {
     QuerySnapshot querySnapshot = await _firestore
