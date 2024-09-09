@@ -1,0 +1,34 @@
+[debug] [2024-09-09T15:33:53.563Z] ----------------------------------------------------------------------
+[debug] [2024-09-09T15:33:53.564Z] Command:       /Users/giulioleone/.nvm/versions/node/v18.20.4/bin/node /Users/giulioleone/.nvm/versions/node/v18.20.4/bin/firebase deploy
+[debug] [2024-09-09T15:33:53.564Z] CLI Version:   13.16.0
+[debug] [2024-09-09T15:33:53.564Z] Platform:      darwin
+[debug] [2024-09-09T15:33:53.564Z] Node Version:  v18.20.4
+[debug] [2024-09-09T15:33:53.567Z] Time:          Mon Sep 09 2024 17:33:53 GMT+0200 (Ora legale dell’Europa centrale)
+[debug] [2024-09-09T15:33:53.567Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2024-09-09T15:33:53.602Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2024-09-09T15:33:53.602Z] > authorizing via signed-in user (giulio97.leone@gmail.com)
+[debug] [2024-09-09T15:33:53.602Z] [iam] checking project alphaness-322423 for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2024-09-09T15:33:53.603Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/alphaness-322423:testIamPermissions [none]
+[debug] [2024-09-09T15:33:53.603Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/alphaness-322423:testIamPermissions x-goog-quota-user=projects/alphaness-322423
+[debug] [2024-09-09T15:33:53.603Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/alphaness-322423:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2024-09-09T15:33:54.503Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/alphaness-322423:testIamPermissions 200
+[debug] [2024-09-09T15:33:54.503Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/alphaness-322423:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2024-09-09T15:33:54.504Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/alphaness-322423/serviceAccounts/alphaness-322423@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2024-09-09T15:33:54.504Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/alphaness-322423/serviceAccounts/alphaness-322423@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2024-09-09T15:33:55.413Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/alphaness-322423/serviceAccounts/alphaness-322423@appspot.gserviceaccount.com:testIamPermissions 200
+[debug] [2024-09-09T15:33:55.413Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/alphaness-322423/serviceAccounts/alphaness-322423@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2024-09-09T15:33:55.416Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/alphaness-322423 [none]
+[debug] [2024-09-09T15:33:55.911Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/alphaness-322423 200
+[debug] [2024-09-09T15:33:55.912Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/alphaness-322423 {"projectId":"alphaness-322423","projectNumber":"179277367624","displayName":"Alphaness","name":"projects/alphaness-322423","resources":{"hostingSite":"alphaness-322423","storageBucket":"alphaness-322423.appspot.com","locationId":"europe-west"},"state":"ACTIVE","etag":"1_eff4cd42-3cbf-466e-a7e7-4445f4754544"}
+[info] 
+   Thank you for trying our experimental support for Flutter Web on Firebase Hosting.
+   While this integration is maintained by Googlers it is not a supported Firebase product.
+   Issues filed on GitHub will be addressed on a best-effort basis by maintainers and other community members.
+
+   Documentation: https://firebase.google.com/docs/hosting/frameworks/frameworks-overview
+   File a bug: https://github.com/firebase/firebase-tools/issues/new?template=bug_report.md
+   Submit a feature request: https://github.com/firebase/firebase-tools/issues/new?template=feature_request.md
+
+   We'd love to learn from you. Express your interest in helping us shape the future of Firebase Hosting: https://goo.gle/41enW5X
+
