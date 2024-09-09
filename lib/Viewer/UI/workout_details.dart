@@ -622,11 +622,13 @@ Future<void> _recalculateWeights(Map<String, dynamic> exercise, String newExerci
     final newWeight = SeriesUtils.calculateWeightFromIntensity(newExerciseMaxWeight.toDouble(), minIntensity);
     final roundedWeight = SeriesUtils.roundWeight(newWeight, exercise['type'] ?? '');
 
-    // Calcolo di maxWeight
+    // Calcolo di maxWeight solo se maxIntensity è presente e valida
     double? newMaxWeight;
-    if (maxIntensity != null) {
+    if (maxIntensity != null && maxIntensity > 0) {
       final calculatedMaxWeight = SeriesUtils.calculateWeightFromIntensity(newExerciseMaxWeight.toDouble(), maxIntensity);
       newMaxWeight = SeriesUtils.roundWeight(calculatedMaxWeight, exercise['type'] ?? '');
+    } else {
+      newMaxWeight = null; // Mantieni maxWeight null se maxIntensity era null o non valido
     }
 
     // Calcolo del nuovo RPE e RPE Max
@@ -643,7 +645,7 @@ Future<void> _recalculateWeights(Map<String, dynamic> exercise, String newExerci
     await _workoutService.updateSeriesForExerciseChange(
       serie['id'] ?? '',
       weight: roundedWeight,
-      maxWeight: newMaxWeight,
+      maxWeight: newMaxWeight, // Passa newMaxWeight che può essere null
       reps: serie['reps'],
       intensity: newIntensity, // Mantieni solo intensity
       rpe: rpeValue, // Mantieni solo rpe
@@ -652,7 +654,7 @@ Future<void> _recalculateWeights(Map<String, dynamic> exercise, String newExerci
 
     // Aggiorna i valori locali
     serie['weight'] = roundedWeight;
-    serie['maxWeight'] = newMaxWeight;
+    serie['maxWeight'] = newMaxWeight; // Mantieni maxWeight null se applicabile
     serie['intensity'] = newIntensity; // Aggiorna solo con intensity
     serie['rpe'] = rpeValue; // Aggiorna solo con rpe
     serie['rpeMax'] = rpeMaxValue; // Aggiorna solo con rpeMax
@@ -660,6 +662,7 @@ Future<void> _recalculateWeights(Map<String, dynamic> exercise, String newExerci
 
   setState(() {});
 }
+
 
   Future<void> _showEditSeriesDialog(String seriesId, Map<String, dynamic> series, BuildContext context) async {
     final userRole = ref.read(userRoleProvider);
