@@ -609,7 +609,7 @@ Future<void> _recalculateWeights(Map<String, dynamic> exercise, String newExerci
   final newExerciseMaxWeight = await SeriesUtils.getLatestMaxWeight(
     exerciseRecordService,
     widget.userId,
-    newExerciseId
+    newExerciseId,
   );
   
   final series = exercise['series'] as List<Map<String, dynamic>>;
@@ -629,29 +629,33 @@ Future<void> _recalculateWeights(Map<String, dynamic> exercise, String newExerci
       newMaxWeight = SeriesUtils.roundWeight(calculatedMaxWeight, exercise['type'] ?? '');
     }
 
-    // Calcolo del nuovo RPE
+    // Calcolo del nuovo RPE e RPE Max
     final newRpe = SeriesUtils.calculateRPE(roundedWeight, newExerciseMaxWeight, serie['reps'])?.toStringAsFixed(1) ?? '';
     final newMaxRpe = newMaxWeight != null 
       ? SeriesUtils.calculateRPE(newMaxWeight, newExerciseMaxWeight, serie['reps'])?.toStringAsFixed(1) 
       : null;
 
-    final newIntensity = maxIntensity != null ? '$minIntensity/$maxIntensity' : minIntensity.toString();
-    final newRpeRange = newMaxRpe != null ? '$newRpe/$newMaxRpe' : newRpe;
+    // Mantieni intensity, maxIntensity, rpe e rpeMax separati
+    final newIntensity = minIntensity.toString(); // Mantieni solo il valore di intensity
+    final rpeValue = newRpe; // Mantieni solo il valore di rpe, senza concatenare rpeMax
+    final rpeMaxValue = newMaxRpe; // Mantieni il valore di rpeMax separato
 
     await _workoutService.updateSeriesForExerciseChange(
       serie['id'] ?? '',
       weight: roundedWeight,
       maxWeight: newMaxWeight,
       reps: serie['reps'],
-      intensity: newIntensity,
-      rpe: newRpeRange,
+      intensity: newIntensity, // Mantieni solo intensity
+      rpe: rpeValue, // Mantieni solo rpe
+      rpeMax: rpeMaxValue, // Mantieni solo rpeMax separato
     );
 
     // Aggiorna i valori locali
     serie['weight'] = roundedWeight;
     serie['maxWeight'] = newMaxWeight;
-    serie['intensity'] = newIntensity;
-    serie['rpe'] = newRpeRange;
+    serie['intensity'] = newIntensity; // Aggiorna solo con intensity
+    serie['rpe'] = rpeValue; // Aggiorna solo con rpe
+    serie['rpeMax'] = rpeMaxValue; // Aggiorna solo con rpeMax
   }
 
   setState(() {});

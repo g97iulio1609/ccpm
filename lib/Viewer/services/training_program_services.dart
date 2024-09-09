@@ -82,6 +82,7 @@ Future<void> updateSeriesForExerciseChange(String seriesId, {
   required int reps,
   required String intensity,
   required String rpe,
+  String? rpeMax, // Aggiunto rpeMax come parametro opzionale
 }) async {
   final updateData = {
     'weight': weight,
@@ -93,8 +94,14 @@ Future<void> updateSeriesForExerciseChange(String seriesId, {
     'done': false,
   };
 
+  // Aggiungi maxWeight se presente
   if (maxWeight != null) {
     updateData['maxWeight'] = maxWeight;
+  }
+
+  // Aggiungi rpeMax se presente
+  if (rpeMax != null) {
+    updateData['rpeMax'] = rpeMax;
   }
 
   await FirebaseFirestore.instance.collection('series').doc(seriesId).update(updateData);
