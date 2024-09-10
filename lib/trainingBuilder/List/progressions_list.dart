@@ -112,7 +112,7 @@ class ProgressionControllersNotifier extends StateNotifier<List<List<List<Progre
   }
 
   static String _formatRangeValue(dynamic value, dynamic maxValue) {
-    if (maxValue != null && maxValue != value && maxValue != 0) {
+    if (maxValue != null && maxValue != value) {
       return '$value/$maxValue';
     }
     return value.toString();
@@ -414,7 +414,7 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
     );
   }
 
-   void _updateSeries(int weekIndex, int sessionIndex, int groupIndex, {String? reps, String? sets, String? intensity, String? rpe, String? weight}) {
+  void _updateSeries(int weekIndex, int sessionIndex, int groupIndex, {String? reps, String? sets, String? intensity, String? rpe, String? weight}) {
     final programController = ref.read(trainingProgramControllerProvider);
     final weekProgressions = _buildWeekProgressions(programController.program.weeks, widget.exercise!);
 
@@ -447,27 +447,25 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
   dynamic _parseRangeValue(String value, dynamic defaultValue) {
     if (value.isEmpty) return defaultValue;
     final parts = value.split('/');
-    if (defaultValue is int) {
-      return int.tryParse(parts[0]) ?? defaultValue;
-    } else if (defaultValue is double) {
-      return double.tryParse(parts[0]) ?? defaultValue;
-    } else {
-      return parts[0];
-    }
+    return _parseValue(parts[0], defaultValue); 
   }
 
   dynamic _parseMaxValue(String value, dynamic defaultValue) {
     final parts = value.split('/');
     if (parts.length > 1) {
-      if (defaultValue is int) {
-        return int.tryParse(parts[1]) ?? defaultValue;
-      } else if (defaultValue is double) {
-        return double.tryParse(parts[1]) ?? defaultValue;
-      } else {
-        return parts[1];
-      }
+      return _parseValue(parts[1], defaultValue);
     }
     return null;
+  }
+
+  dynamic _parseValue(String value, dynamic defaultValue) {
+    if (defaultValue is int) {
+      return int.tryParse(value) ?? defaultValue;
+    } else if (defaultValue is double) {
+      return double.tryParse(value) ?? defaultValue;
+    } else {
+      return value;
+    }
   }
   
   void _updateWeightFromIntensity(int weekIndex, int sessionIndex, int groupIndex, String intensity) {
@@ -493,7 +491,7 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
       final rpeValues = rpe.split('/');
       
       final weights = rpeValues.map((r) {
-final rpeDouble = double.tryParse(r) ?? 0;
+        final rpeDouble = double.tryParse(r) ?? 0;
         final percentage = SeriesUtils.getRPEPercentage(rpeDouble, reps);
         final calculatedWeight = widget.latestMaxWeight.toDouble() * percentage;
         return SeriesUtils.roundWeight(calculatedWeight, widget.exercise?.type ?? '');
@@ -594,7 +592,7 @@ final rpeDouble = double.tryParse(r) ?? 0;
     );
   }
 
- Future<void> _handleSave() async {
+  Future<void> _handleSave() async {
     final programController = ref.read(trainingProgramControllerProvider);
     final controllers = ref.read(progressionControllersProvider);
     
@@ -605,42 +603,33 @@ final rpeDouble = double.tryParse(r) ?? 0;
         List<WeekProgression> weekProgressions = [];
         for (int sessionIndex = 0; sessionIndex < controllers[weekIndex].length; sessionIndex++) {
           List<Series> updatedSeries = [];
-         for (int groupIndex = 0; groupIndex < controllers[weekIndex][sessionIndex].length; groupIndex++) {
-  final groupControllers = controllers[weekIndex][sessionIndex][groupIndex];
-  final sets = int.tryParse(groupControllers.sets.text) ?? 1;
-  final repsRange = _parseIntRange(groupControllers.reps.text);
-  final intensity = _parseStringRange(groupControllers.intensity.text);
-  
-  // Parsing rpe e maxRpe separatamente
-  final rpeRange = _parseStringRange(groupControllers.rpe.text);
-  final rpe = rpeRange.start.toStringAsFixed(2);
-  final maxRpe = rpeRange.end != rpeRange.start ? rpeRange.end.toStringAsFixed(2) : null;
+          for (int groupIndex = 0; groupIndex < controllers[weekIndex][sessionIndex].length; groupIndex++) {
+            final groupControllers = controllers[weekIndex][sessionIndex][groupIndex];
+            final sets = int.tryParse(groupControllers.sets.text) ?? 1;
+            final repsRange = _parseIntRange(groupControllers.reps.text);
+            final intensityRange = _parseDoubleRange(groupControllers.intensity.text);
+            final rpeRange = _parseDoubleRange(groupControllers.rpe.text);
+            final weightRange = _parseDoubleRange(groupControllers.weight.text);
 
-  final weightRange = _parseDoubleRange(groupControllers.weight.text);
-  debugPrint('Sto salvando rpe:$rpe');
-
-  for (int i = 0; i < sets; i++) {
-    updatedSeries.add(Series(
-      serieId: generateRandomId(16).toString(),
-      reps: repsRange.start.toInt(),
-      maxReps: repsRange.end != repsRange.start ? repsRange.end.toInt() : null,
-      sets: 1,
-      intensity: intensity.start.toStringAsFixed(2),
-      maxIntensity: intensity.end != intensity.start ? intensity.end.toStringAsFixed(2) : null,
-      
-      // Assegna rpe e maxRpe separatamente
-      rpe: rpe,
-      maxRpe: maxRpe,
-      
-      weight: weightRange.start,
-      maxWeight: weightRange.end != weightRange.start ? weightRange.end : null,
-      order: updatedSeries.length + 1,
-      done: false,
-      reps_done: 0,
-      weight_done: 0.0,
-    ));
-  }
-}
+            for (int i = 0; i < sets; i++) {
+              updatedSeries.add(Series(
+                serieId: generateRandomId(16).toString(),
+                reps: repsRange.start.toInt(),
+                maxReps: repsRange.end != repsRange.start ? repsRange.end.toInt() : null,
+                sets: 1,
+                intensity: intensityRange.start.toStringAsFixed(2),
+                maxIntensity: intensityRange.end != intensityRange.start ? intensityRange.end.toStringAsFixed(2) : null,
+                rpe: rpeRange.start.toStringAsFixed(2),
+                maxRpe: rpeRange.end != rpeRange.start ? rpeRange.end.toStringAsFixed(2) : null,
+                weight: weightRange.start,
+                maxWeight: weightRange.end != weightRange.start ? weightRange.end : null,
+                order: updatedSeries.length + 1,
+                done: false,
+                reps_done: 0,
+                weight_done: 0.0,
+              ));
+            }
+          }
 
           weekProgressions.add(WeekProgression(
             weekNumber: weekIndex + 1,
@@ -668,7 +657,7 @@ final rpeDouble = double.tryParse(r) ?? 0;
     }
   }
 
-RangeValues _parseIntRange(String value) {
+  RangeValues _parseIntRange(String value) {
     final parts = value.split('/');
     int start = int.tryParse(parts[0]) ?? 0;
     int end = parts.length > 1 ? (int.tryParse(parts[1]) ?? start) : start;
@@ -681,15 +670,6 @@ RangeValues _parseIntRange(String value) {
     double end = parts.length > 1 ? (double.tryParse(parts[1]) ?? start) : start;
     return RangeValues(start, end);
   }
-
-RangeValues _parseStringRange(String value) {
-  final parts = value.split('/');
-  double start = double.tryParse(parts[0]) ?? 0.0;
-  double end = parts.length > 1 ? double.tryParse(parts[1]) ?? start : start;
-  return RangeValues(start, end);
-}
-
-
 
   List<List<WeekProgression>> _buildWeekProgressions(List<Week> weeks, Exercise exercise) {
     return List.generate(weeks.length, (weekIndex) {
