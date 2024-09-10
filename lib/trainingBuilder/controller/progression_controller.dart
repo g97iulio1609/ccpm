@@ -48,23 +48,7 @@ class ProgressionController extends ChangeNotifier {
             final progression = exerciseProgressions[sessionIndex];
             debugPrint('Applying progression for week ${weekIndex + 1}, session ${sessionIndex + 1}: $progression');
 
-            currentExercise.series = List.generate(progression.series.length, (index) {
-              final series = progression.series[index];
-              final newSeries = Series(
-                serieId: generateRandomId(16).toString(),
-                reps: series.reps,
-                sets: series.sets,
-                intensity: series.intensity,
-                rpe: series.rpe,
-                weight: series.weight,
-                order: index + 1,
-                done: false,
-                reps_done: 0,
-                weight_done: 0.0,
-              );
-              debugPrint('Generated series: reps=${newSeries.reps}, sets=${newSeries.sets}, intensity=${newSeries.intensity}, rpe=${newSeries.rpe}, weight=${newSeries.weight}');
-              return newSeries;
-            });
+            currentExercise.series = _createSeriesFromProgression(progression);
             debugPrint('Updated exercise series: ${currentExercise.series}');
           } else {
             debugPrint('Invalid session index for week ${weekIndex + 1}, session ${sessionIndex + 1}');
@@ -77,13 +61,38 @@ class ProgressionController extends ChangeNotifier {
     notifyListeners();
   }
 
+  List<Series> _createSeriesFromProgression(WeekProgression progression) {
+    return progression.series.expand((series) {
+      final List<Series> expandedSeries = [];
+      for (int i = 0; i < series.sets; i++) {
+        expandedSeries.add(Series(
+          serieId: generateRandomId(16).toString(),
+          reps: series.reps,
+          maxReps: series.maxReps,
+          sets: 1,
+          intensity: series.intensity,
+          maxIntensity: series.maxIntensity,
+          rpe: series.rpe,
+          maxRpe: series.maxRpe,
+          weight: series.weight,
+          maxWeight: series.maxWeight,
+          order: expandedSeries.length + 1,
+          done: false,
+          reps_done: 0,
+          weight_done: 0.0,
+        ));
+      }
+      return expandedSeries;
+    }).toList();
+  }
+
   List<List<dynamic>> _groupSeries(List<Series> series) {
     final groupedSeries = <List<dynamic>>[];
     List<Series> currentGroup = [];
 
     for (int i = 0; i < series.length; i++) {
       final currentSeries = series[i];
-      if (i == 0 || currentSeries.reps != series[i - 1].reps || currentSeries.weight != series[i - 1].weight) {
+      if (i == 0 || !_isSameGroup(currentSeries, series[i - 1])) {
         if (currentGroup.isNotEmpty) {
           groupedSeries.add(currentGroup);
           currentGroup = [];
@@ -99,6 +108,17 @@ class ProgressionController extends ChangeNotifier {
     }
 
     return groupedSeries;
+  }
+
+  bool _isSameGroup(Series a, Series b) {
+    return a.reps == b.reps &&
+           a.maxReps == b.maxReps &&
+           a.intensity == b.intensity &&
+           a.maxIntensity == b.maxIntensity &&
+           a.rpe == b.rpe &&
+           a.maxRpe == b.maxRpe &&
+           a.weight == b.weight &&
+           a.maxWeight == b.maxWeight;
   }
 
   List<List<WeekProgression>> buildWeekProgressions(List<Week> weeks, Exercise exercise) {
@@ -124,62 +144,56 @@ class ProgressionController extends ChangeNotifier {
             ),
           );
           if (sessionProgression.series.isNotEmpty) {
-            debugPrint('    Progressione esistente trovata per la sessione ${workout.order}');
+            debugPrint('    Existing progression found for session ${workout.order}');
             return sessionProgression;
           } else {
-            debugPrint('    Nessuna progressione esistente trovata per la sessione ${workout.order}');
+            debugPrint('    No existing progression found for session ${workout.order}');
             final groupedSeries = _groupSeries(exerciseInWorkout.series);
             return WeekProgression(
               weekNumber: weekIndex + 1,
               sessionNumber: workout.order,
-              series: groupedSeries.map((group) {
-                final series = group.first;
-                return Series(
-                  serieId: series.serieId,
-                  reps: series.reps,
-                  sets: group.length,
-                  intensity: series.intensity,
-                  rpe: series.rpe,
-                  weight: series.weight,
-                  order: series.order,
-                  done: series.done,
-                  reps_done: series.reps_done,
-                  weight_done: series.weight_done,
-                );
-              }).toList(),
+              series: _createGroupedSeries(groupedSeries),
             );
           }
         } else {
-          debugPrint('    Nessuna progressione esistente trovata per la sessione ${workout.order}');
+          debugPrint('    No existing progression found for session ${workout.order}');
           final groupedSeries = _groupSeries(exerciseInWorkout.series);
           return WeekProgression(
             weekNumber: weekIndex + 1,
             sessionNumber: workout.order,
-            series: groupedSeries.map((group) {
-              final series = group.first;
-              return Series(
-                serieId: series.serieId,
-                reps: series.reps,
-                sets: group.length,
-                intensity: series.intensity,
-                rpe: series.rpe,
-                weight: series.weight,
-                order: series.order,
-                done: series.done,
-                reps_done: series.reps_done,
-                weight_done: series.weight_done,
-              );
-            }).toList(),
+            series: _createGroupedSeries(groupedSeries),
           );
         }
       }).toList();
 
-      debugPrint('  Progressioni per la settimana ${weekIndex + 1}: $exerciseProgressions');
+      debugPrint('  Progressions for week ${weekIndex + 1}: $exerciseProgressions');
       return exerciseProgressions;
     });
 
-    debugPrint('Progressioni finali: $progressions');
+    debugPrint('Final progressions: $progressions');
     return progressions;
+  }
+
+  List<Series> _createGroupedSeries(List<List<dynamic>> groupedSeries) {
+    return groupedSeries.map((group) {
+      final series = group.first as Series;
+      return Series(
+        serieId: series.serieId,
+        reps: series.reps,
+        maxReps: series.maxReps,
+        sets: group.length,
+        intensity: series.intensity,
+        maxIntensity: series.maxIntensity,
+        rpe: series.rpe,
+        maxRpe: series.maxRpe,
+        weight: series.weight,
+        maxWeight: series.maxWeight,
+        order: series.order,
+        done: series.done,
+        reps_done: series.reps_done,
+        weight_done: series.weight_done,
+      );
+    }).toList();
   }
 
   Future<void> addSeriesToProgression(TrainingProgram program, int weekIndex, int workoutIndex, int exerciseIndex) async {
