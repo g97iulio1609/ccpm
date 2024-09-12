@@ -808,13 +808,13 @@ class RangeEditDialog extends StatefulWidget {
   final Function(String?, String?) onChanged;
 
   const RangeEditDialog({
-    Key? key,
+    super.key,
     required this.title,
     required this.initialMin,
     required this.initialMax,
     required this.onSave,
     required this.onChanged,
-  }) : super(key: key);
+  });
 
   @override
   _RangeEditDialogState createState() => _RangeEditDialogState();
@@ -853,7 +853,7 @@ class _RangeEditDialogState extends State<RangeEditDialog> {
             TextField(
               controller: _minController,
               decoration: InputDecoration(labelText: 'Minimum ${widget.title}'),
-              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               onChanged: (value) {
                 widget.onChanged(value, _maxController.text);
               },
@@ -862,7 +862,7 @@ class _RangeEditDialogState extends State<RangeEditDialog> {
             TextField(
               controller: _maxController,
               decoration: InputDecoration(labelText: 'Maximum ${widget.title}'),
-              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               onChanged: (value) {
                 widget.onChanged(_minController.text, value);
               },
