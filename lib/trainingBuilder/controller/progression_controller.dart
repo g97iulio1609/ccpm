@@ -20,7 +20,7 @@ class ProgressionController extends ChangeNotifier {
 
   TrainingProgram get program => _trainingProgramController.program;
 
-  Future<void> updateExerciseProgressions(Exercise exercise, List<List<WeekProgression>> updatedProgressions, BuildContext context) async {
+ Future<void> updateExerciseProgressions(Exercise exercise, List<List<WeekProgression>> updatedProgressions, BuildContext context) async {
     debugPrint('Updating exercise progressions for exercise: ${exercise.name}');
 
     for (int weekIndex = 0; weekIndex < program.weeks.length; weekIndex++) {
@@ -68,14 +68,14 @@ class ProgressionController extends ChangeNotifier {
         expandedSeries.add(Series(
           serieId: generateRandomId(16).toString(),
           reps: series.reps,
-          maxReps: series.maxReps,
+          maxReps: series.maxReps ?? 0,  // Use null-aware operator
           sets: 1,
           intensity: series.intensity,
-          maxIntensity: series.maxIntensity,
+          maxIntensity: series.maxIntensity ?? '',  // Use null-aware operator
           rpe: series.rpe,
-          maxRpe: series.maxRpe,
+          maxRpe: series.maxRpe ?? '',  // Use null-aware operator
           weight: series.weight,
-          maxWeight: series.maxWeight,
+          maxWeight: series.maxWeight ?? 0,  // Use null-aware operator
           order: expandedSeries.length + 1,
           done: false,
           reps_done: 0,

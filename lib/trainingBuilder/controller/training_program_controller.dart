@@ -114,7 +114,7 @@ class TrainingProgramController extends ChangeNotifier {
     _mesocycleNumberController = TextEditingController(text: _program.mesocycleNumber.toString());
   }
 
-  void updateWeekProgressions(List<List<WeekProgression>> updatedProgressions, String exerciseId) {
+void updateWeekProgressions(List<List<WeekProgression>> updatedProgressions, String exerciseId) {
     for (int weekIndex = 0; weekIndex < _program.weeks.length && weekIndex < updatedProgressions.length; weekIndex++) {
       final week = _program.weeks[weekIndex];
       for (int workoutIndex = 0; workoutIndex < week.workouts.length && workoutIndex < updatedProgressions[weekIndex].length; workoutIndex++) {
@@ -132,7 +132,23 @@ class TrainingProgramController extends ChangeNotifier {
             }
           }
 
-          exercise.series = updatedProgressions[weekIndex][workoutIndex].series;
+          // Update the series with the new progressions
+          exercise.series = updatedProgressions[weekIndex][workoutIndex].series.map((s) => Series(
+            serieId: s.serieId,
+            reps: s.reps,
+            maxReps: s.maxReps,  // This will be null if it was cleared
+            sets: s.sets,
+            intensity: s.intensity,
+            maxIntensity: s.maxIntensity,  // This will be null or empty if it was cleared
+            rpe: s.rpe,
+            maxRpe: s.maxRpe,  // This will be null or empty if it was cleared
+            weight: s.weight,
+            maxWeight: s.maxWeight,  // This will be null if it was cleared
+            order: s.order,
+            done: s.done,
+            reps_done: s.reps_done,
+            weight_done: s.weight_done,
+          )).toList();
 
           exercise.weekProgressions ??= [];
 
@@ -155,6 +171,7 @@ class TrainingProgramController extends ChangeNotifier {
 
     notifyListeners();
   }
+
 
   Future<void> loadProgram(String? programId) async {
     if (programId == null) {

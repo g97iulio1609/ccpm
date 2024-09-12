@@ -9,88 +9,107 @@ import 'package:alphanessone/trainingBuilder/series_utils.dart';
 import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 
-final progressionControllersProvider = StateNotifierProvider<ProgressionControllersNotifier, List<List<List<ProgressionControllers>>>>((ref) {
-  return ProgressionControllersNotifier();
-});
+class RangeControllers {
+  final TextEditingController min;
+  final TextEditingController max;
 
-class ProgressionControllers {
-  final TextEditingController reps;
-  final TextEditingController sets;
-  final TextEditingController intensity;
-  final TextEditingController rpe;
-  final TextEditingController weight;
-  final FocusNode repsFocusNode;
-  final FocusNode setsFocusNode;
-  final FocusNode intensityFocusNode;
-  final FocusNode rpeFocusNode;
-  final FocusNode weightFocusNode;
-
-  ProgressionControllers({
-    required this.reps,
-    required this.sets,
-    required this.intensity,
-    required this.rpe,
-    required this.weight,
-    FocusNode? repsFocusNode,
-    FocusNode? setsFocusNode,
-    FocusNode? intensityFocusNode,
-    FocusNode? rpeFocusNode,
-    FocusNode? weightFocusNode,
-  }) : repsFocusNode = repsFocusNode ?? FocusNode(),
-       setsFocusNode = setsFocusNode ?? FocusNode(),
-       intensityFocusNode = intensityFocusNode ?? FocusNode(),
-       rpeFocusNode = rpeFocusNode ?? FocusNode(),
-       weightFocusNode = weightFocusNode ?? FocusNode();
+  RangeControllers()
+      : min = TextEditingController(),
+        max = TextEditingController();
 
   void dispose() {
-    for (var controller in [reps, sets, intensity, rpe, weight]) {
-      controller.dispose();
+    min.dispose();
+    max.dispose();
+  }
+
+  String get displayText {
+    if (max.text.isEmpty) {
+      return min.text;
+    } else if (min.text.isEmpty) {
+      return max.text;
+    } else {
+      return "${min.text}-${max.text}";
     }
-    for (var node in [repsFocusNode, setsFocusNode, intensityFocusNode, rpeFocusNode, weightFocusNode]) {
-      node.dispose();
-    }
+  }
+
+  void updateFromDialog(String minValue, String maxValue) {
+    min.text = minValue;
+    max.text = maxValue;
   }
 }
 
-class ProgressionControllersNotifier extends StateNotifier<List<List<List<ProgressionControllers>>>> {
+class ProgressionControllers {
+  final RangeControllers reps;
+  final TextEditingController sets;
+  final RangeControllers intensity;
+  final RangeControllers rpe;
+  final RangeControllers weight;
+
+  ProgressionControllers()
+      : reps = RangeControllers(),
+        sets = TextEditingController(),
+        intensity = RangeControllers(),
+        rpe = RangeControllers(),
+        weight = RangeControllers();
+
+  void dispose() {
+    reps.dispose();
+    sets.dispose();
+    intensity.dispose();
+    rpe.dispose();
+    weight.dispose();
+  }
+}
+
+class ProgressionControllersNotifier
+    extends StateNotifier<List<List<List<ProgressionControllers>>>> {
   ProgressionControllersNotifier() : super([]);
 
   void initialize(List<List<WeekProgression>> weekProgressions) {
-    state = weekProgressions.map((week) => 
-      week.map((session) => 
-        _groupSeries(session.series).map((group) => ProgressionControllers(
-          reps: TextEditingController(text: _formatRangeValue(group.first.reps, group.first.maxReps)),
-          sets: TextEditingController(text: group.length.toString()),
-          intensity: TextEditingController(text: _formatRangeValue(group.first.intensity, group.first.maxIntensity)),
-          rpe: TextEditingController(text: _formatRangeValue(group.first.rpe, group.first.maxRpe)),
-          weight: TextEditingController(text: _formatRangeValue(group.first.weight, group.first.maxWeight)),
-        )).toList()
-      ).toList()
-    ).toList();
+    state = weekProgressions
+        .map((week) => week
+            .map((session) => _groupSeries(session.series)
+                .map((_) => ProgressionControllers())
+                .toList())
+            .toList())
+        .toList();
+
+    for (int weekIndex = 0; weekIndex < weekProgressions.length; weekIndex++) {
+      for (int sessionIndex = 0;
+          sessionIndex < weekProgressions[weekIndex].length;
+          sessionIndex++) {
+        final groupedSeries =
+            _groupSeries(weekProgressions[weekIndex][sessionIndex].series);
+        for (int groupIndex = 0;
+            groupIndex < groupedSeries.length;
+            groupIndex++) {
+          updateControllers(weekIndex, sessionIndex, groupIndex,
+              groupedSeries[groupIndex].first);
+        }
+      }
+    }
   }
 
-  void updateControllers(int weekIndex, int sessionIndex, int groupIndex, Series series) {
+  void updateControllers(
+      int weekIndex, int sessionIndex, int groupIndex, Series series) {
     if (_isValidIndex(state, weekIndex, sessionIndex, groupIndex)) {
       final controllers = state[weekIndex][sessionIndex][groupIndex];
-      controllers.reps.text = _formatRangeValue(series.reps, series.maxReps);
+      controllers.reps.min.text = series.reps.toString();
+      controllers.reps.max.text = series.maxReps?.toString() ?? '';
       controllers.sets.text = series.sets.toString();
-      controllers.intensity.text = _formatRangeValue(series.intensity, series.maxIntensity);
-      controllers.rpe.text = _formatRangeValue(series.rpe, series.maxRpe);
-      controllers.weight.text = _formatRangeValue(series.weight, series.maxWeight);
+      controllers.intensity.min.text = series.intensity;
+      controllers.intensity.max.text = series.maxIntensity ?? '';
+      controllers.rpe.min.text = series.rpe;
+      controllers.rpe.max.text = series.maxRpe ?? '';
+      controllers.weight.min.text = series.weight.toString();
+      controllers.weight.max.text = series.maxWeight?.toString() ?? '';
       state = [...state];
     }
   }
 
-  void addControllers(int weekIndex, int sessionIndex, int groupIndex, Series series) {
+  void addControllers(int weekIndex, int sessionIndex, int groupIndex) {
     if (_isValidIndex(state, weekIndex, sessionIndex)) {
-      final newControllers = ProgressionControllers(
-        reps: TextEditingController(text: _formatRangeValue(series.reps, series.maxReps)),
-        sets: TextEditingController(text: series.sets.toString()),
-        intensity: TextEditingController(text: _formatRangeValue(series.intensity, series.maxIntensity)),
-        rpe: TextEditingController(text: _formatRangeValue(series.rpe, series.maxRpe)),
-        weight: TextEditingController(text: _formatRangeValue(series.weight, series.maxWeight)),
-      );
-      
+      final newControllers = ProgressionControllers();
       final newState = List<List<List<ProgressionControllers>>>.from(state);
       newState[weekIndex][sessionIndex].insert(groupIndex, newControllers);
       state = newState;
@@ -105,17 +124,16 @@ class ProgressionControllersNotifier extends StateNotifier<List<List<List<Progre
     }
   }
 
-  bool _isValidIndex(List<List<List<ProgressionControllers>>> list, int weekIndex, [int? sessionIndex, int? groupIndex]) {
-    return weekIndex >= 0 && weekIndex < list.length &&
-           (sessionIndex == null || (sessionIndex >= 0 && sessionIndex < list[weekIndex].length)) &&
-           (groupIndex == null || (groupIndex >= 0 && groupIndex < list[weekIndex][sessionIndex!].length));
-  }
-
-  static String _formatRangeValue(dynamic value, dynamic maxValue) {
-    if (maxValue != null && maxValue != value) {
-      return '$value/$maxValue';
-    }
-    return value.toString();
+  bool _isValidIndex(
+      List<List<List<ProgressionControllers>>> list, int weekIndex,
+      [int? sessionIndex, int? groupIndex]) {
+    return weekIndex >= 0 &&
+        weekIndex < list.length &&
+        (sessionIndex == null ||
+            (sessionIndex >= 0 && sessionIndex < list[weekIndex].length)) &&
+        (groupIndex == null ||
+            (groupIndex >= 0 &&
+                groupIndex < list[weekIndex][sessionIndex!].length));
   }
 
   static List<List<Series>> _groupSeries(List<Series> series) {
@@ -142,6 +160,12 @@ class ProgressionControllersNotifier extends StateNotifier<List<List<List<Progre
   }
 }
 
+final progressionControllersProvider = StateNotifierProvider<
+    ProgressionControllersNotifier,
+    List<List<List<ProgressionControllers>>>>((ref) {
+  return ProgressionControllersNotifier();
+});
+
 class ProgressionsList extends ConsumerStatefulWidget {
   final String exerciseId;
   final Exercise? exercise;
@@ -158,7 +182,8 @@ class ProgressionsList extends ConsumerStatefulWidget {
   ConsumerState<ProgressionsList> createState() => _ProgressionsListState();
 }
 
-class _ProgressionsListState extends ConsumerState<ProgressionsList> with AutomaticKeepAliveClientMixin {
+class _ProgressionsListState extends ConsumerState<ProgressionsList>
+    with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
 
@@ -167,13 +192,17 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _initializeControllers());
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _initializeControllers());
   }
 
   void _initializeControllers() {
     final programController = ref.read(trainingProgramControllerProvider);
-    final weekProgressions = _buildWeekProgressions(programController.program.weeks, widget.exercise!);
-    ref.read(progressionControllersProvider.notifier).initialize(weekProgressions);
+    final weekProgressions = _buildWeekProgressions(
+        programController.program.weeks, widget.exercise!);
+    ref
+        .read(progressionControllersProvider.notifier)
+        .initialize(weekProgressions);
   }
 
   @override
@@ -183,11 +212,14 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
     final controllers = ref.watch(progressionControllersProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
-    final weekProgressions = _buildWeekProgressions(programController.program.weeks, widget.exercise!);
+    final weekProgressions = _buildWeekProgressions(
+        programController.program.weeks, widget.exercise!);
 
     if (controllers.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(progressionControllersProvider.notifier).initialize(weekProgressions);
+        ref
+            .read(progressionControllersProvider.notifier)
+            .initialize(weekProgressions);
       });
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
@@ -203,7 +235,8 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
                 itemCount: weekProgressions.length,
                 itemBuilder: (context, weekIndex) {
                   return weekIndex < controllers.length
-                      ? _buildWeekItem(weekIndex, weekProgressions[weekIndex], controllers[weekIndex], colorScheme)
+                      ? _buildWeekItem(weekIndex, weekProgressions[weekIndex],
+                          controllers[weekIndex], colorScheme)
                       : const SizedBox.shrink();
                 },
               ),
@@ -216,7 +249,11 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
     );
   }
 
-  Widget _buildWeekItem(int weekIndex, List<WeekProgression> weekProgression, List<List<ProgressionControllers>> weekControllers, ColorScheme colorScheme) {
+  Widget _buildWeekItem(
+      int weekIndex,
+      List<WeekProgression> weekProgression,
+      List<List<ProgressionControllers>> weekControllers,
+      ColorScheme colorScheme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -234,13 +271,19 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
         ...weekProgression.asMap().entries.map((entry) {
           final sessionIndex = entry.key;
           final session = entry.value;
-          return _buildSessionItem(weekIndex, sessionIndex, session, weekControllers[sessionIndex], colorScheme);
+          return _buildSessionItem(weekIndex, sessionIndex, session,
+              weekControllers[sessionIndex], colorScheme);
         }),
       ],
     );
   }
 
-  Widget _buildSessionItem(int weekIndex, int sessionIndex, WeekProgression session, List<ProgressionControllers> sessionControllers, ColorScheme colorScheme) {
+  Widget _buildSessionItem(
+      int weekIndex,
+      int sessionIndex,
+      WeekProgression session,
+      List<ProgressionControllers> sessionControllers,
+      ColorScheme colorScheme) {
     final groupedSeries = _groupSeries(session.series);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -259,13 +302,20 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
         ...groupedSeries.asMap().entries.map((entry) {
           final groupIndex = entry.key;
           final seriesGroup = entry.value;
-          return _buildSeriesItem(weekIndex, sessionIndex, groupIndex, seriesGroup, sessionControllers[groupIndex], colorScheme);
+          return _buildSeriesItem(weekIndex, sessionIndex, groupIndex,
+              seriesGroup, sessionControllers[groupIndex], colorScheme);
         }),
       ],
     );
   }
 
-  Widget _buildSeriesItem(int weekIndex, int sessionIndex, int groupIndex, List<Series> seriesGroup, ProgressionControllers controllers, ColorScheme colorScheme) {
+  Widget _buildSeriesItem(
+      int weekIndex,
+      int sessionIndex,
+      int groupIndex,
+      List<Series> seriesGroup,
+      ProgressionControllers controllers,
+      ColorScheme colorScheme) {
     return GestureDetector(
       onHorizontalDragStart: (_) => setState(() => _isSwipeInProgress = true),
       onHorizontalDragEnd: (_) => setState(() => _isSwipeInProgress = false),
@@ -276,7 +326,8 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
           motion: const ScrollMotion(),
           children: [
             SlidableAction(
-              onPressed: (_) => _addSeriesGroup(weekIndex, sessionIndex, groupIndex),
+              onPressed: (_) =>
+                  _addSeriesGroup(weekIndex, sessionIndex, groupIndex),
               backgroundColor: Colors.blue,
               foregroundColor: Colors.white,
               icon: Icons.add,
@@ -288,7 +339,8 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
           motion: const ScrollMotion(),
           children: [
             SlidableAction(
-              onPressed: (_) => _removeSeriesGroup(weekIndex, sessionIndex, groupIndex),
+              onPressed: (_) =>
+                  _removeSeriesGroup(weekIndex, sessionIndex, groupIndex),
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
               icon: Icons.delete,
@@ -303,7 +355,8 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildSeriesFields(weekIndex, sessionIndex, groupIndex, seriesGroup.first, controllers),
+                _buildSeriesFields(weekIndex, sessionIndex, groupIndex,
+                    seriesGroup.first, controllers),
                 const SizedBox(height: 24),
               ],
             ),
@@ -313,60 +366,71 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
     );
   }
 
-  Widget _buildSeriesFields(int weekIndex, int sessionIndex, int groupIndex, Series series, ProgressionControllers controllers) {
+  Widget _buildSeriesFields(int weekIndex, int sessionIndex, int groupIndex,
+      Series series, ProgressionControllers controllers) {
     return Row(
       children: [
-        _buildTextField(
-          controller: controllers.reps,
-          focusNode: controllers.repsFocusNode,
-          labelText: 'Reps',
-          keyboardType: TextInputType.text,
-          onChanged: (value) => _updateSeries(weekIndex, sessionIndex, groupIndex, reps: value),
+        _buildRangeField(
+          controllers.reps,
+          'Reps',
+          () => _showRangeDialog(
+              weekIndex, sessionIndex, groupIndex, 'Reps', controllers.reps),
         ),
         _buildTextField(
           controller: controllers.sets,
-          focusNode: controllers.setsFocusNode,
           labelText: 'Sets',
-          keyboardType: TextInputType.text,
-          onChanged: (value) => _updateSeries(weekIndex, sessionIndex, groupIndex, sets: value),
+          keyboardType: TextInputType.number,
+          onChanged: (value) =>
+              _updateSeries(weekIndex, sessionIndex, groupIndex, sets: value),
         ),
-        _buildTextField(
-          controller: controllers.intensity,
-          focusNode: controllers.intensityFocusNode,
-          labelText: '1RM%',
-          keyboardType: TextInputType.text,
-          onChanged: (value) {
-            _updateSeries(weekIndex, sessionIndex, groupIndex, intensity: value);
-            _updateWeightFromIntensity(weekIndex, sessionIndex, groupIndex, value);
-          },
+        _buildRangeField(
+          controllers.intensity,
+          '1RM%',
+          () => _showRangeDialog(weekIndex, sessionIndex, groupIndex,
+              'Intensity', controllers.intensity),
         ),
-        _buildTextField(
-          controller: controllers.rpe,
-          focusNode: controllers.rpeFocusNode,
-          labelText: 'RPE',
-          keyboardType: TextInputType.text,
-          onChanged: (value) {
-            _updateSeries(weekIndex, sessionIndex, groupIndex, rpe: value);
-            _updateWeightFromRPE(weekIndex, sessionIndex, groupIndex, value, series.reps);
-          },
+        _buildRangeField(
+          controllers.rpe,
+          'RPE',
+          () => _showRangeDialog(
+              weekIndex, sessionIndex, groupIndex, 'RPE', controllers.rpe),
         ),
-        _buildTextField(
-          controller: controllers.weight,
-          focusNode: controllers.weightFocusNode,
-          labelText: 'Weight',
-          keyboardType: TextInputType.text,
-          onChanged: (value) {
-            _updateSeries(weekIndex, sessionIndex, groupIndex, weight: value);
-            _updateIntensityFromWeight(weekIndex, sessionIndex, groupIndex, value);
-          },
+        _buildRangeField(
+          controllers.weight,
+          'Weight',
+          () => _showRangeDialog(weekIndex, sessionIndex, groupIndex, 'Weight',
+              controllers.weight),
         ),
       ],
     );
   }
 
+  Widget _buildRangeField(
+      RangeControllers controllers, String label, VoidCallback onTap) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: InputDecorator(
+          decoration: InputDecoration(
+            labelText: label,
+            labelStyle: const TextStyle(color: Colors.white70),
+            alignLabelWithHint: true,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          child: Text(
+            controllers.displayText,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildTextField({
     required TextEditingController controller,
-    required FocusNode focusNode,
     required String labelText,
     required TextInputType keyboardType,
     required Function(String) onChanged,
@@ -378,13 +442,16 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
         padding: const EdgeInsets.symmetric(horizontal: 4),
         child: TextFormField(
           controller: controller,
-          focusNode: focusNode,
           keyboardType: keyboardType,
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: Colors.white),
+          textAlign: TextAlign.center, // Aggiunto per centrare il testo
+          style: const TextStyle(
+              color: Colors
+                  .white), // Assicura che il testo sia visibile su sfondo scuro
           decoration: InputDecoration(
             labelText: labelText,
             labelStyle: const TextStyle(color: Colors.white70),
+            alignLabelWithHint:
+                true, // Allinea l'etichetta con il testo centrato
             filled: true,
             fillColor: colorScheme.surface,
             enabledBorder: OutlineInputBorder(
@@ -402,135 +469,244 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
               ),
             ),
           ),
-          onChanged: (value) {
-            final cursorPosition = controller.selection.base.offset;
-            onChanged(value);
-            controller.selection = TextSelection.fromPosition(
-              TextPosition(offset: cursorPosition),
-            );
-          },
+          onChanged: onChanged,
         ),
       ),
     );
   }
 
-  void _updateSeries(int weekIndex, int sessionIndex, int groupIndex, {String? reps, String? sets, String? intensity, String? rpe, String? weight}) {
+  void _showRangeDialog(int weekIndex, int sessionIndex, int groupIndex,
+      String title, RangeControllers controllers) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
+      ),
+      builder: (BuildContext dialogContext) {
+        return RangeEditDialog(
+          title: title,
+          initialMin: controllers.min.text,
+          initialMax: controllers.max.text,
+          onSave: (min, max) {
+            // Gestione dei valori nulli o vuoti
+            final minText = min ?? '';
+            final maxText = max ?? '';
+
+            setState(() {
+              controllers.updateFromDialog(minText, maxText);
+            });
+
+            // Controlla e chiudi la finestra modale
+            Navigator.of(dialogContext).pop();
+
+            // Aggiornamenti real-time
+            _updateSeriesWithRealTimeCalculations(
+              weekIndex,
+              sessionIndex,
+              groupIndex,
+              title,
+              minText,
+              maxText,
+            );
+          },
+          onChanged: (min, max) {
+            _updateSeriesWithRealTimeCalculations(
+              weekIndex,
+              sessionIndex,
+              groupIndex,
+              title,
+              min ?? '', // Controllo dei valori per evitare null
+              max ?? '',
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _updateSeriesWithRealTimeCalculations(
+    int weekIndex,
+    int sessionIndex,
+    int groupIndex,
+    String title,
+    String min,
+    String max,
+  ) {
+    final controllers = ref.read(progressionControllersProvider)[weekIndex]
+        [sessionIndex][groupIndex];
+
+    switch (title) {
+      case 'Intensity':
+        // Calcola il peso usando l'intensità inserita
+        final minIntensityValue = double.tryParse(min) ?? 0;
+        final minWeight = SeriesUtils.calculateWeightFromIntensity(
+            widget.latestMaxWeight.toDouble(), minIntensityValue);
+        final maxWeight = max.isNotEmpty
+            ? SeriesUtils.calculateWeightFromIntensity(
+                widget.latestMaxWeight.toDouble(), double.tryParse(max) ?? 0)
+            : null;
+
+        // Aggiorna i controller dei pesi con i valori calcolati
+        controllers.weight.min.text =
+            SeriesUtils.roundWeight(minWeight, widget.exercise!.type)
+                .toStringAsFixed(1);
+        controllers.weight.max.text = maxWeight != null
+            ? SeriesUtils.roundWeight(maxWeight, widget.exercise!.type)
+                .toStringAsFixed(1)
+            : '';
+
+        // Aggiorna i controller dell'intensità
+        controllers.intensity.min.text = min;
+        controllers.intensity.max.text = max;
+        break;
+
+      case 'Weight':
+        // Calcola l'intensità usando il peso inserito
+        final minWeightValue = double.tryParse(min) ?? 0;
+        final minIntensity = SeriesUtils.calculateIntensityFromWeight(
+            minWeightValue, widget.latestMaxWeight);
+        final maxIntensity = max.isNotEmpty
+            ? SeriesUtils.calculateIntensityFromWeight(
+                double.tryParse(max) ?? 0, widget.latestMaxWeight)
+            : null;
+
+        // Aggiorna i controller dell'intensità con i valori calcolati
+        controllers.intensity.min.text = minIntensity.toStringAsFixed(1);
+        controllers.intensity.max.text =
+            maxIntensity != null ? maxIntensity.toStringAsFixed(1) : '';
+
+        // Aggiorna i controller del peso
+        controllers.weight.min.text = min;
+        controllers.weight.max.text = max;
+        break;
+
+      // Aggiungi altri casi per altri campi come Reps o RPE, se necessario
+    }
+
+    // Aggiorna la serie con i nuovi valori
+    _updateSeries(
+      weekIndex,
+      sessionIndex,
+      groupIndex,
+      reps: title == 'Reps' ? min : null,
+      maxReps: title == 'Reps' ? max : null,
+      intensity: title == 'Intensity' ? min : null,
+      maxIntensity: title == 'Intensity' ? max : null,
+      rpe: title == 'RPE' ? min : null,
+      maxRpe: title == 'RPE' ? max : null,
+      weight: title == 'Weight' ? min : null,
+      maxWeight: title == 'Weight' ? max : null,
+    );
+  }
+
+  void _updateSeries(
+    int weekIndex,
+    int sessionIndex,
+    int groupIndex, {
+    String? reps,
+    String? maxReps,
+    String? sets,
+    String? intensity,
+    String? maxIntensity,
+    String? rpe,
+    String? maxRpe,
+    String? weight,
+    String? maxWeight,
+  }) {
     final programController = ref.read(trainingProgramControllerProvider);
-    final weekProgressions = _buildWeekProgressions(programController.program.weeks, widget.exercise!);
+    final weekProgressions = _buildWeekProgressions(
+        programController.program.weeks, widget.exercise!);
 
     if (_isValidIndex(weekProgressions, weekIndex, sessionIndex)) {
-      final groupedSeries = _groupSeries(weekProgressions[weekIndex][sessionIndex].series);
+      final groupedSeries =
+          _groupSeries(weekProgressions[weekIndex][sessionIndex].series);
       if (groupIndex >= 0 && groupIndex < groupedSeries.length) {
         final updatedGroup = groupedSeries[groupIndex].map((series) {
-          final updatedSeries = series.copyWith(
-            reps: reps != null ? _parseRangeValue(reps, series.reps) : series.reps,
-            maxReps: reps != null ? _parseMaxValue(reps, series.maxReps) : series.maxReps,
-            sets: sets != null ? (int.tryParse(sets) ?? series.sets) : series.sets,
-            intensity: intensity != null ? _parseRangeValue(intensity, series.intensity) : series.intensity,
-            maxIntensity: intensity != null ? _parseMaxValue(intensity, series.maxIntensity) : series.maxIntensity,
-            rpe: rpe != null ? _parseRangeValue(rpe, series.rpe) : series.rpe,
-            maxRpe: rpe != null ? _parseMaxValue(rpe, series.maxRpe) : series.maxRpe,
-            weight: weight != null ? _parseRangeValue(weight, series.weight) : series.weight,
-            maxWeight: weight != null ? _parseMaxValue(weight, series.maxWeight) : series.maxWeight,
+          // Parse the input values
+          final newReps =
+              reps != null ? int.tryParse(reps) ?? series.reps : series.reps;
+          final newMaxReps =
+              maxReps?.isEmpty == true ? null : int.tryParse(maxReps!);
+          final newSets =
+              sets != null ? int.tryParse(sets) ?? series.sets : series.sets;
+          final newIntensity = intensity?.isEmpty == true ? null : intensity;
+          final newMaxIntensity =
+              maxIntensity?.isEmpty == true ? null : maxIntensity;
+          final newRpe = rpe?.isEmpty == true ? null : rpe;
+          final newMaxRpe = maxRpe?.isEmpty == true ? null : maxRpe;
+          final newWeight = weight != null
+              ? double.tryParse(weight) ?? series.weight
+              : series.weight;
+          final newMaxWeight =
+              maxWeight?.isEmpty == true ? null : double.tryParse(maxWeight!);
+
+          // Recalculate weight if intensity changed
+          double calculatedWeight = newWeight;
+          double? calculatedMaxWeight = newMaxWeight;
+          if (newIntensity != null) {
+            calculatedWeight = SeriesUtils.calculateWeightFromIntensity(
+                widget.latestMaxWeight.toDouble(), double.parse(newIntensity));
+            calculatedWeight = SeriesUtils.roundWeight(
+                calculatedWeight, widget.exercise!.type);
+          }
+          if (newMaxIntensity != null) {
+            calculatedMaxWeight = SeriesUtils.calculateWeightFromIntensity(
+                widget.latestMaxWeight.toDouble(),
+                double.parse(newMaxIntensity));
+            calculatedMaxWeight = SeriesUtils.roundWeight(
+                calculatedMaxWeight, widget.exercise!.type);
+          }
+
+          // Recalculate intensity if weight changed
+          String calculatedIntensity = newIntensity ?? '';
+          String? calculatedMaxIntensity = newMaxIntensity;
+          if (weight != null) {
+            calculatedIntensity = SeriesUtils.calculateIntensityFromWeight(
+                    newWeight, widget.latestMaxWeight)
+                .toStringAsFixed(1);
+          }
+          if (newMaxWeight != null) {
+            calculatedMaxIntensity = SeriesUtils.calculateIntensityFromWeight(
+                    newMaxWeight, widget.latestMaxWeight)
+                .toStringAsFixed(1);
+          }
+
+          return series.copyWith(
+            reps: newReps,
+            maxReps: newMaxReps,
+            sets: newSets,
+            intensity: calculatedIntensity,
+            maxIntensity: calculatedMaxIntensity,
+            rpe: newRpe,
+            maxRpe: newMaxRpe,
+            weight: calculatedWeight,
+            maxWeight: calculatedMaxWeight,
           );
-          return updatedSeries;
         }).toList();
 
         groupedSeries[groupIndex] = updatedGroup;
-        weekProgressions[weekIndex][sessionIndex].series = groupedSeries.expand((group) => group).toList();
+        weekProgressions[weekIndex][sessionIndex].series =
+            groupedSeries.expand((group) => group).toList();
         _updateProgressionsWithNewSeries(weekProgressions);
-        ref.read(progressionControllersProvider.notifier).updateControllers(weekIndex, sessionIndex, groupIndex, updatedGroup.first);
+
+        // Update the controllers to reflect the changes
+        final controllers = ref.read(progressionControllersProvider.notifier);
+        controllers.updateControllers(
+            weekIndex, sessionIndex, groupIndex, updatedGroup.first);
+
+        // Force a rebuild of the widget tree
+        setState(() {});
       }
-    }
-  }
-
-  dynamic _parseRangeValue(String value, dynamic defaultValue) {
-    if (value.isEmpty) return defaultValue;
-    final parts = value.split('/');
-    return _parseValue(parts[0], defaultValue); 
-  }
-
-  dynamic _parseMaxValue(String value, dynamic defaultValue) {
-    final parts = value.split('/');
-    if (parts.length > 1) {
-      return _parseValue(parts[1], defaultValue);
-    }
-    return null;
-  }
-
-  dynamic _parseValue(String value, dynamic defaultValue) {
-    if (defaultValue is int) {
-      return int.tryParse(value) ?? defaultValue;
-    } else if (defaultValue is double) {
-      return double.tryParse(value) ?? defaultValue;
-    } else {
-      return value;
-    }
-  }
-  
-  void _updateWeightFromIntensity(int weekIndex, int sessionIndex, int groupIndex, String intensity) {
-    final controllers = ref.read(progressionControllersProvider);
-    if (_isValidIndex(controllers, weekIndex, sessionIndex, groupIndex)) {
-      final weightController = controllers[weekIndex][sessionIndex][groupIndex].weight;
-      final intensityValues = intensity.split('/').map((v) => double.tryParse(v) ?? 0).toList();
-      final calculatedWeights = intensityValues.map((i) => SeriesUtils.calculateWeightFromIntensity(
-        widget.latestMaxWeight.toDouble(),
-        i,
-      )).toList();
-      final roundedWeights = calculatedWeights.map((w) => SeriesUtils.roundWeight(w, widget.exercise?.type)).toList();
-      weightController.text = roundedWeights.map((w) => w.toStringAsFixed(2)).join('/');
-      _updateSeries(weekIndex, sessionIndex, groupIndex, weight: weightController.text);
-    }
-  }
-
-  void _updateWeightFromRPE(int weekIndex, int sessionIndex, int groupIndex, String rpe, int reps) {
-    final controllers = ref.read(progressionControllersProvider);
-    if (_isValidIndex(controllers, weekIndex, sessionIndex, groupIndex)) {
-      final weightController = controllers[weekIndex][sessionIndex][groupIndex].weight;
-      final intensityController = controllers[weekIndex][sessionIndex][groupIndex].intensity;
-      final rpeValues = rpe.split('/');
-      
-      final weights = rpeValues.map((r) {
-        final rpeDouble = double.tryParse(r) ?? 0;
-        final percentage = SeriesUtils.getRPEPercentage(rpeDouble, reps);
-        final calculatedWeight = widget.latestMaxWeight.toDouble() * percentage;
-        return SeriesUtils.roundWeight(calculatedWeight, widget.exercise?.type ?? '');
-      }).toList();
-
-      weightController.text = weights.map((w) => w.toStringAsFixed(2)).join('/');
-      
-      final intensities = weights.map((w) => 
-        SeriesUtils.calculateIntensityFromWeight(w, widget.latestMaxWeight.toDouble())
-      ).toList();
-      intensityController.text = intensities.map((i) => i.toStringAsFixed(2)).join('/');
-      
-      _updateSeries(
-        weekIndex,
-        sessionIndex,
-        groupIndex,
-        weight: weightController.text,
-        intensity: intensityController.text,
-      );
-    }
-  }
-
-  void _updateIntensityFromWeight(int weekIndex, int sessionIndex, int groupIndex, String weight) {
-    final controllers = ref.read(progressionControllersProvider);
-    if (_isValidIndex(controllers, weekIndex, sessionIndex, groupIndex)) {
-      final intensityController = controllers[weekIndex][sessionIndex][groupIndex].intensity;
-      final weightValues = weight.split('/').map((w) => double.tryParse(w) ?? 0).toList();
-      final calculatedIntensities = weightValues.map((w) => 
-        SeriesUtils.calculateIntensityFromWeight(w, widget.latestMaxWeight.toDouble())
-      ).toList();
-      intensityController.text = calculatedIntensities.map((i) => i.toStringAsFixed(2)).join('/');
-      _updateSeries(weekIndex, sessionIndex, groupIndex, intensity: intensityController.text);
     }
   }
 
   void _addSeriesGroup(int weekIndex, int sessionIndex, int groupIndex) {
     final programController = ref.read(trainingProgramControllerProvider);
-    final weekProgressions = _buildWeekProgressions(programController.program.weeks, widget.exercise!);
-    final controllersNotifier = ref.read(progressionControllersProvider.notifier);
+    final weekProgressions = _buildWeekProgressions(
+        programController.program.weeks, widget.exercise!);
+    final controllersNotifier =
+        ref.read(progressionControllersProvider.notifier);
 
     if (_isValidIndex(weekProgressions, weekIndex, sessionIndex)) {
       final currentSession = weekProgressions[weekIndex][sessionIndex];
@@ -553,7 +729,8 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
         groupedSeries.insert(groupIndex + 1, [newSeries]);
         currentSession.series = groupedSeries.expand((group) => group).toList();
         _updateProgressionsWithNewSeries(weekProgressions);
-        controllersNotifier.addControllers(weekIndex, sessionIndex, groupIndex + 1, newSeries);
+        controllersNotifier.addControllers(
+            weekIndex, sessionIndex, groupIndex + 1);
         setState(() {});
       }
     }
@@ -561,15 +738,20 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
 
   void _removeSeriesGroup(int weekIndex, int sessionIndex, int groupIndex) {
     final programController = ref.read(trainingProgramControllerProvider);
-    final weekProgressions = _buildWeekProgressions(programController.program.weeks, widget.exercise!);
+    final weekProgressions = _buildWeekProgressions(
+        programController.program.weeks, widget.exercise!);
 
     if (_isValidIndex(weekProgressions, weekIndex, sessionIndex)) {
-      final groupedSeries = _groupSeries(weekProgressions[weekIndex][sessionIndex].series);
+      final groupedSeries =
+          _groupSeries(weekProgressions[weekIndex][sessionIndex].series);
       if (groupIndex >= 0 && groupIndex < groupedSeries.length) {
         groupedSeries.removeAt(groupIndex);
-        weekProgressions[weekIndex][sessionIndex].series = groupedSeries.expand((group) => group).toList();
+        weekProgressions[weekIndex][sessionIndex].series =
+            groupedSeries.expand((group) => group).toList();
         _updateProgressionsWithNewSeries(weekProgressions);
-        ref.read(progressionControllersProvider.notifier).removeControllers(weekIndex, sessionIndex, groupIndex);
+        ref
+            .read(progressionControllersProvider.notifier)
+            .removeControllers(weekIndex, sessionIndex, groupIndex);
       }
     }
   }
@@ -595,34 +777,40 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
   Future<void> _handleSave() async {
     final programController = ref.read(trainingProgramControllerProvider);
     final controllers = ref.read(progressionControllersProvider);
-    
+
     try {
       List<List<WeekProgression>> updatedWeekProgressions = [];
-      
+
       for (int weekIndex = 0; weekIndex < controllers.length; weekIndex++) {
         List<WeekProgression> weekProgressions = [];
-        for (int sessionIndex = 0; sessionIndex < controllers[weekIndex].length; sessionIndex++) {
+        for (int sessionIndex = 0;
+            sessionIndex < controllers[weekIndex].length;
+            sessionIndex++) {
           List<Series> updatedSeries = [];
-          for (int groupIndex = 0; groupIndex < controllers[weekIndex][sessionIndex].length; groupIndex++) {
-            final groupControllers = controllers[weekIndex][sessionIndex][groupIndex];
+          for (int groupIndex = 0;
+              groupIndex < controllers[weekIndex][sessionIndex].length;
+              groupIndex++) {
+            final groupControllers =
+                controllers[weekIndex][sessionIndex][groupIndex];
             final sets = int.tryParse(groupControllers.sets.text) ?? 1;
-            final repsRange = _parseIntRange(groupControllers.reps.text);
-            final intensityRange = _parseDoubleRange(groupControllers.intensity.text);
-            final rpeRange = _parseDoubleRange(groupControllers.rpe.text);
-            final weightRange = _parseDoubleRange(groupControllers.weight.text);
 
             for (int i = 0; i < sets; i++) {
               updatedSeries.add(Series(
                 serieId: generateRandomId(16).toString(),
-                reps: repsRange.start.toInt(),
-                maxReps: repsRange.end != repsRange.start ? repsRange.end.toInt() : null,
+                reps: int.tryParse(groupControllers.reps.min.text) ?? 0,
+                maxReps: int.tryParse(groupControllers.reps.max.text),
                 sets: 1,
-                intensity: intensityRange.start.toStringAsFixed(2),
-                maxIntensity: intensityRange.end != intensityRange.start ? intensityRange.end.toStringAsFixed(2) : null,
-                rpe: rpeRange.start.toStringAsFixed(2),
-                maxRpe: rpeRange.end != rpeRange.start ? rpeRange.end.toStringAsFixed(2) : null,
-                weight: weightRange.start,
-                maxWeight: weightRange.end != weightRange.start ? weightRange.end : null,
+                intensity: groupControllers.intensity.min.text,
+                maxIntensity: groupControllers.intensity.max.text.isNotEmpty
+                    ? groupControllers.intensity.max.text
+                    : null,
+                rpe: groupControllers.rpe.min.text,
+                maxRpe: groupControllers.rpe.max.text.isNotEmpty
+                    ? groupControllers.rpe.max.text
+                    : null,
+                weight:
+                    double.tryParse(groupControllers.weight.min.text) ?? 0.0,
+                maxWeight: double.tryParse(groupControllers.weight.max.text),
                 order: updatedSeries.length + 1,
                 done: false,
                 reps_done: 0,
@@ -639,11 +827,12 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
         }
         updatedWeekProgressions.add(weekProgressions);
       }
-      
-      programController.updateWeekProgressions(updatedWeekProgressions, widget.exercise!.exerciseId!);
-      
+
+      programController.updateWeekProgressions(
+          updatedWeekProgressions, widget.exercise!.exerciseId!);
+
       if (!mounted) return;
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Progressions saved successfully')),
       );
@@ -657,21 +846,8 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
     }
   }
 
-  RangeValues _parseIntRange(String value) {
-    final parts = value.split('/');
-    int start = int.tryParse(parts[0]) ?? 0;
-    int end = parts.length > 1 ? (int.tryParse(parts[1]) ?? start) : start;
-    return RangeValues(start.toDouble(), end.toDouble());
-  }
-
-  RangeValues _parseDoubleRange(String value) {
-    final parts = value.split('/');
-    double start = double.tryParse(parts[0]) ?? 0.0;
-    double end = parts.length > 1 ? (double.tryParse(parts[1]) ?? start) : start;
-    return RangeValues(start, end);
-  }
-
-  List<List<WeekProgression>> _buildWeekProgressions(List<Week> weeks, Exercise exercise) {
+  List<List<WeekProgression>> _buildWeekProgressions(
+      List<Week> weeks, Exercise exercise) {
     return List.generate(weeks.length, (weekIndex) {
       final week = weeks[weekIndex];
       return week.workouts.map((workout) {
@@ -682,21 +858,47 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
 
         final existingProgressions = exerciseInWorkout.weekProgressions;
         WeekProgression? sessionProgression;
-        if (existingProgressions.isNotEmpty && existingProgressions.length > weekIndex) {
+        if (existingProgressions.isNotEmpty &&
+            existingProgressions.length > weekIndex) {
           sessionProgression = existingProgressions[weekIndex].firstWhere(
             (progression) => progression.sessionNumber == workout.order,
-            orElse: () => WeekProgression(weekNumber: weekIndex + 1, sessionNumber: workout.order, series: []),
+            orElse: () => WeekProgression(
+                weekNumber: weekIndex + 1,
+                sessionNumber: workout.order,
+                series: []),
           );
         }
 
-        return sessionProgression?.series.isNotEmpty == true
-            ? sessionProgression!
-            : WeekProgression(
-                weekNumber: weekIndex + 1,
-                sessionNumber: workout.order,
-                series: exerciseInWorkout.series,
+        if (sessionProgression?.series.isNotEmpty == true) {
+          return sessionProgression!;
+        } else {
+          final groupedSeries = _groupSeries(exerciseInWorkout.series);
+          return WeekProgression(
+            weekNumber: weekIndex + 1,
+            sessionNumber: workout.order,
+            series: groupedSeries.map((group) {
+              final firstSeries = group.first;
+              return Series(
+                serieId: firstSeries.serieId,
+                reps: firstSeries.reps,
+                maxReps: firstSeries.maxReps,
+                sets: group
+                    .length, // Use the length of the group as the number of sets
+                intensity: firstSeries.intensity,
+                maxIntensity: firstSeries.maxIntensity,
+                rpe: firstSeries.rpe,
+                maxRpe: firstSeries.maxRpe,
+                weight: firstSeries.weight,
+                maxWeight: firstSeries.maxWeight,
+                order: firstSeries.order,
+                done: firstSeries.done,
+                reps_done: firstSeries.reps_done,
+                weight_done: firstSeries.weight_done,
               );
-      }).toList(); 
+            }).toList(),
+          );
+        }
+      }).toList();
     });
   }
 
@@ -724,12 +926,115 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
   }
 
   bool _isValidIndex(List list, int index1, [int? index2, int? index3]) {
-    return index1 >= 0 && index1 < list.length &&
-           (index2 == null || (index2 >= 0 && index2 < list[index1].length)) &&
-           (index3 == null || (index3 >= 0 && index3 < list[index1][index2].length));
+    return index1 >= 0 &&
+        index1 < list.length &&
+        (index2 == null || (index2 >= 0 && index2 < list[index1].length)) &&
+        (index3 == null ||
+            (index3 >= 0 && index3 < list[index1][index2].length));
   }
 
-  void _updateProgressionsWithNewSeries(List<List<WeekProgression>> weekProgressions) {
-    ref.read(trainingProgramControllerProvider).updateWeekProgressions(weekProgressions, widget.exercise!.exerciseId!);
+  void _updateProgressionsWithNewSeries(
+      List<List<WeekProgression>> weekProgressions) {
+    ref
+        .read(trainingProgramControllerProvider)
+        .updateWeekProgressions(weekProgressions, widget.exercise!.exerciseId!);
+  }
+}
+
+class RangeEditDialog extends StatefulWidget {
+  final String title;
+  final String initialMin;
+  final String initialMax;
+  final Function(String, String) onSave;
+  final Function(String, String) onChanged;
+
+  const RangeEditDialog({
+    Key? key,
+    required this.title,
+    required this.initialMin,
+    required this.initialMax,
+    required this.onSave,
+    required this.onChanged,
+  }) : super(key: key);
+
+  @override
+  _RangeEditDialogState createState() => _RangeEditDialogState();
+}
+
+class _RangeEditDialogState extends State<RangeEditDialog> {
+  late TextEditingController _minController;
+  late TextEditingController _maxController;
+
+  @override
+  void initState() {
+    super.initState();
+    _minController = TextEditingController(text: widget.initialMin);
+    _maxController = TextEditingController(text: widget.initialMax);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 16,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Edit ${widget.title}',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _minController,
+              decoration: InputDecoration(labelText: 'Minimum ${widget.title}'),
+              keyboardType: TextInputType.number,
+              onChanged: (value) {
+                widget.onChanged(value, _maxController.text);
+              },
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _maxController,
+              decoration: InputDecoration(labelText: 'Maximum ${widget.title}'),
+              keyboardType: TextInputType.number,
+              onChanged: (value) {
+                widget.onChanged(_minController.text, value);
+              },
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  final min = _minController.text.trim();
+                  final max = _maxController.text.trim();
+
+                  // Consenti salvataggio anche se `max` è vuoto
+                  widget.onSave(min, max);
+
+                  // Chiudi la finestra modale
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Save'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _minController.dispose();
+    _maxController.dispose();
+    super.dispose();
   }
 }
