@@ -11,12 +11,14 @@ class FoodSelector extends ConsumerStatefulWidget {
   final String? myFoodId;
   final VoidCallback? onSave;
   final bool isFavoriteMeal;
+  final ScrollController? scrollController; // Aggiunto il parametro
 
   const FoodSelector({
     required this.meal,
     this.myFoodId,
     this.onSave,
     this.isFavoriteMeal = false,
+    this.scrollController, // Aggiunto il parametro
     super.key,
   });
 
@@ -26,7 +28,8 @@ class FoodSelector extends ConsumerStatefulWidget {
 
 class FoodSelectorState extends ConsumerState<FoodSelector> {
   final TextEditingController _searchController = TextEditingController();
-  final TextEditingController _quantityController = TextEditingController(text: '100');
+  final TextEditingController _quantityController =
+      TextEditingController(text: '100');
   String _selectedFoodId = '';
   double _quantity = 100.0;
   String _unit = 'g';
@@ -51,7 +54,8 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
 
   Future<macros.Food?> _loadFoodData(String foodId) async {
     final mealsService = ref.read(mealsServiceProvider);
-    final food = await mealsService.getMyFoodById(widget.meal.userId, foodId);
+    final food =
+        await mealsService.getMyFoodById(widget.meal.userId, foodId);
     if (food != null) {
       if (mounted) {
         setState(() {
@@ -149,7 +153,8 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
     );
   }
 
-  Future<void> _addFood(MealsService mealsService, macros.Food adjustedFood) async {
+  Future<void> _addFood(
+      MealsService mealsService, macros.Food adjustedFood) async {
     if (widget.isFavoriteMeal) {
       await mealsService.addFoodToFavoriteMeal(
         userId: widget.meal.userId,
@@ -167,7 +172,8 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
     }
   }
 
-  Future<void> _updateFood(MealsService mealsService, macros.Food adjustedFood) async {
+  Future<void> _updateFood(
+      MealsService mealsService, macros.Food adjustedFood) async {
     await mealsService.updateMyFood(
       userId: widget.meal.userId,
       myFoodId: widget.myFoodId!,
@@ -192,37 +198,42 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            AutoTypeField(
-              controller: _searchController,
-              focusNode: FocusNode(),
-              onSelected: (macros.Food food) {
-                setState(() {
-                  _updateLoadedFood(food);
-                  _quantity = 100.0;
-                  _unit = 'g';
-                  _quantityController.text = '100';
-                  _foodFuture = Future.value(food);
-                  _updateMacronutrientValues(food);
-                });
-              },
-              onChanged: (String pattern) {
-                // Handle changes in the search field if necessary
-              },
-            ),
-            if (_selectedFoodId.isNotEmpty || widget.myFoodId != null)
-              Expanded(child: _buildSelectedFoodDetails(context)),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _saveFood,
-              child: const Text('Save and Go Back'),
-            ),
-          ],
-        ),
+    return SingleChildScrollView(
+      controller: widget.scrollController, // Utilizza lo scrollController passato
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AutoTypeField(
+            controller: _searchController,
+            focusNode: FocusNode(),
+            onSelected: (macros.Food food) {
+              setState(() {
+                _updateLoadedFood(food);
+                _quantity = 100.0;
+                _unit = 'g';
+                _quantityController.text = '100';
+                _foodFuture = Future.value(food);
+                _updateMacronutrientValues(food);
+              });
+            },
+            onChanged: (String pattern) {
+              // Gestione dei cambiamenti nel campo di ricerca se necessario
+            },
+          ),
+          if (_selectedFoodId.isNotEmpty || widget.myFoodId != null)
+            _buildSelectedFoodDetails(context),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _saveFood,
+            child: const Text('Salva e torna indietro'),
+          ),
+        ],
       ),
     );
   }
@@ -236,30 +247,28 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
         } else if (snapshot.hasData) {
           final food = snapshot.data!;
           _loadedFood = food;
-          return SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Divider(),
-                Text(
-                  food.name,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                _buildQuantityInput(food),
-                const SizedBox(height: 16),
-                const Text('Macro Nutrients:'),
-                Text('Protein: ${_proteinValue.toStringAsFixed(2)}g'),
-                Text('Carbohydrates: ${_carbsValue.toStringAsFixed(2)}g'),
-                Text('Fat: ${_fatValue.toStringAsFixed(2)}g'),
-                Text('Calories: ${_kcalValue.toStringAsFixed(2)}kcal'),
-              ],
-            ),
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Divider(),
+              Text(
+                food.name,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 8),
+              _buildQuantityInput(food),
+              const SizedBox(height: 16),
+              const Text('Macronutrienti:'),
+              Text('Proteine: ${_proteinValue.toStringAsFixed(2)}g'),
+              Text('Carboidrati: ${_carbsValue.toStringAsFixed(2)}g'),
+              Text('Grassi: ${_fatValue.toStringAsFixed(2)}g'),
+              Text('Calorie: ${_kcalValue.toStringAsFixed(2)}kcal'),
+            ],
           );
         } else if (snapshot.hasError) {
-          return Text('Error: ${snapshot.error}');
+          return Text('Errore: ${snapshot.error}');
         } else {
-          return const Text('No data');
+          return const Text('Nessun dato disponibile');
         }
       },
     );
@@ -272,7 +281,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
           child: TextField(
             controller: _quantityController,
             decoration: const InputDecoration(
-              labelText: 'Quantity',
+              labelText: 'Quantità',
             ),
             keyboardType: TextInputType.number,
             onChanged: (value) {
