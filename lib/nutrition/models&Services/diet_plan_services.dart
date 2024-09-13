@@ -1,9 +1,8 @@
-// providers/diet_plan_service.dart
+// providers/diet_plan_services.dart
 import 'package:alphanessone/nutrition/models&Services/diet_plan_model.dart';
 import 'package:alphanessone/nutrition/models&Services/meals_services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 
 final dietPlanServiceProvider = Provider<DietPlanService>((ref) {
   return DietPlanService(ref, FirebaseFirestore.instance);
@@ -54,7 +53,7 @@ class DietPlanService {
   }
 
   // Applica un piano dietetico al periodo definito
-  Future<void> applyDietPlan(DietPlan dietPlan) async {
+   Future<void> applyDietPlan(DietPlan dietPlan) async {
     final userId = dietPlan.userId;
     final startDate = dietPlan.startDate;
     final durationDays = dietPlan.durationDays;

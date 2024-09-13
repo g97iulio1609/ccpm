@@ -94,10 +94,16 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
       );
 
       final dietPlanService = ref.read(dietPlanServiceProvider);
-      await dietPlanService.createDietPlan(dietPlan);
+      final dietPlanId = await dietPlanService.createDietPlan(dietPlan);
+
+      // Recupera il piano dietetico appena creato con l'ID
+      final createdDietPlan = dietPlan.copyWith(id: dietPlanId);
+
+      // Applica il piano dietetico appena creato
+      await dietPlanService.applyDietPlan(createdDietPlan);
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Diet Plan Saved')),
+        const SnackBar(content: Text('Diet Plan Saved and Applied')),
       );
 
       Navigator.of(context).pop();
@@ -262,7 +268,7 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
                 ),
-                child: Text('Save Diet Plan', style: GoogleFonts.roboto(fontSize: 18)),
+                child: Text('Save & Apply Diet Plan', style: GoogleFonts.roboto(fontSize: 18)),
               ),
             ],
           ),

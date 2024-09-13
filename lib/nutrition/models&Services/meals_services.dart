@@ -1,4 +1,4 @@
-// providers/meals_services.dart
+// meals_services.dart
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -153,36 +153,24 @@ class MealsService extends ChangeNotifier {
         .doc(userId)
         .collection('myfoods')
         .doc();
-    final myFood = {
-      'mealId': mealId,
-      'name': food.name,
-      'kcal': food.kcal * quantity / 100,
-      'carbs': food.carbs * quantity / 100,
-      'fat': food.fat * quantity / 100,
-      'protein': food.protein * quantity / 100,
-      'quantity': quantity,
-      'quantityUnit': food.quantityUnit,
-      'portion': food.portion,
-      'sugar': food.sugar * quantity / 100,
-      'fiber': food.fiber * quantity / 100,
-      'saturatedFat': food.saturatedFat * quantity / 100,
-      'polyunsaturatedFat': food.polyunsaturatedFat * quantity / 100,
-      'monounsaturatedFat': food.monounsaturatedFat * quantity / 100,
-      'transFat': food.transFat * quantity / 100,
-      'cholesterol': food.cholesterol * quantity / 100,
-      'sodium': food.sodium * quantity / 100,
-      'potassium': food.potassium * quantity / 100,
-      'vitaminA': food.vitaminA * quantity / 100,
-      'vitaminC': food.vitaminC * quantity / 100,
-      'calcium': food.calcium * quantity / 100,
-      'iron': food.iron * quantity / 100,
-    };
+    final myFood = macros.Food(
+      id: myFoodRef.id,
+      mealId: mealId,
+      name: food.name,
+      kcal: food.kcal * quantity / 100,
+      carbs: food.carbs * quantity / 100,
+      fat: food.fat * quantity / 100,
+      protein: food.protein * quantity / 100,
+      quantity: quantity,
+      portion: food.portion,
+      // Aggiungi altri campi se necessario
+    );
 
-    batch.set(myFoodRef, myFood);
+    batch.set(myFoodRef, myFood.toMap());
     batch.update(mealRef, meal.toMap());
     await batch.commit();
     notifyListeners(); // Notify listeners when a food is added to a meal
-    await updateMealAndDailyStats(userId, mealId, food, isAdding: true);
+    await updateMealAndDailyStats(userId, mealId, myFood, isAdding: true);
   }
 
   Future<void> updateFoodInMeal({
@@ -212,19 +200,7 @@ class MealsService extends ChangeNotifier {
       'fat': myFoodData['fat'] * adjustmentFactor,
       'protein': myFoodData['protein'] * adjustmentFactor,
       'quantity': newQuantity,
-      'sugar': myFoodData['sugar'] * adjustmentFactor,
-      'fiber': myFoodData['fiber'] * adjustmentFactor,
-      'saturatedFat': myFoodData['saturatedFat'] * adjustmentFactor,
-      'polyunsaturatedFat': myFoodData['polyunsaturatedFat'] * adjustmentFactor,
-      'monounsaturatedFat': myFoodData['monounsaturatedFat'] * adjustmentFactor,
-      'transFat': myFoodData['transFat'] * adjustmentFactor,
-      'cholesterol': myFoodData['cholesterol'] * adjustmentFactor,
-      'sodium': myFoodData['sodium'] * adjustmentFactor,
-      'potassium': myFoodData['potassium'] * adjustmentFactor,
-      'vitaminA': myFoodData['vitaminA'] * adjustmentFactor,
-      'vitaminC': myFoodData['vitaminC'] * adjustmentFactor,
-      'calcium': myFoodData['calcium'] * adjustmentFactor,
-      'iron': myFoodData['iron'] * adjustmentFactor,
+      // Aggiorna altri campi se necessario
     };
 
     batch.update(myFoodRef, updatedFood);
@@ -481,12 +457,12 @@ class MealsService extends ChangeNotifier {
           userId: userId,
           date: date,
         );
-        final dailyStatsRef = _firestore
+        final statsRef = _firestore
             .collection('users')
             .doc(userId)
             .collection('dailyStats')
             .doc();
-        batch.set(dailyStatsRef, newStats.toMap());
+        batch.set(statsRef, newStats.toMap());
       }
     }
 
@@ -739,7 +715,7 @@ class MealsService extends ChangeNotifier {
 
     final dailyStats =
         meals.DailyStats.fromFirestore(dailyStatsSnapshot);
-    
+
     dailyStats.totalCalories =
         (dailyStats.totalCalories + (isAdding ? food.kcal : -food.kcal))
             .clamp(0, double.infinity);
@@ -757,6 +733,83 @@ class MealsService extends ChangeNotifier {
     await batch.commit();
   }
 
+  // Metodo aggiornato per creare pasti da un piano dietetico, duplicando anche gli alimenti
+  Future<void> createMealsFromMealIds(String userId, DateTime date, List<String> mealIds) async {
+    final dailyStatsId = await _getOrCreateDailyStatsId(userId, date);
+
+    for (String mealId in mealIds) {
+      final meal = await getMealById(userId, mealId);
+      if (meal != null) {
+        // Crea una copia del pasto per la nuova data
+        final newMeal = meal.copyWith(
+          id: null,
+          date: date,
+          dailyStatsId: dailyStatsId,
+        );
+
+        // Aggiungi il nuovo pasto al database e ottieni il riferimento
+        final newMealRef = await _firestore
+            .collection('users')
+            .doc(userId)
+            .collection('meals')
+            .add(newMeal.toMap());
+
+        // Recupera gli alimenti associati al pasto originale
+        final originalFoods = await getFoodsForMeals(userId: userId, mealId: mealId);
+
+        // Duplica ciascun alimento e associarlo al nuovo pasto
+        for (final food in originalFoods) {
+          final duplicatedFood = food.copyWith(
+            id: null, // Lascia che Firestore assegni un nuovo ID
+            mealId: newMealRef.id, // Associa al nuovo pasto
+          );
+          await _firestore
+              .collection('users')
+              .doc(userId)
+              .collection('myfoods')
+              .add(duplicatedFood.toMap());
+
+          // Aggiorna le statistiche del pasto e giornaliere per il nuovo alimento
+          await updateMealAndDailyStats(userId, newMealRef.id, duplicatedFood, isAdding: true);
+        }
+      }
+    }
+  }
+
+  Future<String> _getOrCreateDailyStatsId(String userId, DateTime date) async {
+    final startOfDay = DateTime(date.year, date.month, date.day);
+    final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
+
+    final statsQuery = await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('dailyStats')
+        .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+        .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
+        .limit(1)
+        .get();
+
+    if (statsQuery.docs.isNotEmpty) {
+      return statsQuery.docs.first.id;
+    } else {
+      // Crea un nuovo dailyStats
+      final newStatsRef = _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('dailyStats')
+          .doc();
+      await newStatsRef.set({
+        'userId': userId,
+        'date': Timestamp.fromDate(date),
+        'totalCalories': 0.0,
+        'totalCarbs': 0.0,
+        'totalFat': 0.0,
+        'totalProtein': 0.0,
+      });
+      return newStatsRef.id;
+    }
+  }
+
   // Metodo per creare pasti da un DailyDiet
   Future<void> createMealsFromDailyDiet(
       String userId, DateTime date, List<meals.Meal> mealsList) async {
@@ -772,7 +825,11 @@ class MealsService extends ChangeNotifier {
 
       if (querySnapshot.docs.isEmpty) {
         // Crea un nuovo pasto
-        final newMealRef = mealsCollection.doc();
+        final newMealRef = _firestore
+            .collection('users')
+            .doc(userId)
+            .collection('meals')
+            .doc();
         final newMeal = meal.copyWith(
           id: newMealRef.id,
           date: date,
@@ -862,20 +919,22 @@ class MealsService extends ChangeNotifier {
     final foods = await getFoodsForMeals(userId: userId, mealId: favoriteMealId);
 
     for (final food in foods) {
-      final newFood = food.copyWith(id: null, mealId: currentMealId);
+      final newFood = food.copyWith(
+        id: null, // Lascia che Firestore assegni un nuovo ID
+        mealId: currentMealId, // Associa al pasto corrente
+      );
       final myFoodRef = _firestore
           .collection('users')
           .doc(userId)
           .collection('myfoods')
           .doc();
       batch.set(myFoodRef, newFood.toMap());
+
+      // Aggiorna le statistiche del pasto e giornaliere per il nuovo alimento
+      await updateMealAndDailyStats(userId, currentMealId, newFood, isAdding: true);
     }
 
     await batch.commit();
-
-    for (final food in foods) {
-      await updateMealAndDailyStats(userId, currentMealId, food, isAdding: true);
-    }
   }
 
   Future<void> saveDayAsFavorite(
@@ -922,7 +981,7 @@ class MealsService extends ChangeNotifier {
             .collection('users')
             .doc(userId)
             .collection('myfoods')
-            .where('mealId', isEqualTo: meal.id)
+            .where('mealId', isEqualTo: meal.id!)
             .get();
 
         for (final foodDoc in foodsForMeal.docs) {
@@ -970,44 +1029,32 @@ class MealsService extends ChangeNotifier {
       throw Exception('Meal not found');
     }
 
-    final mealData = mealSnapshot.data();
-    final meal = meals.Meal.fromMap(mealData!);
+    final mealData = mealSnapshot.data()!;
+    final meal = meals.Meal.fromMap(mealData);
 
     final myFoodRef = _firestore
         .collection('users')
         .doc(userId)
         .collection('myfoods')
         .doc();
-    final myFood = {
-      'mealId': mealId,
-      'name': food.name,
-      'kcal': food.kcal * quantity / 100,
-      'carbs': food.carbs * quantity / 100,
-      'fat': food.fat * quantity / 100,
-      'protein': food.protein * quantity / 100,
-      'quantity': quantity,
-      'quantityUnit': food.quantityUnit,
-      'portion': food.portion,
-      'sugar': food.sugar * quantity / 100,
-      'fiber': food.fiber * quantity / 100,
-      'saturatedFat': food.saturatedFat * quantity / 100,
-      'polyunsaturatedFat': food.polyunsaturatedFat * quantity / 100,
-      'monounsaturatedFat': food.monounsaturatedFat * quantity / 100,
-      'transFat': food.transFat * quantity / 100,
-      'cholesterol': food.cholesterol * quantity / 100,
-      'sodium': food.sodium * quantity / 100,
-      'potassium': food.potassium * quantity / 100,
-      'vitaminA': food.vitaminA * quantity / 100,
-      'vitaminC': food.vitaminC * quantity / 100,
-      'calcium': food.calcium * quantity / 100,
-      'iron': food.iron * quantity / 100,
-    };
+    final myFood = macros.Food(
+      id: myFoodRef.id,
+      mealId: mealId,
+      name: food.name,
+      kcal: food.kcal * quantity / 100,
+      carbs: food.carbs * quantity / 100,
+      fat: food.fat * quantity / 100,
+      protein: food.protein * quantity / 100,
+      quantity: quantity,
+      portion: food.portion,
+      // Aggiungi altri campi se necessario
+    );
 
-    batch.set(myFoodRef, myFood);
+    batch.set(myFoodRef, myFood.toMap());
     batch.update(mealRef, meal.toMap());
     await batch.commit();
     notifyListeners(); // Notify listeners when a food is added to a meal
-    await updateMealAndDailyStats(userId, mealId, food, isAdding: true);
+    await updateMealAndDailyStats(userId, mealId, myFood, isAdding: true);
   }
 
   Future<void> applyFavoriteDayToCurrent(
@@ -1122,6 +1169,9 @@ class MealsService extends ChangeNotifier {
             .collection('myfoods')
             .doc();
         batch.set(myFoodRef, newFood.toMap());
+
+        // Aggiorna le statistiche del pasto e giornaliere per il nuovo alimento
+        await updateMealAndDailyStats(userId, currentMeal.id!, newFood, isAdding: true);
       }
     }
 
@@ -1129,55 +1179,29 @@ class MealsService extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<String> createMealFromFavorite(
-    String userId,
-    String favoriteMealId,
-    DateTime date,
-    String newDailyStatsId,
-  ) async {
-    final batch = _firestore.batch();
-    final favoriteMealRef = _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('mymeals')
-        .doc(favoriteMealId);
-    final favoriteMealSnapshot = await favoriteMealRef.get();
+  @override
+  void dispose() {
+    _mealsChangesSubscription?.cancel();
+    _mealsStreamController.close();
+    super.dispose();
+  }
 
-    if (!favoriteMealSnapshot.exists) {
-      throw Exception('Favorite meal not found');
-    }
-
-    final favoriteMeal = meals.Meal.fromFirestore(favoriteMealSnapshot);
-
-    final newMeal = favoriteMeal.copyWith(
-      id: null,
-      dailyStatsId: newDailyStatsId,
-      date: date,
-    );
-
-    final mealRef = _firestore
+  Future<void> deleteMealsByDate(String userId, DateTime date) async {
+    final mealsSnapshot = await _firestore
         .collection('users')
         .doc(userId)
         .collection('meals')
-        .doc();
-    batch.set(mealRef, newMeal.toMap());
-    await batch.commit();
-    return mealRef.id;
-  }
+        .where('date', isEqualTo: Timestamp.fromDate(date))
+        .get();
 
-  Future<void> deleteFavoriteDay(String userId, String favoriteDayId) async {
     final batch = _firestore.batch();
-    final favoriteDayRef = _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('mydays')
-        .doc(favoriteDayId);
-    batch.delete(favoriteDayRef);
+    for (var doc in mealsSnapshot.docs) {
+      batch.delete(doc.reference);
+    }
     await batch.commit();
-    notifyListeners(); // Notify listeners when a favorite day is deleted
   }
 
-  Stream<meals.DailyStats> getDailyStatsByDateStream(String userId, DateTime date) {
+   Stream<meals.DailyStats> getDailyStatsByDateStream(String userId, DateTime date) {
     final startOfDay = DateTime(date.year, date.month, date.day);
     final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
 
@@ -1196,75 +1220,22 @@ class MealsService extends ChangeNotifier {
       }
     });
   }
-
+  Future<void> deleteFavoriteDay(String userId, String favoriteDayId) async {
+    final batch = _firestore.batch();
+    final favoriteDayRef = _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('mydays')
+        .doc(favoriteDayId);
+    batch.delete(favoriteDayRef);
+    await batch.commit();
+    notifyListeners(); // Notify listeners when a favorite day is deleted
+  }
   Future<void> deleteFavoriteMeal(String userId, String favoriteMealId) async {
     final batch = _firestore.batch();
     final favoriteMealRef = _firestore.collection('users').doc(userId).collection('mymeals').doc(favoriteMealId);
     batch.delete(favoriteMealRef);
     await batch.commit();
     notifyListeners(); // Notify listeners when a favorite meal is deleted
-  }
-
-Future<void> createMealsFromMealIds(String userId, DateTime date, List<String> mealIds) async {
-    final dailyStatsId = await _getOrCreateDailyStatsId(userId, date);
-
-    for (String mealId in mealIds) {
-      final meal = await getMealById(userId, mealId);
-      if (meal != null) {
-        // Crea una copia del pasto per la nuova data
-        final newMeal = meal.copyWith(
-          id: null,
-          date: date,
-          dailyStatsId: dailyStatsId,
-        );
-
-        await _firestore
-            .collection('users')
-            .doc(userId)
-            .collection('meals')
-            .add(newMeal.toMap());
-      }
-    }
-  }
-  
-Future<String> _getOrCreateDailyStatsId(String userId, DateTime date) async {
-    final startOfDay = DateTime(date.year, date.month, date.day);
-    final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
-
-    final statsQuery = await _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('dailyStats')
-        .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
-        .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
-        .limit(1)
-        .get();
-
-    if (statsQuery.docs.isNotEmpty) {
-      return statsQuery.docs.first.id;
-    } else {
-      // Crea un nuovo dailyStats
-      final newStatsRef = _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('dailyStats')
-          .doc();
-      await newStatsRef.set({
-        'userId': userId,
-        'date': Timestamp.fromDate(date),
-        'totalCalories': 0.0,
-        'totalCarbs': 0.0,
-        'totalFat': 0.0,
-        'totalProtein': 0.0,
-      });
-      return newStatsRef.id;
-    }
-  }
-
-  @override
-  void dispose() {
-    _mealsChangesSubscription?.cancel();
-    _mealsStreamController.close();
-    super.dispose();
   }
 }
