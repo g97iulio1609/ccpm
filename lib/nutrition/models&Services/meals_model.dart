@@ -93,6 +93,8 @@ class Meal {
     );
   }
 
+  get carbs => null;
+
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -138,7 +140,8 @@ class DailyStats {
     this.totalProtein = 0,
   });
 
-  factory DailyStats.fromJson(String source) => DailyStats.fromMap(json.decode(source));
+  factory DailyStats.fromJson(String source) =>
+      DailyStats.fromMap(json.decode(source));
 
   String toJson() => json.encode(toMap());
 
@@ -179,6 +182,7 @@ class DailyStats {
     };
   }
 }
+
 
 class Food {
   String? id;

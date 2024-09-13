@@ -4,6 +4,7 @@ import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/user_autocomplete.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../models&Services/meals_services.dart';
 import 'food_list.dart';
 import '../models&Services/meals_model.dart' as meals;
@@ -68,12 +69,32 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
     }
   }
 
-  @override
+   @override
   Widget build(BuildContext context) {
     final selectedDate = ref.watch(selectedDateProvider);
     final dailyStats = ref.watch(dailyStatsProvider(selectedDate));
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text('Daily Food Tracker', style: GoogleFonts.roboto()),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.pie_chart),
+            onPressed: () {
+              context.push('/diet_plan');
+            },
+            tooltip: 'Diet Plans',
+          ),
+          IconButton(
+            icon: const Icon(Icons.view_list),
+            onPressed: () {
+              context.push('/view_diet_plans');
+            },
+            tooltip: 'View Diet Plans',
+          ),
+        ],
+        backgroundColor: Theme.of(context).colorScheme.primary,
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -104,9 +125,16 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Aggiungi qui l'azione per aggiungere un nuovo pasto manualmente
+        },
+        child: const Icon(Icons.add),
+      ),
     );
   }
 
+  
   Widget _buildMacroSummary(meals.DailyStats stats) {
     return Container(
       color: Theme.of(context).colorScheme.surface,

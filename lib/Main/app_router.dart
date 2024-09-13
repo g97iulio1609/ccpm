@@ -1,7 +1,10 @@
+// app_router.dart
 import 'package:alphanessone/Viewer/models/timer_model.dart';
 import 'package:alphanessone/Coaching/coaching_association.dart';
 import 'package:alphanessone/exerciseManager/exercise_model.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_stats.dart';
+import 'package:alphanessone/nutrition/tracker/diet_plan_screen.dart';
+import 'package:alphanessone/nutrition/tracker/view_diet_plans_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -168,12 +171,12 @@ class AppRouter {
                 path: '/subscriptions',
                 builder: (context, state) => const InAppSubscriptionsPage(),
               ),
-            GoRoute(
-  path: '/measurements',
-  builder: (context, state) {
-    return const MeasurementsPage();
-  },
-),
+              GoRoute(
+                path: '/measurements',
+                builder: (context, state) {
+                  return const MeasurementsPage();
+                },
+              ),
               GoRoute(
                 path: '/tdee',
                 builder: (context, state) {
@@ -239,27 +242,26 @@ class AppRouter {
                 path: '/exercises_list',
                 builder: (context, state) => const ExercisesList(),
               ),
-             GoRoute(
-  path: '/maxrmdashboard',
-  builder: (context, state) => const MaxRMDashboard(),
-  routes: [
-    GoRoute(
-      path: 'exercise_stats/:exerciseId',
-      builder: (context, state) {
-        final extra = state.extra as Map<String, dynamic>;
-        final exercise = extra['exercise'] as ExerciseModel;
-        final userId = extra['userId'] as String;
-        debugPrint('userId: $userId');
-
-        return ExerciseStats(
-          exercise: exercise,
-          userId: userId, // Passaggio dell'ID utente qui
-        );
-      },
-    ),
-  ],
-),
-
+              GoRoute(
+                path: '/maxrmdashboard',
+                builder: (context, state) => const MaxRMDashboard(),
+                routes: [
+                  GoRoute(
+                    path: 'exercise_stats/:exerciseId',
+                    builder: (context, state) {
+                      final extra = state.extra as Map<String, dynamic>;
+                      final exercise = extra['exercise'] as ExerciseModel;
+                      final userId = extra['userId'] as String;
+                      debugPrint('userId: $userId');
+    
+                      return ExerciseStats(
+                        exercise: exercise,
+                        userId: userId, // Passaggio dell'ID utente qui
+                      );
+                    },
+                  ),
+                ],
+              ),
               GoRoute(
                 path: '/users_dashboard',
                 builder: (context, state) => const UsersDashboard(),
@@ -270,6 +272,15 @@ class AppRouter {
                   final userId = state.pathParameters['userId'];
                   return UserProfile(userId: userId);
                 },
+              ),
+              // Nuove Rotte per Diet Plan
+              GoRoute(
+                path: '/diet_plan',
+                builder: (context, state) => const DietPlanScreen(),
+              ),
+              GoRoute(
+                path: '/view_diet_plans',
+                builder: (context, state) => const ViewDietPlansScreen(),
               ),
             ],
           ),
