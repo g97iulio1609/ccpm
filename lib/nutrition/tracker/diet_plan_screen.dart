@@ -131,10 +131,6 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
     final mealsService = ref.watch(mealsServiceProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Create Diet Plan', style: GoogleFonts.roboto()),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(

@@ -22,10 +22,6 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
     final dietPlansStream = ref.watch(dietPlanServiceProvider).getDietPlansStream(userId);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Your Diet Plans', style: GoogleFonts.roboto()),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-      ),
       body: StreamBuilder<List<DietPlan>>(
         stream: dietPlansStream,
         builder: (context, snapshot) {
@@ -80,7 +76,7 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          context.go('/diet_plan');
+          context.go('/food_tracker/diet_plan');
         },
         tooltip: 'Create Diet Plan',
         child: const Icon(Icons.add),

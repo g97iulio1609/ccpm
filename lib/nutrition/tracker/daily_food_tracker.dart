@@ -75,26 +75,6 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
     final dailyStats = ref.watch(dailyStatsProvider(selectedDate));
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Daily Food Tracker', style: GoogleFonts.roboto()),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.pie_chart),
-            onPressed: () {
-              context.push('/diet_plan');
-            },
-            tooltip: 'Diet Plans',
-          ),
-          IconButton(
-            icon: const Icon(Icons.view_list),
-            onPressed: () {
-              context.push('/view_diet_plans');
-            },
-            tooltip: 'View Diet Plans',
-          ),
-        ],
-        backgroundColor: Theme.of(context).colorScheme.primary,
-      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -124,12 +104,6 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
             ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Aggiungi qui l'azione per aggiungere un nuovo pasto manualmente
-        },
-        child: const Icon(Icons.add),
       ),
     );
   }

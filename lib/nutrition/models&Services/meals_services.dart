@@ -734,25 +734,80 @@ class MealsService extends ChangeNotifier {
   }
 
   // Metodo aggiornato per creare pasti da un piano dietetico, duplicando anche gli alimenti
-  Future<void> createMealsFromMealIds(String userId, DateTime date, List<String> mealIds) async {
-    final dailyStatsId = await _getOrCreateDailyStatsId(userId, date);
+Future<void> createMealsFromMealIds(String userId, DateTime date, List<String> mealIds) async {
+  final dailyStatsId = await _getOrCreateDailyStatsId(userId, date);
+  final batch = _firestore.batch();
 
-    for (String mealId in mealIds) {
-      final meal = await getMealById(userId, mealId);
-      if (meal != null) {
-        // Crea una copia del pasto per la nuova data
+  for (String mealId in mealIds) {
+    final meal = await getMealById(userId, mealId);
+    if (meal != null) {
+      final mealType = meal.mealType;
+
+      // Query per verificare se esiste già un pasto dello stesso tipo nella data di destinazione
+      final existingMealsSnapshot = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('meals')
+          .where('date', isEqualTo: Timestamp.fromDate(date))
+          .where('mealType', isEqualTo: mealType)
+          .get();
+
+      if (existingMealsSnapshot.docs.isNotEmpty) {
+        // Il pasto esiste, sovrascrivere
+        final existingMealDoc = existingMealsSnapshot.docs.first;
+        final existingMeal = meals.Meal.fromFirestore(existingMealDoc);
+
+        // Elimina tutti gli alimenti associati al pasto esistente
+        final existingFoodsSnapshot = await _firestore
+            .collection('users')
+            .doc(userId)
+            .collection('myfoods')
+            .where('mealId', isEqualTo: existingMeal.id)
+            .get();
+
+        for (final foodDoc in existingFoodsSnapshot.docs) {
+          batch.delete(foodDoc.reference);
+        }
+
+        // Aggiorna il pasto esistente con la nuova data e dailyStatsId
+        batch.update(existingMealDoc.reference, {
+          'date': Timestamp.fromDate(date),
+          'dailyStatsId': dailyStatsId,
+          // Altri campi da aggiornare se necessario
+        });
+
+        // Duplica gli alimenti dal pasto originale al pasto esistente
+        final originalFoods = await getFoodsForMeals(userId: userId, mealId: mealId);
+        for (final food in originalFoods) {
+          final duplicatedFood = food.copyWith(
+            id: null, // Lascia che Firestore assegni un nuovo ID
+            mealId: existingMeal.id!, // Associa al pasto esistente (uso di !)
+          );
+          final foodRef = _firestore
+              .collection('users')
+              .doc(userId)
+              .collection('myfoods')
+              .doc();
+          batch.set(foodRef, duplicatedFood.toMap());
+
+          // Aggiorna le statistiche del pasto e giornaliere per il nuovo alimento
+          // Nota: updateMealAndDailyStats è asincrono, ma non può essere chiamato all'interno di un batch
+          // Devi chiamarlo dopo il commit del batch
+        }
+      } else {
+        // Il pasto non esiste, creare un nuovo pasto
         final newMeal = meal.copyWith(
-          id: null,
+          id: null, // Lascia che Firestore assegni un nuovo ID
           date: date,
           dailyStatsId: dailyStatsId,
         );
 
-        // Aggiungi il nuovo pasto al database e ottieni il riferimento
-        final newMealRef = await _firestore
+        final newMealRef = _firestore
             .collection('users')
             .doc(userId)
             .collection('meals')
-            .add(newMeal.toMap());
+            .doc();
+        batch.set(newMealRef, newMeal.toMap());
 
         // Recupera gli alimenti associati al pasto originale
         final originalFoods = await getFoodsForMeals(userId: userId, mealId: mealId);
@@ -763,19 +818,35 @@ class MealsService extends ChangeNotifier {
             id: null, // Lascia che Firestore assegni un nuovo ID
             mealId: newMealRef.id, // Associa al nuovo pasto
           );
-          await _firestore
+          final foodRef = _firestore
               .collection('users')
               .doc(userId)
               .collection('myfoods')
-              .add(duplicatedFood.toMap());
+              .doc();
+          batch.set(foodRef, duplicatedFood.toMap());
 
           // Aggiorna le statistiche del pasto e giornaliere per il nuovo alimento
-          await updateMealAndDailyStats(userId, newMealRef.id, duplicatedFood, isAdding: true);
+          // Nota: updateMealAndDailyStats è asincrono, ma non può essere chiamato all'interno di un batch
+          // Devi chiamarlo dopo il commit del batch
         }
       }
     }
   }
 
+  // Commit del batch
+  await batch.commit();
+
+  // Ora aggiorna le statistiche per tutti i pasti modificati
+  for (String mealId in mealIds) {
+    final meal = await getMealById(userId, mealId);
+    if (meal != null) {
+      final originalFoods = await getFoodsForMeals(userId: userId, mealId: mealId);
+      for (final food in originalFoods) {
+        await updateMealAndDailyStats(userId, meal.id!, food, isAdding: true); // Uso di !
+      }
+    }
+  }
+}
   Future<String> _getOrCreateDailyStatsId(String userId, DateTime date) async {
     final startOfDay = DateTime(date.year, date.month, date.day);
     final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);

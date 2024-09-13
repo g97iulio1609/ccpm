@@ -1,4 +1,5 @@
 // app_router.dart
+
 import 'package:alphanessone/Viewer/models/timer_model.dart';
 import 'package:alphanessone/Coaching/coaching_association.dart';
 import 'package:alphanessone/exerciseManager/exercise_model.dart';
@@ -232,6 +233,15 @@ class AppRouter {
                       );
                     },
                   ),
+                  // Nuove Rotte Figlie per Diet Plan
+                  GoRoute(
+                    path: 'diet_plan',
+                    builder: (context, state) => const DietPlanScreen(),
+                  ),
+                  GoRoute(
+                    path: 'view_diet_plans',
+                    builder: (context, state) => const ViewDietPlansScreen(),
+                  ),
                 ],
               ),
               GoRoute(
@@ -253,7 +263,7 @@ class AppRouter {
                       final exercise = extra['exercise'] as ExerciseModel;
                       final userId = extra['userId'] as String;
                       debugPrint('userId: $userId');
-    
+  
                       return ExerciseStats(
                         exercise: exercise,
                         userId: userId, // Passaggio dell'ID utente qui
@@ -273,15 +283,7 @@ class AppRouter {
                   return UserProfile(userId: userId);
                 },
               ),
-              // Nuove Rotte per Diet Plan
-              GoRoute(
-                path: '/diet_plan',
-                builder: (context, state) => const DietPlanScreen(),
-              ),
-              GoRoute(
-                path: '/view_diet_plans',
-                builder: (context, state) => const ViewDietPlansScreen(),
-              ),
+              // Rotte per Diet Plan rimosse dal livello top e aggiunte come rotte figlie di /food_tracker
             ],
           ),
         ],

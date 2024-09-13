@@ -1,3 +1,5 @@
+// appBar_custom.dart
+
 import 'package:alphanessone/Viewer/providers/training_program_provider.dart';
 import 'package:alphanessone/exerciseManager/exercises_manager.dart';
 import 'package:alphanessone/ExerciseRecords/maxrmdashboard.dart';
@@ -42,7 +44,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
     initializeDateFormatting('it_IT', null);
   }
 
-   String _getTitleForRoute(String currentPath) {
+  String _getTitleForRoute(String currentPath) {
     if (currentPath.contains('/exercise_details/')) {
       return ref.watch(currentExerciseNameProvider);
     } else if (currentPath.contains('/workout_details/')) {
@@ -80,6 +82,10 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
         return 'Galleria Allenamenti';
       case '/food_tracker':
         return 'Tracciatore Cibo';
+      case '/food_tracker/diet_plan':
+        return 'Aggiungi Piano Dietetico';
+      case '/food_tracker/view_diet_plans':
+        return 'Visualizza Piani Dietetici';
       default:
         return 'Alphaness One';
     }
@@ -207,7 +213,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
       if (favoriteName != null && mounted) {
         await mealsService.saveDayAsFavorite(userId, selectedDate, favoriteName: favoriteName);
       }
-} else if (value == 'apply_favorite_day') {
+    } else if (value == 'apply_favorite_day') {
       final favoriteDays = await mealsService.getFavoriteDays(userId);
       if (favoriteDays.isNotEmpty && mounted) {
         final selectedFavorite = await _showFavoriteDaySelectionDialog(favoriteDays);
@@ -215,6 +221,10 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
           await mealsService.applyFavoriteDayToCurrent(userId, selectedFavorite.id!, selectedDate);
         }
       }
+    } else if (value == 'add_diet_plan') {
+      context.go('/food_tracker/diet_plan');
+    } else if (value == 'view_diet_plans') {
+      context.go('/food_tracker/view_diet_plans');
     }
   }
 
@@ -317,6 +327,8 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
           itemBuilder: (BuildContext context) => [
             const PopupMenuItem(value: 'save_as_favorite_day', child: Text('Save as Favorite Day')),
             const PopupMenuItem(value: 'apply_favorite_day', child: Text('Apply Favorite Day')),
+            const PopupMenuItem(value: 'add_diet_plan', child: Text('Add Diet Plan')),
+            const PopupMenuItem(value: 'view_diet_plans', child: Text('View Diet Plans')),
           ],
         ),
       ],
@@ -411,6 +423,9 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
         ),
       );
     }
+
+    // Sezione per aggiungere azioni specifiche per altre route può essere aggiunta qui
+
     return actions;
   }
 }
