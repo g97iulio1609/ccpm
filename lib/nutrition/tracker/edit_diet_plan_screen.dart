@@ -1,4 +1,3 @@
-// diet_plan_screen.dart
 import 'package:alphanessone/nutrition/models&Services/diet_plan_model.dart';
 import 'package:alphanessone/nutrition/models&Services/diet_plan_services.dart';
 import 'package:alphanessone/nutrition/models&Services/meals_model.dart';
@@ -9,16 +8,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'meal_selection_dialog.dart';
 
-class DietPlanScreen extends ConsumerStatefulWidget {
-  final DietPlan? existingDietPlan; // Parametro opzionale per la modifica
+class EditDietPlanScreen extends ConsumerStatefulWidget {
+  final DietPlan dietPlan;
 
-  const DietPlanScreen({super.key, this.existingDietPlan});
+  const EditDietPlanScreen({super.key, required this.dietPlan});
 
   @override
-  ConsumerState<DietPlanScreen> createState() => _DietPlanScreenState();
+  ConsumerState<EditDietPlanScreen> createState() => _EditDietPlanScreenState();
 }
 
-class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
+class _EditDietPlanScreenState extends ConsumerState<EditDietPlanScreen> {
   final _formKey = GlobalKey<FormState>();
   late String _name;
   late DateTime _startDate;
@@ -28,27 +27,30 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.existingDietPlan != null) {
-      // Modalità modifica
-      _name = widget.existingDietPlan!.name;
-      _startDate = widget.existingDietPlan!.startDate;
-      _durationDays = widget.existingDietPlan!.durationDays;
-      _days = List<DietPlanDay>.from(widget.existingDietPlan!.days);
-    } else {
-      // Modalità creazione
-      _name = '';
-      _startDate = DateTime.now();
-      _durationDays = 7;
+    _name = widget.dietPlan.name;
+    _startDate = widget.dietPlan.startDate;
+    _durationDays = widget.dietPlan.durationDays;
+    _days = List<DietPlanDay>.from(widget.dietPlan.days);
+  }
+
+  void _updateDurationDays(int newDuration) {
+    setState(() {
+      _durationDays = newDuration;
       _initializeDays();
-    }
+    });
   }
 
   void _initializeDays() {
-    _days = [];
-    for (int i = 0; i < _durationDays; i++) {
-      final currentDate = _startDate.add(Duration(days: i));
-      final dayOfWeek = _getDayOfWeek(currentDate.weekday);
-      _days.add(DietPlanDay(dayOfWeek: dayOfWeek, mealIds: []));
+    // Logica per aggiornare i giorni in base alla nuova durata
+    // Potrebbe includere aggiungere o rimuovere giorni
+    if (_days.length < _durationDays) {
+      for (int i = _days.length; i < _durationDays; i++) {
+        final currentDate = _startDate.add(Duration(days: i));
+        final dayOfWeek = _getDayOfWeek(currentDate.weekday);
+        _days.add(DietPlanDay(dayOfWeek: dayOfWeek, mealIds: []));
+      }
+    } else if (_days.length > _durationDays) {
+      _days = _days.sublist(0, _durationDays);
     }
   }
 
@@ -73,13 +75,6 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
     }
   }
 
-  void _updateDurationDays(int newDuration) {
-    setState(() {
-      _durationDays = newDuration;
-      _initializeDays();
-    });
-  }
-
   Future<void> _selectMeals(int dayIndex) async {
     final selectedMealIds = await showDialog<List<String>>(
       context: context,
@@ -100,45 +95,24 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
+      final updatedDietPlan = widget.dietPlan.copyWith(
+        name: _name,
+        startDate: _startDate,
+        durationDays: _durationDays,
+        days: _days,
+      );
+
       final dietPlanService = ref.read(dietPlanServiceProvider);
-      final userId = ref.read(usersServiceProvider).getCurrentUserId();
+      await dietPlanService.updateDietPlan(updatedDietPlan);
 
-      if (widget.existingDietPlan != null) {
-        // Modalità modifica
-        final updatedDietPlan = widget.existingDietPlan!.copyWith(
-          name: _name,
-          startDate: _startDate,
-          durationDays: _durationDays,
-          days: _days,
-        );
+      // Applica il piano dietetico aggiornato
+      await dietPlanService.applyDietPlan(updatedDietPlan);
 
-        await dietPlanService.updateDietPlan(updatedDietPlan);
-        await dietPlanService.applyDietPlan(updatedDietPlan);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Diet Plan Updated and Applied')),
+      );
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Diet Plan Updated and Applied')),
-        );
-      } else {
-        // Modalità creazione
-        final newDietPlan = DietPlan(
-          userId: userId,
-          name: _name,
-          startDate: _startDate,
-          durationDays: _durationDays,
-          days: _days,
-        );
-
-        final dietPlanId = await dietPlanService.createDietPlan(newDietPlan);
-        final createdDietPlan = newDietPlan.copyWith(id: dietPlanId);
-
-        await dietPlanService.applyDietPlan(createdDietPlan);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Diet Plan Saved and Applied')),
-        );
-      }
-
-      Navigator.of(context).pop(); // Torna indietro alla schermata precedente
+      Navigator.of(context).pop();
     }
   }
 
@@ -161,17 +135,17 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
   @override
   Widget build(BuildContext context) {
     final mealsService = ref.watch(mealsServiceProvider);
-    final isEditing = widget.existingDietPlan != null;
 
     return Scaffold(
-    
+      appBar: AppBar(
+        title: Text('Edit Diet Plan', style: GoogleFonts.roboto()),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
-              // Nome del piano dietetico
               TextFormField(
                 initialValue: _name,
                 decoration: const InputDecoration(labelText: 'Diet Plan Name'),
@@ -186,8 +160,6 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
                 },
               ),
               const SizedBox(height: 16),
-
-              // Data di inizio
               Row(
                 children: [
                   Expanded(
@@ -203,8 +175,6 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-
-              // Durata in giorni
               TextFormField(
                 decoration: const InputDecoration(labelText: 'Duration (days)'),
                 keyboardType: TextInputType.number,
@@ -228,8 +198,6 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
                 },
               ),
               const SizedBox(height: 24),
-
-              // Lista dei giorni
               ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -244,7 +212,6 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
                         style: GoogleFonts.roboto(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       children: [
-                        // Lista dei pasti per il giorno
                         ListView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
@@ -287,8 +254,6 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
                             );
                           },
                         ),
-
-                        // Bottone per selezionare nuovi pasti
                         Align(
                           alignment: Alignment.centerRight,
                           child: TextButton.icon(
@@ -303,18 +268,13 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
                 },
               ),
               const SizedBox(height: 24),
-
-              // Bottone di salvataggio
               ElevatedButton(
                 onPressed: _saveDietPlan,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
                 ),
-                child: Text(
-                  isEditing ? 'Update & Apply Diet Plan' : 'Save & Apply Diet Plan',
-                  style: GoogleFonts.roboto(fontSize: 18),
-                ),
+                child: Text('Update & Apply Diet Plan', style: GoogleFonts.roboto(fontSize: 18)),
               ),
             ],
           ),

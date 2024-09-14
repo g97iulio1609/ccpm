@@ -4,6 +4,7 @@ import 'package:alphanessone/Viewer/models/timer_model.dart';
 import 'package:alphanessone/Coaching/coaching_association.dart';
 import 'package:alphanessone/exerciseManager/exercise_model.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_stats.dart';
+import 'package:alphanessone/nutrition/models&Services/diet_plan_model.dart';
 import 'package:alphanessone/nutrition/tracker/diet_plan_screen.dart';
 import 'package:alphanessone/nutrition/tracker/view_diet_plans_screen.dart';
 import 'package:flutter/material.dart';
@@ -233,10 +234,21 @@ class AppRouter {
                       );
                     },
                   ),
-                  // Nuove Rotte Figlie per Diet Plan
+                  // Rotte per Diet Plan
                   GoRoute(
                     path: 'diet_plan',
-                    builder: (context, state) => const DietPlanScreen(),
+                    builder: (context, state) {
+                      // Modalità creazione: nessun extra
+                      return const DietPlanScreen();
+                    },
+                  ),
+                  GoRoute(
+                    path: 'diet_plan/edit',
+                    builder: (context, state) {
+                      // Modalità modifica: passa l'extra DietPlan
+                      final dietPlan = state.extra as DietPlan;
+                      return DietPlanScreen(existingDietPlan: dietPlan);
+                    },
                   ),
                   GoRoute(
                     path: 'view_diet_plans',
@@ -263,7 +275,7 @@ class AppRouter {
                       final exercise = extra['exercise'] as ExerciseModel;
                       final userId = extra['userId'] as String;
                       debugPrint('userId: $userId');
-  
+
                       return ExerciseStats(
                         exercise: exercise,
                         userId: userId, // Passaggio dell'ID utente qui
@@ -283,7 +295,7 @@ class AppRouter {
                   return UserProfile(userId: userId);
                 },
               ),
-              // Rotte per Diet Plan rimosse dal livello top e aggiunte come rotte figlie di /food_tracker
+              // Altre rotte...
             ],
           ),
         ],
