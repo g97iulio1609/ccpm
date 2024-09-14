@@ -275,7 +275,7 @@ class AppRouter {
                       final exercise = extra['exercise'] as ExerciseModel;
                       final userId = extra['userId'] as String;
                       debugPrint('userId: $userId');
-
+    
                       return ExerciseStats(
                         exercise: exercise,
                         userId: userId, // Passaggio dell'ID utente qui

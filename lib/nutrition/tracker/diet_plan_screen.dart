@@ -43,12 +43,22 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
     }
   }
 
+  /// Inizializza i giorni preservando gli mealIds esistenti
   void _initializeDays() {
-    _days = [];
     for (int i = 0; i < _durationDays; i++) {
       final currentDate = _startDate.add(Duration(days: i));
       final dayOfWeek = _getDayOfWeek(currentDate.weekday);
-      _days.add(DietPlanDay(dayOfWeek: dayOfWeek, mealIds: []));
+      if (i < _days.length) {
+        // Preserva gli mealIds esistenti
+        _days[i] = _days[i].copyWith(dayOfWeek: dayOfWeek);
+      } else {
+        // Aggiunge nuovi giorni se la durata aumenta
+        _days.add(DietPlanDay(dayOfWeek: dayOfWeek, mealIds: []));
+      }
+    }
+    // Se la nuova durata è minore della precedente, tronca la lista
+    if (_days.length > _durationDays) {
+      _days = _days.sublist(0, _durationDays);
     }
   }
 

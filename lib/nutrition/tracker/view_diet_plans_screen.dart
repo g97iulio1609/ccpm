@@ -1,4 +1,4 @@
-// view_diet_plans_screen.dart
+// view_diet_plan_screen.dart
 import 'package:alphanessone/nutrition/models&Services/diet_plan_model.dart';
 import 'package:alphanessone/nutrition/models&Services/diet_plan_services.dart';
 import 'package:alphanessone/nutrition/models&Services/meals_model.dart';
