@@ -1,4 +1,5 @@
-// view_diet_plan_screen.dart
+// view_diet_plans_screen.dart
+
 import 'package:alphanessone/nutrition/models&Services/diet_plan_model.dart';
 import 'package:alphanessone/nutrition/models&Services/diet_plan_services.dart';
 import 'package:alphanessone/nutrition/models&Services/meals_model.dart';
@@ -6,8 +7,9 @@ import 'package:alphanessone/nutrition/models&Services/meals_services.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
+
 
 class ViewDietPlansScreen extends ConsumerStatefulWidget {
   const ViewDietPlansScreen({super.key});
@@ -19,13 +21,17 @@ class ViewDietPlansScreen extends ConsumerStatefulWidget {
 class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
   @override
   Widget build(BuildContext context) {
-    final userId = ref.read(usersServiceProvider).getCurrentUserId();
+    final userService = ref.read(usersServiceProvider);
+    final currentUserId = userService.getCurrentUserId();
+    final currentUserRole = userService.getCurrentUserRole();
+    final selectedUserId = ref.read(selectedUserIdProvider);
+    final userId = selectedUserId ?? currentUserId;
+
     final dietPlansStream = ref.watch(dietPlanServiceProvider).getDietPlansStream(userId);
+    final isAdminOrCoach = currentUserRole == 'admin' || currentUserRole == 'coach';
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Diet Plans', style: GoogleFonts.roboto()),
-      ),
+    
       body: StreamBuilder<List<DietPlan>>(
         stream: dietPlansStream,
         builder: (context, snapshot) {
@@ -164,6 +170,48 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(newName),
               child: Text('Duplicate', style: GoogleFonts.roboto()),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Seleziona un template da applicare
+  Future<DietPlan?> _selectTemplate(BuildContext context) async {
+    final userService = ref.read(usersServiceProvider);
+    final adminId = userService.getCurrentUserId();
+    final templates = await ref.read(dietPlanServiceProvider).getDietPlanTemplatesStream(adminId).first;
+
+    if (templates.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No templates available')));
+      return null;
+    }
+
+    return showDialog<DietPlan>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Select a Template', style: GoogleFonts.roboto(fontWeight: FontWeight.bold)),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: templates.length,
+              itemBuilder: (context, index) {
+                final template = templates[index];
+                return ListTile(
+                  title: Text(template.name, style: GoogleFonts.roboto()),
+                  subtitle: Text('Duration: ${template.durationDays} days', style: GoogleFonts.roboto()),
+                  onTap: () => Navigator.of(context).pop(template),
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Cancel', style: GoogleFonts.roboto()),
             ),
           ],
         );

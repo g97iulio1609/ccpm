@@ -1,4 +1,5 @@
 // diet_plan_screen.dart
+
 import 'package:alphanessone/nutrition/models&Services/diet_plan_model.dart';
 import 'package:alphanessone/nutrition/models&Services/diet_plan_services.dart';
 import 'package:alphanessone/nutrition/models&Services/meals_model.dart';
@@ -7,7 +8,9 @@ import 'package:alphanessone/providers/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'meal_selection_dialog.dart';
+
+import 'meal_selection_dialog.dart'; // Assicurati che questo dialog esista
+
 
 class DietPlanScreen extends ConsumerStatefulWidget {
   final DietPlan? existingDietPlan; // Parametro opzionale per la modifica
@@ -39,26 +42,30 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
       _name = '';
       _startDate = DateTime.now();
       _durationDays = 7;
+      _days = [];
       _initializeDays();
     }
   }
 
-  /// Inizializza i giorni preservando gli mealIds esistenti
+  /// Inizializza i giorni in base alla durata e alla data di inizio
   void _initializeDays() {
+    final newDays = <DietPlanDay>[];
     for (int i = 0; i < _durationDays; i++) {
       final currentDate = _startDate.add(Duration(days: i));
       final dayOfWeek = _getDayOfWeek(currentDate.weekday);
       if (i < _days.length) {
-        // Preserva gli mealIds esistenti
-        _days[i] = _days[i].copyWith(dayOfWeek: dayOfWeek);
+        // Mantieni i mealIds esistenti
+        newDays.add(_days[i].copyWith(dayOfWeek: dayOfWeek));
       } else {
-        // Aggiunge nuovi giorni se la durata aumenta
-        _days.add(DietPlanDay(dayOfWeek: dayOfWeek, mealIds: []));
+        // Aggiungi nuovi giorni
+        newDays.add(DietPlanDay(dayOfWeek: dayOfWeek, mealIds: []));
       }
     }
     // Se la nuova durata è minore della precedente, tronca la lista
-    if (_days.length > _durationDays) {
-      _days = _days.sublist(0, _durationDays);
+    if (newDays.length > _durationDays) {
+      _days = newDays.sublist(0, _durationDays);
+    } else {
+      _days = newDays;
     }
   }
 
@@ -91,10 +98,14 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
   }
 
   Future<void> _selectMeals(int dayIndex) async {
+    final userService = ref.read(usersServiceProvider);
+    final selectedUserId = ref.read(selectedUserIdProvider);
+    final userId = selectedUserId ?? userService.getCurrentUserId();
+
     final selectedMealIds = await showDialog<List<String>>(
       context: context,
       builder: (context) => MealSelectionDialog(
-        userId: ref.read(usersServiceProvider).getCurrentUserId(),
+        userId: userId,
         initialSelectedMealIds: _days[dayIndex].mealIds,
       ),
     );
@@ -111,7 +122,11 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
       _formKey.currentState!.save();
 
       final dietPlanService = ref.read(dietPlanServiceProvider);
-      final userId = ref.read(usersServiceProvider).getCurrentUserId();
+      final userService = ref.read(usersServiceProvider);
+      final currentUserId = userService.getCurrentUserId();
+      final currentUserRole = userService.getCurrentUserRole();
+      final selectedUserId = ref.read(selectedUserIdProvider);
+      final userId = selectedUserId ?? currentUserId;
 
       if (widget.existingDietPlan != null) {
         // Modalità modifica
@@ -124,6 +139,14 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
 
         await dietPlanService.updateDietPlan(updatedDietPlan);
         await dietPlanService.applyDietPlan(updatedDietPlan);
+
+        // Se l'utente corrente è admin o coach, salva come template
+        if (currentUserRole == 'admin' || currentUserRole == 'coach') {
+          final templateDietPlan = updatedDietPlan.copyWith(
+            id: null, // Firestore genererà un nuovo ID
+          );
+          await dietPlanService.createDietPlanTemplate(currentUserId, templateDietPlan);
+        }
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Diet Plan Updated and Applied')),
@@ -142,6 +165,14 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
         final createdDietPlan = newDietPlan.copyWith(id: dietPlanId);
 
         await dietPlanService.applyDietPlan(createdDietPlan);
+
+        // Se l'utente corrente è admin o coach, salva come template
+        if (currentUserRole == 'admin' || currentUserRole == 'coach') {
+          final templateDietPlan = createdDietPlan.copyWith(
+            id: null, // Firestore genererà un nuovo ID
+          );
+          await dietPlanService.createDietPlanTemplate(currentUserId, templateDietPlan);
+        }
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Diet Plan Saved and Applied')),
@@ -173,8 +204,12 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
     final mealsService = ref.watch(mealsServiceProvider);
     final isEditing = widget.existingDietPlan != null;
 
+    final userService = ref.watch(usersServiceProvider);
+    final selectedUserId = ref.watch(selectedUserIdProvider);
+    final userId = selectedUserId ?? userService.getCurrentUserId();
+
     return Scaffold(
-    
+     
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -262,7 +297,7 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
                           itemBuilder: (context, mealIndex) {
                             final mealId = day.mealIds[mealIndex];
                             return FutureBuilder<Meal?>(
-                              future: mealsService.getMealById(ref.read(usersServiceProvider).getCurrentUserId(), mealId),
+                              future: mealsService.getMealById(userId, mealId), // Usa l'userId corretto
                               builder: (context, snapshot) {
                                 if (snapshot.connectionState == ConnectionState.waiting) {
                                   return const ListTile(

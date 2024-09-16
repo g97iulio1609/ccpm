@@ -15,6 +15,9 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:alphanessone/nutrition/models&Services/meals_model.dart' as meals;
 import 'package:alphanessone/nutrition/models&Services/meals_services.dart';
 import 'package:alphanessone/Viewer/UI/exercise_details.dart';
+import 'package:alphanessone/nutrition/models&Services/diet_plan_model.dart';
+import 'package:alphanessone/nutrition/models&Services/diet_plan_services.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class CustomAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
   const CustomAppBar({
@@ -424,9 +427,73 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
       );
     }
 
-    // Sezione per aggiungere azioni specifiche per altre route può essere aggiunta qui
+    if (currentRoute == '/food_tracker/view_diet_plans') {
+      actions.add(
+        PopupMenuButton<String>(
+          onSelected: (value) async {
+            if (value == 'apply_template') {
+              final templateDietPlan = await _selectTemplate(context);
+              if (templateDietPlan != null) {
+                final newDietPlan = templateDietPlan.copyWith(
+                  id: null,
+                  startDate: DateTime.now(),
+                );
+                final dietPlanId = await ref.read(dietPlanServiceProvider).createDietPlan(newDietPlan);
+                final createdDietPlan = newDietPlan.copyWith(id: dietPlanId);
+                await ref.read(dietPlanServiceProvider).applyDietPlan(createdDietPlan);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Template Applied as New Diet Plan')));
+              }
+            }
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(value: 'apply_template', child: Text('Apply Template')),
+          ],
+        ),
+      );
+    }
 
     return actions;
+  }
+
+  Future<DietPlan?> _selectTemplate(BuildContext context) async {
+    final userService = ref.read(usersServiceProvider);
+    final adminId = userService.getCurrentUserId();
+    final templates = await ref.read(dietPlanServiceProvider).getDietPlanTemplatesStream(adminId).first;
+
+    if (templates.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No templates available')));
+      return null;
+    }
+
+    return showDialog<DietPlan>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Select a Template', style: GoogleFonts.roboto(fontWeight: FontWeight.bold)),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: templates.length,
+              itemBuilder: (context, index) {
+                final template = templates[index];
+                return ListTile(
+                  title: Text(template.name, style: GoogleFonts.roboto()),
+                  subtitle: Text('Duration: ${template.durationDays} days', style: GoogleFonts.roboto()),
+                  onTap: () => Navigator.of(context).pop(template),
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Cancel', style: GoogleFonts.roboto()),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
 

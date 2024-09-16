@@ -38,6 +38,9 @@ final usersServiceProvider = Provider<UsersService>((ref) {
 
 final selectedUserIdProvider = StateProvider<String?>((ref) => null);
 
+
+
+
 final tdeeServiceProvider = Provider<TDEEService>((ref) {
   return TDEEService(ref.watch(firebaseFirestoreProvider));
 });

@@ -1,8 +1,9 @@
-// providers/diet_plan_services.dart
-import 'package:alphanessone/nutrition/models&Services/diet_plan_model.dart';
-import 'package:alphanessone/nutrition/models&Services/meals_services.dart';
+// diet_plan_services.dart
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'diet_plan_model.dart';
+import 'meals_services.dart';
 
 final dietPlanServiceProvider = Provider<DietPlanService>((ref) {
   return DietPlanService(ref, FirebaseFirestore.instance);
@@ -14,7 +15,7 @@ class DietPlanService {
 
   DietPlanService(this.ref, this._firestore);
 
-  // Ottieni la collezione dei piani dietetici per un utente
+  // Ottieni la collezione dei piani dietetici per un utente specifico
   CollectionReference getDietPlansCollection(String userId) {
     return _firestore.collection('users').doc(userId).collection('dietPlans');
   }
@@ -36,7 +37,7 @@ class DietPlanService {
     await getDietPlansCollection(userId).doc(dietPlanId).delete();
   }
 
-  // Ottieni uno stream di tutti i piani dietetici per un utente
+  // Ottieni uno stream di piani dietetici per un utente
   Stream<List<DietPlan>> getDietPlansStream(String userId) {
     return getDietPlansCollection(userId).snapshots().map((snapshot) {
       return snapshot.docs.map((doc) => DietPlan.fromFirestore(doc)).toList();
@@ -52,7 +53,56 @@ class DietPlanService {
     return null;
   }
 
-  // Applica un piano dietetico al periodo definito utilizzando batch
+  // Metodi relativi ai template
+
+  // Ottieni la collezione dei template dei piani dietetici per un admin/coach
+  CollectionReference getDietPlanTemplatesCollection(String adminId) {
+    return _firestore.collection('users').doc(adminId).collection('dietPlanTemplates');
+  }
+
+  // Crea un nuovo piano dietetico come template
+  Future<String> createDietPlanTemplate(String adminId, DietPlan dietPlan) async {
+    final docRef = await getDietPlanTemplatesCollection(adminId).add(dietPlan.toMap());
+    return docRef.id;
+  }
+
+  // Ottieni uno stream di tutti i template dietetici per un admin/coach
+  Stream<List<DietPlan>> getDietPlanTemplatesStream(String adminId) {
+    return getDietPlanTemplatesCollection(adminId).snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) => DietPlan.fromFirestore(doc)).toList();
+    });
+  }
+
+  // Duplica un piano dietetico esistente
+  Future<String> duplicateDietPlan(String userId, String dietPlanId, {String? newName}) async {
+    // Ottieni il piano dietetico originale
+    final originalDietPlan = await getDietPlanById(userId, dietPlanId);
+    if (originalDietPlan == null) {
+      throw Exception('DietPlan not found');
+    }
+
+    // Crea una copia del piano dietetico con un nuovo ID e (opzionalmente) un nuovo nome
+    final duplicatedDietPlan = originalDietPlan.copyWith(
+      id: null, // Firestore genererà un nuovo ID
+      name: newName ?? '${originalDietPlan.name} (Copy)',
+      startDate: DateTime.now(), // Puoi decidere come gestire la data di inizio
+    );
+
+    // Crea il nuovo piano dietetico
+    final newDietPlanId = await createDietPlan(duplicatedDietPlan);
+    final newDietPlan = duplicatedDietPlan.copyWith(id: newDietPlanId);
+
+    // Copia i giorni
+    final List<DietPlanDay> duplicatedDays = originalDietPlan.days.map((day) => day.copyWith()).toList();
+    final updatedDietPlan = newDietPlan.copyWith(days: duplicatedDays);
+
+    // Aggiorna il nuovo piano dietetico con i giorni duplicati
+    await updateDietPlan(updatedDietPlan);
+
+    return newDietPlanId;
+  }
+
+  // Applica un piano dietetico all'utente
   Future<void> applyDietPlan(DietPlan dietPlan) async {
     final userId = dietPlan.userId;
     final startDate = dietPlan.startDate;
@@ -79,48 +129,6 @@ class DietPlanService {
     await batch.commit();
   }
 
-  // Crea più piani dietetici in batch
-  Future<List<String>> createMultipleDietPlans(List<DietPlan> dietPlans) async {
-    final batch = _firestore.batch();
-    final createdIds = <String>[];
-
-    for (final dietPlan in dietPlans) {
-      final docRef = getDietPlansCollection(dietPlan.userId).doc();
-      batch.set(docRef, dietPlan.toMap());
-      createdIds.add(docRef.id);
-    }
-
-    await batch.commit();
-    return createdIds;
-  }
-  
-  
-
-  // Aggiorna più piani dietetici in batch
-  Future<void> updateMultipleDietPlans(List<DietPlan> dietPlans) async {
-    final batch = _firestore.batch();
-
-    for (final dietPlan in dietPlans) {
-      if (dietPlan.id == null) throw Exception('DietPlan ID is null');
-      final docRef = getDietPlansCollection(dietPlan.userId).doc(dietPlan.id);
-      batch.update(docRef, dietPlan.toMap());
-    }
-
-    await batch.commit();
-  }
-
-  // Elimina più piani dietetici in batch
-  Future<void> deleteMultipleDietPlans(String userId, List<String> dietPlanIds) async {
-    final batch = _firestore.batch();
-
-    for (final id in dietPlanIds) {
-      final docRef = getDietPlansCollection(userId).doc(id);
-      batch.delete(docRef);
-    }
-
-    await batch.commit();
-  }
-
   // Utility per ottenere il nome del giorno della settimana
   String _getDayOfWeek(int weekday) {
     switch (weekday) {
@@ -141,47 +149,5 @@ class DietPlanService {
       default:
         return '';
     }
-  }
-
-  /// Duplicare un piano dietetico esistente
-  Future<String> duplicateDietPlan(String userId, String dietPlanId, {String? newName}) async {
-    // Ottieni il piano dietetico originale
-    final originalDietPlan = await getDietPlanById(userId, dietPlanId);
-    if (originalDietPlan == null) {
-      throw Exception('DietPlan not found');
-    }
-
-    // Crea una copia del piano dietetico con un nuovo ID e (opzionalmente) un nuovo nome
-    final duplicatedDietPlan = originalDietPlan.copyWith(
-      id: null, // Firestore genererà un nuovo ID
-      name: newName ?? '${originalDietPlan.name} (Copy)',
-      startDate: DateTime.now(), // Puoi decidere come gestire la data di inizio
-    );
-
-    // Crea il nuovo piano dietetico
-    final newDietPlanId = await createDietPlan(duplicatedDietPlan);
-
-    // Recupera i pasti associati al piano originale
-    final originalDays = originalDietPlan.days;
-
-    // Copia i pasti per ciascun giorno
-    for (final day in originalDays) {
-      // Copia le mealIds per il nuovo piano dietetico
-      final duplicatedDay = day.copyWith(
-        mealIds: List<String>.from(day.mealIds),
-      );
-
-      // Aggiorna il piano dietetico con i giorni duplicati
-      await updateDietPlan(DietPlan(
-        id: newDietPlanId,
-        userId: duplicatedDietPlan.userId,
-        name: duplicatedDietPlan.name,
-        startDate: duplicatedDietPlan.startDate,
-        durationDays: duplicatedDietPlan.durationDays,
-        days: [...duplicatedDietPlan.days, duplicatedDay],
-      ));
-    }
-
-    return newDietPlanId;
   }
 }
