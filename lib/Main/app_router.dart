@@ -4,7 +4,7 @@ import 'package:alphanessone/Viewer/models/timer_model.dart';
 import 'package:alphanessone/Coaching/coaching_association.dart';
 import 'package:alphanessone/exerciseManager/exercise_model.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_stats.dart';
-import 'package:alphanessone/nutrition/models&Services/diet_plan_model.dart';
+import 'package:alphanessone/nutrition/models/diet_plan_model.dart';
 import 'package:alphanessone/nutrition/tracker/diet_plan_screen.dart';
 import 'package:alphanessone/nutrition/tracker/view_diet_plans_screen.dart';
 import 'package:flutter/material.dart';
@@ -36,7 +36,7 @@ import '../nutrition/tracker/my_meals.dart';
 import '../store/inAppPurchase.dart';
 import '../exerciseManager/exercises_manager.dart';
 import '../providers/providers.dart';
-import '../nutrition/models&Services/meals_model.dart';
+import '../nutrition/models/meals_model.dart';
 
 class AppRouter {
   static GoRouter router(WidgetRef ref) => GoRouter(

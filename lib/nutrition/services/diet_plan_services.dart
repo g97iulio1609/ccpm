@@ -2,7 +2,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'diet_plan_model.dart';
+import '../models/diet_plan_model.dart';
 import 'meals_services.dart';
 
 final dietPlanServiceProvider = Provider<DietPlanService>((ref) {

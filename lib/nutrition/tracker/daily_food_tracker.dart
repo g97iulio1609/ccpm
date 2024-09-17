@@ -5,9 +5,9 @@ import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/user_autocomplete.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models&Services/meals_services.dart';
+import '../services/meals_services.dart';
 import 'food_list.dart';
-import '../models&Services/meals_model.dart' as meals;
+import '../models/meals_model.dart' as meals;
 import 'package:google_fonts/google_fonts.dart';
 
 class DailyFoodTracker extends ConsumerStatefulWidget {

@@ -12,11 +12,11 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:alphanessone/nutrition/models&Services/meals_model.dart' as meals;
-import 'package:alphanessone/nutrition/models&Services/meals_services.dart';
+import 'package:alphanessone/nutrition/models/meals_model.dart' as meals;
+import 'package:alphanessone/nutrition/services/meals_services.dart';
 import 'package:alphanessone/Viewer/UI/exercise_details.dart';
-import 'package:alphanessone/nutrition/models&Services/diet_plan_model.dart';
-import 'package:alphanessone/nutrition/models&Services/diet_plan_services.dart';
+import 'package:alphanessone/nutrition/models/diet_plan_model.dart';
+import 'package:alphanessone/nutrition/services/diet_plan_services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class CustomAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget {

@@ -4,7 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:openfoodfacts/openfoodfacts.dart';
 import 'package:multi_select_flutter/multi_select_flutter.dart';
-import '../models&Services/food_services.dart';
+import '../services/food_services.dart';
 
 final foodServiceProvider = Provider<FoodService>((ref) {
   return FoodService(FirebaseFirestore.instance);

@@ -1,9 +1,9 @@
 // view_diet_plans_screen.dart
 
-import 'package:alphanessone/nutrition/models&Services/diet_plan_model.dart';
-import 'package:alphanessone/nutrition/models&Services/diet_plan_services.dart';
-import 'package:alphanessone/nutrition/models&Services/meals_model.dart';
-import 'package:alphanessone/nutrition/models&Services/meals_services.dart';
+import 'package:alphanessone/nutrition/models/diet_plan_model.dart';
+import 'package:alphanessone/nutrition/services/diet_plan_services.dart';
+import 'package:alphanessone/nutrition/models/meals_model.dart';
+import 'package:alphanessone/nutrition/services/meals_services.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

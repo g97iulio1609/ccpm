@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
-import '../models&Services/macros_model.dart' as macros;
-import '../models&Services/meals_model.dart' as meals;
-import '../models&Services/meals_services.dart';
+import '../models/macros_model.dart' as macros;
+import '../models/meals_model.dart' as meals;
+import '../services/meals_services.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 // Import FoodSelector
 

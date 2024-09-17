@@ -1,5 +1,5 @@
-import 'package:alphanessone/nutrition/models&Services/meals_model.dart';
-import 'package:alphanessone/nutrition/models&Services/meals_services.dart';
+import 'package:alphanessone/nutrition/models/meals_model.dart';
+import 'package:alphanessone/nutrition/services/meals_services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

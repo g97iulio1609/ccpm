@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models&Services/macros_model.dart' as macros;
-import '../models&Services/meals_model.dart' as meals;
-import '../models&Services/meals_services.dart';
+import '../models/macros_model.dart' as macros;
+import '../models/meals_model.dart' as meals;
+import '../services/meals_services.dart';
 import 'food_autocomplete.dart';
 import 'package:go_router/go_router.dart';
 

@@ -4,8 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rxdart/rxdart.dart';
-import '../models&Services/meals_model.dart' as meals;
-import '../models&Services/macros_model.dart' as macros;
+import '../models/meals_model.dart' as meals;
+import '../models/macros_model.dart' as macros;
 
 final mealsServiceProvider = ChangeNotifierProvider<MealsService>((ref) {
   return MealsService(ref, FirebaseFirestore.instance);
