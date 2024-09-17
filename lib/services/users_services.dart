@@ -8,7 +8,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_functions/cloud_functions.dart';
-
 import '../models/user_model.dart';
 import '../providers/providers.dart';
 
@@ -51,10 +50,16 @@ class UsersService {
       if (user.uid != _auth.currentUser?.uid) {
         await _updateUserRole(user.uid);
       }
+      await _fetchAndSetUserRole(user.uid);
       _initializeUsersStream();
     } else {
       _clearUsersStream();
+      clearUserData();
     }
+  }
+
+  Future<void> _fetchAndSetUserRole(String userId) async {
+    await fetchUserRole();
   }
 
   void _initializeUsersStream() {
@@ -103,8 +108,10 @@ class UsersService {
           ? (userDoc.data() as Map<String, dynamic>)['role'] ?? 'client'
           : 'client';
       _ref.read(userRoleProvider.notifier).state = userRole;
+      debugPrint('User Role updated to: $userRole');
     } catch (error) {
       _ref.read(userRoleProvider.notifier).state = 'client';
+      debugPrint('Error updating user role: $error');
     }
   }
 
@@ -114,6 +121,7 @@ class UsersService {
         'role': newRole,
       });
       debugPrint('User role updated successfully to: $newRole');
+      _ref.read(userRoleProvider.notifier).state = newRole;
     } catch (e) {
       debugPrint('Error updating user role: $e');
       throw Exception('Failed to update user role');

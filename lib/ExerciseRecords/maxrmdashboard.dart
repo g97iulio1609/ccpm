@@ -1,6 +1,6 @@
 import 'package:alphanessone/models/exercise_record.dart';
 import 'package:alphanessone/models/user_model.dart';
-import 'package:alphanessone/services/coaching_service.dart';
+import 'package:alphanessone/Coaching/coaching_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';

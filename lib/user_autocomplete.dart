@@ -7,7 +7,7 @@ import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import '../services/coaching_service.dart';
+import 'Coaching/coaching_service.dart';
 
 // Providers
 final userServiceProvider = Provider<UsersService>((ref) {

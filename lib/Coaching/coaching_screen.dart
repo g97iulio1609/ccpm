@@ -6,7 +6,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import '../user_autocomplete.dart';
 import '../../models/user_model.dart';
-import '../../services/coaching_service.dart';
+import 'coaching_service.dart';
 
 final userListProvider = StateProvider<List<UserModel>>((ref) => []);
 final filteredUserListProvider = StateProvider<List<UserModel>>((ref) => []);
