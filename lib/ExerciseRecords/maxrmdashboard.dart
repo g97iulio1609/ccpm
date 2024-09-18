@@ -42,8 +42,7 @@ final currentUserRoleProvider = StateProvider<String>((ref) {
   usersService.fetchUserRole();
   return usersService.getCurrentUserRole();
 });
-final userListProvider = StateProvider<List<UserModel>>((ref) => []);
-final filteredUserListProvider = StateProvider<List<UserModel>>((ref) => []);
+
 
 // Main widget
 class MaxRMDashboard extends HookConsumerWidget {

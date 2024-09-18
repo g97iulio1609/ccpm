@@ -38,7 +38,8 @@ final usersServiceProvider = Provider<UsersService>((ref) {
 
 final selectedUserIdProvider = StateProvider<String?>((ref) => null);
 
-
+final userListProvider = StateProvider<List<UserModel>>((ref) => []);
+final filteredUserListProvider = StateProvider<List<UserModel>>((ref) => []);
 
 
 final tdeeServiceProvider = Provider<TDEEService>((ref) {

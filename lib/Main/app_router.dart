@@ -53,7 +53,7 @@ class AppRouter {
                 builder: (context, state) {
                   final userRole = ref.read(userRoleProvider);
                   if (userRole == 'admin' || userRole == 'coach') {
-                    return const ProgramsScreen();
+                    return const CoachingScreen();
                   } else {
                     return const Center(child: Text('Access denied'));
                   }
