@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'exercise_model.dart';
-import 'exercises_services.dart';
 
 final muscleGroupsProvider = StreamProvider((ref) {
   return FirebaseFirestore.instance.collection('muscleGroups').snapshots().map(

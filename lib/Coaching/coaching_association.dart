@@ -26,7 +26,7 @@ final associationsStreamProvider = StreamProvider.autoDispose<List<Association>>
 
 /// Schermata principale per la gestione delle associazioni coach-athlete
 class CoachAthleteAssociationScreen extends ConsumerStatefulWidget {
-  const CoachAthleteAssociationScreen({Key? key}) : super(key: key);
+  const CoachAthleteAssociationScreen({super.key});
 
   @override
   CoachAthleteAssociationScreenState createState() => CoachAthleteAssociationScreenState();
@@ -54,7 +54,7 @@ class CoachAthleteAssociationScreenState extends ConsumerState<CoachAthleteAssoc
     // Ottiene il ruolo e l'ID dell'utente corrente in modo reattivo
     final usersService = ref.watch(usersServiceProvider);
     final String userRole = ref.watch(userRoleProvider);
-    final String userId = usersService.getCurrentUserId();
+    usersService.getCurrentUserId();
     final associationsAsyncValue = ref.watch(associationsStreamProvider);
 
     return Scaffold(
@@ -178,7 +178,7 @@ class CoachAthleteAssociationScreenState extends ConsumerState<CoachAthleteAssoc
 class CoachSearchDialog extends ConsumerStatefulWidget {
   final String userId;
 
-  const CoachSearchDialog({Key? key, required this.userId}) : super(key: key);
+  const CoachSearchDialog({super.key, required this.userId});
 
   @override
   CoachSearchDialogState createState() => CoachSearchDialogState();
@@ -310,13 +310,13 @@ class AssociationTile extends ConsumerStatefulWidget {
   final VoidCallback? onRemove;
 
   const AssociationTile({
-    Key? key,
+    super.key,
     required this.association,
     required this.userRole,
     this.onAccept,
     this.onReject,
     this.onRemove,
-  }) : super(key: key);
+  });
 
   @override
   AssociationTileState createState() => AssociationTileState();

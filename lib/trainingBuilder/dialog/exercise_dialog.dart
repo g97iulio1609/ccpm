@@ -1,15 +1,16 @@
-import 'package:alphanessone/exerciseManager/exercise_model.dart';
+// exercise_dialog.dart
+
+import 'package:alphanessone/ExerciseRecords/exercise_autocomplete.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
+
 import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import '../../exerciseManager/exercises_services.dart';
 import '../controller/training_program_controller.dart';
-import 'add_exercise_dialog.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
-class ExerciseDialog extends ConsumerWidget {
+import 'package:flutter_hooks/flutter_hooks.dart'; // Importa flutter_hooks
+
+class ExerciseDialog extends HookConsumerWidget {
   final ExerciseRecordService exerciseRecordService;
   final String athleteId;
   final Exercise? exercise;
@@ -24,13 +25,16 @@ class ExerciseDialog extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(trainingProgramControllerProvider);
-    final exerciseNameController = TextEditingController(text: exercise?.name ?? '');
-    final variantController = TextEditingController(text: exercise?.variant ?? '');
-    String selectedExerciseId = exercise?.exerciseId ?? '';
-    String selectedExerciseType = exercise?.type ?? '';
 
-    final exercisesService = ref.watch(exercisesServiceProvider);
-    final userId = FirebaseAuth.instance.currentUser?.uid;
+    // Usa useTextEditingController per gestire i controller
+    final exerciseNameController =
+        useTextEditingController(text: exercise?.name ?? '');
+    final variantController =
+        useTextEditingController(text: exercise?.variant ?? '');
+
+    // Usa useState per gestire lo stato di selectedExerciseId e selectedExerciseType
+    final selectedExerciseId = useState<String>(exercise?.exerciseId ?? '');
+    final selectedExerciseType = useState<String>(exercise?.type ?? '');
 
     return AlertDialog(
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -40,86 +44,20 @@ class ExerciseDialog extends ConsumerWidget {
       contentTextStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
           ),
-      title: Text(exercise == null ? 'Aggiungi Esercizio' : 'Modifica Esercizio'),
+      title:
+          Text(exercise == null ? 'Aggiungi Esercizio' : 'Modifica Esercizio'),
       content: SingleChildScrollView(
         child: ListBody(
           children: [
-            TypeAheadField<ExerciseModel>(
-              suggestionsCallback: (search) async {
-                final exercises = await exercisesService.getExercises().first;
-                final suggestions = exercises
-                    .where((exercise) => exercise.name.toLowerCase().contains(search.toLowerCase()))
-                    .toList();
-                suggestions.add(ExerciseModel(id: '', name: 'Crea Esercizio', type: '', muscleGroup: ''));
-                return suggestions;
-              },
-              itemBuilder: (context, suggestion) {
-                return ListTile(
-                  title: Text(suggestion.name),
-                );
-              },
-              onSelected: (suggestion) async {
-                if (suggestion.name == 'Crea Esercizio') {
-                  final newExercise = await showDialog<ExerciseModel>(
-                    context: context,
-                    builder: (context) => userId != null
-                        ? AddExerciseDialog(exercisesService: exercisesService, userId: userId)
-                        : const SizedBox.shrink(),
-                  );
-                  if (newExercise != null) {
-                    exerciseNameController.text = newExercise.name;
-                    selectedExerciseId = newExercise.id;
-                    selectedExerciseType = newExercise.type;
-                  }
-                } else {
-                  exerciseNameController.text = suggestion.name;
-                  selectedExerciseId = suggestion.id;
-                  selectedExerciseType = suggestion.type;
-                }
-              },
-              emptyBuilder: (context) => const SizedBox.shrink(),
-              hideWithKeyboard: true,
-              hideOnSelect: true,
-              retainOnLoading: false,
-              offset: const Offset(0, 8),
-              decorationBuilder: (context, suggestionsBox) {
-                return Material(
-                  elevation: 4,
-                  color: Theme.of(context).colorScheme.surface,
-                  child: suggestionsBox,
-                );
-              },
+            ExerciseAutocompleteBox(
               controller: exerciseNameController,
-              focusNode: FocusNode(),
-              builder: (context, controller, focusNode) {
-                return TextField(
-                  controller: controller,
-                  focusNode: focusNode,
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(
-                        color: Colors.white,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(
-                        color: Theme.of(context).colorScheme.primary,
-                        width: 2,
-                      ),
-                    ),
-                    filled: true,
-                    fillColor: Theme.of(context).colorScheme.surface,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  ),
-                );
+              exerciseRecordService: exerciseRecordService,
+              athleteId: athleteId,
+              onSelected: (selectedExercise) {
+                if (selectedExercise.id.isNotEmpty) {
+                  selectedExerciseId.value = selectedExercise.id;
+                  selectedExerciseType.value = selectedExercise.type;
+                }
               },
             ),
             const SizedBox(height: 16),
@@ -128,8 +66,11 @@ class ExerciseDialog extends ConsumerWidget {
               decoration: InputDecoration(
                 labelText: 'Variante',
                 labelStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                ),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.6),
+                    ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(
@@ -151,7 +92,8 @@ class ExerciseDialog extends ConsumerWidget {
                 ),
                 filled: true,
                 fillColor: Theme.of(context).colorScheme.surface,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
             ),
             const SizedBox(height: 16),
@@ -170,9 +112,9 @@ class ExerciseDialog extends ConsumerWidget {
           onPressed: () {
             final newExercise = Exercise(
               id: exercise?.id ?? '',
-              exerciseId: selectedExerciseId,
+              exerciseId: selectedExerciseId.value,
               name: exerciseNameController.text,
-              type: selectedExerciseType,
+              type: selectedExerciseType.value,
               variant: variantController.text,
               order: exercise?.order ?? 0,
               series: exercise?.series ?? [],

@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:in_app_update/in_app_update.dart';
@@ -25,7 +24,7 @@ class AppServices {
       ));
       await _fetchRemoteConfig();
     } catch (e) {
-      debugPrint('Error initializing AppServices: $e');
+      // Handle error if needed
     }
   }
 
@@ -34,7 +33,7 @@ class AppServices {
       await _remoteConfig.fetchAndActivate();
       _minimumVersion = _remoteConfig.getString('minimum_app_version');
     } catch (e) {
-      debugPrint('Error fetching remote config: $e');
+      // Handle error if needed
     }
   }
 
@@ -49,8 +48,7 @@ class AppServices {
 
       return _compareVersions(currentVersion, _minimumVersion!);
     } catch (e) {
-      debugPrint('Error checking app version: $e');
-      return true; // Assume supported if there's an error
+      return true; 
     }
   }
 
@@ -86,7 +84,7 @@ class AppServices {
         await _performUpdate();
       }
     } catch (e) {
-      debugPrint('Error checking for update: $e');
+      // Handle error if needed
     }
   }
 
@@ -101,7 +99,7 @@ class AppServices {
         }
       }
     } catch (e) {
-      debugPrint('Error performing update: $e');
+      // Handle error if needed
     }
   }
 
@@ -117,23 +115,18 @@ class AppServices {
       String productId = userData['productId'];
       String purchaseToken = userData['purchaseToken'];
 
-      // Se l'utente è già un client base, non c'è bisogno di ulteriori controlli
       if (role == 'client') return false;
 
-      // Procediamo con il controllo solo per utenti premium o coach
       if (role == 'client_premium' || role == 'coach') {
         Timestamp? expiryDate = userData['subscriptionExpiryDate'];
 
         if (expiryDate == null) {
-          // Se non c'è una data di scadenza, consideriamo l'abbonamento non valido
           await _updateUserToClient(user.uid);
           return false;
         }
 
         if (expiryDate.toDate().isBefore(DateTime.now())) {
-          // L'abbonamento è scaduto, chiamiamo la Cloud Function per verificare e aggiornare lo stato
           await _callSubscriptionCheckFunction(user.uid, productId, purchaseToken);
-          // Rileggiamo i dati dell'utente dopo la chiamata alla Cloud Function
           userDoc = await _firestore.collection('users').doc(user.uid).get();
           userData = userDoc.data() as Map<String, dynamic>;
           role = userData['role'] ?? 'client';
@@ -143,10 +136,8 @@ class AppServices {
         return true;
       }
 
-      // Per qualsiasi altro ruolo non riconosciuto, consideriamo l'abbonamento non valido
       return false;
     } catch (e) {
-      debugPrint('Error checking subscription status: $e');
       return false;
     }
   }
@@ -154,10 +145,9 @@ class AppServices {
   Future<void> _callSubscriptionCheckFunction(String userId, String productId, String purchaseToken) async {
     try {
       HttpsCallable callable = _functions.httpsCallable('checkAndUpdateSubscription');
-      final result = await callable.call({'purchaseToken': purchaseToken, 'productId': productId});
-      debugPrint('Cloud Function result: ${result.data}');
+      await callable.call({'purchaseToken': purchaseToken, 'productId': productId});
     } catch (e) {
-      debugPrint('Error calling Cloud Function: $e');
+      // Handle error if needed
     }
   }
 
@@ -167,9 +157,8 @@ class AppServices {
         'role': 'client',
         'subscriptionExpiryDate': null
       });
-      debugPrint('User role updated to client');
     } catch (e) {
-      debugPrint('Error updating user role: $e');
+      // Handle error if needed
     }
   }
 }

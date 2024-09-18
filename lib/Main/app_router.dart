@@ -271,9 +271,23 @@ class AppRouter {
                 path: '/exercises_list',
                 builder: (context, state) => const ExercisesList(),
               ),
-              GoRoute(
+             GoRoute(
                 path: '/maxrmdashboard',
-                builder: (context, state) => const MaxRMDashboard(),
+                builder: (context, state) {
+                  return Consumer(
+                    builder: (context, ref, child) {
+                      final userRole = ref.watch(userRoleProvider);
+                      if (userRole == 'admin' || userRole == 'coach') {
+                        return const MaxRMDashboard();
+                      } else if (userRole.isEmpty) {
+                        // Stato non ancora caricato, mostra un indicatore di caricamento
+                        return const Center(child: CircularProgressIndicator());
+                      } else {
+                        return const Center(child: Text('Access denied'));
+                      }
+                    },
+                  );
+                },
                 routes: [
                   GoRoute(
                     path: 'exercise_stats/:exerciseId',

@@ -1,11 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_model.dart';
 
-final coachingServiceProvider = Provider<CoachingService>((ref) {
-  return CoachingService(FirebaseFirestore.instance);
-});
 
 class Association {
   final String id;

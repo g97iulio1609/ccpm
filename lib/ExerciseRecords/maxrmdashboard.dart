@@ -1,56 +1,26 @@
+import 'package:alphanessone/ExerciseRecords/exercise_autocomplete.dart';
 import 'package:alphanessone/models/exercise_record.dart';
 import 'package:alphanessone/models/user_model.dart';
 import 'package:alphanessone/Coaching/coaching_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:rxdart/rxdart.dart';
 import '../exerciseManager/exercise_model.dart';
-import '../exerciseManager/exercises_services.dart';
 import 'package:alphanessone/services/users_services.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 import '../../user_autocomplete.dart';
 import '../../providers/providers.dart';
 
-// Providers file (providers.dart)
-final authProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
-final exercisesStreamProvider = StreamProvider<List<ExerciseModel>>((ref) {
-  final service = ref.watch(exercisesServiceProvider);
-  return service.getExercises();
-});
-final userServiceProvider = Provider<UsersService>((ref) {
-  return UsersService(ref, FirebaseFirestore.instance, FirebaseAuth.instance);
-});
-final exerciseRecordServiceProvider = Provider<ExerciseRecordService>((ref) {
-  return ExerciseRecordService(FirebaseFirestore.instance);
-});
-final coachingServiceProvider = Provider<CoachingService>((ref) {
-  return CoachingService(FirebaseFirestore.instance);
-});
-final usersStreamProvider = StreamProvider<List<UserModel>>((ref) {
-  final service = ref.watch(userServiceProvider);
-  return service.getUsers();
-});
-final keepWeightProvider = StateProvider<bool>((ref) => false);
-final currentUserRoleProvider = StateProvider<String>((ref) {
-  final usersService = ref.watch(userServiceProvider);
-  usersService.fetchUserRole();
-  return usersService.getCurrentUserRole();
-});
-
-
-// Main widget
 class MaxRMDashboard extends HookConsumerWidget {
   const MaxRMDashboard({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final usersService = ref.watch(userServiceProvider);
+    final usersService = ref.watch(usersServiceProvider);
     final coachingService = ref.watch(coachingServiceProvider);
     final exerciseRecordService = ref.watch(exerciseRecordServiceProvider);
     final currentUserRole = ref.watch(currentUserRoleProvider);
@@ -66,11 +36,10 @@ class MaxRMDashboard extends HookConsumerWidget {
             List<UserModel> users = await _fetchUsersByRole(currentUserRole, usersService, coachingService);
             ref.read(userListProvider.notifier).state = users;
             ref.read(filteredUserListProvider.notifier).state = users;
-          } catch (e, stackTrace) {
-            debugPrint('Error fetching users: $e');
-            debugPrintStack(stackTrace: stackTrace);
+          } catch (e) {
+            // Handle error if needed
           }
-        }
+        } 
         userFetchComplete.value = true;
       }
 
@@ -81,9 +50,12 @@ class MaxRMDashboard extends HookConsumerWidget {
     void filterUsers(String pattern) {
       if (currentUserRole == 'admin' || currentUserRole == 'coach') {
         final allUsers = ref.read(userListProvider);
+        final lowerPattern = pattern.toLowerCase();
         final filtered = pattern.isEmpty
             ? allUsers
-            : allUsers.where((user) => user.name.toLowerCase().contains(pattern.toLowerCase())).toList();
+            : allUsers.where((user) =>
+                user.name.toLowerCase().contains(lowerPattern) ||
+                user.email.toLowerCase().contains(lowerPattern)).toList();
         ref.read(filteredUserListProvider.notifier).state = filtered;
       }
     }
@@ -101,7 +73,9 @@ class MaxRMDashboard extends HookConsumerWidget {
                 onSelected: (UserModel user) {
                   ref.read(selectedUserIdProvider.notifier).state = user.id;
                 },
-                onChanged: filterUsers,
+                onChanged: (String value) {
+                  filterUsers(value);
+                },
               ),
               const SizedBox(height: 8),
             ],
@@ -119,7 +93,8 @@ class MaxRMDashboard extends HookConsumerWidget {
       final snapshot = await FirebaseFirestore.instance.collection('users').get();
       users = snapshot.docs.map((doc) => UserModel.fromFirestore(doc)).toList();
     } else if (role == 'coach') {
-      final associations = await coachingService.getUserAssociations(usersService.getCurrentUserId()).first;
+      final currentUserId = usersService.getCurrentUserId();
+      final associations = await coachingService.getCoachAssociations(currentUserId).first;
       for (var association in associations) {
         if (association.status == 'accepted') {
           final athlete = await usersService.getUserById(association.athleteId);
@@ -201,7 +176,7 @@ class MaxRMDashboard extends HookConsumerWidget {
       builder: (context) => _MaxRMForm(
         onSubmit: (exerciseId, exerciseName, maxWeight, repetitions, date, keepWeight, selectedUserId) async {
           final exerciseRecordService = ref.read(exerciseRecordServiceProvider);
-          final usersService = ref.read(userServiceProvider);
+          final usersService = ref.read(usersServiceProvider);
           final userId = selectedUserId ?? usersService.getCurrentUserId();
 
           await exerciseRecordService.addExerciseRecord(
@@ -339,24 +314,24 @@ class ExerciseCard extends ConsumerWidget {
         return AlertDialog(
           title: Text(
             'Confirmation',
-            style: TextStyle(color: Theme.of(dialogContext).colorScheme.onSurface),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
           ),
-          backgroundColor: Theme.of(dialogContext).colorScheme.surface,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           content: Text(
             'Are you sure you want to delete this record?',
-            style: TextStyle(color: Theme.of(dialogContext).colorScheme.onSurface),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
           ),
           actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text('Cancel', style: TextStyle(color: Theme.of(dialogContext).colorScheme.primary)),
+              child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
             ),
             TextButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop();
                 _performDelete(context, ref);
               },
-              child: Text('Delete', style: TextStyle(color: Theme.of(dialogContext).colorScheme.error)),
+              child: Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.error)),
             ),
           ],
         );
@@ -526,14 +501,12 @@ class EditRecordDialog extends HookConsumerWidget {
       );
 
       if (keepWeight) {
-        debugPrint('Updating intensity while keeping weight.');
         await exerciseRecordService.updateIntensityForProgram(
           selectedUserId ?? usersService.getCurrentUserId(),
           exercise.id,
           newMaxWeight,
         );
       } else {
-        debugPrint('Updating weights based on new max weight.');
         await exerciseRecordService.updateWeightsForProgram(
           selectedUserId ?? usersService.getCurrentUserId(),
           exercise.id,
@@ -565,7 +538,7 @@ class _MaxRMForm extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final exercisesAsyncValue = ref.watch(exercisesStreamProvider);
+    ref.watch(exercisesStreamProvider);
     final selectedExerciseController = useState<ExerciseModel?>(null);
     final exerciseNameController = useTextEditingController();
     final maxWeightController = useTextEditingController();
@@ -602,11 +575,14 @@ class _MaxRMForm extends HookConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  _buildExerciseTypeAheadField(
-                    exercisesAsyncValue,
-                    selectedExerciseController,
-                    exerciseNameController,
-                    context,
+                  // Integra ExerciseAutocompleteBox
+                  ExerciseAutocompleteBox(
+                    controller: exerciseNameController,
+                    exerciseRecordService: ref.watch(exerciseRecordServiceProvider),
+                    athleteId: ref.watch(selectedUserIdProvider) ?? '',
+                    onSelected: (selectedExercise) {
+                      selectedExerciseController.value = selectedExercise;
+                    },
                   ),
                   const SizedBox(height: 16),
                   _buildTextField(
@@ -672,65 +648,6 @@ class _MaxRMForm extends HookConsumerWidget {
     );
   }
 
-
-  Widget _buildExerciseTypeAheadField(
-    AsyncValue<List<ExerciseModel>> exercisesAsyncValue,
-    ValueNotifier<ExerciseModel?> selectedExerciseController,
-    TextEditingController exerciseNameController,
-    BuildContext context,
-  ) {
-    return exercisesAsyncValue.when(
-      data: (exercises) {
-        return TypeAheadField<ExerciseModel>(
-          suggestionsCallback: (search) async {
-            return exercises.where((exercise) => exercise.name.toLowerCase().contains(search.toLowerCase())).toList();
-          },
-          itemBuilder: (context, suggestion) {
-            return ListTile(
-              title: Text(suggestion.name),
-            );
-          },
-          onSelected: (suggestion) {
-            selectedExerciseController.value = suggestion;
-            exerciseNameController.text = suggestion.name;
-          },
-          emptyBuilder: (context) => const SizedBox.shrink(),
-          hideWithKeyboard: false,
-          hideOnSelect: true,
-          retainOnLoading: false,
-          decorationBuilder: (context, child) {
-            return Material(
-              elevation: 4,
-              borderRadius: BorderRadius.circular(12),
-              child: child,
-            );
-          },
-          offset: const Offset(0, 8),
-          constraints: const BoxConstraints(maxHeight: 200),
-          controller: exerciseNameController,
-          focusNode: FocusNode(),
-          builder: (context, controller, focusNode) {
-            return TextField(
-              controller: controller,
-              focusNode: focusNode,
-              decoration: InputDecoration(
-                labelText: 'Exercise Name',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: Theme.of(context).colorScheme.surface,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                prefixIcon: Icon(Icons.fitness_center, color: Theme.of(context).colorScheme.onSurfaceVariant),
-              ),
-            );
-          },
-        );
-      },
-      loading: () => const CircularProgressIndicator(),
-      error: (error, stack) => Text("Error loading exercises: $error"),
-    );
-  }
 
   Widget _buildTextField({
     required TextEditingController controller,

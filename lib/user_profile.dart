@@ -135,39 +135,48 @@ class UserProfileState extends ConsumerState<UserProfile> with SingleTickerProvi
     ));
   }
 
-  Future<void> _uploadProfilePicture() async {
-    final status = await Permission.photos.request();
-    if (status.isGranted) {
-      final picker = ImagePicker();
-      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+Future<void> _uploadProfilePicture() async {
+    final picker = ImagePicker();
+    XFile? pickedFile;
+    
+    if (Platform.isAndroid) {
+      // Usa il Photo Picker su Android
+      pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    } else {
+      // Su iOS, richiedi il permesso come prima
+      final status = await Permission.photos.request();
+      if (status.isGranted) {
+        pickedFile = await picker.pickImage(source: ImageSource.gallery);
+      } else {
+        _showSnackBar('Gallery access denied', Colors.red);
+        return;
+      }
+    }
 
-      if (pickedFile != null) {
-        File file = File(pickedFile.path);
-        String uid = widget.userId ?? FirebaseAuth.instance.currentUser!.uid;
-        String fileExtension = file.path.split('.').last.toLowerCase();
+    if (pickedFile != null) {
+      File file = File(pickedFile.path);
+      String uid = widget.userId ?? FirebaseAuth.instance.currentUser!.uid;
+      String fileExtension = file.path.split('.').last.toLowerCase();
 
-        if (['jpg', 'png', 'jpeg'].contains(fileExtension)) {
-          try {
-            final storageRef = FirebaseStorage.instance.ref().child('user_profile_pictures/$uid.$fileExtension');
-            await storageRef.putFile(file);
-            final downloadURL = await storageRef.getDownloadURL();
-            await ref.read(usersServiceProvider).updateUser(uid, {'photoURL': downloadURL});
-            setState(() => _photoURL = downloadURL);
-            _showSnackBar('Profile picture uploaded successfully!', Colors.green);
-          } catch (e) {
-            _showSnackBar('Error uploading profile picture: $e', Colors.red);
-          }
-        } else {
-          _showSnackBar('Unsupported image format. Please choose a JPG, PNG, or JPEG file.', Colors.red);
+      if (['jpg', 'png', 'jpeg'].contains(fileExtension)) {
+        try {
+          final storageRef = FirebaseStorage.instance.ref().child('user_profile_pictures/$uid.$fileExtension');
+          await storageRef.putFile(file);
+          final downloadURL = await storageRef.getDownloadURL();
+          await ref.read(usersServiceProvider).updateUser(uid, {'photoURL': downloadURL});
+          setState(() => _photoURL = downloadURL);
+          _showSnackBar('Profile picture uploaded successfully!', Colors.green);
+        } catch (e) {
+          _showSnackBar('Error uploading profile picture: $e', Colors.red);
         }
       } else {
-        _showSnackBar('No image selected.', Colors.red);
+        _showSnackBar('Unsupported image format. Please choose a JPG, PNG, or JPEG file.', Colors.red);
       }
     } else {
-      _showSnackBar('Gallery access denied', Colors.red);
+      _showSnackBar('No image selected.', Colors.red);
     }
   }
-
+  
   Future<void> _deleteUser() async {
     try {
       String uid = widget.userId ?? FirebaseAuth.instance.currentUser!.uid;
