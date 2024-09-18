@@ -29,16 +29,22 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
   @override
   void initState() {
     super.initState();
-    // Set default selected user if current user is admin or coach
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Set default selected user based on role
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final userRole = ref.read(userRoleProvider);
-      if ((userRole == 'admin' || userRole == 'coach') &&
-          ref.read(selectedUserIdProvider) == null) {
-        final currentUserId = ref.read(usersServiceProvider).getCurrentUserId();
+      final currentUserId = ref.read(usersServiceProvider).getCurrentUserId();
+
+      if (userRole == 'admin' || userRole == 'coach') {
+        if (ref.read(selectedUserIdProvider) == null) {
+          ref.read(selectedUserIdProvider.notifier).state = currentUserId;
+        }
+      } else if (userRole == 'client' || userRole == 'client_premium') {
+        // For client roles, always set selectedUserIdProvider to currentUserId
         ref.read(selectedUserIdProvider.notifier).state = currentUserId;
       }
+
       // Initialize data based on the selected user
-      _initializeUserData();
+      await _initializeUserData();
     });
   }
 
@@ -84,7 +90,8 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
   Widget build(BuildContext context) {
     final selectedDate = ref.watch(selectedDateProvider);
     final selectedUserId = ref.watch(selectedUserIdProvider);
-    final userAsyncValue = ref.watch(userProvider(selectedUserId ?? ''));
+    final userId = selectedUserId ?? ref.read(usersServiceProvider).getCurrentUserId();
+    final userAsyncValue = ref.watch(userProvider(userId));
 
     return Scaffold(
       body: SafeArea(

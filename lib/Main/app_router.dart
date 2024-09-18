@@ -49,23 +49,23 @@ class AppRouter {
                 builder: (context, state) => const AuthWrapper(),
               ),
               GoRoute(
-  path: '/programs_screen',
-  builder: (context, state) {
-    return Consumer(
-      builder: (context, ref, child) {
-        final userRole = ref.watch(userRoleProvider);
-        if (userRole == 'admin' || userRole == 'coach') {
-          return const CoachingScreen();
-        } else if (userRole.isEmpty) {
-          // Stato non ancora caricato, mostra un indicatore di caricamento
-          return const Center(child: CircularProgressIndicator());
-        } else {
-          return const Center(child: Text('Access denied'));
-        }
-      },
-    );
-  },
-),
+                path: '/programs_screen',
+                builder: (context, state) {
+                  return Consumer(
+                    builder: (context, ref, child) {
+                      final userRole = ref.watch(userRoleProvider);
+                      if (userRole == 'admin' || userRole == 'coach') {
+                        return const CoachingScreen();
+                      } else if (userRole.isEmpty) {
+                        // Stato non ancora caricato, mostra un indicatore di caricamento
+                        return const Center(child: CircularProgressIndicator());
+                      } else {
+                        return const Center(child: Text('Access denied'));
+                      }
+                    },
+                  );
+                },
+              ),
               GoRoute(
                 path: '/user_programs/:userId',
                 builder: (context, state) =>
@@ -189,19 +189,47 @@ class AppRouter {
               GoRoute(
                 path: '/tdee',
                 builder: (context, state) {
-                  final userId = FirebaseAuth.instance.currentUser?.uid;
-                  return userId != null
-                      ? TDEEScreen(userId: userId)
-                      : const SizedBox();
+                  return Consumer(
+                    builder: (context, ref, child) {
+                      final userAsyncValue = ref.watch(userProvider(
+                          FirebaseAuth.instance.currentUser?.uid ?? ''));
+                      return userAsyncValue.when(
+                        data: (user) {
+                          if (user == null) {
+                            return const Center(child: Text('User not found'));
+                          }
+                          return TDEEScreen(userId: user.id);
+                        },
+                        loading: () =>
+                            const Center(child: CircularProgressIndicator()),
+                        error: (err, stack) =>
+                            Center(child: Text('Error: $err')),
+                      );
+                    },
+                  );
                 },
               ),
               GoRoute(
                 path: '/macros_selector',
                 builder: (context, state) {
-                  final userId = FirebaseAuth.instance.currentUser?.uid;
-                  return userId != null
-                      ? MacrosSelector(userId: userId)
-                      : const SizedBox();
+                  return Consumer(
+                    builder: (context, ref, child) {
+                      final userAsyncValue = ref.watch(userProvider(
+                          FirebaseAuth.instance.currentUser?.uid ?? ''));
+                      return userAsyncValue.when(
+                        data: (user) {
+                          if (user == null) {
+                            return const Center(child: Text('User not found'));
+                          }
+                          return MacrosSelector(userId: user.id);
+                        },
+                        loading: () =>
+                            const Center(child: CircularProgressIndicator()),
+                        error: (err, stack) =>
+                            Center(child: Text('Error: $err')),
+                      );
+                    },
+                  );
                 },
               ),
               GoRoute(
@@ -224,7 +252,28 @@ class AppRouter {
               ),
               GoRoute(
                 path: '/food_tracker',
-                builder: (context, state) => const DailyFoodTracker(),
+                builder: (context, state) {
+                  return Consumer(
+                    builder: (context, ref, child) {
+                      final selectedUserId = ref.watch(selectedUserIdProvider);
+                      final userAsyncValue = ref.watch(userProvider(
+                          selectedUserId ??
+                              FirebaseAuth.instance.currentUser?.uid ?? ''));
+                      return userAsyncValue.when(
+                        data: (user) {
+                          if (user == null) {
+                            return const Center(child: Text('User not found'));
+                          }
+                          return const DailyFoodTracker();
+                        },
+                        loading: () =>
+                            const Center(child: CircularProgressIndicator()),
+                        error: (err, stack) =>
+                            Center(child: Text('Error: $err')),
+                      );
+                    },
+                  );
+                },
                 routes: [
                   GoRoute(
                     path: 'food_selector',
@@ -271,22 +320,10 @@ class AppRouter {
                 path: '/exercises_list',
                 builder: (context, state) => const ExercisesList(),
               ),
-             GoRoute(
+              GoRoute(
                 path: '/maxrmdashboard',
                 builder: (context, state) {
-                  return Consumer(
-                    builder: (context, ref, child) {
-                      final userRole = ref.watch(userRoleProvider);
-                      if (userRole == 'admin' || userRole == 'coach') {
-                        return const MaxRMDashboard();
-                      } else if (userRole.isEmpty) {
-                        // Stato non ancora caricato, mostra un indicatore di caricamento
-                        return const Center(child: CircularProgressIndicator());
-                      } else {
-                        return const Center(child: Text('Access denied'));
-                      }
-                    },
-                  );
+                  return const MaxRMDashboard();
                 },
                 routes: [
                   GoRoute(
@@ -296,7 +333,7 @@ class AppRouter {
                       final exercise = extra['exercise'] as ExerciseModel;
                       final userId = extra['userId'] as String;
                       debugPrint('userId: $userId');
-    
+
                       return ExerciseStats(
                         exercise: exercise,
                         userId: userId, // Passaggio dell'ID utente qui
