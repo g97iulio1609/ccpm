@@ -49,16 +49,23 @@ class AppRouter {
                 builder: (context, state) => const AuthWrapper(),
               ),
               GoRoute(
-                path: '/programs_screen',
-                builder: (context, state) {
-                  final userRole = ref.read(userRoleProvider);
-                  if (userRole == 'admin' || userRole == 'coach') {
-                    return const CoachingScreen();
-                  } else {
-                    return const Center(child: Text('Access denied'));
-                  }
-                },
-              ),
+  path: '/programs_screen',
+  builder: (context, state) {
+    return Consumer(
+      builder: (context, ref, child) {
+        final userRole = ref.watch(userRoleProvider);
+        if (userRole == 'admin' || userRole == 'coach') {
+          return const CoachingScreen();
+        } else if (userRole.isEmpty) {
+          // Stato non ancora caricato, mostra un indicatore di caricamento
+          return const Center(child: CircularProgressIndicator());
+        } else {
+          return const Center(child: Text('Access denied'));
+        }
+      },
+    );
+  },
+),
               GoRoute(
                 path: '/user_programs/:userId',
                 builder: (context, state) =>
