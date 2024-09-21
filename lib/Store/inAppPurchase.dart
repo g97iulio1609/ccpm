@@ -1,7 +1,7 @@
-import 'package:alphanessone/providers/providers.dart';
+import 'package:alphanessone/Store/inAppPurchase_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'inAppPurchase_services.dart';
+import 'package:alphanessone/providers/providers.dart';
 
 class InAppSubscriptionsPage extends ConsumerStatefulWidget {
   const InAppSubscriptionsPage({super.key});
@@ -15,19 +15,19 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
   bool _loading = true;
   final TextEditingController _promoCodeController = TextEditingController();
   String? _promoCodeError;
+  bool _isAdmin = false;
 
   @override
   void initState() {
     super.initState();
-    // Inizializza InAppPurchaseService con UsersService
-    final usersService = ref.read(usersServiceProvider);
-    _inAppPurchaseService = InAppPurchaseService(usersService);
+    ref.read(usersServiceProvider);
+    _inAppPurchaseService = InAppPurchaseService();
     _initialize();
+    _checkAdminStatus();
   }
 
   Future<void> _initialize() async {
     try {
-      debugPrint("Initializing store info...");
       await _inAppPurchaseService.initStoreInfo();
     } catch (e) {
       debugPrint("Error during initialization: $e");
@@ -39,11 +39,19 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
     }
   }
 
+  Future<void> _checkAdminStatus() async {
+    final userRole = ref.read(usersServiceProvider).getCurrentUserRole();
+    setState(() {
+      _isAdmin = userRole == 'admin';
+    });
+  }
+
   @override
   void dispose() {
     _promoCodeController.dispose();
     super.dispose();
   }
+
   Future<void> _redeemPromoCode() async {
     setState(() {
       _promoCodeError = null;
@@ -113,7 +121,7 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
           return 'AlphanessOne+ Quarterly Plan';
         case 2:
           return 'AlphanessOne+ Semi-Annual Plan';
-           case 3:
+        case 3:
           return 'AlphanessOne+ Yearly Plan';
         default:
           return 'Subscription Plan';
@@ -124,7 +132,7 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
           return 'Coaching 1:1 Monthly Plan';
         case 1:
           return 'Coaching 1:1 Quarterly Plan';
-          case 2:
+        case 2:
           return 'Coaching 1:1 Semi-Annual Plan';
         default:
           return 'Subscription Plan';
@@ -133,9 +141,34 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
     return 'Subscription Plan';
   }
 
+  Future<void> _syncProducts() async {
+    try {
+      await _inAppPurchaseService.manualSyncProducts();
+      _showSnackBar('Products synced successfully');
+      await _initialize();
+    } catch (e) {
+      _showSnackBar('Error syncing products: ${e.toString()}');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Subscriptions'),
+        actions: [
+          if (_isAdmin)
+            IconButton(
+              icon: const Icon(Icons.sync),
+              onPressed: _syncProducts,
+              tooltip: 'Sync Products',
+            ),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _initialize,
+          ),
+        ],
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -156,7 +189,6 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
                   return productDetailsList.asMap().entries.map((mapEntry) {
                     final index = mapEntry.key;
                     final productDetails = mapEntry.value;
-                    debugPrint("Displaying product: ${productDetails.id}");
                     String planTitle = _getPlanTitle(index, productDetails.id);
                     return Card(
                       elevation: 4,
@@ -181,14 +213,14 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  productDetails.price,
+                                  '${productDetails.price} ${productDetails.currencyCode}',
                                   style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
                                 ),
                                 ElevatedButton(
                                   style: ElevatedButton.styleFrom(
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                   ),
-                                  onPressed: () => _inAppPurchaseService.makePurchase(productDetails),
+                                  onPressed: () => _inAppPurchaseService.makePurchase(productDetails.id),
                                   child: const Text('Subscribe'),
                                 ),
                               ],

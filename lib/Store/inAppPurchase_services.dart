@@ -1,128 +1,195 @@
-import 'package:alphanessone/services/users_services.dart';
+import 'package:alphanessone/Store/inAppPurchase_model.dart';
+import 'package:flutter/foundation.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:in_app_purchase_android/in_app_purchase_android.dart';
-import 'inAppPurchase_model.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class InAppPurchaseService {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFunctions _functions = FirebaseFunctions.instance;
+  final bool isWeb = kIsWeb;
+
   final InAppPurchase _inAppPurchase = InAppPurchase.instance;
   final List<ProductDetails> _productDetails = [];
   final List<Purchase> _purchases = [];
-  final UsersService _usersService;
 
-  InAppPurchaseService(this._usersService);
-
-  final Map<String, String> promoCodeToProductId = {
-    'A1PROMO': 'alphanessoneplussubscription',
-  };
-
-  final Map<String, String> subscriptionDurations = {
-    'alphanessoneplussubscription': 'Monthly',
-    'coachingalphaness': 'Monthly',
-  };
-
-  final Map<String, String> productIdToRole = {
+  Map<String, String> productIdToRole = {
     'alphanessoneplussubscription': 'client_premium',
     'coachingalphaness': 'coach',
   };
 
-  Stream<List<PurchaseDetails>> get purchaseStream => _inAppPurchase.purchaseStream;
+  Map<String, List<ProductDetails>> _productDetailsByProductId = {};
+  Map<String, List<ProductDetails>> get productDetailsByProductId => _productDetailsByProductId;
 
   Future<void> initStoreInfo() async {
-    debugPrint("Checking store availability...");
-    final bool available = await _inAppPurchase.isAvailable();
-    if (!available) {
-      debugPrint("Store not available");
-      throw Exception("Store not available");
+    if (isWeb) {
+      await _initStripe();
+    } else {
+      await _initGooglePlay();
     }
-    debugPrint("Store is available");
-
-    const Set<String> kIds = {'alphanessoneplussubscription', 'coachingalphaness'};
-    debugPrint("Querying product details for IDs: $kIds");
-    final ProductDetailsResponse response = await _inAppPurchase.queryProductDetails(kIds);
-
-    if (response.notFoundIDs.isNotEmpty) {
-      debugPrint("Products not found: ${response.notFoundIDs}");
-    }
-
-    debugPrint("Products found: ${response.productDetails.map((pd) => pd.id).toList()}");
-    debugPrint("Products found: ${response.productDetails.map((pd) => pd.rawPrice).toList()}");
-
-    _productDetails.addAll(response.productDetails);
-
-    Map<String, List<ProductDetails>> groupedProducts = {};
-    for (var product in _productDetails) {
-      if (!groupedProducts.containsKey(product.id)) {
-        groupedProducts[product.id] = [];
-      }
-      groupedProducts[product.id]?.add(product);
-    }
-
-    for (var key in groupedProducts.keys) {
-      groupedProducts[key]?.sort((a, b) => a.rawPrice.compareTo(b.rawPrice));
-    }
-
-    _productDetailsByProductId = groupedProducts;
   }
 
-  Future<void> makePurchase(ProductDetails productDetails) async {
-    final PurchaseParam purchaseParam = PurchaseParam(productDetails: productDetails);
-    debugPrint("Initiating purchase for product: ${productDetails.id}");
-    await _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
+Future<void> _initStripe() async {
+  debugPrint('Initializing Stripe...');
+  try {
+    debugPrint('Calling getStripeProducts Cloud Function...');
+    final result = await _functions.httpsCallable('getStripeProducts').call();
+    debugPrint('Cloud Function call successful. Raw result: ${result.data}');
+
+    if (result.data == null || !result.data.containsKey('products')) {
+      throw Exception('Invalid response format from getStripeProducts');
+    }
+
+    final products = List<Map<String, dynamic>>.from(result.data['products']);
+    debugPrint('Number of products received: ${products.length}');
+    
+    _productDetails.clear(); // Clear existing products before adding new ones
+    for (var product in products) {
+      debugPrint('Processing product: ${product['id']}');
+      final productDetails = ProductDetails(
+        id: product['id'],
+        title: product['name'] ?? 'Unknown',
+        description: product['description'] ?? '',
+        price: ((product['price'] as double?) ?? 0 / 100).toStringAsFixed(2),
+        rawPrice: (product['price'] as double?) ?? 0 / 100,
+        currencyCode: product['currency'] ?? 'USD',
+      );
+      _productDetails.add(productDetails);
+      _addToProductDetailsByProductId(productDetails);
+      debugPrint('Added product: ${productDetails.id}');
+    }
+    debugPrint('Stripe initialization completed successfully');
+  } catch (e) {
+    debugPrint('Error initializing Stripe: $e');
+    if (e is FirebaseFunctionsException) {
+      debugPrint('Firebase Functions Error Code: ${e.code}');
+      debugPrint('Firebase Functions Error Details: ${e.details}');
+      debugPrint('Firebase Functions Error Message: ${e.message}');
+    }
+    rethrow;
+  }
+}
+
+  Future<void> _initGooglePlay() async {
+    try {
+      final bool available = await _inAppPurchase.isAvailable();
+      if (!available) {
+        throw Exception("Store not available");
+      }
+
+      const Set<String> kIds = {'alphanessoneplussubscription', 'coachingalphaness'};
+      final ProductDetailsResponse response = await _inAppPurchase.queryProductDetails(kIds);
+
+      _productDetails.addAll(response.productDetails);
+      for (var product in response.productDetails) {
+        _addToProductDetailsByProductId(product);
+      }
+    } catch (e) {
+      debugPrint('Error initializing Google Play: $e');
+    }
+  }
+
+  void _addToProductDetailsByProductId(ProductDetails product) {
+    if (!_productDetailsByProductId.containsKey(product.id)) {
+      _productDetailsByProductId[product.id] = [];
+    }
+    _productDetailsByProductId[product.id]!.add(product);
+    _productDetailsByProductId[product.id]!.sort((a, b) => a.rawPrice.compareTo(b.rawPrice));
+  }
+
+  Future<void> makePurchase(String productId) async {
+    if (isWeb) {
+      await _makeStripePurchase(productId);
+    } else {
+      await _makeGooglePlayPurchase(productId);
+    }
+  }
+
+  Future<void> _makeStripePurchase(String productId) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('User not authenticated');
+
+      final result = await _functions.httpsCallable('createCheckoutSession').call({
+        'productId': productId,
+      });
+
+      final sessionId = result.data['sessionId'];
+
+      // Redirect to Stripe Checkout
+      final redirectUrl = 'https://checkout.stripe.com/pay/$sessionId';
+      if (await canLaunch(redirectUrl)) {
+        await launch(redirectUrl);
+      } else {
+        throw Exception('Could not launch Stripe Checkout');
+      }
+    } catch (e) {
+      debugPrint('Error making Stripe purchase: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> _makeGooglePlayPurchase(String productId) async {
+    try {
+      final ProductDetails? productDetails = _productDetails.firstWhere(
+        (element) => element.id == productId,
+        orElse: () => throw Exception('Product not found'),
+      );
+
+      if (productDetails == null) {
+        throw Exception('Product details are null');
+      }
+
+      final PurchaseParam purchaseParam = PurchaseParam(productDetails: productDetails);
+      await _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
+    } catch (e) {
+      debugPrint('Error making Google Play purchase: $e');
+      rethrow;
+    }
   }
 
   Future<void> redeemPromoCode(String promoCode) async {
-    _inAppPurchase.getPlatformAddition<InAppPurchaseAndroidPlatformAddition>();
-
     try {
-      final trimmedPromoCode = promoCode.trim();
-      final productId = promoCodeToProductId[trimmedPromoCode];
-      if (productId == null) {
-        throw Exception("Promo code not found: $trimmedPromoCode");
+      final result = await _functions.httpsCallable('redeemPromoCode').call({
+        'promoCode': promoCode,
+      });
+
+      if (result.data['success']) {
+        debugPrint('Promo code redeemed successfully');
+      } else {
+        throw Exception(result.data['message']);
       }
-
-      final productDetails = _productDetails.firstWhere(
-        (pd) => pd.id == productId,
-        orElse: () => throw Exception("Product not found for promo code: $trimmedPromoCode"),
-      );
-
-      final PurchaseParam purchaseParam = PurchaseParam(productDetails: productDetails);
-      debugPrint("Initiating purchase with promo code: $trimmedPromoCode");
-      _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
     } catch (e) {
-      debugPrint("Error redeeming promo code: $e");
-      throw Exception("Error redeeming promo code: $e");
+      debugPrint('Error redeeming promo code: $e');
+      rethrow;
     }
+  }
+
+  Stream<List<ProductDetails>> getProducts() {
+    return _firestore.collection('products').snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        return ProductDetails(
+          id: doc.id,
+          title: data['name'],
+          description: data['description'],
+          price: (data['price'] / 100).toStringAsFixed(2),
+          rawPrice: data['price'] / 100,
+          currencyCode: data['currency'],
+        );
+      }).toList();
+    });
   }
 
   Future<void> handlePurchaseUpdates(List<PurchaseDetails> purchaseDetailsList) async {
     for (var purchaseDetails in purchaseDetailsList) {
       if (purchaseDetails.status == PurchaseStatus.purchased) {
-        String? newRole = productIdToRole[purchaseDetails.productID];
-        if (newRole != null) {
-          await _usersService.updateUserRole(_usersService.getCurrentUserId(), newRole);
-        }
-
-        int durationInDays = _getDurationInDays(purchaseDetails.productID);
-        DateTime newExpiryDate = DateTime.now().add(Duration(days: durationInDays));
-        DateTime? currentExpiryDate = await _usersService.getUserSubscriptionExpiryDate(_usersService.getCurrentUserId());
-
-        if (currentExpiryDate != null && currentExpiryDate.isAfter(DateTime.now())) {
-          newExpiryDate = currentExpiryDate.add(Duration(days: durationInDays));
-        }
-
-        await _usersService.updateUserSubscription(
-          _usersService.getCurrentUserId(),
-          newExpiryDate,
-          purchaseDetails.productID,
-          purchaseDetails.purchaseID!,
-        );
-
-        _purchases.add(Purchase(
-          productId: purchaseDetails.productID,
-          purchaseId: purchaseDetails.purchaseID!,
-          purchaseDate: DateTime.fromMillisecondsSinceEpoch(int.parse(purchaseDetails.transactionDate!)),
-        ));
+        await _verifyAndUpdateSubscription(purchaseDetails);
       }
       if (purchaseDetails.pendingCompletePurchase) {
         await _inAppPurchase.completePurchase(purchaseDetails);
@@ -130,18 +197,127 @@ class InAppPurchaseService {
     }
   }
 
-  int _getDurationInDays(String productId) {
-    switch (productId) {
-      case 'alphanessoneplussubscription':
-      case 'coachingalphaness':
-        return 30; // Monthly subscription
-      default:
-        return 0;
+  Future<void> _verifyAndUpdateSubscription(PurchaseDetails purchaseDetails) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('User not authenticated');
+
+      final result = await _functions.httpsCallable('verifyPurchase').call({
+        'productId': purchaseDetails.productID,
+        'purchaseToken': purchaseDetails.verificationData.serverVerificationData,
+      });
+
+      if (result.data['valid']) {
+        await _updateUserSubscription(user.uid, purchaseDetails.productID, result.data['expiryDate']);
+      } else {
+        throw Exception('Invalid purchase');
+      }
+    } catch (e) {
+      debugPrint('Error verifying and updating subscription: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> _updateUserSubscription(String userId, String productId, DateTime expiryDate) async {
+    try {
+      String? newRole = productIdToRole[productId];
+      if (newRole != null) {
+        await _firestore.collection('users').doc(userId).update({
+          'role': newRole,
+          'subscriptionProductId': productId,
+          'subscriptionPlatform': isWeb ? 'stripe' : 'google_play',
+          'subscriptionStartDate': FieldValue.serverTimestamp(),
+          'subscriptionExpiryDate': Timestamp.fromDate(expiryDate),
+          'subscriptionStatus': 'active',
+        });
+      }
+    } catch (e) {
+      debugPrint('Error updating user subscription: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> cancelSubscription() async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('User not authenticated');
+
+      final result = await _functions.httpsCallable('cancelSubscription').call();
+
+      if (result.data['success']) {
+        await _firestore.collection('users').doc(user.uid).update({
+          'subscriptionStatus': 'cancelled',
+        });
+      } else {
+        throw Exception('Failed to cancel subscription');
+      }
+    } catch (e) {
+      debugPrint('Error cancelling subscription: $e');
+      rethrow;
+    }
+  }
+
+  Future<SubscriptionStatus> getSubscriptionStatus() async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('User not authenticated');
+
+      final doc = await _firestore.collection('users').doc(user.uid).get();
+      final data = doc.data();
+
+      if (data == null || !data.containsKey('subscriptionStatus')) {
+        return SubscriptionStatus.inactive;
+      }
+
+      switch (data['subscriptionStatus']) {
+        case 'active':
+          return SubscriptionStatus.active;
+        case 'cancelled':
+          return SubscriptionStatus.cancelled;
+        case 'expired':
+          return SubscriptionStatus.expired;
+        default:
+          return SubscriptionStatus.inactive;
+      }
+    } catch (e) {
+      debugPrint('Error getting subscription status: $e');
+      return SubscriptionStatus.inactive;
+    }
+  }
+
+  Future<void> manualSyncProducts() async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('User not authenticated');
+
+      // Verifica che l'utente sia un amministratore
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (userDoc.data()?['role'] != 'admin') {
+        throw Exception('Unauthorized access');
+      }
+
+      final result = await _functions.httpsCallable('manualSyncStripeProducts').call();
+
+      if (result.data['success']) {
+        // Aggiorna i prodotti locali
+        await initStoreInfo();
+        debugPrint('Products synced and updated successfully');
+      } else {
+        throw Exception(result.data['message']);
+      }
+    } catch (e) {
+      debugPrint('Error in manual sync: $e');
+      rethrow;
     }
   }
 
   List<ProductDetails> get productDetails => _productDetails;
   List<Purchase> get purchases => _purchases;
-  Map<String, List<ProductDetails>> _productDetailsByProductId = {};
-  Map<String, List<ProductDetails>> get productDetailsByProductId => _productDetailsByProductId;
+}
+
+enum SubscriptionStatus {
+  active,
+  cancelled,
+  expired,
+  inactive,
 }

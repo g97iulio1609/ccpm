@@ -24,7 +24,7 @@ class AppServices {
       ));
       await _fetchRemoteConfig();
     } catch (e) {
-      // Handle error if needed
+      print('Error initializing AppServices: $e');
     }
   }
 
@@ -33,7 +33,7 @@ class AppServices {
       await _remoteConfig.fetchAndActivate();
       _minimumVersion = _remoteConfig.getString('minimum_app_version');
     } catch (e) {
-      // Handle error if needed
+      print('Error fetching remote config: $e');
     }
   }
 
@@ -48,6 +48,7 @@ class AppServices {
 
       return _compareVersions(currentVersion, _minimumVersion!);
     } catch (e) {
+      print('Error checking app version: $e');
       return true; 
     }
   }
@@ -84,7 +85,7 @@ class AppServices {
         await _performUpdate();
       }
     } catch (e) {
-      // Handle error if needed
+      print('Error checking for update: $e');
     }
   }
 
@@ -99,7 +100,7 @@ class AppServices {
         }
       }
     } catch (e) {
-      // Handle error if needed
+      print('Error performing update: $e');
     }
   }
 
@@ -112,12 +113,11 @@ class AppServices {
       Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
 
       String role = userData['role'] ?? 'client';
-      String productId = userData['productId'];
-      String purchaseToken = userData['purchaseToken'];
+      String subscriptionPlatform = userData['subscriptionPlatform'] ?? '';
 
       if (role == 'client') return false;
 
-      if (role == 'client_premium' || role == 'coach') {
+if (role == 'client_premium' || role == 'coach') {
         Timestamp? expiryDate = userData['subscriptionExpiryDate'];
 
         if (expiryDate == null) {
@@ -126,7 +126,11 @@ class AppServices {
         }
 
         if (expiryDate.toDate().isBefore(DateTime.now())) {
-          await _callSubscriptionCheckFunction(user.uid, productId, purchaseToken);
+          if (subscriptionPlatform == 'stripe') {
+            await _checkStripeSubscription(user.uid, userData['subscriptionId']);
+          } else {
+            await _checkGooglePlaySubscription(user.uid, userData['productId'], userData['purchaseToken']);
+          }
           userDoc = await _firestore.collection('users').doc(user.uid).get();
           userData = userDoc.data() as Map<String, dynamic>;
           role = userData['role'] ?? 'client';
@@ -138,16 +142,47 @@ class AppServices {
 
       return false;
     } catch (e) {
+      print('Error checking subscription status: $e');
       return false;
     }
   }
 
-  Future<void> _callSubscriptionCheckFunction(String userId, String productId, String purchaseToken) async {
+  Future<void> _checkStripeSubscription(String userId, String subscriptionId) async {
     try {
-      HttpsCallable callable = _functions.httpsCallable('checkAndUpdateSubscription');
-      await callable.call({'purchaseToken': purchaseToken, 'productId': productId});
+      final result = await _functions.httpsCallable('checkStripeSubscription').call({
+        'subscriptionId': subscriptionId,
+      });
+
+      if (result.data['active']) {
+        await _firestore.collection('users').doc(userId).update({
+          'subscriptionExpiryDate': result.data['expiryDate'],
+        });
+      } else {
+        await _updateUserToClient(userId);
+      }
     } catch (e) {
-      // Handle error if needed
+      print('Error checking Stripe subscription: $e');
+      await _updateUserToClient(userId);
+    }
+  }
+
+  Future<void> _checkGooglePlaySubscription(String userId, String productId, String purchaseToken) async {
+    try {
+      final result = await _functions.httpsCallable('checkGooglePlaySubscription').call({
+        'productId': productId,
+        'purchaseToken': purchaseToken,
+      });
+
+      if (result.data['valid']) {
+        await _firestore.collection('users').doc(userId).update({
+          'subscriptionExpiryDate': result.data['expiryDate'],
+        });
+      } else {
+        await _updateUserToClient(userId);
+      }
+    } catch (e) {
+      print('Error checking Google Play subscription: $e');
+      await _updateUserToClient(userId);
     }
   }
 
@@ -155,10 +190,14 @@ class AppServices {
     try {
       await _firestore.collection('users').doc(userId).update({
         'role': 'client',
-        'subscriptionExpiryDate': null
+        'subscriptionExpiryDate': null,
+        'subscriptionId': null,
+        'subscriptionPlatform': null,
+        'productId': null,
+        'purchaseToken': null,
       });
     } catch (e) {
-      // Handle error if needed
+      print('Error updating user to client: $e');
     }
   }
 }

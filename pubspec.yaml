@@ -58,6 +58,8 @@ dependencies:
   in_app_purchase_storekit: ^0.3.17+2
   uuid: ^4.4.2
   flutter_native_splash: ^2.4.1
+  flutter_stripe: ^11.1.0
+  flutter_stripe_web: ^6.1.0
 
 dev_dependencies:
   flutter_test:

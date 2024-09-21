@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'firebase_options.dart';
 import 'Main/app_router.dart';
 import 'Main/app_theme.dart';
@@ -11,13 +13,22 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   
-  await initializeNotifications();
-  await requestNotificationPermission();
+  // Inizializza Stripe solo se non è una piattaforma Web
+  if (!kIsWeb) {
+    Stripe.publishableKey = 'pk_live_51Lk8noGIoD20nGKnKB5igqB4Kpry8VQpYgWwm0t5dJWTCOX4pQXdg9N24dM1fSgZP3oVoYPTZj4SGYIp9aT05Mrr00a4XOvZg6';
+    await Stripe.instance.applySettings();
+  }
+
+  // Inizializza le notifiche solo se non è una piattaforma Web
+  if (!kIsWeb) {
+    await initializeNotifications();
+    await requestNotificationPermission();
+  }
+  
   await AppServices.instance.initialize();
 
   final bool isVersionSupported = await AppServices.instance.isAppVersionSupported();
   if (isVersionSupported) {
-    // Controlla lo stato dell'abbonamento all'avvio dell'app
     await AppServices.instance.checkSubscriptionStatus();
     runApp(const ProviderScope(child: MyApp()));
   } else {
@@ -58,21 +69,22 @@ class UnsupportedVersionApp extends StatelessWidget {
                   style: TextStyle(fontSize: 16, color: Colors.white),
                 ),
                 const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: () async {
-                    await AppServices.instance.checkForUpdate();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: const Color(0xFF2196F3),
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                if (!kIsWeb)
+                  ElevatedButton(
+                    onPressed: () async {
+                      await AppServices.instance.checkForUpdate();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF2196F3),
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    ),
+                    child: const Text(
+                      'Aggiorna',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
                   ),
-                  child: const Text(
-                    'Aggiorna',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ),
               ],
             ),
           ),
