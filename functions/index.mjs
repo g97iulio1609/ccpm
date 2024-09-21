@@ -54,32 +54,43 @@ export const deleteUser = onCall({ maxInstances: 1 }, async (request) => {
   }
 });
 
-// Funzione per creare una sessione di checkout con Stripe
+// Funzione per creare una sessione di checkout con Stripe utilizzando stripePriceId esistente
 export const createCheckoutSession = onCall(async (request) => {
+  console.log('createCheckoutSession called');
+  console.log('Request data:', request.data);
+  
   if (!request.auth) {
-    throw new Error('Must be authenticated to create a checkout session.');
+    console.error('createCheckoutSession: User not authenticated');
+    throw new functions.https.HttpsError('unauthenticated', 'Must be authenticated to create a checkout session.');
   }
 
   const { productId } = request.data;
   const userId = request.auth.uid;
 
+  console.log(`Authenticated user ID: ${userId}`);
+  console.log(`Product ID received: ${productId}`);
+
   try {
     const productDoc = await firestore.collection('products').doc(productId).get();
     if (!productDoc.exists) {
-      throw new Error('Product not found');
+      console.error(`Product not found: ${productId}`);
+      throw new functions.https.HttpsError('not-found', 'Product not found.');
     }
+
     const product = productDoc.data();
+    console.log(`Product data retrieved:`, product);
+
+    if (!product.stripePriceId) {
+      console.error(`Product does not have a Stripe Price ID: ${productId}`);
+      throw new functions.https.HttpsError('invalid-argument', 'Product does not have a Stripe Price ID.');
+    }
+
+    console.log(`Using Stripe Price ID: ${product.stripePriceId}`);
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [{
-        price_data: {
-          currency: product.currency,
-          product_data: {
-            name: product.name,
-          },
-          unit_amount: product.price * 100, // Converti in centesimi per Stripe
-        },
+        price: product.stripePriceId, // Utilizza l'ID del prezzo esistente
         quantity: 1,
       }],
       mode: 'subscription',
@@ -88,11 +99,14 @@ export const createCheckoutSession = onCall(async (request) => {
       client_reference_id: userId,
     });
 
-    console.log(`Checkout session created for user ${userId}: ${session.id}`);
-    return { sessionId: session.id };
+    console.log(`Checkout session created successfully: ${session.id}`);
+    console.log(`Checkout session URL: ${session.url}`);
+
+    // Restituisci sia l'ID della sessione che l'URL
+    return { sessionId: session.id, url: session.url };
   } catch (error) {
     console.error('Error creating checkout session:', error);
-    throw new Error('Unable to create checkout session');
+    throw new functions.https.HttpsError('internal', 'Unable to create checkout session');
   }
 });
 
