@@ -20,6 +20,7 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
   @override
   void initState() {
     super.initState();
+    debugPrint('InAppSubscriptionsPage: initState called');
     ref.read(usersServiceProvider);
     _inAppPurchaseService = InAppPurchaseService();
     _initialize();
@@ -27,32 +28,40 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
   }
 
   Future<void> _initialize() async {
+    debugPrint('Initializing store info...');
     try {
       await _inAppPurchaseService.initStoreInfo();
+      debugPrint('Store info initialized successfully');
     } catch (e) {
       debugPrint("Error during initialization: $e");
+      _showSnackBar('Errore durante l\'inizializzazione dello store: $e');
     }
     if (mounted) {
       setState(() {
         _loading = false;
       });
+      debugPrint('Loading state set to false');
     }
   }
 
   Future<void> _checkAdminStatus() async {
+    debugPrint('Checking admin status...');
     final userRole = ref.read(usersServiceProvider).getCurrentUserRole();
     setState(() {
       _isAdmin = userRole == 'admin';
     });
+    debugPrint('Admin status: $_isAdmin');
   }
 
   @override
   void dispose() {
+    debugPrint('Disposing InAppSubscriptionsPage');
     _promoCodeController.dispose();
     super.dispose();
   }
 
   Future<void> _redeemPromoCode() async {
+    debugPrint('Redeeming promo code: ${_promoCodeController.text}');
     setState(() {
       _promoCodeError = null;
     });
@@ -62,21 +71,23 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
         _showSnackBar('Promo code redeemed successfully!');
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _promoCodeError = e.toString();
-        });
-      }
+      debugPrint('Error redeeming promo code: $e');
+      setState(() {
+        _promoCodeError = e.toString();
+      });
+      _showSnackBar('Errore nel redeem del promo code: $e');
     }
   }
 
   void _showSnackBar(String message) {
+    debugPrint('Showing SnackBar: $message');
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
   }
 
   void _showPromoCodeDialog() {
+    debugPrint('Showing promo code dialog');
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -94,7 +105,10 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
           actions: [
             TextButton(
               child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-              onPressed: () => Navigator.of(dialogContext).pop(),
+              onPressed: () {
+                debugPrint('Cancel promo code dialog');
+                Navigator.of(dialogContext).pop();
+              },
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -102,6 +116,7 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
               ),
               child: const Text('Redeem'),
               onPressed: () {
+                debugPrint('Redeem button pressed in promo code dialog');
                 Navigator.of(dialogContext).pop();
                 _redeemPromoCode();
               },
@@ -142,17 +157,20 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
   }
 
   Future<void> _syncProducts() async {
+    debugPrint('Syncing products...');
     try {
       await _inAppPurchaseService.manualSyncProducts();
       _showSnackBar('Products synced successfully');
       await _initialize();
     } catch (e) {
+      debugPrint('Error syncing products: $e');
       _showSnackBar('Error syncing products: ${e.toString()}');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('Building InAppSubscriptionsPage');
     return Scaffold(
       appBar: AppBar(
         title: const Text('Subscriptions'),
@@ -165,7 +183,11 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
             ),
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: _initialize,
+            onPressed: () {
+              debugPrint('Refresh button pressed');
+              _initialize();
+            },
+            tooltip: 'Refresh',
           ),
         ],
       ),
@@ -206,7 +228,7 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
                             const SizedBox(height: 8),
                             Text(
                               productDetails.description,
-                              style: const TextStyle(fontSize: 14, color: Colors.white),
+                              style: const TextStyle(fontSize: 14, color: Colors.black54),
                             ),
                             const SizedBox(height: 16),
                             Row(
@@ -220,7 +242,10 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
                                   style: ElevatedButton.styleFrom(
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                   ),
-                                  onPressed: () => _inAppPurchaseService.makePurchase(productDetails.id),
+                                  onPressed: () {
+                                    debugPrint('Subscribe button pressed for productId: ${productDetails.id}');
+                                    _inAppPurchaseService.makePurchase(productDetails.id);
+                                  },
                                   child: const Text('Subscribe'),
                                 ),
                               ],

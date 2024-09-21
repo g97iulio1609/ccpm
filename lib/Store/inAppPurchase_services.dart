@@ -27,6 +27,7 @@ class InAppPurchaseService {
   Map<String, List<ProductDetails>> get productDetailsByProductId => _productDetailsByProductId;
 
   Future<void> initStoreInfo() async {
+    debugPrint('initStoreInfo called');
     if (isWeb) {
       await _initStripe();
     } else {
@@ -34,50 +35,52 @@ class InAppPurchaseService {
     }
   }
 
-Future<void> _initStripe() async {
-  debugPrint('Initializing Stripe...');
-  try {
-    debugPrint('Calling getStripeProducts Cloud Function...');
-    final result = await _functions.httpsCallable('getStripeProducts').call();
-    debugPrint('Cloud Function call successful. Raw result: ${result.data}');
+  Future<void> _initStripe() async {
+    debugPrint('Initializing Stripe...');
+    try {
+      debugPrint('Calling getStripeProducts Cloud Function...');
+      final result = await _functions.httpsCallable('getStripeProducts').call();
+      debugPrint('Cloud Function call successful. Raw result: ${result.data}');
 
-    if (result.data == null || !result.data.containsKey('products')) {
-      throw Exception('Invalid response format from getStripeProducts');
-    }
+      if (result.data == null || !result.data.containsKey('products')) {
+        throw Exception('Invalid response format from getStripeProducts');
+      }
 
-    final products = List<Map<String, dynamic>>.from(result.data['products']);
-    debugPrint('Number of products received: ${products.length}');
-    
-    _productDetails.clear(); // Clear existing products before adding new ones
-    for (var product in products) {
-      debugPrint('Processing product: ${product['id']}');
-      final productDetails = ProductDetails(
-        id: product['id'],
-        title: product['name'] ?? 'Unknown',
-        description: product['description'] ?? '',
-        price: ((product['price'] as double?) ?? 0 / 100).toStringAsFixed(2),
-        rawPrice: (product['price'] as double?) ?? 0 / 100,
-        currencyCode: product['currency'] ?? 'USD',
-      );
-      _productDetails.add(productDetails);
-      _addToProductDetailsByProductId(productDetails);
-      debugPrint('Added product: ${productDetails.id}');
+      final products = List<Map<String, dynamic>>.from(result.data['products']);
+      debugPrint('Number of products received: ${products.length}');
+
+      _productDetails.clear(); // Clear existing products before adding new ones
+      for (var product in products) {
+        debugPrint('Processing product: ${product['id']}');
+        final productDetails = ProductDetails(
+          id: product['id'],
+          title: product['name'] ?? 'Unknown',
+          description: product['description'] ?? '',
+          price: ((product['price'] as double?) ?? 0).toStringAsFixed(2),
+          rawPrice: (product['price'] as double?) ?? 0,
+          currencyCode: product['currency'] ?? 'USD',
+        );
+        _productDetails.add(productDetails);
+        _addToProductDetailsByProductId(productDetails);
+        debugPrint('Added product: ${productDetails.id}');
+      }
+      debugPrint('Stripe initialization completed successfully');
+    } catch (e) {
+      debugPrint('Error initializing Stripe: $e');
+      if (e is FirebaseFunctionsException) {
+        debugPrint('Firebase Functions Error Code: ${e.code}');
+        debugPrint('Firebase Functions Error Details: ${e.details}');
+        debugPrint('Firebase Functions Error Message: ${e.message}');
+      }
+      rethrow;
     }
-    debugPrint('Stripe initialization completed successfully');
-  } catch (e) {
-    debugPrint('Error initializing Stripe: $e');
-    if (e is FirebaseFunctionsException) {
-      debugPrint('Firebase Functions Error Code: ${e.code}');
-      debugPrint('Firebase Functions Error Details: ${e.details}');
-      debugPrint('Firebase Functions Error Message: ${e.message}');
-    }
-    rethrow;
   }
-}
 
   Future<void> _initGooglePlay() async {
+    debugPrint('Initializing Google Play...');
     try {
       final bool available = await _inAppPurchase.isAvailable();
+      debugPrint('Google Play Store available: $available');
       if (!available) {
         throw Exception("Store not available");
       }
@@ -85,10 +88,15 @@ Future<void> _initStripe() async {
       const Set<String> kIds = {'alphanessoneplussubscription', 'coachingalphaness'};
       final ProductDetailsResponse response = await _inAppPurchase.queryProductDetails(kIds);
 
+      if (response.notFoundIDs.isNotEmpty) {
+        debugPrint('Products not found: ${response.notFoundIDs}');
+      }
+
       _productDetails.addAll(response.productDetails);
       for (var product in response.productDetails) {
         _addToProductDetailsByProductId(product);
       }
+      debugPrint('Google Play initialization completed successfully');
     } catch (e) {
       debugPrint('Error initializing Google Play: $e');
     }
@@ -103,6 +111,7 @@ Future<void> _initStripe() async {
   }
 
   Future<void> makePurchase(String productId) async {
+    debugPrint('makePurchase called for productId: $productId');
     if (isWeb) {
       await _makeStripePurchase(productId);
     } else {
@@ -111,21 +120,37 @@ Future<void> _initStripe() async {
   }
 
   Future<void> _makeStripePurchase(String productId) async {
+    debugPrint('Making Stripe purchase for productId: $productId');
     try {
       final user = _auth.currentUser;
-      if (user == null) throw Exception('User not authenticated');
+      if (user == null) {
+        debugPrint('User not authenticated');
+        throw Exception('User not authenticated');
+      }
 
+      debugPrint('Calling createCheckoutSession Cloud Function...');
       final result = await _functions.httpsCallable('createCheckoutSession').call({
         'productId': productId,
       });
 
-      final sessionId = result.data['sessionId'];
+      debugPrint('Cloud Function call successful. Result: ${result.data}');
+
+      if (result.data == null || !result.data.containsKey('url')) {
+        debugPrint('Invalid response format from createCheckoutSession.');
+        throw Exception('Invalid response format from createCheckoutSession.');
+      }
+
+      final sessionUrl = result.data['url'];
+      debugPrint('Received sessionUrl: $sessionUrl');
 
       // Redirect to Stripe Checkout
-      final redirectUrl = 'https://checkout.stripe.com/pay/$sessionId';
+      final redirectUrl = sessionUrl;
+      debugPrint('Redirecting to: $redirectUrl');
       if (await canLaunch(redirectUrl)) {
         await launch(redirectUrl);
+        debugPrint('Stripe Checkout launched successfully');
       } else {
+        debugPrint('Could not launch Stripe Checkout');
         throw Exception('Could not launch Stripe Checkout');
       }
     } catch (e) {
@@ -135,6 +160,7 @@ Future<void> _initStripe() async {
   }
 
   Future<void> _makeGooglePlayPurchase(String productId) async {
+    debugPrint('Making Google Play purchase for productId: $productId');
     try {
       final ProductDetails? productDetails = _productDetails.firstWhere(
         (element) => element.id == productId,
@@ -142,11 +168,14 @@ Future<void> _initStripe() async {
       );
 
       if (productDetails == null) {
+        debugPrint('Product details are null for productId: $productId');
         throw Exception('Product details are null');
       }
 
       final PurchaseParam purchaseParam = PurchaseParam(productDetails: productDetails);
+      debugPrint('Starting Google Play purchase for productId: $productId');
       await _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
+      debugPrint('Google Play purchase initiated successfully');
     } catch (e) {
       debugPrint('Error making Google Play purchase: $e');
       rethrow;
@@ -154,14 +183,18 @@ Future<void> _initStripe() async {
   }
 
   Future<void> redeemPromoCode(String promoCode) async {
+    debugPrint('Redeeming promo code: $promoCode');
     try {
       final result = await _functions.httpsCallable('redeemPromoCode').call({
         'promoCode': promoCode,
       });
 
+      debugPrint('Promo code redemption result: ${result.data}');
+
       if (result.data['success']) {
         debugPrint('Promo code redeemed successfully');
       } else {
+        debugPrint('Promo code redemption failed: ${result.data['message']}');
         throw Exception(result.data['message']);
       }
     } catch (e) {
@@ -171,7 +204,9 @@ Future<void> _initStripe() async {
   }
 
   Stream<List<ProductDetails>> getProducts() {
+    debugPrint('getProducts called');
     return _firestore.collection('products').snapshots().map((snapshot) {
+      debugPrint('Fetched ${snapshot.docs.length} products from Firestore');
       return snapshot.docs.map((doc) {
         final data = doc.data();
         return ProductDetails(
@@ -187,29 +222,45 @@ Future<void> _initStripe() async {
   }
 
   Future<void> handlePurchaseUpdates(List<PurchaseDetails> purchaseDetailsList) async {
+    debugPrint('handlePurchaseUpdates called with ${purchaseDetailsList.length} purchases');
     for (var purchaseDetails in purchaseDetailsList) {
+      debugPrint('Processing purchase: ${purchaseDetails.productID}, status: ${purchaseDetails.status}');
       if (purchaseDetails.status == PurchaseStatus.purchased) {
         await _verifyAndUpdateSubscription(purchaseDetails);
       }
       if (purchaseDetails.pendingCompletePurchase) {
         await _inAppPurchase.completePurchase(purchaseDetails);
+        debugPrint('Completed purchase: ${purchaseDetails.productID}');
       }
     }
   }
 
   Future<void> _verifyAndUpdateSubscription(PurchaseDetails purchaseDetails) async {
+    debugPrint('Verifying and updating subscription for productId: ${purchaseDetails.productID}');
     try {
       final user = _auth.currentUser;
-      if (user == null) throw Exception('User not authenticated');
+      if (user == null) {
+        debugPrint('User not authenticated');
+        throw Exception('User not authenticated');
+      }
 
       final result = await _functions.httpsCallable('verifyPurchase').call({
         'productId': purchaseDetails.productID,
         'purchaseToken': purchaseDetails.verificationData.serverVerificationData,
       });
 
+      debugPrint('Purchase verification result: ${result.data}');
+
       if (result.data['valid']) {
-        await _updateUserSubscription(user.uid, purchaseDetails.productID, result.data['expiryDate']);
+        debugPrint('Purchase is valid. Updating user subscription.');
+        await _updateUserSubscription(
+          user.uid,
+          purchaseDetails.productID,
+          DateTime.parse(result.data['expiryDate']),
+        );
+        debugPrint('User subscription updated successfully.');
       } else {
+        debugPrint('Invalid purchase');
         throw Exception('Invalid purchase');
       }
     } catch (e) {
@@ -219,6 +270,7 @@ Future<void> _initStripe() async {
   }
 
   Future<void> _updateUserSubscription(String userId, String productId, DateTime expiryDate) async {
+    debugPrint('Updating subscription for userId: $userId, productId: $productId, expiryDate: $expiryDate');
     try {
       String? newRole = productIdToRole[productId];
       if (newRole != null) {
@@ -230,6 +282,10 @@ Future<void> _initStripe() async {
           'subscriptionExpiryDate': Timestamp.fromDate(expiryDate),
           'subscriptionStatus': 'active',
         });
+        debugPrint('User subscription updated in Firestore');
+      } else {
+        debugPrint('No role mapping found for productId: $productId');
+        throw Exception('No role mapping found for productId: $productId');
       }
     } catch (e) {
       debugPrint('Error updating user subscription: $e');
@@ -238,17 +294,25 @@ Future<void> _initStripe() async {
   }
 
   Future<void> cancelSubscription() async {
+    debugPrint('Cancelling subscription');
     try {
       final user = _auth.currentUser;
-      if (user == null) throw Exception('User not authenticated');
+      if (user == null) {
+        debugPrint('User not authenticated');
+        throw Exception('User not authenticated');
+      }
 
       final result = await _functions.httpsCallable('cancelSubscription').call();
+
+      debugPrint('Cancel subscription result: ${result.data}');
 
       if (result.data['success']) {
         await _firestore.collection('users').doc(user.uid).update({
           'subscriptionStatus': 'cancelled',
         });
+        debugPrint('Subscription cancelled successfully');
       } else {
+        debugPrint('Failed to cancel subscription: ${result.data['message']}');
         throw Exception('Failed to cancel subscription');
       }
     } catch (e) {
@@ -258,14 +322,19 @@ Future<void> _initStripe() async {
   }
 
   Future<SubscriptionStatus> getSubscriptionStatus() async {
+    debugPrint('Getting subscription status');
     try {
       final user = _auth.currentUser;
-      if (user == null) throw Exception('User not authenticated');
+      if (user == null) {
+        debugPrint('User not authenticated');
+        throw Exception('User not authenticated');
+      }
 
       final doc = await _firestore.collection('users').doc(user.uid).get();
       final data = doc.data();
 
       if (data == null || !data.containsKey('subscriptionStatus')) {
+        debugPrint('No subscription status found');
         return SubscriptionStatus.inactive;
       }
 
@@ -286,23 +355,32 @@ Future<void> _initStripe() async {
   }
 
   Future<void> manualSyncProducts() async {
+    debugPrint('manualSyncProducts called');
     try {
       final user = _auth.currentUser;
-      if (user == null) throw Exception('User not authenticated');
+      if (user == null) {
+        debugPrint('User not authenticated');
+        throw Exception('User not authenticated');
+      }
 
       // Verifica che l'utente sia un amministratore
       final userDoc = await _firestore.collection('users').doc(user.uid).get();
       if (userDoc.data()?['role'] != 'admin') {
+        debugPrint('Unauthorized access: User is not admin');
         throw Exception('Unauthorized access');
       }
 
+      debugPrint('Calling manualSyncStripeProducts Cloud Function...');
       final result = await _functions.httpsCallable('manualSyncStripeProducts').call();
 
+      debugPrint('manualSyncStripeProducts result: ${result.data}');
+
       if (result.data['success']) {
-        // Aggiorna i prodotti locali
+        debugPrint('Products synced successfully');
         await initStoreInfo();
-        debugPrint('Products synced and updated successfully');
+        debugPrint('Products initialized successfully after sync');
       } else {
+        debugPrint('Failed to sync products: ${result.data['message']}');
         throw Exception(result.data['message']);
       }
     } catch (e) {
