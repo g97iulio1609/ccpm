@@ -1,7 +1,8 @@
-import 'package:alphanessone/providers/providers.dart';
+
+import 'package:alphanessone/Store/inAppPurchase_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'inAppPurchase_services.dart';
+import 'package:alphanessone/providers/providers.dart';
 
 class InAppSubscriptionsPage extends ConsumerStatefulWidget {
   const InAppSubscriptionsPage({super.key});
@@ -15,36 +16,53 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
   bool _loading = true;
   final TextEditingController _promoCodeController = TextEditingController();
   String? _promoCodeError;
+  bool _isAdmin = false;
 
   @override
   void initState() {
     super.initState();
-    // Inizializza InAppPurchaseService con UsersService
-    final usersService = ref.read(usersServiceProvider);
-    _inAppPurchaseService = InAppPurchaseService(usersService);
+    debugPrint('InAppSubscriptionsPage: initState called');
+    ref.read(usersServiceProvider);
+    _inAppPurchaseService = InAppPurchaseService();
     _initialize();
+    _checkAdminStatus();
   }
 
   Future<void> _initialize() async {
+    debugPrint('Initializing store info...');
     try {
-      debugPrint("Initializing store info...");
       await _inAppPurchaseService.initStoreInfo();
+      debugPrint('Store info initialized successfully');
     } catch (e) {
       debugPrint("Error during initialization: $e");
+      _showSnackBar('Errore durante l\'inizializzazione dello store: $e');
     }
     if (mounted) {
       setState(() {
         _loading = false;
       });
+      debugPrint('Loading state set to false');
     }
+  }
+
+  Future<void> _checkAdminStatus() async {
+    debugPrint('Checking admin status...');
+    final userRole = ref.read(usersServiceProvider).getCurrentUserRole();
+    setState(() {
+      _isAdmin = userRole == 'admin';
+    });
+    debugPrint('Admin status: $_isAdmin');
   }
 
   @override
   void dispose() {
+    debugPrint('Disposing InAppSubscriptionsPage');
     _promoCodeController.dispose();
     super.dispose();
   }
+
   Future<void> _redeemPromoCode() async {
+    debugPrint('Redeeming promo code: ${_promoCodeController.text}');
     setState(() {
       _promoCodeError = null;
     });
@@ -54,21 +72,23 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
         _showSnackBar('Promo code redeemed successfully!');
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _promoCodeError = e.toString();
-        });
-      }
+      debugPrint('Error redeeming promo code: $e');
+      setState(() {
+        _promoCodeError = e.toString();
+      });
+      _showSnackBar('Errore nel redeem del promo code: $e');
     }
   }
 
   void _showSnackBar(String message) {
+    debugPrint('Showing SnackBar: $message');
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
   }
 
   void _showPromoCodeDialog() {
+    debugPrint('Showing promo code dialog');
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -86,7 +106,10 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
           actions: [
             TextButton(
               child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-              onPressed: () => Navigator.of(dialogContext).pop(),
+              onPressed: () {
+                debugPrint('Cancel promo code dialog');
+                Navigator.of(dialogContext).pop();
+              },
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -94,6 +117,7 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
               ),
               child: const Text('Redeem'),
               onPressed: () {
+                debugPrint('Redeem button pressed in promo code dialog');
                 Navigator.of(dialogContext).pop();
                 _redeemPromoCode();
               },
@@ -113,7 +137,7 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
           return 'AlphanessOne+ Quarterly Plan';
         case 2:
           return 'AlphanessOne+ Semi-Annual Plan';
-           case 3:
+        case 3:
           return 'AlphanessOne+ Yearly Plan';
         default:
           return 'Subscription Plan';
@@ -124,7 +148,7 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
           return 'Coaching 1:1 Monthly Plan';
         case 1:
           return 'Coaching 1:1 Quarterly Plan';
-          case 2:
+        case 2:
           return 'Coaching 1:1 Semi-Annual Plan';
         default:
           return 'Subscription Plan';
@@ -133,9 +157,41 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
     return 'Subscription Plan';
   }
 
+  Future<void> _syncProducts() async {
+    debugPrint('Syncing products...');
+    try {
+      await _inAppPurchaseService.manualSyncProducts();
+      _showSnackBar('Products synced successfully');
+      await _initialize();
+    } catch (e) {
+      debugPrint('Error syncing products: $e');
+      _showSnackBar('Error syncing products: ${e.toString()}');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    debugPrint('Building InAppSubscriptionsPage');
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Subscriptions'),
+        actions: [
+          if (_isAdmin)
+            IconButton(
+              icon: const Icon(Icons.sync),
+              onPressed: _syncProducts,
+              tooltip: 'Sync Products',
+            ),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              debugPrint('Refresh button pressed');
+              _initialize();
+            },
+            tooltip: 'Refresh',
+          ),
+        ],
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -156,7 +212,6 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
                   return productDetailsList.asMap().entries.map((mapEntry) {
                     final index = mapEntry.key;
                     final productDetails = mapEntry.value;
-                    debugPrint("Displaying product: ${productDetails.id}");
                     String planTitle = _getPlanTitle(index, productDetails.id);
                     return Card(
                       elevation: 4,
@@ -174,21 +229,24 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
                             const SizedBox(height: 8),
                             Text(
                               productDetails.description,
-                              style: const TextStyle(fontSize: 14, color: Colors.white),
+                              style: const TextStyle(fontSize: 14, color: Colors.black54),
                             ),
                             const SizedBox(height: 16),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  productDetails.price,
+                                  '${productDetails.price} ${productDetails.currencyCode}',
                                   style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
                                 ),
                                 ElevatedButton(
                                   style: ElevatedButton.styleFrom(
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                   ),
-                                  onPressed: () => _inAppPurchaseService.makePurchase(productDetails),
+                                  onPressed: () {
+                                    debugPrint('Subscribe button pressed for productId: ${productDetails.id}');
+                                    _inAppPurchaseService.makePurchase(productDetails.id);
+                                  },
                                   child: const Text('Subscribe'),
                                 ),
                               ],

@@ -34,23 +34,24 @@ class UserModel {
 
   // Factory method for creating a UserModel from Firestore data
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
-    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-    return UserModel(
-      id: doc.id,
-      name: data['name'] ?? '',
-      displayName: data['displayName'] ?? '',
-      email: data['email'] ?? '',
-      role: data['role'] ?? 'client',
-      photoURL: data['photoURL'] ?? '',
-      gender: data['gender'] ?? 0, // Added gender field with default value
-      uniqueNumber: data['uniqueNumber'],
-      subscriptionExpiryDate: (data['subscriptionExpiryDate'] as Timestamp?)?.toDate(),
-      productId: data['productId'],
-      purchaseToken: data['purchaseToken'],
-      birthdate: (data['birthdate'] as Timestamp?)?.toDate(), // Fetch birthdate from Firestore
-      height: (data['height'] as num?)?.toDouble(), // Fetch height from Firestore
-    );
-  }
+  Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+  return UserModel(
+    id: doc.id,
+    name: data['name'] ?? '',
+    displayName: data['displayName'] ?? '',
+    email: data['email'] ?? '',
+    role: data['role'] ?? 'client',
+    photoURL: data['photoURL'] ?? '',
+    gender: data['gender'] ?? 0,  // Assicurati che sia numerico
+    uniqueNumber: data['uniqueNumber'],
+    subscriptionExpiryDate: (data['subscriptionExpiryDate'] as Timestamp?)?.toDate(),
+    productId: data['productId'],
+    purchaseToken: data['purchaseToken'],
+    birthdate: (data['birthdate'] as Timestamp?)?.toDate(),
+    height: (data['height'] as num?)?.toDouble(),
+  );
+}
+
 
   // Map method for converting UserModel to Firestore format
   Map<String, dynamic> toMap() {
