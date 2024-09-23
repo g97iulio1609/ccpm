@@ -28,30 +28,44 @@ class AuthService {
     return userCredential;
   }
 
-  Future<UserCredential> signUpWithEmailAndPassword(String email,
-      String password, String userName, String userGender) async {
-    final userCredential = await auth.createUserWithEmailAndPassword(
-        email: email, password: password);
-    final user = userCredential.user;
-    if (user != null) {
-      await firestore.collection('users').doc(user.uid).set({
-        'address': '',
-        'currentProgram': '',
-        'displayName': userName,
-        'email': email,
-        'gender': userGender,
-        'id': user.uid,
-        'name': userName,
-        'phoneNumber': null,
-        'photoURL': user.photoURL ?? '',
-        'role': 'client',
-        'socialLinks': {'facebook': '', 'twitter': ''},
-      });
-      await user.updateDisplayName(userName);
-      await usersService.setUserRole(user.uid);
-    }
-    return userCredential;
+Future<UserCredential> signUpWithEmailAndPassword(String email,
+    String password, String userName, String userGender) async {
+
+  // Convertire il genere in valore numerico
+  int genderValue;
+  switch (userGender.toLowerCase()) {
+    case 'male':
+      genderValue = 1;
+      break;
+    case 'female':
+      genderValue = 2;
+      break;
+    default:
+      genderValue = 0;
   }
+
+  final userCredential = await auth.createUserWithEmailAndPassword(
+      email: email, password: password);
+  final user = userCredential.user;
+  if (user != null) {
+    await firestore.collection('users').doc(user.uid).set({
+      'address': '',
+      'currentProgram': '',
+      'displayName': userName,
+      'email': email,
+      'gender': genderValue,  // Salvare il valore numerico per il genere
+      'id': user.uid,
+      'name': userName,
+      'phoneNumber': null,
+      'photoURL': user.photoURL ?? '',
+      'role': 'client',
+      'socialLinks': {'facebook': '', 'twitter': ''},
+    });
+    await user.updateDisplayName(userName);
+    await usersService.setUserRole(user.uid);
+  }
+  return userCredential;
+}
 
 Future<UserCredential?> signInWithGoogle() async {
   try {

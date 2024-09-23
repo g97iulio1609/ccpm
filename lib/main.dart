@@ -1,3 +1,5 @@
+
+import 'package:alphanessone/Main/app_services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -7,7 +9,6 @@ import 'firebase_options.dart';
 import 'Main/app_router.dart';
 import 'Main/app_theme.dart';
 import 'Main/app_notifications.dart';
-import 'Main/app_services.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,11 +26,12 @@ void main() async {
     await requestNotificationPermission();
   }
   
-  await AppServices.instance.initialize();
+  await appServices.initialize();
 
-  final bool isVersionSupported = await AppServices.instance.isAppVersionSupported();
+  final bool isVersionSupported = await appServices.isAppVersionSupported();
   if (isVersionSupported) {
-    await AppServices.instance.checkSubscriptionStatus();
+    final bool hasActiveSubscription = await appServices.checkSubscriptionStatus();
+    // Puoi utilizzare hasActiveSubscription se necessario
     runApp(const ProviderScope(child: MyApp()));
   } else {
     runApp(const UnsupportedVersionApp());
@@ -72,7 +74,7 @@ class UnsupportedVersionApp extends StatelessWidget {
                 if (!kIsWeb)
                   ElevatedButton(
                     onPressed: () async {
-                      await AppServices.instance.checkForUpdate();
+                      await appServices.checkForUpdate();
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,

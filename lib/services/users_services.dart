@@ -251,36 +251,51 @@ class UsersService {
     await _firestore.collection('users').doc(userId).update(data);
   }
 
-  Future<void> createUser({
-    required String name,
-    required String email,
-    required String password,
-    required String role,
-  }) async {
-    try {
-      UserCredential userCredential = await _authForUserCreation!
-          .createUserWithEmailAndPassword(email: email, password: password);
+ Future<void> createUser({
+  required String name,
+  required String email,
+  required String password,
+  required String role,
+   String? gender,  // Cambiato da `String` a `int`
+}) async {
+  try {
+    UserCredential userCredential = await _authForUserCreation!
+        .createUserWithEmailAndPassword(email: email, password: password);
 
-      User? newUser = userCredential.user;
-      if (newUser != null) {
-        String? uniqueNumber;
-        if (role == 'coach') {
-          uniqueNumber = await _generateUniqueNumber();
-        }
-
-        await _firestore.collection('users').doc(newUser.uid).set({
-          'name': name,
-          'email': email,
-          'role': role,
-          'photoURL': '',
-          'uniqueNumber': uniqueNumber,
-        });
-        await _authForUserCreation!.signOut();
+    User? newUser = userCredential.user;
+    if (newUser != null) {
+      String? uniqueNumber;
+      if (role == 'coach') {
+        uniqueNumber = await _generateUniqueNumber();
       }
-    } catch (e) {
-      throw Exception(e.toString());
+
+      // Convertire il gender da stringa a intero
+      int genderValue;
+      switch (gender!.toLowerCase()) {
+        case 'male':
+          genderValue = 1;
+          break;
+        case 'female':
+          genderValue = 2;
+          break;
+        default:
+          genderValue = 0;
+      }
+
+      await _firestore.collection('users').doc(newUser.uid).set({
+        'name': name,
+        'email': email,
+        'role': role,
+        'photoURL': '',
+        'gender': genderValue,  // Salva il genere come un intero
+        'uniqueNumber': uniqueNumber,
+      });
+      await _authForUserCreation!.signOut();
     }
+  } catch (e) {
+    throw Exception(e.toString());
   }
+}
 
   Future<String> _generateUniqueNumber() async {
     String uniqueNumber;
