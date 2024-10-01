@@ -18,6 +18,7 @@ import 'package:alphanessone/Viewer/UI/exercise_details.dart';
 import 'package:alphanessone/nutrition/models/diet_plan_model.dart';
 import 'package:alphanessone/nutrition/services/diet_plan_services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:alphanessone/Store/inAppPurchase_services.dart'; // Import aggiunto
 
 class CustomAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
   const CustomAppBar({
@@ -41,10 +42,15 @@ class CustomAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget
 }
 
 class _CustomAppBarState extends ConsumerState<CustomAppBar> {
+  late final InAppPurchaseService _inAppPurchaseService;
+  bool _syncing = false; // Stato di caricamento per sincronizzazione
+
   @override
   void initState() {
     super.initState();
     initializeDateFormatting('it_IT', null);
+    _inAppPurchaseService = InAppPurchaseService();
+    // Inizializzazione se necessario
   }
 
   String _getTitleForRoute(String currentPath) {
@@ -285,11 +291,54 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
     );
   }
 
+  Future<void> _syncProducts() async {
+    setState(() {
+      _syncing = true;
+    });
+    try {
+      await _inAppPurchaseService.manualSyncProducts();
+      _showSnackBar('Products synced successfully');
+    } catch (e) {
+      _showSnackBar('Errore durante la sincronizzazione dei prodotti: ${e.toString()}');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _syncing = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _initialize() async {
+    setState(() {
+      _syncing = true;
+    });
+    try {
+      await _inAppPurchaseService.initStoreInfo();
+      _showSnackBar('Store info initialized successfully');
+    } catch (e) {
+      _showSnackBar('Errore durante l\'inizializzazione dello store: ${e.toString()}');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _syncing = false;
+        });
+      }
+    }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentRoute = GoRouterState.of(context).uri.toString();
     final isBackButtonVisible = currentRoute.split('/').length > 2;
     final selectedDate = ref.watch(selectedDateProvider);
+    final isAdmin = widget.userRole == 'admin';
 
     return AppBar(
       centerTitle: true,
@@ -299,7 +348,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
       backgroundColor: Theme.of(context).colorScheme.surface,
       foregroundColor: Theme.of(context).colorScheme.onSurface,
       leading: isBackButtonVisible ? _buildLeadingButtons(currentRoute) : null,
-      actions: _buildActions(currentRoute),
+      actions: _buildActions(currentRoute, isAdmin),
       elevation: 0,
       scrolledUnderElevation: 0,
     );
@@ -368,9 +417,10 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
     );
   }
 
-  List<Widget> _buildActions(String currentRoute) {
+  List<Widget> _buildActions(String currentRoute, bool isAdmin) {
     final List<Widget> actions = [];
 
+    // Azioni esistenti
     if (widget.userRole == 'admin' && currentRoute == '/users_dashboard') {
       actions.add(
         IconButton(
@@ -448,6 +498,44 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
           itemBuilder: (context) => [
             const PopupMenuItem(value: 'apply_template', child: Text('Apply Template')),
           ],
+        ),
+      );
+    }
+
+    // Azioni aggiunte per InAppPurchasePage
+    if (currentRoute == '/subscriptions') {
+      if (isAdmin) {
+        actions.add(
+          IconButton(
+            icon: _syncing
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.sync),
+            onPressed: _syncing ? null : _syncProducts,
+            tooltip: 'Sync Products',
+          ),
+        );
+      }
+      actions.add(
+        IconButton(
+          icon: _syncing
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Icon(Icons.refresh),
+          onPressed: _syncing ? null : _initialize,
+          tooltip: 'Refresh',
         ),
       );
     }
