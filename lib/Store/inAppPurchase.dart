@@ -173,25 +173,7 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
   Widget build(BuildContext context) {
     debugPrint('Building InAppSubscriptionsPage');
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Subscriptions'),
-        actions: [
-          if (_isAdmin)
-            IconButton(
-              icon: const Icon(Icons.sync),
-              onPressed: _syncProducts,
-              tooltip: 'Sync Products',
-            ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              debugPrint('Refresh button pressed');
-              _initialize();
-            },
-            tooltip: 'Refresh',
-          ),
-        ],
-      ),
+     
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(

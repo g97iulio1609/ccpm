@@ -1,3 +1,4 @@
+// lib/Store/inAppPurchase_services.dart
 import 'package:alphanessone/Store/inAppPurchase_model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -6,7 +7,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:url_launcher/url_launcher.dart'; // Mantieni questo import
+import 'url_redirect.dart'; // Importa il file di redirect
 
 class InAppPurchaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -23,7 +25,7 @@ class InAppPurchaseService {
     'coachingalphaness': 'coach',
   };
 
-  Map<String, List<ProductDetails>> _productDetailsByProductId = {};
+  final Map<String, List<ProductDetails>> _productDetailsByProductId = {};
   Map<String, List<ProductDetails>> get productDetailsByProductId => _productDetailsByProductId;
 
   Future<void> initStoreInfo() async {
@@ -140,21 +142,18 @@ class InAppPurchaseService {
         throw Exception('Invalid response format from createCheckoutSession.');
       }
 
-      final sessionUrl = result.data['url'];
+      final sessionUrl = result.data['url'] as String;
       debugPrint('Received sessionUrl: $sessionUrl');
 
-      // Redirect to Stripe Checkout
-      final redirectUrl = sessionUrl;
+      final redirectUrl = Uri.parse(sessionUrl);
       debugPrint('Redirecting to: $redirectUrl');
-      if (await canLaunch(redirectUrl)) {
-        await launch(redirectUrl);
-        debugPrint('Stripe Checkout launched successfully');
-      } else {
-        debugPrint('Could not launch Stripe Checkout');
-        throw Exception('Could not launch Stripe Checkout');
-      }
+
+      // Utilizza il metodo di redirect condizionato
+      await redirectToUrl(redirectUrl);
+      debugPrint('Stripe Checkout launched successfully');
     } catch (e) {
       debugPrint('Error making Stripe purchase: $e');
+      _showSnackBar('Errore durante l\'acquisto: $e');
       rethrow;
     }
   }
@@ -162,7 +161,7 @@ class InAppPurchaseService {
   Future<void> _makeGooglePlayPurchase(String productId) async {
     debugPrint('Making Google Play purchase for productId: $productId');
     try {
-      final ProductDetails? productDetails = _productDetails.firstWhere(
+      final ProductDetails productDetails = _productDetails.firstWhere(
         (element) => element.id == productId,
         orElse: () => throw Exception('Product not found'),
       );
@@ -391,6 +390,12 @@ class InAppPurchaseService {
 
   List<ProductDetails> get productDetails => _productDetails;
   List<Purchase> get purchases => _purchases;
+
+  void _showSnackBar(String message) {
+    // Implementa la logica per mostrare uno SnackBar se necessario
+    debugPrint('SnackBar message: $message');
+    // Potresti voler implementare un modo per mostrare SnackBar da qui, ad esempio tramite un callback
+  }
 }
 
 enum SubscriptionStatus {
