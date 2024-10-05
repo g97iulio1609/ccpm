@@ -1,3 +1,6 @@
+// lib/Store/app_services_web.dart
+
+import 'package:alphanessone/utils/debug_logger.dart';
 
 import 'app_services_stub.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
@@ -25,7 +28,7 @@ class AppServicesWeb implements AppServices {
       ));
       await _fetchRemoteConfig();
     } catch (e) {
-      print('Error initializing AppServicesWeb: $e');
+      debugLog('Error initializing AppServicesWeb: $e');
     }
   }
 
@@ -34,7 +37,7 @@ class AppServicesWeb implements AppServices {
       await _remoteConfig.fetchAndActivate();
       _minimumVersion = _remoteConfig.getString('minimum_app_version');
     } catch (e) {
-      print('Error fetching remote config: $e');
+      debugLog('Error fetching remote config: $e');
     }
   }
 
@@ -50,7 +53,7 @@ class AppServicesWeb implements AppServices {
 
       return _compareVersions(currentVersion, _minimumVersion!);
     } catch (e) {
-      print('Error checking app version: $e');
+      debugLog('Error checking app version: $e');
       return true; 
     }
   }
@@ -75,7 +78,7 @@ class AppServicesWeb implements AppServices {
   @override
   Future<void> checkForUpdate() async {
     // Le funzionalità di aggiornamento in-app non sono supportate sul web.
-    print('checkForUpdate non è supportato su piattaforma Web.');
+    debugLog('checkForUpdate non è supportato su piattaforma Web.');
   }
 
   @override
@@ -105,7 +108,7 @@ class AppServicesWeb implements AppServices {
             await _checkStripeSubscription(user.uid, userData['subscriptionId']);
           } else {
             // Google Play subscriptions non sono supportate sul web.
-            print('checkGooglePlaySubscription non è supportato su piattaforma Web.');
+            debugLog('checkGooglePlaySubscription non è supportato su piattaforma Web.');
             await _updateUserToClient(user.uid);
           }
           userDoc = await _firestore.collection('users').doc(user.uid).get();
@@ -119,7 +122,7 @@ class AppServicesWeb implements AppServices {
 
       return false;
     } catch (e) {
-      print('Error checking subscription status: $e');
+      debugLog('Error checking subscription status: $e');
       return false;
     }
   }
@@ -138,7 +141,7 @@ class AppServicesWeb implements AppServices {
         await _updateUserToClient(userId);
       }
     } catch (e) {
-      print('Error checking Stripe subscription: $e');
+      debugLog('Error checking Stripe subscription: $e');
       await _updateUserToClient(userId);
     }
   }
@@ -154,7 +157,7 @@ class AppServicesWeb implements AppServices {
         'purchaseToken': null,
       });
     } catch (e) {
-      print('Error updating user to client: $e');
+      debugLog('Error updating user to client: $e');
     }
   }
 }
