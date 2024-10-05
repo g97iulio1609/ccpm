@@ -1,5 +1,7 @@
 // lib/services/app_services_mobile.dart
 
+import 'package:alphanessone/utils/debug_logger.dart';
+
 import 'app_services_stub.dart';
 import 'dart:io';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
@@ -28,7 +30,7 @@ class AppServicesMobile implements AppServices {
       ));
       await _fetchRemoteConfig();
     } catch (e) {
-      print('Error initializing AppServicesMobile: $e');
+      debugLog('Error initializing AppServicesMobile: $e');
     }
   }
 
@@ -37,7 +39,7 @@ class AppServicesMobile implements AppServices {
       await _remoteConfig.fetchAndActivate();
       _minimumVersion = _remoteConfig.getString('minimum_app_version');
     } catch (e) {
-      print('Error fetching remote config: $e');
+      debugLog('Error fetching remote config: $e');
     }
   }
 
@@ -53,7 +55,7 @@ class AppServicesMobile implements AppServices {
 
       return _compareVersions(currentVersion, _minimumVersion!);
     } catch (e) {
-      print('Error checking app version: $e');
+      debugLog('Error checking app version: $e');
       return true; 
     }
   }
@@ -91,7 +93,7 @@ class AppServicesMobile implements AppServices {
         await _performUpdate();
       }
     } catch (e) {
-      print('Error checking for update: $e');
+      debugLog('Error checking for update: $e');
     }
   }
 
@@ -106,7 +108,7 @@ class AppServicesMobile implements AppServices {
         }
       }
     } catch (e) {
-      print('Error performing update: $e');
+      debugLog('Error performing update: $e');
     }
   }
 
@@ -149,7 +151,7 @@ class AppServicesMobile implements AppServices {
 
       return false;
     } catch (e) {
-      print('Error checking subscription status: $e');
+      debugLog('Error checking subscription status: $e');
       return false;
     }
   }
@@ -168,7 +170,7 @@ class AppServicesMobile implements AppServices {
         await _updateUserToClient(userId);
       }
     } catch (e) {
-      print('Error checking Stripe subscription: $e');
+      debugLog('Error checking Stripe subscription: $e');
       await _updateUserToClient(userId);
     }
   }
@@ -188,7 +190,7 @@ class AppServicesMobile implements AppServices {
         await _updateUserToClient(userId);
       }
     } catch (e) {
-      print('Error checking Google Play subscription: $e');
+      debugLog('Error checking Google Play subscription: $e');
       await _updateUserToClient(userId);
     }
   }
@@ -204,7 +206,7 @@ class AppServicesMobile implements AppServices {
         'purchaseToken': null,
       });
     } catch (e) {
-      print('Error updating user to client: $e');
+      debugLog('Error updating user to client: $e');
     }
   }
 }
