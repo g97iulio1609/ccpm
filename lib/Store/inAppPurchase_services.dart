@@ -7,8 +7,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
-// Mantieni questo import
-import 'url_redirect.dart'; // Importa il file di redirect
+import 'url_redirect.dart'; // Assicurati di avere questo file
+import 'package:flutter/material.dart';
 
 class InAppPurchaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -58,7 +58,7 @@ class InAppPurchaseService {
           id: product['id'],
           title: product['name'] ?? 'Unknown',
           description: product['description'] ?? '',
-          price: ((product['price'] as double?) ?? 0).toStringAsFixed(2),
+          price: ((product['price'] as double?)?.toStringAsFixed(2) ?? '0.00'),
           rawPrice: (product['price'] as double?) ?? 0,
           currencyCode: product['currency'] ?? 'USD',
         );
@@ -166,13 +166,6 @@ class InAppPurchaseService {
         orElse: () => throw Exception('Product not found'),
       );
 
-      // Il controllo `productDetails` non è necessario qui perché `firstWhere` lancia un'eccezione se non trovato
-      // Tuttavia, per sicurezza, possiamo mantenerlo
-      // if (productDetails == null) {
-      //   debugLog('Product details are null for productId: $productId');
-      //   throw Exception('Product details are null');
-      // }
-
       final PurchaseParam purchaseParam = PurchaseParam(productDetails: productDetails);
       debugLog('Starting Google Play purchase for productId: $productId');
       await _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
@@ -203,6 +196,27 @@ class InAppPurchaseService {
       rethrow;
     }
   }
+
+Future<void> syncStripeSubscription({bool syncAll = false}) async {
+  try {
+    final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('syncStripeSubscription');
+    final result = await callable.call(<String, dynamic>{
+      'syncAll': syncAll,
+    });
+
+    if (result.data['success']) {
+      debugLog(syncAll 
+        ? 'Tutte le sottoscrizioni Stripe sincronizzate con successo.'
+        : 'Abbonamento Stripe sincronizzato con successo.');
+    } else {
+      throw Exception(result.data['message']);
+    }
+  } catch (e) {
+    debugLog('Errore nella sincronizzazione dell\'abbonamento Stripe: $e');
+    rethrow;
+  }
+}
+
 
   Stream<List<ProductDetails>> getProducts() {
     debugLog('getProducts called');
@@ -397,6 +411,75 @@ class InAppPurchaseService {
     // Implementa la logica per mostrare uno SnackBar se necessario
     debugLog('SnackBar message: $message');
     // Potresti voler implementare un modo per mostrare SnackBar da qui, ad esempio tramite un callback
+  }
+
+  // Recupera i dettagli della sottoscrizione
+  Future<SubscriptionDetails?> getSubscriptionDetails() async {
+    try {
+      final result = await _functions.httpsCallable('getSubscriptionDetails').call();
+      if (result.data['hasSubscription']) {
+        final sub = result.data['subscription'];
+        return SubscriptionDetails(
+          id: sub['id'],
+          status: sub['status'],
+          currentPeriodEnd: DateTime.fromMillisecondsSinceEpoch(sub['current_period_end'] * 1000),
+          items: List<SubscriptionItem>.from(
+            sub['items'].map((item) => SubscriptionItem(
+              priceId: item['priceId'],
+              productId: item['productId'],
+              quantity: item['quantity'],
+            )),
+          ),
+        );
+      } else {
+        return null;
+      }
+    } catch (e) {
+      debugLog('Error getting subscription details: $e');
+      return null;
+    }
+  }
+
+  // Aggiorna la sottoscrizione
+  Future<void> updateSubscription(String newPriceId) async {
+    try {
+      final result = await _functions.httpsCallable('updateSubscription').call({
+        'newPriceId': newPriceId,
+      });
+      if (result.data['success']) {
+        debugLog('Subscription updated successfully.');
+      } else {
+        throw Exception('Failed to update subscription.');
+      }
+    } catch (e) {
+      debugLog('Error updating subscription: $e');
+      rethrow;
+    }
+  }
+
+  // Elenca tutte le sottoscrizioni (opzionale)
+  Future<List<SubscriptionDetails>> listSubscriptions() async {
+    try {
+      final result = await _functions.httpsCallable('listSubscriptions').call();
+      final List subscriptions = result.data['subscriptions'];
+      return subscriptions.map((sub) {
+        return SubscriptionDetails(
+          id: sub['id'],
+          status: sub['status'],
+          currentPeriodEnd: DateTime.fromMillisecondsSinceEpoch(sub['current_period_end'] * 1000),
+          items: List<SubscriptionItem>.from(
+            sub['items'].map((item) => SubscriptionItem(
+              priceId: item['priceId'],
+              productId: item['productId'],
+              quantity: item['quantity'],
+            )),
+          ),
+        );
+      }).toList();
+    } catch (e) {
+      debugLog('Error listing subscriptions: $e');
+      return [];
+    }
   }
 }
 

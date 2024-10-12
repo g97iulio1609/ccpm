@@ -3,15 +3,19 @@ import 'package:alphanessone/measurements/measurements_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
+// Importa i servizi necessari
 import '../services/users_services.dart';
 import '../services/tdee_services.dart';
 import '../ExerciseRecords/exercise_record_services.dart';
 import '../measurements/measurements_services.dart';
 import '../exerciseManager/exercises_services.dart';
-import '../exerciseManager/exercise_model.dart';
 import '../Coaching/coaching_service.dart';
+
+// Importa i modelli
 import '../models/measurement_model.dart';
 import '../models/user_model.dart';
+import '../exerciseManager/exercise_model.dart';
 
 // Firebase-related providers
 final firebaseAuthProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
@@ -36,11 +40,22 @@ final userProvider = FutureProvider.family<UserModel?, String>((ref, userId) asy
   return await usersService.getUserById(userId);
 });
 
-final selectedUserIdProvider = StateProvider<String?>((ref) => null);
+// Provider per la query di ricerca degli utenti
+final userSearchQueryProvider = StateProvider<String>((ref) => '');
+
+// Users stream provider
+final usersStreamProvider = StreamProvider<List<UserModel>>((ref) {
+  final service = ref.watch(usersServiceProvider);
+  return service.getUsers();
+});
+
+// Provider per la lista completa degli utenti
 final userListProvider = StateProvider<List<UserModel>>((ref) => []);
+
+// Provider per la lista filtrata degli utenti basata sulla query di ricerca
 final filteredUserListProvider = StateProvider<List<UserModel>>((ref) => []);
 
-// Exercise-related providers
+// Provider per lo stream delle esercitazioni
 final exercisesStreamProvider = StreamProvider<List<ExerciseModel>>((ref) {
   final service = ref.watch(exercisesServiceProvider);
   return service.getExercises();
@@ -65,8 +80,5 @@ final measurementsProvider = StreamProvider.family<List<MeasurementModel>, Strin
 final selectedComparisonsProvider = StateProvider<List<MeasurementModel>>((ref) => []);
 final measurementFormProvider = StateNotifierProvider<MeasurementFormNotifier, MeasurementFormState>((ref) => MeasurementFormNotifier());
 
-// Users stream provider
-final usersStreamProvider = StreamProvider<List<UserModel>>((ref) {
-  final service = ref.watch(usersServiceProvider);
-  return service.getUsers();
-});
+// User selection providers
+final selectedUserIdProvider = StateProvider<String?>((ref) => null);

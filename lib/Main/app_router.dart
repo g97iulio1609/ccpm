@@ -1,5 +1,6 @@
 // app_router.dart
 
+import 'package:alphanessone/Store/subscriptions_screen.dart';
 import 'package:alphanessone/Viewer/models/timer_model.dart';
 import 'package:alphanessone/Coaching/coaching_association.dart';
 import 'package:alphanessone/exerciseManager/exercise_model.dart';
@@ -180,6 +181,14 @@ class AppRouter {
                 path: '/subscriptions',
                 builder: (context, state) => const InAppSubscriptionsPage(),
               ),
+
+     GoRoute(
+                path: '/status',
+                builder: (context, state) => const SubscriptionsScreen(),
+              ),
+
+
+
               GoRoute(
                 path: '/measurements',
                 builder: (context, state) {

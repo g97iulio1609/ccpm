@@ -1,4 +1,4 @@
-// inAppPurchase.dart
+// lib/Store/inAppPurchase.dart
 
 import 'package:alphanessone/Store/inAppPurchase_services.dart';
 import 'package:flutter/material.dart';
@@ -189,7 +189,7 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
                               ),
                             ),
                             const SizedBox(height: 8),
-                            // Descrizione del Prodotto (Modificata per essere Bianca)
+                            // Descrizione del Prodotto (Modificata per essere Chiara)
                             Text(
                               description,
                               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -227,6 +227,12 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
                     );
                   }).toList();
                 }),
+                if (_isAdmin)
+                  ElevatedButton.icon(
+                    icon: Icon(Icons.sync),
+                    label: Text('Sync Products'),
+                    onPressed: _syncProducts,
+                  ),
               ],
             ),
     );
