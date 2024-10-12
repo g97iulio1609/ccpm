@@ -320,22 +320,6 @@ class SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
     final isSyncing = ref.watch(syncingProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(isAdmin ? 'Gestione Abbonamenti' : 'I Tuoi Abbonamenti'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed: () {
-              if (isAdmin && selectedUserId != null) {
-                _fetchSubscriptionDetails(userId: selectedUserId);
-              } else {
-                _fetchSubscriptionDetails();
-              }
-            },
-            tooltip: 'Ricarica',
-          ),
-        ],
-      ),
       body: Column(
         children: [
           // Campo di ricerca utenti per admin
