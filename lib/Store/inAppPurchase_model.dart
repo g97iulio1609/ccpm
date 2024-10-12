@@ -1,5 +1,34 @@
 enum SubscriptionStatus { active, canceled, gracePeriod, expired }
 
+
+// lib/Store/inAppPurchase_model.dart
+
+class SubscriptionDetails {
+  final String id;
+  final String status;
+  final DateTime currentPeriodEnd;
+  final List<SubscriptionItem> items;
+
+  SubscriptionDetails({
+    required this.id,
+    required this.status,
+    required this.currentPeriodEnd,
+    required this.items,
+  });
+}
+
+class SubscriptionItem {
+  final String priceId;
+  final String productId;
+  final int quantity;
+
+  SubscriptionItem({
+    required this.priceId,
+    required this.productId,
+    required this.quantity,
+  });
+}
+
 class SubscriptionPlan {
   final String kId;
   final String displayName;
