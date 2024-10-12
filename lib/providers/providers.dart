@@ -1,5 +1,7 @@
 // providers.dart
+import 'package:alphanessone/Store/inAppPurchase_model.dart';
 import 'package:alphanessone/measurements/measurements_provider.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -20,11 +22,13 @@ import '../exerciseManager/exercise_model.dart';
 // Firebase-related providers
 final firebaseAuthProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
 final firebaseFirestoreProvider = Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
+final firebaseFunctionsProvider = Provider<FirebaseFunctions>((ref) => FirebaseFunctions.instance);
 
 // Service providers
 final usersServiceProvider = Provider<UsersService>((ref) {
   return UsersService(ref, ref.watch(firebaseFirestoreProvider), ref.watch(firebaseAuthProvider));
 });
+final isAdminProvider = StateProvider<bool>((ref) => false);
 
 final tdeeServiceProvider = Provider<TDEEService>((ref) => TDEEService(ref.watch(firebaseFirestoreProvider)));
 final exerciseRecordServiceProvider = Provider<ExerciseRecordService>((ref) => ExerciseRecordService(ref.watch(firebaseFirestoreProvider)));
@@ -82,3 +86,10 @@ final measurementFormProvider = StateNotifierProvider<MeasurementFormNotifier, M
 
 // User selection providers
 final selectedUserIdProvider = StateProvider<String?>((ref) => null);
+
+// New Providers for SubscriptionsScreen
+final subscriptionDetailsProvider = StateProvider<SubscriptionDetails?>((ref) => null);
+final selectedUserSubscriptionProvider = StateProvider<SubscriptionDetails?>((ref) => null);
+final subscriptionLoadingProvider = StateProvider<bool>((ref) => false);
+final managingSubscriptionProvider = StateProvider<bool>((ref) => false);
+final syncingProvider = StateProvider<bool>((ref) => false);
