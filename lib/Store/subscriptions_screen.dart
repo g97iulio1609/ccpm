@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/Store/inAppPurchase_services.dart';
 import 'package:alphanessone/Store/inAppPurchase_model.dart';
 import 'package:alphanessone/providers/providers.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'dart:async';
@@ -273,9 +274,16 @@ class SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
   }
 
   // Crea un nuovo abbonamento (funzionalità non implementata)
-  Future<void> _createNewSubscription() async {
-    _showSnackBar('Funzionalità di creazione abbonamento non implementata.');
-  }
+// Navigates to the InAppSubscriptionsPage using go_router
+Future<void> _createNewSubscription() async {
+  // Use context.push to navigate to the '/subscriptions' route
+  await context.push('/subscriptions');
+
+  // Refresh the subscription details after returning from the purchase page
+  await _fetchSubscriptionDetails();
+}
+
+
 
   // Sincronizza l'abbonamento con Stripe
   Future<void> _syncStripeSubscription() async {
