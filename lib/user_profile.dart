@@ -1,5 +1,8 @@
+// user_profile.dart
+
 import 'dart:async';
 import 'dart:io';
+import 'package:alphanessone/Store/subscriptions_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -36,17 +39,28 @@ class UserProfileState extends ConsumerState<UserProfile> with SingleTickerProvi
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this); // Updated length from 3 to 4
+    debugPrint('UserProfile initState with userId: ${widget.userId}');
     _fetchUserProfile();
+  }
+
+  @override
+  void didUpdateWidget(covariant UserProfile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.userId != oldWidget.userId) {
+      debugPrint('UserProfile didUpdateWidget: userId changed from ${oldWidget.userId} to ${widget.userId}');
+      _fetchUserProfile();
+    }
   }
 
   Future<void> _fetchUserProfile() async {
     setState(() => _isLoading = true);
+    debugPrint('Fetching user profile for userId: ${widget.userId}');
     try {
       String uid = widget.userId ?? FirebaseAuth.instance.currentUser!.uid;
       DocumentSnapshot userData = await FirebaseFirestore.instance.collection('users').doc(uid).get();
       final userProfileData = userData.data() as Map<String, dynamic>?;
-      
+
       if (userProfileData != null) {
         _updateControllers(userProfileData);
         _selectedGender = userProfileData['gender'] as int?;
@@ -60,10 +74,14 @@ class UserProfileState extends ConsumerState<UserProfile> with SingleTickerProvi
           final mostRecentMeasurement = measurements.first;
           _lastMeasurementId = mostRecentMeasurement.id;
           _controllers['weight']?.text = mostRecentMeasurement.weight.toString();
+          debugPrint('Fetched most recent weight measurement: ${mostRecentMeasurement.weight}');
         }
+      } else {
+        debugPrint('No user profile data found for userId: $uid');
       }
     } catch (e) {
-      _showSnackBar('Error fetching user profile: $e', Colors.red);
+      _showSnackBar('Errore nel recuperare il profilo utente: $e', Colors.red);
+      debugPrint('Error fetching user profile: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -73,6 +91,7 @@ class UserProfileState extends ConsumerState<UserProfile> with SingleTickerProvi
     data.forEach((key, value) {
       if (!_excludedFields.contains(key)) {
         _controllers[key] = TextEditingController(text: value?.toString() ?? '');
+        debugPrint('Controller updated for $key');
       }
     });
   }
@@ -85,16 +104,19 @@ class UserProfileState extends ConsumerState<UserProfile> with SingleTickerProvi
       } else {
         await ref.read(usersServiceProvider).updateUser(uid, {field: value});
       }
-      _showSnackBar('Profile saved successfully!', Colors.green);
+      _showSnackBar('Profilo salvato con successo!', Colors.green);
+      debugPrint('Profile saved successfully for field: $field');
     } catch (e) {
-      _showSnackBar('Error saving profile: $e', Colors.red);
+      _showSnackBar('Errore nel salvare il profilo: $e', Colors.red);
+      debugPrint('Error saving profile: $e');
     }
   }
 
   Future<void> _updateWeight(String uid, String weightValue) async {
     final measurementsService = ref.read(measurementsServiceProvider);
     final weight = double.parse(weightValue);
-    
+    debugPrint('Updating weight to: $weight for userId: $uid');
+
     if (_lastMeasurementId != null) {
       // Update the last measurement
       final lastMeasurement = (await measurementsService.getMeasurements(userId: uid).first).first;
@@ -111,6 +133,7 @@ class UserProfileState extends ConsumerState<UserProfile> with SingleTickerProvi
         chestCircumference: lastMeasurement.chestCircumference,
         bicepsCircumference: lastMeasurement.bicepsCircumference,
       );
+      debugPrint('Updated existing weight measurement with id: $_lastMeasurementId');
     } else {
       // Add a new measurement if there's no previous one
       _lastMeasurementId = await measurementsService.addMeasurement(
@@ -125,30 +148,33 @@ class UserProfileState extends ConsumerState<UserProfile> with SingleTickerProvi
         chestCircumference: 0,
         bicepsCircumference: 0,
       );
+      debugPrint('Added new weight measurement with id: $_lastMeasurementId');
     }
   }
 
   void _showSnackBar(String message, Color color) {
+    debugPrint('SnackBar: $message');
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(message),
       backgroundColor: color,
     ));
   }
 
-Future<void> _uploadProfilePicture() async {
+  Future<void> _uploadProfilePicture() async {
     final picker = ImagePicker();
     XFile? pickedFile;
-    
+
     if (Platform.isAndroid) {
-      // Usa il Photo Picker su Android
+      // Use Photo Picker on Android
       pickedFile = await picker.pickImage(source: ImageSource.gallery);
     } else {
-      // Su iOS, richiedi il permesso come prima
+      // On iOS, request permission as before
       final status = await Permission.photos.request();
       if (status.isGranted) {
         pickedFile = await picker.pickImage(source: ImageSource.gallery);
       } else {
-        _showSnackBar('Gallery access denied', Colors.red);
+        _showSnackBar('Accesso alla galleria negato', Colors.red);
+        debugPrint('Photo access denied');
         return;
       }
     }
@@ -157,6 +183,7 @@ Future<void> _uploadProfilePicture() async {
       File file = File(pickedFile.path);
       String uid = widget.userId ?? FirebaseAuth.instance.currentUser!.uid;
       String fileExtension = file.path.split('.').last.toLowerCase();
+      debugPrint('Uploading profile picture for userId: $uid with extension: $fileExtension');
 
       if (['jpg', 'png', 'jpeg'].contains(fileExtension)) {
         try {
@@ -165,43 +192,52 @@ Future<void> _uploadProfilePicture() async {
           final downloadURL = await storageRef.getDownloadURL();
           await ref.read(usersServiceProvider).updateUser(uid, {'photoURL': downloadURL});
           setState(() => _photoURL = downloadURL);
-          _showSnackBar('Profile picture uploaded successfully!', Colors.green);
+          _showSnackBar('Foto profilo caricata con successo!', Colors.green);
+          debugPrint('Profile picture uploaded successfully');
         } catch (e) {
-          _showSnackBar('Error uploading profile picture: $e', Colors.red);
+          _showSnackBar('Errore nel caricamento della foto profilo: $e', Colors.red);
+          debugPrint('Error uploading profile picture: $e');
         }
       } else {
-        _showSnackBar('Unsupported image format. Please choose a JPG, PNG, or JPEG file.', Colors.red);
+        _showSnackBar('Formato immagine non supportato. Scegli un file JPG, PNG o JPEG.', Colors.red);
+        debugPrint('Unsupported image format: $fileExtension');
       }
     } else {
-      _showSnackBar('No image selected.', Colors.red);
+      _showSnackBar('Nessuna immagine selezionata.', Colors.red);
+      debugPrint('No image selected');
     }
   }
-  
+
   Future<void> _deleteUser() async {
     try {
       String uid = widget.userId ?? FirebaseAuth.instance.currentUser!.uid;
       User? user = FirebaseAuth.instance.currentUser;
+      debugPrint('Attempting to delete userId: $uid');
+
       if (user != null) {
         bool isSelfDelete = uid == user.uid;
         await ref.read(usersServiceProvider).deleteUser(uid);
-        
+
         if (isSelfDelete) {
           await FirebaseAuth.instance.signOut();
           if (mounted) {
-            _showSnackBar('Your account has been deleted successfully.', Colors.green);
+            _showSnackBar('Il tuo account è stato eliminato con successo.', Colors.green);
+            debugPrint('Self-deletion successful, navigating to root');
             context.go('/');
           }
         } else {
           if (mounted) {
-            _showSnackBar('User deleted successfully!', Colors.green);
+            _showSnackBar('Utente eliminato con successo!', Colors.green);
+            debugPrint('User deletion successful, popping context');
             context.pop();
           }
         }
       } else {
-        throw Exception("User not authenticated.");
+        throw Exception("Utente non autenticato.");
       }
     } catch (e) {
-      _showSnackBar('Error deleting user: $e', Colors.red);
+      _showSnackBar('Errore nell\'eliminazione dell\'utente: $e', Colors.red);
+      debugPrint('Error deleting user: $e');
     }
   }
 
@@ -213,8 +249,10 @@ Future<void> _uploadProfilePicture() async {
         await _showPasswordDialog();
       }
       await _deleteUser();
+      debugPrint('Re-authentication and deletion successful');
     } catch (e) {
-      _showSnackBar('Error during re-authentication: $e', Colors.red);
+      _showSnackBar('Errore durante la ri-autenticazione: $e', Colors.red);
+      debugPrint('Error during re-authentication and deletion: $e');
     }
   }
 
@@ -222,7 +260,8 @@ Future<void> _uploadProfilePicture() async {
     final GoogleSignIn googleSignIn = GoogleSignIn();
     final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
     if (googleUser == null) {
-      _showSnackBar('Sign-in cancelled.', Colors.red);
+      _showSnackBar('Accesso annullato.', Colors.red);
+      debugPrint('Google sign-in cancelled');
       return;
     }
 
@@ -233,6 +272,7 @@ Future<void> _uploadProfilePicture() async {
     );
 
     await FirebaseAuth.instance.currentUser?.reauthenticateWithCredential(credential);
+    debugPrint('Re-authenticated with Google credentials');
   }
 
   Future<void> _showPasswordDialog() async {
@@ -241,7 +281,7 @@ Future<void> _uploadProfilePicture() async {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Confirm your password'),
+          title: const Text('Conferma la tua password'),
           content: TextField(
             obscureText: true,
             onChanged: (value) => password = value,
@@ -249,11 +289,11 @@ Future<void> _uploadProfilePicture() async {
           ),
           actions: [
             TextButton(
-              child: const Text('Cancel'),
+              child: const Text('Annulla'),
               onPressed: () => Navigator.of(context).pop(),
             ),
             TextButton(
-              child: const Text('Confirm'),
+              child: const Text('Conferma'),
               onPressed: () async {
                 Navigator.of(context).pop();
                 await _reauthenticateWithPassword(password);
@@ -263,6 +303,7 @@ Future<void> _uploadProfilePicture() async {
         );
       },
     );
+    debugPrint('Password dialog closed');
   }
 
   Future<void> _reauthenticateWithPassword(String password) async {
@@ -270,8 +311,9 @@ Future<void> _uploadProfilePicture() async {
     if (user != null) {
       AuthCredential credential = EmailAuthProvider.credential(email: user.email!, password: password);
       await user.reauthenticateWithCredential(credential);
+      debugPrint('Re-authenticated with password');
     } else {
-      throw Exception("User not authenticated or password not provided.");
+      throw Exception("Utente non autenticato o password non fornita.");
     }
   }
 
@@ -280,18 +322,19 @@ Future<void> _uploadProfilePicture() async {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Confirm deletion'),
-          content: const Text('Are you sure you want to delete this user?'),
+          title: const Text('Conferma eliminazione'),
+          content: const Text('Sei sicuro di voler eliminare questo utente?'),
           actions: [
             TextButton(
-              child: const Text('Cancel'),
+              child: const Text('Annulla'),
               onPressed: () => Navigator.of(context).pop(),
             ),
             TextButton(
-              child: const Text('Delete'),
+              child: const Text('Elimina'),
               onPressed: () {
                 Navigator.of(context).pop();
                 User? currentUser = FirebaseAuth.instance.currentUser;
+                debugPrint('Initiating user deletion');
                 _reauthenticateAndDelete(_isGoogleUser(currentUser));
               },
             ),
@@ -299,6 +342,7 @@ Future<void> _uploadProfilePicture() async {
         );
       },
     );
+    debugPrint('Delete confirmation dialog shown');
   }
 
   bool _isGoogleUser(User? user) {
@@ -307,7 +351,7 @@ Future<void> _uploadProfilePicture() async {
 
   Widget _buildEditableField(String field, TextEditingController? controller) {
     if (controller == null) return const SizedBox.shrink();
-    
+
     String label = field[0].toUpperCase() + field.substring(1);
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -353,12 +397,15 @@ Future<void> _uploadProfilePicture() async {
               _birthdate = pickedDate;
               _saveProfile('birthdate', Timestamp.fromDate(pickedDate));
             });
+            debugPrint('Birthdate updated to: $pickedDate');
           }
         },
         child: InputDecorator(
-          decoration: _getInputDecoration('Birth date'),
+          decoration: _getInputDecoration('Data di nascita'),
           child: Text(
-            _birthdate != null ? '${_calculateAge(_birthdate!)} years old (${_birthdate!.day}/${_birthdate!.month}/${_birthdate!.year})' : 'Select birth date',
+            _birthdate != null
+                ? '${_calculateAge(_birthdate!)} anni (${_birthdate!.day}/${_birthdate!.month}/${_birthdate!.year})'
+                : 'Seleziona data di nascita',
             style: const TextStyle(color: Colors.white),
           ),
         ),
@@ -385,8 +432,9 @@ Future<void> _uploadProfilePicture() async {
             _selectedGender = value;
             if (value != null) _saveProfile('gender', value);
           });
+          debugPrint('Gender updated to: ${genderMap[value]}');
         },
-        decoration: _getInputDecoration('Gender'),
+        decoration: _getInputDecoration('Genere'),
         dropdownColor: Colors.grey[900],
         style: const TextStyle(color: Colors.white),
         items: genderMap.entries.map((entry) {
@@ -395,9 +443,10 @@ Future<void> _uploadProfilePicture() async {
             child: Text(entry.value),
           );
         }).toList(),
-        hint: Text('Select gender', style: TextStyle(color: Colors.white.withOpacity(0.7))),
+        hint: Text('Seleziona genere', style: TextStyle(color: Colors.white.withOpacity(0.7))),
       ),
-    );}
+    );
+  }
 
   Widget _buildPersonalInfoTab() {
     return SingleChildScrollView(
@@ -405,12 +454,12 @@ Future<void> _uploadProfilePicture() async {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildEditableField('name', _controllers['name']),
-          _buildEditableField('surname', _controllers['surname']),
+          _buildEditableField('nome', _controllers['name']),
+          _buildEditableField('cognome', _controllers['surname']),
           _buildBirthdayField(),
           _buildGenderDropdown(),
           _buildEditableField('email', _controllers['email']),
-          _buildEditableField('phone', _controllers['phone']),
+          _buildEditableField('telefono', _controllers['phone']),
         ],
       ),
     );
@@ -426,16 +475,17 @@ Future<void> _uploadProfilePicture() async {
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: () {
-              // Implement password change logic
+              // Implementa la logica per cambiare la password
+              debugPrint('Change Password button pressed');
             },
-            child: const Text('Change Password'),
+            child: const Text('Cambia Password'),
           ),
           const SizedBox(height: 20),
           if (ref.read(usersServiceProvider).getCurrentUserRole() == 'admin' || widget.userId != null)
             ElevatedButton(
               onPressed: _showDeleteConfirmationDialog,
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              child: const Text('Delete Account'),
+              child: const Text('Elimina Account'),
             ),
         ],
       ),
@@ -448,15 +498,22 @@ Future<void> _uploadProfilePicture() async {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildEditableField('height', _controllers['height']),
-          _buildEditableField('weight', _controllers['weight']),
-          _buildEditableField('bodyFat', _controllers['bodyFat']),
+          _buildEditableField('altezza', _controllers['height']),
+          _buildEditableField('peso', _controllers['weight']),
+          _buildEditableField('grassoCorpo', _controllers['bodyFat']),
         ],
       ),
     );
   }
 
- Widget _buildProfilePicture() {
+  // Builds the Subscriptions tab
+Widget _buildSubscriptionsTab() {
+  debugPrint('Building SubscriptionsScreen with userId: ${widget.userId}');
+  return SubscriptionsScreen(userId: widget.userId ?? FirebaseAuth.instance.currentUser!.uid);
+}
+
+
+  Widget _buildProfilePicture() {
     return GestureDetector(
       onTap: _uploadProfilePicture,
       child: Container(
@@ -467,60 +524,63 @@ Future<void> _uploadProfilePicture() async {
           border: Border.all(color: Colors.white, width: 3),
           color: Colors.grey[800],
           image: _photoURL != null
-            ? DecorationImage(
-                image: NetworkImage(_photoURL!),
-                fit: BoxFit.cover,
-              )
-            : null,
+              ? DecorationImage(
+                  image: NetworkImage(_photoURL!),
+                  fit: BoxFit.cover,
+                )
+              : null,
         ),
         child: _photoURL == null
-          ? const Icon(Icons.person, size: 60, color: Colors.white)
-          : null,
+            ? const Icon(Icons.person, size: 60, color: Colors.white)
+            : null,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('Building UserProfile widget');
     return Scaffold(
       backgroundColor: Colors.black,
       body: _isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 40, bottom: 20),
-                child: _buildProfilePicture(),
-              ),
-              Text(
-                _controllers['name']?.text ?? 'User',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 40, bottom: 20),
+                  child: _buildProfilePicture(),
                 ),
-              ),
-              const SizedBox(height: 20),
-              TabBar(
-                controller: _tabController,
-                tabs: const [
-                  Tab(icon: Icon(Icons.person), text: "Personal"),
-                  Tab(icon: Icon(Icons.settings), text: "Account"),
-                  Tab(icon: Icon(Icons.fitness_center), text: "Fitness"),
-                ],
-              ),
-              Expanded(
-                child: TabBarView(
+                Text(
+                  _controllers['name']?.text ?? 'Utente',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                TabBar(
                   controller: _tabController,
-                  children: [
-                    _buildPersonalInfoTab(),
-                    _buildAccountSettingsTab(),
-                    _buildFitnessDataTab(),
+                  tabs: const [
+                    Tab(icon: Icon(Icons.person), text: "Personali"),
+                    Tab(icon: Icon(Icons.settings), text: "Account"),
+                    Tab(icon: Icon(Icons.fitness_center), text: "Fitness"),
+                    Tab(icon: Icon(Icons.subscriptions), text: "Sottoscrizioni"), // Nuova Tab
                   ],
                 ),
-              ),
-            ],
-          ),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildPersonalInfoTab(),
+                      _buildAccountSettingsTab(),
+                      _buildFitnessDataTab(),
+                      _buildSubscriptionsTab(), // Contenuto della Nuova Tab
+                    ],
+                  ),
+                ),
+              ],
+            ),
     );
   }
 
@@ -528,10 +588,12 @@ Future<void> _uploadProfilePicture() async {
   void dispose() {
     for (var controller in _controllers.values) {
       controller.dispose();
+      debugPrint('Disposed controller for field');
     }
     _tabController.dispose();
     _debouncer.dispose();
     super.dispose();
+    debugPrint('Disposed UserProfileState');
   }
 }
 

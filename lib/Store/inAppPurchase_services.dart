@@ -414,25 +414,56 @@ Future<void> syncStripeSubscription({bool syncAll = false}) async {
   }
 
   // Recupera i dettagli della sottoscrizione
-  Future<SubscriptionDetails?> getSubscriptionDetails() async {
+Future<SubscriptionDetails?> getSubscriptionDetails({String? userId}) async {
     try {
-      final result = await _functions.httpsCallable('getSubscriptionDetails').call();
-      if (result.data['hasSubscription']) {
-        final sub = result.data['subscription'];
-        return SubscriptionDetails(
-          id: sub['id'],
-          status: sub['status'],
-          currentPeriodEnd: DateTime.fromMillisecondsSinceEpoch(sub['current_period_end'] * 1000),
-          items: List<SubscriptionItem>.from(
-            sub['items'].map((item) => SubscriptionItem(
-              priceId: item['priceId'],
-              productId: item['productId'],
-              quantity: item['quantity'],
-            )),
-          ),
-        );
+      HttpsCallable callable;
+
+      if (userId != null) {
+        // Chiama la funzione Cloud per ottenere i dettagli della sottoscrizione di un utente specifico
+        callable = _functions.httpsCallable('getUserSubscriptionDetails');
+        final results = await callable.call(<String, dynamic>{
+          'userId': userId,
+        });
+
+        if (results.data['hasSubscription']) {
+          final sub = results.data['subscription'];
+          return SubscriptionDetails(
+            id: sub['id'],
+            status: sub['status'],
+            currentPeriodEnd: DateTime.fromMillisecondsSinceEpoch(sub['current_period_end'] * 1000),
+            items: List<SubscriptionItem>.from(
+              sub['items'].map((item) => SubscriptionItem(
+                    priceId: item['priceId'],
+                    productId: item['productId'],
+                    quantity: item['quantity'],
+                  )),
+            ),
+          );
+        } else {
+          return null;
+        }
       } else {
-        return null;
+        // Chiama la funzione Cloud per ottenere i dettagli della sottoscrizione dell'utente corrente
+        callable = _functions.httpsCallable('getSubscriptionDetails');
+        final results = await callable.call();
+
+        if (results.data['hasSubscription']) {
+          final sub = results.data['subscription'];
+          return SubscriptionDetails(
+            id: sub['id'],
+            status: sub['status'],
+            currentPeriodEnd: DateTime.fromMillisecondsSinceEpoch(sub['current_period_end'] * 1000),
+            items: List<SubscriptionItem>.from(
+              sub['items'].map((item) => SubscriptionItem(
+                    priceId: item['priceId'],
+                    productId: item['productId'],
+                    quantity: item['quantity'],
+                  )),
+            ),
+          );
+        } else {
+          return null;
+        }
       }
     } catch (e) {
       debugLog('Error getting subscription details: $e');
