@@ -1,7 +1,10 @@
+import 'package:alphanessone/providers/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/training_program_provider.dart';
+import '../../Store/inAppPurchase_services.dart';
+import '../../utils/subscription_checker.dart';
 
 class TrainingViewer extends ConsumerStatefulWidget {
   final String programId;
@@ -17,8 +20,73 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
   @override
   void initState() {
     super.initState();
-    // Delay the fetch call to after the build phase
+    _checkSubscriptionAndFetch();
+  }
+
+  Future<void> _checkSubscriptionAndFetch() async {
+    final userRole = ref.read(userRoleProvider);
+    
+    // Se l'utente è admin, carica direttamente i contenuti senza controlli
+    if (userRole == 'admin') {
+      Future.microtask(() => fetchTrainingWeeks());
+      return;
+    }
+
+    // Per gli altri utenti, verifica la sottoscrizione
+    final subscriptionChecker = SubscriptionChecker();
+    final hasValidSubscription = await subscriptionChecker.checkSubscription(context);
+    
+    if (!hasValidSubscription) {
+      if (mounted) {
+        await showSubscriptionExpiredDialog(context);
+        context.go('/subscriptions'); // Navigate back to subscriptions page
+        return;
+      }
+    }
+
+    // Solo se la sottoscrizione è valida o l'utente è admin
     Future.microtask(() => fetchTrainingWeeks());
+  }
+
+  Future<void> showSubscriptionExpiredDialog(BuildContext context) async {
+    final inAppPurchaseService = InAppPurchaseService();
+    final subscriptionDetails = await inAppPurchaseService.getSubscriptionDetails();
+    final platform = subscriptionDetails?.platform ?? 'stripe'; // Default to stripe if unknown
+
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Abbonamento Scaduto'),
+          content: const Text(
+            'Il tuo abbonamento è scaduto. Per continuare ad accedere ai contenuti, '
+            'è necessario rinnovare l\'abbonamento.'
+          ),
+          actions: [
+            TextButton(
+              child: const Text('Rinnova Abbonamento'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                if (platform == 'stripe') {
+                  context.go('/subscriptions');
+                } else {
+                  // For Google Play, open the Play Store subscription page
+                  inAppPurchaseService.makePurchase('alphanessoneplussubscription');
+                }
+              },
+            ),
+            TextButton(
+              child: const Text('Torna Indietro'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                context.go('/');
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> fetchTrainingWeeks() async {

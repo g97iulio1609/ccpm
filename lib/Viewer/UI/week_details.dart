@@ -10,11 +10,11 @@ class WeekDetails extends ConsumerStatefulWidget {
   final String userId;
 
   const WeekDetails({
-    Key? key,
+    super.key,
     required this.programId,
     required this.weekId,
     required this.userId,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<WeekDetails> createState() => _WeekDetailsState();
@@ -94,11 +94,11 @@ class WorkoutCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const WorkoutCard({
-    Key? key,
+    super.key,
     required this.workoutOrder,
     required this.workoutDescription,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

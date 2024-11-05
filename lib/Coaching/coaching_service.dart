@@ -121,7 +121,7 @@ class CoachingService {
           .get();
 
       if (existing.docs.isNotEmpty) {
-        debugPrint('Richiesta di associazione già esistente.');
+        //debugPrint('Richiesta di associazione già esistente.');
         return false;
       }
 
@@ -132,7 +132,7 @@ class CoachingService {
       });
       return true;
     } catch (e) {
-      debugPrint('Error requesting association: $e');
+      //debugPrint('Error requesting association: $e');
       return false;
     }
   }
@@ -147,7 +147,7 @@ class CoachingService {
       });
       return true;
     } catch (e) {
-      debugPrint('Error responding to association: $e');
+      //debugPrint('Error responding to association: $e');
       return false;
     }
   }
@@ -158,7 +158,7 @@ class CoachingService {
       await _firestore.collection('associations').doc(associationId).delete();
       return true;
     } catch (e) {
-      debugPrint('Error removing association: $e');
+      //debugPrint('Error removing association: $e');
       return false;
     }
   }
@@ -190,7 +190,7 @@ class CoachingService {
 
       return associationsCount! < maxAssociations;
     } catch (e) {
-      debugPrint('Error checking coach availability: $e');
+      //debugPrint('Error checking coach availability: $e');
       return false;
     }
   }

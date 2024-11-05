@@ -8,12 +8,16 @@ class SubscriptionDetails {
   final String status;
   final DateTime currentPeriodEnd;
   final List<SubscriptionItem> items;
+  final String platform; // Add platform field
+  final Map<String, dynamic>? giftInfo; // Aggiungi informazioni sul regalo
 
   SubscriptionDetails({
     required this.id,
     required this.status,
     required this.currentPeriodEnd,
     required this.items,
+    required this.platform, // Platform can be 'stripe' or 'google_play'
+    this.giftInfo,
   });
 }
 
