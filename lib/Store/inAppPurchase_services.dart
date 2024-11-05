@@ -438,6 +438,7 @@ Future<SubscriptionDetails?> getSubscriptionDetails({String? userId}) async {
                     quantity: item['quantity'],
                   )),
             ),
+            platform: sub['platform'], // Add the platform field
           );
         } else {
           return null;
@@ -460,6 +461,7 @@ Future<SubscriptionDetails?> getSubscriptionDetails({String? userId}) async {
                     quantity: item['quantity'],
                   )),
             ),
+            platform: sub['platform'], // Add the platform field
           );
         } else {
           return null;
@@ -505,6 +507,7 @@ Future<SubscriptionDetails?> getSubscriptionDetails({String? userId}) async {
               quantity: item['quantity'],
             )),
           ),
+          platform: sub['platform'], // Add the platform field
         );
       }).toList();
     } catch (e) {
