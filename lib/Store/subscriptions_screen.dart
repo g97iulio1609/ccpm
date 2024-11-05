@@ -32,11 +32,11 @@ class SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
   void initState() {
     super.initState();
     _initializeScreen();
-    debugPrint('SubscriptionsScreen initState with userId: ${widget.userId}');
+    //debugPrint('SubscriptionsScreen initState with userId: ${widget.userId}');
   }
 
   Future<void> _initializeScreen() async {
-    debugPrint('Initializing SubscriptionsScreen');
+    //debugPrint('Initializing SubscriptionsScreen');
     await _checkIfAdmin();
     await _fetchSubscriptionDetails(userId: widget.userId); // Passa userId se disponibile
     if (ref.read(isAdminProvider) && widget.userId == null) {
@@ -46,7 +46,7 @@ class SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
 
   // Checks if the current user is an admin
   Future<void> _checkIfAdmin() async {
-    debugPrint('Checking if user is admin');
+    //debugPrint('Checking if user is admin');
     final firebaseAuth = ref.read(firebaseAuthProvider);
     final firebaseFirestore = ref.read(firebaseFirestoreProvider);
 
@@ -55,32 +55,32 @@ class SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
       final userDoc = await firebaseFirestore.collection('users').doc(user.uid).get();
       if (userDoc.exists && userDoc.data()?['role'] == 'admin') {
         ref.read(isAdminProvider.notifier).state = true;
-        debugPrint('User is admin');
+        //debugPrint('User is admin');
       } else {
         ref.read(isAdminProvider.notifier).state = false;
-        debugPrint('User is not admin');
+        //debugPrint('User is not admin');
       }
     } else {
       ref.read(isAdminProvider.notifier).state = false;
-      debugPrint('No authenticated user');
+      //debugPrint('No authenticated user');
     }
   }
 
   // Loads all users if the current user is an admin and userId is not provided
   Future<void> _loadAllUsers() async {
     final isAdmin = ref.read(isAdminProvider);
-    debugPrint('Loading all users: isAdmin=$isAdmin');
+    //debugPrint('Loading all users: isAdmin=$isAdmin');
     if (isAdmin) {
       try {
         final usersStream = ref.read(usersServiceProvider).getUsers();
         _userSubscription = usersStream.listen((users) {
           ref.read(userListProvider.notifier).state = users;
           ref.read(filteredUserListProvider.notifier).state = users;
-          debugPrint('Loaded ${users.length} users');
+          //debugPrint('Loaded ${users.length} users');
         });
       } catch (e) {
         _showSnackBar('Errore nel caricamento degli utenti.');
-        debugPrint('Error loading users: $e');
+        //debugPrint('Error loading users: $e');
       }
     }
   }
@@ -88,45 +88,45 @@ class SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
   // Fetches subscription details for the given userId
   Future<void> _fetchSubscriptionDetails({String? userId}) async {
     ref.read(subscriptionLoadingProvider.notifier).state = true;
-    debugPrint('Fetching subscription details for userId: $userId');
+    //debugPrint('Fetching subscription details for userId: $userId');
 
     try {
       final isAdmin = ref.read(isAdminProvider);
       final targetUserId = userId ??
           (isAdmin ? ref.read(selectedUserIdProvider) : FirebaseAuth.instance.currentUser!.uid);
-      debugPrint('isAdmin: $isAdmin, targetUserId: $targetUserId');
+      //debugPrint('isAdmin: $isAdmin, targetUserId: $targetUserId');
 
   // Nel metodo _fetchSubscriptionDetails
 if (isAdmin && userId != null) {
   // Admin viewing another user's subscription
-  debugPrint('Admin viewing subscription for userId: $targetUserId');
+  //debugPrint('Admin viewing subscription for userId: $targetUserId');
   final details = await _inAppPurchaseService.getSubscriptionDetails(userId: targetUserId);
   ref.read(selectedUserSubscriptionProvider.notifier).state = details;
-  debugPrint('Fetched subscription details for userId: $targetUserId');
+  //debugPrint('Fetched subscription details for userId: $targetUserId');
   
   // Imposta selectedUserIdProvider
   ref.read(selectedUserIdProvider.notifier).state = targetUserId;
-  debugPrint('selectedUserIdProvider set to: $targetUserId');
+  //debugPrint('selectedUserIdProvider set to: $targetUserId');
 }
  else {
         // Regular user viewing their own subscription
-        debugPrint('Regular user viewing own subscription');
+        //debugPrint('Regular user viewing own subscription');
         final details = await _inAppPurchaseService.getSubscriptionDetails();
         ref.read(subscriptionDetailsProvider.notifier).state = details;
-        debugPrint('Fetched own subscription details');
+        //debugPrint('Fetched own subscription details');
       }
     } catch (e) {
       _showSnackBar('Errore nel recuperare i dettagli dell\'abbonamento: $e');
-      debugPrint('Error fetching subscription details: $e');
+      //debugPrint('Error fetching subscription details: $e');
     } finally {
       ref.read(subscriptionLoadingProvider.notifier).state = false;
-      debugPrint('Finished fetching subscription details');
+      //debugPrint('Finished fetching subscription details');
     }
   }
 
   // Shows a SnackBar with a message
   void _showSnackBar(String message) {
-    debugPrint('SnackBar message: $message');
+    //debugPrint('SnackBar message: $message');
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
@@ -137,7 +137,7 @@ if (isAdmin && userId != null) {
     final subscriptionDetails = ref.read(subscriptionDetailsProvider);
     if (subscriptionDetails == null) {
       _showSnackBar('Nessun abbonamento attivo.');
-      debugPrint('No active subscription to manage');
+      //debugPrint('No active subscription to manage');
       return;
     }
 
@@ -184,7 +184,7 @@ if (isAdmin && userId != null) {
         );
       },
     );
-    debugPrint('Manage subscription options shown');
+    //debugPrint('Manage subscription options shown');
   }
 
   // Shows the dialog to update the subscription
@@ -194,7 +194,7 @@ if (isAdmin && userId != null) {
       builder: (BuildContext context) {
         String? selectedPriceId;
         final availableProducts = _inAppPurchaseService.productDetailsByProductId.values.expand((e) => e).toList();
-        debugPrint('Available products for update: ${availableProducts.map((p) => p.id).toList()}');
+        //debugPrint('Available products for update: ${availableProducts.map((p) => p.id).toList()}');
 
         return AlertDialog(
           title: Text('Aggiorna Abbonamento'),
@@ -211,7 +211,7 @@ if (isAdmin && userId != null) {
                   setState(() {
                     selectedPriceId = value;
                   });
-                  debugPrint('Selected new priceId: $value');
+                  //debugPrint('Selected new priceId: $value');
                 },
                 decoration: InputDecoration(
                   labelText: 'Seleziona Nuovo Piano',
@@ -225,7 +225,7 @@ if (isAdmin && userId != null) {
               child: Text('Annulla'),
               onPressed: () {
                 Navigator.pop(context);
-                debugPrint('Update subscription dialog cancelled');
+                //debugPrint('Update subscription dialog cancelled');
               },
             ),
             ElevatedButton(
@@ -234,15 +234,15 @@ if (isAdmin && userId != null) {
                   : () async {
                       Navigator.pop(context);
                       ref.read(managingSubscriptionProvider.notifier).state = true;
-                      debugPrint('Updating subscription to priceId: $selectedPriceId');
+                      //debugPrint('Updating subscription to priceId: $selectedPriceId');
                       try {
                         await _inAppPurchaseService.updateSubscription(selectedPriceId!);
                         _showSnackBar('Abbonamento aggiornato con successo.');
                         await _fetchSubscriptionDetails(userId: ref.read(selectedUserIdProvider));
-                        debugPrint('Subscription updated and details refetched');
+                        //debugPrint('Subscription updated and details refetched');
                       } catch (e) {
                         _showSnackBar('Errore nell\'aggiornamento dell\'abbonamento: $e');
-                        debugPrint('Error updating subscription: $e');
+                        //debugPrint('Error updating subscription: $e');
                       } finally {
                         ref.read(managingSubscriptionProvider.notifier).state = false;
                       }
@@ -253,7 +253,7 @@ if (isAdmin && userId != null) {
         );
       },
     );
-    debugPrint('Update subscription dialog shown');
+    //debugPrint('Update subscription dialog shown');
   }
 
   // Confirms the cancellation of the subscription
@@ -268,14 +268,14 @@ if (isAdmin && userId != null) {
             child: Text('No'),
             onPressed: () {
               Navigator.pop(context, false);
-              debugPrint('Subscription cancellation cancelled');
+              //debugPrint('Subscription cancellation cancelled');
             },
           ),
           ElevatedButton(
             child: Text('Sì'),
             onPressed: () {
               Navigator.pop(context, true);
-              debugPrint('Subscription cancellation confirmed');
+              //debugPrint('Subscription cancellation confirmed');
             },
           ),
         ],
@@ -284,20 +284,20 @@ if (isAdmin && userId != null) {
 
     if (confirm == true) {
       ref.read(managingSubscriptionProvider.notifier).state = true;
-      debugPrint('Cancelling subscription');
+      //debugPrint('Cancelling subscription');
       try {
         await _inAppPurchaseService.cancelSubscription();
         _showSnackBar('Abbonamento annullato con successo.');
         await _fetchSubscriptionDetails(userId: ref.read(selectedUserIdProvider));
-        debugPrint('Subscription cancelled and details refetched');
+        //debugPrint('Subscription cancelled and details refetched');
       } catch (e) {
         _showSnackBar('Errore nell\'annullamento dell\'abbonamento: $e');
-        debugPrint('Error cancelling subscription: $e');
+        //debugPrint('Error cancelling subscription: $e');
       } finally {
         ref.read(managingSubscriptionProvider.notifier).state = false;
       }
     } else {
-      debugPrint('Subscription cancellation not confirmed');
+      //debugPrint('Subscription cancellation not confirmed');
       // Do nothing if the user cancels
     }
   }
@@ -306,17 +306,17 @@ if (isAdmin && userId != null) {
   Future<void> _createNewSubscription() async {
     // Use context.push to navigate to the '/subscriptions' route
     await context.push('/subscriptions');
-    debugPrint('Navigated to /subscriptions to create a new subscription');
+    //debugPrint('Navigated to /subscriptions to create a new subscription');
 
     // Refresh the subscription details after returning from the purchase page
     await _fetchSubscriptionDetails();
-    debugPrint('Subscription details refreshed after creating new subscription');
+    //debugPrint('Subscription details refreshed after creating new subscription');
   }
 
   // Synchronizes the subscription with Stripe
   Future<void> _syncStripeSubscription() async {
     ref.read(syncingProvider.notifier).state = true;
-    debugPrint('Synchronizing subscription with Stripe');
+    //debugPrint('Synchronizing subscription with Stripe');
 
     try {
       final firebaseFunctions = ref.read(firebaseFunctionsProvider);
@@ -327,7 +327,7 @@ if (isAdmin && userId != null) {
 
       if (result.data['success']) {
         _showSnackBar(result.data['message']);
-        debugPrint('Stripe synchronization successful: ${result.data['message']}');
+        //debugPrint('Stripe synchronization successful: ${result.data['message']}');
         if (ref.read(isAdminProvider) && ref.read(selectedUserIdProvider) != null) {
           await _fetchSubscriptionDetails(userId: ref.read(selectedUserIdProvider));
         } else {
@@ -335,16 +335,125 @@ if (isAdmin && userId != null) {
         }
       } else {
         _showSnackBar(result.data['message']);
-        debugPrint('Stripe synchronization failed: ${result.data['message']}');
+        //debugPrint('Stripe synchronization failed: ${result.data['message']}');
       }
     } catch (e) {
       _showSnackBar('Errore nella sincronizzazione dell\'abbonamento.');
-      debugPrint('Error synchronizing with Stripe: $e');
+      //debugPrint('Error synchronizing with Stripe: $e');
     } finally {
       ref.read(syncingProvider.notifier).state = false;
-      debugPrint('Stripe synchronization completed');
+      //debugPrint('Stripe synchronization completed');
     }
   }
+
+Future<void> _showGiftSubscriptionDialog(String userId, String userName) async {
+  final durationOptions = [
+    {'days': 7, 'label': '1 Settimana', 'icon': Icons.calendar_today},
+    {'days': 30, 'label': '1 Mese', 'icon': Icons.calendar_month},
+    {'days': 90, 'label': '3 Mesi', 'icon': Icons.calendar_today},
+    {'days': 180, 'label': '6 Mesi', 'icon': Icons.calendar_view_month},
+    {'days': 365, 'label': '1 Anno', 'icon': Icons.calendar_today},
+  ];
+
+  return showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.card_giftcard, 
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 28,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Regalo Abbonamento',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Seleziona la durata dell\'abbonamento da regalare a $userName:',
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+              const SizedBox(height: 24),
+              ...durationOptions.map((option) => 
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () async {
+                      Navigator.of(context).pop();
+                      try {
+                        await _inAppPurchaseService.giftSubscription(
+                          userId,
+                          option['days'] as int,
+                        );
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Abbonamento regalato con successo'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                          await _fetchSubscriptionDetails(userId: userId);
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Errore: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(option['icon'] as IconData),
+                            const SizedBox(width: 12),
+                            Text(option['label'] as String),
+                          ],
+                        ),
+                        const Icon(Icons.arrow_forward_ios, size: 16),
+                      ],
+                    ),
+                  ),
+                ),
+              ).toList(),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Annulla'),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
 
 @override
 Widget build(BuildContext context) {
@@ -360,7 +469,7 @@ Widget build(BuildContext context) {
   ref.watch(managingSubscriptionProvider);
   final isSyncing = ref.watch(syncingProvider);
 
-  debugPrint('Building SubscriptionsScreen: isAdmin=$isAdmin, selectedUserId=$selectedUserId, isLoading=$isLoading');
+  //debugPrint('Building SubscriptionsScreen: isAdmin=$isAdmin, selectedUserId=$selectedUserId, isLoading=$isLoading');
 
   // Determina quale subscriptionDetails usare
   final SubscriptionDetails? targetSubscriptionDetails;
@@ -387,14 +496,14 @@ Widget build(BuildContext context) {
                 ref.read(selectedUserIdProvider.notifier).state = user.id;
                 _fetchSubscriptionDetails(userId: user.id);
                 FocusScope.of(context).unfocus();
-                debugPrint('Selected user for subscription viewing: ${user.id}');
+                //debugPrint('Selected user for subscription viewing: ${user.id}');
               },
               onChanged: (pattern) {
                 final filtered = allUsers.where((user) =>
                     user.name.toLowerCase().contains(pattern.toLowerCase()) ||
                     user.email.toLowerCase().contains(pattern.toLowerCase())).toList();
                 ref.read(filteredUserListProvider.notifier).state = filtered;
-                debugPrint('Filtered users based on search pattern: $pattern');
+                //debugPrint('Filtered users based on search pattern: $pattern');
               },
             ),
           ),
@@ -434,16 +543,7 @@ Widget _buildAdminView({
   required String userId,
   required SubscriptionDetails? subscriptionDetails,
 }) {
-  debugPrint('Building admin view: userId=$userId');
-
-  if (subscriptionDetails == null) {
-    return Center(
-      child: Text(
-        'L\'utente selezionato non ha abbonamenti attivi.',
-        style: Theme.of(context).textTheme.titleLarge,
-      ),
-    );
-  }
+  //debugPrint('Building admin view: userId=$userId');
 
   final usersService = ref.read(usersServiceProvider);
   final Future<UserModel?> userFuture = usersService.getUserById(userId);
@@ -452,57 +552,80 @@ Widget _buildAdminView({
     future: userFuture,
     builder: (context, snapshot) {
       if (snapshot.connectionState == ConnectionState.waiting) {
-        return Center(
-          child: CircularProgressIndicator(),
-        );
+        return Center(child: CircularProgressIndicator());
       }
       if (!snapshot.hasData || snapshot.data == null) {
         return Center(
-          child: Text(
-            'Utente non trovato.',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
+          child: Text('Utente non trovato.', style: Theme.of(context).textTheme.titleLarge),
         );
       }
 
       final user = snapshot.data!;
+      final bool isGiftSubscription = subscriptionDetails?.platform == 'gift';
 
       return SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SubscriptionCard(
-              title: '${user.name}\'s Abbonamento',
-              status: subscriptionDetails.status.capitalize(),
-              expiry: DateFormat.yMMMd().add_jm().format(subscriptionDetails.currentPeriodEnd),
+            // Aggiungiamo prima i pulsanti di azione
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    icon: Icon(Icons.card_giftcard),
+                    label: Text('Regala Abbonamento'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    onPressed: () => _showGiftSubscriptionDialog(userId, user.name),
+                  ),
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    icon: Icon(Icons.sync),
+                    label: Text('Sincronizza'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.secondary,
+                      foregroundColor: Theme.of(context).colorScheme.onSecondary,
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    onPressed: ref.watch(syncingProvider) ? null : _syncStripeSubscription,
+                  ),
+                ),
+              ],
             ),
             SizedBox(height: 16),
-            Text(
-              'Dettagli Abbonamento',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            Divider(),
-            ...subscriptionDetails.items.map((item) {
-              return SubscriptionItemTile(item: item);
-            }),
-            SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: ref.watch(syncingProvider) ? null : _syncStripeSubscription,
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            // Dettagli dell'abbonamento esistente (se presente)
+            if (subscriptionDetails != null) ...[
+              SubscriptionCard(
+                title: '${user.name}\'s Abbonamento',
+                status: subscriptionDetails.status.capitalize(),
+                expiry: DateFormat.yMMMd().add_jm().format(subscriptionDetails.currentPeriodEnd),
+                isGift: isGiftSubscription,
+                giftInfo: isGiftSubscription ? 'Abbonamento regalo' : null,
               ),
-              child: ref.watch(syncingProvider)
-                  ? SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Theme.of(context).colorScheme.onPrimary,
-                      ),
-                    )
-                  : Text('Sincronizza Abbonamento con Stripe'),
-            ),
+              SizedBox(height: 16),
+              Text(
+                'Dettagli Abbonamento',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              Divider(),
+              ...subscriptionDetails.items.map((item) {
+                return SubscriptionItemTile(item: item);
+              }),
+            ] else ...[
+              Center(
+                child: Text(
+                  'L\'utente non ha un abbonamento attivo',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+            ],
           ],
         ),
       );
@@ -514,7 +637,7 @@ Widget _buildAdminView({
   Widget _buildUserView({
     required SubscriptionDetails? subscriptionDetails,
   }) {
-    debugPrint('Building user view: subscriptionDetails=${subscriptionDetails != null}');
+    //debugPrint('Building user view: subscriptionDetails=${subscriptionDetails != null}');
 
     if (subscriptionDetails == null) {
       return SingleChildScrollView(
@@ -589,7 +712,7 @@ Widget _buildAdminView({
     _userSearchController.dispose();
     _userSearchFocusNode.dispose();
     _userSubscription?.cancel(); // Cancels the user stream subscription
-    debugPrint('Disposed SubscriptionsScreenState');
+    //debugPrint('Disposed SubscriptionsScreenState');
     super.dispose();
   }
 }
@@ -600,6 +723,8 @@ class SubscriptionCard extends StatelessWidget {
   final String status;
   final String expiry;
   final Widget? actionButton;
+  final bool isGift;
+  final String? giftInfo;
 
   const SubscriptionCard({
     super.key,
@@ -607,11 +732,13 @@ class SubscriptionCard extends StatelessWidget {
     required this.status,
     required this.expiry,
     this.actionButton,
+    this.isGift = false,
+    this.giftInfo,
   });
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('Building SubscriptionCard: $title, status: $status, expiry: $expiry');
+    //debugPrint('Building SubscriptionCard: $title, status: $status, expiry: $expiry');
     return Card(
       elevation: 4,
       margin: const EdgeInsets.only(bottom: 16),
@@ -621,13 +748,33 @@ class SubscriptionCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: Theme.of(context).textTheme.titleLarge),
-            SizedBox(height: 8),
+            Row(
+              children: [
+                if (isGift) ...[
+                  const Icon(Icons.card_giftcard, color: Colors.purple),
+                  const SizedBox(width: 8),
+                ],
+                Expanded(
+                  child: Text(title, style: Theme.of(context).textTheme.titleLarge),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
             Text('Stato: $status', style: Theme.of(context).textTheme.bodyLarge),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Text('Scadenza: $expiry', style: Theme.of(context).textTheme.bodyLarge),
-            if (actionButton != null) ...[
-              SizedBox(height: 16),
+            if (giftInfo != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                giftInfo!,
+                style: const TextStyle(
+                  color: Colors.purple,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+            if (actionButton != null && !isGift) ...[
+              const SizedBox(height: 16),
               actionButton!,
             ],
           ],
@@ -645,7 +792,7 @@ class SubscriptionItemTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('Building SubscriptionItemTile for productId: ${item.productId}');
+    //debugPrint('Building SubscriptionItemTile for productId: ${item.productId}');
     return ListTile(
       title: Text('Prodotto: ${item.productId}'),
       subtitle: Text('ID Prezzo: ${item.priceId}'),

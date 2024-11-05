@@ -838,3 +838,49 @@ export const listSubscriptions = onCall(async (request) => {
     throw new functions.https.HttpsError('internal', 'Errore nel recuperare le sottoscrizioni.');
   }
 });
+
+// Function to create a gift subscription
+export const createGiftSubscription = onCall(async (request) => {
+  if (!request.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Must be authenticated.');
+  }
+
+  const adminUid = request.auth.uid;
+  const { userId, durationInDays } = request.data;
+
+  try {
+    // Verify admin status
+    const adminDoc = await firestore.collection('users').doc(adminUid).get();
+    if (!adminDoc.exists || adminDoc.data().role !== 'admin') {
+      throw new functions.https.HttpsError('permission-denied', 'Only admins can create gift subscriptions.');
+    }
+
+    // Get user document
+    const userDoc = await firestore.collection('users').doc(userId).get();
+    if (!userDoc.exists) {
+      throw new functions.https.HttpsError('not-found', 'User not found.');
+    }
+
+    // Calculate subscription dates
+    const startDate = new Date();
+    const expiryDate = new Date(startDate.getTime() + durationInDays * 24 * 60 * 60 * 1000);
+
+    // Update user document with gift subscription
+    await firestore.collection('users').doc(userId).update({
+      role: 'client_premium',
+      subscriptionStatus: 'active',
+      subscriptionPlatform: 'gift',
+      subscriptionStartDate: startDate,
+      subscriptionExpiryDate: expiryDate,
+      giftedBy: adminUid,
+      giftedAt: startDate,
+    });
+
+    return {
+      success: true,
+      message: 'Gift subscription created successfully',
+    };
+  } catch (error) {
+    throw new functions.https.HttpsError('internal', 'Error creating gift subscription: ' + error.message);
+  }
+});
