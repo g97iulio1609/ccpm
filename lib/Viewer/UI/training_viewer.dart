@@ -1,9 +1,9 @@
+import 'package:alphanessone/providers/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/training_program_provider.dart';
 import '../../Store/inAppPurchase_services.dart';
-import '../../Store/inAppPurchase_model.dart';
 import '../../utils/subscription_checker.dart';
 
 class TrainingViewer extends ConsumerStatefulWidget {
@@ -24,6 +24,15 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
   }
 
   Future<void> _checkSubscriptionAndFetch() async {
+    final userRole = ref.read(userRoleProvider);
+    
+    // Se l'utente è admin, carica direttamente i contenuti senza controlli
+    if (userRole == 'admin') {
+      Future.microtask(() => fetchTrainingWeeks());
+      return;
+    }
+
+    // Per gli altri utenti, verifica la sottoscrizione
     final subscriptionChecker = SubscriptionChecker();
     final hasValidSubscription = await subscriptionChecker.checkSubscription(context);
     
@@ -35,7 +44,7 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
       }
     }
 
-    // Only fetch training weeks if subscription is valid
+    // Solo se la sottoscrizione è valida o l'utente è admin
     Future.microtask(() => fetchTrainingWeeks());
   }
 
