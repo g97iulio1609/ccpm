@@ -119,7 +119,13 @@ class ExercisesList extends HookConsumerWidget {
               itemBuilder: (context, exercise) {
                 return ListTile(
                   title: Text(exercise.name),
-                  subtitle: Text('${exercise.muscleGroup} - ${exercise.type}'),
+                  subtitle: Text(
+                    '${exercise.muscleGroups.join(", ")} - ${exercise.type}',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
                 );
               },
               onSelected: (exercise) {
@@ -316,7 +322,7 @@ class ExercisesList extends HookConsumerWidget {
   }
 }
 
-class ExercisesGrid extends StatelessWidget {
+class ExercisesGrid extends ConsumerWidget {
   final List<ExerciseModel> exercises;
   final String currentUserRole;
   final String currentUserId;
@@ -333,7 +339,7 @@ class ExercisesGrid extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return CustomScrollView(
       slivers: [
         SliverLayoutBuilder(
@@ -341,15 +347,15 @@ class ExercisesGrid extends StatelessWidget {
             final isMobile = MediaQuery.of(context).size.width <= 600;
             
             return isMobile 
-                ? _buildList(context)
-                : _buildGrid(context);
+                ? _buildList(context, ref)
+                : _buildGrid(context, ref);
           },
         ),
       ],
     );
   }
 
-  Widget _buildList(BuildContext context) {
+  Widget _buildList(BuildContext context, WidgetRef ref) {
     return SliverList(
       delegate: SliverChildBuilderDelegate(
         (context, index) => Padding(
@@ -357,14 +363,14 @@ class ExercisesGrid extends StatelessWidget {
             vertical: 8.0,
             horizontal: 16.0,
           ),
-          child: _buildExerciseCard(context, exercises[index]),
+          child: _buildExerciseCard(context, exercises[index], ref),
         ),
         childCount: exercises.length,
       ),
     );
   }
 
-  Widget _buildGrid(BuildContext context) {
+  Widget _buildGrid(BuildContext context, WidgetRef ref) {
     return SliverPadding(
       padding: const EdgeInsets.all(16.0),
       sliver: SliverGrid(
@@ -375,7 +381,7 @@ class ExercisesGrid extends StatelessWidget {
           childAspectRatio: 1.2,
         ),
         delegate: SliverChildBuilderDelegate(
-          (context, index) => _buildExerciseCard(context, exercises[index]),
+          (context, index) => _buildExerciseCard(context, exercises[index], ref),
           childCount: exercises.length,
         ),
       ),
@@ -390,13 +396,14 @@ class ExercisesGrid extends StatelessWidget {
     return 1;
   }
 
-  Widget _buildExerciseCard(BuildContext context, ExerciseModel exercise) {
+  Widget _buildExerciseCard(BuildContext context, ExerciseModel exercise, WidgetRef ref) {
     final canModify = currentUserRole == 'admin' || exercise.userId == currentUserId;
+    final isAdmin = currentUserRole == 'admin';
     
-    return ExerciseCardContent(
-      exercise: exercise,
-      onTap: () => onEdit(exercise),
-      actions: canModify ? [
+    final List<Widget> actionButtons = [];
+
+    if (canModify) {
+      actionButtons.addAll([
         IconButtonWithBackground(
           icon: Icons.edit_outlined,
           color: Theme.of(context).colorScheme.primary,
@@ -408,7 +415,71 @@ class ExercisesGrid extends StatelessWidget {
           color: Theme.of(context).colorScheme.error,
           onPressed: () => onDelete(exercise),
         ),
-      ] : [],
+      ]);
+    }
+
+    if (isAdmin && exercise.status == 'pending') {
+      if (actionButtons.isNotEmpty) {
+        actionButtons.insert(0, const SizedBox(width: 8));
+      }
+      actionButtons.insert(0, 
+        IconButtonWithBackground(
+          icon: Icons.check_circle_outline,
+          color: Theme.of(context).colorScheme.tertiary,
+          onPressed: () => _showApproveConfirmationDialog(context, exercise, ref),
+        ),
+      );
+    }
+    
+    return ExerciseCardContent(
+      exercise: exercise,
+      onTap: () => onEdit(exercise),
+      actions: actionButtons,
+    );
+  }
+
+  void _showApproveConfirmationDialog(
+    BuildContext context,
+    ExerciseModel exercise,
+    WidgetRef ref,
+  ) {
+    final theme = Theme.of(context);
+    
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(
+          'Approve Exercise',
+          style: theme.textTheme.titleLarge?.copyWith(
+            color: theme.colorScheme.onSurface,
+          ),
+        ),
+        content: Text(
+          'Are you sure you want to approve "${exercise.name}"?',
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: theme.colorScheme.primary),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              ref.read(exercisesServiceProvider).approveExercise(exercise.id);
+              Navigator.pop(dialogContext);
+            },
+            child: Text(
+              'Approve',
+              style: TextStyle(color: theme.colorScheme.tertiary),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -427,7 +498,7 @@ class _ExerciseForm extends HookConsumerWidget {
     final theme = Theme.of(context);
     final formKey = useMemoized(() => GlobalKey<FormState>());
     final nameController = useTextEditingController(text: exercise?.name);
-    final selectedMuscleGroup = useState<String?>(exercise?.muscleGroup);
+    final selectedMuscleGroups = useState<List<String>>(exercise?.muscleGroups ?? []);
     final selectedExerciseType = useState<String?>(exercise?.type);
 
     return MediaQuery.removePadding(
@@ -472,24 +543,22 @@ class _ExerciseForm extends HookConsumerWidget {
                   builder: (context, ref, child) {
                     final muscleGroupsAsyncValue = ref.watch(muscleGroupsProvider);
                     return muscleGroupsAsyncValue.when(
-                      data: (muscleGroups) => DropdownButtonFormField<String>(
-                        value: selectedMuscleGroup.value,
-                        items: muscleGroups.map((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
+                      data: (muscleGroups) => Wrap(
+                        spacing: 8.0,
+                        children: muscleGroups.map((String group) {
+                          final isSelected = selectedMuscleGroups.value.contains(group);
+                          return FilterChip(
+                            label: Text(group),
+                            selected: isSelected,
+                            onSelected: (bool selected) {
+                              if (selected) {
+                                selectedMuscleGroups.value = [...selectedMuscleGroups.value, group];
+                              } else {
+                                selectedMuscleGroups.value = selectedMuscleGroups.value.where((g) => g != group).toList();
+                              }
+                            },
                           );
                         }).toList(),
-                        onChanged: (value) => selectedMuscleGroup.value = value,
-                        decoration: const InputDecoration(
-                          labelText: 'Muscle Group',
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please select a muscle group';
-                          }
-                          return null;
-                        },
                       ),
                       loading: () => const CircularProgressIndicator(),
                       error: (_, __) => const Text('Failed to load muscle groups'),
@@ -535,7 +604,7 @@ class _ExerciseForm extends HookConsumerWidget {
                           ref,
                           context,
                           nameController.text,
-                          selectedMuscleGroup.value!,
+                          selectedMuscleGroups.value,
                           selectedExerciseType.value!,
                         );
                       }
@@ -552,13 +621,13 @@ class _ExerciseForm extends HookConsumerWidget {
   }
 
   void _submitExercise(WidgetRef ref, BuildContext context, String name,
-      String muscleGroup, String exerciseType) {
+      List<String> muscleGroups, String exerciseType) {
     final exercisesService = ref.read(exercisesServiceProvider);
 
     if (exercise == null) {
       exercisesService.addExercise(
         name,
-        muscleGroup,
+        muscleGroups,
         exerciseType,
         userId,
       );
@@ -566,7 +635,7 @@ class _ExerciseForm extends HookConsumerWidget {
       exercisesService.updateExercise(
         exercise!.id,
         name,
-        muscleGroup,
+        muscleGroups,
         exerciseType,
       );
     }

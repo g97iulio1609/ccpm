@@ -192,7 +192,7 @@ class MaxRMDashboard extends HookConsumerWidget {
                         final record = latestRecords[index];
                         ExerciseModel exercise = exercises.firstWhere(
                           (ex) => ex.id == record?.exerciseId,
-                          orElse: () => ExerciseModel(id: '', name: 'Exercise not found', type: '', muscleGroup: ''),
+                          orElse: () => ExerciseModel(id: '', name: 'Exercise not found', type: '', muscleGroups: []),
                         );
                         return Padding(
                           padding: const EdgeInsets.only(
@@ -220,7 +220,7 @@ class MaxRMDashboard extends HookConsumerWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                             subtitle: Text(
-                              exercise.muscleGroup,
+                              exercise.muscleGroups.firstOrNull ?? '',
                               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 letterSpacing: -0.3,
@@ -298,7 +298,7 @@ class MaxRMDashboard extends HookConsumerWidget {
                       final record = latestRecords[index];
                       ExerciseModel exercise = exercises.firstWhere(
                         (ex) => ex.id == record?.exerciseId,
-                        orElse: () => ExerciseModel(id: '', name: 'Exercise not found', type: '', muscleGroup: ''),
+                        orElse: () => ExerciseModel(id: '', name: 'Exercise not found', type: '', muscleGroups: []),
                       );
                       return ActionCard(
                         onTap: () {
@@ -320,7 +320,7 @@ class MaxRMDashboard extends HookConsumerWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         subtitle: Text(
-                          exercise.muscleGroup,
+                          exercise.muscleGroups.firstOrNull ?? '',
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: Theme.of(context).colorScheme.onSurfaceVariant,
                             letterSpacing: -0.3,
@@ -572,7 +572,7 @@ class ExerciseCard extends ConsumerWidget {
         ),
       ),
       subtitle: Text(
-        exercise.muscleGroup,
+        exercise.muscleGroups.firstOrNull ?? '',
         style: theme.textTheme.bodyMedium?.copyWith(
           color: theme.colorScheme.onSurfaceVariant,
           letterSpacing: -0.3,

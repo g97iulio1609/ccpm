@@ -8,7 +8,7 @@ class ExerciseListController extends StateNotifier<AsyncValue<List<ExerciseModel
   final ExercisesService _exercisesService;
   List<ExerciseModel> _allExercises = [];
   String _currentSearchText = '';
-  String? _currentMuscleGroup;
+  List<String> _selectedMuscleGroups = [];
   String? _currentExerciseType;
   
   ExerciseListController(this._exercisesService) : super(const AsyncValue.loading()) {
@@ -28,7 +28,8 @@ class ExerciseListController extends StateNotifier<AsyncValue<List<ExerciseModel
   void _applyFilters() {
     final filteredList = _allExercises.where((exercise) =>
       exercise.name.toLowerCase().contains(_currentSearchText.toLowerCase()) &&
-      (_currentMuscleGroup == null || exercise.muscleGroup == _currentMuscleGroup) &&
+      (_selectedMuscleGroups.isEmpty || 
+        _selectedMuscleGroups.any((group) => exercise.muscleGroups.contains(group))) &&
       (_currentExerciseType == null || exercise.type == _currentExerciseType)
     ).toList();
 
@@ -41,18 +42,18 @@ class ExerciseListController extends StateNotifier<AsyncValue<List<ExerciseModel
 
   void updateFilters({
     String? searchText,
-    String? muscleGroup,
+    List<String>? muscleGroups,
     String? exerciseType,
   }) {
     if (searchText != null) _currentSearchText = searchText;
-    if (muscleGroup != null) _currentMuscleGroup = muscleGroup;
+    if (muscleGroups != null) _selectedMuscleGroups = muscleGroups;
     if (exerciseType != null) _currentExerciseType = exerciseType;
     _applyFilters();
   }
 
   void resetFilters() {
     _currentSearchText = '';
-    _currentMuscleGroup = null;
+    _selectedMuscleGroups = [];
     _currentExerciseType = null;
     state = AsyncValue.data(_allExercises);
   }

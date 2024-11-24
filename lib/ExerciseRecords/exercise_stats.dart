@@ -54,7 +54,7 @@ class ExerciseStats extends HookConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      exercise.name,
+                      '${exercise.name} - ${exercise.muscleGroups.join(", ")}',
                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).colorScheme.onBackground,

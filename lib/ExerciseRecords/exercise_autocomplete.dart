@@ -33,7 +33,7 @@ class ExerciseAutocompleteBox extends HookConsumerWidget {
         final suggestions = exercisesList
             .where((exercise) => exercise.name.toLowerCase().contains(search.toLowerCase()))
             .toList();
-        suggestions.add(ExerciseModel(id: '', name: 'Crea Esercizio', type: '', muscleGroup: ''));
+        suggestions.add(ExerciseModel(id: '', name: 'Crea Esercizio', type: '', muscleGroups: []));
         return suggestions;
       },
       itemBuilder: (context, suggestion) {

@@ -4,7 +4,7 @@ class ExerciseModel {
   final String id;
   final String name;
   final String type;
-  final String muscleGroup;
+  final List<String> muscleGroups;
   final String? status;
   final String? userId;
 
@@ -12,17 +12,27 @@ class ExerciseModel {
     required this.id,
     required this.name,
     required this.type,
-    required this.muscleGroup,
+    required this.muscleGroups,
     this.status,
     this.userId,
   });
 
   factory ExerciseModel.fromJson(Map<String, dynamic> json) {
+    List<String> getMuscleGroups() {
+      var muscleGroups = json['muscleGroups'];
+      if (muscleGroups is List) {
+        return muscleGroups.cast<String>();
+      } else if (muscleGroups is String) {
+        return [muscleGroups];
+      }
+      return [];
+    }
+
     return ExerciseModel(
       id: json['id'] ?? '',
       name: json['name'] ?? '',
       type: json['type'] ?? '',
-      muscleGroup: json['muscleGroup'] ?? '',
+      muscleGroups: getMuscleGroups(),
       status: json['status'],
       userId: json['userId'],
     );

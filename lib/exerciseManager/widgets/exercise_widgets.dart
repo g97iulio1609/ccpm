@@ -71,7 +71,7 @@ class ExerciseCardContent extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
       ),
       subtitle: Text(
-        '${exercise.muscleGroup} - ${exercise.type}',
+        '${exercise.muscleGroups.join(", ")} - ${exercise.type}',
         style: theme.textTheme.bodyMedium?.copyWith(
           color: theme.colorScheme.onSurfaceVariant,
           letterSpacing: -0.3,
