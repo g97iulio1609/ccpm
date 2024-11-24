@@ -25,7 +25,7 @@ class CustomCard extends StatelessWidget {
     final theme = Theme.of(context);
     
     return Container(
-      margin: const EdgeInsets.only(bottom: 20),
+      // Rimosso il margin inferiore fisso per evitare l'accumulo di spaziature
       decoration: BoxDecoration(
         color: backgroundColor ?? theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(borderRadius),
@@ -70,7 +70,7 @@ class ActionCard extends StatelessWidget {
     required this.actions,
     this.bottomContent,
     this.onTap,
-    this.contentPadding = const EdgeInsets.all(24),
+    this.contentPadding = const EdgeInsets.symmetric(horizontal: 16, vertical: 8), // Ridotto il padding
     this.actionsPadding = const EdgeInsets.symmetric(horizontal: 8),
   });
 
@@ -78,8 +78,9 @@ class ActionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return CustomCard(
       onTap: onTap,
-      padding: EdgeInsets.zero,
+      padding: EdgeInsets.zero, // Padding gestito internamente
       child: Column(
+        mainAxisSize: MainAxisSize.min, // Assicura altezza minima
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
@@ -90,6 +91,7 @@ class ActionCard extends StatelessWidget {
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min, // Assicura altezza minima
                     children: [
                       title,
                       if (subtitle != null) ...[
@@ -117,7 +119,7 @@ class ActionCard extends StatelessWidget {
             ),
           ),
           if (bottomContent != null) ...[
-            const SizedBox(height: 20),
+            const SizedBox(height: 12), // Ridotto l'altezza
             Padding(
               padding: contentPadding,
               child: Row(
@@ -153,7 +155,7 @@ class IconButtonWithBackground extends StatelessWidget {
     required this.color,
     required this.onPressed,
     this.size = 20,
-    this.padding = const EdgeInsets.all(8),
+    this.padding = const EdgeInsets.all(4), // Ridotto il padding
   });
 
   @override
@@ -169,10 +171,10 @@ class IconButtonWithBackground extends StatelessWidget {
         color: color,
         padding: padding,
         constraints: const BoxConstraints(
-          minWidth: 40,
-          minHeight: 40,
+          minWidth: 32, // Ridotto le dimensioni minime
+          minHeight: 32,
         ),
       ),
     );
   }
-} 
+}
