@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:alphanessone/providers/providers.dart';
 import './trainingBuilder/controller/training_program_controller.dart';
 import './trainingBuilder/services/training_services.dart';
+import 'UI/components/card.dart';
 
 class UserProgramsScreen extends HookConsumerWidget {
   final String userId;
@@ -15,42 +16,26 @@ class UserProgramsScreen extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final userRole = ref.watch(userRoleProvider);
     final firestoreService = ref.watch(firestoreServiceProvider);
+    final theme = Theme.of(context);
 
     return Scaffold(
-      body: Column(
-        children: [
-          if (userRole == 'admin' || userRole == 'client_premium' || userRole == 'coach')
-            _buildAddProgramButton(context, userId),
-          Expanded(
-            child: _buildProgramList(context, ref, userId, userRole, firestoreService),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              theme.colorScheme.surface,
+              theme.colorScheme.surface.withOpacity(0.92),
+            ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAddProgramButton(BuildContext context, String userId) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: ElevatedButton(
-        onPressed: () => _addProgram(context, userId),
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          foregroundColor: Theme.of(context).colorScheme.onPrimary,
-          textStyle: Theme.of(context).textTheme.titleMedium,
         ),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Column(
           children: [
-            Icon(Icons.add),
-            SizedBox(width: 8),
-            Text(
-              'Crea Programma Di Allenamento',
-              style: TextStyle(fontWeight: FontWeight.bold),
+            if (userRole == 'admin' || userRole == 'client_premium' || userRole == 'coach')
+              _buildAddProgramButton(context, userId),
+            Expanded(
+              child: _buildProgramList(context, ref, userId, userRole, firestoreService),
             ),
           ],
         ),
@@ -58,7 +43,58 @@ class UserProgramsScreen extends HookConsumerWidget {
     );
   }
 
-  Widget _buildProgramList(BuildContext context, WidgetRef ref, String userId, String userRole, FirestoreService firestoreService) {
+  Widget _buildAddProgramButton(BuildContext context, String userId) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Container(
+        width: double.infinity,
+        height: 56,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              theme.colorScheme.primary,
+              theme.colorScheme.primary.withOpacity(0.8),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: theme.colorScheme.primary.withOpacity(0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: MaterialButton(
+          onPressed: () => _addProgram(context, userId),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.add,
+                color: theme.colorScheme.onPrimary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Crea Programma Di Allenamento',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: theme.colorScheme.onPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProgramList(BuildContext context, WidgetRef ref, String userId,
+      String userRole, FirestoreService firestoreService) {
     return StreamBuilder<QuerySnapshot>(
       stream: _getProgramsStream(userId, userRole),
       builder: (context, snapshot) {
@@ -75,89 +111,166 @@ class UserProgramsScreen extends HookConsumerWidget {
         final documents = snapshot.data!.docs;
 
         return ListView.builder(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
           itemCount: documents.length,
-          itemBuilder: (context, index) => _buildProgramCard(context, ref, documents[index], userId, userRole, firestoreService),
+          itemBuilder: (context, index) =>
+              _buildProgramCard(context, ref, documents[index], userId, userRole, firestoreService),
         );
       },
     );
   }
 
-  Widget _buildProgramCard(BuildContext context, WidgetRef ref, DocumentSnapshot doc, String userId, String userRole, FirestoreService firestoreService) {
+  Widget _buildProgramCard(BuildContext context, WidgetRef ref,
+      DocumentSnapshot doc, String userId, String userRole, FirestoreService firestoreService) {
+    final theme = Theme.of(context);
     final isHidden = doc['hide'] ?? false;
     final controller = ref.read(trainingProgramControllerProvider);
     final mesocycleNumber = doc['mesocycleNumber'] ?? 1;
 
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.0),
+    return ActionCard(
+      onTap: () => context.go('/user_programs/$userId/training_viewer/${doc.id}'),
+      title: Text(
+        doc['name'],
+        style: theme.textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.5,
+        ),
       ),
-      child: InkWell(
-        onTap: () => context.go('/user_programs/$userId/training_viewer/${doc.id}'),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      doc['name'],
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                  ),
-                  Text(
-                    'Mesociclo $mesocycleNumber',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
-                  ),
-                ],
-              ),
-              if (isHidden && (userRole == 'admin' || userRole == 'coach') )
-                Text(
-                  'Nascosto',
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  if (userRole == 'admin' || userRole == 'coach')
-                    IconButton(
-                      icon: Icon(isHidden ? Icons.visibility_off : Icons.visibility),
-                      onPressed: () => _toggleProgramVisibility(doc.id, isHidden),
-                    ),
-                  if (userRole == 'admin' || userRole == 'client_premium' || userRole=='coach')
-                    _buildPopupMenu(context, doc, userId, controller, firestoreService),
-                ],
-              ),
-            ],
+      subtitle: Text(
+        'Mesociclo $mesocycleNumber',
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.secondary,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      actions: [
+        if (userRole == 'admin' || userRole == 'coach')
+          IconButtonWithBackground(
+            icon: isHidden ? Icons.visibility_off : Icons.visibility,
+            color: theme.colorScheme.primary,
+            onPressed: () => _toggleProgramVisibility(doc.id, isHidden),
           ),
+        if (userRole == 'admin' || userRole == 'client_premium' || userRole == 'coach')
+          IconButtonWithBackground(
+            icon: Icons.more_vert,
+            color: theme.colorScheme.primary,
+            onPressed: () => _showProgramOptions(
+              context,
+              doc,
+              userId,
+              controller,
+              firestoreService,
+              theme,
+            ),
+          ),
+      ],
+      bottomContent: isHidden && (userRole == 'admin' || userRole == 'coach')
+          ? [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.visibility_off,
+                      size: 16,
+                      color: theme.colorScheme.onErrorContainer,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Nascosto',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onErrorContainer,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ]
+          : null,
+    );
+  }
+
+  void _showProgramOptions(
+    BuildContext context,
+    DocumentSnapshot doc,
+    String userId,
+    TrainingProgramController controller,
+    FirestoreService firestoreService,
+    ThemeData theme,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: theme.colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) => CustomCard(
+        padding: EdgeInsets.zero,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildOptionTile(
+              context,
+              'Modifica',
+              Icons.edit_outlined,
+              () {
+                Navigator.pop(context);
+                context.go('/user_programs/$userId/training_program/${doc.id}');
+              },
+            ),
+            _buildOptionTile(
+              context,
+              'Duplica',
+              Icons.content_copy,
+              () {
+                Navigator.pop(context);
+                _duplicateProgram(context, doc.id, controller);
+              },
+            ),
+            _buildOptionTile(
+              context,
+              'Elimina',
+              Icons.delete_outline,
+              () {
+                Navigator.pop(context);
+                _deleteProgram(context, doc.id, firestoreService);
+              },
+              isDestructive: true,
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildPopupMenu(BuildContext context, DocumentSnapshot doc, String userId, TrainingProgramController controller, FirestoreService firestoreService) {
-    return PopupMenuButton(
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          child: const Text('Modifica'),
-          onTap: () => context.go('/user_programs/$userId/training_program/${doc.id}'),
+  Widget _buildOptionTile(
+    BuildContext context,
+    String title,
+    IconData icon,
+    VoidCallback onTap, {
+    bool isDestructive = false,
+  }) {
+    final theme = Theme.of(context);
+    final color = isDestructive ? theme.colorScheme.error : theme.colorScheme.onSurface;
+    
+    return ListTile(
+      leading: Icon(icon, color: color),
+      title: Text(
+        title,
+        style: theme.textTheme.titleMedium?.copyWith(
+          color: color,
         ),
-        PopupMenuItem(
-          child: const Text('Elimina'),
-          onTap: () => _deleteProgram(context, doc.id, firestoreService),
-        ),
-        PopupMenuItem(
-          child: const Text('Duplica'),
-          onTap: () => _duplicateProgram(context, doc.id, controller),
-        ),
-      ],
+      ),
+      onTap: onTap,
     );
   }
 

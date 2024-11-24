@@ -14,6 +14,7 @@ import 'package:alphanessone/services/users_services.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 import '../../user_autocomplete.dart';
 import '../../providers/providers.dart';
+import '../UI/components/card.dart';
 
 class MaxRMDashboard extends HookConsumerWidget {
   const MaxRMDashboard({super.key});
@@ -293,147 +294,72 @@ class ExerciseCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedUserId = ref.watch(selectedUserIdProvider);
+    final theme = Theme.of(context);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            offset: const Offset(0, 8),
-            blurRadius: 24,
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(24),
-          onTap: () {
-            context.push(
-              '/maxrmdashboard/exercise_stats/${exercise.id}',
-              extra: {
-                'exercise': exercise,
-                'userId': selectedUserId ?? usersService.getCurrentUserId(),
-              },
-            );
+    return ActionCard(
+      onTap: () {
+        context.push(
+          '/maxrmdashboard/exercise_stats/${exercise.id}',
+          extra: {
+            'exercise': exercise,
+            'userId': selectedUserId ?? usersService.getCurrentUserId(),
           },
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            exercise.name,
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(context).colorScheme.onSurface,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            exercise.muscleGroup,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              letterSpacing: -0.3,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        _buildIconButton(
-                          context,
-                          Icons.edit_outlined,
-                          Theme.of(context).colorScheme.primary,
-                          () => _showEditDialog(context, ref),
-                        ),
-                        const SizedBox(width: 8),
-                        _buildIconButton(
-                          context,
-                          Icons.delete_outline,
-                          Theme.of(context).colorScheme.error,
-                          () => _showDeleteDialog(context, ref),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.8),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Text(
-                        '${record.maxWeight} kg',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).colorScheme.onPrimaryContainer,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Text(
-                      DateFormat('d MMM yyyy').format(DateTime.parse(record.date)),
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+        );
+      },
+      title: Text(
+        exercise.name,
+        style: theme.textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.5,
+        ),
+      ),
+      subtitle: Text(
+        exercise.muscleGroup,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+          letterSpacing: -0.3,
+        ),
+      ),
+      actions: [
+        IconButtonWithBackground(
+          icon: Icons.edit_outlined,
+          color: theme.colorScheme.primary,
+          onPressed: () => _showEditDialog(context, ref),
+        ),
+        const SizedBox(width: 8),
+        IconButtonWithBackground(
+          icon: Icons.delete_outline,
+          color: theme.colorScheme.error,
+          onPressed: () => _showDeleteDialog(context, ref),
+        ),
+      ],
+      bottomContent: [
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primaryContainer.withOpacity(0.8),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Text(
+            '${record.maxWeight} kg',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onPrimaryContainer,
+              letterSpacing: -0.5,
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildIconButton(
-    BuildContext context,
-    IconData icon,
-    Color color,
-    VoidCallback onPressed,
-  ) {
-    return Container(
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: IconButton(
-        icon: Icon(icon, size: 20),
-        onPressed: onPressed,
-        color: color,
-        padding: const EdgeInsets.all(8),
-        constraints: const BoxConstraints(
-          minWidth: 40,
-          minHeight: 40,
+        Text(
+          DateFormat('d MMM yyyy').format(DateTime.parse(record.date)),
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            letterSpacing: -0.3,
+          ),
         ),
-      ),
+      ],
     );
   }
 

@@ -18,84 +18,152 @@ class AuthForm extends HookConsumerWidget {
     final userPassword = useState('');
     final userName = useState('');
     final userGender = useState('');
+    final theme = Theme.of(context);
 
-    return Container(
-      color: const Color(0xFF121212),
+    return Form(
+      key: formKey,
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
-            'Begin your journey',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+          // Title Section
+          Text(
+            isLogin.value ? 'Welcome Back' : 'Create Account',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onSurface,
+              letterSpacing: -0.5,
             ),
           ),
-          const SizedBox(height: 16),
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              GoogleSignInButtonWrapper(),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Or continue with',
-            style: TextStyle(
-              color: Colors.white,
+          const SizedBox(height: 8),
+          Text(
+            isLogin.value 
+                ? 'Sign in to continue your fitness journey'
+                : 'Join us and start your transformation',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          Form(
-            key: formKey,
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  EmailField(userEmail: userEmail),
-                  const SizedBox(height: 16),
-                  PasswordField(userPassword: userPassword),
-                  if (!isLogin.value) ...[
-                    const SizedBox(height: 16),
-                    UsernameField(userName: userName),
-                    const SizedBox(height: 16),
-                    GenderField(userGender: userGender),
-                  ],
-                  const SizedBox(height: 24),
-                  SubmitButton(
-                    formKey: formKey,
-                    isLogin: isLogin,
-                    authService: authService,
-                    userEmail: userEmail,
-                    userPassword: userPassword,
-                    userName: userName,
-                    userGender: userGender,
-                  ),
-                  const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: () => isLogin.value = !isLogin.value,
-                    child: Text(
-                      isLogin.value ? 'Not a Member? Create an Account' : 'I already have an account',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {},
-                    child: const Text(
-                      'Forgot password?',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
+          const SizedBox(height: 32),
+
+          // Social Sign In
+          Container(
+            height: 48,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  theme.colorScheme.surface,
+                  theme.colorScheme.surface.withOpacity(0.8),
                 ],
               ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: theme.colorScheme.outline.withOpacity(0.2),
+              ),
             ),
+            child: const GoogleSignInButtonWrapper(),
           ),
+          const SizedBox(height: 24),
+
+          // Divider
+          Row(
+            children: [
+              Expanded(
+                child: Divider(
+                  color: theme.colorScheme.outline.withOpacity(0.2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'or continue with',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Divider(
+                  color: theme.colorScheme.outline.withOpacity(0.2),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          // Form Fields
+          EmailField(userEmail: userEmail),
+          const SizedBox(height: 16),
+          PasswordField(userPassword: userPassword),
+          
+          // Registration Fields
+          if (!isLogin.value) ...[
+            const SizedBox(height: 16),
+            UsernameField(userName: userName),
+            const SizedBox(height: 16),
+            GenderField(userGender: userGender),
+          ],
+          
+          const SizedBox(height: 24),
+
+          // Submit Button
+          SubmitButton(
+            formKey: formKey,
+            isLogin: isLogin,
+            authService: authService,
+            userEmail: userEmail,
+            userPassword: userPassword,
+            userName: userName,
+            userGender: userGender,
+          ),
+          
+          const SizedBox(height: 16),
+
+          // Toggle Auth Mode
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                isLogin.value ? 'Not a member? ' : 'Already have an account? ',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              TextButton(
+                onPressed: () => isLogin.value = !isLogin.value,
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: Size.zero,
+                ),
+                child: Text(
+                  isLogin.value ? 'Sign up' : 'Sign in',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          if (isLogin.value) ...[
+            TextButton(
+              onPressed: () {
+                // Implementa la logica per il recupero password
+              },
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                minimumSize: Size.zero,
+              ),
+              child: Text(
+                'Forgot password?',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
