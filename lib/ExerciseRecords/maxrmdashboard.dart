@@ -112,16 +112,6 @@ class MaxRMDashboard extends HookConsumerWidget {
                       ),
                       const SizedBox(height: 32),
                     ],
-                    Text(
-                      'Personal Records',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
-                        color: Theme.of(context).colorScheme.onSurface,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
                   ],
                 ),
               ),
@@ -208,7 +198,7 @@ class MaxRMDashboard extends HookConsumerWidget {
                     return ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
                       itemCount: latestRecords.length,
                       itemBuilder: (context, index) {
                         final record = latestRecords[index];
@@ -216,82 +206,89 @@ class MaxRMDashboard extends HookConsumerWidget {
                           (ex) => ex.id == record?.exerciseId,
                           orElse: () => ExerciseModel(id: '', name: 'Exercise not found', type: '', muscleGroup: ''),
                         );
-                        return ActionCard(
-                          onTap: () {
-                            context.push(
-                              '/maxrmdashboard/exercise_stats/${exercise.id}',
-                              extra: {
-                                'exercise': exercise,
-                                'userId': selectedUserId ?? usersService.getCurrentUserId(),
-                              },
-                            );
-                          },
-                          title: Text(
-                            exercise.name,
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: -0.5,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                        return Padding(
+                          padding: const EdgeInsets.only(
+                            left: 16,
+                            right: 16,
+                            bottom: 16,
                           ),
-                          subtitle: Text(
-                            exercise.muscleGroup,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              letterSpacing: -0.3,
-                            ),
-                          ),
-                          actions: [
-                            IconButtonWithBackground(
-                              icon: Icons.edit_outlined,
-                              color: Theme.of(context).colorScheme.primary,
-                              onPressed: () {
-                                if (record != null) {
-                                  _showEditMaxRMDialog(context, ref, record!, exercise);
-                                }
-                              },
-                            ),
-                            const SizedBox(width: 8),
-                            IconButtonWithBackground(
-                              icon: Icons.delete_outline,
-                              color: Theme.of(context).colorScheme.error,
-                              onPressed: () {
-                                if (record != null) {
-                                  _showDeleteMaxRMDialog(context, ref, record!, exercise);
-                                }
-                              },
-                            ),
-                          ],
-                          bottomContent: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
+                          child: ActionCard(
+                            onTap: () {
+                              context.push(
+                                '/maxrmdashboard/exercise_stats/${exercise.id}',
+                                extra: {
+                                  'exercise': exercise,
+                                  'userId': selectedUserId ?? usersService.getCurrentUserId(),
+                                },
+                              );
+                            },
+                            title: Text(
+                              exercise.name,
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: -0.5,
                               ),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.8),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Text(
-                                '${record?.maxWeight ?? 0} kg',
-                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: Theme.of(context).colorScheme.onPrimaryContainer,
-                                  letterSpacing: -0.5,
-                                ),
-                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            Text(
-                              DateFormat('d MMM yyyy').format(
-                                DateTime.parse(record?.date ?? DateTime.now().toString()),
-                              ),
-                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            subtitle: Text(
+                              exercise.muscleGroup,
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 letterSpacing: -0.3,
                               ),
                             ),
-                          ],
+                            actions: [
+                              IconButtonWithBackground(
+                                icon: Icons.edit_outlined,
+                                color: Theme.of(context).colorScheme.primary,
+                                onPressed: () {
+                                  if (record != null) {
+                                    _showEditMaxRMDialog(context, ref, record!, exercise);
+                                  }
+                                },
+                              ),
+                              const SizedBox(width: 8),
+                              IconButtonWithBackground(
+                                icon: Icons.delete_outline,
+                                color: Theme.of(context).colorScheme.error,
+                                onPressed: () {
+                                  if (record != null) {
+                                    _showDeleteMaxRMDialog(context, ref, record!, exercise);
+                                  }
+                                },
+                              ),
+                            ],
+                            bottomContent: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.8),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Text(
+                                  '${record?.maxWeight ?? 0} kg',
+                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                DateFormat('d MMM yyyy').format(
+                                  DateTime.parse(record?.date ?? DateTime.now().toString()),
+                                ),
+                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  letterSpacing: -0.3,
+                                ),
+                              ),
+                            ],
+                          ),
                         );
                       },
                     );
