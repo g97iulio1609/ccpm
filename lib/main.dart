@@ -1,4 +1,3 @@
-
 import 'package:alphanessone/Main/app_services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -9,13 +8,15 @@ import 'firebase_options.dart';
 import 'Main/app_router.dart';
 import 'Main/app_theme.dart';
 import 'Main/app_notifications.dart';
+import 'Store/url_redirect_web.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   
-  // Inizializza Stripe solo se non è una piattaforma Web
-  if (!kIsWeb) {
+  if (kIsWeb) {
+    await StripeCheckout.initStripe();
+  } else {
     Stripe.publishableKey = 'pk_live_51Lk8noGIoD20nGKnKB5igqB4Kpry8VQpYgWwm0t5dJWTCOX4pQXdg9N24dM1fSgZP3oVoYPTZj4SGYIp9aT05Mrr00a4XOvZg6';
     await Stripe.instance.applySettings();
   }

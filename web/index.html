@@ -1,6 +1,14 @@
 <!DOCTYPE html><html><head>
   <meta name="google-signin-client_id" content="179277367624-haict835tr0dgldmhn4d4nv6ec3s41fp.apps.googleusercontent.com">
 
+  <meta http-equiv="Content-Security-Policy" 
+        content="default-src * 'unsafe-inline' 'unsafe-eval'; 
+                 script-src * 'unsafe-inline' 'unsafe-eval' https://js.stripe.com; 
+                 connect-src * 'unsafe-inline' https://api.stripe.com; 
+                 img-src * data: blob: 'unsafe-inline'; 
+                 frame-src * https://js.stripe.com https://hooks.stripe.com;
+                 style-src * 'unsafe-inline';">
+
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
@@ -18,6 +26,8 @@
 
   <title>AlphanessOne</title>
   <link rel="manifest" href="manifest.json">
+
+  <script src="https://js.stripe.com/v3/"></script>
 
   
   

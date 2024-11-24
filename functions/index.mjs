@@ -884,3 +884,63 @@ export const createGiftSubscription = onCall(async (request) => {
     throw new functions.https.HttpsError('internal', 'Error creating gift subscription: ' + error.message);
   }
 });
+
+// Nuova funzione per creare un PaymentIntent
+export const createPaymentIntent = onCall(async (request) => {
+  if (!request.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Must be authenticated.');
+  }
+
+  const { productId } = request.data;
+  const userId = request.auth.uid;
+
+  try {
+    const userDoc = await firestore.collection('users').doc(userId).get();
+    if (!userDoc.exists) {
+      throw new functions.https.HttpsError('not-found', 'User not found.');
+    }
+
+    const userData = userDoc.data();
+    const userEmail = userData.email;
+
+    const productDoc = await firestore.collection('products').doc(productId).get();
+    if (!productDoc.exists) {
+      throw new functions.https.HttpsError('not-found', 'Product not found.');
+    }
+
+    const product = productDoc.data();
+
+    // Crea o recupera il cliente Stripe
+    let customer;
+    const existingCustomers = await stripe.customers.list({ email: userEmail, limit: 1 });
+    if (existingCustomers.data.length > 0) {
+      customer = existingCustomers.data[0];
+    } else {
+      customer = await stripe.customers.create({
+        email: userEmail,
+        metadata: { firebaseUid: userId },
+      });
+    }
+
+    // Crea il PaymentIntent
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: product.price * 100, // Converti in centesimi
+      currency: product.currency || 'eur',
+      customer: customer.id,
+      metadata: {
+        productId,
+        userId,
+      },
+      payment_method_types: ['card'],
+      setup_future_usage: 'off_session', // Per abbonamenti futuri
+    });
+
+    return {
+      clientSecret: paymentIntent.client_secret,
+      amount: paymentIntent.amount,
+      currency: paymentIntent.currency,
+    };
+  } catch (error) {
+    throw new functions.https.HttpsError('internal', 'Unable to create payment intent: ' + error.message);
+  }
+});

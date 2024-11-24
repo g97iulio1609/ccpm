@@ -9,6 +9,9 @@ import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'url_redirect.dart'; // Assicurati di avere questo file
 import 'package:flutter/material.dart';
+import 'url_redirect_web.dart';
+import 'package:flutter_stripe_web/flutter_stripe_web.dart' as stripe_web;
+import 'stripe_checkout_widget.dart';
 
 class InAppPurchaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -27,6 +30,8 @@ class InAppPurchaseService {
 
   final Map<String, List<ProductDetails>> _productDetailsByProductId = {};
   Map<String, List<ProductDetails>> get productDetailsByProductId => _productDetailsByProductId;
+
+  BuildContext? _context;
 
   Future<void> initStoreInfo() async {
     debugLog('initStoreInfo called');
@@ -130,27 +135,51 @@ class InAppPurchaseService {
         throw Exception('User not authenticated');
       }
 
-      debugLog('Calling createCheckoutSession Cloud Function...');
-      final result = await _functions.httpsCallable('createCheckoutSession').call({
+      debugLog('Calling createPaymentIntent Cloud Function...');
+      final result = await _functions.httpsCallable('createPaymentIntent').call({
         'productId': productId,
       });
 
       debugLog('Cloud Function call successful. Result: ${result.data}');
 
-      if (result.data == null || !result.data.containsKey('url')) {
-        debugLog('Invalid response format from createCheckoutSession.');
-        throw Exception('Invalid response format from createCheckoutSession.');
+      if (result.data == null || 
+          !result.data.containsKey('clientSecret') || 
+          !result.data.containsKey('amount') || 
+          !result.data.containsKey('currency')) {
+        debugLog('Invalid response format from createPaymentIntent');
+        throw Exception('Invalid response format from createPaymentIntent');
       }
 
-      final sessionUrl = result.data['url'] as String;
-      debugLog('Received sessionUrl: $sessionUrl');
+      // Mostra il dialog di checkout
+      final paymentResult = await showDialog<String>(
+        context: _context!,
+        barrierDismissible: false,
+        builder: (context) => Dialog(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 500),
+            child: StripeCheckoutWidget(
+              clientSecret: result.data['clientSecret'],
+              amount: result.data['amount'].toDouble(),
+              currency: result.data['currency'],
+              onPaymentSuccess: (paymentIntentId) {
+                Navigator.of(context).pop(paymentIntentId);
+              },
+              onPaymentError: (error) {
+                _showSnackBar(error);
+                Navigator.of(context).pop();
+              },
+            ),
+          ),
+        ),
+      );
 
-      final redirectUrl = Uri.parse(sessionUrl);
-      debugLog('Redirecting to: $redirectUrl');
-
-      // Utilizza il metodo di redirect condizionato
-      await redirectToUrl(redirectUrl);
-      debugLog('Stripe Checkout launched successfully');
+      if (paymentResult != null) {
+        debugLog('Payment successful');
+        await _verifyAndUpdateSubscription(paymentResult);
+      } else {
+        debugLog('Payment cancelled or failed');
+        throw Exception('Payment cancelled');
+      }
     } catch (e) {
       debugLog('Error making Stripe purchase: $e');
       _showSnackBar('Errore durante l\'acquisto: $e');
@@ -241,7 +270,7 @@ Future<void> syncStripeSubscription({bool syncAll = false}) async {
     for (var purchaseDetails in purchaseDetailsList) {
       debugLog('Processing purchase: ${purchaseDetails.productID}, status: ${purchaseDetails.status}');
       if (purchaseDetails.status == PurchaseStatus.purchased) {
-        await _verifyAndUpdateSubscription(purchaseDetails);
+        await _verifyAndUpdateSubscription(purchaseDetails.purchaseID ?? '');
       }
       if (purchaseDetails.pendingCompletePurchase) {
         await _inAppPurchase.completePurchase(purchaseDetails);
@@ -250,36 +279,21 @@ Future<void> syncStripeSubscription({bool syncAll = false}) async {
     }
   }
 
-  Future<void> _verifyAndUpdateSubscription(PurchaseDetails purchaseDetails) async {
-    debugLog('Verifying and updating subscription for productId: ${purchaseDetails.productID}');
+  Future<void> _verifyAndUpdateSubscription(String paymentIntentId) async {
+    debugLog('Verifying payment intent: $paymentIntentId');
     try {
-      final user = _auth.currentUser;
-      if (user == null) {
-        debugLog('User not authenticated');
-        throw Exception('User not authenticated');
-      }
-
-      final result = await _functions.httpsCallable('verifyPurchase').call({
-        'productId': purchaseDetails.productID,
-        'purchaseToken': purchaseDetails.verificationData.serverVerificationData,
+      final result = await _functions.httpsCallable('verifyPayment').call({
+        'paymentIntentId': paymentIntentId,
       });
 
-      debugLog('Purchase verification result: ${result.data}');
-
       if (result.data['valid']) {
-        debugLog('Purchase is valid. Updating user subscription.');
-        await _updateUserSubscription(
-          user.uid,
-          purchaseDetails.productID,
-          DateTime.parse(result.data['expiryDate']),
-        );
-        debugLog('User subscription updated successfully.');
+        debugLog('Payment is valid. Updating subscription...');
+        // Aggiorna l'abbonamento
       } else {
-        debugLog('Invalid purchase');
-        throw Exception('Invalid purchase');
+        throw Exception('Invalid payment');
       }
     } catch (e) {
-      debugLog('Error verifying and updating subscription: $e');
+      debugLog('Error verifying payment: $e');
       rethrow;
     }
   }
@@ -521,6 +535,10 @@ Future<SubscriptionDetails?> getSubscriptionDetails({String? userId}) async {
       debugLog('Error creating gift subscription: $e');
       rethrow;
     }
+  }
+
+  void setContext(BuildContext context) {
+    _context = context;
   }
 }
 

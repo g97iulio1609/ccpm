@@ -27,6 +27,7 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
     debugLog('InAppSubscriptionsPage: initState called');
     ref.read(usersServiceProvider);
     _inAppPurchaseService = InAppPurchaseService();
+    _inAppPurchaseService.setContext(context);
     _initialize();
     _checkAdminStatus();
   }

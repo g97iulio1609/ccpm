@@ -61,26 +61,68 @@ class MaxRMDashboard extends HookConsumerWidget {
     }
 
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if ((currentUserRole == 'admin' || currentUserRole == 'coach') && userFetchComplete.value) ...[
-              UserTypeAheadField(
-                controller: selectedUserController,
-                focusNode: FocusNode(),
-                onSelected: (UserModel user) {
-                  ref.read(selectedUserIdProvider.notifier).state = user.id;
-                },
-                onChanged: (String value) {
-                  filterUsers(value);
-                },
-              ),
-              const SizedBox(height: 8),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Theme.of(context).colorScheme.surface,
+              Theme.of(context).colorScheme.surface.withOpacity(0.8),
             ],
-            _buildAllExercisesMaxRMs(ref, usersService, exerciseRecordService, context, selectedUserId),
-          ],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 24),
+              if ((currentUserRole == 'admin' || currentUserRole == 'coach') && 
+                  userFetchComplete.value) ...[
+                Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+                    ),
+                  ),
+                  child: UserTypeAheadField(
+                    controller: selectedUserController,
+                    focusNode: FocusNode(),
+                    onSelected: (UserModel user) {
+                      ref.read(selectedUserIdProvider.notifier).state = user.id;
+                    },
+                    onChanged: (String value) {
+                      filterUsers(value);
+                    },
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                child: Text(
+                  'Personal Records',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: _buildAllExercisesMaxRMs(
+                  ref, 
+                  usersService, 
+                  exerciseRecordService, 
+                  context, 
+                  selectedUserId
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -179,12 +221,17 @@ class MaxRMDashboard extends HookConsumerWidget {
           final usersService = ref.read(usersServiceProvider);
           final userId = selectedUserId ?? usersService.getCurrentUserId();
 
+          double adjustedMaxWeight = maxWeight.toDouble();
+          if (repetitions > 1) {
+            adjustedMaxWeight = (maxWeight / (1.0278 - (0.0278 * repetitions))).roundToDouble();
+          }
+
           await exerciseRecordService.addExerciseRecord(
             userId: userId,
             exerciseId: exerciseId,
             exerciseName: exerciseName,
-            maxWeight: maxWeight,
-            repetitions: repetitions,
+            maxWeight: adjustedMaxWeight,
+            repetitions: 1,
             date: DateFormat('yyyy-MM-dd').format(date),
           );
 
@@ -192,13 +239,13 @@ class MaxRMDashboard extends HookConsumerWidget {
             await exerciseRecordService.updateIntensityForProgram(
               userId,
               exerciseId,
-              maxWeight,
+              adjustedMaxWeight,
             );
           } else {
             await exerciseRecordService.updateWeightsForProgram(
               userId,
               exerciseId,
-              maxWeight,
+              adjustedMaxWeight,
             );
           }
 
@@ -232,61 +279,99 @@ class ExerciseCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedUserId = ref.watch(selectedUserIdProvider);
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      color: Theme.of(context).colorScheme.surface,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          context.push(
-            '/maxrmdashboard/exercise_stats/${exercise.id}',
-            extra: {
-              'exercise': exercise,
-              'userId': selectedUserId ?? usersService.getCurrentUserId(),
-            },
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () {
+            context.push(
+              '/maxrmdashboard/exercise_stats/${exercise.id}',
+              extra: {
+                'exercise': exercise,
+                'userId': selectedUserId ?? usersService.getCurrentUserId(),
+              },
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      exercise.name,
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Theme.of(context).colorScheme.onSurface),
+                    Expanded(
+                      child: Text(
+                        exercise.name,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${record.maxWeight} kg x ${record.repetitions} reps',
-                      style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      record.date,
-                      style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit_outlined),
+                          onPressed: () => _showEditDialog(context, ref),
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: () => _showDeleteDialog(context, ref),
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ),
-              Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () => _showEditDialog(context, ref),
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () => _showDeleteDialog(context, ref),
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ],
-              ),
-            ],
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '${record.maxWeight} kg',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      record.date,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
