@@ -188,24 +188,211 @@ class MaxRMDashboard extends HookConsumerWidget {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
-              var latestRecords = snapshot.data ?? [];
-              latestRecords = latestRecords.where((record) => record != null).toList();
+              
+              final latestRecords = (snapshot.data ?? [])
+                  .where((record) => record != null)
+                  .toList();
 
-              return ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: latestRecords.length,
-                itemBuilder: (context, index) {
-                  var record = latestRecords[index];
-                  ExerciseModel exercise = exercises.firstWhere(
-                    (ex) => ex.id == record?.exerciseId,
-                    orElse: () => ExerciseModel(id: '', name: 'Exercise not found', type: '', muscleGroup: ''),
-                  );
-                  return ExerciseCard(
-                    record: record!,
-                    exercise: exercise,
-                    exerciseRecordService: exerciseRecordService,
-                    usersService: usersService,
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  final isMobile = constraints.maxWidth <= 600;
+                  final crossAxisCount = switch (constraints.maxWidth) {
+                    > 1200 => 4, // Desktop large
+                    > 900 => 3,  // Desktop
+                    > 600 => 2,  // Tablet
+                    _ => 1,      // Mobile
+                  };
+
+                  if (isMobile) {
+                    // Per mobile, usiamo ListView invece di GridView per altezza adattiva
+                    return ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(16),
+                      itemCount: latestRecords.length,
+                      itemBuilder: (context, index) {
+                        final record = latestRecords[index];
+                        ExerciseModel exercise = exercises.firstWhere(
+                          (ex) => ex.id == record?.exerciseId,
+                          orElse: () => ExerciseModel(id: '', name: 'Exercise not found', type: '', muscleGroup: ''),
+                        );
+                        return ActionCard(
+                          onTap: () {
+                            context.push(
+                              '/maxrmdashboard/exercise_stats/${exercise.id}',
+                              extra: {
+                                'exercise': exercise,
+                                'userId': selectedUserId ?? usersService.getCurrentUserId(),
+                              },
+                            );
+                          },
+                          title: Text(
+                            exercise.name,
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: -0.5,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Text(
+                            exercise.muscleGroup,
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                          actions: [
+                            IconButtonWithBackground(
+                              icon: Icons.edit_outlined,
+                              color: Theme.of(context).colorScheme.primary,
+                              onPressed: () {
+                                if (record != null) {
+                                  _showEditMaxRMDialog(context, ref, record!, exercise);
+                                }
+                              },
+                            ),
+                            const SizedBox(width: 8),
+                            IconButtonWithBackground(
+                              icon: Icons.delete_outline,
+                              color: Theme.of(context).colorScheme.error,
+                              onPressed: () {
+                                if (record != null) {
+                                  _showDeleteMaxRMDialog(context, ref, record!, exercise);
+                                }
+                              },
+                            ),
+                          ],
+                          bottomContent: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.8),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Text(
+                                '${record?.maxWeight ?? 0} kg',
+                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              DateFormat('d MMM yyyy').format(
+                                DateTime.parse(record?.date ?? DateTime.now().toString()),
+                              ),
+                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  }
+
+                  // Per tablet/desktop, manteniamo il GridView
+                  return GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: EdgeInsets.all(crossAxisCount == 1 ? 16 : 24),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: crossAxisCount,
+                      crossAxisSpacing: 20.0,
+                      mainAxisSpacing: 20.0,
+                      childAspectRatio: 1.2,
+                    ),
+                    itemCount: latestRecords.length,
+                    itemBuilder: (context, index) {
+                      final record = latestRecords[index];
+                      ExerciseModel exercise = exercises.firstWhere(
+                        (ex) => ex.id == record?.exerciseId,
+                        orElse: () => ExerciseModel(id: '', name: 'Exercise not found', type: '', muscleGroup: ''),
+                      );
+                      return ActionCard(
+                        onTap: () {
+                          context.push(
+                            '/maxrmdashboard/exercise_stats/${exercise.id}',
+                            extra: {
+                              'exercise': exercise,
+                              'userId': selectedUserId ?? usersService.getCurrentUserId(),
+                            },
+                          );
+                        },
+                        title: Text(
+                          exercise.name,
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: -0.5,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: Text(
+                          exercise.muscleGroup,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        actions: [
+                          IconButtonWithBackground(
+                            icon: Icons.edit_outlined,
+                            color: Theme.of(context).colorScheme.primary,
+                            onPressed: () {
+                              if (record != null) {
+                                _showEditMaxRMDialog(context, ref, record!, exercise);
+                              }
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          IconButtonWithBackground(
+                            icon: Icons.delete_outline,
+                            color: Theme.of(context).colorScheme.error,
+                            onPressed: () {
+                              if (record != null) {
+                                _showDeleteMaxRMDialog(context, ref, record!, exercise);
+                              }
+                            },
+                          ),
+                        ],
+                        bottomContent: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.8),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Text(
+                              '${record?.maxWeight ?? 0} kg',
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            DateFormat('d MMM yyyy').format(
+                              DateTime.parse(record?.date ?? DateTime.now().toString()),
+                            ),
+                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   );
                 },
               );
@@ -274,6 +461,92 @@ class MaxRMDashboard extends HookConsumerWidget {
         },
       ),
     );
+  }
+
+  void _showEditMaxRMDialog(
+    BuildContext context,
+    WidgetRef ref,
+    ExerciseRecord record,
+    ExerciseModel exercise,
+  ) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return EditRecordDialog(
+          record: record,
+          exercise: exercise,
+          exerciseRecordService: ref.read(exerciseRecordServiceProvider),
+          usersService: ref.read(usersServiceProvider),
+        );
+      },
+    );
+  }
+
+  void _showDeleteMaxRMDialog(
+    BuildContext context,
+    WidgetRef ref,
+    ExerciseRecord record,
+    ExerciseModel exercise,
+  ) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text(
+            'Confirmation',
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          content: Text(
+            'Are you sure you want to delete this record?',
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _performDelete(context, ref, record, exercise);
+              },
+              child: Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _performDelete(
+    BuildContext context,
+    WidgetRef ref,
+    ExerciseRecord record,
+    ExerciseModel exercise,
+  ) async {
+    final exerciseRecordService = ref.read(exerciseRecordServiceProvider);
+    final selectedUserId = ref.read(selectedUserIdProvider);
+    final usersService = ref.read(usersServiceProvider);
+    
+    try {
+      await exerciseRecordService.deleteExerciseRecord(
+        userId: selectedUserId ?? usersService.getCurrentUserId(),
+        exerciseId: exercise.id,
+        recordId: record.id,
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Record deleted successfully')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete record: $e')),
+        );
+      }
+    }
   }
 }
 

@@ -123,86 +123,206 @@ class ExercisesList extends HookConsumerWidget {
                       );
                     }
 
-                    return ListView.builder(
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: filteredExercises.length,
-                      itemBuilder: (context, index) {
-                        final exercise = filteredExercises[index];
-                        return ActionCard(
-                          onTap: () => _showEditExerciseBottomSheet(context, ref, exercise),
-                          title: Text(
-                            exercise.name,
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          subtitle: Text(
-                            '${exercise.muscleGroup} - ${exercise.type}',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                              letterSpacing: -0.3,
-                            ),
-                          ),
-                          actions: [
-                            if (currentUserRole == 'admin' || exercise.userId == currentUserId) ...[
-                              IconButtonWithBackground(
-                                icon: Icons.edit_outlined,
-                                color: theme.colorScheme.primary,
-                                onPressed: () => _showEditExerciseBottomSheet(context, ref, exercise),
-                              ),
-                              const SizedBox(width: 8),
-                              IconButtonWithBackground(
-                                icon: Icons.delete_outline,
-                                color: theme.colorScheme.error,
-                                onPressed: () => _showDeleteConfirmationDialog(
-                                  context,
-                                  exercise,
-                                  ref,
-                                  theme,
-                                ),
-                              ),
-                            ],
-                          ],
-                          bottomContent: exercise.status == 'pending'
-                              ? [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: theme.colorScheme.primary.withOpacity(0.15),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: theme.colorScheme.primary.withOpacity(0.3),
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.pending_outlined,
-                                          size: 16,
-                                          color: theme.colorScheme.primary,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          'Pending Approval',
-                                          style: theme.textTheme.labelMedium?.copyWith(
-                                            color: theme.colorScheme.primary,
+                    return CustomScrollView(
+                      slivers: [
+                        SliverLayoutBuilder(
+                          builder: (BuildContext context, constraints) {
+                            final isMobile = MediaQuery.of(context).size.width <= 600;
+                            
+                            if (isMobile) {
+                              // Per mobile, usiamo SliverList invece di SliverGrid
+                              return SliverList(
+                                delegate: SliverChildBuilderDelegate(
+                                  (context, index) {
+                                    final exercise = filteredExercises[index];
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                                      child: ActionCard(
+                                        onTap: () => _showEditExerciseBottomSheet(context, ref, exercise),
+                                        title: Text(
+                                          exercise.name,
+                                          style: theme.textTheme.titleLarge?.copyWith(
                                             fontWeight: FontWeight.w600,
-                                            letterSpacing: 0.3,
+                                            letterSpacing: -0.5,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        subtitle: Text(
+                                          '${exercise.muscleGroup} - ${exercise.type}',
+                                          style: theme.textTheme.bodyMedium?.copyWith(
+                                            color: theme.colorScheme.onSurfaceVariant,
+                                            letterSpacing: -0.3,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        actions: [
+                                          if (currentUserRole == 'admin' || exercise.userId == currentUserId) ...[
+                                            IconButtonWithBackground(
+                                              icon: Icons.edit_outlined,
+                                              color: theme.colorScheme.primary,
+                                              onPressed: () => _showEditExerciseBottomSheet(context, ref, exercise),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            IconButtonWithBackground(
+                                              icon: Icons.delete_outline,
+                                              color: theme.colorScheme.error,
+                                              onPressed: () => _showDeleteConfirmationDialog(
+                                                context,
+                                                exercise,
+                                                ref,
+                                                theme,
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                        bottomContent: exercise.status == 'pending'
+                                            ? [
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 6,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: theme.colorScheme.primary.withOpacity(0.15),
+                                                    borderRadius: BorderRadius.circular(12),
+                                                    border: Border.all(
+                                                      color: theme.colorScheme.primary.withOpacity(0.3),
+                                                      width: 1,
+                                                    ),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      Icon(
+                                                        Icons.pending_outlined,
+                                                        size: 16,
+                                                        color: theme.colorScheme.primary,
+                                                      ),
+                                                      const SizedBox(width: 6),
+                                                      Text(
+                                                        'Pending Approval',
+                                                        style: theme.textTheme.labelMedium?.copyWith(
+                                                          color: theme.colorScheme.primary,
+                                                          fontWeight: FontWeight.w600,
+                                                          letterSpacing: 0.3,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ]
+                                            : null,
+                                      ),
+                                    );
+                                  },
+                                  childCount: filteredExercises.length,
+                                ),
+                              );
+                            }
+
+                            // Per tablet/desktop, manteniamo il SliverGrid
+                            return SliverGrid(
+                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: switch (MediaQuery.of(context).size.width) {
+                                  > 1200 => 4, // Desktop large
+                                  > 900 => 3,  // Desktop
+                                  > 600 => 2,  // Tablet
+                                  _ => 1,      // Mobile
+                                },
+                                crossAxisSpacing: 20.0,
+                                mainAxisSpacing: 20.0,
+                                childAspectRatio: 1.2,
+                              ),
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) {
+                                  final exercise = filteredExercises[index];
+                                  return ActionCard(
+                                    onTap: () => _showEditExerciseBottomSheet(context, ref, exercise),
+                                    title: Text(
+                                      exercise.name,
+                                      style: theme.textTheme.titleLarge?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: -0.5,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    subtitle: Text(
+                                      '${exercise.muscleGroup} - ${exercise.type}',
+                                      style: theme.textTheme.bodyMedium?.copyWith(
+                                        color: theme.colorScheme.onSurfaceVariant,
+                                        letterSpacing: -0.3,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    actions: [
+                                      if (currentUserRole == 'admin' || exercise.userId == currentUserId) ...[
+                                        IconButtonWithBackground(
+                                          icon: Icons.edit_outlined,
+                                          color: theme.colorScheme.primary,
+                                          onPressed: () => _showEditExerciseBottomSheet(context, ref, exercise),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        IconButtonWithBackground(
+                                          icon: Icons.delete_outline,
+                                          color: theme.colorScheme.error,
+                                          onPressed: () => _showDeleteConfirmationDialog(
+                                            context,
+                                            exercise,
+                                            ref,
+                                            theme,
                                           ),
                                         ),
                                       ],
-                                    ),
-                                  ),
-                                ]
-                              : null,
-                        );
-                      },
+                                    ],
+                                    bottomContent: exercise.status == 'pending'
+                                        ? [
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 12,
+                                                vertical: 6,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: theme.colorScheme.primary.withOpacity(0.15),
+                                                borderRadius: BorderRadius.circular(12),
+                                                border: Border.all(
+                                                  color: theme.colorScheme.primary.withOpacity(0.3),
+                                                  width: 1,
+                                                ),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    Icons.pending_outlined,
+                                                    size: 16,
+                                                    color: theme.colorScheme.primary,
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Text(
+                                                    'Pending Approval',
+                                                    style: theme.textTheme.labelMedium?.copyWith(
+                                                      color: theme.colorScheme.primary,
+                                                      fontWeight: FontWeight.w600,
+                                                      letterSpacing: 0.3,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ]
+                                        : null,
+                                  );
+                                },
+                                childCount: filteredExercises.length,
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     );
                   } else if (snapshot.hasError) {
                     return Center(
