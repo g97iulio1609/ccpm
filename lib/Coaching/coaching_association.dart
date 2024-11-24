@@ -38,92 +38,142 @@ class CoachAthleteAssociationScreenState extends ConsumerState<CoachAthleteAssoc
   @override
   void initState() {
     super.initState();
-    // Inizializza il TabController con 2 schede
     _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
   void dispose() {
-    // Dispone del TabController quando il widget viene distrutto
     _tabController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Ottiene il ruolo e l'ID dell'utente corrente in modo reattivo
     final usersService = ref.watch(usersServiceProvider);
     final String userRole = ref.watch(userRoleProvider);
     usersService.getCurrentUserId();
     final associationsAsyncValue = ref.watch(associationsStreamProvider);
+    final theme = Theme.of(context);
 
     return Scaffold(
-      body: Column(
-        children: [
-          // Container per la TabBar con sfondo colorato
-          Container(
-            color: Theme.of(context).primaryColor, // Imposta lo sfondo della TabBar
-            child: TabBar(
-              controller: _tabController,
-              labelColor: Colors.white, // Colore dei titoli delle Tab selezionate
-              unselectedLabelColor: Colors.white70, // Colore dei titoli delle Tab non selezionate
-              indicatorColor: Colors.white, // Colore dell'indicatore della Tab selezionata
-              tabs: const [
-                Tab(text: 'Accettate'),
-                Tab(text: 'In Attesa'),
-              ],
-            ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              theme.colorScheme.surface,
+              theme.colorScheme.surface.withOpacity(0.92),
+            ],
           ),
-          // TabBarView per mostrare le associazioni filtrate
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildAssociationList(associationsAsyncValue, 'accepted', userRole),
-                _buildAssociationList(associationsAsyncValue, 'pending', userRole),
-              ],
-            ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  boxShadow: [
+                    BoxShadow(
+                      color: theme.colorScheme.shadow.withOpacity(0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: TabBar(
+                  controller: _tabController,
+                  labelColor: theme.colorScheme.primary,
+                  unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
+                  indicatorColor: theme.colorScheme.primary,
+                  indicatorSize: TabBarIndicatorSize.label,
+                  labelStyle: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.5,
+                  ),
+                  unselectedLabelStyle: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: -0.5,
+                  ),
+                  tabs: const [
+                    Tab(text: 'Accettate'),
+                    Tab(text: 'In Attesa'),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildAssociationList(associationsAsyncValue, 'accepted', userRole),
+                    _buildAssociationList(associationsAsyncValue, 'pending', userRole),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
-      // FloatingActionButton visibile solo ai client per inviare richieste di associazione
       floatingActionButton: userRole == 'client'
           ? FloatingActionButton(
               onPressed: _showCoachSearchDialog,
-              tooltip: 'Cerca Coach',
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: const Icon(Icons.add),
             )
           : null,
     );
   }
 
-  /// Costruisce la lista delle associazioni filtrate per stato
   Widget _buildAssociationList(AsyncValue<List<Association>> associationsAsyncValue, String status, String userRole) {
+    final theme = Theme.of(context);
+    
     return associationsAsyncValue.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text('Errore: $err')),
+      error: (err, stack) => Center(
+        child: Text(
+          'Errore: $err',
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: theme.colorScheme.error,
+          ),
+        ),
+      ),
       data: (associations) {
-        // Filtra le associazioni in base allo stato ('accepted' o 'pending')
         final filteredAssociations = associations.where((a) => a.status == status).toList();
         if (filteredAssociations.isEmpty) {
-          return Center(child: Text('Nessuna associazione $status.'));
+          return Center(
+            child: Text(
+              'Nessuna associazione ${status == 'accepted' ? 'accettata' : 'in attesa'}.',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          );
         }
         return ListView.builder(
+          padding: const EdgeInsets.all(16),
           itemCount: filteredAssociations.length,
           itemBuilder: (context, index) {
             final association = filteredAssociations[index];
-            return AssociationTile(
-              association: association,
-              userRole: userRole,
-              onAccept: status == 'pending' && (userRole == 'admin' || userRole == 'coach')
-                  ? () => _respondToAssociation(association.id, true)
-                  : null,
-              onReject: status == 'pending' && (userRole == 'admin' || userRole == 'coach')
-                  ? () => _respondToAssociation(association.id, false)
-                  : null,
-              onRemove: status == 'accepted'
-                  ? () => _removeAssociation(association.id)
-                  : null,
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: AssociationTile(
+                association: association,
+                userRole: userRole,
+                onAccept: status == 'pending' && (userRole == 'admin' || userRole == 'coach')
+                    ? () => _respondToAssociation(association.id, true)
+                    : null,
+                onReject: status == 'pending' && (userRole == 'admin' || userRole == 'coach')
+                    ? () => _respondToAssociation(association.id, false)
+                    : null,
+                onRemove: status == 'accepted'
+                    ? () => _removeAssociation(association.id)
+                    : null,
+              ),
             );
           },
         );
@@ -302,7 +352,7 @@ class CoachSearchDialogState extends ConsumerState<CoachSearchDialog> {
 }
 
 /// Widget per visualizzare una singola associazione nella lista
-class AssociationTile extends ConsumerStatefulWidget {
+class AssociationTile extends ConsumerWidget {
   final Association association;
   final String userRole;
   final VoidCallback? onAccept;
@@ -319,82 +369,92 @@ class AssociationTile extends ConsumerStatefulWidget {
   });
 
   @override
-  AssociationTileState createState() => AssociationTileState();
-}
-
-class AssociationTileState extends ConsumerState<AssociationTile> {
-  late Future<UserModel?> _userFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    final usersService = ref.read(usersServiceProvider);
-    _userFuture = _determineAssociatedUser(usersService);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: theme.colorScheme.outline.withOpacity(0.1),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        association.status == 'accepted' ? 'Associazione Attiva' : 'Richiesta in Attesa',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: association.status == 'accepted' 
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.secondary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      FutureBuilder<UserModel?>(
+                        future: _getUserDetails(ref),
+                        builder: (context, snapshot) {
+                          final userName = snapshot.data?.displayName ?? 'Utente';
+                          return Text(
+                            _getTitle(userName),
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: theme.colorScheme.onSurface,
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                if (onAccept != null && onReject != null) ...[
+                  IconButton(
+                    icon: Icon(Icons.check, color: theme.colorScheme.primary),
+                    onPressed: onAccept,
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close, color: theme.colorScheme.error),
+                    onPressed: onReject,
+                  ),
+                ],
+                if (onRemove != null)
+                  IconButton(
+                    icon: Icon(Icons.delete_outline, color: theme.colorScheme.error),
+                    onPressed: onRemove,
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   /// Determina quale utente mostrare in base al ruolo corrente
-  Future<UserModel?> _determineAssociatedUser(UsersService usersService) async {
-    if (widget.userRole == 'client') {
-      return usersService.getUserById(widget.association.coachId);
-    } else if (widget.userRole == 'coach' || widget.userRole == 'admin') {
-      return usersService.getUserById(widget.association.athleteId);
+  Future<UserModel?> _getUserDetails(WidgetRef ref) async {
+    final usersService = ref.read(usersServiceProvider);
+    if (userRole == 'client') {
+      return usersService.getUserById(association.coachId);
+    } else if (userRole == 'coach' || userRole == 'admin') {
+      return usersService.getUserById(association.athleteId);
     }
     return null;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<UserModel?>(
-      future: _userFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const ListTile(title: Text('Caricamento...'));
-        }
-
-        final associatedUser = snapshot.data;
-        final userName = associatedUser?.displayName ?? associatedUser?.name ?? 'Utente sconosciuto';
-
-        return ListTile(
-          title: Text(_getTitle(userName)),
-          subtitle: Text('Stato: ${widget.association.status}'),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // IconButton per accettare la richiesta (visibile solo a coach/admin)
-              if (widget.association.status == 'pending' && 
-                  (widget.userRole == 'admin' || widget.userRole == 'coach'))
-                IconButton(
-                  icon: const Icon(Icons.check, color: Colors.green),
-                  onPressed: widget.onAccept,
-                  tooltip: 'Accetta',
-                ),
-              // IconButton per rifiutare la richiesta (visibile solo a coach/admin)
-              if (widget.association.status == 'pending' && 
-                  (widget.userRole == 'admin' || widget.userRole == 'coach'))
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.red),
-                  onPressed: widget.onReject,
-                  tooltip: 'Rifiuta',
-                ),
-              // IconButton per rimuovere l'associazione (visibile solo se accettata)
-              if (widget.onRemove != null)
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.grey),
-                  onPressed: widget.onRemove,
-                  tooltip: 'Rimuovi',
-                ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   /// Genera il titolo della ListTile in base al ruolo dell'utente
   String _getTitle(String userName) {
-    if (widget.userRole == 'client') {
+    if (userRole == 'client') {
       return 'Coach: $userName';
-    } else if (widget.userRole == 'coach' || widget.userRole == 'admin') {
+    } else if (userRole == 'coach' || userRole == 'admin') {
       return 'Atleta: $userName';
     }
     return 'Utente: $userName';

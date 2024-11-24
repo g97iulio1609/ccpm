@@ -30,14 +30,16 @@ class UserProgramsScreen extends HookConsumerWidget {
             ],
           ),
         ),
-        child: Column(
-          children: [
-            if (userRole == 'admin' || userRole == 'client_premium' || userRole == 'coach')
-              _buildAddProgramButton(context, userId),
-            Expanded(
-              child: _buildProgramList(context, ref, userId, userRole, firestoreService),
-            ),
-          ],
+        child: SafeArea(
+          child: Column(
+            children: [
+              if (userRole == 'admin' || userRole == 'client_premium' || userRole == 'coach')
+                _buildAddProgramButton(context, userId),
+              Expanded(
+                child: _buildProgramList(context, ref, userId, userRole, firestoreService),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -110,11 +112,53 @@ class UserProgramsScreen extends HookConsumerWidget {
 
         final documents = snapshot.data!.docs;
 
-        return ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          itemCount: documents.length,
-          itemBuilder: (context, index) =>
-              _buildProgramCard(context, ref, documents[index], userId, userRole, firestoreService),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final crossAxisCount = switch (constraints.maxWidth) {
+              > 1200 => 4, // Desktop large
+              > 900 => 3,  // Desktop
+              > 600 => 2,  // Tablet
+              _ => 1,      // Mobile
+            };
+
+            final horizontalPadding = crossAxisCount == 1 ? 16.0 : 24.0;
+            final spacing = 20.0;
+
+            return CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(
+                    horizontalPadding,
+                    horizontalPadding,
+                    horizontalPadding,
+                    horizontalPadding + MediaQuery.of(context).padding.bottom,
+                  ),
+                  sliver: SliverGrid(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: crossAxisCount,
+                      mainAxisSpacing: spacing,
+                      crossAxisSpacing: spacing,
+                      childAspectRatio: crossAxisCount == 1 ? 3.5 : 1.8,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final doc = documents[index];
+                        return _buildProgramCard(
+                          context, 
+                          ref, 
+                          doc, 
+                          userId, 
+                          userRole, 
+                          firestoreService,
+                        );
+                      },
+                      childCount: documents.length,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -129,18 +173,32 @@ class UserProgramsScreen extends HookConsumerWidget {
 
     return ActionCard(
       onTap: () => context.go('/user_programs/$userId/training_viewer/${doc.id}'),
-      title: Text(
-        doc['name'],
-        style: theme.textTheme.titleLarge?.copyWith(
-          fontWeight: FontWeight.w600,
-          letterSpacing: -0.5,
-        ),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 20,
+        vertical: 16,
       ),
-      subtitle: Text(
-        'Mesociclo $mesocycleNumber',
-        style: theme.textTheme.bodyMedium?.copyWith(
-          color: theme.colorScheme.secondary,
-          fontWeight: FontWeight.w500,
+      title: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              doc['name'],
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Mesociclo $mesocycleNumber',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.secondary,
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
       actions: [

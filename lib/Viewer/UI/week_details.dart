@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/training_program_provider.dart';
+import '../../UI/components/card.dart';
 
 class WeekDetails extends ConsumerStatefulWidget {
   final String programId;
@@ -43,108 +44,216 @@ class _WeekDetailsState extends ConsumerState<WeekDetails> {
   @override
   Widget build(BuildContext context) {
     final weekService = ref.watch(trainingProgramServicesProvider);
+    final theme = Theme.of(context);
 
     return Scaffold(
-      body: StreamBuilder<QuerySnapshot>(
-        stream: weekService.getWorkouts(widget.weekId),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              theme.colorScheme.surface,
+              theme.colorScheme.surface.withOpacity(0.92),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: StreamBuilder<QuerySnapshot>(
+            stream: weekService.getWorkouts(widget.weekId),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Center(child: Text('Errore: ${snapshot.error}'));
+              }
 
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-          final workouts = snapshot.data!.docs
-              .map((doc) => {
-                    'id': doc.id,
-                    ...doc.data() as Map<String, dynamic>,
-                  })
-              .toList();
+              final workouts = snapshot.data!.docs
+                  .map((doc) => {
+                        'id': doc.id,
+                        ...doc.data() as Map<String, dynamic>,
+                      })
+                  .toList();
 
-          return ListView.builder(
-            itemCount: workouts.length,
-            itemBuilder: (context, index) {
-              final workout = workouts[index];
-              final workoutId = workout['id'];
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  final crossAxisCount = () {
+                    if (constraints.maxWidth > 1200) return 4; // Desktop large
+                    if (constraints.maxWidth > 900) return 3;  // Desktop
+                    if (constraints.maxWidth > 600) return 2;  // Tablet
+                    return 1; // Mobile
+                  }();
 
-              return WorkoutCard(
-                workoutOrder: workout['order'],
-                workoutDescription: workout['description'] ?? '',
-                onTap: () {
-                  if (workoutId != null) {
-                    context.go(
-                      '/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/$workoutId',
+                  final horizontalPadding = crossAxisCount == 1 ? 16.0 : 24.0;
+                  final spacing = 20.0;
+
+                  if (crossAxisCount == 1) {
+                    // Utilizza SliverList per una colonna con altezza adattiva
+                    return CustomScrollView(
+                      slivers: [
+                        SliverPadding(
+                          padding: EdgeInsets.fromLTRB(
+                            horizontalPadding,
+                            horizontalPadding,
+                            horizontalPadding,
+                            horizontalPadding + MediaQuery.of(context).padding.bottom,
+                          ),
+                          sliver: SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                final workout = workouts[index];
+                                final workoutId = workout['id'];
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 20.0),
+                                  child: ActionCard(
+                                    onTap: () {
+                                      if (workoutId != null) {
+                                        context.go(
+                                          '/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/$workoutId',
+                                        );
+                                      }
+                                    },
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 16,
+                                    ),
+                                    title: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                                      children: [
+                                        Text(
+                                          'Workout ${workout['order']}',
+                                          style: theme.textTheme.titleLarge?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                            letterSpacing: -0.5,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        if (workout['description'] != null &&
+                                            workout['description'].toString().isNotEmpty) ...[
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            workout['description'],
+                                            style: theme.textTheme.bodyMedium?.copyWith(
+                                              color: theme.colorScheme.secondary,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                    actions: [
+                                      IconButtonWithBackground(
+                                        icon: Icons.chevron_right,
+                                        color: theme.colorScheme.primary,
+                                        onPressed: () {
+                                          if (workoutId != null) {
+                                            context.go(
+                                              '/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/$workoutId',
+                                            );
+                                          }
+                                        },
+                                      ),
+                                    ],
+                                    bottomContent: const [],
+                                  ),
+                                );
+                              },
+                              childCount: workouts.length,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  } else {
+                    // Utilizza SliverGrid per più colonne con childAspectRatio adeguato
+                    return CustomScrollView(
+                      slivers: [
+                        SliverPadding(
+                          padding: EdgeInsets.fromLTRB(
+                            horizontalPadding,
+                            horizontalPadding,
+                            horizontalPadding,
+                            horizontalPadding + MediaQuery.of(context).padding.bottom,
+                          ),
+                          sliver: SliverGrid(
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: crossAxisCount,
+                              mainAxisSpacing: spacing,
+                              crossAxisSpacing: spacing,
+                              childAspectRatio: 1.4, // Rapporto fisso per griglie
+                            ),
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                final workout = workouts[index];
+                                final workoutId = workout['id'];
+                                return ActionCard(
+                                  onTap: () {
+                                    if (workoutId != null) {
+                                      context.go(
+                                        '/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/$workoutId',
+                                      );
+                                    }
+                                  },
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 16,
+                                  ),
+                                  title: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    children: [
+                                      Text(
+                                        'Workout ${workout['order']}',
+                                        style: theme.textTheme.titleLarge?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: -0.5,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      if (workout['description'] != null &&
+                                          workout['description'].toString().isNotEmpty) ...[
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          workout['description'],
+                                          style: theme.textTheme.bodyMedium?.copyWith(
+                                            color: theme.colorScheme.secondary,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          maxLines: 3,
+                                          overflow: TextOverflow.ellipsis,
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                  actions: [
+                                    IconButtonWithBackground(
+                                      icon: Icons.chevron_right,
+                                      color: theme.colorScheme.primary,
+                                      onPressed: () {
+                                        if (workoutId != null) {
+                                          context.go(
+                                            '/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/$workoutId',
+                                          );
+                                        }
+                                      },
+                                    ),
+                                  ],
+                                  bottomContent: const [],
+                                );
+                              },
+                              childCount: workouts.length,
+                            ),
+                          ),
+                        ),
+                      ],
                     );
                   }
                 },
               );
             },
-          );
-        },
-      ),
-    );
-  }
-}
-
-class WorkoutCard extends StatelessWidget {
-  final int workoutOrder;
-  final String workoutDescription;
-  final VoidCallback onTap;
-
-  const WorkoutCard({
-    super.key,
-    required this.workoutOrder,
-    required this.workoutDescription,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    '$workoutOrder',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Center(
-                  child: Text(
-                    'Allenamento $workoutOrder',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                ),
-              ),
-              const Icon(Icons.chevron_right),
-            ],
           ),
         ),
       ),
