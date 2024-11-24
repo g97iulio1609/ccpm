@@ -27,9 +27,10 @@ class MaxRMDashboard extends HookConsumerWidget {
     final currentUserRole = ref.watch(currentUserRoleProvider);
     final selectedUserController = useTextEditingController();
     final selectedUserId = ref.watch(selectedUserIdProvider);
-
+    final focusNode = useFocusNode();
     final userFetchComplete = useState(false);
 
+    // Effetto per caricare gli utenti
     useEffect(() {
       Future<void> fetchUsers() async {
         if (currentUserRole == 'admin' || currentUserRole == 'coach') {
@@ -38,28 +39,15 @@ class MaxRMDashboard extends HookConsumerWidget {
             ref.read(userListProvider.notifier).state = users;
             ref.read(filteredUserListProvider.notifier).state = users;
           } catch (e) {
-            // Handle error if needed
+            debugPrint('Error fetching users: $e');
           }
-        } 
+        }
         userFetchComplete.value = true;
       }
 
       fetchUsers();
       return null;
     }, [currentUserRole]);
-
-    void filterUsers(String pattern) {
-      if (currentUserRole == 'admin' || currentUserRole == 'coach') {
-        final allUsers = ref.read(userListProvider);
-        final lowerPattern = pattern.toLowerCase();
-        final filtered = pattern.isEmpty
-            ? allUsers
-            : allUsers.where((user) =>
-                user.name.toLowerCase().contains(lowerPattern) ||
-                user.email.toLowerCase().contains(lowerPattern)).toList();
-        ref.read(filteredUserListProvider.notifier).state = filtered;
-      }
-    }
 
     return Scaffold(
       body: Container(
@@ -71,62 +59,62 @@ class MaxRMDashboard extends HookConsumerWidget {
               Theme.of(context).colorScheme.surface,
               Theme.of(context).colorScheme.surface.withOpacity(0.92),
             ],
-            stops: const [0.0, 1.0],
           ),
         ),
-        child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if ((currentUserRole == 'admin' || currentUserRole == 'coach') && 
-                        userFetchComplete.value) ...[
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              offset: const Offset(0, 4),
-                              blurRadius: 20,
-                            ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: UserTypeAheadField(
-                            controller: selectedUserController,
-                            focusNode: FocusNode(),
-                            onSelected: (UserModel user) {
-                              ref.read(selectedUserIdProvider.notifier).state = user.id;
-                            },
-                            onChanged: (String value) {
-                              filterUsers(value);
-                            },
-                          ),
-                        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Campo di ricerca utente
+              if (currentUserRole == 'admin' || currentUserRole == 'coach') 
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Card(
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
                       ),
-                      const SizedBox(height: 32),
-                    ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: UserTypeAheadField(
+                        controller: selectedUserController,
+                        focusNode: focusNode,
+                        onSelected: (UserModel user) {
+                          ref.read(selectedUserIdProvider.notifier).state = user.id;
+                        },
+                        onChanged: (String value) {
+                          final allUsers = ref.read(userListProvider);
+                          final filteredUsers = allUsers.where((user) =>
+                            user.name.toLowerCase().contains(value.toLowerCase()) ||
+                            user.email.toLowerCase().contains(value.toLowerCase())
+                          ).toList();
+                          ref.read(filteredUserListProvider.notifier).state = filteredUsers;
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              // Lista dei record
+              Expanded(
+                child: CustomScrollView(
+                  slivers: [
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      sliver: _buildAllExercisesMaxRMs(
+                        ref,
+                        usersService,
+                        exerciseRecordService,
+                        context,
+                        selectedUserId,
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              sliver: _buildAllExercisesMaxRMs(
-                ref,
-                usersService,
-                exerciseRecordService,
-                context,
-                selectedUserId,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
