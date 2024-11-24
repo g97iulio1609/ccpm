@@ -906,11 +906,10 @@ class _MaxRMForm extends HookConsumerWidget {
                   // Integra ExerciseAutocompleteBox
                   ExerciseAutocompleteBox(
                     controller: exerciseNameController,
-                    exerciseRecordService: ref.watch(exerciseRecordServiceProvider),
-                    athleteId: ref.watch(selectedUserIdProvider) ?? '',
                     onSelected: (selectedExercise) {
                       selectedExerciseController.value = selectedExercise;
                     },
+                    athleteId: ref.watch(selectedUserIdProvider) ?? '',
                   ),
                   const SizedBox(height: 16),
                   _buildTextField(

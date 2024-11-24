@@ -51,14 +51,13 @@ class ExerciseDialog extends HookConsumerWidget {
           children: [
             ExerciseAutocompleteBox(
               controller: exerciseNameController,
-              exerciseRecordService: exerciseRecordService,
-              athleteId: athleteId,
               onSelected: (selectedExercise) {
                 if (selectedExercise.id.isNotEmpty) {
                   selectedExerciseId.value = selectedExercise.id;
                   selectedExerciseType.value = selectedExercise.type;
                 }
               },
+              athleteId: athleteId,
             ),
             const SizedBox(height: 16),
             TextFormField(

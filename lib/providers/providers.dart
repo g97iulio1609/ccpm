@@ -35,7 +35,9 @@ final exerciseRecordServiceProvider = Provider<ExerciseRecordService>((ref) {
   return ExerciseRecordService(FirebaseFirestore.instance);
 });
 final measurementsServiceProvider = Provider<MeasurementsService>((ref) => MeasurementsService(ref.watch(firebaseFirestoreProvider)));
-final exercisesServiceProvider = Provider<ExercisesService>((ref) => ExercisesService(ref.watch(firebaseFirestoreProvider)));
+final exercisesServiceProvider = Provider<ExercisesService>((ref) {
+  return ExercisesService(ref.watch(firebaseFirestoreProvider));
+});
 final coachingServiceProvider = Provider<CoachingService>((ref) => CoachingService(ref.watch(firebaseFirestoreProvider)));
 
 // User-related providers
@@ -59,7 +61,9 @@ final usersStreamProvider = StreamProvider<List<UserModel>>((ref) {
 final userListProvider = StateProvider<List<UserModel>>((ref) => []);
 
 // Provider per la lista filtrata degli utenti basata sulla query di ricerca
-final filteredUserListProvider = StateProvider<List<UserModel>>((ref) => []);
+final filteredUserListProvider = StateProvider<List<UserModel>>((ref) {
+  return [];
+});
 
 // Provider per lo stream delle esercitazioni
 final exercisesStreamProvider = StreamProvider<List<ExerciseModel>>((ref) {
@@ -87,7 +91,9 @@ final selectedComparisonsProvider = StateProvider<List<MeasurementModel>>((ref) 
 final measurementFormProvider = StateNotifierProvider<MeasurementFormNotifier, MeasurementFormState>((ref) => MeasurementFormNotifier());
 
 // User selection providers
-final selectedUserIdProvider = StateProvider<String?>((ref) => null);
+final selectedUserIdProvider = StateProvider<String?>((ref) {
+  return null;
+});
 
 // New Providers for SubscriptionsScreen
 final subscriptionDetailsProvider = StateProvider<SubscriptionDetails?>((ref) => null);
@@ -95,3 +101,8 @@ final selectedUserSubscriptionProvider = StateProvider<SubscriptionDetails?>((re
 final subscriptionLoadingProvider = StateProvider<bool>((ref) => false);
 final managingSubscriptionProvider = StateProvider<bool>((ref) => false);
 final syncingProvider = StateProvider<bool>((ref) => false);
+
+// Provider per il servizio degli esercizi
+final exerciseServiceProvider = Provider<ExercisesService>((ref) {
+  return ExercisesService(ref.watch(firebaseFirestoreProvider));
+});

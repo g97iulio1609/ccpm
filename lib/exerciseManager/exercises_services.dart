@@ -9,9 +9,12 @@ class ExercisesService {
   ExercisesService(this._firestore);
 
   Stream<List<ExerciseModel>> getExercises() {
-    return _firestore.collection('exercises').snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) => ExerciseModel.fromFirestore(doc)).toList();
-    });
+    return _firestore
+        .collection('exercises')
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => ExerciseModel.fromFirestore(doc))
+            .toList());
   }
 
   Future<ExerciseModel?> getExerciseById(String id) async {
