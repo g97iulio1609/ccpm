@@ -31,7 +31,9 @@ final usersServiceProvider = Provider<UsersService>((ref) {
 final isAdminProvider = StateProvider<bool>((ref) => false);
 
 final tdeeServiceProvider = Provider<TDEEService>((ref) => TDEEService(ref.watch(firebaseFirestoreProvider)));
-final exerciseRecordServiceProvider = Provider<ExerciseRecordService>((ref) => ExerciseRecordService(ref.watch(firebaseFirestoreProvider)));
+final exerciseRecordServiceProvider = Provider<ExerciseRecordService>((ref) {
+  return ExerciseRecordService(FirebaseFirestore.instance);
+});
 final measurementsServiceProvider = Provider<MeasurementsService>((ref) => MeasurementsService(ref.watch(firebaseFirestoreProvider)));
 final exercisesServiceProvider = Provider<ExercisesService>((ref) => ExercisesService(ref.watch(firebaseFirestoreProvider)));
 final coachingServiceProvider = Provider<CoachingService>((ref) => CoachingService(ref.watch(firebaseFirestoreProvider)));

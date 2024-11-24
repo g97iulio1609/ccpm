@@ -5,6 +5,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../UI/components/card.dart';
 import 'exercise_model.dart';
 import '../providers/providers.dart';
+import 'widgets/exercise_widgets.dart';
+import 'controllers/exercise_list_controller.dart';
+import '../ExerciseRecords/exercise_autocomplete.dart';
+import '../ExerciseRecords/exercise_record_services.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 
 // Providers per i muscleGroups e exerciseTypes
 final muscleGroupsProvider = StreamProvider((ref) {
@@ -45,10 +50,11 @@ class ExercisesList extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final exercisesService = ref.watch(exercisesServiceProvider);
-    final searchText = useState('');
+    final searchController = useTextEditingController();
     final selectedMuscleGroup = useState<String?>(null);
     final selectedExerciseType = useState<String?>(null);
+    final exercisesState = ref.watch(exerciseListControllerProvider);
+    final controller = ref.watch(exerciseListControllerProvider.notifier);
     final currentUserRole = ref.watch(userRoleProvider);
     final currentUserId = ref.read(usersServiceProvider).getCurrentUserId();
     final theme = Theme.of(context);
@@ -67,274 +73,97 @@ class ExercisesList extends HookConsumerWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 24),
-            // Search Field
-            Container(
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    offset: const Offset(0, 4),
-                    blurRadius: 20,
+            TypeAheadField<ExerciseModel>(
+              suggestionsCallback: (pattern) async {
+                if (pattern.length < 2) return [];
+                
+                final exercises = await ref.read(exercisesServiceProvider).getExercises().first;
+                return exercises.where((exercise) => 
+                  exercise.name.toLowerCase().contains(pattern.toLowerCase())
+                ).toList();
+              },
+              builder: (context, controller, focusNode) {
+                return TextField(
+                  controller: controller,
+                  focusNode: focusNode,
+                  decoration: InputDecoration(
+                    hintText: 'Search exercise...',
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    filled: true,
+                    fillColor: theme.colorScheme.surfaceContainerHighest,
                   ),
-                ],
+                );
+              },
+              itemBuilder: (context, exercise) {
+                return ListTile(
+                  title: Text(exercise.name),
+                  subtitle: Text('${exercise.muscleGroup} - ${exercise.type}'),
+                );
+              },
+              onSelected: (exercise) {
+                if (exercise != null) {
+                  searchController.text = exercise.name;
+                  Future.microtask(() {
+                    controller.updateFilters(searchText: exercise.name);
+                  });
+                }
+              },
+              debounceDuration: const Duration(milliseconds: 500),
+              hideOnEmpty: false,
+              hideOnLoading: false,
+              hideOnError: false,
+              animationDuration: const Duration(milliseconds: 300),
+              constraints: const BoxConstraints(maxHeight: 300),
+              decorationBuilder: (context, child) {
+                return Material(
+                  elevation: 4,
+                  borderRadius: BorderRadius.circular(12),
+                  color: theme.colorScheme.surface,
+                  child: child,
+                );
+              },
+              loadingBuilder: (context) => const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Center(child: CircularProgressIndicator()),
               ),
-              child: TextField(
-                onChanged: (value) => searchText.value = value,
-                style: theme.textTheme.bodyLarge,
-                decoration: InputDecoration(
-                  hintText: 'Search exercise...',
-                  prefixIcon: Icon(
-                    Icons.search,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
+              errorBuilder: (context, error) => Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Error: $error',
+                  style: TextStyle(color: theme.colorScheme.error),
                 ),
+              ),
+              emptyBuilder: (context) => const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text('No exercises found'),
               ),
             ),
             const SizedBox(height: 24),
-            // Exercises List
             Expanded(
-              child: StreamBuilder<List<ExerciseModel>>(
-                stream: exercisesService.getExercises(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    final exercises = snapshot.data!;
-                    final filteredExercises = exercises.where((exercise) =>
-                      exercise.name.toLowerCase().contains(searchText.value.toLowerCase()) &&
-                      (selectedMuscleGroup.value == null || exercise.muscleGroup == selectedMuscleGroup.value) &&
-                      (selectedExerciseType.value == null || exercise.type == selectedExerciseType.value)
-                    ).toList();
-
-                    if (filteredExercises.isEmpty) {
-                      return Center(
-                        child: Text(
-                          'No exercises found.',
-                          style: theme.textTheme.bodyLarge,
-                        ),
-                      );
-                    }
-
-                    return CustomScrollView(
-                      slivers: [
-                        SliverLayoutBuilder(
-                          builder: (BuildContext context, constraints) {
-                            final isMobile = MediaQuery.of(context).size.width <= 600;
-                            
-                            if (isMobile) {
-                              // Per mobile, usiamo SliverList invece di SliverGrid
-                              return SliverList(
-                                delegate: SliverChildBuilderDelegate(
-                                  (context, index) {
-                                    final exercise = filteredExercises[index];
-                                    return Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                                      child: ActionCard(
-                                        onTap: () => _showEditExerciseBottomSheet(context, ref, exercise),
-                                        title: Text(
-                                          exercise.name,
-                                          style: theme.textTheme.titleLarge?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                            letterSpacing: -0.5,
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        subtitle: Text(
-                                          '${exercise.muscleGroup} - ${exercise.type}',
-                                          style: theme.textTheme.bodyMedium?.copyWith(
-                                            color: theme.colorScheme.onSurfaceVariant,
-                                            letterSpacing: -0.3,
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        actions: [
-                                          if (currentUserRole == 'admin' || exercise.userId == currentUserId) ...[
-                                            IconButtonWithBackground(
-                                              icon: Icons.edit_outlined,
-                                              color: theme.colorScheme.primary,
-                                              onPressed: () => _showEditExerciseBottomSheet(context, ref, exercise),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            IconButtonWithBackground(
-                                              icon: Icons.delete_outline,
-                                              color: theme.colorScheme.error,
-                                              onPressed: () => _showDeleteConfirmationDialog(
-                                                context,
-                                                exercise,
-                                                ref,
-                                                theme,
-                                              ),
-                                            ),
-                                          ],
-                                        ],
-                                        bottomContent: exercise.status == 'pending'
-                                            ? [
-                                                Container(
-                                                  padding: const EdgeInsets.symmetric(
-                                                    horizontal: 12,
-                                                    vertical: 6,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: theme.colorScheme.primary.withOpacity(0.15),
-                                                    borderRadius: BorderRadius.circular(12),
-                                                    border: Border.all(
-                                                      color: theme.colorScheme.primary.withOpacity(0.3),
-                                                      width: 1,
-                                                    ),
-                                                  ),
-                                                  child: Row(
-                                                    mainAxisSize: MainAxisSize.min,
-                                                    children: [
-                                                      Icon(
-                                                        Icons.pending_outlined,
-                                                        size: 16,
-                                                        color: theme.colorScheme.primary,
-                                                      ),
-                                                      const SizedBox(width: 6),
-                                                      Text(
-                                                        'Pending Approval',
-                                                        style: theme.textTheme.labelMedium?.copyWith(
-                                                          color: theme.colorScheme.primary,
-                                                          fontWeight: FontWeight.w600,
-                                                          letterSpacing: 0.3,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ]
-                                            : null,
-                                      ),
-                                    );
-                                  },
-                                  childCount: filteredExercises.length,
-                                ),
-                              );
-                            }
-
-                            // Per tablet/desktop, manteniamo il SliverGrid
-                            return SliverGrid(
-                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: switch (MediaQuery.of(context).size.width) {
-                                  > 1200 => 4, // Desktop large
-                                  > 900 => 3,  // Desktop
-                                  > 600 => 2,  // Tablet
-                                  _ => 1,      // Mobile
-                                },
-                                crossAxisSpacing: 20.0,
-                                mainAxisSpacing: 20.0,
-                                childAspectRatio: 1.2,
-                              ),
-                              delegate: SliverChildBuilderDelegate(
-                                (context, index) {
-                                  final exercise = filteredExercises[index];
-                                  return ActionCard(
-                                    onTap: () => _showEditExerciseBottomSheet(context, ref, exercise),
-                                    title: Text(
-                                      exercise.name,
-                                      style: theme.textTheme.titleLarge?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                        letterSpacing: -0.5,
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    subtitle: Text(
-                                      '${exercise.muscleGroup} - ${exercise.type}',
-                                      style: theme.textTheme.bodyMedium?.copyWith(
-                                        color: theme.colorScheme.onSurfaceVariant,
-                                        letterSpacing: -0.3,
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    actions: [
-                                      if (currentUserRole == 'admin' || exercise.userId == currentUserId) ...[
-                                        IconButtonWithBackground(
-                                          icon: Icons.edit_outlined,
-                                          color: theme.colorScheme.primary,
-                                          onPressed: () => _showEditExerciseBottomSheet(context, ref, exercise),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        IconButtonWithBackground(
-                                          icon: Icons.delete_outline,
-                                          color: theme.colorScheme.error,
-                                          onPressed: () => _showDeleteConfirmationDialog(
-                                            context,
-                                            exercise,
-                                            ref,
-                                            theme,
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                    bottomContent: exercise.status == 'pending'
-                                        ? [
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(
-                                                horizontal: 12,
-                                                vertical: 6,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: theme.colorScheme.primary.withOpacity(0.15),
-                                                borderRadius: BorderRadius.circular(12),
-                                                border: Border.all(
-                                                  color: theme.colorScheme.primary.withOpacity(0.3),
-                                                  width: 1,
-                                                ),
-                                              ),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Icon(
-                                                    Icons.pending_outlined,
-                                                    size: 16,
-                                                    color: theme.colorScheme.primary,
-                                                  ),
-                                                  const SizedBox(width: 6),
-                                                  Text(
-                                                    'Pending Approval',
-                                                    style: theme.textTheme.labelMedium?.copyWith(
-                                                      color: theme.colorScheme.primary,
-                                                      fontWeight: FontWeight.w600,
-                                                      letterSpacing: 0.3,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ]
-                                        : null,
-                                  );
-                                },
-                                childCount: filteredExercises.length,
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    );
-                  } else if (snapshot.hasError) {
-                    return Center(
-                      child: Text(
-                        'Error: ${snapshot.error}',
-                        style: theme.textTheme.bodyLarge,
-                      ),
-                    );
-                  } else {
-                    return const Center(child: CircularProgressIndicator());
-                  }
+              child: exercisesState.when(
+                data: (exercises) {
+                  return ExercisesGrid(
+                    exercises: exercises,
+                    currentUserRole: currentUserRole,
+                    currentUserId: currentUserId,
+                    onEdit: (exercise) => _showEditExerciseBottomSheet(context, ref, exercise),
+                    onDelete: (exercise) => _showDeleteConfirmationDialog(
+                      context, exercise, ref, theme,
+                    ),
+                  );
                 },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (error, _) => Center(
+                  child: Text('Error: $error'),
+                ),
               ),
             ),
           ],
@@ -473,106 +302,99 @@ class ExercisesList extends HookConsumerWidget {
   }
 }
 
-class ExerciseCard extends StatelessWidget {
-  const ExerciseCard({
+class ExercisesGrid extends StatelessWidget {
+  final List<ExerciseModel> exercises;
+  final String currentUserRole;
+  final String currentUserId;
+  final Function(ExerciseModel) onEdit;
+  final Function(ExerciseModel) onDelete;
+
+  const ExercisesGrid({
     super.key,
-    required this.exercise,
-    required this.isAdmin,
-    required this.canEdit,
-    required this.canDelete,
+    required this.exercises,
+    required this.currentUserRole,
+    required this.currentUserId,
     required this.onEdit,
     required this.onDelete,
-    required this.onApprove,
-    required this.onReject,
   });
-
-  final ExerciseModel exercise;
-  final bool isAdmin;
-  final bool canEdit;
-  final bool canDelete;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-  final VoidCallback onApprove;
-  final VoidCallback onReject;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isPending = exercise.status == 'pending';
+    return CustomScrollView(
+      slivers: [
+        SliverLayoutBuilder(
+          builder: (context, constraints) {
+            final isMobile = MediaQuery.of(context).size.width <= 600;
+            
+            return isMobile 
+                ? _buildList(context)
+                : _buildGrid(context);
+          },
+        ),
+      ],
+    );
+  }
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      color: colorScheme.surface,
-      child: InkWell(
-        onTap: canEdit ? onEdit : null,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      exercise.name,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${exercise.muscleGroup} - ${exercise.type}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    if (isPending)
-                      const Text(
-                        'Pending Approval',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.orange,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              if (isAdmin && isPending)
-                IconButton(
-                  icon: const Icon(Icons.check),
-                  onPressed: onApprove,
-                  color: Colors.green,
-                ),
-              if (isAdmin && isPending)
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: onReject,
-                  color: Colors.red,
-                ),
-              if (canEdit && !isPending)
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: onEdit,
-                  color: colorScheme.onSurface,
-                ),
-              if (canDelete && !isPending)
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: onDelete,
-                  color: colorScheme.onSurface,
-                ),
-            ],
+  Widget _buildList(BuildContext context) {
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) => Padding(
+          padding: const EdgeInsets.symmetric(
+            vertical: 8.0,
+            horizontal: 16.0,
           ),
+          child: _buildExerciseCard(context, exercises[index]),
+        ),
+        childCount: exercises.length,
+      ),
+    );
+  }
+
+  Widget _buildGrid(BuildContext context) {
+    return SliverPadding(
+      padding: const EdgeInsets.all(16.0),
+      sliver: SliverGrid(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: _getGridCrossAxisCount(context),
+          crossAxisSpacing: 24.0,
+          mainAxisSpacing: 24.0,
+          childAspectRatio: 1.2,
+        ),
+        delegate: SliverChildBuilderDelegate(
+          (context, index) => _buildExerciseCard(context, exercises[index]),
+          childCount: exercises.length,
         ),
       ),
+    );
+  }
+
+  int _getGridCrossAxisCount(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    if (width > 1200) return 4;
+    if (width > 900) return 3;
+    if (width > 600) return 2;
+    return 1;
+  }
+
+  Widget _buildExerciseCard(BuildContext context, ExerciseModel exercise) {
+    final canModify = currentUserRole == 'admin' || exercise.userId == currentUserId;
+    
+    return ExerciseCardContent(
+      exercise: exercise,
+      onTap: () => onEdit(exercise),
+      actions: canModify ? [
+        IconButtonWithBackground(
+          icon: Icons.edit_outlined,
+          color: Theme.of(context).colorScheme.primary,
+          onPressed: () => onEdit(exercise),
+        ),
+        const SizedBox(width: 8),
+        IconButtonWithBackground(
+          icon: Icons.delete_outline,
+          color: Theme.of(context).colorScheme.error,
+          onPressed: () => onDelete(exercise),
+        ),
+      ] : [],
     );
   }
 }
