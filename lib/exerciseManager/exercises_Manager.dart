@@ -94,6 +94,20 @@ class ExercisesList extends HookConsumerWidget {
                       Icons.search,
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
+                    suffixIcon: controller.text.isNotEmpty
+                        ? IconButton(
+                            icon: Icon(
+                              Icons.close,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            onPressed: () {
+                              controller.clear();
+                              Future.microtask(() {
+                                ref.read(exerciseListControllerProvider.notifier).resetFilters();
+                              });
+                            },
+                          )
+                        : null,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
