@@ -15,6 +15,7 @@ import '../dialog/reorder_dialog.dart';
 import '../../UI/components/card.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/trainingBuilder/models/superseries_model.dart';
+import 'package:alphanessone/UI/components/bottom_menu.dart';
 
 class TrainingProgramExerciseList extends ConsumerWidget {
   final TrainingProgramController controller;
@@ -359,142 +360,108 @@ class TrainingProgramExerciseList extends ConsumerWidget {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (context) => CustomCard(
-        padding: EdgeInsets.zero,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildOptionTile(
-              context,
-              'Modifica',
-              Icons.edit_outlined,
-              () {
-                Navigator.pop(context);
-                controller.editExercise(
-                    weekIndex, workoutIndex, exercise.order - 1, context);
-              },
-            ),
-            _buildOptionTile(
-              context,
-              'Sposta Esercizio',
-              Icons.move_up,
-              () {
-                Navigator.pop(context);
-                _showMoveExerciseDialog(context, weekIndex, workoutIndex, exercise);
-              },
-            ),
-            _buildOptionTile(
-              context,
-              'Duplica Esercizio',
-              Icons.content_copy_outlined,
-              () {
-                Navigator.pop(context);
-                controller.duplicateExercise(
-                  weekIndex,
-                  workoutIndex,
-                  exercise.order - 1,
-                );
-              },
-            ),
-            if (!isInSuperSet)
-              _buildOptionTile(
-                context,
-                'Aggiungi a Super Set',
-                Icons.group_add_outlined,
-                () {
-                  Navigator.pop(context);
-                  _showAddToSuperSetDialog(context, exercise, colorScheme);
-                },
-              ),
-            if (isInSuperSet)
-              _buildOptionTile(
-                context,
-                'Rimuovi da Super Set',
-                Icons.group_remove_outlined,
-                () {
-                  Navigator.pop(context);
-                  controller.removeExerciseFromSuperSet(
-                    weekIndex,
-                    workoutIndex,
-                    superSet.id,
-                    exercise.id!,
-                  );
-                },
-              ),
-            _buildOptionTile(
-              context,
-              'Imposta Progressione',
-              Icons.trending_up,
-              () {
-                Navigator.pop(context);
-                _showSetProgressionScreen(
-                  context,
-                  exercise,
-                  latestMaxWeight,
-                  colorScheme,
-                );
-              },
-            ),
-            _buildOptionTile(
-              context,
-              'Aggiorna Max RM',
-              Icons.fitness_center,
-              () {
-                Navigator.pop(context);
-                _addOrUpdateMaxRM(
-                  exercise,
-                  context,
-                  exerciseRecordService,
-                  athleteId,
-                  dateFormat,
-                  colorScheme,
-                );
-              },
-            ),
-            _buildOptionTile(
-              context,
-              'Elimina',
-              Icons.delete_outline,
-              () {
-                Navigator.pop(context);
-                controller.removeExercise(
-                  weekIndex,
-                  workoutIndex,
-                  exercise.order - 1,
-                );
-              },
-              isDestructive: true,
-            ),
-          ],
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => BottomMenu(
+        title: exercise.name,
+        subtitle: exercise.variant,
+        leading: Container(
+          padding: EdgeInsets.all(AppTheme.spacing.sm),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(AppTheme.radii.md),
+          ),
+          child: Icon(
+            Icons.fitness_center,
+            color: colorScheme.primary,
+            size: 24,
+          ),
         ),
+        items: [
+          BottomMenuItem(
+            title: 'Modifica',
+            icon: Icons.edit_outlined,
+            onTap: () => controller.editExercise(
+              weekIndex,
+              workoutIndex,
+              exercise.order - 1,
+              context,
+            ),
+          ),
+          BottomMenuItem(
+            title: 'Sposta Esercizio',
+            icon: Icons.move_up,
+            onTap: () => _showMoveExerciseDialog(
+              context,
+              weekIndex,
+              workoutIndex,
+              exercise,
+            ),
+          ),
+          BottomMenuItem(
+            title: 'Duplica Esercizio',
+            icon: Icons.content_copy_outlined,
+            onTap: () => controller.duplicateExercise(
+              weekIndex,
+              workoutIndex,
+              exercise.order - 1,
+            ),
+          ),
+          if (!isInSuperSet)
+            BottomMenuItem(
+              title: 'Aggiungi a Super Set',
+              icon: Icons.group_add_outlined,
+              onTap: () => _showAddToSuperSetDialog(
+                context,
+                exercise,
+                colorScheme,
+              ),
+            ),
+          if (isInSuperSet)
+            BottomMenuItem(
+              title: 'Rimuovi da Super Set',
+              icon: Icons.group_remove_outlined,
+              onTap: () => controller.removeExerciseFromSuperSet(
+                weekIndex,
+                workoutIndex,
+                superSet.id,
+                exercise.id!,
+              ),
+            ),
+          BottomMenuItem(
+            title: 'Imposta Progressione',
+            icon: Icons.trending_up,
+            onTap: () => _showSetProgressionScreen(
+              context,
+              exercise,
+              latestMaxWeight,
+              colorScheme,
+            ),
+          ),
+          BottomMenuItem(
+            title: 'Aggiorna Max RM',
+            icon: Icons.fitness_center,
+            onTap: () => _addOrUpdateMaxRM(
+              exercise,
+              context,
+              exerciseRecordService,
+              athleteId,
+              dateFormat,
+              colorScheme,
+            ),
+          ),
+          BottomMenuItem(
+            title: 'Elimina',
+            icon: Icons.delete_outline,
+            onTap: () => controller.removeExercise(
+              weekIndex,
+              workoutIndex,
+              exercise.order - 1,
+            ),
+            isDestructive: true,
+          ),
+        ],
       ),
-    );
-  }
-
-  Widget _buildOptionTile(
-    BuildContext context,
-    String title,
-    IconData icon,
-    VoidCallback onTap, {
-    bool isDestructive = false,
-  }) {
-    final theme = Theme.of(context);
-    return ListTile(
-      leading: Icon(icon, color: theme.colorScheme.onSurface),
-      title: Text(
-        title,
-        style: theme.textTheme.titleMedium?.copyWith(
-          color: theme.colorScheme.onSurface,
-        ),
-      ),
-      onTap: onTap,
-      style: ListTileStyle.list,
-      selected: isDestructive,
-      selectedColor: Theme.of(context).colorScheme.error,
     );
   }
 
