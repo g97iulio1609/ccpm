@@ -100,61 +100,64 @@ class AppInput extends StatelessWidget {
 
         SizedBox(height: AppTheme.spacing.xs),
 
-        // Input Field
-        Container(
-          decoration: BoxDecoration(
-            color: enabled 
-                ? colorScheme.surfaceContainerHighest.withOpacity(0.3)
-                : colorScheme.surfaceContainerHighest.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-            border: Border.all(
-              color: colorScheme.outline.withOpacity(0.1),
-            ),
-          ),
-          child: TextFormField(
-            controller: controller,
-            focusNode: focusNode,
-            enabled: enabled,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: enabled ? colorScheme.onSurface : colorScheme.onSurface.withOpacity(0.5),
-            ),
-            decoration: InputDecoration(
-              hintText: hintText,
-              hintStyle: theme.textTheme.bodyLarge?.copyWith(
-                color: colorScheme.onSurfaceVariant.withOpacity(0.5),
-              ),
-              prefixIcon: prefixIcon != null
-                  ? Icon(
-                      prefixIcon,
-                      color: enabled ? colorScheme.primary : colorScheme.onSurfaceVariant.withOpacity(0.5),
-                      size: 20,
-                    )
-                  : null,
-              suffix: suffix,
-              suffixText: suffixText,
-              suffixStyle: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.all(AppTheme.spacing.md),
-              errorStyle: theme.textTheme.bodySmall?.copyWith(
-                color: colorScheme.error,
+        // Input Field - Wrapped in ConstrainedBox per garantire una larghezza finita
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: double.infinity),
+          child: Container(
+            decoration: BoxDecoration(
+              color: enabled 
+                  ? colorScheme.surfaceContainerHighest.withOpacity(0.3)
+                  : colorScheme.surfaceContainerHighest.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+              border: Border.all(
+                color: colorScheme.outline.withOpacity(0.1),
               ),
             ),
-            obscureText: obscureText,
-            keyboardType: keyboardType,
-            inputFormatters: inputFormatters,
-            validator: validator,
-            onChanged: onChanged,
-            onTap: onTap,
-            readOnly: readOnly,
-            autofocus: autofocus,
-            textCapitalization: textCapitalization,
-            textInputAction: textInputAction,
-            onFieldSubmitted: onSubmitted,
-            maxLines: maxLines,
-            minLines: minLines,
-            maxLength: maxLength,
+            child: TextFormField(
+              controller: controller,
+              focusNode: focusNode,
+              enabled: enabled,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: enabled ? colorScheme.onSurface : colorScheme.onSurface.withOpacity(0.5),
+              ),
+              decoration: InputDecoration(
+                hintText: hintText,
+                hintStyle: theme.textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                ),
+                prefixIcon: prefixIcon != null
+                    ? Icon(
+                        prefixIcon,
+                        color: enabled ? colorScheme.primary : colorScheme.onSurfaceVariant.withOpacity(0.5),
+                        size: 20,
+                      )
+                    : null,
+                suffix: suffix,
+                suffixText: suffixText,
+                suffixStyle: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.all(AppTheme.spacing.md),
+                errorStyle: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.error,
+                ),
+              ),
+              obscureText: obscureText,
+              keyboardType: keyboardType,
+              inputFormatters: inputFormatters,
+              validator: validator,
+              onChanged: onChanged,
+              onTap: onTap,
+              readOnly: readOnly,
+              autofocus: autofocus,
+              textCapitalization: textCapitalization,
+              textInputAction: textInputAction,
+              onFieldSubmitted: onSubmitted,
+              maxLines: maxLines,
+              minLines: minLines,
+              maxLength: maxLength,
+            ),
           ),
         ),
       ],

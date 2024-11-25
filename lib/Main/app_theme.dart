@@ -163,12 +163,10 @@ class AppTheme {
     errorContainer: error.withOpacity(0.15),
     onErrorContainer: errorDark,
     
-    background: surfaceLightest,
-    onBackground: surfaceDarkest,
+
     
     surface: surfaceLightest,
     onSurface: surfaceDarkest,
-    surfaceVariant: surfaceLightMedium,
     onSurfaceVariant: surfaceDark.withOpacity(0.7),
     
     surfaceContainerHighest: surfaceLightMedium,
