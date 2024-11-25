@@ -19,6 +19,7 @@ class _Radii {
   final double lg = 16.0;
   final double xl = 24.0;
   final double xxl = 32.0;
+  final double full = 999.0;
 }
 
 class _Elevations {
