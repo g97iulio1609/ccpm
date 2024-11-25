@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 
+enum BadgeStatus {
+  success,
+  warning,
+  error,
+  info,
+  neutral,
+}
+
 class AppBadge extends StatelessWidget {
   final String text;
   final Color? backgroundColor;
@@ -11,6 +19,7 @@ class AppBadge extends StatelessWidget {
   final bool isPulsing;
   final VoidCallback? onTap;
   final bool isGradient;
+  final BadgeStatus? status;
 
   const AppBadge({
     super.key,
@@ -23,6 +32,7 @@ class AppBadge extends StatelessWidget {
     this.isPulsing = false,
     this.onTap,
     this.isGradient = false,
+    this.status,
   });
 
   @override
@@ -30,7 +40,7 @@ class AppBadge extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     
-    final badgeColor = backgroundColor ?? colorScheme.primary;
+    final badgeColor = backgroundColor ?? _getStatusColor(status, colorScheme) ?? colorScheme.primary;
     final labelColor = textColor ?? (isOutlined ? badgeColor : colorScheme.onPrimary);
     final textStyle = (size == AppBadgeSize.small 
         ? theme.textTheme.labelSmall 
@@ -95,6 +105,23 @@ class AppBadge extends StatelessWidget {
     return badge;
   }
 
+  Color? _getStatusColor(BadgeStatus? status, ColorScheme colorScheme) {
+    if (status == null) return null;
+    
+    switch (status) {
+      case BadgeStatus.success:
+        return colorScheme.tertiary;
+      case BadgeStatus.warning:
+        return colorScheme.secondary;
+      case BadgeStatus.error:
+        return colorScheme.error;
+      case BadgeStatus.info:
+        return colorScheme.primary;
+      case BadgeStatus.neutral:
+        return colorScheme.outline;
+    }
+  }
+
   // Factory constructors per casi comuni
   factory AppBadge.status({
     required String text,
@@ -103,28 +130,13 @@ class AppBadge extends StatelessWidget {
     bool isPulsing = false,
     VoidCallback? onTap,
   }) {
-    Color getStatusColor(BadgeStatus status, ColorScheme colorScheme) {
-      switch (status) {
-        case BadgeStatus.success:
-          return colorScheme.tertiary;
-        case BadgeStatus.warning:
-          return colorScheme.secondary;
-        case BadgeStatus.error:
-          return colorScheme.error;
-        case BadgeStatus.info:
-          return colorScheme.primary;
-        case BadgeStatus.neutral:
-          return colorScheme.outline;
-      }
-    }
-
     return AppBadge(
       text: text,
       icon: icon,
       isPulsing: isPulsing,
       onTap: onTap,
       isOutlined: true,
-      backgroundColor: (context) => getStatusColor(status, Theme.of(context).colorScheme),
+      status: status,
     );
   }
 
@@ -208,13 +220,4 @@ class AppBadgeSize {
   static const double small = 16.0;
   static const double medium = 20.0;
   static const double large = 24.0;
-}
-
-// Stati predefiniti per i badge
-enum BadgeStatus {
-  success,
-  warning,
-  error,
-  info,
-  neutral,
 } 

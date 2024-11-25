@@ -4,8 +4,9 @@ import 'package:google_fonts/google_fonts.dart';
 // Design Tokens Classes
 class _Spacing {
   const _Spacing();
-  final double xs = 4.0;
-  final double sm = 8.0;
+  final double xxs = 4.0;
+  final double xs = 8.0;
+  final double sm = 12.0;
   final double md = 16.0;
   final double lg = 24.0;
   final double xl = 32.0;
