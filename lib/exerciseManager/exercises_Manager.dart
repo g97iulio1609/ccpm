@@ -11,6 +11,8 @@ import 'controllers/exercise_list_controller.dart';
 import '../ExerciseRecords/exercise_autocomplete.dart';
 import '../ExerciseRecords/exercise_record_services.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:alphanessone/UI/components/bottom_menu.dart';
+import 'package:alphanessone/Main/app_theme.dart';
 
 // Providers per i muscleGroups e exerciseTypes
 final muscleGroupsProvider = StreamProvider((ref) {
@@ -351,62 +353,56 @@ class ExercisesList extends HookConsumerWidget {
     ThemeData theme,
   ) {
     final exercisesService = ref.read(exercisesServiceProvider);
+    final colorScheme = theme.colorScheme;
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: theme.colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (context) => CustomCard(
-        padding: EdgeInsets.zero,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildOptionTile(
-              context,
-              'Edit',
-              Icons.edit_outlined,
-              () {
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => BottomMenu(
+        title: exercise.name,
+        subtitle: exercise.muscleGroups.join(", "),
+        leading: Container(
+          padding: EdgeInsets.all(AppTheme.spacing.sm),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(AppTheme.radii.md),
+          ),
+          child: Icon(
+            Icons.fitness_center,
+            color: colorScheme.primary,
+            size: 24,
+          ),
+        ),
+        items: [
+          if (exercise.status == 'pending')
+            BottomMenuItem(
+              title: 'Approva Esercizio',
+              icon: Icons.check_circle_outline,
+              onTap: () {
                 Navigator.pop(context);
-                _showEditExerciseBottomSheet(context, ref, exercise);
+                _showApproveConfirmationDialog(context, exercise, ref);
               },
             ),
-            _buildOptionTile(
-              context,
-              'Delete',
-              Icons.delete_outline,
-              () {
-                Navigator.pop(context);
-                exercisesService.deleteExercise(exercise.id);
-              },
-              isDestructive: true,
-            ),
-          ],
-        ),
+          BottomMenuItem(
+            title: 'Modifica Esercizio',
+            icon: Icons.edit_outlined,
+            onTap: () {
+              Navigator.pop(context);
+              _showEditExerciseBottomSheet(context, ref, exercise);
+            },
+          ),
+          BottomMenuItem(
+            title: 'Elimina Esercizio',
+            icon: Icons.delete_outline,
+            onTap: () {
+              Navigator.pop(context);
+              exercisesService.deleteExercise(exercise.id);
+            },
+            isDestructive: true,
+          ),
+        ],
       ),
-    );
-  }
-
-  Widget _buildOptionTile(
-    BuildContext context,
-    String title,
-    IconData icon,
-    VoidCallback onTap, {
-    bool isDestructive = false,
-  }) {
-    final theme = Theme.of(context);
-    final color = isDestructive ? theme.colorScheme.error : theme.colorScheme.onSurface;
-    
-    return ListTile(
-      leading: Icon(icon, color: color),
-      title: Text(
-        title,
-        style: theme.textTheme.titleMedium?.copyWith(
-          color: color,
-        ),
-      ),
-      onTap: onTap,
     );
   }
 
@@ -448,6 +444,52 @@ class ExercisesList extends HookConsumerWidget {
             child: Text(
               'Delete',
               style: TextStyle(color: theme.colorScheme.error),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showApproveConfirmationDialog(
+    BuildContext context,
+    ExerciseModel exercise,
+    WidgetRef ref,
+  ) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(
+          'Approva Esercizio',
+          style: theme.textTheme.titleLarge?.copyWith(
+            color: colorScheme.onSurface,
+          ),
+        ),
+        content: Text(
+          'Sei sicuro di voler approvare "${exercise.name}"?',
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(
+              'Annulla',
+              style: TextStyle(color: colorScheme.primary),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              ref.read(exercisesServiceProvider).approveExercise(exercise.id);
+              Navigator.pop(dialogContext);
+            },
+            child: Text(
+              'Approva',
+              style: TextStyle(color: colorScheme.tertiary),
             ),
           ),
         ],

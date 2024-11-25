@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../exercise_model.dart';
 import '../../UI/components/card.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/UI/components/bottom_menu.dart';
+
 
 class PendingApprovalBadge extends StatelessWidget {
   const PendingApprovalBadge({super.key});
@@ -75,30 +77,42 @@ class ExerciseCardContent extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onTap,
+          onTap: () => _showExerciseOptions(context),
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           child: Padding(
             padding: EdgeInsets.all(AppTheme.spacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Exercise Type Badge
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: AppTheme.spacing.md,
-                    vertical: AppTheme.spacing.xs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
-                  ),
-                  child: Text(
-                    exercise.type,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.w600,
+                Row(
+                  children: [
+                    // Exercise Type Badge
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppTheme.spacing.md,
+                        vertical: AppTheme.spacing.xs,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primaryContainer.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
+                      ),
+                      child: Text(
+                        exercise.type,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
-                  ),
+                    const Spacer(),
+                    IconButton(
+                      icon: Icon(
+                        Icons.more_vert,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      onPressed: () => _showExerciseOptions(context),
+                    ),
+                  ],
                 ),
 
                 SizedBox(height: AppTheme.spacing.md),
@@ -125,14 +139,6 @@ class ExerciseCardContent extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
 
-                SizedBox(height: AppTheme.spacing.lg),
-
-                // Actions Row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: actions,
-                ),
-
                 if (exercise.status == 'pending') ...[
                   SizedBox(height: AppTheme.spacing.md),
                   const PendingApprovalBadge(),
@@ -143,5 +149,73 @@ class ExerciseCardContent extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _showExerciseOptions(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => BottomMenu(
+        title: exercise.name,
+        subtitle: exercise.muscleGroups.join(", "),
+        leading: Container(
+          padding: EdgeInsets.all(AppTheme.spacing.sm),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(AppTheme.radii.md),
+          ),
+          child: Icon(
+            Icons.fitness_center,
+            color: colorScheme.primary,
+            size: 24,
+          ),
+        ),
+        items: [
+          BottomMenuItem(
+            title: 'Visualizza Dettagli',
+            icon: Icons.visibility_outlined,
+            onTap: () {
+              Navigator.pop(context);
+              onTap();
+            },
+          ),
+          ...actions.map((action) {
+            if (action is IconButtonWithBackground) {
+              return BottomMenuItem(
+                title: _getActionTitle(action.icon),
+                icon: action.icon,
+                onTap: () {
+                  Navigator.pop(context);
+                  action.onPressed();
+                },
+                isDestructive: action.color == colorScheme.error,
+              );
+            }
+            return BottomMenuItem(
+              title: 'Azione non disponibile',
+              icon: Icons.error,
+              onTap: () {},
+            );
+          }).where((item) => item.onTap != null).toList(),
+        ],
+      ),
+    );
+  }
+
+  String _getActionTitle(IconData icon) {
+    switch (icon) {
+      case Icons.edit_outlined:
+        return 'Modifica Esercizio';
+      case Icons.delete_outline:
+        return 'Elimina Esercizio';
+      case Icons.check_circle_outline:
+        return 'Approva Esercizio';
+      default:
+        return '';
+    }
   }
 } 
