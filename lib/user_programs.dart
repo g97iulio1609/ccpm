@@ -7,6 +7,7 @@ import './trainingBuilder/controller/training_program_controller.dart';
 import './trainingBuilder/services/training_services.dart';
 import 'UI/components/card.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'UI/components/bottom_menu.dart';
 
 class UserProgramsScreen extends HookConsumerWidget {
   final String userId;
@@ -370,70 +371,63 @@ class UserProgramsScreen extends HookConsumerWidget {
     FirestoreService firestoreService,
     ThemeData theme,
   ) {
+    final colorScheme = theme.colorScheme;
+
     showModalBottomSheet(
       context: context,
-      backgroundColor: theme.colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (context) => CustomCard(
-        padding: EdgeInsets.zero,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildOptionTile(
-              context,
-              'Modifica',
-              Icons.edit_outlined,
-              () {
-                Navigator.pop(context);
-                context.go('/user_programs/$userId/training_program/${doc.id}');
-              },
-            ),
-            _buildOptionTile(
-              context,
-              'Duplica',
-              Icons.content_copy,
-              () {
-                Navigator.pop(context);
-                _duplicateProgram(context, doc.id, controller);
-              },
-            ),
-            _buildOptionTile(
-              context,
-              'Elimina',
-              Icons.delete_outline,
-              () {
-                Navigator.pop(context);
-                _deleteProgram(context, doc.id, firestoreService);
-              },
-              isDestructive: true,
-            ),
-          ],
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => BottomMenu(
+        title: doc['name'],
+        subtitle: doc['description'] ?? '',
+        leading: Container(
+          padding: EdgeInsets.all(AppTheme.spacing.sm),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(AppTheme.radii.md),
+          ),
+          child: Icon(
+            Icons.fitness_center,
+            color: colorScheme.primary,
+            size: 24,
+          ),
         ),
+        items: [
+          BottomMenuItem(
+            title: 'Modifica Programma',
+            icon: Icons.edit_outlined,
+            onTap: () {
+              Navigator.pop(context);
+              context.go('/user_programs/$userId/training_program/${doc.id}');
+            },
+          ),
+          BottomMenuItem(
+            title: 'Duplica Programma',
+            icon: Icons.content_copy_outlined,
+            onTap: () {
+              Navigator.pop(context);
+              _duplicateProgram(context, doc.id, controller);
+            },
+          ),
+          BottomMenuItem(
+            title: 'Cambia Visibilità',
+            icon: doc['hide'] ? Icons.visibility : Icons.visibility_off,
+            onTap: () {
+              Navigator.pop(context);
+              _toggleProgramVisibility(doc.id, doc['hide'] ?? false);
+            },
+          ),
+          BottomMenuItem(
+            title: 'Elimina Programma',
+            icon: Icons.delete_outline,
+            onTap: () {
+              Navigator.pop(context);
+              _deleteProgram(context, doc.id, firestoreService);
+            },
+            isDestructive: true,
+          ),
+        ],
       ),
-    );
-  }
-
-  Widget _buildOptionTile(
-    BuildContext context,
-    String title,
-    IconData icon,
-    VoidCallback onTap, {
-    bool isDestructive = false,
-  }) {
-    final theme = Theme.of(context);
-    final color = isDestructive ? theme.colorScheme.error : theme.colorScheme.onSurface;
-    
-    return ListTile(
-      leading: Icon(icon, color: color),
-      title: Text(
-        title,
-        style: theme.textTheme.titleMedium?.copyWith(
-          color: color,
-        ),
-      ),
-      onTap: onTap,
     );
   }
 
