@@ -15,6 +15,7 @@ import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 import '../../user_autocomplete.dart';
 import '../../providers/providers.dart';
 import '../UI/components/card.dart';
+import 'package:alphanessone/Main/app_theme.dart';
 
 class MaxRMDashboard extends HookConsumerWidget {
   const MaxRMDashboard({super.key});
@@ -29,6 +30,8 @@ class MaxRMDashboard extends HookConsumerWidget {
     final selectedUserId = ref.watch(selectedUserIdProvider);
     final focusNode = useFocusNode();
     final userFetchComplete = useState(false);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     // Effetto per caricare gli utenti
     useEffect(() {
@@ -50,67 +53,409 @@ class MaxRMDashboard extends HookConsumerWidget {
     }, [currentUserRole]);
 
     return Scaffold(
+      backgroundColor: colorScheme.background,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Theme.of(context).colorScheme.surface,
-              Theme.of(context).colorScheme.surface.withOpacity(0.92),
+              colorScheme.surface,
+              colorScheme.surfaceVariant.withOpacity(0.5),
             ],
+            stops: const [0.0, 1.0],
           ),
         ),
         child: SafeArea(
-          child: Column(
-            children: [
-              // Campo di ricerca utente
-              if (currentUserRole == 'admin' || currentUserRole == 'coach') 
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Card(
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(
-                        color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: UserTypeAheadField(
-                        controller: selectedUserController,
-                        focusNode: focusNode,
-                        onSelected: (UserModel user) {
-                          ref.read(selectedUserIdProvider.notifier).state = user.id;
-                        },
-                        onChanged: (String value) {
-                          final allUsers = ref.read(userListProvider);
-                          final filteredUsers = allUsers.where((user) =>
-                            user.name.toLowerCase().contains(value.toLowerCase()) ||
-                            user.email.toLowerCase().contains(value.toLowerCase())
-                          ).toList();
-                          ref.read(filteredUserListProvider.notifier).state = filteredUsers;
-                        },
-                      ),
+          child: CustomScrollView(
+            slivers: [
+              // Search Bar
+              if (currentUserRole == 'admin' || currentUserRole == 'coach')
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.all(AppTheme.spacing.xl),
+                    child: _buildSearchBar(
+                      selectedUserController,
+                      focusNode,
+                      context,
+                      ref,
+                      theme,
+                      colorScheme,
                     ),
                   ),
                 ),
-              // Lista dei record
-              Expanded(
-                child: CustomScrollView(
-                  slivers: [
-                    SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      sliver: _buildAllExercisesMaxRMs(
-                        ref,
-                        usersService,
-                        exerciseRecordService,
-                        context,
-                        selectedUserId,
+
+              // Records Grid
+              SliverPadding(
+                padding: EdgeInsets.all(AppTheme.spacing.xl),
+                sliver: _buildAllExercisesMaxRMs(
+                  ref,
+                  usersService,
+                  exerciseRecordService,
+                  theme,
+                  colorScheme,
+                  selectedUserId,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar(
+    TextEditingController controller,
+    FocusNode focusNode,
+    BuildContext context,
+    WidgetRef ref,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
+        ),
+        boxShadow: AppTheme.elevations.small,
+      ),
+      padding: EdgeInsets.all(AppTheme.spacing.md),
+      child: UserTypeAheadField(
+        controller: controller,
+        focusNode: focusNode,
+        onSelected: (UserModel user) {
+          ref.read(selectedUserIdProvider.notifier).state = user.id;
+        },
+        onChanged: (String value) {
+          final allUsers = ref.read(userListProvider);
+          final filteredUsers = allUsers.where((user) =>
+            user.name.toLowerCase().contains(value.toLowerCase()) ||
+            user.email.toLowerCase().contains(value.toLowerCase())
+          ).toList();
+          ref.read(filteredUserListProvider.notifier).state = filteredUsers;
+        },
+      ),
+    );
+  }
+
+  Widget _buildAllExercisesMaxRMs(
+    WidgetRef ref,
+    UsersService usersService,
+    ExerciseRecordService exerciseRecordService,
+    ThemeData theme,
+    ColorScheme colorScheme,
+    String? selectedUserId,
+  ) {
+    return Builder(builder: (context) {
+      final exercisesAsyncValue = ref.watch(exercisesStreamProvider);
+
+      return exercisesAsyncValue.when(
+        data: (exercises) {
+          final userId = selectedUserId ?? usersService.getCurrentUserId();
+          List<Stream<ExerciseRecord?>> exerciseRecordStreams = exercises.map((exercise) {
+            return exerciseRecordService
+                .getExerciseRecords(userId: userId, exerciseId: exercise.id)
+                .map((records) => records.isNotEmpty ? records.reduce((a, b) => a.date.compareTo(b.date) > 0 ? a : b) : null);
+          }).toList();
+
+          return StreamBuilder<List<ExerciseRecord?>>(
+            stream: CombineLatestStream.list(exerciseRecordStreams),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return SliverToBoxAdapter(
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: colorScheme.primary,
+                    ),
+                  ),
+                );
+              }
+
+              if (snapshot.hasError) {
+                return SliverToBoxAdapter(
+                  child: Center(
+                    child: Text(
+                      'Error: ${snapshot.error}',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: colorScheme.error,
                       ),
                     ),
-                  ],
+                  ),
+                );
+              }
+
+              final latestRecords = (snapshot.data ?? [])
+                  .where((record) => record != null)
+                  .toList();
+
+              if (latestRecords.isEmpty) {
+                return SliverToBoxAdapter(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.fitness_center_outlined,
+                          size: 64,
+                          color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                        ),
+                        SizedBox(height: AppTheme.spacing.md),
+                        Text(
+                          'No Records Found',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(height: AppTheme.spacing.sm),
+                        Text(
+                          'Start adding your max records',
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              return SliverGrid(
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 400,
+                  mainAxisSpacing: 20,
+                  crossAxisSpacing: 20,
+                  childAspectRatio: 1.2,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final record = latestRecords[index]!;
+                    final exercise = exercises.firstWhere(
+                      (ex) => ex.id == record.exerciseId,
+                      orElse: () => ExerciseModel(
+                        id: '',
+                        name: 'Exercise not found',
+                        type: '',
+                        muscleGroups: [],
+                      ),
+                    );
+                    return _buildRecordCard(
+                      record,
+                      exercise,
+                      theme,
+                      colorScheme,
+                      context,
+                    );
+                  },
+                  childCount: latestRecords.length,
+                ),
+              );
+            },
+          );
+        },
+        loading: () => const SliverToBoxAdapter(
+          child: Center(child: CircularProgressIndicator()),
+        ),
+        error: (error, stack) => SliverToBoxAdapter(
+          child: Center(
+            child: Text(
+              'Error loading max RMs: $error',
+              style: theme.textTheme.titleLarge?.copyWith(
+                color: colorScheme.error,
+              ),
+            ),
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildRecordCard(
+    ExerciseRecord record,
+    ExerciseModel exercise,
+    ThemeData theme,
+    ColorScheme colorScheme,
+    BuildContext context,
+  ) {
+    return Builder(builder: (context) {
+      final ref = ProviderScope.containerOf(context);
+      
+      return Container(
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          border: Border.all(
+            color: colorScheme.outline.withOpacity(0.1),
+          ),
+          boxShadow: AppTheme.elevations.small,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => context.push(
+              '/maxrmdashboard/exercise_stats/${exercise.id}',
+              extra: {
+                'exercise': exercise,
+                'userId': record.id.split('_')[0],
+              },
+            ),
+            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+            child: Padding(
+              padding: EdgeInsets.all(AppTheme.spacing.sm),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Exercise Badge
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppTheme.spacing.sm,
+                      vertical: AppTheme.spacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
+                    ),
+                    child: Text(
+                      exercise.muscleGroups.firstOrNull ?? '',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  
+                  SizedBox(height: AppTheme.spacing.xs),
+                  
+                  Text(
+                    exercise.name,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.5,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+
+                  SizedBox(height: AppTheme.spacing.xs),
+
+                  // Max Weight Display
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppTheme.spacing.sm,
+                      vertical: AppTheme.spacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          colorScheme.primary,
+                          colorScheme.primary.withOpacity(0.8),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
+                      boxShadow: [
+                        BoxShadow(
+                          color: colorScheme.primary.withOpacity(0.2),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      '${record.maxWeight} kg',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: colorScheme.onPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: AppTheme.spacing.xs),
+
+                  // Date
+                  Text(
+                    DateFormat('d MMM yyyy').format(DateTime.parse(record.date)),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+
+                  SizedBox(height: AppTheme.spacing.xs),
+
+                  // Action Buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildActionButton(
+                        icon: Icons.edit_outlined,
+                        label: 'Edit',
+                        onTap: () => _showEditMaxRMDialog(context, ref, record, exercise),
+                        colorScheme: colorScheme,
+                        theme: theme,
+                      ),
+                      SizedBox(width: AppTheme.spacing.xs),
+                      _buildActionButton(
+                        icon: Icons.delete_outline,
+                        label: 'Delete',
+                        onTap: () => _showDeleteMaxRMDialog(context, ref, record, exercise),
+                        colorScheme: colorScheme,
+                        theme: theme,
+                        isDestructive: true,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required ColorScheme colorScheme,
+    required ThemeData theme,
+    bool isDestructive = false,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppTheme.radii.full),
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: AppTheme.spacing.sm,
+            vertical: AppTheme.spacing.xs,
+          ),
+          decoration: BoxDecoration(
+            color: isDestructive
+                ? colorScheme.errorContainer.withOpacity(0.2)
+                : colorScheme.surfaceVariant.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(AppTheme.radii.full),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: isDestructive ? colorScheme.error : colorScheme.primary,
+              ),
+              SizedBox(width: AppTheme.spacing.xs),
+              Text(
+                label,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: isDestructive ? colorScheme.error : colorScheme.primary,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
@@ -139,260 +484,6 @@ class MaxRMDashboard extends HookConsumerWidget {
       }
     }
     return users;
-  }
-
-  SliverToBoxAdapter _buildAllExercisesMaxRMs(
-    WidgetRef ref,
-    UsersService usersService,
-    ExerciseRecordService exerciseRecordService,
-    BuildContext context,
-    String? selectedUserId,
-  ) {
-    final exercisesAsyncValue = ref.watch(exercisesStreamProvider);
-    final userId = selectedUserId ?? usersService.getCurrentUserId();
-
-    return SliverToBoxAdapter(
-      child: exercisesAsyncValue.when(
-        data: (exercises) {
-          List<Stream<ExerciseRecord?>> exerciseRecordStreams = exercises.map((exercise) {
-            return exerciseRecordService
-                .getExerciseRecords(userId: userId, exerciseId: exercise.id)
-                .map((records) => records.isNotEmpty ? records.reduce((a, b) => a.date.compareTo(b.date) > 0 ? a : b) : null);
-          }).toList();
-
-          return StreamBuilder<List<ExerciseRecord?>>(
-            stream: CombineLatestStream.list(exerciseRecordStreams),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              
-              final latestRecords = (snapshot.data ?? [])
-                  .where((record) => record != null)
-                  .toList();
-
-              return LayoutBuilder(
-                builder: (context, constraints) {
-                  final isMobile = constraints.maxWidth <= 600;
-                  final crossAxisCount = switch (constraints.maxWidth) {
-                    > 1200 => 4, // Desktop large
-                    > 900 => 3,  // Desktop
-                    > 600 => 2,  // Tablet
-                    _ => 1,      // Mobile
-                  };
-
-                  if (isMobile) {
-                    // Per mobile, usiamo ListView invece di GridView per altezza adattiva
-                    return ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      itemCount: latestRecords.length,
-                      itemBuilder: (context, index) {
-                        final record = latestRecords[index];
-                        ExerciseModel exercise = exercises.firstWhere(
-                          (ex) => ex.id == record?.exerciseId,
-                          orElse: () => ExerciseModel(id: '', name: 'Exercise not found', type: '', muscleGroups: []),
-                        );
-                        return Padding(
-                          padding: const EdgeInsets.only(
-                            left: 16,
-                            right: 16,
-                            bottom: 16,
-                          ),
-                          child: ActionCard(
-                            onTap: () {
-                              context.push(
-                                '/maxrmdashboard/exercise_stats/${exercise.id}',
-                                extra: {
-                                  'exercise': exercise,
-                                  'userId': selectedUserId ?? usersService.getCurrentUserId(),
-                                },
-                              );
-                            },
-                            title: Text(
-                              exercise.name,
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: -0.5,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            subtitle: Text(
-                              exercise.muscleGroups.firstOrNull ?? '',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                letterSpacing: -0.3,
-                              ),
-                            ),
-                            actions: [
-                              IconButtonWithBackground(
-                                icon: Icons.edit_outlined,
-                                color: Theme.of(context).colorScheme.primary,
-                                onPressed: () {
-                                  if (record != null) {
-                                    _showEditMaxRMDialog(context, ref, record!, exercise);
-                                  }
-                                },
-                              ),
-                              const SizedBox(width: 8),
-                              IconButtonWithBackground(
-                                icon: Icons.delete_outline,
-                                color: Theme.of(context).colorScheme.error,
-                                onPressed: () {
-                                  if (record != null) {
-                                    _showDeleteMaxRMDialog(context, ref, record!, exercise);
-                                  }
-                                },
-                              ),
-                            ],
-                            bottomContent: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.8),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Text(
-                                  '${record?.maxWeight ?? 0} kg',
-                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                                    letterSpacing: -0.5,
-                                  ),
-                                ),
-                              ),
-                              Text(
-                                DateFormat('d MMM yyyy').format(
-                                  DateTime.parse(record?.date ?? DateTime.now().toString()),
-                                ),
-                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                  letterSpacing: -0.3,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    );
-                  }
-
-                  // Per tablet/desktop, manteniamo il GridView
-                  return GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    padding: EdgeInsets.all(crossAxisCount == 1 ? 16 : 24),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: crossAxisCount,
-                      crossAxisSpacing: 20.0,
-                      mainAxisSpacing: 20.0,
-                      childAspectRatio: 1.2,
-                    ),
-                    itemCount: latestRecords.length,
-                    itemBuilder: (context, index) {
-                      final record = latestRecords[index];
-                      ExerciseModel exercise = exercises.firstWhere(
-                        (ex) => ex.id == record?.exerciseId,
-                        orElse: () => ExerciseModel(id: '', name: 'Exercise not found', type: '', muscleGroups: []),
-                      );
-                      return ActionCard(
-                        onTap: () {
-                          context.push(
-                            '/maxrmdashboard/exercise_stats/${exercise.id}',
-                            extra: {
-                              'exercise': exercise,
-                              'userId': selectedUserId ?? usersService.getCurrentUserId(),
-                            },
-                          );
-                        },
-                        title: Text(
-                          exercise.name,
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: -0.5,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        subtitle: Text(
-                          exercise.muscleGroups.firstOrNull ?? '',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            letterSpacing: -0.3,
-                          ),
-                        ),
-                        actions: [
-                          IconButtonWithBackground(
-                            icon: Icons.edit_outlined,
-                            color: Theme.of(context).colorScheme.primary,
-                            onPressed: () {
-                              if (record != null) {
-                                _showEditMaxRMDialog(context, ref, record!, exercise);
-                              }
-                            },
-                          ),
-                          const SizedBox(width: 8),
-                          IconButtonWithBackground(
-                            icon: Icons.delete_outline,
-                            color: Theme.of(context).colorScheme.error,
-                            onPressed: () {
-                              if (record != null) {
-                                _showDeleteMaxRMDialog(context, ref, record!, exercise);
-                              }
-                            },
-                          ),
-                        ],
-                        bottomContent: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.8),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Text(
-                              '${record?.maxWeight ?? 0} kg',
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: Theme.of(context).colorScheme.onPrimaryContainer,
-                                letterSpacing: -0.5,
-                              ),
-                            ),
-                          ),
-                          Text(
-                            DateFormat('d MMM yyyy').format(
-                              DateTime.parse(record?.date ?? DateTime.now().toString()),
-                            ),
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              letterSpacing: -0.3,
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-              );
-            },
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Text(
-            'Error loading max RMs: $error',
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-          ),
-        ),
-      ),
-    );
   }
 
   static void showAddMaxRMDialog(BuildContext context, WidgetRef ref) {
@@ -448,9 +539,9 @@ class MaxRMDashboard extends HookConsumerWidget {
     );
   }
 
-  void _showEditMaxRMDialog(
+  static void _showEditMaxRMDialog(
     BuildContext context,
-    WidgetRef ref,
+    ProviderContainer ref,
     ExerciseRecord record,
     ExerciseModel exercise,
   ) {
@@ -467,9 +558,9 @@ class MaxRMDashboard extends HookConsumerWidget {
     );
   }
 
-  void _showDeleteMaxRMDialog(
+  static void _showDeleteMaxRMDialog(
     BuildContext context,
-    WidgetRef ref,
+    ProviderContainer ref,
     ExerciseRecord record,
     ExerciseModel exercise,
   ) {
@@ -504,9 +595,9 @@ class MaxRMDashboard extends HookConsumerWidget {
     );
   }
 
-  void _performDelete(
+  static void _performDelete(
     BuildContext context,
-    WidgetRef ref,
+    ProviderContainer ref,
     ExerciseRecord record,
     ExerciseModel exercise,
   ) async {
@@ -514,161 +605,6 @@ class MaxRMDashboard extends HookConsumerWidget {
     final selectedUserId = ref.read(selectedUserIdProvider);
     final usersService = ref.read(usersServiceProvider);
     
-    try {
-      await exerciseRecordService.deleteExerciseRecord(
-        userId: selectedUserId ?? usersService.getCurrentUserId(),
-        exerciseId: exercise.id,
-        recordId: record.id,
-      );
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Record deleted successfully')),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to delete record: $e')),
-        );
-      }
-    }
-  }
-}
-
-class ExerciseCard extends ConsumerWidget {
-  final ExerciseRecord record;
-  final ExerciseModel exercise;
-  final ExerciseRecordService exerciseRecordService;
-  final UsersService usersService;
-
-  const ExerciseCard({
-    super.key,
-    required this.record,
-    required this.exercise,
-    required this.exerciseRecordService,
-    required this.usersService,
-  });
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final selectedUserId = ref.watch(selectedUserIdProvider);
-    final theme = Theme.of(context);
-
-    return ActionCard(
-      onTap: () {
-        context.push(
-          '/maxrmdashboard/exercise_stats/${exercise.id}',
-          extra: {
-            'exercise': exercise,
-            'userId': selectedUserId ?? usersService.getCurrentUserId(),
-          },
-        );
-      },
-      title: Text(
-        exercise.name,
-        style: theme.textTheme.titleLarge?.copyWith(
-          fontWeight: FontWeight.w600,
-          letterSpacing: -0.5,
-        ),
-      ),
-      subtitle: Text(
-        exercise.muscleGroups.firstOrNull ?? '',
-        style: theme.textTheme.bodyMedium?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-          letterSpacing: -0.3,
-        ),
-      ),
-      actions: [
-        IconButtonWithBackground(
-          icon: Icons.edit_outlined,
-          color: theme.colorScheme.primary,
-          onPressed: () => _showEditDialog(context, ref),
-        ),
-        const SizedBox(width: 8),
-        IconButtonWithBackground(
-          icon: Icons.delete_outline,
-          color: theme.colorScheme.error,
-          onPressed: () => _showDeleteDialog(context, ref),
-        ),
-      ],
-      bottomContent: [
-        Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.primaryContainer.withOpacity(0.8),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Text(
-            '${record.maxWeight} kg',
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onPrimaryContainer,
-              letterSpacing: -0.5,
-            ),
-          ),
-        ),
-        Text(
-          DateFormat('d MMM yyyy').format(DateTime.parse(record.date)),
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-            letterSpacing: -0.3,
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _showEditDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return EditRecordDialog(
-          record: record,
-          exercise: exercise,
-          exerciseRecordService: exerciseRecordService,
-          usersService: usersService,
-        );
-      },
-    );
-  }
-
-  void _showDeleteDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: Text(
-            'Confirmation',
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-          ),
-          backgroundColor: Theme.of(context).colorScheme.surface,
-          content: Text(
-            'Are you sure you want to delete this record?',
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                _performDelete(context, ref);
-              },
-              child: Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.error)),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _performDelete(BuildContext context, WidgetRef ref) async {
-    final selectedUserId = ref.read(selectedUserIdProvider);
     try {
       await exerciseRecordService.deleteExerciseRecord(
         userId: selectedUserId ?? usersService.getCurrentUserId(),
