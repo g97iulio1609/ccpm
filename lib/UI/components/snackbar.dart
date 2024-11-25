@@ -16,8 +16,8 @@ class AppSnackbar extends StatelessWidget {
   final String? actionLabel;
   final Duration duration;
   final VoidCallback? onDismiss;
-  final bool showProgress;
-  final double? progress;
+  final bool showProgressBar;
+  final double? progressValue;
 
   const AppSnackbar({
     super.key,
@@ -28,8 +28,8 @@ class AppSnackbar extends StatelessWidget {
     this.actionLabel,
     this.duration = const Duration(seconds: 4),
     this.onDismiss,
-    this.showProgress = false,
-    this.progress,
+    this.showProgressBar = false,
+    this.progressValue,
   });
 
   @override
@@ -64,9 +64,9 @@ class AppSnackbar extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           // Progress Indicator
-          if (showProgress) ...[
+          if (showProgressBar) ...[
             LinearProgressIndicator(
-              value: progress,
+              value: progressValue,
               backgroundColor: snackbarColor.withOpacity(0.1),
               valueColor: AlwaysStoppedAnimation<Color>(snackbarColor),
               minHeight: 2,
@@ -192,8 +192,8 @@ class AppSnackbar extends StatelessWidget {
     String? actionLabel,
     Duration duration = const Duration(seconds: 4),
     VoidCallback? onDismiss,
-    bool showProgress = false,
-    double? progress,
+    bool showProgressBar = false,
+    double? progressValue,
   }) {
     final snackBar = SnackBar(
       content: AppSnackbar(
@@ -204,8 +204,8 @@ class AppSnackbar extends StatelessWidget {
         actionLabel: actionLabel,
         duration: duration,
         onDismiss: onDismiss,
-        showProgress: showProgress,
-        progress: progress,
+        showProgressBar: showProgressBar,
+        progressValue: progressValue,
       ),
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -289,10 +289,10 @@ class AppSnackbar extends StatelessWidget {
     );
   }
 
-  static void progress(
+  static void showProgress(
     BuildContext context, {
     required String message,
-    required double progress,
+    required double progressValue,
     VoidCallback? onAction,
     String? actionLabel,
     Duration? duration,
@@ -304,8 +304,8 @@ class AppSnackbar extends StatelessWidget {
       onAction: onAction,
       actionLabel: actionLabel,
       duration: duration ?? const Duration(seconds: 4),
-      showProgress: true,
-      progress: progress,
+      showProgressBar: true,
+      progressValue: progressValue,
     );
   }
 } 

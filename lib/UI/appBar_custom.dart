@@ -19,6 +19,9 @@ import 'package:alphanessone/nutrition/models/diet_plan_model.dart';
 import 'package:alphanessone/nutrition/services/diet_plan_services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:alphanessone/Store/inAppPurchase_services.dart'; // Import aggiunto
+import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/UI/components/snackbar.dart';
+
 
 class CustomAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
   const CustomAppBar({
@@ -328,62 +331,168 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+    AppSnackbar.info(
+      context,
+      message: message,
+      duration: const Duration(seconds: 2),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final currentRoute = GoRouterState.of(context).uri.toString();
     final isBackButtonVisible = currentRoute.split('/').length > 2;
     final selectedDate = ref.watch(selectedDateProvider);
     final isAdmin = widget.userRole == 'admin';
 
-    return AppBar(
-      centerTitle: true,
-      title: _isDailyFoodTrackerRoute(currentRoute)
-          ? _buildDateSelector(selectedDate)
-          : Text(_getTitleForRoute(currentRoute)),
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      foregroundColor: Theme.of(context).colorScheme.onSurface,
-      leading: isBackButtonVisible ? _buildLeadingButtons(currentRoute) : null,
-      actions: _buildActions(currentRoute, isAdmin),
-      elevation: 0,
-      scrolledUnderElevation: 0,
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: AppBar(
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: isBackButtonVisible ? _buildLeadingButtons(currentRoute) : null,
+        title: _isDailyFoodTrackerRoute(currentRoute)
+            ? _buildDateSelector(selectedDate)
+            : _buildTitle(currentRoute),
+        actions: _buildActions(currentRoute, isAdmin),
+      ),
     );
   }
 
-  Widget _buildDateSelector(DateTime selectedDate) {
+  Widget _buildTitle(String currentRoute) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final title = _getTitleForRoute(currentRoute);
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        IconButton(
-          icon: const Icon(Icons.chevron_left),
-          onPressed: () {
-            ref.read(selectedDateProvider.notifier).update((state) => state.subtract(const Duration(days: 1)));
-          },
+        Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: AppTheme.spacing.sm,
+            vertical: AppTheme.spacing.xs,
+          ),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(AppTheme.radii.full),
+          ),
+          child: Icon(
+            _getIconForRoute(currentRoute),
+            color: colorScheme.primary,
+            size: 20,
+          ),
         ),
+        SizedBox(width: AppTheme.spacing.sm),
         Text(
-          _formatDate(selectedDate),
-          style: const TextStyle(fontSize: 16),
-        ),
-        IconButton(
-          icon: const Icon(Icons.chevron_right),
-          onPressed: () {
-            ref.read(selectedDateProvider.notifier).update((state) => state.add(const Duration(days: 1)));
-          },
-        ),
-        PopupMenuButton<String>(
-          onSelected: _onDayMenuSelected,
-          itemBuilder: (BuildContext context) => [
-            const PopupMenuItem(value: 'save_as_favorite_day', child: Text('Save as Favorite Day')),
-            const PopupMenuItem(value: 'apply_favorite_day', child: Text('Apply Favorite Day')),
-            const PopupMenuItem(value: 'add_diet_plan', child: Text('Add Diet Plan')),
-            const PopupMenuItem(value: 'view_diet_plans', child: Text('View Diet Plans')),
-          ],
+          title,
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.5,
+          ),
         ),
       ],
+    );
+  }
+
+  IconData _getIconForRoute(String currentPath) {
+    if (currentPath.contains('/exercise_details/')) return Icons.fitness_center;
+    if (currentPath.contains('/workout_details/')) return Icons.schedule;
+    if (currentPath.contains('/week_details/')) return Icons.calendar_today;
+
+    switch (currentPath) {
+      case '/programs_screen': return Icons.people;
+      case '/user_programs': return Icons.fitness_center;
+      case '/exercises_list': return Icons.list;
+      case '/subscriptions': return Icons.card_membership;
+      case '/maxrmdashboard': return Icons.trending_up;
+      case '/user_profile': return Icons.person;
+      case '/training_program': return Icons.edit;
+      case '/users_dashboard': return Icons.group;
+      case '/volume_dashboard': return Icons.bar_chart;
+      case '/measurements': return Icons.straighten;
+      case '/tdee': return Icons.local_fire_department;
+      case '/macros_selector': return Icons.pie_chart;
+      case '/training_gallery': return Icons.photo_library;
+      case '/food_tracker': return Icons.restaurant_menu;
+      default: return Icons.dashboard;
+    }
+  }
+
+  Widget _buildDateSelector(DateTime selectedDate) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppTheme.spacing.sm,
+        vertical: AppTheme.spacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(AppTheme.radii.full),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: Icon(
+              Icons.chevron_left,
+              color: colorScheme.onSurfaceVariant,
+              size: 20,
+            ),
+            onPressed: () {
+              ref.read(selectedDateProvider.notifier).update(
+                    (state) => state.subtract(const Duration(days: 1)),
+                  );
+            },
+          ),
+          Text(
+            _formatDate(selectedDate),
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.chevron_right,
+              color: colorScheme.onSurfaceVariant,
+              size: 20,
+            ),
+            onPressed: () {
+              ref.read(selectedDateProvider.notifier).update(
+                    (state) => state.add(const Duration(days: 1)),
+                  );
+            },
+          ),
+          PopupMenuButton<String>(
+            icon: Icon(
+              Icons.more_vert,
+              color: colorScheme.onSurfaceVariant,
+              size: 20,
+            ),
+            onSelected: _onDayMenuSelected,
+            itemBuilder: _buildDayMenuItems,
+          ),
+        ],
+      ),
     );
   }
 
@@ -582,6 +691,51 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
         );
       },
     );
+  }
+
+  List<PopupMenuEntry<String>> _buildDayMenuItems(BuildContext context) {
+    return [
+      const PopupMenuItem(
+        value: 'save_as_favorite_day',
+        child: Row(
+          children: [
+            Icon(Icons.favorite_border),
+            SizedBox(width: 8),
+            Text('Salva come Giorno Preferito'),
+          ],
+        ),
+      ),
+      const PopupMenuItem(
+        value: 'apply_favorite_day',
+        child: Row(
+          children: [
+            Icon(Icons.favorite),
+            SizedBox(width: 8),
+            Text('Applica Giorno Preferito'),
+          ],
+        ),
+      ),
+      const PopupMenuItem(
+        value: 'add_diet_plan',
+        child: Row(
+          children: [
+            Icon(Icons.add_chart),
+            SizedBox(width: 8),
+            Text('Aggiungi Piano Dietetico'),
+          ],
+        ),
+      ),
+      const PopupMenuItem(
+        value: 'view_diet_plans',
+        child: Row(
+          children: [
+            Icon(Icons.list_alt),
+            SizedBox(width: 8),
+            Text('Visualizza Piani Dietetici'),
+          ],
+        ),
+      ),
+    ];
   }
 }
 
