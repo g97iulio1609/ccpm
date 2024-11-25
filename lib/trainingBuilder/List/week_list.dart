@@ -7,6 +7,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import '../controller/training_program_controller.dart';
 import '../dialog/reorder_dialog.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/UI/components/bottom_menu.dart';
 
 class TrainingProgramWeekList extends ConsumerWidget {
   final String programId;
@@ -109,7 +110,6 @@ class TrainingProgramWeekList extends ConsumerWidget {
             padding: EdgeInsets.all(AppTheme.spacing.lg),
             child: Row(
               children: [
-                // Week Number Badge
                 Container(
                   width: 48,
                   height: 48,
@@ -127,10 +127,7 @@ class TrainingProgramWeekList extends ConsumerWidget {
                     ),
                   ),
                 ),
-
                 SizedBox(width: AppTheme.spacing.lg),
-
-                // Week Title
                 Expanded(
                   child: Text(
                     'Week ${week.number}',
@@ -141,9 +138,13 @@ class TrainingProgramWeekList extends ConsumerWidget {
                     ),
                   ),
                 ),
-
-                // Options Menu
-                _buildOptionsMenu(context, index, theme, colorScheme),
+                IconButton(
+                  icon: Icon(
+                    Icons.more_vert,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  onPressed: () => _showWeekOptions(context, index, theme, colorScheme),
+                ),
               ],
             ),
           ),
@@ -152,78 +153,52 @@ class TrainingProgramWeekList extends ConsumerWidget {
     );
   }
 
-  Widget _buildOptionsMenu(
+  void _showWeekOptions(
     BuildContext context,
     int index,
     ThemeData theme,
     ColorScheme colorScheme,
   ) {
-    return PopupMenuButton(
-      icon: Icon(
-        Icons.more_vert,
-        color: colorScheme.onSurfaceVariant,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-      ),
-      itemBuilder: (context) => [
-        _buildMenuItem(
-          'Copy Week',
-          Icons.content_copy_outlined,
-          () => controller.copyWeek(index, context),
-          theme,
-          colorScheme,
-        ),
-        _buildMenuItem(
-          'Delete Week',
-          Icons.delete_outline,
-          () => controller.removeWeek(index),
-          theme,
-          colorScheme,
-          isDestructive: true,
-        ),
-        _buildMenuItem(
-          'Reorder Weeks',
-          Icons.reorder,
-          () => _showReorderWeeksDialog(context),
-          theme,
-          colorScheme,
-        ),
-        _buildMenuItem(
-          'Add Week',
-          Icons.add,
-          () => controller.addWeek(),
-          theme,
-          colorScheme,
-        ),
-      ],
-    );
-  }
-
-  PopupMenuItem<void> _buildMenuItem(
-    String text,
-    IconData icon,
-    VoidCallback onTap,
-    ThemeData theme,
-    ColorScheme colorScheme, {
-    bool isDestructive = false,
-  }) {
-    return PopupMenuItem(
-      onTap: onTap,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 20,
-            color: isDestructive ? colorScheme.error : colorScheme.onSurface,
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => BottomMenu(
+        title: 'Settimana ${index + 1}',
+        subtitle: 'Gestisci settimana',
+        leading: Container(
+          padding: EdgeInsets.all(AppTheme.spacing.sm),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
-          SizedBox(width: AppTheme.spacing.sm),
-          Text(
-            text,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: isDestructive ? colorScheme.error : colorScheme.onSurface,
-            ),
+          child: Icon(
+            Icons.calendar_today,
+            color: colorScheme.primary,
+            size: 24,
+          ),
+        ),
+        items: [
+          BottomMenuItem(
+            title: 'Copia Settimana',
+            icon: Icons.content_copy_outlined,
+            onTap: () => controller.copyWeek(index, context),
+          ),
+          BottomMenuItem(
+            title: 'Riordina Settimane',
+            icon: Icons.reorder,
+            onTap: () => _showReorderWeeksDialog(context),
+          ),
+          BottomMenuItem(
+            title: 'Aggiungi Settimana',
+            icon: Icons.add,
+            onTap: () => controller.addWeek(),
+          ),
+          BottomMenuItem(
+            title: 'Elimina Settimana',
+            icon: Icons.delete_outline,
+            onTap: () => controller.removeWeek(index),
+            isDestructive: true,
           ),
         ],
       ),
