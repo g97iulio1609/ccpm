@@ -7,6 +7,8 @@ import '../dialog/reorder_dialog.dart';
 import '../series_utils.dart';
 import '../dialog/series_dialog.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/UI/components/bottom_menu.dart';
+import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 
 final expansionStateProvider = StateNotifierProvider.autoDispose<
     ExpansionStateNotifier, Map<String, bool>>((ref) {
@@ -622,5 +624,139 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
     }
 
     widget.controller.updateSeries(widget.weekIndex, widget.workoutIndex, widget.exerciseIndex, exercise.series);
+  }
+
+  void _showSeriesOptions(
+    BuildContext context,
+    Series series,
+    List<Series> seriesGroup,
+    int groupIndex,
+    int? seriesIndex,
+    VoidCallback? onRemove,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    final exercise = widget.controller.program.weeks[widget.weekIndex]
+        .workouts[widget.workoutIndex].exercises[widget.exerciseIndex];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => BottomMenu(
+        title: 'Serie ${series.order}',
+        subtitle: _formatSeriesInfo(series),
+        leading: Container(
+          padding: EdgeInsets.all(AppTheme.spacing.sm),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(AppTheme.radii.md),
+          ),
+          child: Icon(
+            Icons.fitness_center,
+            color: colorScheme.primary,
+            size: 24,
+          ),
+        ),
+        items: [
+          BottomMenuItem(
+            title: 'Modifica',
+            icon: Icons.edit_outlined,
+            onTap: () => _showEditSeriesDialog([series], isIndividualEdit: true),
+          ),
+          BottomMenuItem(
+            title: 'Duplica Serie',
+            icon: Icons.content_copy_outlined,
+            onTap: () {
+              final newSeries = series.copyWith(
+                serieId: generateRandomId(16),
+                order: exercise.series.length + 1,
+              );
+              _addNewSeries([newSeries]);
+            },
+          ),
+          BottomMenuItem(
+            title: 'Elimina',
+            icon: Icons.delete_outline,
+            onTap: () {
+              if (onRemove != null) {
+                onRemove();
+              } else {
+                widget.controller.removeSeries(
+                  widget.weekIndex,
+                  widget.workoutIndex,
+                  widget.exerciseIndex,
+                  groupIndex,
+                  seriesIndex ?? 0,
+                );
+              }
+            },
+            isDestructive: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSeriesGroupOptions(
+    BuildContext context,
+    List<Series> seriesGroup,
+    int groupIndex,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    final exercise = widget.controller.program.weeks[widget.weekIndex]
+        .workouts[widget.workoutIndex].exercises[widget.exerciseIndex];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => BottomMenu(
+        title: 'Gruppo Serie',
+        subtitle: '${seriesGroup.length} serie',
+        leading: Container(
+          padding: EdgeInsets.all(AppTheme.spacing.sm),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(AppTheme.radii.md),
+          ),
+          child: Icon(
+            Icons.format_list_numbered,
+            color: colorScheme.primary,
+            size: 24,
+          ),
+        ),
+        items: [
+          BottomMenuItem(
+            title: 'Modifica Gruppo',
+            icon: Icons.edit_outlined,
+            onTap: () => _showEditSeriesDialog(seriesGroup),
+          ),
+          BottomMenuItem(
+            title: 'Duplica Gruppo',
+            icon: Icons.content_copy_outlined,
+            onTap: () {
+              final newSeriesGroup = seriesGroup.map((s) => s.copyWith(
+                serieId: generateRandomId(16),
+                order: exercise.series.length + seriesGroup.indexOf(s) + 1,
+              )).toList();
+              _addNewSeries(newSeriesGroup);
+            },
+          ),
+          BottomMenuItem(
+            title: 'Riordina Serie',
+            icon: Icons.reorder,
+            onTap: () => _showReorderSeriesDialog(seriesGroup),
+          ),
+          BottomMenuItem(
+            title: 'Elimina Gruppo',
+            icon: Icons.delete_outline,
+            onTap: () => _showDeleteSeriesGroupDialog(seriesGroup, groupIndex),
+            isDestructive: true,
+          ),
+        ],
+      ),
+    );
   }
 }
