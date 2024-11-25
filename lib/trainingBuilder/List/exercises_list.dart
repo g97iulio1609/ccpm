@@ -9,11 +9,11 @@ import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-
 import '../controller/training_program_controller.dart';
 import 'series_list.dart';
 import '../dialog/reorder_dialog.dart';
 import '../../UI/components/card.dart';
+import 'package:alphanessone/Main/app_theme.dart';
 
 class TrainingProgramExerciseList extends ConsumerWidget {
   final TrainingProgramController controller;
@@ -38,16 +38,50 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return ListView.builder(
-      shrinkWrap: true,
-      itemCount: exercises.length + 1,
-      itemBuilder: (context, index) {
-        if (index == exercises.length) {
-          return _buildAddExerciseButton(context, colorScheme);
-        }
-        return _buildExerciseCard(context, exercises[index], exerciseRecordService,
-            athleteId, dateFormat, colorScheme);
-      },
+    return Scaffold(
+      backgroundColor: colorScheme.background,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              colorScheme.surface,
+              colorScheme.surfaceVariant.withOpacity(0.5),
+            ],
+            stops: const [0.0, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: CustomScrollView(
+            slivers: [
+              // Exercises List
+              SliverPadding(
+                padding: EdgeInsets.all(AppTheme.spacing.xl),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      if (index == exercises.length) {
+                        return _buildAddExerciseButton(context, colorScheme, theme);
+                      }
+                      return _buildExerciseCard(
+                        context,
+                        exercises[index],
+                        exerciseRecordService,
+                        athleteId,
+                        dateFormat,
+                        theme,
+                        colorScheme,
+                      );
+                    },
+                    childCount: exercises.length + 1,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -57,6 +91,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     ExerciseRecordService exerciseRecordService,
     String athleteId,
     DateFormat dateFormat,
+    ThemeData theme,
     ColorScheme colorScheme,
   ) {
     final superSets = controller
@@ -66,116 +101,242 @@ class TrainingProgramExerciseList extends ConsumerWidget {
 
     return FutureBuilder<num>(
       future: getLatestMaxWeight(
-          exerciseRecordService, athleteId, exercise.exerciseId ?? ''),
+        exerciseRecordService,
+        athleteId,
+        exercise.exerciseId ?? '',
+      ),
       builder: (context, snapshot) {
         final latestMaxWeight = snapshot.data ?? 0;
-        return Slidable(
-          startActionPane: ActionPane(
-            motion: const DrawerMotion(),
-            children: [
-              SlidableAction(
-                onPressed: (context) =>
-                    controller.addExercise(weekIndex, workoutIndex, context),
-                backgroundColor: colorScheme.primary,
-                foregroundColor: colorScheme.onPrimary,
-                icon: Icons.add,
-                label: 'Aggiungi Esercizio',
-              ),
-            ],
+
+        return Container(
+          margin: EdgeInsets.only(bottom: AppTheme.spacing.md),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+            border: Border.all(
+              color: colorScheme.outline.withOpacity(0.1),
+            ),
+            boxShadow: AppTheme.elevations.small,
           ),
-          endActionPane: ActionPane(
-            motion: const DrawerMotion(),
-            children: [
-              SlidableAction(
-                onPressed: (context) => controller.removeExercise(
-                    weekIndex, workoutIndex, exercise.order - 1),
-                backgroundColor: colorScheme.error,
-                foregroundColor: colorScheme.onError,
-                icon: Icons.delete,
-                label: 'Elimina',
-              ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: ActionCard(
-              onTap: () => controller.editExercise(
-                  weekIndex, workoutIndex, exercise.order - 1, context),
-              title: Text(
-                exercise.name,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: -0.5,
-                ),
-              ),
-              subtitle: exercise.variant.isNotEmpty
-                  ? Text(
-                      exercise.variant,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                        letterSpacing: -0.3,
-                      ),
-                    )
-                  : null,
-              actions: [
-                IconButtonWithBackground(
-                  icon: Icons.more_vert,
-                  color: colorScheme.primary,
-                  onPressed: () => _showExerciseOptions(
-                    context,
-                    exercise,
-                    exerciseRecordService,
-                    athleteId,
-                    dateFormat,
-                    latestMaxWeight,
-                    colorScheme,
+          child: Slidable(
+            startActionPane: ActionPane(
+              motion: const ScrollMotion(),
+              children: [
+                SlidableAction(
+                  onPressed: (context) => controller.addExercise(weekIndex, workoutIndex, context),
+                  backgroundColor: colorScheme.primaryContainer,
+                  foregroundColor: colorScheme.onPrimaryContainer,
+                  borderRadius: BorderRadius.horizontal(
+                    left: Radius.circular(AppTheme.radii.lg),
                   ),
+                  icon: Icons.add,
+                  label: 'Add',
                 ),
               ],
-              bottomContent: [
-                if (superSets.isNotEmpty)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.group_work,
-                          size: 18,
-                          color: colorScheme.onPrimaryContainer,
+            ),
+            endActionPane: ActionPane(
+              motion: const ScrollMotion(),
+              children: [
+                SlidableAction(
+                  onPressed: (context) => controller.removeExercise(
+                    weekIndex,
+                    workoutIndex,
+                    exercise.order - 1,
+                  ),
+                  backgroundColor: colorScheme.errorContainer,
+                  foregroundColor: colorScheme.onErrorContainer,
+                  borderRadius: BorderRadius.horizontal(
+                    right: Radius.circular(AppTheme.radii.lg),
+                  ),
+                  icon: Icons.delete_outline,
+                  label: 'Delete',
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => controller.editExercise(
+                  weekIndex,
+                  workoutIndex,
+                  exercise.order - 1,
+                  context,
+                ),
+                borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                child: Padding(
+                  padding: EdgeInsets.all(AppTheme.spacing.lg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          // Exercise Type Badge
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: AppTheme.spacing.md,
+                              vertical: AppTheme.spacing.xs,
+                            ),
+                            decoration: BoxDecoration(
+                              color: colorScheme.primaryContainer.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
+                            ),
+                            child: Text(
+                              exercise.type,
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          const Spacer(),
+                          IconButton(
+                            icon: Icon(
+                              Icons.more_vert,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                            onPressed: () => _showExerciseOptions(
+                              context,
+                              exercise,
+                              exerciseRecordService,
+                              athleteId,
+                              dateFormat,
+                              latestMaxWeight,
+                              colorScheme,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: AppTheme.spacing.md),
+
+                      // Exercise Name and Variant
+                      Text(
+                        exercise.name,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color: colorScheme.onSurface,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: -0.5,
                         ),
-                        const SizedBox(width: 4),
+                      ),
+
+                      if (exercise.variant.isNotEmpty) ...[
+                        SizedBox(height: AppTheme.spacing.xs),
                         Text(
-                          'Superset',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onPrimaryContainer,
-                            fontWeight: FontWeight.w500,
+                          exercise.variant,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
-                    ),
+
+                      SizedBox(height: AppTheme.spacing.lg),
+
+                      // Series List
+                      TrainingProgramSeriesList(
+                        controller: controller,
+                        exerciseRecordService: exerciseRecordService,
+                        weekIndex: weekIndex,
+                        workoutIndex: workoutIndex,
+                        exerciseIndex: exercise.order - 1,
+                        exerciseType: exercise.type,
+                      ),
+
+                      // Superset Badge
+                      if (superSets.isNotEmpty) ...[
+                        SizedBox(height: AppTheme.spacing.md),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppTheme.spacing.md,
+                            vertical: AppTheme.spacing.xs,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.secondaryContainer.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.group_work,
+                                size: 18,
+                                color: colorScheme.secondary,
+                              ),
+                              SizedBox(width: AppTheme.spacing.xs),
+                              Text(
+                                'Superset',
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: colorScheme.secondary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                const SizedBox(height: 16),
-                TrainingProgramSeriesList(
-                  controller: controller,
-                  exerciseRecordService: exerciseRecordService,
-                  weekIndex: weekIndex,
-                  workoutIndex: workoutIndex,
-                  exerciseIndex: exercise.order - 1,
-                  exerciseType: exercise.type,
                 ),
-              ],
+              ),
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildAddExerciseButton(
+    BuildContext context,
+    ColorScheme colorScheme,
+    ThemeData theme,
+  ) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            colorScheme.primary,
+            colorScheme.primary.withOpacity(0.8),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.primary.withOpacity(0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => controller.addExercise(weekIndex, workoutIndex, context),
+          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              vertical: AppTheme.spacing.lg,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.add_circle_outline,
+                  color: colorScheme.onPrimary,
+                  size: 24,
+                ),
+                SizedBox(width: AppTheme.spacing.sm),
+                Text(
+                  'Add Exercise',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: colorScheme.onPrimary,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -245,83 +406,56 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     );
   }
 
-  Widget _buildAddExerciseButton(
+  void _showMoveExerciseDialog(
     BuildContext context,
-    ColorScheme colorScheme,
+    int weekIndex,
+    int sourceWorkoutIndex,
+    Exercise exercise,
   ) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: ElevatedButton(
-        onPressed: () =>
-            controller.addExercise(weekIndex, workoutIndex, context),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: colorScheme.primary,
-          foregroundColor: Colors.black,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-        child: Text(
-          'Aggiungi Esercizio',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
+    final sourceExerciseIndex = exercise.order - 1;
+    final week = controller.program.weeks[weekIndex];
+
+    showDialog<int>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Seleziona l\'Allenamento di Destinazione'),
+          content: DropdownButtonFormField<int>(
+            value: null,
+            items: List.generate(
+              week.workouts.length,
+              (index) => DropdownMenuItem(
+                value: index,
+                child: Text('Allenamento ${week.workouts[index].order}'),
               ),
-        ),
-      ),
-    );
-  }
-
- void _showMoveExerciseDialog(
-  BuildContext context,
-  int weekIndex,
-  int sourceWorkoutIndex,
-  Exercise exercise,
-) {
-  final sourceExerciseIndex = exercise.order - 1;
-  final week = controller.program.weeks[weekIndex];
-
-  showDialog<int>(
-    context: context,
-    builder: (BuildContext dialogContext) {
-      return AlertDialog(
-        title: const Text('Seleziona l\'Allenamento di Destinazione'),
-        content: DropdownButtonFormField<int>(
-          value: null,
-          items: List.generate(
-            week.workouts.length,
-            (index) => DropdownMenuItem(
-              value: index,
-              child: Text('Allenamento ${week.workouts[index].order}'),
+            ),
+            onChanged: (value) {
+              Navigator.pop(dialogContext, value);
+            },
+            decoration: const InputDecoration(
+              labelText: 'Allenamento di Destinazione',
             ),
           ),
-          onChanged: (value) {
-            Navigator.pop(dialogContext, value);
-          },
-          decoration: const InputDecoration(
-            labelText: 'Allenamento di Destinazione',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Annulla'),
-          ),
-        ],
-      );
-    },
-  ).then((destinationWorkoutIndex) {
-    if (destinationWorkoutIndex != null && destinationWorkoutIndex != sourceWorkoutIndex) {
-      controller.moveExercise(
-        weekIndex,
-        sourceWorkoutIndex,
-        sourceExerciseIndex,
-        weekIndex,
-        destinationWorkoutIndex,
-      );
-    }
-  });
-}
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Annulla'),
+            ),
+          ],
+        );
+      },
+    ).then((destinationWorkoutIndex) {
+      if (destinationWorkoutIndex != null && destinationWorkoutIndex != sourceWorkoutIndex) {
+        controller.moveExercise(
+          weekIndex,
+          sourceWorkoutIndex,
+          sourceExerciseIndex,
+          weekIndex,
+          destinationWorkoutIndex,
+        );
+      }
+    });
+  }
 
   void _addOrUpdateMaxRM(
     Exercise exercise,

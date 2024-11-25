@@ -6,6 +6,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import '../controller/training_program_controller.dart';
 import '../dialog/reorder_dialog.dart';
+import 'package:alphanessone/Main/app_theme.dart';
 
 class TrainingProgramWeekList extends ConsumerWidget {
   final String programId;
@@ -23,6 +24,8 @@ class TrainingProgramWeekList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final program = ref.watch(trainingProgramStateProvider);
     final weeks = program.weeks;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return ListView.builder(
       shrinkWrap: true,
@@ -30,24 +33,31 @@ class TrainingProgramWeekList extends ConsumerWidget {
       itemCount: weeks.length,
       itemBuilder: (context, index) {
         final week = weeks[index];
-        return _buildWeekSlidable(context, week, index);
+        return _buildWeekSlidable(context, week, index, theme, colorScheme);
       },
     );
   }
 
-  Widget _buildWeekSlidable(BuildContext context, Week week, int index) {
+  Widget _buildWeekSlidable(
+    BuildContext context,
+    Week week,
+    int index,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
     return Slidable(
       endActionPane: ActionPane(
         motion: const ScrollMotion(),
         children: [
           SlidableAction(
-            onPressed: (context) {
-              controller.removeWeek(index);
-            },
-            backgroundColor: Colors.red,
-            foregroundColor: Colors.white,
-            icon: Icons.delete,
-            label: 'Elimina',
+            onPressed: (context) => controller.removeWeek(index),
+            backgroundColor: colorScheme.errorContainer,
+            foregroundColor: colorScheme.onErrorContainer,
+            borderRadius: BorderRadius.horizontal(
+              right: Radius.circular(AppTheme.radii.lg),
+            ),
+            icon: Icons.delete_outline,
+            label: 'Delete',
           ),
         ],
       ),
@@ -55,87 +65,167 @@ class TrainingProgramWeekList extends ConsumerWidget {
         motion: const ScrollMotion(),
         children: [
           SlidableAction(
-            onPressed: (context) {
-              controller.addWeek();
-            },
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            foregroundColor: Colors.white,
+            onPressed: (context) => controller.addWeek(),
+            backgroundColor: colorScheme.primaryContainer,
+            foregroundColor: colorScheme.onPrimaryContainer,
+            borderRadius: BorderRadius.horizontal(
+              left: Radius.circular(AppTheme.radii.lg),
+            ),
             icon: Icons.add,
-            label: 'Aggiungi',
+            label: 'Add',
           ),
         ],
       ),
-      child: _buildWeekCard(context, week, index),
+      child: _buildWeekCard(context, week, index, theme, colorScheme),
     );
   }
 
-  Widget _buildWeekCard(BuildContext context, Week week, int index) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+  Widget _buildWeekCard(
+    BuildContext context,
+    Week week,
+    int index,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    return Container(
+      margin: EdgeInsets.symmetric(
+        vertical: AppTheme.spacing.xs,
+        horizontal: AppTheme.spacing.md,
       ),
-      child: InkWell(
-        onTap: () {
-          _navigateToWeek(context, userId, programId, index);
-        },
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    '${week.number}',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
+        ),
+        boxShadow: AppTheme.elevations.small,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _navigateToWeek(context, userId, programId, index),
+          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          child: Padding(
+            padding: EdgeInsets.all(AppTheme.spacing.lg),
+            child: Row(
+              children: [
+                // Week Number Badge
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer.withOpacity(0.3),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${week.number}',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              Expanded(
-                child: Center(
+
+                SizedBox(width: AppTheme.spacing.lg),
+
+                // Week Title
+                Expanded(
                   child: Text(
-                    'Settimana ${week.number}',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                    'Week ${week.number}',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.5,
+                    ),
                   ),
                 ),
-              ),
-              PopupMenuButton(
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    child: const Text('Copia Settimana'),
-                    onTap: () => controller.copyWeek(index, context),
-                  ),
-                  PopupMenuItem(
-                    child: const Text('Elimina Settimana'),
-                    onTap: () => controller.removeWeek(index),
-                  ),
-                  PopupMenuItem(
-                    child: const Text('Riordina Settimane'),
-                    onTap: () => _showReorderWeeksDialog(context),
-                  ),
-                  PopupMenuItem(
-                    child: const Text('Aggiungi Settimana'),
-                    onTap: () => controller.addWeek(),
-                  ),
-                ],
-              ),
-            ],
+
+                // Options Menu
+                _buildOptionsMenu(context, index, theme, colorScheme),
+              ],
+            ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildOptionsMenu(
+    BuildContext context,
+    int index,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    return PopupMenuButton(
+      icon: Icon(
+        Icons.more_vert,
+        color: colorScheme.onSurfaceVariant,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+      ),
+      itemBuilder: (context) => [
+        _buildMenuItem(
+          'Copy Week',
+          Icons.content_copy_outlined,
+          () => controller.copyWeek(index, context),
+          theme,
+          colorScheme,
+        ),
+        _buildMenuItem(
+          'Delete Week',
+          Icons.delete_outline,
+          () => controller.removeWeek(index),
+          theme,
+          colorScheme,
+          isDestructive: true,
+        ),
+        _buildMenuItem(
+          'Reorder Weeks',
+          Icons.reorder,
+          () => _showReorderWeeksDialog(context),
+          theme,
+          colorScheme,
+        ),
+        _buildMenuItem(
+          'Add Week',
+          Icons.add,
+          () => controller.addWeek(),
+          theme,
+          colorScheme,
+        ),
+      ],
+    );
+  }
+
+  PopupMenuItem<void> _buildMenuItem(
+    String text,
+    IconData icon,
+    VoidCallback onTap,
+    ThemeData theme,
+    ColorScheme colorScheme, {
+    bool isDestructive = false,
+  }) {
+    return PopupMenuItem(
+      onTap: onTap,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 20,
+            color: isDestructive ? colorScheme.error : colorScheme.onSurface,
+          ),
+          SizedBox(width: AppTheme.spacing.sm),
+          Text(
+            text,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: isDestructive ? colorScheme.error : colorScheme.onSurface,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -146,7 +236,7 @@ class TrainingProgramWeekList extends ConsumerWidget {
   }
 
   void _showReorderWeeksDialog(BuildContext context) {
-    final weekNames = controller.program.weeks.map((week) => 'Settimana ${week.number}').toList();
+    final weekNames = controller.program.weeks.map((week) => 'Week ${week.number}').toList();
     showDialog(
       context: context,
       builder: (context) => ReorderDialog(
