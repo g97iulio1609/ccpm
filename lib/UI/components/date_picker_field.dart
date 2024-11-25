@@ -123,22 +123,114 @@ class DatePickerField extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final DateTime? picked = await showDatePicker(
+    final DateTime? picked = await showDialog<DateTime>(
       context: context,
-      initialDate: value ?? DateTime.now(),
-      firstDate: firstDate ?? DateTime(1900),
-      lastDate: lastDate ?? DateTime.now(),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: colorScheme,
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: colorScheme.primary,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(AppTheme.radii.xl),
+              border: Border.all(
+                color: colorScheme.outline.withOpacity(0.1),
               ),
+              boxShadow: AppTheme.elevations.large,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                Container(
+                  padding: EdgeInsets.all(AppTheme.spacing.lg),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceVariant.withOpacity(0.3),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(AppTheme.radii.xl),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppTheme.spacing.sm,
+                          vertical: AppTheme.spacing.xs,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(AppTheme.radii.full),
+                        ),
+                        child: Icon(
+                          Icons.calendar_today,
+                          color: colorScheme.primary,
+                          size: 20,
+                        ),
+                      ),
+                      SizedBox(width: AppTheme.spacing.md),
+                      Text(
+                        'Seleziona Data',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color: colorScheme.onSurface,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Calendar
+                Theme(
+                  data: theme.copyWith(
+                    colorScheme: colorScheme.copyWith(
+                      primary: colorScheme.primary,
+                      onPrimary: colorScheme.onPrimary,
+                      surface: colorScheme.surface,
+                      onSurface: colorScheme.onSurface,
+                    ),
+                  ),
+                  child: CalendarDatePicker(
+                    initialDate: value ?? DateTime.now(),
+                    firstDate: firstDate ?? DateTime(1900),
+                    lastDate: lastDate ?? DateTime.now(),
+                    onDateChanged: (date) {
+                      Navigator.pop(context, date);
+                    },
+                  ),
+                ),
+
+                // Actions
+                Container(
+                  padding: EdgeInsets.all(AppTheme.spacing.lg),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceVariant.withOpacity(0.3),
+                    borderRadius: BorderRadius.vertical(
+                      bottom: Radius.circular(AppTheme.radii.xl),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppTheme.spacing.lg,
+                            vertical: AppTheme.spacing.md,
+                          ),
+                        ),
+                        child: Text(
+                          'Annulla',
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-          child: child!,
         );
       },
     );

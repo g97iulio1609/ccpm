@@ -349,6 +349,9 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
             }
             return null;
           },
+          firstDate: DateTime(1900),
+          lastDate: DateTime.now(),
+          icon: Icons.cake,
         ),
         SizedBox(height: AppTheme.spacing.lg),
         
