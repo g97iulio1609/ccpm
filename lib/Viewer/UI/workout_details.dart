@@ -10,7 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/training_program_services.dart';
 import '../providers/training_program_provider.dart';
-
+import 'package:alphanessone/Main/app_theme.dart';
 
 class WorkoutDetails extends ConsumerStatefulWidget {
   final String programId;
@@ -135,15 +135,27 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   Widget build(BuildContext context) {
     final loading = ref.watch(loadingProvider);
     final exercises = ref.watch(exercisesProvider);
-    final exerciseRecordService = ref.watch(exerciseRecordServiceProvider);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
+      backgroundColor: colorScheme.background,
       body: loading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(
+              child: CircularProgressIndicator(
+                color: colorScheme.primary,
+              ),
+            )
           : exercises.isEmpty
-              ? const Center(child: Text('No exercises found'))
+              ? Center(
+                  child: Text(
+                    'Nessun esercizio trovato',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: colorScheme.onBackground,
+                        ),
+                  ),
+                )
               : ListView.builder(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: EdgeInsets.all(AppTheme.spacing.md),
                   itemCount: exercises.length,
                   itemBuilder: (context, index) => _buildExerciseCard(exercises[index], context),
                 ),
@@ -209,24 +221,67 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     final firstNotDoneSeriesIndex = _findFirstNotDoneSeriesIndex(series);
     final isContinueMode = firstNotDoneSeriesIndex > 0;
     final allSeriesCompleted = firstNotDoneSeriesIndex == series.length;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(16),
-      decoration: _buildCardDecoration(context),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          _buildExerciseName(exercise, context),
-          const SizedBox(height: 24),
-          if (!allSeriesCompleted) ...[
-            _buildStartButton(exercise, firstNotDoneSeriesIndex, isContinueMode, context),
-            const SizedBox(height: 24),
+      margin: EdgeInsets.only(bottom: AppTheme.spacing.md),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
+          width: 1,
+        ),
+        boxShadow: AppTheme.elevations.small,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              padding: EdgeInsets.all(AppTheme.spacing.md),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                border: Border(
+                  bottom: BorderSide(
+                    color: colorScheme.outline.withOpacity(0.1),
+                  ),
+                ),
+              ),
+              child: _buildExerciseName(exercise, context),
+            ),
+
+            Padding(
+              padding: EdgeInsets.all(AppTheme.spacing.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (!allSeriesCompleted) ...[
+                    _buildStartButton(exercise, firstNotDoneSeriesIndex, isContinueMode, context),
+                    SizedBox(height: AppTheme.spacing.md),
+                  ],
+                  
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      vertical: AppTheme.spacing.xs,
+                      horizontal: AppTheme.spacing.sm,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceVariant.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(AppTheme.radii.sm),
+                    ),
+                    child: _buildSeriesHeaderRow(context),
+                  ),
+                  
+                  SizedBox(height: AppTheme.spacing.sm),
+                  
+                  ..._buildSeriesContainers(series, context),
+                ],
+              ),
+            ),
           ],
-          _buildSeriesHeaderRow(context),
-          const SizedBox(height: 8),
-          ..._buildSeriesContainers(series, context),
-        ],
+        ),
       ),
     );
   }
@@ -292,27 +347,29 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   }
 
   Widget _buildSeriesHeaderRow(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Row(
       children: [
         _buildHeaderText('Serie', context, 1),
         _buildHeaderText('Reps', context, 2),
         _buildHeaderText('Kg', context, 2),
-        _buildHeaderText('Svolto', context, 1),
+        _buildHeaderText('✓', context, 1),
       ],
     );
   }
 
   Widget _buildHeaderText(String text, BuildContext context, int flex) {
     final colorScheme = Theme.of(context).colorScheme;
+    
     return Expanded(
       flex: flex,
       child: Text(
         text,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: colorScheme.onSurface,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+          color: colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w600,
+        ),
         textAlign: TextAlign.center,
       ),
     );
@@ -434,30 +491,24 @@ _isSeriesDone(series) ? Icons.check_circle : Icons.cancel,
 
   Widget _buildStartButton(Map<String, dynamic> exercise, int firstNotDoneSeriesIndex, bool isContinueMode, BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final series = exercise['series'];
-    final allSeriesCompleted = series.every((series) => _isSeriesDone(series));
-
-    if (allSeriesCompleted) {
-      return const SizedBox.shrink();
-    }
-
-    return GestureDetector(
-      onTap: () => _navigateToExerciseDetails(exercise, [exercise], firstNotDoneSeriesIndex),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-        decoration: BoxDecoration(
-          color: colorScheme.primary,
-          borderRadius: BorderRadius.circular(8),
+    
+    return ElevatedButton(
+      onPressed: () => _navigateToExerciseDetails(exercise, [exercise], firstNotDoneSeriesIndex),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
+        padding: EdgeInsets.symmetric(
+          vertical: AppTheme.spacing.md,
         ),
-        child: Text(
-          isContinueMode ? 'CONTINUA' : 'START',
-          style: TextStyle(
-            color: colorScheme.onPrimary,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-          textAlign: TextAlign.center,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radii.md),
+        ),
+      ),
+      child: Text(
+        isContinueMode ? 'CONTINUA' : 'INIZIA',
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          color: colorScheme.onPrimary,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
