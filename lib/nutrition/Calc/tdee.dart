@@ -6,6 +6,7 @@ import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
 import 'package:alphanessone/UI/components/bottom_input_form.dart';
 import 'package:flutter/services.dart';
+import 'package:alphanessone/UI/components/date_picker_field.dart';
 
 // Constants
 const Map<int, String> genderMap = {
@@ -329,7 +330,26 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildDatePicker(context),
+        DatePickerField(
+          value: _birthdate,
+          label: 'Data di Nascita',
+          helperText: 'Seleziona la tua data di nascita',
+          onDateSelected: (date) {
+            setState(() {
+              _birthdate = date;
+              _ageController.text = _calculateAge(date).toString();
+            });
+          },
+          validator: (date) {
+            if (date == null) {
+              return 'Seleziona una data di nascita';
+            }
+            if (date.isAfter(DateTime.now())) {
+              return 'La data non può essere nel futuro';
+            }
+            return null;
+          },
+        ),
         SizedBox(height: AppTheme.spacing.lg),
         
         BottomInputForm.buildTextInput(
@@ -360,11 +380,12 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
         ),
         SizedBox(height: AppTheme.spacing.lg),
 
-        // Campo per il genere
+        // Campo per il genere usando BottomInputForm
         BottomInputForm.buildFormField(
           label: 'Genere',
           theme: theme,
           colorScheme: colorScheme,
+          helperText: 'Seleziona il tuo genere',
           child: Container(
             decoration: BoxDecoration(
               color: colorScheme.surfaceVariant.withOpacity(0.3),
@@ -375,6 +396,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
             ),
             child: DropdownButtonFormField<int>(
               value: _gender,
+              isExpanded: true,
               items: genderMap.entries.map((entry) {
                 return DropdownMenuItem<int>(
                   value: entry.key,
@@ -402,7 +424,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
         ),
         SizedBox(height: AppTheme.spacing.lg),
 
-        // Campo per il livello di attività
+        // Campo per il livello di attività usando BottomInputForm
         BottomInputForm.buildFormField(
           label: 'Livello di Attività',
           theme: theme,
@@ -446,60 +468,6 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildDatePicker(BuildContext context) {
-    return BottomInputForm.buildFormField(
-      label: 'Data di Nascita',
-      theme: Theme.of(context),
-      colorScheme: Theme.of(context).colorScheme,
-      child: InkWell(
-        onTap: () async {
-          final pickedDate = await showDatePicker(
-            context: context,
-            initialDate: _birthdate ?? DateTime.now(),
-            firstDate: DateTime(1900),
-            lastDate: DateTime.now(),
-          );
-          if (pickedDate != null) {
-            setState(() {
-              _birthdate = pickedDate;
-              _ageController.text = _calculateAge(_birthdate!).toString();
-            });
-          }
-        },
-        child: Container(
-          padding: EdgeInsets.all(AppTheme.spacing.md),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
-            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.calendar_today,
-                color: Theme.of(context).colorScheme.primary,
-                size: 20,
-              ),
-              SizedBox(width: AppTheme.spacing.md),
-              Text(
-                _birthdate != null 
-                    ? DateFormat('dd/MM/yyyy').format(_birthdate!)
-                    : 'Seleziona data',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: _birthdate != null 
-                      ? Theme.of(context).colorScheme.onSurface
-                      : Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
