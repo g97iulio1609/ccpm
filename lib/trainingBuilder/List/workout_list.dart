@@ -5,6 +5,7 @@ import '../controller/training_program_controller.dart';
 import '../dialog/reorder_dialog.dart';
 import '../models/workout_model.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/UI/components/bottom_menu.dart';
 
 class TrainingProgramWorkoutListPage extends StatefulWidget {
   final TrainingProgramController controller;
@@ -186,8 +187,18 @@ class _TrainingProgramWorkoutListPageState extends State<TrainingProgramWorkoutL
                   ),
                 ),
 
-                // Options Menu
-                _buildOptionsMenu(context, index, theme, colorScheme),
+                IconButton(
+                  icon: Icon(
+                    Icons.more_vert,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  onPressed: () => _showWorkoutOptions(
+                    context,
+                    index,
+                    theme,
+                    colorScheme,
+                  ),
+                ),
               ],
             ),
           ),
@@ -196,78 +207,59 @@ class _TrainingProgramWorkoutListPageState extends State<TrainingProgramWorkoutL
     );
   }
 
-  Widget _buildOptionsMenu(
+  void _showWorkoutOptions(
     BuildContext context,
     int index,
     ThemeData theme,
     ColorScheme colorScheme,
   ) {
-    return PopupMenuButton(
-      icon: Icon(
-        Icons.more_vert,
-        color: colorScheme.onSurfaceVariant,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-      ),
-      itemBuilder: (context) => [
-        _buildMenuItem(
-          'Copy Workout',
-          Icons.content_copy_outlined,
-          () => widget.controller.copyWorkout(widget.weekIndex, index, context),
-          theme,
-          colorScheme,
-        ),
-        _buildMenuItem(
-          'Delete Workout',
-          Icons.delete_outline,
-          () => widget.controller.removeWorkout(widget.weekIndex, index + 1),
-          theme,
-          colorScheme,
-          isDestructive: true,
-        ),
-        _buildMenuItem(
-          'Reorder Workouts',
-          Icons.reorder,
-          () => _showReorderWorkoutsDialog(context),
-          theme,
-          colorScheme,
-        ),
-        _buildMenuItem(
-          'Add Workout',
-          Icons.add,
-          () => widget.controller.addWorkout(widget.weekIndex),
-          theme,
-          colorScheme,
-        ),
-      ],
-    );
-  }
-
-  PopupMenuItem<void> _buildMenuItem(
-    String text,
-    IconData icon,
-    VoidCallback onTap,
-    ThemeData theme,
-    ColorScheme colorScheme, {
-    bool isDestructive = false,
-  }) {
-    return PopupMenuItem(
-      onTap: onTap,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 20,
-            color: isDestructive ? colorScheme.error : colorScheme.onSurface,
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => BottomMenu(
+        title: 'Allenamento ${index + 1}',
+        subtitle: 'Gestisci allenamento',
+        leading: Container(
+          padding: EdgeInsets.all(AppTheme.spacing.sm),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
-          SizedBox(width: AppTheme.spacing.sm),
-          Text(
-            text,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: isDestructive ? colorScheme.error : colorScheme.onSurface,
+          child: Icon(
+            Icons.fitness_center,
+            color: colorScheme.primary,
+            size: 24,
+          ),
+        ),
+        items: [
+          BottomMenuItem(
+            title: 'Copia Allenamento',
+            icon: Icons.content_copy_outlined,
+            onTap: () => widget.controller.copyWorkout(
+              widget.weekIndex,
+              index,
+              context,
             ),
+          ),
+          BottomMenuItem(
+            title: 'Riordina Allenamenti',
+            icon: Icons.reorder,
+            onTap: () => _showReorderWorkoutsDialog(context),
+          ),
+          BottomMenuItem(
+            title: 'Aggiungi Allenamento',
+            icon: Icons.add,
+            onTap: () => widget.controller.addWorkout(widget.weekIndex),
+          ),
+          BottomMenuItem(
+            title: 'Elimina Allenamento',
+            icon: Icons.delete_outline,
+            onTap: () => widget.controller.removeWorkout(
+              widget.weekIndex,
+              index + 1,
+            ),
+            isDestructive: true,
           ),
         ],
       ),
