@@ -219,7 +219,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
                         ),
                       ),
 
-                      if (exercise.variant.isNotEmpty) ...[
+                      if (exercise.variant.isNotEmpty && exercise.variant != '') ...[
                         SizedBox(height: AppTheme.spacing.xs),
                         Text(
                           exercise.variant,
