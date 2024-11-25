@@ -175,7 +175,7 @@ class ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
         : null;
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       body: SafeArea(
         child: GestureDetector(
           onTap: () => _hideKeyboard(context),

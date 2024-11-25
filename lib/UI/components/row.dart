@@ -45,7 +45,7 @@ class AppRow extends StatelessWidget {
           decoration: BoxDecoration(
             color: backgroundColor ?? (isSelected 
                 ? colorScheme.primaryContainer.withOpacity(0.3)
-                : colorScheme.surfaceVariant.withOpacity(0.3)),
+                : colorScheme.surfaceContainerHighest.withOpacity(0.3)),
             borderRadius: borderRadius ?? BorderRadius.circular(AppTheme.radii.lg),
             border: Border.all(
               color: isSelected
@@ -105,7 +105,7 @@ class AppRow extends StatelessWidget {
                       ...actions!.map((action) => Padding(
                         padding: EdgeInsets.only(left: AppTheme.spacing.sm),
                         child: action,
-                      )).toList(),
+                      )),
                     ],
                   ],
                 ),

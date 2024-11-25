@@ -69,7 +69,7 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
     final selectedUserId = ref.watch(selectedUserIdProvider);
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -77,7 +77,7 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceVariant.withOpacity(0.5),
+              colorScheme.surfaceContainerHighest.withOpacity(0.5),
             ],
             stops: const [0.0, 1.0],
           ),
@@ -664,7 +664,7 @@ class _MeasurementsTrend extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(AppTheme.spacing.lg),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceVariant.withOpacity(0.3),
+              color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
               borderRadius: BorderRadius.vertical(
                 top: Radius.circular(AppTheme.radii.lg),
               ),
@@ -994,7 +994,7 @@ class _MeasurementsList extends ConsumerWidget {
           Container(
             padding: EdgeInsets.all(AppTheme.spacing.lg),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceVariant.withOpacity(0.3),
+              color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
               borderRadius: BorderRadius.vertical(
                 top: Radius.circular(AppTheme.radii.lg),
               ),
@@ -1284,7 +1284,7 @@ class _ComparisonSelectionDialogState extends ConsumerState<_ComparisonSelection
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                 borderRadius: BorderRadius.vertical(
                   top: Radius.circular(AppTheme.radii.xl),
                 ),
@@ -1331,7 +1331,7 @@ class _ComparisonSelectionDialogState extends ConsumerState<_ComparisonSelection
                     return Container(
                       margin: EdgeInsets.only(bottom: AppTheme.spacing.sm),
                       decoration: BoxDecoration(
-                        color: colorScheme.surfaceVariant.withOpacity(0.3),
+                        color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                         border: Border.all(
                           color: colorScheme.outline.withOpacity(0.1),
@@ -1382,7 +1382,7 @@ class _ComparisonSelectionDialogState extends ConsumerState<_ComparisonSelection
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                 borderRadius: BorderRadius.vertical(
                   bottom: Radius.circular(AppTheme.radii.xl),
                 ),
@@ -1530,7 +1530,7 @@ class _MeasurementFormState extends ConsumerState<_MeasurementForm> {
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                 borderRadius: BorderRadius.vertical(
                   top: Radius.circular(AppTheme.radii.xl),
                 ),
@@ -1638,7 +1638,7 @@ class _MeasurementFormState extends ConsumerState<_MeasurementForm> {
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -1738,7 +1738,7 @@ class _MeasurementFormState extends ConsumerState<_MeasurementForm> {
           child: Container(
             padding: EdgeInsets.all(AppTheme.spacing.md),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceVariant.withOpacity(0.3),
+              color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
               borderRadius: BorderRadius.circular(AppTheme.radii.lg),
               border: Border.all(
                 color: colorScheme.outline.withOpacity(0.1),
@@ -1789,7 +1789,7 @@ class _MeasurementFormState extends ConsumerState<_MeasurementForm> {
         SizedBox(height: AppTheme.spacing.xs),
         Container(
           decoration: BoxDecoration(
-            color: colorScheme.surfaceVariant.withOpacity(0.3),
+            color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
             borderRadius: BorderRadius.circular(AppTheme.radii.lg),
             border: Border.all(
               color: colorScheme.outline.withOpacity(0.1),

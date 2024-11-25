@@ -2,14 +2,12 @@ import 'package:alphanessone/trainingBuilder/providers/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-
 import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
 import 'package:alphanessone/trainingBuilder/dialog/athlete_selection_dialog.dart';
 import 'package:alphanessone/trainingBuilder/List/week_list.dart';
 import 'package:alphanessone/trainingBuilder/List/workout_list.dart';
 import 'package:alphanessone/trainingBuilder/List/exercises_list.dart';
 import 'package:alphanessone/providers/providers.dart';
-import 'package:alphanessone/trainingBuilder/training_volume_dashboard.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 
 class TrainingProgramPage extends HookConsumerWidget {
@@ -43,7 +41,7 @@ class TrainingProgramPage extends HookConsumerWidget {
     }, [programId]);
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -51,7 +49,7 @@ class TrainingProgramPage extends HookConsumerWidget {
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceVariant.withOpacity(0.5),
+              colorScheme.surfaceContainerHighest.withOpacity(0.5),
             ],
             stops: const [0.0, 1.0],
           ),
@@ -193,7 +191,7 @@ class TrainingProgramPage extends HookConsumerWidget {
           ),
         ),
         filled: true,
-        fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+        fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
       ),
       style: theme.textTheme.bodyLarge?.copyWith(
         color: colorScheme.onSurface,
@@ -286,7 +284,7 @@ class TrainingProgramPage extends HookConsumerWidget {
           ),
         ),
         filled: true,
-        fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+        fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
       ),
       style: theme.textTheme.bodyLarge?.copyWith(
         color: colorScheme.onSurface,
@@ -333,7 +331,7 @@ class TrainingProgramPage extends HookConsumerWidget {
         vertical: AppTheme.spacing.sm,
       ),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
         borderRadius: BorderRadius.circular(AppTheme.radii.md),
       ),
       child: Row(
@@ -402,7 +400,7 @@ class TrainingProgramPage extends HookConsumerWidget {
         gradient: LinearGradient(
           colors: isPrimary
               ? [colorScheme.primary, colorScheme.primary.withOpacity(0.8)]
-              : [colorScheme.surfaceVariant, colorScheme.surfaceVariant.withOpacity(0.8)],
+              : [colorScheme.surfaceContainerHighest, colorScheme.surfaceContainerHighest.withOpacity(0.8)],
         ),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         boxShadow: isPrimary ? AppTheme.elevations.small : null,

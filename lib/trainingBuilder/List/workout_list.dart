@@ -30,7 +30,7 @@ class _TrainingProgramWorkoutListPageState extends State<TrainingProgramWorkoutL
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -38,7 +38,7 @@ class _TrainingProgramWorkoutListPageState extends State<TrainingProgramWorkoutL
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceVariant.withOpacity(0.5),
+              colorScheme.surfaceContainerHighest.withOpacity(0.5),
             ],
             stops: const [0.0, 1.0],
           ),

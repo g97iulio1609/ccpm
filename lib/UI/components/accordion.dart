@@ -51,7 +51,7 @@ class _AppAccordionState extends State<AppAccordion> with SingleTickerProviderSt
     _iconTurns = _controller.drive(Tween<double>(begin: 0.0, end: 0.5)
         .chain(CurveTween(curve: Curves.easeIn)));
     _heightFactor = _controller.drive(CurveTween(curve: Curves.easeIn));
-    _isExpanded = PageStorage.of(context)?.readState(context) as bool? ?? widget.initiallyExpanded;
+    _isExpanded = PageStorage.of(context).readState(context) as bool? ?? widget.initiallyExpanded;
     if (_isExpanded) {
       _controller.value = 1.0;
     }
@@ -71,7 +71,7 @@ class _AppAccordionState extends State<AppAccordion> with SingleTickerProviderSt
       } else {
         _controller.reverse();
       }
-      PageStorage.of(context)?.writeState(context, _isExpanded);
+      PageStorage.of(context).writeState(context, _isExpanded);
     });
     widget.onTap?.call();
   }
@@ -83,7 +83,7 @@ class _AppAccordionState extends State<AppAccordion> with SingleTickerProviderSt
 
     return Container(
       decoration: BoxDecoration(
-        color: widget.backgroundColor ?? colorScheme.surfaceVariant.withOpacity(0.3),
+        color: widget.backgroundColor ?? colorScheme.surfaceContainerHighest.withOpacity(0.3),
         borderRadius: widget.borderRadius ?? BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
           color: colorScheme.outline.withOpacity(0.1),
@@ -229,7 +229,6 @@ class _AppAccordionGroupState extends State<AppAccordionGroup> {
               title: widget.accordions[i].title,
               subtitle: widget.accordions[i].subtitle,
               leading: widget.accordions[i].leading,
-              children: widget.accordions[i].children,
               initiallyExpanded: _expandedIndexes.contains(i),
               showDivider: widget.accordions[i].showDivider,
               contentPadding: widget.accordions[i].contentPadding,
@@ -238,6 +237,7 @@ class _AppAccordionGroupState extends State<AppAccordionGroup> {
               enabled: widget.accordions[i].enabled,
               onTap: () => _handleAccordionTap(i),
               trailing: widget.accordions[i].trailing,
+              children: widget.accordions[i].children,
             ),
             if (i < widget.accordions.length - 1)
               SizedBox(height: widget.spacing ?? AppTheme.spacing.md),

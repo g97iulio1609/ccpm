@@ -104,8 +104,8 @@ class AppInput extends StatelessWidget {
         Container(
           decoration: BoxDecoration(
             color: enabled 
-                ? colorScheme.surfaceVariant.withOpacity(0.3)
-                : colorScheme.surfaceVariant.withOpacity(0.1),
+                ? colorScheme.surfaceContainerHighest.withOpacity(0.3)
+                : colorScheme.surfaceContainerHighest.withOpacity(0.1),
             borderRadius: BorderRadius.circular(AppTheme.radii.lg),
             border: Border.all(
               color: colorScheme.outline.withOpacity(0.1),

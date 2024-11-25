@@ -442,7 +442,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
         vertical: AppTheme.spacing.xs,
       ),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
         borderRadius: BorderRadius.circular(AppTheme.radii.full),
         border: Border.all(
           color: colorScheme.outline.withOpacity(0.1),

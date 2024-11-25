@@ -57,7 +57,7 @@ class AppDialog extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                 borderRadius: BorderRadius.vertical(
                   top: Radius.circular(AppTheme.radii.xl),
                 ),
@@ -133,7 +133,7 @@ class AppDialog extends StatelessWidget {
               Container(
                 padding: EdgeInsets.all(AppTheme.spacing.lg),
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceVariant.withOpacity(0.3),
+                  color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                   borderRadius: BorderRadius.vertical(
                     bottom: Radius.circular(AppTheme.radii.xl),
                   ),
@@ -201,7 +201,7 @@ class AppDialog extends StatelessWidget {
             (isDestructive ? colorScheme.error : colorScheme.primary).withOpacity(0.8),
           ],
         ) : null,
-        color: !isPrimary ? colorScheme.surfaceVariant.withOpacity(0.3) : null,
+        color: !isPrimary ? colorScheme.surfaceContainerHighest.withOpacity(0.3) : null,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         boxShadow: isPrimary ? [
           BoxShadow(
@@ -284,14 +284,6 @@ class AppDialog extends StatelessWidget {
             size: 24,
           ),
         ),
-        children: [
-          Text(
-            message,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: colorScheme.onSurface,
-            ),
-          ),
-        ],
         actions: [
           buildCancelButton(
             context: context,
@@ -302,6 +294,14 @@ class AppDialog extends StatelessWidget {
             label: confirmLabel ?? 'Conferma',
             onPressed: () => Navigator.pop(context, true),
             isDestructive: isDestructive,
+          ),
+        ],
+        children: [
+          Text(
+            message,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: colorScheme.onSurface,
+            ),
           ),
         ],
       ),

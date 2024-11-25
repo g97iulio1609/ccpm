@@ -1,10 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
-import 'package:alphanessone/UI/components/input.dart';
-import 'package:alphanessone/UI/components/select.dart';
-import 'package:alphanessone/UI/components/radio_select.dart';
-import 'package:alphanessone/UI/components/checkbox.dart';
-import 'package:alphanessone/UI/components/date_picker_field.dart';
 import 'package:alphanessone/UI/components/button.dart';
 
 class AppForm extends StatelessWidget {
@@ -57,7 +52,7 @@ class AppForm extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                 borderRadius: BorderRadius.vertical(
                   top: Radius.circular(AppTheme.radii.xl),
                 ),
@@ -122,7 +117,7 @@ class AppForm extends StatelessWidget {
               Container(
                 padding: EdgeInsets.all(AppTheme.spacing.lg),
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceVariant.withOpacity(0.3),
+                  color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                   borderRadius: BorderRadius.vertical(
                     bottom: Radius.circular(AppTheme.radii.xl),
                   ),
@@ -134,7 +129,7 @@ class AppForm extends StatelessWidget {
                       ...actions!.map((action) => Padding(
                         padding: EdgeInsets.only(right: AppTheme.spacing.md),
                         child: action,
-                      )).toList(),
+                      )),
                     ],
                     if (onSubmit != null)
                       AppButton(
@@ -233,12 +228,12 @@ class AppForm extends StatelessWidget {
       title: title,
       subtitle: subtitle,
       leading: leading,
-      children: children,
       actions: actions,
       onSubmit: onSubmit,
       isLoading: isLoading,
       formKey: formKey,
       contentPadding: EdgeInsets.all(AppTheme.spacing.xl),
+      children: children,
     );
   }
 
@@ -256,13 +251,13 @@ class AppForm extends StatelessWidget {
       title: title,
       subtitle: subtitle,
       leading: leading,
-      children: children,
       actions: actions,
       onSubmit: onSubmit,
       isLoading: isLoading,
       formKey: formKey,
       showDividers: false,
       contentPadding: EdgeInsets.all(AppTheme.spacing.lg),
+      children: children,
     );
   }
 } 

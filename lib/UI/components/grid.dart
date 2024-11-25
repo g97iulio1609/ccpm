@@ -61,7 +61,7 @@ class AppGrid extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                 borderRadius: borderRadius != null
                     ? BorderRadius.vertical(top: Radius.circular(AppTheme.radii.lg))
                     : null,
@@ -99,7 +99,7 @@ class AppGrid extends StatelessWidget {
                     ...actions!.map((action) => Padding(
                       padding: EdgeInsets.only(left: AppTheme.spacing.sm),
                       child: action,
-                    )).toList(),
+                    )),
                   ],
                 ],
               ),
@@ -148,7 +148,6 @@ class AppGrid extends StatelessWidget {
       title: title,
       subtitle: subtitle,
       leading: leading,
-      children: children,
       actions: actions,
       crossAxisCount: crossAxisCount,
       spacing: spacing,
@@ -156,6 +155,7 @@ class AppGrid extends StatelessWidget {
       maxWidth: maxWidth,
       borderRadius: BorderRadius.circular(AppTheme.radii.lg),
       showDividers: true,
+      children: children,
     );
   }
 
@@ -171,13 +171,13 @@ class AppGrid extends StatelessWidget {
     return AppGrid(
       title: title,
       subtitle: subtitle,
-      children: children,
       crossAxisCount: crossAxisCount,
       spacing: spacing,
       childAspectRatio: childAspectRatio,
       padding: padding,
       backgroundColor: Colors.transparent,
       borderRadius: null,
+      children: children,
     );
   }
 
@@ -199,13 +199,13 @@ class AppGrid extends StatelessWidget {
       title: title,
       subtitle: subtitle,
       leading: leading,
-      children: children,
       actions: actions,
       crossAxisCount: crossAxisCount > 0 ? crossAxisCount : 1,
       spacing: spacing,
       childAspectRatio: childAspectRatio,
       borderRadius: BorderRadius.circular(AppTheme.radii.lg),
       showDividers: true,
+      children: children,
     );
   }
 }
@@ -240,7 +240,7 @@ class GridCell extends StatelessWidget {
       decoration: BoxDecoration(
         color: isSelected
             ? colorScheme.primaryContainer.withOpacity(0.3)
-            : colorScheme.surfaceVariant.withOpacity(0.3),
+            : colorScheme.surfaceContainerHighest.withOpacity(0.3),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
           color: isSelected

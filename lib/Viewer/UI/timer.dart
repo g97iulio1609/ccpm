@@ -124,7 +124,7 @@ class TimerPageState extends ConsumerState<TimerPage>
 
     if (timerModel == null) {
       return Scaffold(
-        backgroundColor: colorScheme.background,
+        backgroundColor: colorScheme.surface,
         body: Center(
           child: Text(
             'Errore: timerModel non disponibile',
@@ -139,7 +139,7 @@ class TimerPageState extends ConsumerState<TimerPage>
     final remainingSeconds = ref.watch(remainingSecondsProvider);
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       body: SafeArea(
         child: Container(
           decoration: BoxDecoration(
@@ -219,7 +219,7 @@ class TimerPageState extends ConsumerState<TimerPage>
           end: Alignment.bottomRight,
           colors: [
             colorScheme.surface,
-            colorScheme.surfaceVariant,
+            colorScheme.surfaceContainerHighest,
           ],
         ),
         shape: BoxShape.circle,
@@ -272,7 +272,7 @@ class TimerPageState extends ConsumerState<TimerPage>
         return CircularProgressIndicator(
           value: _animation.value,
           strokeWidth: 6,
-          backgroundColor: colorScheme.surfaceVariant.withOpacity(0.2),
+          backgroundColor: colorScheme.surfaceContainerHighest.withOpacity(0.2),
           valueColor: AlwaysStoppedAnimation<Color>(
             colorScheme.primary.withOpacity(0.8),
           ),

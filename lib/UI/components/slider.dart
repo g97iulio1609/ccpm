@@ -85,7 +85,7 @@ class AppSlider extends StatelessWidget {
               decoration: BoxDecoration(
                 color: enabled
                     ? colorScheme.primaryContainer.withOpacity(0.3)
-                    : colorScheme.surfaceVariant.withOpacity(0.3),
+                    : colorScheme.surfaceContainerHighest.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(AppTheme.radii.full),
               ),
               child: Text(
@@ -113,13 +113,13 @@ class AppSlider extends StatelessWidget {
             trackHeight: 4,
             activeTrackColor: enabled
                 ? (activeColor ?? colorScheme.primary).withOpacity(0.3)
-                : colorScheme.surfaceVariant.withOpacity(0.3),
+                : colorScheme.surfaceContainerHighest.withOpacity(0.3),
             inactiveTrackColor: enabled
-                ? (inactiveColor ?? colorScheme.surfaceVariant).withOpacity(0.3)
-                : colorScheme.surfaceVariant.withOpacity(0.1),
+                ? (inactiveColor ?? colorScheme.surfaceContainerHighest).withOpacity(0.3)
+                : colorScheme.surfaceContainerHighest.withOpacity(0.1),
             thumbColor: enabled
                 ? activeColor ?? colorScheme.primary
-                : colorScheme.surfaceVariant,
+                : colorScheme.surfaceContainerHighest,
             overlayColor: (activeColor ?? colorScheme.primary).withOpacity(0.12),
             valueIndicatorColor: colorScheme.primaryContainer,
             valueIndicatorTextStyle: theme.textTheme.labelMedium?.copyWith(
@@ -128,10 +128,10 @@ class AppSlider extends StatelessWidget {
             tickMarkShape: const RoundSliderTickMarkShape(),
             activeTickMarkColor: enabled
                 ? (activeColor ?? colorScheme.primary).withOpacity(0.5)
-                : colorScheme.surfaceVariant.withOpacity(0.3),
+                : colorScheme.surfaceContainerHighest.withOpacity(0.3),
             inactiveTickMarkColor: enabled
-                ? (inactiveColor ?? colorScheme.surfaceVariant).withOpacity(0.3)
-                : colorScheme.surfaceVariant.withOpacity(0.1),
+                ? (inactiveColor ?? colorScheme.surfaceContainerHighest).withOpacity(0.3)
+                : colorScheme.surfaceContainerHighest.withOpacity(0.1),
           ),
           child: Slider(
             value: value,
@@ -317,7 +317,7 @@ class AppRangeSlider extends StatelessWidget {
               decoration: BoxDecoration(
                 color: enabled
                     ? colorScheme.primaryContainer.withOpacity(0.3)
-                    : colorScheme.surfaceVariant.withOpacity(0.3),
+                    : colorScheme.surfaceContainerHighest.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(AppTheme.radii.full),
               ),
               child: Text(
@@ -346,13 +346,13 @@ class AppRangeSlider extends StatelessWidget {
             trackHeight: 4,
             activeTrackColor: enabled
                 ? (activeColor ?? colorScheme.primary).withOpacity(0.3)
-                : colorScheme.surfaceVariant.withOpacity(0.3),
+                : colorScheme.surfaceContainerHighest.withOpacity(0.3),
             inactiveTrackColor: enabled
-                ? (inactiveColor ?? colorScheme.surfaceVariant).withOpacity(0.3)
-                : colorScheme.surfaceVariant.withOpacity(0.1),
+                ? (inactiveColor ?? colorScheme.surfaceContainerHighest).withOpacity(0.3)
+                : colorScheme.surfaceContainerHighest.withOpacity(0.1),
             thumbColor: enabled
                 ? activeColor ?? colorScheme.primary
-                : colorScheme.surfaceVariant,
+                : colorScheme.surfaceContainerHighest,
             overlayColor: (activeColor ?? colorScheme.primary).withOpacity(0.12),
             valueIndicatorColor: colorScheme.primaryContainer,
             valueIndicatorTextStyle: theme.textTheme.labelMedium?.copyWith(
@@ -361,10 +361,10 @@ class AppRangeSlider extends StatelessWidget {
             tickMarkShape: const RoundSliderTickMarkShape(),
             activeTickMarkColor: enabled
                 ? (activeColor ?? colorScheme.primary).withOpacity(0.5)
-                : colorScheme.surfaceVariant.withOpacity(0.3),
+                : colorScheme.surfaceContainerHighest.withOpacity(0.3),
             inactiveTickMarkColor: enabled
-                ? (inactiveColor ?? colorScheme.surfaceVariant).withOpacity(0.3)
-                : colorScheme.surfaceVariant.withOpacity(0.1),
+                ? (inactiveColor ?? colorScheme.surfaceContainerHighest).withOpacity(0.3)
+                : colorScheme.surfaceContainerHighest.withOpacity(0.1),
           ),
           child: RangeSlider(
             values: values,

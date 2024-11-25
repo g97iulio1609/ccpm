@@ -41,7 +41,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -49,7 +49,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceVariant.withOpacity(0.5),
+              colorScheme.surfaceContainerHighest.withOpacity(0.5),
             ],
             stops: const [0.0, 1.0],
           ),

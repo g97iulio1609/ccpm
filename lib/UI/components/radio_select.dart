@@ -123,7 +123,7 @@ class AppRadioSelect<T> extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? colorScheme.primaryContainer.withOpacity(0.3)
-              : colorScheme.surfaceVariant.withOpacity(0.3),
+              : colorScheme.surfaceContainerHighest.withOpacity(0.3),
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           border: Border.all(
             color: isSelected

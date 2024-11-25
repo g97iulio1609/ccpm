@@ -340,7 +340,7 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
     return Container(
       padding: EdgeInsets.all(AppTheme.spacing.lg),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
           color: colorScheme.outline.withOpacity(0.1),

@@ -152,7 +152,7 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -160,7 +160,7 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceVariant.withOpacity(0.5),
+              colorScheme.surfaceContainerHighest.withOpacity(0.5),
             ],
             stops: const [0.0, 1.0],
           ),

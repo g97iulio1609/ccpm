@@ -184,7 +184,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
     colorScheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -192,7 +192,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceVariant.withOpacity(0.5),
+              colorScheme.surfaceContainerHighest.withOpacity(0.5),
             ],
             stops: const [0.0, 1.0],
           ),
@@ -209,7 +209,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
                   Container(
                     padding: EdgeInsets.all(AppTheme.spacing.lg),
                     decoration: BoxDecoration(
-                      color: colorScheme.surfaceVariant.withOpacity(0.3),
+                      color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                       borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                       border: Border.all(
                         color: colorScheme.outline.withOpacity(0.1),
@@ -391,7 +391,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
           helperText: 'Seleziona il tuo genere',
           child: Container(
             decoration: BoxDecoration(
-              color: colorScheme.surfaceVariant.withOpacity(0.3),
+              color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
               borderRadius: BorderRadius.circular(AppTheme.radii.lg),
               border: Border.all(
                 color: colorScheme.outline.withOpacity(0.1),
@@ -435,7 +435,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
           helperText: 'Seleziona il tuo livello di attività fisica settimanale',
           child: Container(
             decoration: BoxDecoration(
-              color: colorScheme.surfaceVariant.withOpacity(0.3),
+              color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
               borderRadius: BorderRadius.circular(AppTheme.radii.lg),
               border: Border.all(
                 color: colorScheme.outline.withOpacity(0.1),
@@ -612,7 +612,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
             colorScheme.primary.withOpacity(0.8),
           ],
         ) : null,
-        color: isPrimary ? null : colorScheme.surfaceVariant.withOpacity(0.3),
+        color: isPrimary ? null : colorScheme.surfaceContainerHighest.withOpacity(0.3),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         boxShadow: isPrimary ? [
           BoxShadow(

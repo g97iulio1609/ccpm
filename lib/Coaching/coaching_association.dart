@@ -1,5 +1,4 @@
 import 'package:alphanessone/Coaching/coaching_service.dart';
-import 'package:alphanessone/services/users_services.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:alphanessone/providers/providers.dart';
@@ -59,7 +58,7 @@ class CoachAthleteAssociationScreenState extends ConsumerState<CoachAthleteAssoc
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -67,7 +66,7 @@ class CoachAthleteAssociationScreenState extends ConsumerState<CoachAthleteAssoc
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceVariant.withOpacity(0.5),
+              colorScheme.surfaceContainerHighest.withOpacity(0.5),
             ],
             stops: const [0.0, 1.0],
           ),

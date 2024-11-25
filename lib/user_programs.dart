@@ -22,7 +22,7 @@ class UserProgramsScreen extends HookConsumerWidget {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -30,7 +30,7 @@ class UserProgramsScreen extends HookConsumerWidget {
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceVariant.withOpacity(0.5),
+              colorScheme.surfaceContainerHighest.withOpacity(0.5),
             ],
             stops: const [0.0, 1.0],
           ),
@@ -271,7 +271,7 @@ class UserProgramsScreen extends HookConsumerWidget {
             vertical: AppTheme.spacing.sm,
           ),
           decoration: BoxDecoration(
-            color: colorScheme.surfaceVariant.withOpacity(0.3),
+            color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
             borderRadius: BorderRadius.circular(AppTheme.radii.full),
           ),
           child: Row(
@@ -397,15 +397,15 @@ class UserProgramsScreen extends HookConsumerWidget {
             title: 'Modifica Programma',
             icon: Icons.edit_outlined,
             onTap: () {
-              Navigator.pop(context);
-              context.go('/user_programs/$userId/training_program/${doc.id}');
+              final route = '/user_programs/$userId/training_program/${doc.id}';
+              debugPrint('Navigating to: $route');
+              context.go(route);
             },
           ),
           BottomMenuItem(
             title: 'Duplica Programma',
             icon: Icons.content_copy_outlined,
             onTap: () {
-              Navigator.pop(context);
               _duplicateProgram(context, doc.id, controller);
             },
           ),
@@ -413,7 +413,6 @@ class UserProgramsScreen extends HookConsumerWidget {
             title: 'Cambia Visibilità',
             icon: doc['hide'] ? Icons.visibility : Icons.visibility_off,
             onTap: () {
-              Navigator.pop(context);
               _toggleProgramVisibility(doc.id, doc['hide'] ?? false);
             },
           ),
@@ -421,7 +420,6 @@ class UserProgramsScreen extends HookConsumerWidget {
             title: 'Elimina Programma',
             icon: Icons.delete_outline,
             onTap: () {
-              Navigator.pop(context);
               _deleteProgram(context, doc.id, firestoreService);
             },
             isDestructive: true,

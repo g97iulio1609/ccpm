@@ -67,9 +67,9 @@ class AppTabs extends StatelessWidget {
                 letterSpacing: -0.5,
               ),
               splashFactory: NoSplash.splashFactory,
-              overlayColor: MaterialStateProperty.resolveWith<Color?>(
-                (Set<MaterialState> states) {
-                  return states.contains(MaterialState.focused) ? null : Colors.transparent;
+              overlayColor: WidgetStateProperty.resolveWith<Color?>(
+                (Set<WidgetState> states) {
+                  return states.contains(WidgetState.focused) ? null : Colors.transparent;
                 },
               ),
               tabs: tabs.map((tab) => _buildTab(tab, colorScheme)).toList(),

@@ -442,7 +442,7 @@ Future<void> _showGiftSubscriptionDialog(String userId, String userName) async {
                     ),
                   ),
                 ),
-              ).toList(),
+              ),
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
@@ -483,7 +483,7 @@ Widget build(BuildContext context) {
   }
 
   return Scaffold(
-    backgroundColor: colorScheme.background,
+    backgroundColor: colorScheme.surface,
     body: Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -491,7 +491,7 @@ Widget build(BuildContext context) {
           end: Alignment.bottomRight,
           colors: [
             colorScheme.surface,
-            colorScheme.surfaceVariant.withOpacity(0.5),
+            colorScheme.surfaceContainerHighest.withOpacity(0.5),
           ],
           stops: const [0.0, 1.0],
         ),

@@ -51,7 +51,7 @@ class ExerciseDialog extends HookConsumerWidget {
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                 borderRadius: BorderRadius.vertical(
                   top: Radius.circular(AppTheme.radii.xl),
                 ),
@@ -95,14 +95,14 @@ class ExerciseDialog extends HookConsumerWidget {
                   Text(
                     'Nome Esercizio',
                     style: theme.textTheme.labelMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
+                      color: colorScheme.surfaceContainerHighest,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   SizedBox(height: AppTheme.spacing.xs),
                   Container(
                     decoration: BoxDecoration(
-                      color: colorScheme.surfaceVariant.withOpacity(0.3),
+                      color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                       borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                       border: Border.all(
                         color: colorScheme.outline.withOpacity(0.1),
@@ -126,14 +126,14 @@ class ExerciseDialog extends HookConsumerWidget {
                   Text(
                     'Variante',
                     style: theme.textTheme.labelMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
+                      color: colorScheme.surfaceContainerHighest,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   SizedBox(height: AppTheme.spacing.xs),
                   Container(
                     decoration: BoxDecoration(
-                      color: colorScheme.surfaceVariant.withOpacity(0.3),
+                      color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                       borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                       border: Border.all(
                         color: colorScheme.outline.withOpacity(0.1),
@@ -149,7 +149,7 @@ class ExerciseDialog extends HookConsumerWidget {
                         contentPadding: EdgeInsets.all(AppTheme.spacing.md),
                         hintText: 'Inserisci la variante',
                         hintStyle: theme.textTheme.bodyLarge?.copyWith(
-                          color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                          color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
                         ),
                       ),
                     ),
@@ -162,7 +162,7 @@ class ExerciseDialog extends HookConsumerWidget {
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                 borderRadius: BorderRadius.vertical(
                   bottom: Radius.circular(AppTheme.radii.xl),
                 ),
@@ -181,7 +181,7 @@ class ExerciseDialog extends HookConsumerWidget {
                     child: Text(
                       'Annulla',
                       style: theme.textTheme.labelLarge?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                        color: colorScheme.surfaceContainerHighest,
                       ),
                     ),
                   ),

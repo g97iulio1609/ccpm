@@ -81,7 +81,7 @@ class _SeriesDialogState extends State<SeriesDialog> {
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                 borderRadius: BorderRadius.vertical(
                   top: Radius.circular(AppTheme.radii.xl),
                 ),
@@ -186,7 +186,7 @@ class _SeriesDialogState extends State<SeriesDialog> {
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                 borderRadius: BorderRadius.vertical(
                   bottom: Radius.circular(AppTheme.radii.xl),
                 ),
@@ -279,7 +279,7 @@ class _SeriesDialogState extends State<SeriesDialog> {
         SizedBox(height: AppTheme.spacing.xs),
         Container(
           decoration: BoxDecoration(
-            color: colorScheme.surfaceVariant.withOpacity(0.3),
+            color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
             borderRadius: BorderRadius.circular(AppTheme.radii.lg),
             border: Border.all(
               color: colorScheme.outline.withOpacity(0.1),

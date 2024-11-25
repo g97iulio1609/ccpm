@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../providers/training_program_provider.dart';
 import '../../Store/inAppPurchase_services.dart';
 import '../../utils/subscription_checker.dart';
-import '../../UI/components/card.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 
 class TrainingViewer extends ConsumerStatefulWidget {
@@ -55,7 +54,7 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -63,7 +62,7 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceVariant.withOpacity(0.5),
+              colorScheme.surfaceContainerHighest.withOpacity(0.5),
             ],
             stops: const [0.0, 1.0],
           ),

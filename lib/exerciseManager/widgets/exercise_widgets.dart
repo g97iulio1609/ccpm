@@ -1,9 +1,10 @@
+// lib/exerciseManager/widgets/exercise_widgets.dart
+
 import 'package:flutter/material.dart';
 import '../exercise_model.dart';
-import '../../UI/components/card.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
-
+import 'package:alphanessone/UI/components/IconButtonWithBackground.dart';
 
 class PendingApprovalBadge extends StatelessWidget {
   const PendingApprovalBadge({super.key});
@@ -179,28 +180,20 @@ class ExerciseCardContent extends StatelessWidget {
             title: 'Visualizza Dettagli',
             icon: Icons.visibility_outlined,
             onTap: () {
-              Navigator.pop(context);
               onTap();
             },
           ),
-          ...actions.map((action) {
-            if (action is IconButtonWithBackground) {
-              return BottomMenuItem(
-                title: _getActionTitle(action.icon),
-                icon: action.icon,
-                onTap: () {
-                  Navigator.pop(context);
-                  action.onPressed();
-                },
-                isDestructive: action.color == colorScheme.error,
-              );
-            }
+          ...actions.whereType<IconButtonWithBackground>().map((action) {
+            final iconButton = action;
             return BottomMenuItem(
-              title: 'Azione non disponibile',
-              icon: Icons.error,
-              onTap: () {},
+              title: _getActionTitle(iconButton.icon),
+              icon: iconButton.icon,
+              onTap: () {
+                iconButton.onPressed();
+              },
+              isDestructive: iconButton.icon == Icons.delete_outline,
             );
-          }).where((item) => item.onTap != null).toList(),
+          }),
         ],
       ),
     );
@@ -215,7 +208,7 @@ class ExerciseCardContent extends StatelessWidget {
       case Icons.check_circle_outline:
         return 'Approva Esercizio';
       default:
-        return '';
+        return 'Azione';
     }
   }
-} 
+}

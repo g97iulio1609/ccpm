@@ -60,7 +60,7 @@ class BottomInputForm extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(AppTheme.spacing.lg),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceVariant.withOpacity(0.3),
+              color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
               borderRadius: showDragHandle 
                   ? null 
                   : BorderRadius.vertical(top: Radius.circular(AppTheme.radii.xl)),
@@ -128,7 +128,7 @@ class BottomInputForm extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                 border: Border(
                   top: BorderSide(
                     color: colorScheme.outline.withOpacity(0.1),
@@ -199,7 +199,7 @@ class BottomInputForm extends StatelessWidget {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
           color: colorScheme.outline.withOpacity(0.1),
@@ -252,7 +252,7 @@ class BottomInputForm extends StatelessWidget {
             colorScheme.primary.withOpacity(0.8),
           ],
         ) : null,
-        color: isPrimary ? null : colorScheme.surfaceVariant.withOpacity(0.3),
+        color: isPrimary ? null : colorScheme.surfaceContainerHighest.withOpacity(0.3),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         boxShadow: isPrimary ? [
           BoxShadow(

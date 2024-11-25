@@ -138,7 +138,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       body: loading
           ? Center(
               child: CircularProgressIndicator(
@@ -150,7 +150,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
                   child: Text(
                     'Nessun esercizio trovato',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: colorScheme.onBackground,
+                          color: colorScheme.onSurface,
                         ),
                   ),
                 )
@@ -242,7 +242,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.md),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                 border: Border(
                   bottom: BorderSide(
                     color: colorScheme.outline.withOpacity(0.1),
@@ -268,7 +268,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
                       horizontal: AppTheme.spacing.sm,
                     ),
                     decoration: BoxDecoration(
-                      color: colorScheme.surfaceVariant.withOpacity(0.3),
+                      color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                       borderRadius: BorderRadius.circular(AppTheme.radii.sm),
                     ),
                     child: _buildSeriesHeaderRow(context),
@@ -347,7 +347,6 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   }
 
   Widget _buildSeriesHeaderRow(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     
     return Row(
       children: [

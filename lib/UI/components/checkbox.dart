@@ -10,14 +10,14 @@ class AppCheckbox extends StatelessWidget {
   final IconData? icon;
 
   const AppCheckbox({
-    Key? key,
+    super.key,
     required this.value,
     required this.onChanged,
     required this.label,
     this.isEnabled = true,
     this.helperText,
     this.icon,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -111,7 +111,7 @@ class AppCheckboxGroup<T> extends StatelessWidget {
   final IconData? Function(T)? getIcon;
 
   const AppCheckboxGroup({
-    Key? key,
+    super.key,
     required this.values,
     required this.selectedValues,
     required this.onChanged,
@@ -119,7 +119,7 @@ class AppCheckboxGroup<T> extends StatelessWidget {
     this.isEnabled,
     this.getHelperText,
     this.getIcon,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

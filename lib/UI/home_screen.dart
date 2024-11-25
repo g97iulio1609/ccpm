@@ -85,7 +85,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
 
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: colorScheme.background,
+        backgroundColor: colorScheme.surface,
         body: Center(
           child: AppSpinner(
             message: 'Caricamento...',
@@ -96,7 +96,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       appBar: user != null
           ? CustomAppBar(
               userRole: userRole,
@@ -118,7 +118,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceVariant.withOpacity(0.5),
+              colorScheme.surfaceContainerHighest.withOpacity(0.5),
             ],
             stops: const [0.0, 1.0],
           ),
@@ -152,7 +152,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: colorScheme.background,
+                  color: colorScheme.surface,
                   borderRadius: BorderRadius.only(
                     topLeft: isLargeScreen ? Radius.circular(AppTheme.radii.xl) : Radius.zero,
                   ),

@@ -45,7 +45,7 @@ class AppColumn extends StatelessWidget {
       decoration: BoxDecoration(
         color: backgroundColor ?? (isSelected 
             ? colorScheme.primaryContainer.withOpacity(0.3)
-            : colorScheme.surfaceVariant.withOpacity(0.3)),
+            : colorScheme.surfaceContainerHighest.withOpacity(0.3)),
         borderRadius: borderRadius ?? BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
           color: isSelected
@@ -100,7 +100,7 @@ class AppColumn extends StatelessWidget {
                     ...actions!.map((action) => Padding(
                       padding: EdgeInsets.only(left: AppTheme.spacing.sm),
                       child: action,
-                    )).toList(),
+                    )),
                   ],
                 ],
               ),
@@ -151,12 +151,12 @@ class AppColumn extends StatelessWidget {
       title: title,
       subtitle: subtitle,
       leading: leading,
-      children: children,
       actions: actions,
       showDividers: showDividers,
       maxWidth: maxWidth,
       borderRadius: BorderRadius.circular(AppTheme.radii.lg),
       backgroundColor: null,
+      children: children,
     );
   }
 
@@ -170,11 +170,11 @@ class AppColumn extends StatelessWidget {
     return AppColumn(
       title: title,
       subtitle: subtitle,
-      children: children,
       showDividers: showDividers,
       contentPadding: contentPadding,
       backgroundColor: Colors.transparent,
       borderRadius: null,
+      children: children,
     );
   }
 
@@ -185,12 +185,12 @@ class AppColumn extends StatelessWidget {
     CrossAxisAlignment crossAxisAlignment = CrossAxisAlignment.start,
   }) {
     return AppColumn(
-      children: children,
       showDividers: showDividers,
       contentPadding: contentPadding ?? EdgeInsets.all(AppTheme.spacing.md),
       backgroundColor: Colors.transparent,
       borderRadius: null,
       crossAxisAlignment: crossAxisAlignment,
+      children: children,
     );
   }
 } 

@@ -6,7 +6,6 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import '../user_autocomplete.dart';
 import '../../models/user_model.dart';
-import '../UI/components/card.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 
 class CoachingScreen extends HookConsumerWidget {
@@ -58,7 +57,7 @@ class CoachingScreen extends HookConsumerWidget {
     }, [snapshot.data, snapshot.error]);
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -66,7 +65,7 @@ class CoachingScreen extends HookConsumerWidget {
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceVariant.withOpacity(0.5),
+              colorScheme.surfaceContainerHighest.withOpacity(0.5),
             ],
             stops: const [0.0, 1.0],
           ),

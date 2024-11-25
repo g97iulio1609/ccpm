@@ -39,7 +39,7 @@ class AthleteSelectionDialog extends ConsumerWidget {
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                 borderRadius: BorderRadius.vertical(
                   top: Radius.circular(AppTheme.radii.xl),
                 ),
@@ -82,7 +82,7 @@ class AthleteSelectionDialog extends ConsumerWidget {
                   Text(
                     'Nome Atleta',
                     style: theme.textTheme.labelMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
+                      color: colorScheme.surfaceContainerHighest,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -100,7 +100,7 @@ class AthleteSelectionDialog extends ConsumerWidget {
                             final users = snapshot.data!;
                             return Container(
                               decoration: BoxDecoration(
-                                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                                 borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                                 border: Border.all(
                                   color: colorScheme.outline.withOpacity(0.1),
@@ -155,7 +155,7 @@ class AthleteSelectionDialog extends ConsumerWidget {
                                   child: Text(
                                     'Nessun atleta trovato',
                                     style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: colorScheme.onSurfaceVariant,
+                                      color: colorScheme.surfaceContainerHighest,
                                     ),
                                   ),
                                 ),
@@ -180,7 +180,7 @@ class AthleteSelectionDialog extends ConsumerWidget {
                                     decoration: InputDecoration(
                                       hintText: 'Cerca atleta...',
                                       hintStyle: theme.textTheme.bodyLarge?.copyWith(
-                                        color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                                        color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
                                       ),
                                       prefixIcon: Icon(
                                         Icons.search,
@@ -220,7 +220,7 @@ class AthleteSelectionDialog extends ConsumerWidget {
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                 borderRadius: BorderRadius.vertical(
                   bottom: Radius.circular(AppTheme.radii.xl),
                 ),
@@ -239,7 +239,7 @@ class AthleteSelectionDialog extends ConsumerWidget {
                     child: Text(
                       'Annulla',
                       style: theme.textTheme.labelLarge?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                        color: colorScheme.surfaceContainerHighest,
                       ),
                     ),
                   ),

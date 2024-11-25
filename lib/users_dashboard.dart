@@ -28,7 +28,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -36,7 +36,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceVariant.withOpacity(0.5),
+              colorScheme.surfaceContainerHighest.withOpacity(0.5),
             ],
             stops: const [0.0, 1.0],
           ),
@@ -345,7 +345,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
           decoration: BoxDecoration(
             color: isDestructive
                 ? colorScheme.errorContainer.withOpacity(0.2)
-                : colorScheme.surfaceVariant.withOpacity(0.3),
+                : colorScheme.surfaceContainerHighest.withOpacity(0.3),
             borderRadius: BorderRadius.circular(AppTheme.radii.full),
           ),
           child: Row(

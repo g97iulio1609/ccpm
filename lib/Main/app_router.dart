@@ -72,7 +72,6 @@ class AppRouter {
                 path: '/user_programs/:userId',
                 builder: (context, state) {
                   final userId = state.pathParameters['userId'];
-                  //debugPrint('Navigating to UserProgramsScreen with userId: $userId');
                   return UserProgramsScreen(userId: userId!);
                 },
                 routes: [
@@ -81,7 +80,6 @@ class AppRouter {
                     builder: (context, state) {
                       final programId = state.pathParameters['programId'];
                       final userId = state.pathParameters['userId'];
-                      //debugPrint('Navigating to TrainingProgramPage with programId: $programId, userId: $userId');
                       return TrainingProgramPage(
                         programId: programId!,
                         userId: userId!,

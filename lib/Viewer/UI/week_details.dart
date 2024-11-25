@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/training_program_provider.dart';
-import '../../UI/components/card.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 
 class WeekDetails extends ConsumerStatefulWidget {
@@ -49,7 +48,7 @@ class _WeekDetailsState extends ConsumerState<WeekDetails> {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -57,7 +56,7 @@ class _WeekDetailsState extends ConsumerState<WeekDetails> {
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceVariant.withOpacity(0.5),
+              colorScheme.surfaceContainerHighest.withOpacity(0.5),
             ],
             stops: const [0.0, 1.0],
           ),

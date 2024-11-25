@@ -42,7 +42,7 @@ class AppButton extends StatelessWidget {
             (isDestructive ? colorScheme.error : colorScheme.primary).withOpacity(0.8),
           ],
         ) : null,
-        color: !isPrimary ? colorScheme.surfaceVariant.withOpacity(0.3) : null,
+        color: !isPrimary ? colorScheme.surfaceContainerHighest.withOpacity(0.3) : null,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         boxShadow: isPrimary ? [
           BoxShadow(
@@ -214,7 +214,7 @@ class CircleIconButton extends StatelessWidget {
             (isDestructive ? colorScheme.error : colorScheme.primary).withOpacity(0.8),
           ],
         ) : null,
-        color: !isPrimary ? colorScheme.surfaceVariant.withOpacity(0.3) : null,
+        color: !isPrimary ? colorScheme.surfaceContainerHighest.withOpacity(0.3) : null,
         boxShadow: isPrimary ? [
           BoxShadow(
             color: (isDestructive ? colorScheme.error : colorScheme.primary).withOpacity(0.2),

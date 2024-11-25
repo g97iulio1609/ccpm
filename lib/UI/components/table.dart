@@ -59,7 +59,7 @@ class AppTable<T> extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                 borderRadius: BorderRadius.vertical(
                   top: Radius.circular(AppTheme.radii.lg),
                 ),
@@ -169,7 +169,7 @@ class AppTable<T> extends StatelessWidget {
   Widget _buildHeader(ColorScheme colorScheme, ThemeData theme) {
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
         border: showDividers ? Border(
           bottom: BorderSide(
             color: colorScheme.outline.withOpacity(0.1),
@@ -200,7 +200,7 @@ class AppTable<T> extends StatelessWidget {
     final cells = buildCells(row);
     final expansion = buildExpansion?.call(row);
     final backgroundColor = zebra && index % 2 == 1
-        ? colorScheme.surfaceVariant.withOpacity(0.1)
+        ? colorScheme.surfaceContainerHighest.withOpacity(0.1)
         : Colors.transparent;
 
     return Column(
@@ -229,7 +229,7 @@ class AppTable<T> extends StatelessWidget {
                       style: theme.textTheme.bodyMedium!.copyWith(
                         color: colorScheme.onSurface,
                       ),
-                      child: cell,
+                      child: cell.child,
                     ),
                   );
                 }).toList(),

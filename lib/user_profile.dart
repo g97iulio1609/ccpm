@@ -402,7 +402,7 @@ class UserProfileState extends ConsumerState<UserProfile>
         ),
       ),
       filled: true,
-      fillColor: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+      fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
     );
   }
 
@@ -483,7 +483,7 @@ class UserProfileState extends ConsumerState<UserProfile>
           debugPrint('Gender updated to: ${genderMap[value]}');
         },
         decoration: _getInputDecoration('Genere'),
-        dropdownColor: theme.colorScheme.surfaceVariant,
+        dropdownColor: theme.colorScheme.surfaceContainerHighest,
         style: TextStyle(color: theme.colorScheme.onSurface),
         items: genderMap.entries.map((entry) {
           return DropdownMenuItem<int>(
@@ -581,7 +581,7 @@ class UserProfileState extends ConsumerState<UserProfile>
             color: theme.colorScheme.primary,
             width: 3,
           ),
-          color: theme.colorScheme.surfaceVariant,
+          color: theme.colorScheme.surfaceContainerHighest,
           image: _photoURL != null
               ? DecorationImage(
                   image: NetworkImage(_photoURL!),
@@ -680,7 +680,7 @@ class UserProfileState extends ConsumerState<UserProfile>
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -688,7 +688,7 @@ class UserProfileState extends ConsumerState<UserProfile>
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceVariant.withOpacity(0.5),
+              colorScheme.surfaceContainerHighest.withOpacity(0.5),
             ],
             stops: const [0.0, 1.0],
           ),

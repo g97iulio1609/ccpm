@@ -42,8 +42,8 @@ class TrainingProgramSeriesList extends ConsumerStatefulWidget {
     required this.workoutIndex,
     required this.exerciseIndex,
     required this.exerciseType,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   TrainingProgramSeriesListState createState() => TrainingProgramSeriesListState();
@@ -232,7 +232,7 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
       ),
       padding: EdgeInsets.all(AppTheme.spacing.sm),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
         borderRadius: BorderRadius.circular(AppTheme.radii.md),
       ),
       child: Row(
@@ -319,7 +319,7 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
         gradient: LinearGradient(
           colors: isPrimary
               ? [colorScheme.primary, colorScheme.primary.withOpacity(0.8)]
-              : [colorScheme.surfaceVariant, colorScheme.surfaceVariant.withOpacity(0.8)],
+              : [colorScheme.surfaceContainerHighest, colorScheme.surfaceContainerHighest.withOpacity(0.8)],
         ),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         boxShadow: isPrimary ? AppTheme.elevations.small : null,

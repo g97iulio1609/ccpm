@@ -14,7 +14,6 @@ import 'package:alphanessone/services/users_services.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 import '../../user_autocomplete.dart';
 import '../../providers/providers.dart';
-import '../UI/components/card.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 
 class MaxRMDashboard extends HookConsumerWidget {
@@ -53,7 +52,7 @@ class MaxRMDashboard extends HookConsumerWidget {
     }, [currentUserRole]);
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -61,7 +60,7 @@ class MaxRMDashboard extends HookConsumerWidget {
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceVariant.withOpacity(0.5),
+              colorScheme.surfaceContainerHighest.withOpacity(0.5),
             ],
             stops: const [0.0, 1.0],
           ),
@@ -439,7 +438,7 @@ class MaxRMDashboard extends HookConsumerWidget {
           decoration: BoxDecoration(
             color: isDestructive
                 ? colorScheme.errorContainer.withOpacity(0.2)
-                : colorScheme.surfaceVariant.withOpacity(0.3),
+                : colorScheme.surfaceContainerHighest.withOpacity(0.3),
             borderRadius: BorderRadius.circular(AppTheme.radii.full),
           ),
           child: Row(

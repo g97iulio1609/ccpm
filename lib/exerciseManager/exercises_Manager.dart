@@ -1,3 +1,5 @@
+// lib/exerciseManager/exercises_manager.dart
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -13,16 +15,24 @@ import '../ExerciseRecords/exercise_record_services.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/UI/components/IconButtonWithBackground.dart';
+import 'package:alphanessone/UI/components/bottom_input_form.dart';
 
 // Providers per i muscleGroups e exerciseTypes
-final muscleGroupsProvider = StreamProvider((ref) {
-  return FirebaseFirestore.instance.collection('muscleGroups').snapshots().map(
-      (snapshot) => snapshot.docs.map((doc) => doc['name'].toString()).toList());
+final muscleGroupsProvider = StreamProvider<List<String>>((ref) {
+  return FirebaseFirestore.instance
+      .collection('muscleGroups')
+      .snapshots()
+      .map((snapshot) =>
+          snapshot.docs.map((doc) => doc['name'].toString()).toList());
 });
 
-final exerciseTypesProvider = StreamProvider((ref) {
-  return FirebaseFirestore.instance.collection('ExerciseTypes').snapshots().map(
-      (snapshot) => snapshot.docs.map((doc) => doc['name'].toString()).toList());
+final exerciseTypesProvider = StreamProvider<List<String>>((ref) {
+  return FirebaseFirestore.instance
+      .collection('ExerciseTypes')
+      .snapshots()
+      .map((snapshot) =>
+          snapshot.docs.map((doc) => doc['name'].toString()).toList());
 });
 
 class ExercisesManager extends ConsumerWidget {
@@ -33,6 +43,7 @@ class ExercisesManager extends ConsumerWidget {
     return const ExercisesList();
   }
 
+  // Funzione per mostrare il Bottom Sheet per aggiungere un esercizio
   static void showAddExerciseBottomSheet(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
@@ -42,6 +53,22 @@ class ExercisesManager extends ConsumerWidget {
       ),
       builder: (context) => _ExerciseForm(
         exercise: null,
+        userId: ref.read(usersServiceProvider).getCurrentUserId(),
+      ),
+    );
+  }
+
+  // Funzione per mostrare il Bottom Sheet per modificare un esercizio
+  static void showEditExerciseBottomSheet(
+      BuildContext context, WidgetRef ref, ExerciseModel exercise) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) => _ExerciseForm(
+        exercise: exercise,
         userId: ref.read(usersServiceProvider).getCurrentUserId(),
       ),
     );
@@ -81,14 +108,6 @@ class ExercisesList extends HookConsumerWidget {
           children: [
             const SizedBox(height: 24),
             TypeAheadField<ExerciseModel>(
-              suggestionsCallback: (pattern) async {
-                if (pattern.length < 2) return [];
-                
-                final exercises = await ref.read(exercisesServiceProvider).getExercises().first;
-                return exercises.where((exercise) => 
-                  exercise.name.toLowerCase().contains(pattern.toLowerCase())
-                ).toList();
-              },
               builder: (context, controller, focusNode) {
                 return TextField(
                   controller: controller,
@@ -108,7 +127,9 @@ class ExercisesList extends HookConsumerWidget {
                             onPressed: () {
                               controller.clear();
                               Future.microtask(() {
-                                ref.read(exerciseListControllerProvider.notifier).resetFilters();
+                                ref
+                                    .read(exerciseListControllerProvider.notifier)
+                                    .resetFilters();
                               });
                             },
                           )
@@ -121,26 +142,34 @@ class ExercisesList extends HookConsumerWidget {
                   ),
                 );
               },
+              suggestionsCallback: (pattern) async {
+                if (pattern.length < 2) return [];
+
+                final exercises = await ref.read(exercisesServiceProvider).getExercises().first;
+                return exercises
+                    .where((exercise) => exercise.name
+                        .toLowerCase()
+                        .contains(pattern.toLowerCase()))
+                    .toList();
+              },
               itemBuilder: (context, exercise) {
                 return ListTile(
                   title: Text(exercise.name),
                   subtitle: Text(
                     '${exercise.muscleGroups.join(", ")} - ${exercise.type}',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      letterSpacing: -0.3,
-                    ),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          letterSpacing: -0.3,
+                        ),
                   ),
                 );
               },
               onSelected: (exercise) {
-                if (exercise != null) {
-                  searchController.text = exercise.name;
-                  Future.microtask(() {
-                    controller.updateFilters(searchText: exercise.name);
-                  });
-                }
-              },
+                searchController.text = exercise.name;
+                Future.microtask(() {
+                  controller.updateFilters(searchText: exercise.name);
+                });
+                            },
               debounceDuration: const Duration(milliseconds: 500),
               hideOnEmpty: false,
               hideOnLoading: false,
@@ -182,20 +211,23 @@ class ExercisesList extends HookConsumerWidget {
                       PointerDeviceKind.mouse,
                       PointerDeviceKind.trackpad,
                     },
-                    physics: const BouncingScrollPhysics(),  // Scroll physics più fluido
+                    physics: const BouncingScrollPhysics(),
                   ),
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
-                    physics: const AlwaysScrollableScrollPhysics(),  // Forza lo scroll anche quando il contenuto è piccolo
+                    physics: const AlwaysScrollableScrollPhysics(),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),  // Padding verticale per centrare
+                      padding:
+                          const EdgeInsets.symmetric(vertical: 8.0),
                       child: Row(
                         children: [
-                          const SizedBox(width: 4),  // Padding iniziale
+                          const SizedBox(width: 4),
                           ...muscleGroups.map((group) {
-                            final isSelected = selectedMuscleGroups.value.contains(group);
+                            final isSelected =
+                                selectedMuscleGroups.value.contains(group);
                             return Padding(
-                              padding: const EdgeInsets.only(right: 8.0),
+                              padding:
+                                  const EdgeInsets.only(right: 8.0),
                               child: SizedBox(
                                 height: 32,
                                 child: FilterChip(
@@ -203,41 +235,59 @@ class ExercisesList extends HookConsumerWidget {
                                     group,
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: isSelected 
-                                          ? theme.colorScheme.onSecondaryContainer
-                                          : theme.colorScheme.onSurface,
+                                      color: isSelected
+                                          ? theme.colorScheme
+                                              .onSecondaryContainer
+                                          : theme.colorScheme
+                                              .onSurface,
                                     ),
                                   ),
                                   selected: isSelected,
                                   onSelected: (bool selected) {
                                     if (selected) {
-                                      selectedMuscleGroups.value = [...selectedMuscleGroups.value, group];
+                                      selectedMuscleGroups.value = [
+                                        ...selectedMuscleGroups.value,
+                                        group
+                                      ];
                                     } else {
-                                      selectedMuscleGroups.value = selectedMuscleGroups.value
-                                          .where((g) => g != group)
-                                          .toList();
+                                      selectedMuscleGroups.value =
+                                          selectedMuscleGroups.value
+                                              .where((g) => g != group)
+                                              .toList();
                                     }
                                     controller.updateFilters(
-                                      muscleGroups: selectedMuscleGroups.value,
+                                      muscleGroups:
+                                          selectedMuscleGroups.value,
                                     );
                                   },
                                   showCheckmark: false,
-                                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                                  labelPadding: const EdgeInsets.symmetric(horizontal: 4.0),
-                                  avatar: isSelected ? Icon(
-                                    Icons.check,
-                                    size: 16,
-                                    color: theme.colorScheme.onSecondaryContainer,
-                                  ) : null,
-                                  selectedColor: theme.colorScheme.secondaryContainer,
-                                  backgroundColor: theme.colorScheme.surfaceVariant.withOpacity(0.5),
+                                  materialTapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8.0),
+                                  labelPadding: const EdgeInsets.symmetric(
+                                      horizontal: 4.0),
+                                  avatar: isSelected
+                                      ? Icon(
+                                          Icons.check,
+                                          size: 16,
+                                          color: theme.colorScheme
+                                              .onSecondaryContainer,
+                                        )
+                                      : null,
+                                  selectedColor:
+                                      theme.colorScheme.secondaryContainer,
+                                  backgroundColor: theme.colorScheme
+                                      .surfaceContainerHighest
+                                      .withOpacity(0.5),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius:
+                                        BorderRadius.circular(16),
                                     side: BorderSide(
-                                      color: isSelected 
+                                      color: isSelected
                                           ? theme.colorScheme.secondary
-                                          : theme.colorScheme.outline.withOpacity(0.5),
+                                          : theme.colorScheme.outline
+                                              .withOpacity(0.5),
                                       width: 1,
                                     ),
                                   ),
@@ -247,13 +297,15 @@ class ExercisesList extends HookConsumerWidget {
                           }).toList(),
                           if (selectedMuscleGroups.value.isNotEmpty)
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8.0),
                               child: SizedBox(
                                 height: 32,
                                 child: TextButton.icon(
                                   onPressed: () {
                                     selectedMuscleGroups.value = [];
-                                    controller.updateFilters(muscleGroups: []);
+                                    controller.updateFilters(
+                                        muscleGroups: []);
                                   },
                                   icon: Icon(
                                     Icons.clear,
@@ -268,14 +320,16 @@ class ExercisesList extends HookConsumerWidget {
                                     ),
                                   ),
                                   style: TextButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8.0),
                                     minimumSize: Size.zero,
-                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
                                   ),
                                 ),
                               ),
                             ),
-                          const SizedBox(width: 4),  // Padding finale
+                          const SizedBox(width: 4),
                         ],
                       ),
                     ),
@@ -310,13 +364,19 @@ class ExercisesList extends HookConsumerWidget {
                     exercises: exercises,
                     currentUserRole: currentUserRole,
                     currentUserId: currentUserId,
-                    onEdit: (exercise) => _showEditExerciseBottomSheet(context, ref, exercise),
-                    onDelete: (exercise) => _showDeleteConfirmationDialog(
-                      context, exercise, ref, theme,
+                    onEdit: (exercise) =>
+                        ExercisesManager.showEditExerciseBottomSheet(context, ref, exercise),
+                    onDelete: (exercise) =>
+                        _showDeleteConfirmationDialog(
+                      context,
+                      exercise,
+                      ref,
+                      theme,
                     ),
                   );
                 },
-                loading: () => const Center(child: CircularProgressIndicator()),
+                loading: () =>
+                    const Center(child: CircularProgressIndicator()),
                 error: (error, _) => Center(
                   child: Text('Error: $error'),
                 ),
@@ -328,31 +388,110 @@ class ExercisesList extends HookConsumerWidget {
     );
   }
 
-  void _showEditExerciseBottomSheet(
-    BuildContext context,
-    WidgetRef ref,
-    ExerciseModel exercise,
-  ) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (context) => _ExerciseForm(
-        exercise: exercise,
-        userId: ref.read(usersServiceProvider).getCurrentUserId(),
-      ),
-    );
-  }
-
-  void _showExerciseOptions(
+  void _showDeleteConfirmationDialog(
     BuildContext context,
     ExerciseModel exercise,
     WidgetRef ref,
     ThemeData theme,
   ) {
-    final exercisesService = ref.read(exercisesServiceProvider);
+    final colorScheme = theme.colorScheme;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => BottomInputForm(
+        title: 'Elimina Esercizio',
+        subtitle: 'Sei sicuro di voler eliminare questo esercizio?',
+        leading: Container(
+          padding: EdgeInsets.all(AppTheme.spacing.sm),
+          decoration: BoxDecoration(
+            color: colorScheme.errorContainer.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(AppTheme.radii.md),
+          ),
+          child: Icon(
+            Icons.delete_outline,
+            color: colorScheme.error,
+            size: 24,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Annulla',
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              color: colorScheme.errorContainer,
+              borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  final exercisesService = ref.read(exercisesServiceProvider);
+                  exercisesService.deleteExercise(exercise.id);
+                  Navigator.pop(context);
+                },
+                borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppTheme.spacing.lg,
+                    vertical: AppTheme.spacing.md,
+                  ),
+                  child: Text(
+                    'Elimina',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: colorScheme.onErrorContainer,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+        children: [
+          Text(
+            'Questa azione non può essere annullata.',
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ExercisesGrid extends ConsumerStatefulWidget {
+  final List<ExerciseModel> exercises;
+  final String currentUserRole;
+  final String currentUserId;
+  final Function(ExerciseModel) onEdit;
+  final Function(ExerciseModel) onDelete;
+
+  const ExercisesGrid({
+    super.key,
+    required this.exercises,
+    required this.currentUserRole,
+    required this.currentUserId,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  ConsumerState<ExercisesGrid> createState() => _ExercisesGridState();
+}
+
+class _ExercisesGridState extends ConsumerState<ExercisesGrid> {
+  void _showExerciseDetails(BuildContext context, ExerciseModel exercise) {
+    final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     showModalBottomSheet(
@@ -375,192 +514,54 @@ class ExercisesList extends HookConsumerWidget {
           ),
         ),
         items: [
-          if (exercise.status == 'pending')
-            BottomMenuItem(
-              title: 'Approva Esercizio',
-              icon: Icons.check_circle_outline,
-              onTap: () {
-                Navigator.pop(context);
-                _showApproveConfirmationDialog(context, exercise, ref);
-              },
-            ),
           BottomMenuItem(
             title: 'Modifica Esercizio',
             icon: Icons.edit_outlined,
             onTap: () {
-              Navigator.pop(context);
-              _showEditExerciseBottomSheet(context, ref, exercise);
+              widget.onEdit(exercise);
             },
           ),
           BottomMenuItem(
             title: 'Elimina Esercizio',
             icon: Icons.delete_outline,
             onTap: () {
-              Navigator.pop(context);
-              exercisesService.deleteExercise(exercise.id);
+              widget.onDelete(exercise);
             },
             isDestructive: true,
           ),
+          if ((widget.currentUserRole == 'admin' ||
+                  widget.currentUserRole == 'coach') &&
+              exercise.status == 'pending')
+            BottomMenuItem(
+              title: 'Approva Esercizio',
+              icon: Icons.check_circle_outline,
+              onTap: () {
+                _approveExercise(exercise);
+              },
+            ),
         ],
       ),
     );
   }
-
-  void _showDeleteConfirmationDialog(
-    BuildContext context,
-    ExerciseModel exercise,
-    WidgetRef ref,
-    ThemeData theme,
-  ) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Delete Exercise',
-          style: theme.textTheme.titleLarge?.copyWith(
-            color: theme.colorScheme.onSurface,
-          ),
-        ),
-        content: Text(
-          'Are you sure you want to delete this exercise?',
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: theme.colorScheme.primary),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              final exercisesService = ref.read(exercisesServiceProvider);
-              exercisesService.deleteExercise(exercise.id);
-              Navigator.pop(context);
-            },
-            child: Text(
-              'Delete',
-              style: TextStyle(color: theme.colorScheme.error),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showApproveConfirmationDialog(
-    BuildContext context,
-    ExerciseModel exercise,
-    WidgetRef ref,
-  ) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(
-          'Approva Esercizio',
-          style: theme.textTheme.titleLarge?.copyWith(
-            color: colorScheme.onSurface,
-          ),
-        ),
-        content: Text(
-          'Sei sicuro di voler approvare "${exercise.name}"?',
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text(
-              'Annulla',
-              style: TextStyle(color: colorScheme.primary),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              ref.read(exercisesServiceProvider).approveExercise(exercise.id);
-              Navigator.pop(dialogContext);
-            },
-            child: Text(
-              'Approva',
-              style: TextStyle(color: colorScheme.tertiary),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class ExercisesGrid extends ConsumerWidget {
-  final List<ExerciseModel> exercises;
-  final String currentUserRole;
-  final String currentUserId;
-  final Function(ExerciseModel) onEdit;
-  final Function(ExerciseModel) onDelete;
-
-  const ExercisesGrid({
-    super.key,
-    required this.exercises,
-    required this.currentUserRole,
-    required this.currentUserId,
-    required this.onEdit,
-    required this.onDelete,
-  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return CustomScrollView(
-      slivers: [
-        SliverLayoutBuilder(
-          builder: (context, constraints) {
-            final isMobile = MediaQuery.of(context).size.width <= 600;
-            
-            return isMobile 
-                ? _buildList(context, ref)
-                : _buildGrid(context, ref);
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildList(BuildContext context, WidgetRef ref) {
-    return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) => Padding(
-          padding: const EdgeInsets.symmetric(
-            vertical: 8.0,
-            horizontal: 16.0,
-          ),
-          child: _buildExerciseCard(context, exercises[index], ref),
-        ),
-        childCount: exercises.length,
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: _getGridCrossAxisCount(context),
+        crossAxisSpacing: 24.0,
+        mainAxisSpacing: 24.0,
+        childAspectRatio: 1.2,
       ),
-    );
-  }
-
-  Widget _buildGrid(BuildContext context, WidgetRef ref) {
-    return SliverPadding(
-      padding: const EdgeInsets.all(16.0),
-      sliver: SliverGrid(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: _getGridCrossAxisCount(context),
-          crossAxisSpacing: 24.0,
-          mainAxisSpacing: 24.0,
-          childAspectRatio: 1.2,
-        ),
-        delegate: SliverChildBuilderDelegate(
-          (context, index) => _buildExerciseCard(context, exercises[index], ref),
-          childCount: exercises.length,
-        ),
-      ),
+      itemCount: widget.exercises.length,
+      itemBuilder: (context, index) {
+        final exercise = widget.exercises[index];
+        return ExerciseCardContent(
+          exercise: exercise,
+          onTap: () => _showExerciseDetails(context, exercise),
+          actions: _buildExerciseActions(context, exercise),
+        );
+      },
     );
   }
 
@@ -572,55 +573,52 @@ class ExercisesGrid extends ConsumerWidget {
     return 1;
   }
 
-  Widget _buildExerciseCard(BuildContext context, ExerciseModel exercise, WidgetRef ref) {
-    final canModify = currentUserRole == 'admin' || exercise.userId == currentUserId;
-    final isAdmin = currentUserRole == 'admin';
-    
-    final List<Widget> actionButtons = [];
+  List<Widget> _buildExerciseActions(
+      BuildContext context, ExerciseModel exercise) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final actions = <Widget>[];
 
-    if (canModify) {
-      actionButtons.addAll([
-        IconButtonWithBackground(
-          icon: Icons.edit_outlined,
-          color: Theme.of(context).colorScheme.primary,
-          onPressed: () => onEdit(exercise),
-        ),
-        const SizedBox(width: 8),
-        IconButtonWithBackground(
-          icon: Icons.delete_outline,
-          color: Theme.of(context).colorScheme.error,
-          onPressed: () => onDelete(exercise),
-        ),
-      ]);
-    }
+    // Azione Modifica
+    actions.add(
+      IconButtonWithBackground(
+        icon: Icons.edit_outlined,
+        color: colorScheme.primary,
+        onPressed: () => widget.onEdit(exercise),
+        tooltip: 'Modifica',
+      ),
+    );
 
-    if (isAdmin && exercise.status == 'pending') {
-      if (actionButtons.isNotEmpty) {
-        actionButtons.insert(0, const SizedBox(width: 8));
-      }
-      actionButtons.insert(0, 
+    // Azione Elimina
+    actions.add(
+      IconButtonWithBackground(
+        icon: Icons.delete_outline,
+        color: colorScheme.error,
+        onPressed: () => widget.onDelete(exercise),
+        tooltip: 'Elimina',
+      ),
+    );
+
+    // Azione Approva (solo per admin/coach)
+    if ((widget.currentUserRole == 'admin' ||
+            widget.currentUserRole == 'coach') &&
+        exercise.status == 'pending') {
+      actions.add(
         IconButtonWithBackground(
           icon: Icons.check_circle_outline,
-          color: Theme.of(context).colorScheme.tertiary,
-          onPressed: () => _showApproveConfirmationDialog(context, exercise, ref),
+          color: colorScheme.tertiary,
+          onPressed: () => _approveExercise(exercise),
+          tooltip: 'Approva',
         ),
       );
     }
-    
-    return ExerciseCardContent(
-      exercise: exercise,
-      onTap: () => onEdit(exercise),
-      actions: actionButtons,
-    );
+
+    return actions;
   }
 
-  void _showApproveConfirmationDialog(
-    BuildContext context,
-    ExerciseModel exercise,
-    WidgetRef ref,
-  ) {
+  void _approveExercise(ExerciseModel exercise) {
     final theme = Theme.of(context);
-    
+
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -646,7 +644,9 @@ class ExercisesGrid extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () {
-              ref.read(exercisesServiceProvider).approveExercise(exercise.id);
+              ref
+                  .read(exercisesServiceProvider)
+                  .approveExercise(exercise.id);
               Navigator.pop(dialogContext);
             },
             child: Text(
@@ -672,9 +672,11 @@ class _ExerciseForm extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final formKey = useMemoized(() => GlobalKey<FormState>());
     final nameController = useTextEditingController(text: exercise?.name);
-    final selectedMuscleGroups = useState<List<String>>(exercise?.muscleGroups ?? []);
+    final selectedMuscleGroups = useState<List<String>>(
+        exercise?.muscleGroups ?? []);
     final selectedExerciseType = useState<String?>(exercise?.type);
 
     return MediaQuery.removePadding(
@@ -688,134 +690,218 @@ class _ExerciseForm extends HookConsumerWidget {
             top: 16,
             bottom: MediaQuery.of(context).viewInsets.bottom + 16,
           ),
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  exercise == null ? 'Add New Exercise' : 'Edit Exercise',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: -0.5,
+          child: BottomInputForm(
+            title: exercise == null
+                ? 'Add New Exercise'
+                : 'Modifica Esercizio',
+            subtitle: exercise?.name,
+            leading: Container(
+              padding: EdgeInsets.all(AppTheme.spacing.sm),
+              decoration: BoxDecoration(
+                color: exercise == null
+                    ? colorScheme.primaryContainer.withOpacity(0.3)
+                    : colorScheme.primaryContainer.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(AppTheme.radii.md),
+              ),
+              child: Icon(
+                exercise == null ? Icons.add : Icons.edit_outlined,
+                color: exercise == null
+                    ? colorScheme.primary
+                    : colorScheme.primary,
+                size: 24,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  'Annulla',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
                   ),
                 ),
-                const SizedBox(height: 24),
-                TextFormField(
-                  controller: nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Exercise Name',
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      colorScheme.primary,
+                      colorScheme.primary.withOpacity(0.8),
+                    ],
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter an exercise name';
-                    }
-                    return null;
-                  },
+                  borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                  boxShadow: [
+                    BoxShadow(
+                      color: colorScheme.primary.withOpacity(0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                Consumer(
-                  builder: (context, ref, child) {
-                    final muscleGroupsAsyncValue = ref.watch(muscleGroupsProvider);
-                    return muscleGroupsAsyncValue.when(
-                      data: (muscleGroups) => Wrap(
-                        spacing: 8.0,
-                        children: muscleGroups.map((String group) {
-                          final isSelected = selectedMuscleGroups.value.contains(group);
-                          return FilterChip(
-                            label: Text(group),
-                            selected: isSelected,
-                            onSelected: (bool selected) {
-                              if (selected) {
-                                selectedMuscleGroups.value = [...selectedMuscleGroups.value, group];
-                              } else {
-                                selectedMuscleGroups.value = selectedMuscleGroups.value.where((g) => g != group).toList();
-                              }
-                            },
-                          );
-                        }).toList(),
-                      ),
-                      loading: () => const CircularProgressIndicator(),
-                      error: (_, __) => const Text('Failed to load muscle groups'),
-                    );
-                  },
-                ),
-                const SizedBox(height: 16),
-                Consumer(
-                  builder: (context, ref, child) {
-                    final exerciseTypesAsyncValue = ref.watch(exerciseTypesProvider);
-                    return exerciseTypesAsyncValue.when(
-                      data: (exerciseTypes) => DropdownButtonFormField<String>(
-                        value: selectedExerciseType.value,
-                        items: exerciseTypes.map((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                        onChanged: (value) => selectedExerciseType.value = value,
-                        decoration: const InputDecoration(
-                          labelText: 'Exercise Type',
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please select an exercise type';
-                          }
-                          return null;
-                        },
-                      ),
-                      loading: () => const CircularProgressIndicator(),
-                      error: (_, __) => const Text('Failed to load exercise types'),
-                    );
-                  },
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
                       if (formKey.currentState!.validate()) {
-                        _submitExercise(
-                          ref,
-                          context,
+                        final exercisesService = ref.read(exercisesServiceProvider);
+                        exercisesService.updateExercise(
+                          exercise?.id ?? '',
                           nameController.text,
                           selectedMuscleGroups.value,
                           selectedExerciseType.value!,
                         );
+                        Navigator.pop(context);
                       }
                     },
-                    child: Text(exercise == null ? 'Add' : 'Update'),
+                    borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppTheme.spacing.lg,
+                        vertical: AppTheme.spacing.md,
+                      ),
+                      child: Text(
+                        'Salva',
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: colorScheme.onPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
+            children: [
+              Form(
+                key: formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Nome Esercizio
+                    BottomInputForm.buildFormField(
+                      label: 'Nome Esercizio',
+                      theme: theme,
+                      colorScheme: colorScheme,
+                      child: TextFormField(
+                        controller: nameController,
+                        decoration: InputDecoration(
+                          hintText: 'Inserisci il nome dell\'esercizio',
+                          border: InputBorder.none,
+                          prefixIcon: Icon(
+                            Icons.fitness_center,
+                            color: colorScheme.primary,
+                            size: 20,
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Inserisci un nome per l\'esercizio';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    SizedBox(height: AppTheme.spacing.lg),
+
+                    // Muscle Groups
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final muscleGroupsAsyncValue =
+                            ref.watch(muscleGroupsProvider);
+                        return muscleGroupsAsyncValue.when(
+                          data: (muscleGroups) => BottomInputForm.buildFormField(
+                            label: 'Gruppi Muscolari',
+                            theme: theme,
+                            colorScheme: colorScheme,
+                            helperText: 'Seleziona i gruppi muscolari coinvolti',
+                            child: Wrap(
+                              spacing: AppTheme.spacing.sm,
+                              runSpacing: AppTheme.spacing.sm,
+                              children: muscleGroups.map((group) {
+                                final isSelected = selectedMuscleGroups.value.contains(group);
+                                return FilterChip(
+                                  label: Text(group),
+                                  selected: isSelected,
+                                  onSelected: (selected) {
+                                    if (selected) {
+                                      selectedMuscleGroups.value = [...selectedMuscleGroups.value, group];
+                                    } else {
+                                      selectedMuscleGroups.value = selectedMuscleGroups.value.where((g) => g != group).toList();
+                                    }
+                                  },
+                                  selectedColor: colorScheme.primaryContainer,
+                                  checkmarkColor: colorScheme.primary,
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                          loading: () => const CircularProgressIndicator(),
+                          error: (_, __) =>
+                              const Text('Errore nel caricamento dei gruppi muscolari'),
+                        );
+                      },
+                    ),
+                    SizedBox(height: AppTheme.spacing.lg),
+
+                    // Exercise Type
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final exerciseTypesAsyncValue =
+                            ref.watch(exerciseTypesProvider);
+                        return exerciseTypesAsyncValue.when(
+                          data: (exerciseTypes) => BottomInputForm.buildFormField(
+                            label: 'Tipo di Esercizio',
+                            theme: theme,
+                            colorScheme: colorScheme,
+                            helperText: 'Seleziona il tipo di esercizio',
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                                borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                                border: Border.all(
+                                  color: colorScheme.outline.withOpacity(0.1),
+                                ),
+                              ),
+                              child: DropdownButtonFormField<String>(
+                                value: selectedExerciseType.value,
+                                items: exerciseTypes.map((type) {
+                                  return DropdownMenuItem(
+                                    value: type,
+                                    child: Text(type),
+                                  );
+                                }).toList(),
+                                onChanged: (value) => selectedExerciseType.value = value,
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.all(AppTheme.spacing.md),
+                                  prefixIcon: Icon(
+                                    Icons.category_outlined,
+                                    color: colorScheme.primary,
+                                    size: 20,
+                                  ),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Seleziona un tipo di esercizio';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                          ),
+                          loading: () => const CircularProgressIndicator(),
+                          error: (_, __) =>
+                              const Text('Errore nel caricamento dei tipi di esercizio'),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
-  }
-
-  void _submitExercise(WidgetRef ref, BuildContext context, String name,
-      List<String> muscleGroups, String exerciseType) {
-    final exercisesService = ref.read(exercisesServiceProvider);
-
-    if (exercise == null) {
-      exercisesService.addExercise(
-        name,
-        muscleGroups,
-        exerciseType,
-        userId,
-      );
-    } else {
-      exercisesService.updateExercise(
-        exercise!.id,
-        name,
-        muscleGroups,
-        exerciseType,
-      );
-    }
-
-    Navigator.of(context).pop();
   }
 }
