@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../exercise_model.dart';
 import '../../UI/components/card.dart';
+import 'package:alphanessone/Main/app_theme.dart';
 
 class PendingApprovalBadge extends StatelessWidget {
   const PendingApprovalBadge({super.key});
@@ -8,17 +9,18 @@ class PendingApprovalBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 6,
+      padding: EdgeInsets.symmetric(
+        horizontal: AppTheme.spacing.md,
+        vertical: AppTheme.spacing.xs,
       ),
       decoration: BoxDecoration(
-        color: theme.colorScheme.primary.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(12),
+        color: colorScheme.tertiaryContainer.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
         border: Border.all(
-          color: theme.colorScheme.primary.withOpacity(0.3),
-          width: 1,
+          color: colorScheme.tertiary.withOpacity(0.3),
         ),
       ),
       child: Row(
@@ -27,13 +29,13 @@ class PendingApprovalBadge extends StatelessWidget {
           Icon(
             Icons.pending_outlined,
             size: 16,
-            color: theme.colorScheme.primary,
+            color: colorScheme.tertiary,
           ),
-          const SizedBox(width: 6),
+          SizedBox(width: AppTheme.spacing.xs),
           Text(
             'Pending Approval',
             style: theme.textTheme.labelMedium?.copyWith(
-              color: theme.colorScheme.primary,
+              color: colorScheme.tertiary,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.3,
             ),
@@ -59,30 +61,87 @@ class ExerciseCardContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return ActionCard(
-      onTap: onTap,
-      title: Text(
-        exercise.name,
-        style: theme.textTheme.titleLarge?.copyWith(
-          fontWeight: FontWeight.w600,
-          letterSpacing: -0.5,
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
         ),
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
+        boxShadow: AppTheme.elevations.small,
       ),
-      subtitle: Text(
-        '${exercise.muscleGroups.join(", ")} - ${exercise.type}',
-        style: theme.textTheme.bodyMedium?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-          letterSpacing: -0.3,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          child: Padding(
+            padding: EdgeInsets.all(AppTheme.spacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Exercise Type Badge
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppTheme.spacing.md,
+                    vertical: AppTheme.spacing.xs,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
+                  ),
+                  child: Text(
+                    exercise.type,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+
+                SizedBox(height: AppTheme.spacing.md),
+
+                Text(
+                  exercise.name,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.5,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+
+                SizedBox(height: AppTheme.spacing.sm),
+
+                Text(
+                  exercise.muscleGroups.join(", "),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+
+                SizedBox(height: AppTheme.spacing.lg),
+
+                // Actions Row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: actions,
+                ),
+
+                if (exercise.status == 'pending') ...[
+                  SizedBox(height: AppTheme.spacing.md),
+                  const PendingApprovalBadge(),
+                ],
+              ],
+            ),
+          ),
         ),
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
       ),
-      actions: actions,
-      bottomContent: exercise.status == 'pending' 
-          ? [const PendingApprovalBadge()]
-          : null,
     );
   }
 } 
