@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:numberpicker/numberpicker.dart';
 import '../models/timer_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:alphanessone/Main/app_theme.dart';
 
 final currentExerciseNameProvider = StateProvider<String>((ref) => '');
 
@@ -174,55 +175,33 @@ class ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
         : null;
 
     return Scaffold(
+      backgroundColor: colorScheme.background,
       body: SafeArea(
         child: GestureDetector(
           onTap: () => _hideKeyboard(context),
           child: SingleChildScrollView(
             child: Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: EdgeInsets.all(AppTheme.spacing.xl),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _buildSeriesIndicator(theme, colorScheme),
-                  const SizedBox(height: 24),
+                  SizedBox(height: AppTheme.spacing.lg),
                   if (currentSeries != null) ...[
-                    _buildInputFields(
-                      theme,
-                      colorScheme,
-                      currentExercise,
-                      currentSeries,
-                    ),
-                    const SizedBox(height: 24),
+                    _buildInputFields(theme, colorScheme, currentExercise, currentSeries),
+                    SizedBox(height: AppTheme.spacing.lg),
                   ],
-                  const SizedBox(height: 32),
-                  if (currentSuperSetExerciseIndex <
-                      widget.superSetExercises.length - 1)
-                    Text(
-                      'Next: ${widget.superSetExercises[currentSuperSetExerciseIndex + 1]['name']}',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        color: colorScheme.onSurface,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  const SizedBox(height: 32),
-                  _buildRestTimeSelector(
-                    theme,
-                    colorScheme,
-                    colorScheme.primary,
-                  ),
-                  const SizedBox(height: 32),
+                  SizedBox(height: AppTheme.spacing.xl),
+                  if (currentSuperSetExerciseIndex < widget.superSetExercises.length - 1)
+                    _buildNextExerciseIndicator(theme, colorScheme),
+                  SizedBox(height: AppTheme.spacing.xl),
+                  _buildRestTimeSelector(theme, colorScheme),
+                  SizedBox(height: AppTheme.spacing.xl),
                   _buildEmomSwitch(theme, colorScheme),
-                  const SizedBox(height: 40),
+                  SizedBox(height: AppTheme.spacing.xxl),
                   if (currentSeries != null)
-                    _buildNextButton(
-                      theme,
-                      colorScheme,
-                      colorScheme.primary,
-                      currentExercise,
-                      currentSeries,
-                    ),
-                  const SizedBox(height: 24),
+                    _buildNextButton(theme, colorScheme, currentExercise, currentSeries),
+                  SizedBox(height: AppTheme.spacing.lg),
                 ],
               ),
             ),
@@ -234,24 +213,69 @@ class ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
 
   Widget _buildSeriesIndicator(ThemeData theme, ColorScheme colorScheme) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(AppTheme.spacing.lg),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Text(
-        widget.superSetExercises.length > 1
-            ? 'Super Set ${currentSeriesIndex + 1}'
-            : 'Set ${currentSeriesIndex + 1} / ${widget.seriesList.length}',
-        style: theme.textTheme.headlineSmall?.copyWith(
-          color: colorScheme.onSurface,
-          fontWeight: FontWeight.bold,
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
         ),
-        textAlign: TextAlign.center,
+        boxShadow: AppTheme.elevations.small,
+      ),
+      child: Column(
+        children: [
+          Text(
+            widget.superSetExercises.length > 1
+                ? 'Super Set ${currentSeriesIndex + 1}'
+                : 'Set ${currentSeriesIndex + 1} / ${widget.seriesList.length}',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          if (widget.superSetExercises.length > 1) ...[
+            SizedBox(height: AppTheme.spacing.sm),
+            Text(
+              'Exercise ${currentSuperSetExerciseIndex + 1}/${widget.superSetExercises.length}',
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
-  
+
+  Widget _buildNextExerciseIndicator(ThemeData theme, ColorScheme colorScheme) {
+    return Container(
+      padding: EdgeInsets.all(AppTheme.spacing.md),
+      decoration: BoxDecoration(
+        color: colorScheme.primaryContainer.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(AppTheme.radii.md),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.arrow_forward,
+            color: colorScheme.primary,
+            size: 20,
+          ),
+          SizedBox(width: AppTheme.spacing.sm),
+          Text(
+            widget.superSetExercises[currentSuperSetExerciseIndex + 1]['name'],
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: colorScheme.primary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildInputFields(
     ThemeData theme,
     ColorScheme colorScheme,
@@ -259,7 +283,6 @@ class ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
     Map<String, dynamic> currentSeries,
   ) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Expanded(
           child: _buildInputField(
@@ -269,9 +292,10 @@ class ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
             TextInputType.number,
             FilteringTextInputFormatter.digitsOnly,
             colorScheme,
+            icon: Icons.repeat,
           ),
         ),
-        const SizedBox(width: 16),
+        SizedBox(width: AppTheme.spacing.md),
         Expanded(
           child: _buildInputField(
             theme,
@@ -280,6 +304,7 @@ class ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
             const TextInputType.numberWithOptions(decimal: true),
             FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*')),
             colorScheme,
+            icon: Icons.fitness_center,
           ),
         ),
       ],
@@ -293,191 +318,131 @@ class ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
     TextInputType keyboardType,
     TextInputFormatter inputFormatter,
     ColorScheme colorScheme, {
+    IconData? icon,
     bool isEnabled = true,
   }) {
-    return TextField(
-      controller: controller,
-      enabled: isEnabled,
-      keyboardType: keyboardType,
-      inputFormatters: [inputFormatter],
-      textAlign: TextAlign.center,
-      style: theme.textTheme.titleLarge?.copyWith(
-        color: colorScheme.onSurface,
-      ),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: theme.textTheme.titleMedium?.copyWith(
-          color: colorScheme.onSurface.withOpacity(0.6),
-        ),
-        filled: true,
-        fillColor: colorScheme.surface,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Colors.white, width: 1),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Colors.white, width: 1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Colors.white, width: 2),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRestTimeSelector(
-    ThemeData theme,
-    ColorScheme colorScheme,
-    Color primaryColor,
-  ) {
     return Container(
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _buildNumberPickerWithLabel(
-            theme,
-            'Minuti',
-            _minutes,
-            0,
-            59,
-            (value) => setState(() => _minutes = value),
-            colorScheme,
-          ),
-          const SizedBox(width: 16),
-          _buildNumberPickerWithLabel(
-            theme,
-            'Secondi',
-            _seconds,
-            0,
-            59,
-            (value) => setState(() => _seconds = value),
-            colorScheme,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNumberPicker(
-    ThemeData theme,
-    int value,
-    int minValue,
-    int maxValue,
-    ValueChanged<int> onChanged,
-    ColorScheme colorScheme,
-  ) {
-    return Container(
-      width: 90,
-      height: 130,
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
-          color: Colors.white,
-          width: 0.2,
+          color: colorScheme.outline.withOpacity(0.1),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        boxShadow: AppTheme.elevations.small,
       ),
-      child: NumberPicker(
-        value: value,
-        minValue: minValue,
-        maxValue: maxValue,
-        onChanged: onChanged,
-        itemHeight: 45,
-        textStyle: theme.textTheme.titleLarge?.copyWith(
+      child: TextField(
+        controller: controller,
+        enabled: isEnabled,
+        keyboardType: keyboardType,
+        inputFormatters: [inputFormatter],
+        textAlign: TextAlign.center,
+        style: theme.textTheme.headlineSmall?.copyWith(
           color: colorScheme.onSurface,
+          fontWeight: FontWeight.w600,
         ),
-        selectedTextStyle: theme.textTheme.titleLarge?.copyWith(
-          color: colorScheme.onSurface,
-          fontWeight: FontWeight.bold,
-        ),
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(
-              color: colorScheme.onSurface.withOpacity(0.2),
-            ),
-            bottom: BorderSide(
-              color: colorScheme.onSurface.withOpacity(0.2),
-            ),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: theme.textTheme.titleMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
+          prefixIcon: icon != null 
+              ? Icon(icon, color: colorScheme.onSurfaceVariant)
+              : null,
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(
+            vertical: AppTheme.spacing.lg,
+            horizontal: AppTheme.spacing.md,
           ),
         ),
       ),
     );
   }
 
-  Widget _buildNumberPickerWithLabel(
-    ThemeData theme,
-    String label,
-    int value,
-    int minValue,
-    int maxValue,
-    ValueChanged<int> onChanged,
-    ColorScheme colorScheme,
-  ) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-      Text(
-          label,
-          style: theme.textTheme.titleMedium?.copyWith(
-            color: colorScheme.onSurface.withOpacity(0.6),
+  Widget _buildRestTimeSelector(ThemeData theme, ColorScheme colorScheme) {
+    return Container(
+      padding: EdgeInsets.all(AppTheme.spacing.lg),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
+        ),
+        boxShadow: AppTheme.elevations.small,
+      ),
+      child: Column(
+        children: [
+          Text(
+            'Rest Time',
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 8),
-        _buildNumberPicker(
-          theme,
-          value,
-          minValue,
-          maxValue,
-          onChanged,
-          colorScheme,
-        ),
-      ],
+          SizedBox(height: AppTheme.spacing.md),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildNumberPickerWithLabel(
+                theme,
+                'Minutes',
+                _minutes,
+                0,
+                59,
+                (value) => setState(() => _minutes = value),
+                colorScheme,
+              ),
+              SizedBox(width: AppTheme.spacing.md),
+              _buildNumberPickerWithLabel(
+                theme,
+                'Seconds',
+                _seconds,
+                0,
+                59,
+                (value) => setState(() => _seconds = value),
+                colorScheme,
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildEmomSwitch(ThemeData theme, ColorScheme colorScheme) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          'EMOM Mode',
-          style: theme.textTheme.titleLarge?.copyWith(
-            color: colorScheme.onSurface,
-            fontWeight: FontWeight.bold,
+    return Container(
+      padding: EdgeInsets.all(AppTheme.spacing.lg),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
+        ),
+        boxShadow: AppTheme.elevations.small,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'EMOM Mode',
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-        const SizedBox(width: 20),
-        Switch(
-          value: _isEmomMode,
-          onChanged: (value) => setState(() => _isEmomMode = value),
-          activeColor: colorScheme.primary,
-          activeTrackColor: colorScheme.primary.withOpacity(0.5),
-          inactiveThumbColor: colorScheme.onSurface.withOpacity(0.5),
-          inactiveTrackColor: colorScheme.onSurface.withOpacity(0.2),
-        ),
-      ],
+          Switch(
+            value: _isEmomMode,
+            onChanged: (value) => setState(() => _isEmomMode = value),
+            activeColor: colorScheme.primary,
+            activeTrackColor: colorScheme.primaryContainer,
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildNextButton(
     ThemeData theme,
     ColorScheme colorScheme,
-    Color primaryColor,
     Map<String, dynamic> currentExercise,
     Map<String, dynamic> currentSeries,
   ) {
@@ -486,29 +451,38 @@ class ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
         await _updateSeriesData(
           currentExercise['id'],
           currentSeries['id'],
-          int.tryParse(
-              _repsControllers[currentExercise['id']]![currentSeries['id']]!
-                  .text),
+          int.tryParse(_repsControllers[currentExercise['id']]![currentSeries['id']]!.text),
           _weightControllers[currentExercise['id']]![currentSeries['id']]!.text,
         );
         _moveToNextExercise();
       },
       style: ElevatedButton.styleFrom(
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.black,
-        padding: const EdgeInsets.symmetric(vertical: 20),
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
+        padding: EdgeInsets.symmetric(
+          vertical: AppTheme.spacing.lg,
+        ),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppTheme.radii.md),
         ),
         elevation: 0,
       ),
-      child: Text(
-        'NEXT',
-        style: theme.textTheme.titleLarge?.copyWith(
-          fontWeight: FontWeight.bold,
-          fontSize: 18,
-          color: Colors.black,
-        ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'NEXT',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: colorScheme.onPrimary,
+            ),
+          ),
+          SizedBox(width: AppTheme.spacing.sm),
+          Icon(
+            Icons.arrow_forward,
+            color: colorScheme.onPrimary,
+          ),
+        ],
       ),
     );
   }
@@ -545,5 +519,83 @@ class ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
       }
     }
     super.dispose();
+  }
+
+  Widget _buildNumberPickerWithLabel(
+    ThemeData theme,
+    String label,
+    int value,
+    int minValue,
+    int maxValue,
+    ValueChanged<int> onChanged,
+    ColorScheme colorScheme,
+  ) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        SizedBox(height: AppTheme.spacing.sm),
+        _buildNumberPicker(
+          theme,
+          value,
+          minValue,
+          maxValue,
+          onChanged,
+          colorScheme,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNumberPicker(
+    ThemeData theme,
+    int value,
+    int minValue,
+    int maxValue,
+    ValueChanged<int> onChanged,
+    ColorScheme colorScheme,
+  ) {
+    return Container(
+      width: 90,
+      height: 130,
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radii.md),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
+        ),
+        boxShadow: AppTheme.elevations.small,
+      ),
+      child: NumberPicker(
+        value: value,
+        minValue: minValue,
+        maxValue: maxValue,
+        onChanged: onChanged,
+        itemHeight: 45,
+        textStyle: theme.textTheme.titleLarge?.copyWith(
+          color: colorScheme.onSurfaceVariant,
+        ),
+        selectedTextStyle: theme.textTheme.titleLarge?.copyWith(
+          color: colorScheme.onSurface,
+          fontWeight: FontWeight.w600,
+        ),
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(
+              color: colorScheme.outline.withOpacity(0.1),
+            ),
+            bottom: BorderSide(
+              color: colorScheme.outline.withOpacity(0.1),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
