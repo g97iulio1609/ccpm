@@ -159,7 +159,7 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
                   borderRadius: BorderRadius.circular(AppTheme.radii.full),
                 ),
                 child: Text(
-                  '${seriesGroup.length} series',
+                  '${seriesGroup.length} serie',
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: colorScheme.primary,
                     fontWeight: FontWeight.w600,
@@ -178,7 +178,19 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
               ),
             ],
           ),
-          trailing: _buildSeriesGroupPopupMenu(context, seriesGroup, groupIndex, theme, colorScheme),
+          trailing: IconButton(
+            icon: Icon(
+              Icons.more_vert,
+              color: colorScheme.onSurfaceVariant,
+            ),
+            onPressed: () => _showSeriesGroupOptions(
+              context,
+              seriesGroup,
+              groupIndex,
+              theme,
+              colorScheme,
+            ),
+          ),
           children: [
             for (int i = 0; i < seriesGroup.length; i++)
               _buildSeriesCard(
@@ -245,127 +257,20 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
               ],
             ),
           ),
-          _buildSeriesPopupMenu(
-            context,
-            series,
-            groupIndex,
-            seriesIndex,
-            onRemove,
-            theme,
-            colorScheme,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSeriesGroupPopupMenu(
-    BuildContext context,
-    List<Series> seriesGroup,
-    int groupIndex,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    return PopupMenuButton(
-      icon: Icon(
-        Icons.more_vert,
-        color: colorScheme.onSurfaceVariant,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-      ),
-      itemBuilder: (context) => [
-        _buildMenuItem(
-          'Edit All',
-          Icons.edit_outlined,
-          () => _showEditSeriesDialog(seriesGroup),
-          theme,
-          colorScheme,
-        ),
-        _buildMenuItem(
-          'Delete',
-          Icons.delete_outline,
-          () => _showDeleteSeriesGroupDialog(seriesGroup, groupIndex),
-          theme,
-          colorScheme,
-          isDestructive: true,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSeriesPopupMenu(
-    BuildContext context,
-    Series series,
-    int groupIndex,
-    int? seriesIndex,
-    VoidCallback? onRemove,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    return PopupMenuButton(
-      icon: Icon(
-        Icons.more_vert,
-        color: colorScheme.onSurfaceVariant,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-      ),
-      itemBuilder: (context) => [
-        _buildMenuItem(
-          'Edit',
-          Icons.edit_outlined,
-          () => _showEditSeriesDialog([series], isIndividualEdit: true),
-          theme,
-          colorScheme,
-        ),
-        _buildMenuItem(
-          'Delete',
-          Icons.delete_outline,
-          () {
-            if (onRemove != null) {
-              onRemove();
-            } else {
-              widget.controller.removeSeries(
-                widget.weekIndex,
-                widget.workoutIndex,
-                widget.exerciseIndex,
-                groupIndex,
-                seriesIndex ?? 0,
-              );
-            }
-          },
-          theme,
-          colorScheme,
-          isDestructive: true,
-        ),
-      ],
-    );
-  }
-
-  PopupMenuItem<void> _buildMenuItem(
-    String text,
-    IconData icon,
-    VoidCallback onTap,
-    ThemeData theme,
-    ColorScheme colorScheme, {
-    bool isDestructive = false,
-  }) {
-    return PopupMenuItem(
-      onTap: onTap,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 20,
-            color: isDestructive ? colorScheme.error : colorScheme.onSurface,
-          ),
-          SizedBox(width: AppTheme.spacing.sm),
-          Text(
-            text,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: isDestructive ? colorScheme.error : colorScheme.onSurface,
+          IconButton(
+            icon: Icon(
+              Icons.more_vert,
+              color: colorScheme.onSurfaceVariant,
+            ),
+            onPressed: () => _showSeriesOptions(
+              context,
+              series,
+              [series],
+              groupIndex,
+              seriesIndex,
+              onRemove,
+              theme,
+              colorScheme,
             ),
           ),
         ],
