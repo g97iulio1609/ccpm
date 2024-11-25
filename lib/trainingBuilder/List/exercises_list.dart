@@ -14,6 +14,7 @@ import 'series_list.dart';
 import '../dialog/reorder_dialog.dart';
 import '../../UI/components/card.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/trainingBuilder/models/superseries_model.dart';
 
 class TrainingProgramExerciseList extends ConsumerWidget {
   final TrainingProgramController controller;
@@ -349,6 +350,13 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     num latestMaxWeight,
     ColorScheme colorScheme,
   ) {
+    final workout = controller.program.weeks[weekIndex].workouts[workoutIndex];
+    final superSet = workout.superSets.firstWhere(
+      (ss) => ss.exerciseIds.contains(exercise.id),
+      orElse: () => SuperSet(id: '', exerciseIds: []),
+    );
+    final isInSuperSet = superSet.id.isNotEmpty;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: colorScheme.surface,
@@ -372,15 +380,95 @@ class TrainingProgramExerciseList extends ConsumerWidget {
             ),
             _buildOptionTile(
               context,
+              'Sposta Esercizio',
+              Icons.move_up,
+              () {
+                Navigator.pop(context);
+                _showMoveExerciseDialog(context, weekIndex, workoutIndex, exercise);
+              },
+            ),
+            _buildOptionTile(
+              context,
+              'Duplica Esercizio',
+              Icons.content_copy_outlined,
+              () {
+                Navigator.pop(context);
+                controller.duplicateExercise(
+                  weekIndex,
+                  workoutIndex,
+                  exercise.order - 1,
+                );
+              },
+            ),
+            if (!isInSuperSet)
+              _buildOptionTile(
+                context,
+                'Aggiungi a Super Set',
+                Icons.group_add_outlined,
+                () {
+                  Navigator.pop(context);
+                  _showAddToSuperSetDialog(context, exercise, colorScheme);
+                },
+              ),
+            if (isInSuperSet)
+              _buildOptionTile(
+                context,
+                'Rimuovi da Super Set',
+                Icons.group_remove_outlined,
+                () {
+                  Navigator.pop(context);
+                  controller.removeExerciseFromSuperSet(
+                    weekIndex,
+                    workoutIndex,
+                    superSet.id,
+                    exercise.id!,
+                  );
+                },
+              ),
+            _buildOptionTile(
+              context,
+              'Imposta Progressione',
+              Icons.trending_up,
+              () {
+                Navigator.pop(context);
+                _showSetProgressionScreen(
+                  context,
+                  exercise,
+                  latestMaxWeight,
+                  colorScheme,
+                );
+              },
+            ),
+            _buildOptionTile(
+              context,
               'Aggiorna Max RM',
               Icons.fitness_center,
               () {
                 Navigator.pop(context);
-                _addOrUpdateMaxRM(exercise, context, exerciseRecordService,
-                    athleteId, dateFormat, colorScheme);
+                _addOrUpdateMaxRM(
+                  exercise,
+                  context,
+                  exerciseRecordService,
+                  athleteId,
+                  dateFormat,
+                  colorScheme,
+                );
               },
             ),
-            // ... altri option tiles ...
+            _buildOptionTile(
+              context,
+              'Elimina',
+              Icons.delete_outline,
+              () {
+                Navigator.pop(context);
+                controller.removeExercise(
+                  weekIndex,
+                  workoutIndex,
+                  exercise.order - 1,
+                );
+              },
+              isDestructive: true,
+            ),
           ],
         ),
       ),
@@ -391,8 +479,9 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     BuildContext context,
     String title,
     IconData icon,
-    VoidCallback onTap,
-  ) {
+    VoidCallback onTap, {
+    bool isDestructive = false,
+  }) {
     final theme = Theme.of(context);
     return ListTile(
       leading: Icon(icon, color: theme.colorScheme.onSurface),
@@ -403,6 +492,9 @@ class TrainingProgramExerciseList extends ConsumerWidget {
         ),
       ),
       onTap: onTap,
+      style: ListTileStyle.list,
+      selected: isDestructive,
+      selectedColor: Theme.of(context).colorScheme.error,
     );
   }
 

@@ -8,6 +8,7 @@ import 'package:alphanessone/trainingBuilder/models/week_model.dart';
 import 'package:alphanessone/trainingBuilder/series_utils.dart';
 import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
+import 'package:alphanessone/Main/app_theme.dart';
 
 // Utility function for number formatting
 String formatNumber(dynamic value) {
@@ -333,55 +334,137 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
   }
 
   Widget _buildSeriesFields(int weekIndex, int sessionIndex, int groupIndex, Series series, ProgressionControllers controllers) {
-    return Row(
-      children: [
-        _buildRangeField(
-          controllers.reps,
-          'Reps',
-          () => _showRangeDialog(weekIndex, sessionIndex, groupIndex, 'Reps', controllers.reps),
+    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: EdgeInsets.all(AppTheme.spacing.lg),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
         ),
-        _buildTextField(
-          controller: controllers.sets,
-          labelText: 'Sets',
-          keyboardType: TextInputType.number,
-          onChanged: (value) => _updateSeries(weekIndex, sessionIndex, groupIndex, sets: value),
-        ),
-        _buildRangeField(
-          controllers.intensity,
-          '1RM%',
-          () => _showRangeDialog(weekIndex, sessionIndex, groupIndex, 'Intensity', controllers.intensity),
-        ),
-        _buildRangeField(
-          controllers.rpe,
-          'RPE',
-          () => _showRangeDialog(weekIndex, sessionIndex, groupIndex, 'RPE', controllers.rpe),
-        ),
-        _buildRangeField(
-          controllers.weight,
-          'Weight',
-          () => _showRangeDialog(weekIndex, sessionIndex, groupIndex, 'Weight', controllers.weight),
-        ),
-      ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header con badge e titolo
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppTheme.spacing.sm,
+                  vertical: AppTheme.spacing.xs,
+                ),
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(AppTheme.radii.full),
+                ),
+                child: Text(
+                  'Series ${groupIndex + 1}',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          SizedBox(height: AppTheme.spacing.md),
+
+          // Griglia di campi
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            mainAxisSpacing: AppTheme.spacing.md,
+            crossAxisSpacing: AppTheme.spacing.md,
+            childAspectRatio: 2.5,
+            children: [
+              _buildRangeField(
+                controllers.reps,
+                'Reps',
+                () => _showRangeDialog(weekIndex, sessionIndex, groupIndex, 'Reps', controllers.reps),
+                colorScheme,
+                theme,
+              ),
+              _buildTextField(
+                controller: controllers.sets,
+                labelText: 'Sets',
+                keyboardType: TextInputType.number,
+                onChanged: (value) => _updateSeries(weekIndex, sessionIndex, groupIndex, sets: value),
+                colorScheme: colorScheme,
+                theme: theme,
+              ),
+              _buildRangeField(
+                controllers.intensity,
+                '1RM%',
+                () => _showRangeDialog(weekIndex, sessionIndex, groupIndex, 'Intensity', controllers.intensity),
+                colorScheme,
+                theme,
+              ),
+              _buildRangeField(
+                controllers.rpe,
+                'RPE',
+                () => _showRangeDialog(weekIndex, sessionIndex, groupIndex, 'RPE', controllers.rpe),
+                colorScheme,
+                theme,
+              ),
+              _buildRangeField(
+                controllers.weight,
+                'Weight',
+                () => _showRangeDialog(weekIndex, sessionIndex, groupIndex, 'Weight', controllers.weight),
+                colorScheme,
+                theme,
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildRangeField(RangeControllers controllers, String label, VoidCallback onTap) {
-    return Expanded(
-      child: GestureDetector(
+  Widget _buildRangeField(
+    RangeControllers controllers,
+    String label,
+    VoidCallback onTap,
+    ColorScheme colorScheme,
+    ThemeData theme,
+  ) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         onTap: onTap,
-        child: InputDecorator(
-          decoration: InputDecoration(
-            labelText: label,
-            labelStyle: const TextStyle(color: Colors.white70),
-            alignLabelWithHint: true,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppTheme.radii.md),
+        child: Container(
+          padding: EdgeInsets.all(AppTheme.spacing.sm),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(AppTheme.radii.md),
+            border: Border.all(
+              color: colorScheme.outline.withOpacity(0.1),
             ),
           ),
-          child: Text(
-            controllers.displayText,
-textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              SizedBox(height: AppTheme.spacing.xs),
+              Text(
+                controllers.displayText,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -393,89 +476,93 @@ textAlign: TextAlign.center,
     required String labelText,
     required TextInputType keyboardType,
     required Function(String) onChanged,
+    required ColorScheme colorScheme,
+    required ThemeData theme,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: TextFormField(
-          controller: controller,
-          keyboardType: keyboardType,
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: Colors.white),
-          decoration: InputDecoration(
-            labelText: labelText,
-            labelStyle: const TextStyle(color: Colors.white70),
-            alignLabelWithHint: true,
-            filled: true,
-            fillColor: colorScheme.surface,
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: colorScheme.onSurface.withOpacity(0.12),
-                width: 1,
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: colorScheme.primary,
-                width: 2,
-              ),
+    return Container(
+      padding: EdgeInsets.all(AppTheme.spacing.sm),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radii.md),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            labelText,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
             ),
           ),
-          onChanged: (value) {
-            final formattedValue = formatNumber(value);
-            if (formattedValue != value) {
-              controller.text = formattedValue;
-              controller.selection = TextSelection.fromPosition(
-                TextPosition(offset: formattedValue.length),
-              );
-            }
-            onChanged(formattedValue);
-          },
-        ),
+          SizedBox(height: AppTheme.spacing.xs),
+          TextFormField(
+            controller: controller,
+            keyboardType: keyboardType,
+            textAlign: TextAlign.start,
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w500,
+            ),
+            decoration: InputDecoration(
+              isDense: true,
+              contentPadding: EdgeInsets.zero,
+              border: InputBorder.none,
+            ),
+            onChanged: onChanged,
+          ),
+        ],
       ),
     );
   }
 
   void _showRangeDialog(int weekIndex, int sessionIndex, int groupIndex, String title, RangeControllers controllers) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
-      ),
       builder: (BuildContext dialogContext) {
-        return RangeEditDialog(
-          title: title,
-          initialMin: controllers.min.text,
-          initialMax: controllers.max.text,
-          onSave: (min, max) {
-            setState(() {
-              controllers.updateFromDialog(min ?? '', max ?? '');
-            });
-            Navigator.of(dialogContext).pop();
-            _updateSeriesWithRealTimeCalculations(
-              weekIndex,
-              sessionIndex,
-              groupIndex,
-              title,
-              min ?? '',
-              max ?? '',
-            );
-          },
-          onChanged: (min, max) {
-            _updateSeriesWithRealTimeCalculations(
-              weekIndex,
-              sessionIndex,
-              groupIndex,
-              title,
-              min ?? '',
-              max ?? '',
-            );
-          },
+        return Container(
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(AppTheme.radii.xl),
+            ),
+          ),
+          padding: EdgeInsets.all(AppTheme.spacing.xl),
+          child: RangeEditDialog(
+            title: title,
+            initialMin: controllers.min.text,
+            initialMax: controllers.max.text,
+            onSave: (min, max) {
+              setState(() {
+                controllers.updateFromDialog(min ?? '', max ?? '');
+              });
+              Navigator.of(dialogContext).pop();
+              _updateSeriesWithRealTimeCalculations(
+                weekIndex,
+                sessionIndex,
+                groupIndex,
+                title,
+                min ?? '',
+                max ?? '',
+              );
+            },
+            onChanged: (min, max) {
+              _updateSeriesWithRealTimeCalculations(
+                weekIndex,
+                sessionIndex,
+                groupIndex,
+                title,
+                min ?? '',
+                max ?? '',
+              );
+            },
+          ),
         );
       },
     );
