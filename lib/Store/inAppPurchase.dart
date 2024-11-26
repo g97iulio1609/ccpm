@@ -43,19 +43,23 @@ class InAppPurchaseState {
 }
 
 // Provider per il servizio degli acquisti in-app
-final inAppPurchaseServiceProvider = Provider<InAppPurchaseService>((ref) => InAppPurchaseService());
+final inAppPurchaseServiceProvider =
+    Provider<InAppPurchaseService>((ref) => InAppPurchaseService());
 
 // Provider per lo stato degli acquisti
-final inAppPurchaseProvider = StateProvider<InAppPurchaseState>((ref) => const InAppPurchaseState());
+final inAppPurchaseProvider =
+    StateProvider<InAppPurchaseState>((ref) => const InAppPurchaseState());
 
 class InAppPurchaseScreen extends ConsumerStatefulWidget {
   const InAppPurchaseScreen({super.key});
 
   @override
-  ConsumerState<InAppPurchaseScreen> createState() => _InAppPurchaseScreenState();
+  ConsumerState<InAppPurchaseScreen> createState() =>
+      _InAppPurchaseScreenState();
 }
 
-class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen> with SingleTickerProviderStateMixin {
+class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -64,11 +68,16 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen> with 
   List<Product> _products = [];
   String? _error;
 
+  // Cache per i prodotti
+  static List<Product>? _cachedProducts;
+  static DateTime? _lastFetchTime;
+  static const Duration _cacheDuration = Duration(minutes: 5);
+
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 500), // Ridotto da 800ms a 500ms
       vsync: this,
     );
 
@@ -86,20 +95,45 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen> with 
     ));
 
     _inAppPurchaseService = ref.read(inAppPurchaseServiceProvider);
-    _loadProducts();
-    _controller.forward();
+
+    // Caricamento ottimizzato con cache
+    _loadProductsOptimized();
   }
 
-  Future<void> _loadProducts() async {
+  Future<void> _loadProductsOptimized() async {
     try {
+      // Verifica se abbiamo una cache valida
+      if (_cachedProducts != null && _lastFetchTime != null) {
+        final now = DateTime.now();
+        if (now.difference(_lastFetchTime!) < _cacheDuration) {
+          if (mounted) {
+            setState(() {
+              _products = _cachedProducts!;
+              _isLoading = false;
+              _error = null;
+            });
+            _controller.forward();
+            return;
+          }
+        }
+      }
+
       setState(() => _isLoading = true);
+
+      // Caricamento asincrono dei prodotti
       final products = await _inAppPurchaseService.getProducts();
+
+      // Aggiorna la cache
+      _cachedProducts = products;
+      _lastFetchTime = DateTime.now();
+
       if (mounted) {
         setState(() {
           _products = products;
           _isLoading = false;
           _error = null;
         });
+        _controller.forward();
       }
     } catch (e) {
       if (mounted) {
@@ -160,7 +194,7 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen> with 
               ),
               SizedBox(height: AppTheme.spacing.lg),
               ElevatedButton.icon(
-                onPressed: _loadProducts,
+                onPressed: _loadProductsOptimized,
                 icon: const Icon(Icons.refresh),
                 label: const Text('Riprova'),
                 style: ElevatedButton.styleFrom(
@@ -259,7 +293,8 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen> with 
     );
   }
 
-  Widget _buildFeatureItem(ThemeData theme, {
+  Widget _buildFeatureItem(
+    ThemeData theme, {
     required IconData icon,
     required String title,
     required String description,
@@ -313,14 +348,14 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen> with 
         Text(
           'Piani Disponibili',
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+                fontWeight: FontWeight.bold,
+              ),
         ),
         SizedBox(height: AppTheme.spacing.lg),
         ..._products.map((product) => Padding(
-          padding: EdgeInsets.only(bottom: AppTheme.spacing.md),
-          child: _buildProductCard(context, product),
-        )),
+              padding: EdgeInsets.only(bottom: AppTheme.spacing.md),
+              child: _buildProductCard(context, product),
+            )),
       ],
     );
   }
@@ -334,19 +369,20 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen> with 
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
-          color: isPopular ? theme.colorScheme.primary : theme.colorScheme.outline,
+          color:
+              isPopular ? theme.colorScheme.primary : theme.colorScheme.outline,
           width: isPopular ? 2 : 1,
         ),
         gradient: isPopular
-          ? LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                colorScheme.surface,
-                colorScheme.surface.withOpacity(0.95),
-              ],
-            )
-          : null,
+            ? LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  colorScheme.surface,
+                  colorScheme.surface.withOpacity(0.95),
+                ],
+              )
+            : null,
       ),
       child: Material(
         color: Colors.transparent,
@@ -407,8 +443,10 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen> with 
                       icon: const Icon(Icons.shopping_cart_outlined),
                       label: const Text('Acquista'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isPopular ? theme.colorScheme.primary : null,
-                        foregroundColor: isPopular ? theme.colorScheme.onPrimary : null,
+                        backgroundColor:
+                            isPopular ? theme.colorScheme.primary : null,
+                        foregroundColor:
+                            isPopular ? theme.colorScheme.onPrimary : null,
                       ),
                     ),
                   ],
@@ -424,52 +462,120 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen> with 
   Future<void> _handlePurchase(BuildContext context, Product product) async {
     try {
       final functions = ref.read(firebaseFunctionsProvider);
-      final result = await functions.httpsCallable('createPaymentIntent').call({
-        'productId': product.id,
-      });
 
-      if (!mounted) return;
-
-      final clientSecret = result.data['clientSecret'];
-      final amount = result.data['amount'] / 100;
-      final currency = result.data['currency'];
-
-      await showModalBottomSheet(
+      // Mostra loading indicator usando un Builder per avere il contesto corretto
+      BuildContext? dialogContext;
+      showDialog(
         context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (context) => StripeCheckoutWidget(
-          clientSecret: clientSecret,
-          amount: amount,
-          currency: currency,
-          onPaymentSuccess: (String paymentId) async {
-            Navigator.of(context).pop();
-            final functions = ref.read(firebaseFunctionsProvider);
-            await functions.httpsCallable('handleSuccessfulPayment').call({
-              'paymentId': paymentId,
-              'productId': product.id,
-            });
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Abbonamento attivato con successo!'),
-                  backgroundColor: AppTheme.success,
-                ),
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          dialogContext = context;
+          return WillPopScope(
+            onWillPop: () async => false,
+            child: const Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        },
+      );
+
+      try {
+        // Chiamata asincrona per creare l'intent di pagamento
+        final result =
+            await functions.httpsCallable('createPaymentIntent').call({
+          'productId': product.id,
+        });
+
+        if (!mounted) return;
+
+        // Chiudi il loading indicator in modo sicuro
+        if (dialogContext != null) {
+          Navigator.of(dialogContext!).pop();
+        }
+
+        final clientSecret = result.data['clientSecret'];
+        final amount = result.data['amount'] / 100;
+        final currency = result.data['currency'];
+
+        // Mostra il widget di checkout
+        if (!mounted) return;
+
+        await showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          isDismissible: false,
+          enableDrag: false,
+          builder: (context) => StripeCheckoutWidget(
+            clientSecret: clientSecret,
+            amount: amount,
+            currency: currency,
+            onPaymentSuccess: (String paymentId) async {
+              // Chiudi il bottom sheet
+              Navigator.of(context).pop();
+
+              // Mostra nuovo loading indicator
+              BuildContext? confirmContext;
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (BuildContext context) {
+                  confirmContext = context;
+                  return WillPopScope(
+                    onWillPop: () async => false,
+                    child: const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                },
               );
-            }
-          },
-          onPaymentError: (String error) {
-            if (mounted) {
+
+              try {
+                final functions = ref.read(firebaseFunctionsProvider);
+                await functions.httpsCallable('handleSuccessfulPayment').call({
+                  'paymentId': paymentId,
+                  'productId': product.id,
+                });
+
+                if (mounted && confirmContext != null) {
+                  Navigator.of(confirmContext!).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Abbonamento attivato con successo!'),
+                      backgroundColor: AppTheme.success,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted && confirmContext != null) {
+                  Navigator.of(confirmContext!).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Errore durante l\'attivazione: $e'),
+                      backgroundColor: AppTheme.error,
+                    ),
+                  );
+                }
+              }
+            },
+            onPaymentError: (String error) {
+              Navigator.of(context).pop();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(error),
                   backgroundColor: AppTheme.error,
                 ),
               );
-            }
-          },
-        ),
-      );
+            },
+          ),
+        );
+      } catch (e) {
+        // Chiudi il loading indicator in caso di errore
+        if (dialogContext != null && mounted) {
+          Navigator.of(dialogContext!).pop();
+        }
+        throw e;
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
