@@ -12,6 +12,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'dart:async';
+import 'package:alphanessone/Main/app_theme.dart';
 
 class SubscriptionsScreen extends ConsumerStatefulWidget {
   final String? userId; // Optional userId parameter
@@ -441,7 +442,7 @@ Future<void> _showGiftSubscriptionDialog(String userId, String userName) async {
                     ),
                   ),
                 ),
-              ).toList(),
+              ),
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
@@ -457,7 +458,7 @@ Future<void> _showGiftSubscriptionDialog(String userId, String userName) async {
 
 @override
 Widget build(BuildContext context) {
-  final ColorScheme colorScheme = Theme.of(context).colorScheme;
+  final colorScheme = Theme.of(context).colorScheme;
 
   final isAdmin = ref.watch(isAdminProvider);
   final allUsers = ref.watch(userListProvider);
@@ -482,56 +483,118 @@ Widget build(BuildContext context) {
   }
 
   return Scaffold(
-    body: Column(
-      children: [
-        // User search field for admin only if userId is not provided
-        if (isAdmin && widget.userId == null)
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: UserTypeAheadField(
-              controller: _userSearchController,
-              focusNode: _userSearchFocusNode,
-              onSelected: (UserModel user) {
-                _userSearchController.text = user.name;
-                ref.read(selectedUserIdProvider.notifier).state = user.id;
-                _fetchSubscriptionDetails(userId: user.id);
-                FocusScope.of(context).unfocus();
-                //debugPrint('Selected user for subscription viewing: ${user.id}');
-              },
-              onChanged: (pattern) {
-                final filtered = allUsers.where((user) =>
-                    user.name.toLowerCase().contains(pattern.toLowerCase()) ||
-                    user.email.toLowerCase().contains(pattern.toLowerCase())).toList();
-                ref.read(filteredUserListProvider.notifier).state = filtered;
-                //debugPrint('Filtered users based on search pattern: $pattern');
-              },
-            ),
-          ),
-        Expanded(
-          child: isLoading
-              ? Center(child: CircularProgressIndicator())
-              : isAdmin && (widget.userId != null || selectedUserId != null)
-                  ? _buildAdminView(
-                      userId: widget.userId ?? selectedUserId!,
-                      subscriptionDetails: targetSubscriptionDetails,
-                    )
-                  : _buildUserView(
-                      subscriptionDetails: targetSubscriptionDetails,
-                    ),
+    backgroundColor: colorScheme.surface,
+    body: Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colorScheme.surface,
+            colorScheme.surfaceContainerHighest.withOpacity(0.5),
+          ],
+          stops: const [0.0, 1.0],
         ),
-      ],
+      ),
+      child: SafeArea(
+        child: Column(
+          children: [
+            // Search Bar per Admin
+            if (isAdmin && widget.userId == null)
+              Padding(
+                padding: EdgeInsets.all(AppTheme.spacing.xl),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                    border: Border.all(
+                      color: colorScheme.outline.withOpacity(0.1),
+                    ),
+                    boxShadow: AppTheme.elevations.small,
+                  ),
+                  padding: EdgeInsets.all(AppTheme.spacing.md),
+                  child: UserTypeAheadField(
+                    controller: _userSearchController,
+                    focusNode: _userSearchFocusNode,
+                    onSelected: (UserModel user) {
+                      _userSearchController.text = user.name;
+                      ref.read(selectedUserIdProvider.notifier).state = user.id;
+                      _fetchSubscriptionDetails(userId: user.id);
+                      FocusScope.of(context).unfocus();
+                      //debugPrint('Selected user for subscription viewing: ${user.id}');
+                    },
+                    onChanged: (pattern) {
+                      final filtered = allUsers.where((user) =>
+                          user.name.toLowerCase().contains(pattern.toLowerCase()) ||
+                          user.email.toLowerCase().contains(pattern.toLowerCase())).toList();
+                      ref.read(filteredUserListProvider.notifier).state = filtered;
+                      //debugPrint('Filtered users based on search pattern: $pattern');
+                    },
+                  ),
+                ),
+              ),
+
+            // Contenuto principale
+            Expanded(
+              child: isLoading
+                  ? Center(
+                      child: CircularProgressIndicator(
+                        color: colorScheme.primary,
+                      ),
+                    )
+                  : isAdmin && (widget.userId != null || selectedUserId != null)
+                      ? _buildAdminView(
+                          userId: widget.userId ?? selectedUserId!,
+                          subscriptionDetails: targetSubscriptionDetails,
+                        )
+                      : _buildUserView(
+                          subscriptionDetails: targetSubscriptionDetails,
+                        ),
+            ),
+          ],
+        ),
+      ),
     ),
     floatingActionButton: isAdmin && widget.userId == null
-        ? FloatingActionButton.extended(
-            onPressed: isSyncing ? null : _syncStripeSubscription,
-            label: isSyncing ? Text('Sincronizzazione...') : Text('Sincronizza Tutti'),
-            icon: isSyncing
-                ? SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(color: colorScheme.onSecondary, strokeWidth: 2),
-                  )
-                : Icon(Icons.sync),
+        ? Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  colorScheme.primary,
+                  colorScheme.primary.withOpacity(0.8),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(AppTheme.radii.full),
+              boxShadow: [
+                BoxShadow(
+                  color: colorScheme.primary.withOpacity(0.2),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: FloatingActionButton.extended(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              onPressed: isSyncing ? null : _syncStripeSubscription,
+              label: Text(
+                isSyncing ? 'Sincronizzazione...' : 'Sincronizza Tutti',
+                style: TextStyle(
+                  color: colorScheme.onPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              icon: isSyncing
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: colorScheme.onPrimary,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : Icon(Icons.sync, color: colorScheme.onPrimary),
+            ),
           )
         : null,
   );
@@ -543,94 +606,142 @@ Widget _buildAdminView({
   required String userId,
   required SubscriptionDetails? subscriptionDetails,
 }) {
-  //debugPrint('Building admin view: userId=$userId');
+  return Builder(builder: (context) {
+    //debugPrint('Building admin view: userId=$userId');
 
-  final usersService = ref.read(usersServiceProvider);
-  final Future<UserModel?> userFuture = usersService.getUserById(userId);
+    final usersService = ref.read(usersServiceProvider);
+    final Future<UserModel?> userFuture = usersService.getUserById(userId);
 
-  return FutureBuilder<UserModel?>(
-    future: userFuture,
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return Center(child: CircularProgressIndicator());
-      }
-      if (!snapshot.hasData || snapshot.data == null) {
-        return Center(
-          child: Text('Utente non trovato.', style: Theme.of(context).textTheme.titleLarge),
-        );
-      }
+    return FutureBuilder<UserModel?>(
+      future: userFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+        if (!snapshot.hasData || snapshot.data == null) {
+          return Center(
+            child: Text('Utente non trovato.', style: Theme.of(context).textTheme.titleLarge),
+          );
+        }
 
-      final user = snapshot.data!;
-      final bool isGiftSubscription = subscriptionDetails?.platform == 'gift';
+        final user = snapshot.data!;
+        final bool isGiftSubscription = subscriptionDetails?.platform == 'gift';
 
-      return SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Aggiungiamo prima i pulsanti di azione
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    icon: Icon(Icons.card_giftcard),
-                    label: Text('Regala Abbonamento'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                      padding: EdgeInsets.symmetric(vertical: 12),
+        return SingleChildScrollView(
+          padding: EdgeInsets.all(AppTheme.spacing.xl),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Action Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildActionButton(
+                      icon: Icons.card_giftcard,
+                      label: 'Regala Abbonamento',
+                      onTap: () => _showGiftSubscriptionDialog(userId, user.name),
+                      isPrimary: true,
                     ),
-                    onPressed: () => _showGiftSubscriptionDialog(userId, user.name),
+                  ),
+                  SizedBox(width: AppTheme.spacing.md),
+                  Expanded(
+                    child: _buildActionButton(
+                      icon: Icons.sync,
+                      label: 'Sincronizza',
+                      onTap: ref.watch(syncingProvider) ? null : _syncStripeSubscription,
+                      isPrimary: false,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: AppTheme.spacing.xl),
+
+              // Subscription Details
+              if (subscriptionDetails != null) ...[
+                SubscriptionCard(
+                  title: '${user.name}\'s Abbonamento',
+                  status: subscriptionDetails.status.capitalize(),
+                  expiry: DateFormat.yMMMd().add_jm().format(subscriptionDetails.currentPeriodEnd),
+                  isGift: isGiftSubscription,
+                  giftInfo: isGiftSubscription ? 'Abbonamento regalo' : null,
+                ),
+                SizedBox(height: AppTheme.spacing.xl),
+                Text(
+                  'Dettagli Abbonamento',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                Divider(),
+                ...subscriptionDetails.items.map((item) {
+                  return SubscriptionItemTile(item: item);
+                }),
+              ] else ...[
+                Center(
+                  child: Text(
+                    'L\'utente non ha un abbonamento attivo',
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
-                SizedBox(width: 8),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    icon: Icon(Icons.sync),
-                    label: Text('Sincronizza'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.secondary,
-                      foregroundColor: Theme.of(context).colorScheme.onSecondary,
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    onPressed: ref.watch(syncingProvider) ? null : _syncStripeSubscription,
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  });
+}
+
+Widget _buildActionButton({
+  required IconData icon,
+  required String label,
+  required VoidCallback? onTap,
+  required bool isPrimary,
+}) {
+  return Builder(builder: (context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isPrimary
+              ? [colorScheme.primary, colorScheme.primary.withOpacity(0.8)]
+              : [colorScheme.secondary, colorScheme.secondary.withOpacity(0.8)],
+        ),
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        boxShadow: AppTheme.elevations.small,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              vertical: AppTheme.spacing.lg,
+              horizontal: AppTheme.spacing.md,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  color: colorScheme.onPrimary,
+                  size: 20,
+                ),
+                SizedBox(width: AppTheme.spacing.sm),
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: colorScheme.onPrimary,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
             ),
-            SizedBox(height: 16),
-            // Dettagli dell'abbonamento esistente (se presente)
-            if (subscriptionDetails != null) ...[
-              SubscriptionCard(
-                title: '${user.name}\'s Abbonamento',
-                status: subscriptionDetails.status.capitalize(),
-                expiry: DateFormat.yMMMd().add_jm().format(subscriptionDetails.currentPeriodEnd),
-                isGift: isGiftSubscription,
-                giftInfo: isGiftSubscription ? 'Abbonamento regalo' : null,
-              ),
-              SizedBox(height: 16),
-              Text(
-                'Dettagli Abbonamento',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              Divider(),
-              ...subscriptionDetails.items.map((item) {
-                return SubscriptionItemTile(item: item);
-              }),
-            ] else ...[
-              Center(
-                child: Text(
-                  'L\'utente non ha un abbonamento attivo',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ),
-            ],
-          ],
+          ),
         ),
-      );
-    },
-  );
+      ),
+    );
+  });
 }
 
   // Builds the user view (own subscription)
@@ -738,48 +849,123 @@ class SubscriptionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    //debugPrint('Building SubscriptionCard: $title, status: $status, expiry: $expiry');
-    return Card(
-      elevation: 4,
-      margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
+        ),
+        boxShadow: AppTheme.elevations.small,
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(AppTheme.spacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                if (isGift) ...[
-                  const Icon(Icons.card_giftcard, color: Colors.purple),
-                  const SizedBox(width: 8),
-                ],
+                if (isGift)
+                  Container(
+                    padding: EdgeInsets.all(AppTheme.spacing.sm),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(AppTheme.radii.full),
+                    ),
+                    child: Icon(
+                      Icons.card_giftcard,
+                      color: colorScheme.primary,
+                      size: 20,
+                    ),
+                  ),
+                if (isGift) SizedBox(width: AppTheme.spacing.sm),
                 Expanded(
-                  child: Text(title, style: Theme.of(context).textTheme.titleLarge),
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            Text('Stato: $status', style: Theme.of(context).textTheme.bodyLarge),
-            const SizedBox(height: 4),
-            Text('Scadenza: $expiry', style: Theme.of(context).textTheme.bodyLarge),
+            SizedBox(height: AppTheme.spacing.md),
+            _buildInfoRow(
+              context,
+              'Stato',
+              status,
+              Icons.info_outline,
+            ),
+            SizedBox(height: AppTheme.spacing.sm),
+            _buildInfoRow(
+              context,
+              'Scadenza',
+              expiry,
+              Icons.event_outlined,
+            ),
             if (giftInfo != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                giftInfo!,
-                style: const TextStyle(
-                  color: Colors.purple,
-                  fontStyle: FontStyle.italic,
+              SizedBox(height: AppTheme.spacing.md),
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppTheme.spacing.md,
+                  vertical: AppTheme.spacing.sm,
+                ),
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(AppTheme.radii.sm),
+                ),
+                child: Text(
+                  giftInfo!,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],
             if (actionButton != null && !isGift) ...[
-              const SizedBox(height: 16),
+              SizedBox(height: AppTheme.spacing.lg),
               actionButton!,
             ],
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildInfoRow(
+    BuildContext context,
+    String label,
+    String value,
+    IconData icon,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 18,
+          color: colorScheme.onSurfaceVariant,
+        ),
+        SizedBox(width: AppTheme.spacing.sm),
+        Text(
+          '$label: ',
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 }

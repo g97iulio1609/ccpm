@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/training_program_provider.dart';
 import '../../Store/inAppPurchase_services.dart';
 import '../../utils/subscription_checker.dart';
-import '../../UI/components/card.dart';
+import 'package:alphanessone/Main/app_theme.dart';
 
 class TrainingViewer extends ConsumerStatefulWidget {
   final String programId;
@@ -51,181 +51,219 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
     final loading = ref.watch(trainingLoadingProvider);
     final weeks = ref.watch(trainingWeeksProvider);
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      body: SafeArea(
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                theme.colorScheme.surface,
-                theme.colorScheme.surface.withOpacity(0.92),
+      backgroundColor: colorScheme.surface,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              colorScheme.surface,
+              colorScheme.surfaceContainerHighest.withOpacity(0.5),
+            ],
+            stops: const [0.0, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: loading
+              ? Center(
+                  child: CircularProgressIndicator(
+                    color: colorScheme.primary,
+                  ),
+                )
+              : CustomScrollView(
+                  slivers: [
+                    // Header Section
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.all(AppTheme.spacing.xl),
+                        child: _buildHeader(theme, colorScheme),
+                      ),
+                    ),
+                    // Weeks Grid/List
+                    SliverPadding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppTheme.spacing.xl,
+                        vertical: AppTheme.spacing.md,
+                      ),
+                      sliver: _buildWeeksList(weeks, theme, colorScheme),
+                    ),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(ThemeData theme, ColorScheme colorScheme) {
+    return Container(
+      padding: EdgeInsets.all(AppTheme.spacing.lg),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radii.xl),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
+        ),
+        boxShadow: AppTheme.elevations.small,
+      ),
+      child: Column(
+        children: [
+          Text(
+            'Training Program',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+              letterSpacing: -0.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: AppTheme.spacing.sm),
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppTheme.spacing.md,
+              vertical: AppTheme.spacing.xs,
+            ),
+            decoration: BoxDecoration(
+              color: colorScheme.primaryContainer.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(AppTheme.radii.sm),
+            ),
+            child: Text(
+              'Your Journey to Excellence',
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: colorScheme.primary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeekCard(Map<String, dynamic> week, ThemeData theme, ColorScheme colorScheme) {
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
+        ),
+        boxShadow: AppTheme.elevations.small,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => context.go(
+            '/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${week['id']}',
+          ),
+          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          child: Padding(
+            padding: EdgeInsets.all(AppTheme.spacing.lg),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Week Number Badge
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppTheme.spacing.md,
+                    vertical: AppTheme.spacing.xs,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
+                  ),
+                  child: Text(
+                    'Week ${week['number']}',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                
+                if (week['description'] != null &&
+                    week['description'].toString().isNotEmpty) ...[
+                  SizedBox(height: AppTheme.spacing.md),
+                  Text(
+                    week['description'],
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+                
+                SizedBox(height: AppTheme.spacing.lg),
+                
+                // Start Button
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        colorScheme.primary,
+                        colorScheme.primary.withOpacity(0.8),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
+                    boxShadow: [
+                      BoxShadow(
+                        color: colorScheme.primary.withOpacity(0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppTheme.spacing.md,
+                      vertical: AppTheme.spacing.sm,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.fitness_center,
+                          color: colorScheme.onPrimary,
+                          size: 18,
+                        ),
+                        SizedBox(width: AppTheme.spacing.xs),
+                        Text(
+                          'START',
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: colorScheme.onPrimary,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
-          child: loading
-              ? const Center(child: CircularProgressIndicator())
-              : LayoutBuilder(
-                  builder: (context, constraints) {
-                    final crossAxisCount = () {
-                      if (constraints.maxWidth > 1200) return 4; // Desktop large
-                      if (constraints.maxWidth > 900) return 3;  // Desktop
-                      if (constraints.maxWidth > 600) return 2;  // Tablet
-                      return 1; // Mobile
-                    }();
-
-                    final horizontalPadding = crossAxisCount == 1 ? 16.0 : 24.0;
-                    final spacing = 20.0;
-
-                    if (crossAxisCount == 1) {
-                      // Utilizza SliverList per una colonna con altezza adattiva
-                      return CustomScrollView(
-                        slivers: [
-                          SliverPadding(
-                            padding: EdgeInsets.fromLTRB(
-                              horizontalPadding,
-                              horizontalPadding,
-                              horizontalPadding,
-                              horizontalPadding + MediaQuery.of(context).padding.bottom,
-                            ),
-                            sliver: SliverList(
-                              delegate: SliverChildBuilderDelegate(
-                                (context, index) {
-                                  var week = weeks[index];
-                                  return Padding(
-                                    padding: const EdgeInsets.only(bottom: 20.0),
-                                    child: ActionCard(
-                                      onTap: () => context.go(
-                                        '/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${week['id']}',
-                                      ),
-                                      contentPadding: const EdgeInsets.symmetric(
-                                        horizontal: 20,
-                                        vertical: 16,
-                                      ),
-                                      title: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                                        children: [
-                                          Text(
-                                            'Week ${week['number']}',
-                                            style: theme.textTheme.titleLarge?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                              letterSpacing: -0.5,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                          if (week['description'] != null &&
-                                              week['description'].toString().isNotEmpty) ...[
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              week['description'],
-                                              style: theme.textTheme.bodyMedium?.copyWith(
-                                                color: theme.colorScheme.secondary,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                      actions: [
-                                        IconButtonWithBackground(
-                                          icon: Icons.chevron_right,
-                                          color: theme.colorScheme.primary,
-                                          onPressed: () => context.go(
-                                            '/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${week['id']}',
-                                          ),
-                                        ),
-                                      ],
-                                      bottomContent: const [],
-                                    ),
-                                  );
-                                },
-                                childCount: weeks.length,
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    } else {
-                      // Utilizza SliverGrid per più colonne con childAspectRatio adeguato
-                      return CustomScrollView(
-                        slivers: [
-                          SliverPadding(
-                            padding: EdgeInsets.fromLTRB(
-                              horizontalPadding,
-                              horizontalPadding,
-                              horizontalPadding,
-                              horizontalPadding + MediaQuery.of(context).padding.bottom,
-                            ),
-                            sliver: SliverGrid(
-                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: crossAxisCount,
-                                mainAxisSpacing: spacing,
-                                crossAxisSpacing: spacing,
-                                childAspectRatio: 1.8, // Rapporto fisso per griglie
-                              ),
-                              delegate: SliverChildBuilderDelegate(
-                                (context, index) {
-                                  var week = weeks[index];
-                                  return ActionCard(
-                                    onTap: () => context.go(
-                                      '/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${week['id']}',
-                                    ),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 20,
-                                      vertical: 16,
-                                    ),
-                                    title: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                                      children: [
-                                        Text(
-                                          'Week ${week['number']}',
-                                          style: theme.textTheme.titleLarge?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                            letterSpacing: -0.5,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                        if (week['description'] != null &&
-                                            week['description'].toString().isNotEmpty) ...[
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            week['description'],
-                                            style: theme.textTheme.bodyMedium?.copyWith(
-                                              color: theme.colorScheme.secondary,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                            maxLines: 3,
-                                            overflow: TextOverflow.ellipsis,
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-                                    actions: [
-                                      IconButtonWithBackground(
-                                        icon: Icons.chevron_right,
-                                        color: theme.colorScheme.primary,
-                                        onPressed: () => context.go(
-                                          '/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${week['id']}',
-                                        ),
-                                      ),
-                                    ],
-                                    bottomContent: const [],
-                                  );
-                                },
-                                childCount: weeks.length,
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    }
-                  },
-                ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildWeeksList(List<Map<String, dynamic>> weeks, ThemeData theme, ColorScheme colorScheme) {
+    return SliverGrid(
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 400,
+        mainAxisSpacing: 20,
+        crossAxisSpacing: 20,
+        childAspectRatio: 1,
+      ),
+      delegate: SliverChildBuilderDelegate(
+        (context, index) => _buildWeekCard(weeks[index], theme, colorScheme),
+        childCount: weeks.length,
       ),
     );
   }

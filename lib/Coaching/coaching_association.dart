@@ -1,9 +1,10 @@
 import 'package:alphanessone/Coaching/coaching_service.dart';
-import 'package:alphanessone/services/users_services.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/models/user_model.dart';
+import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/UI/components/bottom_menu.dart';
 
 /// Provider per ottenere lo stream delle associazioni in base al ruolo dell'utente
 final associationsStreamProvider = StreamProvider.autoDispose<List<Association>>((ref) {
@@ -54,17 +55,20 @@ class CoachAthleteAssociationScreenState extends ConsumerState<CoachAthleteAssoc
     usersService.getCurrentUserId();
     final associationsAsyncValue = ref.watch(associationsStreamProvider);
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Scaffold(
+      backgroundColor: colorScheme.surface,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              theme.colorScheme.surface,
-              theme.colorScheme.surface.withOpacity(0.92),
+              colorScheme.surface,
+              colorScheme.surfaceContainerHighest.withOpacity(0.5),
             ],
+            stops: const [0.0, 1.0],
           ),
         ),
         child: SafeArea(
@@ -72,20 +76,14 @@ class CoachAthleteAssociationScreenState extends ConsumerState<CoachAthleteAssoc
             children: [
               Container(
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surface,
-                  boxShadow: [
-                    BoxShadow(
-                      color: theme.colorScheme.shadow.withOpacity(0.1),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  color: colorScheme.surface,
+                  boxShadow: AppTheme.elevations.small,
                 ),
                 child: TabBar(
                   controller: _tabController,
-                  labelColor: theme.colorScheme.primary,
-                  unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-                  indicatorColor: theme.colorScheme.primary,
+                  labelColor: colorScheme.primary,
+                  unselectedLabelColor: colorScheme.onSurfaceVariant,
+                  indicatorColor: colorScheme.primary,
                   indicatorSize: TabBarIndicatorSize.label,
                   labelStyle: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
@@ -115,15 +113,38 @@ class CoachAthleteAssociationScreenState extends ConsumerState<CoachAthleteAssoc
         ),
       ),
       floatingActionButton: userRole == 'client'
-          ? FloatingActionButton(
-              onPressed: _showCoachSearchDialog,
-              backgroundColor: theme.colorScheme.primary,
-              foregroundColor: theme.colorScheme.onPrimary,
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+          ? Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    colorScheme.primary,
+                    colorScheme.primary.withOpacity(0.8),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                boxShadow: [
+                  BoxShadow(
+                    color: colorScheme.primary.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              child: const Icon(Icons.add),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _showCoachSearchDialog,
+                  borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                  child: Padding(
+                    padding: EdgeInsets.all(AppTheme.spacing.md),
+                    child: Icon(
+                      Icons.add,
+                      color: colorScheme.onPrimary,
+                      size: 24,
+                    ),
+                  ),
+                ),
+              ),
             )
           : null,
     );
@@ -131,36 +152,65 @@ class CoachAthleteAssociationScreenState extends ConsumerState<CoachAthleteAssoc
 
   Widget _buildAssociationList(AsyncValue<List<Association>> associationsAsyncValue, String status, String userRole) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     
     return associationsAsyncValue.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => Center(
+        child: CircularProgressIndicator(
+          color: colorScheme.primary,
+        ),
+      ),
       error: (err, stack) => Center(
-        child: Text(
-          'Errore: $err',
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: theme.colorScheme.error,
-          ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 48,
+              color: colorScheme.error,
+            ),
+            SizedBox(height: AppTheme.spacing.md),
+            Text(
+              'Errore: $err',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: colorScheme.error,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
       data: (associations) {
         final filteredAssociations = associations.where((a) => a.status == status).toList();
         if (filteredAssociations.isEmpty) {
           return Center(
-            child: Text(
-              'Nessuna associazione ${status == 'accepted' ? 'accettata' : 'in attesa'}.',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  status == 'accepted' ? Icons.group_outlined : Icons.pending_outlined,
+                  size: 48,
+                  color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                ),
+                SizedBox(height: AppTheme.spacing.md),
+                Text(
+                  'Nessuna associazione ${status == 'accepted' ? 'accettata' : 'in attesa'}.',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           );
         }
         return ListView.builder(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(AppTheme.spacing.xl),
           itemCount: filteredAssociations.length,
           itemBuilder: (context, index) {
             final association = filteredAssociations[index];
             return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: EdgeInsets.only(bottom: AppTheme.spacing.md),
               child: AssociationTile(
                 association: association,
                 userRole: userRole,
@@ -371,70 +421,128 @@ class AssociationTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: theme.colorScheme.outline.withOpacity(0.1),
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
         ),
+        boxShadow: AppTheme.elevations.small,
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        child: InkWell(
+          onTap: () => _showAssociationOptions(context, ref),
+          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          child: Padding(
+            padding: EdgeInsets.all(AppTheme.spacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
+                Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppTheme.spacing.md,
+                        vertical: AppTheme.spacing.xs,
+                      ),
+                      decoration: BoxDecoration(
+                        color: association.status == 'accepted'
+                            ? colorScheme.primaryContainer.withOpacity(0.3)
+                            : colorScheme.secondaryContainer.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(AppTheme.radii.full),
+                      ),
+                      child: Text(
                         association.status == 'accepted' ? 'Associazione Attiva' : 'Richiesta in Attesa',
-                        style: theme.textTheme.titleMedium?.copyWith(
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: association.status == 'accepted'
+                              ? colorScheme.primary
+                              : colorScheme.secondary,
                           fontWeight: FontWeight.w600,
-                          color: association.status == 'accepted' 
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.secondary,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      FutureBuilder<UserModel?>(
-                        future: _getUserDetails(ref),
-                        builder: (context, snapshot) {
-                          final userName = snapshot.data?.displayName ?? 'Utente';
-                          return Text(
-                            _getTitle(userName),
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color: theme.colorScheme.onSurface,
-                            ),
-                          );
-                        },
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: Icon(
+                        Icons.more_vert,
+                        color: colorScheme.onSurfaceVariant,
                       ),
-                    ],
-                  ),
+                      onPressed: () => _showAssociationOptions(context, ref),
+                    ),
+                  ],
                 ),
-                if (onAccept != null && onReject != null) ...[
-                  IconButton(
-                    icon: Icon(Icons.check, color: theme.colorScheme.primary),
-                    onPressed: onAccept,
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.close, color: theme.colorScheme.error),
-                    onPressed: onReject,
-                  ),
-                ],
-                if (onRemove != null)
-                  IconButton(
-                    icon: Icon(Icons.delete_outline, color: theme.colorScheme.error),
-                    onPressed: onRemove,
-                  ),
+                SizedBox(height: AppTheme.spacing.md),
+                FutureBuilder<UserModel?>(
+                  future: _getUserDetails(ref),
+                  builder: (context, snapshot) {
+                    final userName = snapshot.data?.displayName ?? 'Utente';
+                    return Text(
+                      _getTitle(userName),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    );
+                  },
+                ),
               ],
             ),
-          ],
+          ),
         ),
+      ),
+    );
+  }
+
+  void _showAssociationOptions(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => BottomMenu(
+        title: association.status == 'accepted' ? 'Associazione Attiva' : 'Richiesta in Attesa',
+        subtitle: _getTitle(association.athleteId),
+        leading: Container(
+          padding: EdgeInsets.all(AppTheme.spacing.sm),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(AppTheme.radii.md),
+          ),
+          child: Icon(
+            association.status == 'accepted' ? Icons.group : Icons.pending,
+            color: colorScheme.primary,
+            size: 24,
+          ),
+        ),
+        items: [
+          if (onAccept != null)
+            BottomMenuItem(
+              title: 'Accetta Richiesta',
+              icon: Icons.check_circle_outline,
+              onTap: onAccept!,
+            ),
+          if (onReject != null)
+            BottomMenuItem(
+              title: 'Rifiuta Richiesta',
+              icon: Icons.cancel_outlined,
+              onTap: onReject!,
+              isDestructive: true,
+            ),
+          if (onRemove != null)
+            BottomMenuItem(
+              title: 'Rimuovi Associazione',
+              icon: Icons.delete_outline,
+              onTap: onRemove!,
+              isDestructive: true,
+            ),
+        ],
       ),
     );
   }

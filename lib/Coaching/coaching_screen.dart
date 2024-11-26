@@ -6,7 +6,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import '../user_autocomplete.dart';
 import '../../models/user_model.dart';
-import '../UI/components/card.dart';
+import 'package:alphanessone/Main/app_theme.dart';
 
 class CoachingScreen extends HookConsumerWidget {
   const CoachingScreen({super.key});
@@ -20,6 +20,7 @@ class CoachingScreen extends HookConsumerWidget {
     final currentUserRole = usersService.getCurrentUserRole();
     final currentUserId = usersService.getCurrentUserId();
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     // Recupero degli utenti in base al ruolo
     final usersFuture = useMemoized(() async {
@@ -56,169 +57,306 @@ class CoachingScreen extends HookConsumerWidget {
     }, [snapshot.data, snapshot.error]);
 
     return Scaffold(
+      backgroundColor: colorScheme.surface,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              theme.colorScheme.surface,
-              theme.colorScheme.surface.withOpacity(0.92),
+              colorScheme.surface,
+              colorScheme.surfaceContainerHighest.withOpacity(0.5),
             ],
+            stops: const [0.0, 1.0],
           ),
         ),
         child: SafeArea(
-          child: Column(
-            children: [
-              // Barra di ricerca
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Card(
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(
-                      color: theme.colorScheme.outline.withOpacity(0.1),
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: UserTypeAheadField(
-                      controller: typeAheadController,
-                      focusNode: focusNode,
-                      onSelected: (UserModel selectedUser) {
-                        context.go('/user_programs/${selectedUser.id}');
-                      },
-                      onChanged: (pattern) {
-                        final allUsers = ref.read(userListProvider);
-                        final filteredUsers = allUsers.where((user) =>
-                          user.name.toLowerCase().contains(pattern.toLowerCase()) ||
-                          user.email.toLowerCase().contains(pattern.toLowerCase())
-                        ).toList();
-                        ref.read(filteredUserListProvider.notifier).state = filteredUsers;
-                      },
-                    ),
+          child: CustomScrollView(
+            slivers: [
+              // Search Bar
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(AppTheme.spacing.xl),
+                  child: _buildSearchBar(
+                    typeAheadController,
+                    focusNode,
+                    context,
+                    ref,
+                    theme,
+                    colorScheme,
                   ),
                 ),
               ),
-              // Lista degli utenti
-              Expanded(
-                child: snapshot.connectionState == ConnectionState.waiting
-                    ? const Center(child: CircularProgressIndicator())
-                    : snapshot.hasError
-                        ? Center(
-                            child: Text(
-                              'Errore nel caricamento degli utenti: ${snapshot.error}',
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                color: theme.colorScheme.error,
-                              ),
-                            ),
-                          )
-                        : snapshot.data!.isEmpty
-                            ? Center(
-                                child: Text(
-                                  currentUserRole == 'coach'
-                                      ? 'Nessun atleta è stato associato'
-                                      : 'Nessun utente trovato',
-                                  style: theme.textTheme.titleLarge?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              )
-                            : LayoutBuilder(
-                                builder: (context, constraints) {
-                                  // Determina il numero di colonne in base alla larghezza dello schermo
-                                  final crossAxisCount = () {
-                                    if (constraints.maxWidth > 1200) return 4; // Desktop large
-                                    if (constraints.maxWidth > 900) return 3;  // Desktop
-                                    if (constraints.maxWidth > 600) return 2;  // Tablet
-                                    return 1; // Mobile
-                                  }();
 
-                                  final horizontalPadding = crossAxisCount == 1 ? 16.0 : 24.0;
-                                  final spacing = 20.0;
-
-                                  // Definire childAspectRatio dinamicamente in base al numero di colonne
-                                  double childAspectRatio;
-                                  switch (crossAxisCount) {
-                                    case 1:
-                                      childAspectRatio = 3.0; // Più largo, altezza minima per mobile
-                                      break;
-                                    case 2:
-                                      childAspectRatio = 1.8;
-                                      break;
-                                    case 3:
-                                      childAspectRatio = 1.6;
-                                      break;
-                                    default:
-                                      childAspectRatio = 1.4;
-                                  }
-
-                                  return Padding(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: horizontalPadding,
-                                      vertical: spacing / 2,
-                                    ),
-                                    child: GridView.builder(
-                                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: crossAxisCount,
-                                        mainAxisSpacing: spacing,
-                                        crossAxisSpacing: spacing,
-                                        childAspectRatio: childAspectRatio,
-                                      ),
-                                      itemCount: snapshot.data!.length,
-                                      itemBuilder: (context, index) {
-                                        final user = snapshot.data![index];
-                                        return ActionCard(
-                                          onTap: () => context.go('/user_programs/${user.id}'),
-                                          contentPadding: const EdgeInsets.symmetric(
-                                            horizontal: 20,
-                                            vertical: 16,
-                                          ),
-                                          title: Center(
-                                            child: Column(
-                                              mainAxisAlignment: MainAxisAlignment.center,
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Text(
-                                                  user.name,
-                                                  style: theme.textTheme.titleLarge?.copyWith(
-                                                    fontWeight: FontWeight.w600,
-                                                    letterSpacing: -0.5,
-                                                  ),
-                                                  textAlign: TextAlign.center,
-                                                ),
-                                                const SizedBox(height: 8),
-                                                Text(
-                                                  user.email,
-                                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                                    color: theme.colorScheme.secondary,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                                  textAlign: TextAlign.center,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          actions: [
-                                            IconButtonWithBackground(
-                                              icon: Icons.chevron_right,
-                                              color: theme.colorScheme.primary,
-                                              onPressed: () => context.go('/user_programs/${user.id}'),
-                                            ),
-                                          ],
-                                          bottomContent: const [],
-                                        );
-                                      },
-                                    ),
-                                  );
-                                },
-                              ),
+              // Athletes Grid
+              SliverPadding(
+                padding: EdgeInsets.all(AppTheme.spacing.xl),
+                sliver: _buildAthletesList(
+                  snapshot,
+                  theme,
+                  colorScheme,
+                  currentUserRole,
+                ),
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildSearchBar(
+    TextEditingController controller,
+    FocusNode focusNode,
+    BuildContext context,
+    WidgetRef ref,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
+        ),
+        boxShadow: AppTheme.elevations.small,
+      ),
+      padding: EdgeInsets.all(AppTheme.spacing.md),
+      child: UserTypeAheadField(
+        controller: controller,
+        focusNode: focusNode,
+        onSelected: (UserModel selectedUser) {
+          context.go('/user_programs/${selectedUser.id}');
+        },
+        onChanged: (pattern) {
+          final allUsers = ref.read(userListProvider);
+          final filteredUsers = allUsers.where((user) =>
+            user.name.toLowerCase().contains(pattern.toLowerCase()) ||
+            user.email.toLowerCase().contains(pattern.toLowerCase())
+          ).toList();
+          ref.read(filteredUserListProvider.notifier).state = filteredUsers;
+        },
+      ),
+    );
+  }
+
+  Widget _buildAthletesList(
+    AsyncSnapshot<List<UserModel>> snapshot,
+    ThemeData theme,
+    ColorScheme colorScheme,
+    String currentUserRole,
+  ) {
+    return Builder(builder: (context) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const SliverFillRemaining(
+          child: Center(child: CircularProgressIndicator()),
+        );
+      }
+
+      if (snapshot.hasError) {
+        return SliverFillRemaining(
+          child: Center(
+            child: Text(
+              'Error loading athletes: ${snapshot.error}',
+              style: theme.textTheme.titleLarge?.copyWith(
+                color: colorScheme.error,
+              ),
+            ),
+          ),
+        );
+      }
+
+      if (snapshot.data == null || snapshot.data!.isEmpty) {
+        return SliverFillRemaining(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.group_outlined,
+                  size: 64,
+                  color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                ),
+                SizedBox(height: AppTheme.spacing.md),
+                Text(
+                  currentUserRole == 'coach'
+                      ? 'No Athletes Associated'
+                      : 'No Users Found',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(height: AppTheme.spacing.sm),
+                Text(
+                  currentUserRole == 'coach'
+                      ? 'Start adding athletes to your roster'
+                      : 'Try adjusting your search',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
+      return SliverGrid(
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 400,
+          mainAxisSpacing: 20,
+          crossAxisSpacing: 20,
+          childAspectRatio: 1.2,
+        ),
+        delegate: SliverChildBuilderDelegate(
+          (context, index) => _buildAthleteCard(
+            snapshot.data![index],
+            theme,
+            colorScheme,
+            context,
+          ),
+          childCount: snapshot.data!.length,
+        ),
+      );
+    });
+  }
+
+  Widget _buildAthleteCard(
+    UserModel user,
+    ThemeData theme,
+    ColorScheme colorScheme,
+    BuildContext context,
+  ) {
+    final String initials = user.name.isNotEmpty 
+        ? user.name.substring(0, 1).toUpperCase()
+        : '?';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
+        ),
+        boxShadow: AppTheme.elevations.small,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _onAthleteCardTap(context, user.id),
+          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          child: Padding(
+            padding: EdgeInsets.all(AppTheme.spacing.sm),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer.withOpacity(0.3),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      initials,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+
+                SizedBox(height: AppTheme.spacing.xs),
+
+                Text(
+                  user.name,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.5,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+
+                SizedBox(height: AppTheme.spacing.xs),
+
+                Text(
+                  user.email,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+
+                SizedBox(height: AppTheme.spacing.xs),
+
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        colorScheme.primary,
+                        colorScheme.primary.withOpacity(0.8),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
+                    boxShadow: [
+                      BoxShadow(
+                        color: colorScheme.primary.withOpacity(0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppTheme.spacing.sm,
+                      vertical: AppTheme.spacing.xs,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.visibility_outlined,
+                          color: colorScheme.onPrimary,
+                          size: 16,
+                        ),
+                        SizedBox(width: AppTheme.spacing.xs),
+                        Text(
+                          'View',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: colorScheme.onPrimary,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _onAthleteCardTap(BuildContext context, String userId) {
+    try {
+      context.go('/user_programs/$userId');
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error navigating to user profile: $e')),
+      );
+    }
   }
 }

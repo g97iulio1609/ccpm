@@ -1,3 +1,6 @@
+// lib/exerciseManager/exercises_manager.dart
+
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -5,16 +8,31 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../UI/components/card.dart';
 import 'exercise_model.dart';
 import '../providers/providers.dart';
+import 'widgets/exercise_widgets.dart';
+import 'controllers/exercise_list_controller.dart';
+import '../ExerciseRecords/exercise_autocomplete.dart';
+import '../ExerciseRecords/exercise_record_services.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:alphanessone/UI/components/bottom_menu.dart';
+import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/UI/components/IconButtonWithBackground.dart';
+import 'package:alphanessone/UI/components/bottom_input_form.dart';
 
 // Providers per i muscleGroups e exerciseTypes
-final muscleGroupsProvider = StreamProvider((ref) {
-  return FirebaseFirestore.instance.collection('muscleGroups').snapshots().map(
-      (snapshot) => snapshot.docs.map((doc) => doc['name'].toString()).toList());
+final muscleGroupsProvider = StreamProvider<List<String>>((ref) {
+  return FirebaseFirestore.instance
+      .collection('muscleGroups')
+      .snapshots()
+      .map((snapshot) =>
+          snapshot.docs.map((doc) => doc['name'].toString()).toList());
 });
 
-final exerciseTypesProvider = StreamProvider((ref) {
-  return FirebaseFirestore.instance.collection('ExerciseTypes').snapshots().map(
-      (snapshot) => snapshot.docs.map((doc) => doc['name'].toString()).toList());
+final exerciseTypesProvider = StreamProvider<List<String>>((ref) {
+  return FirebaseFirestore.instance
+      .collection('ExerciseTypes')
+      .snapshots()
+      .map((snapshot) =>
+          snapshot.docs.map((doc) => doc['name'].toString()).toList());
 });
 
 class ExercisesManager extends ConsumerWidget {
@@ -25,6 +43,7 @@ class ExercisesManager extends ConsumerWidget {
     return const ExercisesList();
   }
 
+  // Funzione per mostrare il Bottom Sheet per aggiungere un esercizio
   static void showAddExerciseBottomSheet(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
@@ -38,6 +57,22 @@ class ExercisesManager extends ConsumerWidget {
       ),
     );
   }
+
+  // Funzione per mostrare il Bottom Sheet per modificare un esercizio
+  static void showEditExerciseBottomSheet(
+      BuildContext context, WidgetRef ref, ExerciseModel exercise) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) => _ExerciseForm(
+        exercise: exercise,
+        userId: ref.read(usersServiceProvider).getCurrentUserId(),
+      ),
+    );
+  }
 }
 
 class ExercisesList extends HookConsumerWidget {
@@ -45,13 +80,16 @@ class ExercisesList extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final exercisesService = ref.watch(exercisesServiceProvider);
-    final searchText = useState('');
-    final selectedMuscleGroup = useState<String?>(null);
+    final searchController = useTextEditingController();
+    final selectedMuscleGroups = useState<List<String>>([]);
     final selectedExerciseType = useState<String?>(null);
+    final exercisesState = ref.watch(exerciseListControllerProvider);
+    final controller = ref.watch(exerciseListControllerProvider.notifier);
     final currentUserRole = ref.watch(userRoleProvider);
     final currentUserId = ref.read(usersServiceProvider).getCurrentUserId();
     final theme = Theme.of(context);
+
+    final muscleGroupsAsyncValue = ref.watch(muscleGroupsProvider);
 
     return Container(
       decoration: BoxDecoration(
@@ -67,363 +105,286 @@ class ExercisesList extends HookConsumerWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 24),
-            // Search Field
-            Container(
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    offset: const Offset(0, 4),
-                    blurRadius: 20,
+            TypeAheadField<ExerciseModel>(
+              builder: (context, controller, focusNode) {
+                return TextField(
+                  controller: controller,
+                  focusNode: focusNode,
+                  decoration: InputDecoration(
+                    hintText: 'Search exercise...',
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    suffixIcon: controller.text.isNotEmpty
+                        ? IconButton(
+                            icon: Icon(
+                              Icons.close,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            onPressed: () {
+                              controller.clear();
+                              Future.microtask(() {
+                                ref
+                                    .read(exerciseListControllerProvider.notifier)
+                                    .resetFilters();
+                              });
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    filled: true,
+                    fillColor: theme.colorScheme.surfaceContainerHighest,
                   ),
-                ],
+                );
+              },
+              suggestionsCallback: (pattern) async {
+                if (pattern.length < 2) return [];
+
+                final exercises = await ref.read(exercisesServiceProvider).getExercises().first;
+                return exercises
+                    .where((exercise) => exercise.name
+                        .toLowerCase()
+                        .contains(pattern.toLowerCase()))
+                    .toList();
+              },
+              itemBuilder: (context, exercise) {
+                return ListTile(
+                  title: Text(exercise.name),
+                  subtitle: Text(
+                    '${exercise.muscleGroups.join(", ")} - ${exercise.type}',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          letterSpacing: -0.3,
+                        ),
+                  ),
+                );
+              },
+              onSelected: (exercise) {
+                searchController.text = exercise.name;
+                Future.microtask(() {
+                  controller.updateFilters(searchText: exercise.name);
+                });
+                            },
+              debounceDuration: const Duration(milliseconds: 500),
+              hideOnEmpty: false,
+              hideOnLoading: false,
+              hideOnError: false,
+              animationDuration: const Duration(milliseconds: 300),
+              constraints: const BoxConstraints(maxHeight: 300),
+              decorationBuilder: (context, child) {
+                return Material(
+                  elevation: 4,
+                  borderRadius: BorderRadius.circular(12),
+                  color: theme.colorScheme.surface,
+                  child: child,
+                );
+              },
+              loadingBuilder: (context) => const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Center(child: CircularProgressIndicator()),
               ),
-              child: TextField(
-                onChanged: (value) => searchText.value = value,
-                style: theme.textTheme.bodyLarge,
-                decoration: InputDecoration(
-                  hintText: 'Search exercise...',
-                  prefixIcon: Icon(
-                    Icons.search,
-                    color: theme.colorScheme.onSurfaceVariant,
+              errorBuilder: (context, error) => Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Error: $error',
+                  style: TextStyle(color: theme.colorScheme.error),
+                ),
+              ),
+              emptyBuilder: (context) => const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text('No exercises found'),
+              ),
+            ),
+            const SizedBox(height: 16),
+            muscleGroupsAsyncValue.when(
+              data: (muscleGroups) => Container(
+                height: 48,
+                child: ScrollConfiguration(
+                  behavior: ScrollConfiguration.of(context).copyWith(
+                    dragDevices: {
+                      PointerDeviceKind.touch,
+                      PointerDeviceKind.mouse,
+                      PointerDeviceKind.trackpad,
+                    },
+                    physics: const BouncingScrollPhysics(),
                   ),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: Padding(
+                      padding:
+                          const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Row(
+                        children: [
+                          const SizedBox(width: 4),
+                          ...muscleGroups.map((group) {
+                            final isSelected =
+                                selectedMuscleGroups.value.contains(group);
+                            return Padding(
+                              padding:
+                                  const EdgeInsets.only(right: 8.0),
+                              child: SizedBox(
+                                height: 32,
+                                child: FilterChip(
+                                  label: Text(
+                                    group,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: isSelected
+                                          ? theme.colorScheme
+                                              .onSecondaryContainer
+                                          : theme.colorScheme
+                                              .onSurface,
+                                    ),
+                                  ),
+                                  selected: isSelected,
+                                  onSelected: (bool selected) {
+                                    if (selected) {
+                                      selectedMuscleGroups.value = [
+                                        ...selectedMuscleGroups.value,
+                                        group
+                                      ];
+                                    } else {
+                                      selectedMuscleGroups.value =
+                                          selectedMuscleGroups.value
+                                              .where((g) => g != group)
+                                              .toList();
+                                    }
+                                    controller.updateFilters(
+                                      muscleGroups:
+                                          selectedMuscleGroups.value,
+                                    );
+                                  },
+                                  showCheckmark: false,
+                                  materialTapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8.0),
+                                  labelPadding: const EdgeInsets.symmetric(
+                                      horizontal: 4.0),
+                                  avatar: isSelected
+                                      ? Icon(
+                                          Icons.check,
+                                          size: 16,
+                                          color: theme.colorScheme
+                                              .onSecondaryContainer,
+                                        )
+                                      : null,
+                                  selectedColor:
+                                      theme.colorScheme.secondaryContainer,
+                                  backgroundColor: theme.colorScheme
+                                      .surfaceContainerHighest
+                                      .withOpacity(0.5),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(16),
+                                    side: BorderSide(
+                                      color: isSelected
+                                          ? theme.colorScheme.secondary
+                                          : theme.colorScheme.outline
+                                              .withOpacity(0.5),
+                                      width: 1,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                          if (selectedMuscleGroups.value.isNotEmpty)
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8.0),
+                              child: SizedBox(
+                                height: 32,
+                                child: TextButton.icon(
+                                  onPressed: () {
+                                    selectedMuscleGroups.value = [];
+                                    controller.updateFilters(
+                                        muscleGroups: []);
+                                  },
+                                  icon: Icon(
+                                    Icons.clear,
+                                    size: 16,
+                                    color: theme.colorScheme.error,
+                                  ),
+                                  label: Text(
+                                    'Clear',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: theme.colorScheme.error,
+                                    ),
+                                  ),
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8.0),
+                                    minimumSize: Size.zero,
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          const SizedBox(width: 4),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              loading: () => const SizedBox(
+                height: 48,
+                child: Center(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              ),
+              error: (_, __) => SizedBox(
+                height: 48,
+                child: Center(
+                  child: Text(
+                    'Error loading muscle groups',
+                    style: TextStyle(color: theme.colorScheme.error),
                   ),
                 ),
               ),
             ),
             const SizedBox(height: 24),
-            // Exercises List
             Expanded(
-              child: StreamBuilder<List<ExerciseModel>>(
-                stream: exercisesService.getExercises(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    final exercises = snapshot.data!;
-                    final filteredExercises = exercises.where((exercise) =>
-                      exercise.name.toLowerCase().contains(searchText.value.toLowerCase()) &&
-                      (selectedMuscleGroup.value == null || exercise.muscleGroup == selectedMuscleGroup.value) &&
-                      (selectedExerciseType.value == null || exercise.type == selectedExerciseType.value)
-                    ).toList();
-
-                    if (filteredExercises.isEmpty) {
-                      return Center(
-                        child: Text(
-                          'No exercises found.',
-                          style: theme.textTheme.bodyLarge,
-                        ),
-                      );
-                    }
-
-                    return CustomScrollView(
-                      slivers: [
-                        SliverLayoutBuilder(
-                          builder: (BuildContext context, constraints) {
-                            final isMobile = MediaQuery.of(context).size.width <= 600;
-                            
-                            if (isMobile) {
-                              // Per mobile, usiamo SliverList invece di SliverGrid
-                              return SliverList(
-                                delegate: SliverChildBuilderDelegate(
-                                  (context, index) {
-                                    final exercise = filteredExercises[index];
-                                    return Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                                      child: ActionCard(
-                                        onTap: () => _showEditExerciseBottomSheet(context, ref, exercise),
-                                        title: Text(
-                                          exercise.name,
-                                          style: theme.textTheme.titleLarge?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                            letterSpacing: -0.5,
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        subtitle: Text(
-                                          '${exercise.muscleGroup} - ${exercise.type}',
-                                          style: theme.textTheme.bodyMedium?.copyWith(
-                                            color: theme.colorScheme.onSurfaceVariant,
-                                            letterSpacing: -0.3,
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        actions: [
-                                          if (currentUserRole == 'admin' || exercise.userId == currentUserId) ...[
-                                            IconButtonWithBackground(
-                                              icon: Icons.edit_outlined,
-                                              color: theme.colorScheme.primary,
-                                              onPressed: () => _showEditExerciseBottomSheet(context, ref, exercise),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            IconButtonWithBackground(
-                                              icon: Icons.delete_outline,
-                                              color: theme.colorScheme.error,
-                                              onPressed: () => _showDeleteConfirmationDialog(
-                                                context,
-                                                exercise,
-                                                ref,
-                                                theme,
-                                              ),
-                                            ),
-                                          ],
-                                        ],
-                                        bottomContent: exercise.status == 'pending'
-                                            ? [
-                                                Container(
-                                                  padding: const EdgeInsets.symmetric(
-                                                    horizontal: 12,
-                                                    vertical: 6,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: theme.colorScheme.primary.withOpacity(0.15),
-                                                    borderRadius: BorderRadius.circular(12),
-                                                    border: Border.all(
-                                                      color: theme.colorScheme.primary.withOpacity(0.3),
-                                                      width: 1,
-                                                    ),
-                                                  ),
-                                                  child: Row(
-                                                    mainAxisSize: MainAxisSize.min,
-                                                    children: [
-                                                      Icon(
-                                                        Icons.pending_outlined,
-                                                        size: 16,
-                                                        color: theme.colorScheme.primary,
-                                                      ),
-                                                      const SizedBox(width: 6),
-                                                      Text(
-                                                        'Pending Approval',
-                                                        style: theme.textTheme.labelMedium?.copyWith(
-                                                          color: theme.colorScheme.primary,
-                                                          fontWeight: FontWeight.w600,
-                                                          letterSpacing: 0.3,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ]
-                                            : null,
-                                      ),
-                                    );
-                                  },
-                                  childCount: filteredExercises.length,
-                                ),
-                              );
-                            }
-
-                            // Per tablet/desktop, manteniamo il SliverGrid
-                            return SliverGrid(
-                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: switch (MediaQuery.of(context).size.width) {
-                                  > 1200 => 4, // Desktop large
-                                  > 900 => 3,  // Desktop
-                                  > 600 => 2,  // Tablet
-                                  _ => 1,      // Mobile
-                                },
-                                crossAxisSpacing: 20.0,
-                                mainAxisSpacing: 20.0,
-                                childAspectRatio: 1.2,
-                              ),
-                              delegate: SliverChildBuilderDelegate(
-                                (context, index) {
-                                  final exercise = filteredExercises[index];
-                                  return ActionCard(
-                                    onTap: () => _showEditExerciseBottomSheet(context, ref, exercise),
-                                    title: Text(
-                                      exercise.name,
-                                      style: theme.textTheme.titleLarge?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                        letterSpacing: -0.5,
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    subtitle: Text(
-                                      '${exercise.muscleGroup} - ${exercise.type}',
-                                      style: theme.textTheme.bodyMedium?.copyWith(
-                                        color: theme.colorScheme.onSurfaceVariant,
-                                        letterSpacing: -0.3,
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    actions: [
-                                      if (currentUserRole == 'admin' || exercise.userId == currentUserId) ...[
-                                        IconButtonWithBackground(
-                                          icon: Icons.edit_outlined,
-                                          color: theme.colorScheme.primary,
-                                          onPressed: () => _showEditExerciseBottomSheet(context, ref, exercise),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        IconButtonWithBackground(
-                                          icon: Icons.delete_outline,
-                                          color: theme.colorScheme.error,
-                                          onPressed: () => _showDeleteConfirmationDialog(
-                                            context,
-                                            exercise,
-                                            ref,
-                                            theme,
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                    bottomContent: exercise.status == 'pending'
-                                        ? [
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(
-                                                horizontal: 12,
-                                                vertical: 6,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: theme.colorScheme.primary.withOpacity(0.15),
-                                                borderRadius: BorderRadius.circular(12),
-                                                border: Border.all(
-                                                  color: theme.colorScheme.primary.withOpacity(0.3),
-                                                  width: 1,
-                                                ),
-                                              ),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Icon(
-                                                    Icons.pending_outlined,
-                                                    size: 16,
-                                                    color: theme.colorScheme.primary,
-                                                  ),
-                                                  const SizedBox(width: 6),
-                                                  Text(
-                                                    'Pending Approval',
-                                                    style: theme.textTheme.labelMedium?.copyWith(
-                                                      color: theme.colorScheme.primary,
-                                                      fontWeight: FontWeight.w600,
-                                                      letterSpacing: 0.3,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ]
-                                        : null,
-                                  );
-                                },
-                                childCount: filteredExercises.length,
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    );
-                  } else if (snapshot.hasError) {
-                    return Center(
-                      child: Text(
-                        'Error: ${snapshot.error}',
-                        style: theme.textTheme.bodyLarge,
-                      ),
-                    );
-                  } else {
-                    return const Center(child: CircularProgressIndicator());
-                  }
+              child: exercisesState.when(
+                data: (exercises) {
+                  return ExercisesGrid(
+                    exercises: exercises,
+                    currentUserRole: currentUserRole,
+                    currentUserId: currentUserId,
+                    onEdit: (exercise) =>
+                        ExercisesManager.showEditExerciseBottomSheet(context, ref, exercise),
+                    onDelete: (exercise) =>
+                        _showDeleteConfirmationDialog(
+                      context,
+                      exercise,
+                      ref,
+                      theme,
+                    ),
+                  );
                 },
+                loading: () =>
+                    const Center(child: CircularProgressIndicator()),
+                error: (error, _) => Center(
+                  child: Text('Error: $error'),
+                ),
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  void _showEditExerciseBottomSheet(
-    BuildContext context,
-    WidgetRef ref,
-    ExerciseModel exercise,
-  ) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (context) => _ExerciseForm(
-        exercise: exercise,
-        userId: ref.read(usersServiceProvider).getCurrentUserId(),
-      ),
-    );
-  }
-
-  void _showExerciseOptions(
-    BuildContext context,
-    ExerciseModel exercise,
-    WidgetRef ref,
-    ThemeData theme,
-  ) {
-    final exercisesService = ref.read(exercisesServiceProvider);
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: theme.colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (context) => CustomCard(
-        padding: EdgeInsets.zero,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildOptionTile(
-              context,
-              'Edit',
-              Icons.edit_outlined,
-              () {
-                Navigator.pop(context);
-                _showEditExerciseBottomSheet(context, ref, exercise);
-              },
-            ),
-            _buildOptionTile(
-              context,
-              'Delete',
-              Icons.delete_outline,
-              () {
-                Navigator.pop(context);
-                exercisesService.deleteExercise(exercise.id);
-              },
-              isDestructive: true,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOptionTile(
-    BuildContext context,
-    String title,
-    IconData icon,
-    VoidCallback onTap, {
-    bool isDestructive = false,
-  }) {
-    final theme = Theme.of(context);
-    final color = isDestructive ? theme.colorScheme.error : theme.colorScheme.onSurface;
-    
-    return ListTile(
-      leading: Icon(icon, color: color),
-      title: Text(
-        title,
-        style: theme.textTheme.titleMedium?.copyWith(
-          color: color,
-        ),
-      ),
-      onTap: onTap,
     );
   }
 
@@ -433,38 +394,73 @@ class ExercisesList extends HookConsumerWidget {
     WidgetRef ref,
     ThemeData theme,
   ) {
-    showDialog(
+    final colorScheme = theme.colorScheme;
+
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Delete Exercise',
-          style: theme.textTheme.titleLarge?.copyWith(
-            color: theme.colorScheme.onSurface,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => BottomInputForm(
+        title: 'Elimina Esercizio',
+        subtitle: 'Sei sicuro di voler eliminare questo esercizio?',
+        leading: Container(
+          padding: EdgeInsets.all(AppTheme.spacing.sm),
+          decoration: BoxDecoration(
+            color: colorScheme.errorContainer.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
-        ),
-        content: Text(
-          'Are you sure you want to delete this exercise?',
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+          child: Icon(
+            Icons.delete_outline,
+            color: colorScheme.error,
+            size: 24,
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'Cancel',
-              style: TextStyle(color: theme.colorScheme.primary),
+              'Annulla',
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
-          TextButton(
-            onPressed: () {
-              final exercisesService = ref.read(exercisesServiceProvider);
-              exercisesService.deleteExercise(exercise.id);
-              Navigator.pop(context);
-            },
-            child: Text(
-              'Delete',
-              style: TextStyle(color: theme.colorScheme.error),
+          Container(
+            decoration: BoxDecoration(
+              color: colorScheme.errorContainer,
+              borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  final exercisesService = ref.read(exercisesServiceProvider);
+                  exercisesService.deleteExercise(exercise.id);
+                  Navigator.pop(context);
+                },
+                borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppTheme.spacing.lg,
+                    vertical: AppTheme.spacing.md,
+                  ),
+                  child: Text(
+                    'Elimina',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: colorScheme.onErrorContainer,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+        children: [
+          Text(
+            'Questa azione non può essere annullata.',
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -473,105 +469,192 @@ class ExercisesList extends HookConsumerWidget {
   }
 }
 
-class ExerciseCard extends StatelessWidget {
-  const ExerciseCard({
+class ExercisesGrid extends ConsumerStatefulWidget {
+  final List<ExerciseModel> exercises;
+  final String currentUserRole;
+  final String currentUserId;
+  final Function(ExerciseModel) onEdit;
+  final Function(ExerciseModel) onDelete;
+
+  const ExercisesGrid({
     super.key,
-    required this.exercise,
-    required this.isAdmin,
-    required this.canEdit,
-    required this.canDelete,
+    required this.exercises,
+    required this.currentUserRole,
+    required this.currentUserId,
     required this.onEdit,
     required this.onDelete,
-    required this.onApprove,
-    required this.onReject,
   });
 
-  final ExerciseModel exercise;
-  final bool isAdmin;
-  final bool canEdit;
-  final bool canDelete;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-  final VoidCallback onApprove;
-  final VoidCallback onReject;
+  @override
+  ConsumerState<ExercisesGrid> createState() => _ExercisesGridState();
+}
+
+class _ExercisesGridState extends ConsumerState<ExercisesGrid> {
+  void _showExerciseDetails(BuildContext context, ExerciseModel exercise) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => BottomMenu(
+        title: exercise.name,
+        subtitle: exercise.muscleGroups.join(", "),
+        leading: Container(
+          padding: EdgeInsets.all(AppTheme.spacing.sm),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(AppTheme.radii.md),
+          ),
+          child: Icon(
+            Icons.fitness_center,
+            color: colorScheme.primary,
+            size: 24,
+          ),
+        ),
+        items: [
+          BottomMenuItem(
+            title: 'Modifica Esercizio',
+            icon: Icons.edit_outlined,
+            onTap: () {
+              widget.onEdit(exercise);
+            },
+          ),
+          BottomMenuItem(
+            title: 'Elimina Esercizio',
+            icon: Icons.delete_outline,
+            onTap: () {
+              widget.onDelete(exercise);
+            },
+            isDestructive: true,
+          ),
+          if ((widget.currentUserRole == 'admin' ||
+                  widget.currentUserRole == 'coach') &&
+              exercise.status == 'pending')
+            BottomMenuItem(
+              title: 'Approva Esercizio',
+              icon: Icons.check_circle_outline,
+              onTap: () {
+                _approveExercise(exercise);
+              },
+            ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isPending = exercise.status == 'pending';
-
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+    return GridView.builder(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: _getGridCrossAxisCount(context),
+        crossAxisSpacing: 24.0,
+        mainAxisSpacing: 24.0,
+        childAspectRatio: 1.2,
       ),
-      color: colorScheme.surface,
-      child: InkWell(
-        onTap: canEdit ? onEdit : null,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      exercise.name,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${exercise.muscleGroup} - ${exercise.type}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    if (isPending)
-                      const Text(
-                        'Pending Approval',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.orange,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              if (isAdmin && isPending)
-                IconButton(
-                  icon: const Icon(Icons.check),
-                  onPressed: onApprove,
-                  color: Colors.green,
-                ),
-              if (isAdmin && isPending)
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: onReject,
-                  color: Colors.red,
-                ),
-              if (canEdit && !isPending)
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: onEdit,
-                  color: colorScheme.onSurface,
-                ),
-              if (canDelete && !isPending)
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: onDelete,
-                  color: colorScheme.onSurface,
-                ),
-            ],
+      itemCount: widget.exercises.length,
+      itemBuilder: (context, index) {
+        final exercise = widget.exercises[index];
+        return ExerciseCardContent(
+          exercise: exercise,
+          onTap: () => _showExerciseDetails(context, exercise),
+          actions: _buildExerciseActions(context, exercise),
+        );
+      },
+    );
+  }
+
+  int _getGridCrossAxisCount(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    if (width > 1200) return 4;
+    if (width > 900) return 3;
+    if (width > 600) return 2;
+    return 1;
+  }
+
+  List<Widget> _buildExerciseActions(
+      BuildContext context, ExerciseModel exercise) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final actions = <Widget>[];
+
+    // Azione Modifica
+    actions.add(
+      IconButtonWithBackground(
+        icon: Icons.edit_outlined,
+        color: colorScheme.primary,
+        onPressed: () => widget.onEdit(exercise),
+        tooltip: 'Modifica',
+      ),
+    );
+
+    // Azione Elimina
+    actions.add(
+      IconButtonWithBackground(
+        icon: Icons.delete_outline,
+        color: colorScheme.error,
+        onPressed: () => widget.onDelete(exercise),
+        tooltip: 'Elimina',
+      ),
+    );
+
+    // Azione Approva (solo per admin/coach)
+    if ((widget.currentUserRole == 'admin' ||
+            widget.currentUserRole == 'coach') &&
+        exercise.status == 'pending') {
+      actions.add(
+        IconButtonWithBackground(
+          icon: Icons.check_circle_outline,
+          color: colorScheme.tertiary,
+          onPressed: () => _approveExercise(exercise),
+          tooltip: 'Approva',
+        ),
+      );
+    }
+
+    return actions;
+  }
+
+  void _approveExercise(ExerciseModel exercise) {
+    final theme = Theme.of(context);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(
+          'Approve Exercise',
+          style: theme.textTheme.titleLarge?.copyWith(
+            color: theme.colorScheme.onSurface,
           ),
         ),
+        content: Text(
+          'Are you sure you want to approve "${exercise.name}"?',
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: theme.colorScheme.primary),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              ref
+                  .read(exercisesServiceProvider)
+                  .approveExercise(exercise.id);
+              Navigator.pop(dialogContext);
+            },
+            child: Text(
+              'Approve',
+              style: TextStyle(color: theme.colorScheme.tertiary),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -589,9 +672,11 @@ class _ExerciseForm extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final formKey = useMemoized(() => GlobalKey<FormState>());
     final nameController = useTextEditingController(text: exercise?.name);
-    final selectedMuscleGroup = useState<String?>(exercise?.muscleGroup);
+    final selectedMuscleGroups = useState<List<String>>(
+        exercise?.muscleGroups ?? []);
     final selectedExerciseType = useState<String?>(exercise?.type);
 
     return MediaQuery.removePadding(
@@ -605,136 +690,218 @@ class _ExerciseForm extends HookConsumerWidget {
             top: 16,
             bottom: MediaQuery.of(context).viewInsets.bottom + 16,
           ),
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  exercise == null ? 'Add New Exercise' : 'Edit Exercise',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: -0.5,
+          child: BottomInputForm(
+            title: exercise == null
+                ? 'Add New Exercise'
+                : 'Modifica Esercizio',
+            subtitle: exercise?.name,
+            leading: Container(
+              padding: EdgeInsets.all(AppTheme.spacing.sm),
+              decoration: BoxDecoration(
+                color: exercise == null
+                    ? colorScheme.primaryContainer.withOpacity(0.3)
+                    : colorScheme.primaryContainer.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(AppTheme.radii.md),
+              ),
+              child: Icon(
+                exercise == null ? Icons.add : Icons.edit_outlined,
+                color: exercise == null
+                    ? colorScheme.primary
+                    : colorScheme.primary,
+                size: 24,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  'Annulla',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
                   ),
                 ),
-                const SizedBox(height: 24),
-                TextFormField(
-                  controller: nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Exercise Name',
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      colorScheme.primary,
+                      colorScheme.primary.withOpacity(0.8),
+                    ],
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter an exercise name';
-                    }
-                    return null;
-                  },
+                  borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                  boxShadow: [
+                    BoxShadow(
+                      color: colorScheme.primary.withOpacity(0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                Consumer(
-                  builder: (context, ref, child) {
-                    final muscleGroupsAsyncValue = ref.watch(muscleGroupsProvider);
-                    return muscleGroupsAsyncValue.when(
-                      data: (muscleGroups) => DropdownButtonFormField<String>(
-                        value: selectedMuscleGroup.value,
-                        items: muscleGroups.map((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                        onChanged: (value) => selectedMuscleGroup.value = value,
-                        decoration: const InputDecoration(
-                          labelText: 'Muscle Group',
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please select a muscle group';
-                          }
-                          return null;
-                        },
-                      ),
-                      loading: () => const CircularProgressIndicator(),
-                      error: (_, __) => const Text('Failed to load muscle groups'),
-                    );
-                  },
-                ),
-                const SizedBox(height: 16),
-                Consumer(
-                  builder: (context, ref, child) {
-                    final exerciseTypesAsyncValue = ref.watch(exerciseTypesProvider);
-                    return exerciseTypesAsyncValue.when(
-                      data: (exerciseTypes) => DropdownButtonFormField<String>(
-                        value: selectedExerciseType.value,
-                        items: exerciseTypes.map((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                        onChanged: (value) => selectedExerciseType.value = value,
-                        decoration: const InputDecoration(
-                          labelText: 'Exercise Type',
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please select an exercise type';
-                          }
-                          return null;
-                        },
-                      ),
-                      loading: () => const CircularProgressIndicator(),
-                      error: (_, __) => const Text('Failed to load exercise types'),
-                    );
-                  },
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
                       if (formKey.currentState!.validate()) {
-                        _submitExercise(
-                          ref,
-                          context,
+                        final exercisesService = ref.read(exercisesServiceProvider);
+                        exercisesService.updateExercise(
+                          exercise?.id ?? '',
                           nameController.text,
-                          selectedMuscleGroup.value!,
+                          selectedMuscleGroups.value,
                           selectedExerciseType.value!,
                         );
+                        Navigator.pop(context);
                       }
                     },
-                    child: Text(exercise == null ? 'Add' : 'Update'),
+                    borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppTheme.spacing.lg,
+                        vertical: AppTheme.spacing.md,
+                      ),
+                      child: Text(
+                        'Salva',
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: colorScheme.onPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
+            children: [
+              Form(
+                key: formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Nome Esercizio
+                    BottomInputForm.buildFormField(
+                      label: 'Nome Esercizio',
+                      theme: theme,
+                      colorScheme: colorScheme,
+                      child: TextFormField(
+                        controller: nameController,
+                        decoration: InputDecoration(
+                          hintText: 'Inserisci il nome dell\'esercizio',
+                          border: InputBorder.none,
+                          prefixIcon: Icon(
+                            Icons.fitness_center,
+                            color: colorScheme.primary,
+                            size: 20,
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Inserisci un nome per l\'esercizio';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    SizedBox(height: AppTheme.spacing.lg),
+
+                    // Muscle Groups
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final muscleGroupsAsyncValue =
+                            ref.watch(muscleGroupsProvider);
+                        return muscleGroupsAsyncValue.when(
+                          data: (muscleGroups) => BottomInputForm.buildFormField(
+                            label: 'Gruppi Muscolari',
+                            theme: theme,
+                            colorScheme: colorScheme,
+                            helperText: 'Seleziona i gruppi muscolari coinvolti',
+                            child: Wrap(
+                              spacing: AppTheme.spacing.sm,
+                              runSpacing: AppTheme.spacing.sm,
+                              children: muscleGroups.map((group) {
+                                final isSelected = selectedMuscleGroups.value.contains(group);
+                                return FilterChip(
+                                  label: Text(group),
+                                  selected: isSelected,
+                                  onSelected: (selected) {
+                                    if (selected) {
+                                      selectedMuscleGroups.value = [...selectedMuscleGroups.value, group];
+                                    } else {
+                                      selectedMuscleGroups.value = selectedMuscleGroups.value.where((g) => g != group).toList();
+                                    }
+                                  },
+                                  selectedColor: colorScheme.primaryContainer,
+                                  checkmarkColor: colorScheme.primary,
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                          loading: () => const CircularProgressIndicator(),
+                          error: (_, __) =>
+                              const Text('Errore nel caricamento dei gruppi muscolari'),
+                        );
+                      },
+                    ),
+                    SizedBox(height: AppTheme.spacing.lg),
+
+                    // Exercise Type
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final exerciseTypesAsyncValue =
+                            ref.watch(exerciseTypesProvider);
+                        return exerciseTypesAsyncValue.when(
+                          data: (exerciseTypes) => BottomInputForm.buildFormField(
+                            label: 'Tipo di Esercizio',
+                            theme: theme,
+                            colorScheme: colorScheme,
+                            helperText: 'Seleziona il tipo di esercizio',
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                                borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                                border: Border.all(
+                                  color: colorScheme.outline.withOpacity(0.1),
+                                ),
+                              ),
+                              child: DropdownButtonFormField<String>(
+                                value: selectedExerciseType.value,
+                                items: exerciseTypes.map((type) {
+                                  return DropdownMenuItem(
+                                    value: type,
+                                    child: Text(type),
+                                  );
+                                }).toList(),
+                                onChanged: (value) => selectedExerciseType.value = value,
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.all(AppTheme.spacing.md),
+                                  prefixIcon: Icon(
+                                    Icons.category_outlined,
+                                    color: colorScheme.primary,
+                                    size: 20,
+                                  ),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Seleziona un tipo di esercizio';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                          ),
+                          loading: () => const CircularProgressIndicator(),
+                          error: (_, __) =>
+                              const Text('Errore nel caricamento dei tipi di esercizio'),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
-  }
-
-  void _submitExercise(WidgetRef ref, BuildContext context, String name,
-      String muscleGroup, String exerciseType) {
-    final exercisesService = ref.read(exercisesServiceProvider);
-
-    if (exercise == null) {
-      exercisesService.addExercise(
-        name,
-        muscleGroup,
-        exerciseType,
-        userId,
-      );
-    } else {
-      exercisesService.updateExercise(
-        exercise!.id,
-        name,
-        muscleGroup,
-        exerciseType,
-      );
-    }
-
-    Navigator.of(context).pop();
   }
 }

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:alphanessone/models/user_model.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/services/users_services.dart';
+import 'package:alphanessone/Main/app_theme.dart';
 
 class UsersDashboard extends ConsumerStatefulWidget {
   const UsersDashboard({super.key});
@@ -23,272 +24,428 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
-    
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            UserSearchField(usersService: _usersService),
-            const SizedBox(height: 16),
-            Expanded(
-              child: StreamBuilder<List<UserModel>>(
-                stream: _usersService.getUsers(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    return ErrorView(error: snapshot.error.toString());
-                  }
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  final users = snapshot.data ?? [];
-                  return users.isEmpty
-                      ? const Center(child: Text('No users found'))
-                      : UsersList(
-                          users: users, onDeleteUser: _showDeleteConfirmation);
+      backgroundColor: colorScheme.surface,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              colorScheme.surface,
+              colorScheme.surfaceContainerHighest.withOpacity(0.5),
+            ],
+            stops: const [0.0, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: CustomScrollView(
+            slivers: [
+              // Search Bar
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(AppTheme.spacing.xl),
+                  child: _buildSearchBar(theme, colorScheme),
+                ),
+              ),
+
+              // Users Grid
+              SliverPadding(
+                padding: EdgeInsets.all(AppTheme.spacing.xl),
+                sliver: _buildUsersList(theme, colorScheme),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar(ThemeData theme, ColorScheme colorScheme) {
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
+        ),
+        boxShadow: AppTheme.elevations.small,
+      ),
+      padding: EdgeInsets.all(AppTheme.spacing.md),
+      child: TextField(
+        onChanged: _usersService.searchUsers,
+        decoration: InputDecoration(
+          hintText: 'Search users',
+          hintStyle: theme.textTheme.bodyLarge?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
+          prefixIcon: Icon(
+            Icons.search,
+            color: colorScheme.onSurfaceVariant,
+          ),
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(
+            vertical: AppTheme.spacing.sm,
+            horizontal: AppTheme.spacing.md,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUsersList(ThemeData theme, ColorScheme colorScheme) {
+    return StreamBuilder<List<UserModel>>(
+      stream: _usersService.getUsers(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return SliverFillRemaining(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: colorScheme.error.withOpacity(0.5),
+                  ),
+                  SizedBox(height: AppTheme.spacing.md),
+                  Text(
+                    'Error loading users',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: colorScheme.error,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: AppTheme.spacing.sm),
+                  Text(
+                    snapshot.error.toString(),
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SliverFillRemaining(
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final users = snapshot.data ?? [];
+        if (users.isEmpty) {
+          return SliverFillRemaining(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.group_outlined,
+                    size: 64,
+                    color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                  ),
+                  SizedBox(height: AppTheme.spacing.md),
+                  Text(
+                    'No Users Found',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: AppTheme.spacing.sm),
+                  Text(
+                    'Try adjusting your search',
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return SliverGrid(
+          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: 400,
+            mainAxisSpacing: 20,
+            crossAxisSpacing: 20,
+            childAspectRatio: 1.2,
+          ),
+          delegate: SliverChildBuilderDelegate(
+            (context, index) => _buildUserCard(
+              users[index],
+              theme,
+              colorScheme,
+            ),
+            childCount: users.length,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildUserCard(UserModel user, ThemeData theme, ColorScheme colorScheme) {
+    final String initials = user.name.isNotEmpty 
+        ? user.name.substring(0, 1).toUpperCase()
+        : '?';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
+        ),
+        boxShadow: AppTheme.elevations.small,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => context.go('/user_profile/${user.id}'),
+          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          child: Padding(
+            padding: EdgeInsets.all(AppTheme.spacing.sm),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // User Avatar
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer.withOpacity(0.3),
+                    shape: BoxShape.circle,
+                    image: user.photoURL.isNotEmpty
+                        ? DecorationImage(
+                            image: NetworkImage(user.photoURL),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                  ),
+                  child: user.photoURL.isEmpty
+                      ? Center(
+                          child: Text(
+                            initials,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: colorScheme.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        )
+                      : null,
+                ),
+
+                SizedBox(height: AppTheme.spacing.xs),
+
+                // User Info
+                Text(
+                  user.name,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.5,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+
+                SizedBox(height: AppTheme.spacing.xs),
+
+                Text(
+                  user.email,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+
+                SizedBox(height: AppTheme.spacing.xs),
+
+                // Role Badge
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppTheme.spacing.sm,
+                    vertical: AppTheme.spacing.xs,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(AppTheme.radii.sm),
+                  ),
+                  child: Text(
+                    user.role.toUpperCase(),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+
+                const Spacer(),
+
+                // Action Buttons
+                Wrap(
+                  spacing: AppTheme.spacing.xs,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    _buildActionButton(
+                      icon: Icons.visibility_outlined,
+                      label: 'View',
+                      onTap: () => context.go('/user_profile/${user.id}'),
+                      colorScheme: colorScheme,
+                      theme: theme,
+                    ),
+                    _buildActionButton(
+                      icon: Icons.delete_outline,
+                      label: 'Delete',
+                      onTap: () => _showDeleteConfirmation(user),
+                      colorScheme: colorScheme,
+                      theme: theme,
+                      isDestructive: true,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required ColorScheme colorScheme,
+    required ThemeData theme,
+    bool isDestructive = false,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppTheme.radii.full),
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: AppTheme.spacing.sm,
+            vertical: AppTheme.spacing.xs,
+          ),
+          decoration: BoxDecoration(
+            color: isDestructive
+                ? colorScheme.errorContainer.withOpacity(0.2)
+                : colorScheme.surfaceContainerHighest.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(AppTheme.radii.full),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: isDestructive ? colorScheme.error : colorScheme.primary,
+              ),
+              SizedBox(width: AppTheme.spacing.xs),
+              Text(
+                label,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: isDestructive ? colorScheme.error : colorScheme.primary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(UserModel user) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        final theme = Theme.of(dialogContext);
+        final colorScheme = theme.colorScheme;
+        
+        return AlertDialog(
+          backgroundColor: colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radii.xl),
+          ),
+          title: Text(
+            'Delete User',
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Text(
+            'Are you sure you want to delete ${user.name}?',
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: colorScheme.primary),
+              ),
+            ),
+            Container(
+              decoration: BoxDecoration(
+                color: colorScheme.errorContainer,
+                borderRadius: BorderRadius.circular(AppTheme.radii.md),
+              ),
+              child: TextButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                  _deleteUser(user);
                 },
+                child: Text(
+                  'Delete',
+                  style: TextStyle(color: colorScheme.error),
+                ),
               ),
             ),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 
-
-void _showDeleteConfirmation(UserModel user) {
-  showDialog(
-    context: context,
-    builder: (BuildContext dialogContext) => AlertDialog(
-      title: const Text('Elimina Utente'),
-      content: Text('Sei sicuro di voler eliminare ${user.name}?'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(dialogContext).pop(),
-          child: const Text('Annulla'),
-        ),
-        ElevatedButton(
-          onPressed: () async {
-            Navigator.of(dialogContext).pop(); // Chiudi il dialogo di conferma
-            await _deleteUser(user); // Elimina l'utente
-          },
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-          child: const Text('Elimina'),
-        ),
-      ],
-    ),
-  );
-}
-
-Future<void> _deleteUser(UserModel user) async {
-  try {
-    await _usersService.deleteUser(user.id);
-    if (mounted) {
-      // Mostra un messaggio di successo
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Utente ${user.name} eliminato con successo')),
-      );
-    }
-  } catch (e) {
-    if (mounted) {
-      // Mostra un messaggio di errore
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Errore durante l\'eliminazione dell\'utente: $e')),
-      );
-    }
-  }
-}
-
-}
-
-class UserSearchField extends StatelessWidget {
-  final UsersService usersService;
-
-  const UserSearchField({super.key, required this.usersService});
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      decoration: InputDecoration(
-        hintText: 'Search users',
-        prefixIcon: const Icon(Icons.search),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-      onChanged: usersService.searchUsers,
-    );
-  }
-}
-
-class UsersList extends StatelessWidget {
-  final List<UserModel> users;
-  final Function(UserModel) onDeleteUser;
-
-  const UsersList({super.key, required this.users, required this.onDeleteUser});
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.separated(
-      itemCount: users.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
-      itemBuilder: (context, index) => UserCard(
-        user: users[index],
-        onTap: () => context.go('/user_profile/${users[index].id}'),
-        onDelete: () => onDeleteUser(users[index]),
-      ),
-    );
-  }
-}
-
-class UserCard extends StatelessWidget {
-  final UserModel user;
-  final VoidCallback onTap;
-  final VoidCallback onDelete;
-
-  const UserCard({
-    super.key,
-    required this.user,
-    required this.onTap,
-    required this.onDelete,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundImage:
-              user.photoURL.isNotEmpty ? NetworkImage(user.photoURL) : null,
-          child: user.photoURL.isEmpty ? const Icon(Icons.person) : null,
-        ),
-        title: Text(user.name),
-        subtitle: Text('${user.email}\nRole: ${user.role}'),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete),
-          onPressed: onDelete,
-        ),
-        onTap: onTap,
-      ),
-    );
-  }
-}
-
-class CreateUserDialog extends ConsumerStatefulWidget {
-  final VoidCallback onUserCreated;
-
-  const CreateUserDialog({super.key, required this.onUserCreated});
-
-  @override
-  ConsumerState<CreateUserDialog> createState() => _CreateUserDialogState();
-}
-
-class _CreateUserDialogState extends ConsumerState<CreateUserDialog> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  String _selectedRole = 'client';
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Create User'),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Name'),
-              validator: (value) =>
-                  value!.isEmpty ? 'Please enter a name' : null,
-            ),
-            TextFormField(
-              controller: _emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
-              validator: (value) =>
-                  value!.isEmpty ? 'Please enter an email' : null,
-            ),
-            TextFormField(
-              controller: _passwordController,
-              decoration: const InputDecoration(labelText: 'Password'),
-              obscureText: true,
-              validator: (value) =>
-                  value!.isEmpty ? 'Please enter a password' : null,
-            ),
-            DropdownButtonFormField<String>(
-              value: _selectedRole,
-              onChanged: (value) => setState(() => _selectedRole = value!),
-              items: ['admin', 'client', 'coach']
-                  .map((role) =>
-                      DropdownMenuItem(value: role, child: Text(role)))
-                  .toList(),
-              decoration: const InputDecoration(labelText: 'Role'),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: _createUser,
-          child: const Text('Create'),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _createUser() async {
-    if (_formKey.currentState!.validate()) {
-      try {
-        await ref.read(usersServiceProvider).createUser(
-              name: _nameController.text,
-              email: _emailController.text,
-              password: _passwordController.text,
-              role: _selectedRole,
-            );
-        if (mounted) {
-          widget.onUserCreated();
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error creating user: $e')),
-          );
-        }
+  Future<void> _deleteUser(UserModel user) async {
+    try {
+      await _usersService.deleteUser(user.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('User ${user.name} deleted successfully'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error deleting user: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
       }
     }
-  }
-}
-
-class ErrorView extends StatelessWidget {
-  final String error;
-
-  const ErrorView({super.key, required this.error});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.error_outline, size: 48, color: Colors.red),
-          const SizedBox(height: 16),
-          Text('Error: $error', style: Theme.of(context).textTheme.titleMedium),
-        ],
-      ),
-    );
   }
 }

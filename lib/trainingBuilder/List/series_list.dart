@@ -2,11 +2,13 @@ import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 import 'package:alphanessone/trainingBuilder/models/series_model.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-
 import '../controller/training_program_controller.dart';
 import '../dialog/reorder_dialog.dart';
 import '../series_utils.dart';
 import '../dialog/series_dialog.dart';
+import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/UI/components/bottom_menu.dart';
+import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 
 final expansionStateProvider = StateNotifierProvider.autoDispose<
     ExpansionStateNotifier, Map<String, bool>>((ref) {
@@ -40,8 +42,8 @@ class TrainingProgramSeriesList extends ConsumerStatefulWidget {
     required this.workoutIndex,
     required this.exerciseIndex,
     required this.exerciseType,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   TrainingProgramSeriesListState createState() => TrainingProgramSeriesListState();
@@ -75,9 +77,16 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
   @override
   Widget build(BuildContext context) {
     final workout = widget.controller.program.weeks[widget.weekIndex].workouts[widget.workoutIndex];
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     if (widget.exerciseIndex >= workout.exercises.length) {
-      return const Text('Invalid exercise index');
+      return Text(
+        'Invalid exercise index',
+        style: theme.textTheme.titleMedium?.copyWith(
+          color: colorScheme.error,
+        ),
+      );
     }
 
     final exercise = workout.exercises[widget.exerciseIndex];
@@ -97,40 +106,258 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
             final isExpanded = expansionState[key] ?? false;
 
             if (item is List<Series>) {
-              return _buildSeriesGroupCard(context, item, index, isExpanded, key);
+              return _buildSeriesGroupCard(context, item, index, isExpanded, key, theme, colorScheme);
             } else {
-              return _buildSeriesCard(context, item as Series, index);
+              return _buildSeriesCard(context, item as Series, index, theme, colorScheme);
             }
           },
         ),
-        TextButton(
-          onPressed: () => _showReorderSeriesDialog(exercise.series),
-          child: const Text('Riordina Serie'),
+        SizedBox(height: AppTheme.spacing.md),
+        _buildActionButtons(exercise.series, theme, colorScheme),
+      ],
+    );
+  }
+
+  Widget _buildSeriesGroupCard(
+    BuildContext context,
+    List<Series> seriesGroup,
+    int groupIndex,
+    bool isExpanded,
+    String key,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    final series = seriesGroup.first;
+    
+    return Container(
+      margin: EdgeInsets.only(bottom: AppTheme.spacing.sm),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
         ),
-        Center(
-          child: ElevatedButton(
-            onPressed: () => _showEditSeriesDialog(null),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Colors.black,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(
-              'Aggiungi Serie',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
+        boxShadow: AppTheme.elevations.small,
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          key: Key(key),
+          initiallyExpanded: isExpanded,
+          onExpansionChanged: (value) {
+            ref.read(expansionStateProvider.notifier).toggleExpansionState(key);
+          },
+          title: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppTheme.spacing.sm,
+                  vertical: AppTheme.spacing.xs,
+                ),
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(AppTheme.radii.full),
+                ),
+                child: Text(
+                  '${seriesGroup.length} serie',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w600,
                   ),
+                ),
+              ),
+              SizedBox(width: AppTheme.spacing.sm),
+              Expanded(
+                child: Text(
+                  _formatSeriesInfo(series),
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: colorScheme.onSurface,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          trailing: IconButton(
+            icon: Icon(
+              Icons.more_vert,
+              color: colorScheme.onSurfaceVariant,
             ),
+            onPressed: () => _showSeriesGroupOptions(
+              context,
+              seriesGroup,
+              groupIndex,
+              theme,
+              colorScheme,
+            ),
+          ),
+          children: [
+            for (int i = 0; i < seriesGroup.length; i++)
+              _buildSeriesCard(
+                context,
+                seriesGroup[i],
+                groupIndex,
+                theme,
+                colorScheme,
+                i,
+                () {
+                  seriesGroup.removeAt(i);
+                  widget.controller.updateSeries(
+                    widget.weekIndex,
+                    widget.workoutIndex,
+                    widget.exerciseIndex,
+                    seriesGroup,
+                  );
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSeriesCard(
+    BuildContext context,
+    Series series,
+    int groupIndex,
+    ThemeData theme,
+    ColorScheme colorScheme, [
+    int? seriesIndex,
+    VoidCallback? onRemove,
+  ]) {
+    return Container(
+      margin: EdgeInsets.symmetric(
+        horizontal: AppTheme.spacing.md,
+        vertical: AppTheme.spacing.xs,
+      ),
+      padding: EdgeInsets.all(AppTheme.spacing.sm),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(AppTheme.radii.md),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _formatSeriesInfo(series),
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                SizedBox(height: AppTheme.spacing.xs),
+                Text(
+                  'RPE: ${_formatRange(series.rpe, series.maxRpe)}, Intensity: ${_formatRange(series.intensity, series.maxIntensity)}',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.more_vert,
+              color: colorScheme.onSurfaceVariant,
+            ),
+            onPressed: () => _showSeriesOptions(
+              context,
+              series,
+              [series],
+              groupIndex,
+              seriesIndex,
+              onRemove,
+              theme,
+              colorScheme,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(List<Series> series, ThemeData theme, ColorScheme colorScheme) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildActionButton(
+            icon: Icons.reorder,
+            label: 'Reorder Series',
+            onTap: () => _showReorderSeriesDialog(series),
+            isPrimary: false,
+            theme: theme,
+            colorScheme: colorScheme,
+          ),
+        ),
+        SizedBox(width: AppTheme.spacing.md),
+        Expanded(
+          child: _buildActionButton(
+            icon: Icons.add,
+            label: 'Add Series',
+            onTap: () => _showEditSeriesDialog(null),
+            isPrimary: true,
+            theme: theme,
+            colorScheme: colorScheme,
           ),
         ),
       ],
     );
   }
 
-List<dynamic> _groupSeries(List<Series> series) {
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required bool isPrimary,
+    required ThemeData theme,
+    required ColorScheme colorScheme,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isPrimary
+              ? [colorScheme.primary, colorScheme.primary.withOpacity(0.8)]
+              : [colorScheme.surfaceContainerHighest, colorScheme.surfaceContainerHighest.withOpacity(0.8)],
+        ),
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        boxShadow: isPrimary ? AppTheme.elevations.small : null,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              vertical: AppTheme.spacing.md,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  color: isPrimary ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
+                  size: 20,
+                ),
+                SizedBox(width: AppTheme.spacing.sm),
+                Text(
+                  label,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: isPrimary ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<dynamic> _groupSeries(List<Series> series) {
     final groupedSeries = <dynamic>[];
     List<Series> currentGroup = [];
 
@@ -163,139 +390,6 @@ List<dynamic> _groupSeries(List<Series> series) {
         a.maxRpe == b.maxRpe &&
         a.weight == b.weight &&
         a.maxWeight == b.maxWeight;
-  }
-
-  Widget _buildSeriesGroupCard(
-    BuildContext context,
-    List<Series> seriesGroup,
-    int groupIndex,
-    bool isExpanded,
-    String key,
-  ) {
-    final series = seriesGroup.first;
-    return ExpansionTile(
-      key: Key(key),
-      initiallyExpanded: isExpanded,
-      onExpansionChanged: (value) {
-        ref.read(expansionStateProvider.notifier).toggleExpansionState(key);
-      },
-      title: Text(
-        '${seriesGroup.length} serie${seriesGroup.length > 1 ? 's' : ''}, ${_formatSeriesInfo(series)}',
-        style: Theme.of(context).textTheme.bodyLarge,
-      ),
-      trailing: _buildSeriesGroupPopupMenu(context, seriesGroup, groupIndex),
-      children: [
-        for (int i = 0; i < seriesGroup.length; i++)
-          _buildSeriesCard(context, seriesGroup[i], groupIndex, i, () {
-            seriesGroup.removeAt(i);
-            widget.controller.updateSeries(widget.weekIndex, widget.workoutIndex, widget.exerciseIndex, seriesGroup);
-          }, widget.exerciseType),
-      ],
-    );
-  }
-
-  Widget _buildSeriesGroupPopupMenu(
-      BuildContext context, List<Series> seriesGroup, int groupIndex) {
-    return PopupMenuButton(
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          child: const Text('Modifica Tutte'),
-          onTap: () => _showEditSeriesDialog(seriesGroup),
-        ),
-        PopupMenuItem(
-          child: const Text('Elimina'),
-          onTap: () => _showDeleteSeriesGroupDialog(seriesGroup, groupIndex),
-        ),
-      ],
-    );
-  }
-
-  void _showDeleteSeriesGroupDialog(List<Series> seriesGroup, int groupIndex) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Elimina Gruppo Di Serie'),
-        content: const Text('Confermi Di Voler Eliminare Questo Gruppo Di Serie'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Annulla'),
-          ),
-          TextButton(
-            onPressed: () {
-              _deleteSeriesGroup(seriesGroup, groupIndex);
-              Navigator.pop(context);
-            },
-            child: const Text('Elimina'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _deleteSeriesGroup(List<Series> seriesGroup, int groupIndex) {
-    final exercise = widget.controller.program.weeks[widget.weekIndex].workouts[widget.workoutIndex]
-        .exercises[widget.exerciseIndex];
-
-    List<Series> seriesToRemove = List.from(seriesGroup);
-
-    for (Series series in seriesToRemove) {
-      if (series.serieId != null) {
-        widget.controller.program.trackToDeleteSeries.add(series.serieId!);
-      }
-    }
-
-    exercise.series.removeWhere((series) => seriesToRemove.contains(series));
-
-    for (int i = 0; i < exercise.series.length; i++) {
-      exercise.series[i].order = i + 1;
-    }
-
-    widget.controller.updateSeries(widget.weekIndex, widget.workoutIndex, widget.exerciseIndex, exercise.series);
-  }
-
-  Widget _buildSeriesCard(BuildContext context, Series series,
-      [int? groupIndex, int? seriesIndex, VoidCallback? onRemove, String? exerciseType]) {
-    return ListTile(
-      title: Text(
-        _formatSeriesInfo(series),
-        style: Theme.of(context).textTheme.bodyLarge,
-      ),
-      subtitle: Text('RPE: ${_formatRange(series.rpe, series.maxRpe)}, Intensity: ${_formatRange(series.intensity, series.maxIntensity)}'),
-      trailing: PopupMenuButton(
-        itemBuilder: (context) => [
-          PopupMenuItem(
-            child: const Text('Modifica'),
-            onTap: () => _showEditSeriesDialog([series], isIndividualEdit: true),
-          ),
-          PopupMenuItem(
-            child: const Text('Elimina'),
-            onTap: () {
-              if (onRemove != null) {
-                onRemove();
-              } else {
-                widget.controller.removeSeries(widget.weekIndex, widget.workoutIndex, widget.exerciseIndex,
-                    groupIndex ?? 0, seriesIndex ?? 0);
-              }
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _formatSeriesInfo(Series series) {
-    final reps = _formatRange(series.reps.toString(), series.maxReps?.toString());
-    final sets = _formatRange(series.sets.toString(), series.maxSets?.toString());
-    final weight = _formatRange(series.weight.toString(), series.maxWeight?.toString());
-    return '$sets set(s), $reps reps x $weight kg';
-  }
-
-  String _formatRange(String minValue, String? maxValue) {
-    if (maxValue != null && maxValue != minValue) {
-      return '$minValue-$maxValue';
-    }
-    return minValue;
   }
 
   void _showReorderSeriesDialog(List<Series> series) {
@@ -377,5 +471,197 @@ List<dynamic> _groupSeries(List<Series> series) {
     }
 
     widget.controller.updateSeries(widget.weekIndex, widget.workoutIndex, widget.exerciseIndex, exercise.series);
+  }
+
+  String _formatSeriesInfo(Series series) {
+    final reps = _formatRange(series.reps.toString(), series.maxReps?.toString());
+    final sets = _formatRange(series.sets.toString(), series.maxSets?.toString());
+    final weight = _formatRange(series.weight.toString(), series.maxWeight?.toString());
+    return '$sets set(s), $reps reps x $weight kg';
+  }
+
+  String _formatRange(String minValue, String? maxValue) {
+    if (maxValue != null && maxValue != minValue) {
+      return '$minValue-$maxValue';
+    }
+    return minValue;
+  }
+
+  void _showDeleteSeriesGroupDialog(List<Series> seriesGroup, int groupIndex) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Elimina Gruppo Di Serie'),
+        content: const Text('Confermi Di Voler Eliminare Questo Gruppo Di Serie'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annulla'),
+          ),
+          TextButton(
+            onPressed: () {
+              _deleteSeriesGroup(seriesGroup, groupIndex);
+              Navigator.pop(context);
+            },
+            child: const Text('Elimina'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _deleteSeriesGroup(List<Series> seriesGroup, int groupIndex) {
+    final exercise = widget.controller.program.weeks[widget.weekIndex].workouts[widget.workoutIndex]
+        .exercises[widget.exerciseIndex];
+
+    List<Series> seriesToRemove = List.from(seriesGroup);
+
+    for (Series series in seriesToRemove) {
+      if (series.serieId != null) {
+        widget.controller.program.trackToDeleteSeries.add(series.serieId!);
+      }
+    }
+
+    exercise.series.removeWhere((series) => seriesToRemove.contains(series));
+
+    for (int i = 0; i < exercise.series.length; i++) {
+      exercise.series[i].order = i + 1;
+    }
+
+    widget.controller.updateSeries(widget.weekIndex, widget.workoutIndex, widget.exerciseIndex, exercise.series);
+  }
+
+  void _showSeriesOptions(
+    BuildContext context,
+    Series series,
+    List<Series> seriesGroup,
+    int groupIndex,
+    int? seriesIndex,
+    VoidCallback? onRemove,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    final exercise = widget.controller.program.weeks[widget.weekIndex]
+        .workouts[widget.workoutIndex].exercises[widget.exerciseIndex];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => BottomMenu(
+        title: 'Serie ${series.order}',
+        subtitle: _formatSeriesInfo(series),
+        leading: Container(
+          padding: EdgeInsets.all(AppTheme.spacing.sm),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(AppTheme.radii.md),
+          ),
+          child: Icon(
+            Icons.fitness_center,
+            color: colorScheme.primary,
+            size: 24,
+          ),
+        ),
+        items: [
+          BottomMenuItem(
+            title: 'Modifica',
+            icon: Icons.edit_outlined,
+            onTap: () => _showEditSeriesDialog([series], isIndividualEdit: true),
+          ),
+          BottomMenuItem(
+            title: 'Duplica Serie',
+            icon: Icons.content_copy_outlined,
+            onTap: () {
+              final newSeries = series.copyWith(
+                serieId: generateRandomId(16),
+                order: exercise.series.length + 1,
+              );
+              _addNewSeries([newSeries]);
+            },
+          ),
+          BottomMenuItem(
+            title: 'Elimina',
+            icon: Icons.delete_outline,
+            onTap: () {
+              if (onRemove != null) {
+                onRemove();
+              } else {
+                widget.controller.removeSeries(
+                  widget.weekIndex,
+                  widget.workoutIndex,
+                  widget.exerciseIndex,
+                  groupIndex,
+                  seriesIndex ?? 0,
+                );
+              }
+            },
+            isDestructive: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSeriesGroupOptions(
+    BuildContext context,
+    List<Series> seriesGroup,
+    int groupIndex,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    final exercise = widget.controller.program.weeks[widget.weekIndex]
+        .workouts[widget.workoutIndex].exercises[widget.exerciseIndex];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => BottomMenu(
+        title: 'Gruppo Serie',
+        subtitle: '${seriesGroup.length} serie',
+        leading: Container(
+          padding: EdgeInsets.all(AppTheme.spacing.sm),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(AppTheme.radii.md),
+          ),
+          child: Icon(
+            Icons.format_list_numbered,
+            color: colorScheme.primary,
+            size: 24,
+          ),
+        ),
+        items: [
+          BottomMenuItem(
+            title: 'Modifica Gruppo',
+            icon: Icons.edit_outlined,
+            onTap: () => _showEditSeriesDialog(seriesGroup),
+          ),
+          BottomMenuItem(
+            title: 'Duplica Gruppo',
+            icon: Icons.content_copy_outlined,
+            onTap: () {
+              final newSeriesGroup = seriesGroup.map((s) => s.copyWith(
+                serieId: generateRandomId(16),
+                order: exercise.series.length + seriesGroup.indexOf(s) + 1,
+              )).toList();
+              _addNewSeries(newSeriesGroup);
+            },
+          ),
+          BottomMenuItem(
+            title: 'Riordina Serie',
+            icon: Icons.reorder,
+            onTap: () => _showReorderSeriesDialog(seriesGroup),
+          ),
+          BottomMenuItem(
+            title: 'Elimina Gruppo',
+            icon: Icons.delete_outline,
+            onTap: () => _showDeleteSeriesGroupDialog(seriesGroup, groupIndex),
+            isDestructive: true,
+          ),
+        ],
+      ),
+    );
   }
 }

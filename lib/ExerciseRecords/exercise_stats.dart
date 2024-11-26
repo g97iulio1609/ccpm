@@ -28,7 +28,7 @@ class ExerciseStats extends HookConsumerWidget {
     );
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: StreamBuilder<List<ExerciseRecord>>(
           stream: recordsStream,
@@ -54,10 +54,10 @@ class ExerciseStats extends HookConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      exercise.name,
+                      '${exercise.name} - ${exercise.muscleGroups.join(", ")}',
                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onBackground,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -181,7 +181,7 @@ class ExerciseStats extends HookConsumerWidget {
                   return Text(
                     '${value.toInt()}',
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.onBackground,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 10,
                     ),
                   );
@@ -198,7 +198,7 @@ class ExerciseStats extends HookConsumerWidget {
                     return Text(
                       DateFormat('MMM d').format(DateTime.parse(sortedRecords[value.toInt()].date)),
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.onBackground,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 10,
                       ),
                     );
@@ -284,7 +284,7 @@ class ExerciseStats extends HookConsumerWidget {
           'History',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.onBackground,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
           textAlign: TextAlign.center,
         ),

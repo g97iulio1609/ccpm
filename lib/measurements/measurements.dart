@@ -6,6 +6,10 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:alphanessone/models/measurement_model.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/models/user_model.dart';
+import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/UI/components/bottom_menu.dart';
+
+
 
 class MeasurementsPage extends ConsumerStatefulWidget {
   const MeasurementsPage({super.key});
@@ -17,10 +21,8 @@ class MeasurementsPage extends ConsumerStatefulWidget {
       BuildContext context, WidgetRef ref, String userId) {
     showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
-      ),
       builder: (context) => DraggableScrollableSheet(
         initialChildSize: 0.9,
         minChildSize: 0.5,
@@ -62,37 +64,124 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final currentUserRole = ref.watch(userRoleProvider);
     final selectedUserId = ref.watch(selectedUserIdProvider);
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      body: SafeArea(
-        child: Column(
-          children: [
-            if (currentUserRole == 'admin' || currentUserRole == 'coach')
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: UserTypeAheadField(
-                  controller: _userSearchController,
-                  focusNode: _userSearchFocusNode,
-                  onSelected: (UserModel user) {
-                    ref.read(selectedUserIdProvider.notifier).state = user.id;
-                  },
-                  onChanged: (String value) {
-                    // Handle onChanged if needed
-                  },
+      backgroundColor: colorScheme.surface,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              colorScheme.surface,
+              colorScheme.surfaceContainerHighest.withOpacity(0.5),
+            ],
+            stops: const [0.0, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // User Search Field (for admin/coach)
+              if (currentUserRole == 'admin' || currentUserRole == 'coach')
+                Container(
+                  margin: EdgeInsets.all(AppTheme.spacing.xl),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                    border: Border.all(
+                      color: colorScheme.outline.withOpacity(0.1),
+                    ),
+                    boxShadow: AppTheme.elevations.small,
+                  ),
+                  child: UserTypeAheadField(
+                    controller: _userSearchController,
+                    focusNode: _userSearchFocusNode,
+                    onSelected: (UserModel user) {
+                      ref.read(selectedUserIdProvider.notifier).state = user.id;
+                    },
+                    onChanged: (String value) {
+                      // Gestione del cambiamento del testo di ricerca
+                      final allUsers = ref.read(userListProvider);
+                      final filteredUsers = allUsers.where((user) =>
+                        user.name.toLowerCase().contains(value.toLowerCase()) ||
+                        user.email.toLowerCase().contains(value.toLowerCase())
+                      ).toList();
+                      ref.read(filteredUserListProvider.notifier).state = filteredUsers;
+                    },
+                  ),
                 ),
+
+              // Measurements Content
+              Expanded(
+                child: selectedUserId != null
+                    ? _buildMeasurementsContent(selectedUserId)
+                    : currentUserRole == 'admin' || currentUserRole == 'coach'
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.person_search,
+                                  size: 64,
+                                  color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                                ),
+                                SizedBox(height: AppTheme.spacing.md),
+                                Text(
+                                  'Seleziona un utente',
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : _buildMeasurementsContent(
+                            ref.read(usersServiceProvider).getCurrentUserId()),
               ),
-            Expanded(
-              child: selectedUserId != null
-                  ? _buildMeasurementsContent(selectedUserId)
-                  : currentUserRole == 'admin' || currentUserRole == 'coach'
-                      ? const Center(child: Text('Please select a user'))
-                      : _buildMeasurementsContent(
-                          ref.read(usersServiceProvider).getCurrentUserId()),
+            ],
+          ),
+        ),
+      ),
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              colorScheme.primary,
+              colorScheme.primary.withOpacity(0.8),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.primary.withOpacity(0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => MeasurementsPage.showAddMeasurementDialog(
+              context,
+              ref,
+              selectedUserId ?? ref.read(usersServiceProvider).getCurrentUserId(),
+            ),
+            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+            child: Padding(
+              padding: EdgeInsets.all(AppTheme.spacing.md),
+              child: Icon(
+                Icons.add,
+                color: colorScheme.onPrimary,
+                size: 24,
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -195,7 +284,7 @@ class _MeasurementsContent extends ConsumerWidget {
 class _MeasurementCards extends ConsumerWidget {
   final List<MeasurementModel> measurements;
   final List<MeasurementModel> selectedComparisons;
-  final int userGender; // 1 for male, 2 for female
+  final int userGender;
 
   const _MeasurementCards({
     required this.measurements,
@@ -206,7 +295,8 @@ class _MeasurementCards extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final referenceMeasurement = _getReferenceMeasurement();
-    Theme.of(context);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -214,67 +304,81 @@ class _MeasurementCards extends ConsumerWidget {
         final width = constraints.maxWidth / crossAxisCount - 16;
 
         return Wrap(
-          spacing: 16,
-          runSpacing: 16,
+          spacing: AppTheme.spacing.lg,
+          runSpacing: AppTheme.spacing.lg,
           children: [
             _buildMeasurementCard(
-                context,
-                ref,
-                'Weight',
-                width,
-                referenceMeasurement?.weight,
-                'kg',
-                (value) => _getWeightStatus(
-                    referenceMeasurement?.bodyFatPercentage ?? 0, userGender),
-                _getComparisons(referenceMeasurement, (m) => m.weight)),
+              context,
+              'Peso',
+              width,
+              referenceMeasurement?.weight,
+              'kg',
+              Icons.monitor_weight_outlined,
+              (value) => _getWeightStatus(referenceMeasurement?.bodyFatPercentage ?? 0, userGender),
+              _getComparisons(referenceMeasurement, (m) => m.weight),
+              colorScheme,
+              theme,
+            ),
             _buildMeasurementCard(
-                context,
-                ref,
-                'Height',
-                width,
-                referenceMeasurement?.height,
-                'cm',
-                (_) => 'Normal',
-                _getComparisons(referenceMeasurement, (m) => m.height)),
+              context,
+              'Altezza',
+              width,
+              referenceMeasurement?.height,
+              'cm',
+              Icons.height,
+              (_) => 'Normale',
+              _getComparisons(referenceMeasurement, (m) => m.height),
+              colorScheme,
+              theme,
+            ),
             _buildMeasurementCard(
-                context,
-                ref,
-                'BMI',
-                width,
-                referenceMeasurement?.bmi,
-                '',
-                _getBMIStatus,
-                _getComparisons(referenceMeasurement, (m) => m.bmi)),
+              context,
+              'BMI',
+              width,
+              referenceMeasurement?.bmi,
+              '',
+              Icons.calculate_outlined,
+              _getBMIStatus,
+              _getComparisons(referenceMeasurement, (m) => m.bmi),
+              colorScheme,
+              theme,
+            ),
             _buildMeasurementCard(
-                context,
-                ref,
-                'Body Fat',
-                width,
-                referenceMeasurement?.bodyFatPercentage,
-                '%',
-                _getBodyFatStatus,
-                _getComparisons(
-                    referenceMeasurement, (m) => m.bodyFatPercentage)),
+              context,
+              'Grasso Corporeo',
+              width,
+              referenceMeasurement?.bodyFatPercentage,
+              '%',
+              Icons.pie_chart_outline,
+              _getBodyFatStatus,
+              _getComparisons(referenceMeasurement, (m) => m.bodyFatPercentage),
+              colorScheme,
+              theme,
+            ),
             _buildMeasurementCard(
-                context,
-                ref,
-                'Waist',
-                width,
-                referenceMeasurement?.waistCircumference,
-                'cm',
-                _getWaistStatus,
-                _getComparisons(
-                    referenceMeasurement, (m) => m.waistCircumference)),
+              context,
+              'Circonferenza Vita',
+              width,
+              referenceMeasurement?.waistCircumference,
+              'cm',
+              Icons.straighten,
+              _getWaistStatus,
+              _getComparisons(referenceMeasurement, (m) => m.waistCircumference),
+              colorScheme,
+              theme,
+            ),
             _buildMeasurementCard(
-                context,
-                ref,
-                'Hip',
-                width,
-                referenceMeasurement?.hipCircumference,
-                'cm',
-                (_) => 'Normal',
-                _getComparisons(
-                    referenceMeasurement, (m) => m.hipCircumference)),
+              context,
+              'Circonferenza Fianchi',
+              width,
+              referenceMeasurement?.hipCircumference,
+              'cm',
+              Icons.straighten,
+              (_) => 'Normale',
+              _getComparisons(referenceMeasurement, (m) => m.hipCircumference),
+              colorScheme,
+              theme,
+            ),
           ],
         );
       },
@@ -282,99 +386,171 @@ class _MeasurementCards extends ConsumerWidget {
   }
 
   Widget _buildMeasurementCard(
-      BuildContext context,
-      WidgetRef ref,
-      String title,
-      double width,
-      double? currentValue,
-      String unit,
-      String Function(double) getStatus,
-      List<MapEntry<String, double?>> comparisonValues) {
-    final theme = Theme.of(context);
-
-    return SizedBox(
+    BuildContext context,
+    String title,
+    double width,
+    double? currentValue,
+    String unit,
+    IconData icon,
+    String Function(double) getStatus,
+    List<MapEntry<String, double?>> comparisonValues,
+    ColorScheme colorScheme,
+    ThemeData theme,
+  ) {
+    return Container(
       width: width,
-      child: Card(
-        elevation: 2,
-        color: theme.colorScheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: Colors.white, width: 0.5),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title,
-                  style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface)),
-              const SizedBox(height: 8),
-              if (currentValue != null) ...[
-                Text('${currentValue.toStringAsFixed(1)} $unit',
-                    style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurface)),
-                Text(getStatus(currentValue),
-                    style: TextStyle(
-                        color: _getStatusColor(getStatus(currentValue), theme),
-                        fontSize: 16)),
-                const SizedBox(height: 8),
-                ...comparisonValues.map((entry) => _buildComparisonRow(
-                    context, ref, entry, currentValue, unit)),
-              ] else
-                Text('No data available',
-                    style: TextStyle(color: theme.colorScheme.onSurface)),
-            ],
+        boxShadow: AppTheme.elevations.small,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {}, // Gestire il tap se necessario
+            child: Padding(
+              padding: EdgeInsets.all(AppTheme.spacing.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header con icona e titolo
+                  Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(AppTheme.spacing.sm),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(AppTheme.radii.md),
+                        ),
+                        child: Icon(
+                          icon,
+                          color: colorScheme.primary,
+                          size: 20,
+                        ),
+                      ),
+                      SizedBox(width: AppTheme.spacing.sm),
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: colorScheme.onSurface,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  SizedBox(height: AppTheme.spacing.md),
+
+                  // Valore corrente
+                  if (currentValue != null) ...[
+                    Text(
+                      '${currentValue.toStringAsFixed(1)} $unit',
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    SizedBox(height: AppTheme.spacing.xs),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppTheme.spacing.sm,
+                        vertical: AppTheme.spacing.xs,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _getStatusColor(getStatus(currentValue), colorScheme).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(AppTheme.radii.full),
+                      ),
+                      child: Text(
+                        getStatus(currentValue),
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: _getStatusColor(getStatus(currentValue), colorScheme),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    if (comparisonValues.isNotEmpty) ...[
+                      SizedBox(height: AppTheme.spacing.md),
+                      Divider(
+                        color: colorScheme.outline.withOpacity(0.1),
+                      ),
+                      SizedBox(height: AppTheme.spacing.sm),
+                      ...comparisonValues.map((entry) => _buildComparisonRow(
+                        context,
+                        entry,
+                        currentValue,
+                        unit,
+                        colorScheme,
+                        theme,
+                      )),
+                    ],
+                  ] else
+                    Text(
+                      'Nessun dato disponibile',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildComparisonRow(BuildContext context, WidgetRef ref,
-      MapEntry<String, double?> entry, double currentValue, String unit) {
-    final theme = Theme.of(context);
+  Widget _buildComparisonRow(
+    BuildContext context,
+    MapEntry<String, double?> entry,
+    double currentValue,
+    String unit,
+    ColorScheme colorScheme,
+    ThemeData theme,
+  ) {
     final comparisonDate = entry.key;
     final comparisonValue = entry.value;
     if (comparisonValue != null) {
       final difference = currentValue - comparisonValue;
+      final isPositive = difference >= 0;
       return Padding(
-        padding: const EdgeInsets.only(bottom: 4),
+        padding: EdgeInsets.only(bottom: AppTheme.spacing.xs),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Expanded(
-              child: Text(
-                '$comparisonDate: ${difference.toStringAsFixed(1)} $unit',
-                style: TextStyle(
-                    color: difference < 0
-                        ? theme.colorScheme.tertiary
-                        : theme.colorScheme.error,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14),
+            Text(
+              comparisonDate,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
-            GestureDetector(
-              onTap: () => _removeComparison(ref, comparisonDate),
-              child: Icon(Icons.close,
+            Row(
+              children: [
+                Icon(
+                  isPositive ? Icons.arrow_upward : Icons.arrow_downward,
                   size: 16,
-                  color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                  color: isPositive ? colorScheme.error : colorScheme.tertiary,
+                ),
+                Text(
+                  '${difference.abs().toStringAsFixed(1)} $unit',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: isPositive ? colorScheme.error : colorScheme.tertiary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
       );
     }
     return const SizedBox.shrink();
-  }
-
-  void _removeComparison(WidgetRef ref, String comparisonDate) {
-    final selectedComparisons = ref.read(selectedComparisonsProvider);
-    ref.read(selectedComparisonsProvider.notifier).state = selectedComparisons
-        .where((m) => DateFormat('dd/MM/yyyy').format(m.date) != comparisonDate)
-        .toList();
   }
 
   MeasurementModel? _getReferenceMeasurement() {
@@ -396,22 +572,22 @@ class _MeasurementCards extends ConsumerWidget {
         .toList();
   }
 
-  Color _getStatusColor(String status, ThemeData theme) {
+  Color _getStatusColor(String status, ColorScheme colorScheme) {
     switch (status.toLowerCase()) {
       case 'underweight':
       case 'very low':
-        return theme.colorScheme.secondary;
+        return colorScheme.secondary;
       case 'normal':
       case 'optimal':
       case 'fitness':
-        return theme.colorScheme.tertiary;
+        return colorScheme.tertiary;
       case 'overweight':
       case 'high':
-        return theme.colorScheme.secondary;
+        return colorScheme.secondary;
       case 'obese':
-        return theme.colorScheme.error;
+        return colorScheme.error;
       default:
-        return theme.colorScheme.onSurface;
+        return colorScheme.onSurface;
     }
   }
 
@@ -464,6 +640,7 @@ class _MeasurementsTrend extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     bool hasMeasurements = measurements.isNotEmpty &&
         measurements.any((m) =>
@@ -471,125 +648,235 @@ class _MeasurementsTrend extends StatelessWidget {
             (m.bodyFatPercentage) > 0 ||
             (m.waistCircumference) > 0);
 
-    return Card(
-      elevation: 2,
-      color: theme.colorScheme.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: Colors.white, width: 0.5),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Measurement Trends',
-                style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface)),
-            const SizedBox(height: 16),
-            if (hasMeasurements)
-              SizedBox(
-                height: 200,
-                child: LineChart(
-                  LineChartData(
-                    gridData: FlGridData(
-                      show: true,
-                      drawVerticalLine: true,
-                      getDrawingHorizontalLine: (value) {
-                        return FlLine(
-                          color: theme.colorScheme.onSurface.withOpacity(0.1),
-                          strokeWidth: 1,
-                        );
-                      },
-                      getDrawingVerticalLine: (value) {
-                        return FlLine(
-                          color: theme.colorScheme.onSurface.withOpacity(0.1),
-                          strokeWidth: 1,
-                        );
-                      },
-                    ),
-                    titlesData: _buildTitlesData(theme),
-                    borderData: FlBorderData(
-                      show: true,
-                      border: Border.all(
-                          color: theme.colorScheme.onSurface.withOpacity(0.1),
-                          width: 1),
-                    ),
-                    lineBarsData: [
-                      _buildLineChartBarData(measurements, (m) => m.weight,
-                          theme.colorScheme.primary),
-                      _buildLineChartBarData(
-                          measurements,
-                          (m) => m.bodyFatPercentage,
-                          theme.colorScheme.secondary),
-                      _buildLineChartBarData(
-                          measurements,
-                          (m) => m.waistCircumference,
-                          theme.colorScheme.tertiary),
-                    ],
-                    minX: 0,
-                    maxX: (measurements.length - 1).toDouble(),
-                    minY: 0,
-                    maxY: _calculateMaxY(),
-                    lineTouchData: LineTouchData(
-                      touchTooltipData: LineTouchTooltipData(
-                        tooltipRoundedRadius: 8,
-                        getTooltipItems: (touchedSpots) {
-                          return touchedSpots.map((LineBarSpot touchedSpot) {
-                            final date =
-                                measurements[touchedSpot.x.toInt()].date;
-                            final value = touchedSpot.y;
-                            final measurementType = [
-                              'Weight',
-                              'Body Fat',
-                              'Waist'
-                            ][touchedSpot.barIndex];
-                            return LineTooltipItem(
-                              '${DateFormat('dd/MM/yyyy').format(date)}\n$measurementType: ${value.toStringAsFixed(1)}',
-                              TextStyle(color: theme.colorScheme.onSurface),
-                            );
-                          }).toList();
-                        },
-                        fitInsideHorizontally: true,
-                        fitInsideVertically: true,
-                      ),
-                      handleBuiltInTouches: true,
-                      getTouchLineStart: (data, index) => 0,
-                    ),
-                  ),
-                ),
-              )
-            else
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    'Non ci sono ancora registrazioni di misurazioni. Aggiungi nuove misurazioni per visualizzare il grafico.',
-                    style: TextStyle(
-                        color: theme.colorScheme.onSurface, fontSize: 16),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-            const SizedBox(height: 8),
-            if (hasMeasurements)
-              Wrap(
-                spacing: 8,
-                children: [
-                  _buildLegendItem('Weight', theme.colorScheme.primary),
-                  _buildLegendItem('Body Fat', theme.colorScheme.secondary),
-                  _buildLegendItem('Waist', theme.colorScheme.tertiary),
-                ],
-              ),
-          ],
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
         ),
+        boxShadow: AppTheme.elevations.small,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Container(
+            padding: EdgeInsets.all(AppTheme.spacing.lg),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(AppTheme.radii.lg),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppTheme.spacing.sm,
+                    vertical: AppTheme.spacing.xs,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(AppTheme.radii.full),
+                  ),
+                  child: Icon(
+                    Icons.trending_up,
+                    color: colorScheme.primary,
+                    size: 20,
+                  ),
+                ),
+                SizedBox(width: AppTheme.spacing.md),
+                Text(
+                  'Andamento Misurazioni',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Chart Content
+          Padding(
+            padding: EdgeInsets.all(AppTheme.spacing.lg),
+            child: Column(
+              children: [
+                if (hasMeasurements) ...[
+                  SizedBox(
+                    height: 300,
+                    child: LineChart(
+                      LineChartData(
+                        gridData: FlGridData(
+                          show: true,
+                          drawVerticalLine: true,
+                          getDrawingHorizontalLine: (value) {
+                            return FlLine(
+                              color: colorScheme.outlineVariant.withOpacity(0.2),
+                              strokeWidth: 1,
+                            );
+                          },
+                          getDrawingVerticalLine: (value) {
+                            return FlLine(
+                              color: colorScheme.outlineVariant.withOpacity(0.2),
+                              strokeWidth: 1,
+                            );
+                          },
+                        ),
+                        titlesData: _buildTitlesData(theme, colorScheme),
+                        borderData: FlBorderData(
+                          show: true,
+                          border: Border.all(
+                            color: colorScheme.outlineVariant.withOpacity(0.2),
+                            width: 1,
+                          ),
+                        ),
+                        lineBarsData: [
+                          _buildLineChartBarData(
+                            measurements,
+                            (m) => m.weight,
+                            colorScheme.primary,
+                            colorScheme,
+                          ),
+                          _buildLineChartBarData(
+                            measurements,
+                            (m) => m.bodyFatPercentage,
+                            colorScheme.secondary,
+                            colorScheme,
+                          ),
+                          _buildLineChartBarData(
+                            measurements,
+                            (m) => m.waistCircumference,
+                            colorScheme.tertiary,
+                            colorScheme,
+                          ),
+                        ],
+                        minX: 0,
+                        maxX: (measurements.length - 1).toDouble(),
+                        minY: 0,
+                        maxY: _calculateMaxY(),
+                        lineTouchData: LineTouchData(
+                          touchTooltipData: LineTouchTooltipData(
+                            tooltipRoundedRadius: AppTheme.radii.md,
+                            tooltipBorder: BorderSide(
+                              color: colorScheme.outline.withOpacity(0.1),
+                            ),
+                            tooltipPadding: EdgeInsets.all(AppTheme.spacing.sm),
+                            tooltipMargin: AppTheme.spacing.sm,
+                            getTooltipItems: (touchedSpots) {
+                              return touchedSpots.map((LineBarSpot touchedSpot) {
+                                final date = measurements[touchedSpot.x.toInt()].date;
+                                final value = touchedSpot.y;
+                                final measurementType = [
+                                  'Peso',
+                                  'Grasso Corporeo',
+                                  'Circonferenza Vita'
+                                ][touchedSpot.barIndex];
+                                return LineTooltipItem(
+                                  '${DateFormat('dd/MM/yyyy').format(date)}\n$measurementType: ${value.toStringAsFixed(1)}',
+                                  TextStyle(
+                                    color: colorScheme.onSurface,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                );
+                              }).toList();
+                            },
+                            fitInsideHorizontally: true,
+                            fitInsideVertically: true,
+                          ),
+                          handleBuiltInTouches: true,
+                          getTouchLineStart: (data, index) => 0,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: AppTheme.spacing.lg),
+                  // Legend
+                  Wrap(
+                    spacing: AppTheme.spacing.md,
+                    runSpacing: AppTheme.spacing.sm,
+                    children: [
+                      _buildLegendItem('Peso', colorScheme.primary, theme, colorScheme),
+                      _buildLegendItem('Grasso Corporeo', colorScheme.secondary, theme, colorScheme),
+                      _buildLegendItem('Circonferenza Vita', colorScheme.tertiary, theme, colorScheme),
+                    ],
+                  ),
+                ] else
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.show_chart,
+                          size: 64,
+                          color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                        ),
+                        SizedBox(height: AppTheme.spacing.md),
+                        Text(
+                          'Nessuna misurazione disponibile',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        SizedBox(height: AppTheme.spacing.sm),
+                        Text(
+                          'Aggiungi nuove misurazioni per visualizzare il grafico',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  FlTitlesData _buildTitlesData(ThemeData theme) {
+  Widget _buildLegendItem(String label, Color color, ThemeData theme, ColorScheme colorScheme) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppTheme.spacing.md,
+        vertical: AppTheme.spacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(AppTheme.radii.full),
+        border: Border.all(
+          color: color.withOpacity(0.2),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          SizedBox(width: AppTheme.spacing.xs),
+          Text(
+            label,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  FlTitlesData _buildTitlesData(ThemeData theme, ColorScheme colorScheme) {
     return FlTitlesData(
       leftTitles: AxisTitles(
         sideTitles: SideTitles(
@@ -599,7 +886,7 @@ class _MeasurementsTrend extends StatelessWidget {
             return Text(
               value.toInt().toString(),
               style: TextStyle(
-                color: theme.colorScheme.onSurface,
+                color: colorScheme.onSurface,
                 fontSize: 10,
               ),
             );
@@ -620,7 +907,7 @@ class _MeasurementsTrend extends StatelessWidget {
                 child: Text(
                   DateFormat('dd/MM').format(measurements[index].date),
                   style: TextStyle(
-                    color: theme.colorScheme.onSurface,
+                    color: colorScheme.onSurface,
                     fontSize: 10,
                   ),
                 ),
@@ -635,7 +922,7 @@ class _MeasurementsTrend extends StatelessWidget {
   }
 
   LineChartBarData _buildLineChartBarData(List<MeasurementModel> measurements,
-      double? Function(MeasurementModel) getValue, Color color) {
+      double? Function(MeasurementModel) getValue, Color color, ColorScheme colorScheme) {
     return LineChartBarData(
       spots: measurements.asMap().entries.map((entry) {
         final value = getValue(entry.value);
@@ -659,25 +946,6 @@ class _MeasurementsTrend extends StatelessWidget {
         },
       ),
       belowBarData: BarAreaData(show: false),
-    );
-  }
-
-  Widget _buildLegendItem(String label, Color color) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 16,
-          height: 16,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 2),
-          ),
-        ),
-        const SizedBox(width: 4),
-        Text(label),
-      ],
     );
   }
 
@@ -708,59 +976,213 @@ class _MeasurementsList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    return Card(
-      elevation: 2,
-      color: theme.colorScheme.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: Colors.white, width: 0.5),
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
+        ),
+        boxShadow: AppTheme.elevations.small,
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Measurement History',
-                style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface)),
-            const SizedBox(height: 16),
-            ListView.builder(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Container(
+            padding: EdgeInsets.all(AppTheme.spacing.lg),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(AppTheme.radii.lg),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppTheme.spacing.sm,
+                    vertical: AppTheme.spacing.xs,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(AppTheme.radii.full),
+                  ),
+                  child: Icon(
+                    Icons.history,
+                    color: colorScheme.primary,
+                    size: 20,
+                  ),
+                ),
+                SizedBox(width: AppTheme.spacing.md),
+                Text(
+                  'Storico Misurazioni',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Lista misurazioni
+          if (measurements.isEmpty)
+            Padding(
+              padding: EdgeInsets.all(AppTheme.spacing.xl),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.timeline_outlined,
+                      size: 64,
+                      color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                    ),
+                    SizedBox(height: AppTheme.spacing.md),
+                    Text(
+                      'Nessuna misurazione disponibile',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SizedBox(height: AppTheme.spacing.sm),
+                    Text(
+                      'Aggiungi nuove misurazioni per visualizzare lo storico',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
+              padding: EdgeInsets.all(AppTheme.spacing.lg),
               itemCount: measurements.length,
+              separatorBuilder: (context, index) => Divider(
+                color: colorScheme.outline.withOpacity(0.1),
+                height: AppTheme.spacing.md,
+              ),
               itemBuilder: (context, index) {
                 final measurement = measurements[index];
-                return ListTile(
-                  title: Text(DateFormat('dd/MM/yyyy').format(measurement.date),
-                      style: TextStyle(color: theme.colorScheme.onSurface)),
-                  subtitle: Text(
-                      'Weight: ${measurement.weight.toStringAsFixed(1)} kg, Body Fat: ${measurement.bodyFatPercentage.toStringAsFixed(1)}%',
-                      style: TextStyle(
-                          color: theme.colorScheme.onSurface.withOpacity(0.7))),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon:
-                            Icon(Icons.edit, color: theme.colorScheme.primary),
-                        onPressed: () => _showEditMeasurementDialog(
-                            context, ref, measurement),
+                return Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => _showMeasurementOptions(context, ref, measurement),
+                    borderRadius: BorderRadius.circular(AppTheme.radii.md),
+                    child: Padding(
+                      padding: EdgeInsets.all(AppTheme.spacing.md),
+                      child: Row(
+                        children: [
+                          // Data Badge
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: AppTheme.spacing.md,
+                              vertical: AppTheme.spacing.xs,
+                            ),
+                            decoration: BoxDecoration(
+                              color: colorScheme.primaryContainer.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(AppTheme.radii.full),
+                            ),
+                            child: Text(
+                              DateFormat('dd/MM/yyyy').format(measurement.date),
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: AppTheme.spacing.md),
+                          // Dettagli misurazione
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Peso: ${measurement.weight.toStringAsFixed(1)} kg',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    color: colorScheme.onSurface,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                SizedBox(height: AppTheme.spacing.xs),
+                                Text(
+                                  'Grasso: ${measurement.bodyFatPercentage.toStringAsFixed(1)}%',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Menu Icon
+                          IconButton(
+                            icon: Icon(
+                              Icons.more_vert,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                            onPressed: () => _showMeasurementOptions(context, ref, measurement),
+                          ),
+                        ],
                       ),
-                      IconButton(
-                        icon:
-                            Icon(Icons.delete, color: theme.colorScheme.error),
-                        onPressed: () => _showDeleteConfirmationDialog(
-                            context, ref, measurement),
-                      ),
-                    ],
+                    ),
                   ),
                 );
               },
             ),
-          ],
+        ],
+      ),
+    );
+  }
+
+  void _showMeasurementOptions(
+    BuildContext context,
+    WidgetRef ref,
+    MeasurementModel measurement,
+  ) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => BottomMenu(
+        title: DateFormat('dd/MM/yyyy').format(measurement.date),
+        subtitle: 'Peso: ${measurement.weight.toStringAsFixed(1)} kg',
+        leading: Container(
+          padding: EdgeInsets.all(AppTheme.spacing.sm),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(AppTheme.radii.md),
+          ),
+          child: Icon(
+            Icons.monitor_weight_outlined,
+            color: colorScheme.primary,
+            size: 24,
+          ),
         ),
+        items: [
+          BottomMenuItem(
+            title: 'Modifica Misurazione',
+            icon: Icons.edit_outlined,
+            onTap: () => _showEditMeasurementDialog(context, ref, measurement),
+          ),
+          BottomMenuItem(
+            title: 'Elimina Misurazione',
+            icon: Icons.delete_outline,
+            onTap: () => _showDeleteConfirmationDialog(context, ref, measurement),
+            isDestructive: true,
+          ),
+        ],
       ),
     );
   }
@@ -773,19 +1195,13 @@ class _MeasurementsList extends ConsumerWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
       ),
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.9,
-        minChildSize: 0.5,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (_, controller) {
-          return _MeasurementForm(
-            scrollController: controller,
-            measurement: measurement,
-            userId: userId,
-          );
-        },
-      ),
+      builder: (context) {
+        return _MeasurementForm(
+          scrollController: ScrollController(),
+          measurement: measurement,
+          userId: userId,
+        );
+      },
     );
   }
 
@@ -835,71 +1251,208 @@ class _ComparisonSelectionDialog extends ConsumerStatefulWidget {
       _ComparisonSelectionDialogState();
 }
 
-class _ComparisonSelectionDialogState
-    extends ConsumerState<_ComparisonSelectionDialog> {
+class _ComparisonSelectionDialogState extends ConsumerState<_ComparisonSelectionDialog> {
   late List<MeasurementModel> selectedTemp;
 
   @override
   void initState() {
     super.initState();
-    selectedTemp =
-        List<MeasurementModel>.from(ref.read(selectedComparisonsProvider));
+    selectedTemp = List<MeasurementModel>.from(ref.read(selectedComparisonsProvider));
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return AlertDialog(
-      backgroundColor: theme.colorScheme.surface,
-      title: Text('Select measurements',
-          style: TextStyle(color: theme.colorScheme.onSurface)),
-      content: SingleChildScrollView(
+    final colorScheme = theme.colorScheme;
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(AppTheme.radii.xl),
+          border: Border.all(
+            color: colorScheme.outline.withOpacity(0.1),
+          ),
+          boxShadow: AppTheme.elevations.large,
+        ),
         child: Column(
-          children: widget.measurements.map((measurement) {
-            return CheckboxListTile(
-              title: Text(DateFormat('dd/MM/yyyy').format(measurement.date),
-                  style: TextStyle(color: theme.colorScheme.onSurface)),
-              subtitle: Text(
-                  'Weight: ${measurement.weight.toStringAsFixed(1)} kg',
-                  style: TextStyle(
-                      color: theme.colorScheme.onSurface.withOpacity(0.7))),
-              value: selectedTemp.contains(measurement),
-              onChanged: (bool? selected) {
-                setState(() {
-                  if (selected == true && !selectedTemp.contains(measurement)) {
-                    selectedTemp.add(measurement);
-                  } else if (selected == false) {
-                    if (selectedTemp.length > 1 ||
-                        measurement != selectedTemp.first) {
-                      selectedTemp.remove(measurement);
-                    }
-                  }
-                });
-              },
-              activeColor: theme.colorScheme.primary,
-              checkColor: theme.colorScheme.onPrimary,
-            );
-          }).toList(),
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Header
+            Container(
+              padding: EdgeInsets.all(AppTheme.spacing.lg),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(AppTheme.radii.xl),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppTheme.spacing.sm,
+                      vertical: AppTheme.spacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(AppTheme.radii.full),
+                    ),
+                    child: Icon(
+                      Icons.compare_arrows,
+                      color: colorScheme.primary,
+                      size: 20,
+                    ),
+                  ),
+                  SizedBox(width: AppTheme.spacing.md),
+                  Text(
+                    'Misurazioni da Confrontare',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Content
+            Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.6,
+              ),
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(AppTheme.spacing.lg),
+                child: Column(
+                  children: widget.measurements.map((measurement) {
+                    final isSelected = selectedTemp.contains(measurement);
+                    return Container(
+                      margin: EdgeInsets.only(bottom: AppTheme.spacing.sm),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                        border: Border.all(
+                          color: colorScheme.outline.withOpacity(0.1),
+                        ),
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: CheckboxListTile(
+                          title: Text(
+                            DateFormat('dd/MM/yyyy').format(measurement.date),
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: colorScheme.onSurface,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          subtitle: Text(
+                            'Peso: ${measurement.weight.toStringAsFixed(1)} kg',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          value: isSelected,
+                          onChanged: (bool? selected) {
+                            setState(() {
+                              if (selected == true && !selectedTemp.contains(measurement)) {
+                                selectedTemp.add(measurement);
+                              } else if (selected == false) {
+                                if (selectedTemp.length > 1 || measurement != selectedTemp.first) {
+                                  selectedTemp.remove(measurement);
+                                }
+                              }
+                            });
+                          },
+                          activeColor: colorScheme.primary,
+                          checkColor: colorScheme.onPrimary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+
+            // Actions
+            Container(
+              padding: EdgeInsets.all(AppTheme.spacing.lg),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                borderRadius: BorderRadius.vertical(
+                  bottom: Radius.circular(AppTheme.radii.xl),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppTheme.spacing.lg,
+                        vertical: AppTheme.spacing.md,
+                      ),
+                    ),
+                    child: Text(
+                      'Annulla',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: AppTheme.spacing.md),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          colorScheme.primary,
+                          colorScheme.primary.withOpacity(0.8),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                      boxShadow: [
+                        BoxShadow(
+                          color: colorScheme.primary.withOpacity(0.2),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          ref.read(selectedComparisonsProvider.notifier).state = selectedTemp;
+                          Navigator.pop(context);
+                        },
+                        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppTheme.spacing.lg,
+                            vertical: AppTheme.spacing.md,
+                          ),
+                          child: Text(
+                            'Conferma',
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: colorScheme.onPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text('Cancel',
-              style: TextStyle(color: theme.colorScheme.primary)),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            ref.read(selectedComparisonsProvider.notifier).state = selectedTemp;
-            Navigator.of(context).pop();
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: theme.colorScheme.primary,
-            foregroundColor: theme.colorScheme.onPrimary,
-          ),
-          child: const Text('Confirm'),
-        ),
-      ],
     );
   }
 }
@@ -934,20 +1487,13 @@ class _MeasurementFormState extends ConsumerState<_MeasurementForm> {
   void initState() {
     super.initState();
     _formKey = GlobalKey<FormState>();
-    _weightController = TextEditingController(
-        text: widget.measurement?.weight.toString() ?? '');
-    _heightController = TextEditingController(
-        text: widget.measurement?.height.toString() ?? '');
-    _bodyFatController = TextEditingController(
-        text: widget.measurement?.bodyFatPercentage.toString() ?? '');
-    _waistController = TextEditingController(
-        text: widget.measurement?.waistCircumference.toString() ?? '');
-    _hipController = TextEditingController(
-        text: widget.measurement?.hipCircumference.toString() ?? '');
-    _chestController = TextEditingController(
-        text: widget.measurement?.chestCircumference.toString() ?? '');
-    _bicepsController = TextEditingController(
-        text: widget.measurement?.bicepsCircumference.toString() ?? '');
+    _weightController = TextEditingController(text: widget.measurement?.weight.toString() ?? '');
+    _heightController = TextEditingController(text: widget.measurement?.height.toString() ?? '');
+    _bodyFatController = TextEditingController(text: widget.measurement?.bodyFatPercentage.toString() ?? '');
+    _waistController = TextEditingController(text: widget.measurement?.waistCircumference.toString() ?? '');
+    _hipController = TextEditingController(text: widget.measurement?.hipCircumference.toString() ?? '');
+    _chestController = TextEditingController(text: widget.measurement?.chestCircumference.toString() ?? '');
+    _bicepsController = TextEditingController(text: widget.measurement?.bicepsCircumference.toString() ?? '');
     _selectedDate = widget.measurement?.date ?? DateTime.now();
   }
 
@@ -966,53 +1512,190 @@ class _MeasurementFormState extends ConsumerState<_MeasurementForm> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return SingleChildScrollView(
-      controller: widget.scrollController,
-      child: Padding(
-        padding: EdgeInsets.only(
-          left: 16,
-          right: 16,
-          top: 16,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppTheme.radii.xl),
         ),
+      ),
+      child: SingleChildScrollView(
+        controller: widget.scrollController,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              widget.measurement == null
-                  ? 'Add New Measurement'
-                  : 'Edit Measurement',
-              style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface),
-            ),
-            const SizedBox(height: 16),
-            Form(
-              key: _formKey,
-              child: Column(
+            // Header
+            Container(
+              padding: EdgeInsets.all(AppTheme.spacing.lg),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(AppTheme.radii.xl),
+                ),
+              ),
+              child: Row(
                 children: [
-                  _buildDatePicker(context),
-                  _buildTextField(_weightController, 'Weight (kg)'),
-                  _buildTextField(_heightController, 'Height (cm)'),
-                  _buildTextField(_bodyFatController, 'Body Fat (%)'),
-                  _buildTextField(_waistController, 'Waist (cm)'),
-                  _buildTextField(_hipController, 'Hip (cm)'),
-                  _buildTextField(_chestController, 'Chest (cm)'),
-                  _buildTextField(_bicepsController, 'Biceps (cm)'),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: _submitMeasurement,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.colorScheme.primary,
-                      foregroundColor: theme.colorScheme.onPrimary,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30)),
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 16, horizontal: 32),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppTheme.spacing.sm,
+                      vertical: AppTheme.spacing.xs,
                     ),
-                    child: Text(widget.measurement == null ? 'Add' : 'Update'),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(AppTheme.radii.full),
+                    ),
+                    child: Icon(
+                      widget.measurement == null ? Icons.add_circle_outline : Icons.edit_outlined,
+                      color: colorScheme.primary,
+                      size: 20,
+                    ),
+                  ),
+                  SizedBox(width: AppTheme.spacing.md),
+                  Text(
+                    widget.measurement == null ? 'Nuova Misurazione' : 'Modifica Misurazione',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Form Content
+            Padding(
+              padding: EdgeInsets.all(AppTheme.spacing.xl),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildDatePicker(context),
+                    SizedBox(height: AppTheme.spacing.lg),
+                    _buildMeasurementField(
+                      controller: _weightController,
+                      label: 'Peso',
+                      hint: 'Inserisci il peso in kg',
+                      icon: Icons.monitor_weight_outlined,
+                      unit: 'kg',
+                    ),
+                    SizedBox(height: AppTheme.spacing.lg),
+                    _buildMeasurementField(
+                      controller: _heightController,
+                      label: 'Altezza',
+                      hint: 'Inserisci l\'altezza in cm',
+                      icon: Icons.height,
+                      unit: 'cm',
+                    ),
+                    SizedBox(height: AppTheme.spacing.lg),
+                    _buildMeasurementField(
+                      controller: _bodyFatController,
+                      label: 'Grasso Corporeo',
+                      hint: 'Inserisci la percentuale di grasso corporeo',
+                      icon: Icons.pie_chart_outline,
+                      unit: '%',
+                    ),
+                    SizedBox(height: AppTheme.spacing.lg),
+                    _buildMeasurementField(
+                      controller: _waistController,
+                      label: 'Circonferenza Vita',
+                      hint: 'Inserisci la circonferenza vita in cm',
+                      icon: Icons.straighten,
+                      unit: 'cm',
+                    ),
+                    SizedBox(height: AppTheme.spacing.lg),
+                    _buildMeasurementField(
+                      controller: _hipController,
+                      label: 'Circonferenza Fianchi',
+                      hint: 'Inserisci la circonferenza fianchi in cm',
+                      icon: Icons.straighten,
+                      unit: 'cm',
+                    ),
+                    SizedBox(height: AppTheme.spacing.lg),
+                    _buildMeasurementField(
+                      controller: _chestController,
+                      label: 'Circonferenza Torace',
+                      hint: 'Inserisci la circonferenza torace in cm',
+                      icon: Icons.straighten,
+                      unit: 'cm',
+                    ),
+                    SizedBox(height: AppTheme.spacing.lg),
+                    _buildMeasurementField(
+                      controller: _bicepsController,
+                      label: 'Circonferenza Bicipiti',
+                      hint: 'Inserisci la circonferenza bicipiti in cm',
+                      icon: Icons.straighten,
+                      unit: 'cm',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Actions
+            Container(
+              padding: EdgeInsets.all(AppTheme.spacing.lg),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppTheme.spacing.lg,
+                        vertical: AppTheme.spacing.md,
+                      ),
+                    ),
+                    child: Text(
+                      'Annulla',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: AppTheme.spacing.md),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          colorScheme.primary,
+                          colorScheme.primary.withOpacity(0.8),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                      boxShadow: [
+                        BoxShadow(
+                          color: colorScheme.primary.withOpacity(0.2),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: _submitMeasurement,
+                        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppTheme.spacing.lg,
+                            vertical: AppTheme.spacing.md,
+                          ),
+                          child: Text(
+                            widget.measurement == null ? 'Aggiungi' : 'Aggiorna',
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: colorScheme.onPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -1025,92 +1708,119 @@ class _MeasurementFormState extends ConsumerState<_MeasurementForm> {
 
   Widget _buildDatePicker(BuildContext context) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: InkWell(
-        onTap: () async {
-          final DateTime? picked = await showDatePicker(
-            context: context,
-            initialDate: _selectedDate,
-            firstDate: DateTime(2000),
-            lastDate: DateTime.now(),
-            builder: (BuildContext context, Widget? child) {
-              return Theme(
-                data: ThemeData.dark().copyWith(
-                  colorScheme: theme.colorScheme,
-                  dialogBackgroundColor: theme.colorScheme.surface,
-                ),
-                child: child!,
-              );
-            },
-          );
-          if (picked != null && picked != _selectedDate) {
-            setState(() {
-              _selectedDate = picked;
-            });
-          }
-        },
-        child: InputDecorator(
-          decoration: InputDecoration(
-            labelText: 'Date',
-            labelStyle: TextStyle(color: theme.colorScheme.onSurface),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                  color: theme.colorScheme.onSurface.withOpacity(0.3)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: theme.colorScheme.primary),
-            ),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(DateFormat('dd/MM/yyyy').format(_selectedDate),
-                  style: TextStyle(color: theme.colorScheme.onSurface)),
-              Icon(Icons.calendar_today, color: theme.colorScheme.onSurface),
-            ],
+    final colorScheme = theme.colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Data',
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
           ),
         ),
-      ),
+        SizedBox(height: AppTheme.spacing.xs),
+        InkWell(
+          onTap: () async {
+            final DateTime? picked = await showDatePicker(
+              context: context,
+              initialDate: _selectedDate,
+              firstDate: DateTime(2000),
+              lastDate: DateTime.now(),
+            );
+            if (picked != null && picked != _selectedDate) {
+              setState(() {
+                _selectedDate = picked;
+              });
+            }
+          },
+          child: Container(
+            padding: EdgeInsets.all(AppTheme.spacing.md),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+              border: Border.all(
+                color: colorScheme.outline.withOpacity(0.1),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.calendar_today,
+                  color: colorScheme.primary,
+                  size: 20,
+                ),
+                SizedBox(width: AppTheme.spacing.md),
+                Text(
+                  DateFormat('dd/MM/yyyy').format(_selectedDate),
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label) {
+  Widget _buildMeasurementField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    required String unit,
+  }) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: TextFormField(
-        controller: controller,
-        keyboardType: TextInputType.number,
-        style: TextStyle(color: theme.colorScheme.onSurface),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(color: theme.colorScheme.onSurface),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide:
-                BorderSide(color: theme.colorScheme.onSurface.withOpacity(0.3)),
+    final colorScheme = theme.colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: theme.colorScheme.primary),
-          ),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),
-        validator: (value) {
-          if (value == null || value.isEmpty) {
-            return 'Please enter $label';
-          }
-          return null;
-        },
-      ),
+        SizedBox(height: AppTheme.spacing.xs),
+        Container(
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+            border: Border.all(
+              color: colorScheme.outline.withOpacity(0.1),
+            ),
+          ),
+          child: TextFormField(
+            controller: controller,
+            keyboardType: TextInputType.numberWithOptions(decimal: true),
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: colorScheme.onSurface,
+            ),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: theme.textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+              ),
+              prefixIcon: Icon(
+                icon,
+                color: colorScheme.primary,
+                size: 20,
+              ),
+              suffixText: unit,
+              suffixStyle: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.all(AppTheme.spacing.md),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -1118,6 +1828,7 @@ class _MeasurementFormState extends ConsumerState<_MeasurementForm> {
     if (_formKey.currentState!.validate()) {
       final measurementsService = ref.read(measurementsServiceProvider);
       final selectedUserId = ref.read(selectedUserIdProvider) ?? widget.userId;
+
       final weight = double.tryParse(_weightController.text) ?? 0.0;
       final height = double.tryParse(_heightController.text) ?? 0.0;
       final bodyFat = double.tryParse(_bodyFatController.text) ?? 0.0;
@@ -1128,56 +1839,36 @@ class _MeasurementFormState extends ConsumerState<_MeasurementForm> {
 
       final bmi = height > 0 ? weight / ((height / 100) * (height / 100)) : 0.0;
 
-      // Store the context before the async gap
-      final currentContext = context;
-
-      Future<void> performOperation() async {
-        if (widget.measurement == null) {
-          await measurementsService.addMeasurement(
-            userId: selectedUserId,
-            date: _selectedDate,
-            weight: weight,
-            height: height,
-            bmi: bmi,
-            bodyFatPercentage: bodyFat,
-            waistCircumference: waist,
-            hipCircumference: hip,
-            chestCircumference: chest,
-            bicepsCircumference: biceps,
-          );
-        } else {
-          await measurementsService.updateMeasurement(
-            userId: selectedUserId,
-            measurementId: widget.measurement!.id,
-            date: _selectedDate,
-            weight: weight,
-            height: height,
-            bmi: bmi,
-            bodyFatPercentage: bodyFat,
-            waistCircumference: waist,
-            hipCircumference: hip,
-            chestCircumference: chest,
-            bicepsCircumference: biceps,
-          );
-        }
+      if (widget.measurement == null) {
+        measurementsService.addMeasurement(
+          userId: selectedUserId,
+          date: _selectedDate,
+          weight: weight,
+          height: height,
+          bmi: bmi,
+          bodyFatPercentage: bodyFat,
+          waistCircumference: waist,
+          hipCircumference: hip,
+          chestCircumference: chest,
+          bicepsCircumference: biceps,
+        );
+      } else {
+        measurementsService.updateMeasurement(
+          userId: selectedUserId,
+          measurementId: widget.measurement!.id,
+          date: _selectedDate,
+          weight: weight,
+          height: height,
+          bmi: bmi,
+          bodyFatPercentage: bodyFat,
+          waistCircumference: waist,
+          hipCircumference: hip,
+          chestCircumference: chest,
+          bicepsCircumference: biceps,
+        );
       }
 
-      performOperation().then((_) {
-        // Use the stored context to check if the widget is still mounted
-        if (currentContext.mounted) {
-          Navigator.of(currentContext).pop();
-        }
-      }).catchError((error) {
-        // Handle any errors here
-        if (currentContext.mounted) {
-          ScaffoldMessenger.of(currentContext).showSnackBar(
-            SnackBar(
-              content: Text('Error: $error'),
-              backgroundColor: Theme.of(currentContext).colorScheme.error,
-            ),
-          );
-        }
-      });
+      Navigator.pop(context);
     }
   }
 }

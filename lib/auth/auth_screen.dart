@@ -11,7 +11,6 @@ class AuthScreen extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authService = ref.watch(authServiceProvider);
     final theme = Theme.of(context);
-    final size = MediaQuery.of(context).size;
 
     return Scaffold(
       body: Stack(
@@ -24,7 +23,7 @@ class AuthScreen extends HookConsumerWidget {
                 end: Alignment.bottomRight,
                 colors: [
                   theme.colorScheme.surface,
-                  theme.colorScheme.surfaceVariant,
+                  theme.colorScheme.surfaceContainerHighest,
                 ],
               ),
             ),

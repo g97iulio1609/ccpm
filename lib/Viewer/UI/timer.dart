@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../models/timer_model.dart';
 import '../providers/training_program_provider.dart';
+import 'package:alphanessone/Main/app_theme.dart';
 
 class TimerPage extends ConsumerStatefulWidget {
   final TimerModel timerModel;
@@ -118,12 +119,18 @@ class TimerPageState extends ConsumerState<TimerPage>
   @override
   Widget build(BuildContext context) {
     final timerModel = ref.watch(timerModelProvider);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     if (timerModel == null) {
-      return const Scaffold(
+      return Scaffold(
+        backgroundColor: colorScheme.surface,
         body: Center(
           child: Text(
             'Errore: timerModel non disponibile',
-            style: TextStyle(color: Colors.white),
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: colorScheme.error,
+            ),
           ),
         ),
       );
@@ -132,92 +139,244 @@ class TimerPageState extends ConsumerState<TimerPage>
     final remainingSeconds = ref.watch(remainingSecondsProvider);
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: colorScheme.surface,
       body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                timerModel.isEmomMode ? 'EMOM MODE' : 'REST TIME',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 2.0,
-                ),
-              ),
-              const SizedBox(height: 32),
-              Stack(
-                alignment: Alignment.center,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                colorScheme.surface,
+                colorScheme.surface.withOpacity(0.92),
+              ],
+            ),
+          ),
+          child: Center(
+            child: Padding(
+              padding: EdgeInsets.all(AppTheme.spacing.xl),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildProgressIndicator(),
-                  _buildCountdownText(remainingSeconds),
+                  _buildHeader(timerModel, theme, colorScheme),
+                  SizedBox(height: AppTheme.spacing.xl),
+                  _buildTimerContainer(remainingSeconds, theme, colorScheme),
+                  SizedBox(height: AppTheme.spacing.xl),
+                  if (!timerModel.isEmomMode) 
+                    _buildSkipButton(theme, colorScheme),
                 ],
               ),
-              const SizedBox(height: 24),
-              if (!timerModel.isEmomMode) _buildSkipButton(),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildProgressIndicator() {
-    return SizedBox(
-      width: 300,
-      height: 300,
-      child: AnimatedBuilder(
-        animation: _animation,
-        builder: (context, child) {
-          return CircularProgressIndicator(
-            value: _animation.value,
-            strokeWidth: 12,
-            backgroundColor: Colors.white.withOpacity(0.2),
-            valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-          );
-        },
+  Widget _buildHeader(TimerModel timerModel, ThemeData theme, ColorScheme colorScheme) {
+    return Container(
+      padding: EdgeInsets.all(AppTheme.spacing.lg),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
+        ),
+        boxShadow: AppTheme.elevations.small,
+      ),
+      child: Column(
+        children: [
+          Text(
+            timerModel.isEmomMode ? 'EMOM MODE' : 'REST TIME',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
+            ),
+          ),
+          if (!timerModel.isEmomMode) ...[
+            SizedBox(height: AppTheme.spacing.sm),
+            Text(
+              'Take a breath, stay focused',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
 
-  Widget _buildCountdownText(int remainingSeconds) {
+  Widget _buildTimerContainer(int remainingSeconds, ThemeData theme, ColorScheme colorScheme) {
+    return Container(
+      width: 320,
+      height: 320,
+      padding: EdgeInsets.all(AppTheme.spacing.md),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colorScheme.surface,
+            colorScheme.surfaceContainerHighest,
+          ],
+        ),
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: colorScheme.primary.withOpacity(0.15),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.primary.withOpacity(0.1),
+            blurRadius: 20,
+            spreadRadius: 5,
+          ),
+        ],
+      ),
+      child: Stack(
+        fit: StackFit.expand,
+        alignment: Alignment.center,
+        children: [
+          // Progress indicator più grande e sottile
+          _buildProgressIndicator(colorScheme),
+          
+          // Container centrale con sfondo sfumato
+          Container(
+            margin: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: colorScheme.surface.withOpacity(0.9),
+              boxShadow: [
+                BoxShadow(
+                  color: colorScheme.primary.withOpacity(0.1),
+                  blurRadius: 15,
+                  spreadRadius: -5,
+                ),
+              ],
+            ),
+          ),
+          
+          // Testo del timer
+          _buildCountdownText(remainingSeconds, theme, colorScheme),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProgressIndicator(ColorScheme colorScheme) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return CircularProgressIndicator(
+          value: _animation.value,
+          strokeWidth: 6,
+          backgroundColor: colorScheme.surfaceContainerHighest.withOpacity(0.2),
+          valueColor: AlwaysStoppedAnimation<Color>(
+            colorScheme.primary.withOpacity(0.8),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCountdownText(int remainingSeconds, ThemeData theme, ColorScheme colorScheme) {
     final minutes = (remainingSeconds ~/ 60).toString().padLeft(2, '0');
     final seconds = (remainingSeconds % 60).toString().padLeft(2, '0');
-    final shadow = Shadow(
-      color: Colors.black.withOpacity(0.3),
-      blurRadius: 10,
-      offset: const Offset(0, 5),
-    );
-    return Text(
-      '$minutes:$seconds',
-      style: TextStyle(
-        color: Colors.white,
-        fontSize: 72,
-        fontWeight: FontWeight.bold,
-        shadows: [shadow],
-      ),
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Timer digits
+        Text(
+          '$minutes:$seconds',
+          style: theme.textTheme.displayLarge?.copyWith(
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.w700,
+            fontSize: 64,
+            letterSpacing: -1,
+            height: 1,
+          ),
+        ),
+        SizedBox(height: AppTheme.spacing.sm),
+        // Remaining label
+        Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: AppTheme.spacing.md,
+            vertical: AppTheme.spacing.xs,
+          ),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(AppTheme.radii.sm),
+            border: Border.all(
+              color: colorScheme.primary.withOpacity(0.1),
+            ),
+          ),
+          child: Text(
+            'remaining',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: colorScheme.primary,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildSkipButton() {
-    return TextButton(
-      onPressed: _skipRestTime,
-      style: TextButton.styleFrom(
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30),
-          side: const BorderSide(color: Colors.white, width: 2),
+  Widget _buildSkipButton(ThemeData theme, ColorScheme colorScheme) {
+    return Container(
+      margin: EdgeInsets.only(top: AppTheme.spacing.xl),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colorScheme.primary,
+            colorScheme.primary.withOpacity(0.9),
+          ],
         ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.primary.withOpacity(0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: const Text(
-        'SKIP',
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 1.5,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _skipRestTime,
+          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppTheme.spacing.xxl,
+              vertical: AppTheme.spacing.lg,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.skip_next_rounded,
+                  color: colorScheme.onPrimary,
+                  size: 24,
+                ),
+                SizedBox(width: AppTheme.spacing.sm),
+                Text(
+                  'SKIP REST',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: colorScheme.onPrimary,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

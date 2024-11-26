@@ -10,13 +10,13 @@ class StripeCheckoutWidget extends StatefulWidget {
   final Function(String) onPaymentError;
 
   const StripeCheckoutWidget({
-    Key? key,
+    super.key,
     required this.clientSecret,
     required this.amount,
     required this.currency,
     required this.onPaymentSuccess,
     required this.onPaymentError,
-  }) : super(key: key);
+  });
 
   @override
   State<StripeCheckoutWidget> createState() => _StripeCheckoutWidgetState();

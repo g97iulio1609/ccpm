@@ -109,7 +109,7 @@ class AddExerciseDialog extends HookConsumerWidget {
           onPressed: () {
             if (formKey.currentState!.validate()) {
               final name = nameController.text.trim();
-              final muscleGroup = muscleGroupController.text.trim();
+              final muscleGroup = [muscleGroupController.text.trim()];
               final type = typeController.text.trim();
               
               Navigator.pop(context);

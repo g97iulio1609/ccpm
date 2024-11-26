@@ -6,11 +6,8 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
-import 'url_redirect.dart'; // Assicurati di avere questo file
+import 'package:in_app_purchase/in_app_purchase.dart';// Assicurati di avere questo file
 import 'package:flutter/material.dart';
-import 'url_redirect_web.dart';
-import 'package:flutter_stripe_web/flutter_stripe_web.dart' as stripe_web;
 import 'stripe_checkout_widget.dart';
 
 class InAppPurchaseService {

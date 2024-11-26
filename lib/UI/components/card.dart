@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/UI/components/badge.dart';
 
-class CustomCard extends StatelessWidget {
+class AppCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
   final VoidCallback? onTap;
@@ -8,8 +10,17 @@ class CustomCard extends StatelessWidget {
   final double borderRadius;
   final List<BoxShadow>? boxShadow;
   final Border? border;
+  final String? badge;
+  final BadgeStatus? badgeStatus;
+  final IconData? leadingIcon;
+  final String? title;
+  final String? subtitle;
+  final List<Widget>? actions;
+  final bool isGradient;
+  final bool isOutlined;
+  final bool isInteractive;
 
-  const CustomCard({
+  const AppCard({
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(24),
@@ -18,116 +29,201 @@ class CustomCard extends StatelessWidget {
     this.borderRadius = 24,
     this.boxShadow,
     this.border,
+    this.badge,
+    this.badgeStatus,
+    this.leadingIcon,
+    this.title,
+    this.subtitle,
+    this.actions,
+    this.isGradient = false,
+    this.isOutlined = false,
+    this.isInteractive = true,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     
-    return Container(
-      // Rimosso il margin inferiore fisso per evitare l'accumulo di spaziature
+    final cardColor = backgroundColor ?? colorScheme.surface;
+    
+    Widget card = Container(
       decoration: BoxDecoration(
-        color: backgroundColor ?? theme.colorScheme.surfaceContainerHighest,
+        gradient: isGradient ? LinearGradient(
+          colors: [
+            cardColor,
+            cardColor.withOpacity(0.8),
+          ],
+        ) : null,
+        color: isGradient ? null : cardColor,
         borderRadius: BorderRadius.circular(borderRadius),
-        boxShadow: boxShadow ?? [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            offset: const Offset(0, 8),
-            blurRadius: 24,
-          ),
-        ],
-        border: border,
+        border: isOutlined ? Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
+        ) : border,
+        boxShadow: boxShadow ?? (isOutlined ? null : AppTheme.elevations.small),
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(borderRadius),
-          onTap: onTap,
-          child: Padding(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (title != null || badge != null) ...[
+            _buildHeader(context),
+          ],
+          Padding(
             padding: padding,
             child: child,
           ),
-        ),
+          if (actions != null) ...[
+            _buildActions(context),
+          ],
+        ],
       ),
     );
+
+    if (isInteractive && onTap != null) {
+      card = Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(borderRadius),
+          child: card,
+        ),
+      );
+    }
+
+    return card;
   }
-}
 
-// Variante specifica per le action cards (con icone di azione)
-class ActionCard extends StatelessWidget {
-  final Widget title;
-  final Widget? subtitle;
-  final List<Widget> actions;
-  final List<Widget>? bottomContent;
-  final VoidCallback? onTap;
-  final EdgeInsetsGeometry contentPadding;
-  final EdgeInsetsGeometry actionsPadding;
+  Widget _buildHeader(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-  const ActionCard({
-    super.key,
-    required this.title,
-    this.subtitle,
-    required this.actions,
-    this.bottomContent,
-    this.onTap,
-    this.contentPadding = const EdgeInsets.symmetric(horizontal: 16, vertical: 8), // Ridotto il padding
-    this.actionsPadding = const EdgeInsets.symmetric(horizontal: 8),
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomCard(
-      onTap: onTap,
-      padding: EdgeInsets.zero, // Padding gestito internamente
-      child: Column(
-        mainAxisSize: MainAxisSize.min, // Assicura altezza minima
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      padding: EdgeInsets.all(AppTheme.spacing.lg),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(borderRadius),
+        ),
+      ),
+      child: Row(
         children: [
-          Padding(
-            padding: contentPadding,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          if (leadingIcon != null) ...[
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppTheme.spacing.sm,
+                vertical: AppTheme.spacing.xs,
+              ),
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(AppTheme.radii.full),
+              ),
+              child: Icon(
+                leadingIcon,
+                color: colorScheme.primary,
+                size: 20,
+              ),
+            ),
+            SizedBox(width: AppTheme.spacing.md),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min, // Assicura altezza minima
-                    children: [
-                      title,
-                      if (subtitle != null) ...[
-                        const SizedBox(height: 4),
-                        subtitle!,
-                      ],
-                    ],
+                if (title != null)
+                  Text(
+                    title!,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                Padding(
-                  padding: actionsPadding,
-                  child: Row(
-                    children: actions.map((action) {
-                      final index = actions.indexOf(action);
-                      return Padding(
-                        padding: EdgeInsets.only(
-                          left: index > 0 ? 8.0 : 0,
-                        ),
-                        child: action,
-                      );
-                    }).toList(),
+                if (subtitle != null) ...[
+                  SizedBox(height: AppTheme.spacing.xs),
+                  Text(
+                    subtitle!,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
+          if (badge != null) ...[
+            SizedBox(width: AppTheme.spacing.md),
+            AppBadge(
+              text: badge!,
+              status: badgeStatus,
+              size: AppBadgeSize.small,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActions(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      padding: EdgeInsets.all(AppTheme.spacing.lg),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        borderRadius: BorderRadius.vertical(
+          bottom: Radius.circular(borderRadius),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          for (int i = 0; i < actions!.length; i++) ...[
+            actions![i],
+            if (i < actions!.length - 1)
+              SizedBox(width: AppTheme.spacing.md),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // Factory constructors per casi comuni
+  factory AppCard.action({
+    required String title,
+    String? subtitle,
+    required List<Widget> actions,
+    List<Widget>? bottomContent,
+    VoidCallback? onTap,
+    EdgeInsetsGeometry contentPadding = const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    EdgeInsetsGeometry actionsPadding = const EdgeInsets.symmetric(horizontal: 8),
+    IconData? leadingIcon,
+    String? badge,
+    BadgeStatus? badgeStatus,
+  }) {
+    return AppCard(
+      title: title,
+      subtitle: subtitle,
+      leadingIcon: leadingIcon,
+      badge: badge,
+      badgeStatus: badgeStatus,
+      onTap: onTap,
+      padding: EdgeInsets.zero,
+      actions: actions,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           if (bottomContent != null) ...[
-            const SizedBox(height: 12), // Ridotto l'altezza
+            SizedBox(height: AppTheme.spacing.md),
             Padding(
               padding: contentPadding,
               child: Row(
-                children: bottomContent!.map((content) {
-                  final index = bottomContent!.indexOf(content);
+                children: bottomContent.map((content) {
+                  final index = bottomContent.indexOf(content);
                   return Padding(
                     padding: EdgeInsets.only(
-                      left: index > 0 ? 16.0 : 0,
+                      left: index > 0 ? AppTheme.spacing.lg : 0,
                     ),
                     child: content,
                   );
@@ -139,42 +235,44 @@ class ActionCard extends StatelessWidget {
       ),
     );
   }
-}
 
-// Helper widget per creare un pulsante icona con sfondo colorato
-class IconButtonWithBackground extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final VoidCallback onPressed;
-  final double size;
-  final EdgeInsetsGeometry padding;
+  factory AppCard.gradient({
+    required Widget child,
+    Color? backgroundColor,
+    VoidCallback? onTap,
+    String? title,
+    String? subtitle,
+    IconData? leadingIcon,
+    List<Widget>? actions,
+  }) {
+    return AppCard(
+      backgroundColor: backgroundColor,
+      onTap: onTap,
+      isGradient: true,
+      title: title,
+      subtitle: subtitle,
+      leadingIcon: leadingIcon,
+      actions: actions,
+      child: child,
+    );
+  }
 
-  const IconButtonWithBackground({
-    super.key,
-    required this.icon,
-    required this.color,
-    required this.onPressed,
-    this.size = 20,
-    this.padding = const EdgeInsets.all(4), // Ridotto il padding
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: IconButton(
-        icon: Icon(icon, size: size),
-        onPressed: onPressed,
-        color: color,
-        padding: padding,
-        constraints: const BoxConstraints(
-          minWidth: 32, // Ridotto le dimensioni minime
-          minHeight: 32,
-        ),
-      ),
+  factory AppCard.outlined({
+    required Widget child,
+    VoidCallback? onTap,
+    String? title,
+    String? subtitle,
+    IconData? leadingIcon,
+    List<Widget>? actions,
+  }) {
+    return AppCard(
+      onTap: onTap,
+      isOutlined: true,
+      title: title,
+      subtitle: subtitle,
+      leadingIcon: leadingIcon,
+      actions: actions,
+      child: child,
     );
   }
 }

@@ -2,27 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 // Design Tokens Classes
-class _Spacing {
-  const _Spacing();
-  final double xs = 4.0;
-  final double sm = 8.0;
+class Spacing {
+  const Spacing();
+  final double xxs = 4.0;
+  final double xs = 8.0;
+  final double sm = 12.0;
   final double md = 16.0;
   final double lg = 24.0;
   final double xl = 32.0;
   final double xxl = 40.0;
 }
 
-class _Radii {
-  const _Radii();
+class Radii {
+  const Radii();
   final double sm = 8.0;
   final double md = 12.0;
   final double lg = 16.0;
   final double xl = 24.0;
   final double xxl = 32.0;
+  final double full = 999.0;
 }
 
-class _Elevations {
-  const _Elevations();
+class Elevations {
+  const Elevations();
   
   List<BoxShadow> get small => [
     BoxShadow(
@@ -51,9 +53,9 @@ class _Elevations {
 
 class AppTheme {
   // Design Tokens
-  static const _Spacing spacing = _Spacing();
-  static const _Radii radii = _Radii();
-  static const _Elevations elevations = _Elevations();
+  static const Spacing spacing = Spacing();
+  static const Radii radii = Radii();
+  static const Elevations elevations = Elevations();
 
   // Brand Colors
   static const primaryGold = Color(0xFFFFC107);
@@ -129,15 +131,11 @@ class AppTheme {
     errorContainer: error.withOpacity(0.15),
     onErrorContainer: errorDark,
     
-    background: surfaceDarkest,
-    onBackground: Colors.white,
-    
-    surface: surfaceDark,
+    surface: surfaceDarkest,
     onSurface: Colors.white,
-    surfaceVariant: surfaceMedium,
     onSurfaceVariant: Colors.white.withOpacity(0.7),
     
-    surfaceContainerHighest: surfaceLight,
+    surfaceContainerHighest: surfaceMedium,
     outline: Colors.white.withOpacity(0.2),
     outlineVariant: Colors.white.withOpacity(0.1),
   );
@@ -165,15 +163,13 @@ class AppTheme {
     errorContainer: error.withOpacity(0.15),
     onErrorContainer: errorDark,
     
-    background: surfaceLightest,
-    onBackground: surfaceDarkest,
+
     
-    surface: Colors.white,
+    surface: surfaceLightest,
     onSurface: surfaceDarkest,
-    surfaceVariant: surfaceLightMedium,
     onSurfaceVariant: surfaceDark.withOpacity(0.7),
     
-    surfaceContainerHighest: surfaceLightDark,
+    surfaceContainerHighest: surfaceLightMedium,
     outline: surfaceDark.withOpacity(0.2),
     outlineVariant: surfaceDark.withOpacity(0.1),
   );
@@ -336,7 +332,7 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: isDark 
-            ? colorScheme.surfaceVariant.withOpacity(0.3)
+            ? colorScheme.surfaceContainerHighest.withOpacity(0.3)
             : colorScheme.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radii.md),
@@ -371,35 +367,35 @@ class AppTheme {
       // Elevated Button
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ButtonStyle(
-          backgroundColor: MaterialStateProperty.resolveWith((states) {
-            if (states.contains(MaterialState.disabled)) {
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.disabled)) {
               return colorScheme.primary.withOpacity(0.3);
             }
             return colorScheme.primary;
           }),
-          foregroundColor: MaterialStateProperty.resolveWith((states) {
-            if (states.contains(MaterialState.disabled)) {
+          foregroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.disabled)) {
               return colorScheme.onPrimary.withOpacity(0.3);
             }
             return colorScheme.onPrimary;
           }),
-          elevation: MaterialStateProperty.all(0),
-          padding: MaterialStateProperty.all(
+          elevation: WidgetStateProperty.all(0),
+          padding: WidgetStateProperty.all(
             EdgeInsets.symmetric(
               horizontal: spacing.lg,
               vertical: spacing.md,
             ),
           ),
-          shape: MaterialStateProperty.all(
+          shape: WidgetStateProperty.all(
             RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(radii.md),
             ),
           ),
-          overlayColor: MaterialStateProperty.resolveWith((states) {
-            if (states.contains(MaterialState.pressed)) {
+          overlayColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.pressed)) {
               return colorScheme.onPrimary.withOpacity(0.1);
             }
-            if (states.contains(MaterialState.hovered)) {
+            if (states.contains(WidgetState.hovered)) {
               return colorScheme.onPrimary.withOpacity(0.05);
             }
             return null;
@@ -471,7 +467,7 @@ class AppTheme {
         ),
       ),
 
-      scaffoldBackgroundColor: colorScheme.background,
+      scaffoldBackgroundColor: colorScheme.surface,
       visualDensity: VisualDensity.adaptivePlatformDensity,
     );
   }

@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/providers/providers.dart';
+import 'package:intl/intl.dart';
+import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/UI/components/bottom_menu.dart';
+import 'package:alphanessone/UI/components/bottom_input_form.dart';
+import 'package:flutter/services.dart';
+import 'package:alphanessone/UI/components/date_picker_field.dart';
 
 // Constants
 const Map<int, String> genderMap = {
@@ -28,6 +34,8 @@ class TDEEScreen extends ConsumerStatefulWidget {
 
 class TDEEScreenState extends ConsumerState<TDEEScreen> {
   final _formKey = GlobalKey<FormState>();
+  late ThemeData theme;
+  late ColorScheme colorScheme;
 
   DateTime? _birthdate;
   double _height = 0;
@@ -172,166 +180,522 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
   }
   @override
   Widget build(BuildContext context) {
+    theme = Theme.of(context);
+    colorScheme = theme.colorScheme;
+
     return Scaffold(
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildInfoText(),
-              const SizedBox(height: 32),
-              _buildAgeField(),
-              const SizedBox(height: 16),
-              _buildHeightField(),
-              const SizedBox(height: 16),
-              _buildWeightField(),
-              const SizedBox(height: 16),
-              _buildGenderDropdown(),
-              const SizedBox(height: 16),
-              _buildActivityLevelDropdown(),
-              const SizedBox(height: 32),
-              _buildCalculateButton(),
-              const SizedBox(height: 32),
-              _buildTDEEResult(),
+      backgroundColor: colorScheme.surface,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              colorScheme.surface,
+              colorScheme.surfaceContainerHighest.withOpacity(0.5),
             ],
+            stops: const [0.0, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(AppTheme.spacing.xl),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Header
+                  Container(
+                    padding: EdgeInsets.all(AppTheme.spacing.lg),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                      border: Border.all(
+                        color: colorScheme.outline.withOpacity(0.1),
+                      ),
+                      boxShadow: AppTheme.elevations.small,
+                    ),
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(AppTheme.spacing.md),
+                          decoration: BoxDecoration(
+                            color: colorScheme.primaryContainer.withOpacity(0.3),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.local_fire_department,
+                            color: colorScheme.primary,
+                            size: 32,
+                          ),
+                        ),
+                        SizedBox(height: AppTheme.spacing.md),
+                        Text(
+                          'Calcola il tuo TDEE',
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            color: colorScheme.onSurface,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: -0.5,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: AppTheme.spacing.sm),
+                        Text(
+                          'Scopri il tuo fabbisogno calorico giornaliero',
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  SizedBox(height: AppTheme.spacing.xl),
+
+                  // Form Content
+                  Container(
+                    padding: EdgeInsets.all(AppTheme.spacing.lg),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                      border: Border.all(
+                        color: colorScheme.outline.withOpacity(0.1),
+                      ),
+                      boxShadow: AppTheme.elevations.small,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildTDEEForm(context),
+                      ],
+                    ),
+                  ),
+
+                  SizedBox(height: AppTheme.spacing.xl),
+
+                  // Calculate Button
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          colorScheme.primary,
+                          colorScheme.primary.withOpacity(0.8),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                      boxShadow: [
+                        BoxShadow(
+                          color: colorScheme.primary.withOpacity(0.2),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: _calculateTDEE,
+                        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                        child: Padding(
+                          padding: EdgeInsets.all(AppTheme.spacing.lg),
+                          child: Text(
+                            'Calcola TDEE',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              color: colorScheme.onPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  if (_tdee > 0) ...[
+                    SizedBox(height: AppTheme.spacing.xl),
+                    _buildTDEEResult(),
+                  ],
+                ],
+              ),
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildInfoText() {
+  Widget _buildTDEEForm(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Calcola il tuo TDEE',
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
-          textAlign: TextAlign.center,
+        DatePickerField(
+          value: _birthdate,
+          label: 'Data di Nascita',
+          helperText: 'Seleziona la tua data di nascita',
+          onDateSelected: (date) {
+            setState(() {
+              _birthdate = date;
+              _ageController.text = _calculateAge(date).toString();
+            });
+          },
+          validator: (date) {
+            if (date == null) {
+              return 'Seleziona una data di nascita';
+            }
+            if (date.isAfter(DateTime.now())) {
+              return 'La data non può essere nel futuro';
+            }
+            return null;
+          },
+          firstDate: DateTime(1900),
+          lastDate: DateTime.now(),
+          icon: Icons.cake,
         ),
-        const SizedBox(height: 8),
-        Text(
-          'Conosci il tuo TDEE inserendo dettagli di base come età, peso, altezza e livello di attività.',
-          style: Theme.of(context).textTheme.bodyMedium,
-          textAlign: TextAlign.center,
+        SizedBox(height: AppTheme.spacing.lg),
+        
+        BottomInputForm.buildTextInput(
+          controller: _heightController,
+          hint: "Inserisci l'altezza in cm",
+          icon: Icons.height,
+          theme: theme,
+          colorScheme: colorScheme,
+          keyboardType: TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+          ],
+          suffixText: "cm",
+        ),
+        SizedBox(height: AppTheme.spacing.lg),
+        
+        BottomInputForm.buildTextInput(
+          controller: _weightController,
+          hint: "Inserisci il peso in kg",
+          icon: Icons.monitor_weight,
+          theme: theme,
+          colorScheme: colorScheme,
+          keyboardType: TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+          ],
+          suffixText: "kg",
+        ),
+        SizedBox(height: AppTheme.spacing.lg),
+
+        // Campo per il genere usando BottomInputForm
+        BottomInputForm.buildFormField(
+          label: 'Genere',
+          theme: theme,
+          colorScheme: colorScheme,
+          helperText: 'Seleziona il tuo genere',
+          child: Container(
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+              border: Border.all(
+                color: colorScheme.outline.withOpacity(0.1),
+              ),
+            ),
+            child: DropdownButtonFormField<int>(
+              value: _gender,
+              isExpanded: true,
+              items: genderMap.entries.map((entry) {
+                return DropdownMenuItem<int>(
+                  value: entry.key,
+                  child: Text(
+                    entry.value,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                );
+              }).toList(),
+              decoration: InputDecoration(
+                prefixIcon: Icon(
+                  Icons.person_outline,
+                  color: colorScheme.primary,
+                  size: 20,
+                ),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.all(AppTheme.spacing.md),
+              ),
+              onChanged: (value) => setState(() => _gender = value!),
+              dropdownColor: colorScheme.surface,
+            ),
+          ),
+        ),
+        SizedBox(height: AppTheme.spacing.lg),
+
+        // Campo per il livello di attività usando BottomInputForm
+        BottomInputForm.buildFormField(
+          label: 'Livello di Attività',
+          theme: theme,
+          colorScheme: colorScheme,
+          helperText: 'Seleziona il tuo livello di attività fisica settimanale',
+          child: Container(
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+              border: Border.all(
+                color: colorScheme.outline.withOpacity(0.1),
+              ),
+            ),
+            child: DropdownButtonFormField<double>(
+              value: _activityLevel,
+              isExpanded: true,
+              items: activityLevels.entries.map((entry) {
+                return DropdownMenuItem<double>(
+                  value: entry.value,
+                  child: Text(
+                    _getActivityLevelDescription(entry.key),
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: colorScheme.onSurface,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                );
+              }).toList(),
+              decoration: InputDecoration(
+                prefixIcon: Icon(
+                  Icons.directions_run,
+                  color: colorScheme.primary,
+                  size: 20,
+                ),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.all(AppTheme.spacing.md),
+              ),
+              onChanged: (value) => setState(() => _activityLevel = value!),
+              dropdownColor: colorScheme.surface,
+            ),
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildAgeField() {
-    return TextFormField(
-      decoration: InputDecoration(
-        labelText: 'Età',
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+  Widget _buildTDEEResult() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      padding: EdgeInsets.all(AppTheme.spacing.lg),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
+        ),
+        boxShadow: AppTheme.elevations.small,
       ),
-      controller: _ageController,
-      readOnly: true,
-      onTap: () async {
-        final pickedDate = await showDatePicker(
-          context: context,
-          initialDate: _birthdate ?? DateTime.now(),
-          firstDate: DateTime(1900),
-          lastDate: DateTime.now(),
-        );
-        if (pickedDate != null) {
-          setState(() {
-            _birthdate = pickedDate;
-            _ageController.text = _calculateAge(_birthdate!).toString();
-          });
-        }
-      },
+      child: Column(
+        children: [
+          // Header con icona e titolo
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: EdgeInsets.all(AppTheme.spacing.md),
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer.withOpacity(0.3),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.local_fire_department,
+                  color: colorScheme.primary,
+                  size: 32,
+                ),
+              ),
+              SizedBox(width: AppTheme.spacing.md),
+              Text(
+                'Il tuo TDEE è:',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppTheme.spacing.lg),
+
+          // Valore TDEE
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppTheme.spacing.xl,
+              vertical: AppTheme.spacing.lg,
+            ),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  colorScheme.primaryContainer.withOpacity(0.3),
+                  colorScheme.primaryContainer.withOpacity(0.1),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '$_tdee',
+                  style: theme.textTheme.displayMedium?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(width: AppTheme.spacing.sm),
+                Text(
+                  'kcal',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: colorScheme.primary.withOpacity(0.7),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          SizedBox(height: AppTheme.spacing.lg),
+
+          // Descrizione
+          Text(
+            'Questo è il tuo fabbisogno calorico giornaliero stimato per mantenere il tuo peso attuale.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          SizedBox(height: AppTheme.spacing.lg),
+
+          // Azioni
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildActionButton(
+                icon: Icons.save_alt,
+                label: 'Salva',
+                onTap: () => _saveTDEE(),
+                colorScheme: colorScheme,
+                theme: theme,
+                isPrimary: true,
+              ),
+              SizedBox(width: AppTheme.spacing.md),
+              _buildActionButton(
+                icon: Icons.share,
+                label: 'Condividi',
+                onTap: () => _shareTDEE(),
+                colorScheme: colorScheme,
+                theme: theme,
+                isPrimary: false,
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildHeightField() {
-    return TextFormField(
-      decoration: InputDecoration(
-        labelText: "Altezza (cm)",
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required ColorScheme colorScheme,
+    required ThemeData theme,
+    required bool isPrimary,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: isPrimary ? LinearGradient(
+          colors: [
+            colorScheme.primary,
+            colorScheme.primary.withOpacity(0.8),
+          ],
+        ) : null,
+        color: isPrimary ? null : colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        boxShadow: isPrimary ? [
+          BoxShadow(
+            color: colorScheme.primary.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ] : null,
       ),
-      controller: _heightController,
-      keyboardType: TextInputType.number,
-      validator: (value) => value?.isEmpty ?? true ? 'Inserisci la tua altezza' : null,
-      onSaved: (value) => _height = double.parse(value!),
-    );
-  }
-
-  Widget _buildWeightField() {
-    return TextFormField(
-      decoration: InputDecoration(
-        labelText: "Peso (kg)",
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-      controller: _weightController,
-      keyboardType: TextInputType.number,
-      validator: (value) => value?.isEmpty ?? true ? 'Inserisci il tuo peso' : null,
-      onSaved: (value) => _weight = double.parse(value!),
-    );
-  }
-
-  Widget _buildGenderDropdown() {
-    return DropdownButtonFormField<int>(
-      decoration: InputDecoration(
-        labelText: 'Genere',
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-      value: _gender,
-      items: genderMap.entries.map((entry) {
-        return DropdownMenuItem<int>(
-          value: entry.key,
-          child: Text(entry.value),
-        );
-      }).toList(),
-      validator: (value) => value == null ? 'Seleziona il tuo genere' : null,
-      onChanged: (value) => setState(() => _gender = value!),
-    );
-  }
-
-  Widget _buildActivityLevelDropdown() {
-    return DropdownButtonFormField<double>(
-      decoration: InputDecoration(
-        labelText: 'Livello di Attività',
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-      value: _activityLevel,
-      items: activityLevels.entries.map((entry) {
-        return DropdownMenuItem<double>(
-          value: entry.value,
-          child: Text(entry.key),
-        );
-      }).toList(),
-      validator: (value) => value == null ? 'Seleziona il tuo livello di attività' : null,
-      onChanged: (value) => setState(() => _activityLevel = value!),
-    );
-  }
-
-  Widget _buildCalculateButton() {
-    return ElevatedButton(
-      onPressed: _calculateTDEE,
-      style: ElevatedButton.styleFrom(
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-      child: Text(
-        'Calcola il mio TDEE',
-        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-          color: Theme.of(context).colorScheme.onPrimary,
-          fontWeight: FontWeight.bold,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppTheme.spacing.lg,
+              vertical: AppTheme.spacing.md,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  color: isPrimary ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
+                  size: 20,
+                ),
+                SizedBox(width: AppTheme.spacing.sm),
+                Text(
+                  label,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: isPrimary ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildTDEEResult() {
-    return Text(
-      'Il tuo TDEE è: $_tdee',
-      style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-      textAlign: TextAlign.center,
-    );
+  void _saveTDEE() async {
+    try {
+      final tdeeService = ref.read(tdeeServiceProvider);
+      await tdeeService.saveNutritionData(widget.userId, {
+        'birthdate': _birthdate!.toIso8601String(),
+        'height': _height,
+        'weight': _weight,
+        'gender': _gender,
+        'activityLevel': _activityLevel,
+        'tdee': _tdee,
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'TDEE salvato con successo!',
+              style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Errore nel salvataggio del TDEE: $e',
+              style: TextStyle(color: Theme.of(context).colorScheme.onError),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
+
+  void _shareTDEE() {
+    // Implementa la condivisione del TDEE
   }
 
   int _calculateAge(DateTime birthdate) {
@@ -341,5 +705,22 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
       age--;
     }
     return age;
+  }
+
+  String _getActivityLevelDescription(String level) {
+    switch (level) {
+      case 'Sedentary':
+        return 'Sedentario (poco o nessun esercizio)';
+      case 'Lightly Active':
+        return 'Leggermente Attivo (1-3 giorni/settimana)';
+      case 'Moderately Active':
+        return 'Moderatamente Attivo (3-5 giorni/settimana)';
+      case 'Very Active':
+        return 'Molto Attivo (6-7 giorni/settimana)';
+      case 'Extremely Active':
+        return 'Estremamente Attivo (2x al giorno)';
+      default:
+        return level;
+    }
   }
 }

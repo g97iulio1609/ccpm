@@ -6,6 +6,8 @@ import 'package:alphanessone/providers/providers.dart';
 import './trainingBuilder/controller/training_program_controller.dart';
 import './trainingBuilder/services/training_services.dart';
 import 'UI/components/card.dart';
+import 'package:alphanessone/Main/app_theme.dart';
+import 'UI/components/bottom_menu.dart';
 
 class UserProgramsScreen extends HookConsumerWidget {
   final String userId;
@@ -17,26 +19,38 @@ class UserProgramsScreen extends HookConsumerWidget {
     final userRole = ref.watch(userRoleProvider);
     final firestoreService = ref.watch(firestoreServiceProvider);
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Scaffold(
+      backgroundColor: colorScheme.surface,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              theme.colorScheme.surface,
-              theme.colorScheme.surface.withOpacity(0.92),
+              colorScheme.surface,
+              colorScheme.surfaceContainerHighest.withOpacity(0.5),
             ],
+            stops: const [0.0, 1.0],
           ),
         ),
         child: SafeArea(
-          child: Column(
-            children: [
+          child: CustomScrollView(
+            slivers: [
+              // Add Program Button (if applicable)
               if (userRole == 'admin' || userRole == 'client_premium' || userRole == 'coach')
-                _buildAddProgramButton(context, userId),
-              Expanded(
-                child: _buildProgramList(context, ref, userId, userRole, firestoreService),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.all(AppTheme.spacing.xl),
+                    child: _buildAddProgramButton(context, userId, theme, colorScheme),
+                  ),
+                ),
+
+              // Programs Grid
+              SliverPadding(
+                padding: EdgeInsets.all(AppTheme.spacing.xl),
+                sliver: _buildProgramList(context, ref, userId, userRole, firestoreService),
               ),
             ],
           ),
@@ -45,47 +59,235 @@ class UserProgramsScreen extends HookConsumerWidget {
     );
   }
 
-  Widget _buildAddProgramButton(BuildContext context, String userId) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Container(
-        width: double.infinity,
-        height: 56,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              theme.colorScheme.primary,
-              theme.colorScheme.primary.withOpacity(0.8),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: theme.colorScheme.primary.withOpacity(0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
+  Widget _buildAddProgramButton(BuildContext context, String userId, ThemeData theme, ColorScheme colorScheme) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            colorScheme.primary,
+            colorScheme.primary.withOpacity(0.8),
           ],
         ),
-        child: MaterialButton(
-          onPressed: () => _addProgram(context, userId),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.primary.withOpacity(0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _addProgram(context, userId),
+          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              vertical: AppTheme.spacing.lg,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.add_circle_outline,
+                  color: colorScheme.onPrimary,
+                  size: 24,
+                ),
+                SizedBox(width: AppTheme.spacing.sm),
+                Text(
+                  'Create New Program',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: colorScheme.onPrimary,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProgramCard(BuildContext context, WidgetRef ref,
+      DocumentSnapshot doc, String userId, String userRole, FirestoreService firestoreService) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isHidden = doc['hide'] ?? false;
+    final controller = ref.read(trainingProgramControllerProvider);
+    final mesocycleNumber = doc['mesocycleNumber'] ?? 1;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
+        ),
+        boxShadow: AppTheme.elevations.small,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        child: InkWell(
+          onTap: () => context.go('/user_programs/$userId/training_viewer/${doc.id}'),
+          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          child: Padding(
+            padding: EdgeInsets.all(AppTheme.spacing.lg),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Program Badge
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppTheme.spacing.md,
+                    vertical: AppTheme.spacing.xs,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
+                  ),
+                  child: Text(
+                    'Mesocycle $mesocycleNumber',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                
+                SizedBox(height: AppTheme.spacing.md),
+                
+                Text(
+                  doc['name'],
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.5,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+
+                if (doc['description']?.isNotEmpty ?? false) ...[
+                  SizedBox(height: AppTheme.spacing.sm),
+                  Text(
+                    doc['description'],
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+
+                SizedBox(height: AppTheme.spacing.lg),
+
+                // Action Buttons Row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (userRole == 'admin' || userRole == 'coach')
+                      _buildActionButton(
+                        icon: isHidden ? Icons.visibility_off : Icons.visibility,
+                        label: isHidden ? 'Hidden' : 'Visible',
+                        onTap: () => _toggleProgramVisibility(doc.id, isHidden),
+                        colorScheme: colorScheme,
+                        theme: theme,
+                      ),
+
+                    if (userRole == 'admin' || userRole == 'client_premium' || userRole == 'coach') ...[
+                      SizedBox(width: AppTheme.spacing.sm),
+                      _buildActionButton(
+                        icon: Icons.more_horiz,
+                        label: 'Options',
+                        onTap: () => _showProgramOptions(
+                          context, doc, userId, controller, firestoreService, theme,
+                        ),
+                        colorScheme: colorScheme,
+                        theme: theme,
+                      ),
+                    ],
+                  ],
+                ),
+
+                if (isHidden && (userRole == 'admin' || userRole == 'coach'))
+                  Container(
+                    margin: EdgeInsets.only(top: AppTheme.spacing.md),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppTheme.spacing.md,
+                      vertical: AppTheme.spacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.errorContainer,
+                      borderRadius: BorderRadius.circular(AppTheme.radii.sm),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.visibility_off,
+                          size: 16,
+                          color: colorScheme.onErrorContainer,
+                        ),
+                        SizedBox(width: AppTheme.spacing.xs),
+                        Text(
+                          'Hidden',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: colorScheme.onErrorContainer,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required ColorScheme colorScheme,
+    required ThemeData theme,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppTheme.radii.full),
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: AppTheme.spacing.md,
+            vertical: AppTheme.spacing.sm,
+          ),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(AppTheme.radii.full),
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                Icons.add,
-                color: theme.colorScheme.onPrimary,
+                icon,
+                size: 18,
+                color: colorScheme.primary,
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: AppTheme.spacing.xs),
               Text(
-                'Crea Programma Di Allenamento',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.onPrimary,
-                  fontWeight: FontWeight.w600,
+                label,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
@@ -101,159 +303,63 @@ class UserProgramsScreen extends HookConsumerWidget {
       stream: _getProgramsStream(userId, userRole),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return Center(child: Text('Si è verificato un errore: ${snapshot.error}'));
+          return SliverToBoxAdapter(
+            child: Center(
+              child: Text(
+                'Si è verificato un errore: ${snapshot.error}',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.error,
+                ),
+              ),
+            ),
+          );
         }
+
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const SliverToBoxAdapter(
+            child: Center(child: CircularProgressIndicator()),
+          );
         }
+
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const Center(child: Text('Nessun programma trovato'));
+          return SliverToBoxAdapter(
+            child: Center(
+              child: Text(
+                'Nessun programma trovato',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+          );
         }
 
         final documents = snapshot.data!.docs;
+        final crossAxisCount = switch (MediaQuery.of(context).size.width) {
+          > 1200 => 4, // Desktop large
+          > 900 => 3,  // Desktop
+          > 600 => 2,  // Tablet
+          _ => 1,      // Mobile
+        };
 
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final crossAxisCount = switch (constraints.maxWidth) {
-              > 1200 => 4, // Desktop large
-              > 900 => 3,  // Desktop
-              > 600 => 2,  // Tablet
-              _ => 1,      // Mobile
-            };
-
-            final horizontalPadding = crossAxisCount == 1 ? 16.0 : 24.0;
-            final spacing = 20.0;
-
-            return CustomScrollView(
-              slivers: [
-                SliverPadding(
-                  padding: EdgeInsets.fromLTRB(
-                    horizontalPadding,
-                    horizontalPadding,
-                    horizontalPadding,
-                    horizontalPadding + MediaQuery.of(context).padding.bottom,
-                  ),
-                  sliver: SliverGrid(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: crossAxisCount,
-                      mainAxisSpacing: spacing,
-                      crossAxisSpacing: spacing,
-                      childAspectRatio: crossAxisCount == 1 ? 3.5 : 1.8,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final doc = documents[index];
-                        return _buildProgramCard(
-                          context, 
-                          ref, 
-                          doc, 
-                          userId, 
-                          userRole, 
-                          firestoreService,
-                        );
-                      },
-                      childCount: documents.length,
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
+        return SliverGrid(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            mainAxisSpacing: 20,
+            crossAxisSpacing: 20,
+            childAspectRatio: crossAxisCount == 1 ? 1.2 : 1,
+          ),
+          delegate: SliverChildBuilderDelegate(
+            (context, index) => _buildProgramCard(
+              context,
+              ref,
+              documents[index],
+              userId,
+              userRole,
+              firestoreService,
+            ),
+            childCount: documents.length,
+          ),
         );
       },
-    );
-  }
-
-  Widget _buildProgramCard(BuildContext context, WidgetRef ref,
-      DocumentSnapshot doc, String userId, String userRole, FirestoreService firestoreService) {
-    final theme = Theme.of(context);
-    final isHidden = doc['hide'] ?? false;
-    final controller = ref.read(trainingProgramControllerProvider);
-    final mesocycleNumber = doc['mesocycleNumber'] ?? 1;
-
-    return ActionCard(
-      onTap: () => context.go('/user_programs/$userId/training_viewer/${doc.id}'),
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 20,
-        vertical: 16,
-      ),
-      title: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              doc['name'],
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-                letterSpacing: -0.5,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Mesociclo $mesocycleNumber',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.secondary,
-                fontWeight: FontWeight.w500,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        if (userRole == 'admin' || userRole == 'coach')
-          IconButtonWithBackground(
-            icon: isHidden ? Icons.visibility_off : Icons.visibility,
-            color: theme.colorScheme.primary,
-            onPressed: () => _toggleProgramVisibility(doc.id, isHidden),
-          ),
-        if (userRole == 'admin' || userRole == 'client_premium' || userRole == 'coach')
-          IconButtonWithBackground(
-            icon: Icons.more_vert,
-            color: theme.colorScheme.primary,
-            onPressed: () => _showProgramOptions(
-              context,
-              doc,
-              userId,
-              controller,
-              firestoreService,
-              theme,
-            ),
-          ),
-      ],
-      bottomContent: isHidden && (userRole == 'admin' || userRole == 'coach')
-          ? [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.errorContainer,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.visibility_off,
-                      size: 16,
-                      color: theme.colorScheme.onErrorContainer,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Nascosto',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onErrorContainer,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ]
-          : null,
     );
   }
 
@@ -265,70 +371,61 @@ class UserProgramsScreen extends HookConsumerWidget {
     FirestoreService firestoreService,
     ThemeData theme,
   ) {
+    final colorScheme = theme.colorScheme;
+
     showModalBottomSheet(
       context: context,
-      backgroundColor: theme.colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (context) => CustomCard(
-        padding: EdgeInsets.zero,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildOptionTile(
-              context,
-              'Modifica',
-              Icons.edit_outlined,
-              () {
-                Navigator.pop(context);
-                context.go('/user_programs/$userId/training_program/${doc.id}');
-              },
-            ),
-            _buildOptionTile(
-              context,
-              'Duplica',
-              Icons.content_copy,
-              () {
-                Navigator.pop(context);
-                _duplicateProgram(context, doc.id, controller);
-              },
-            ),
-            _buildOptionTile(
-              context,
-              'Elimina',
-              Icons.delete_outline,
-              () {
-                Navigator.pop(context);
-                _deleteProgram(context, doc.id, firestoreService);
-              },
-              isDestructive: true,
-            ),
-          ],
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => BottomMenu(
+        title: doc['name'],
+        subtitle: doc['description'] ?? '',
+        leading: Container(
+          padding: EdgeInsets.all(AppTheme.spacing.sm),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(AppTheme.radii.md),
+          ),
+          child: Icon(
+            Icons.fitness_center,
+            color: colorScheme.primary,
+            size: 24,
+          ),
         ),
+        items: [
+          BottomMenuItem(
+            title: 'Modifica Programma',
+            icon: Icons.edit_outlined,
+            onTap: () {
+              final route = '/user_programs/$userId/training_program/${doc.id}';
+              debugPrint('Navigating to: $route');
+              context.go(route);
+            },
+          ),
+          BottomMenuItem(
+            title: 'Duplica Programma',
+            icon: Icons.content_copy_outlined,
+            onTap: () {
+              _duplicateProgram(context, doc.id, controller);
+            },
+          ),
+          BottomMenuItem(
+            title: 'Cambia Visibilità',
+            icon: doc['hide'] ? Icons.visibility : Icons.visibility_off,
+            onTap: () {
+              _toggleProgramVisibility(doc.id, doc['hide'] ?? false);
+            },
+          ),
+          BottomMenuItem(
+            title: 'Elimina Programma',
+            icon: Icons.delete_outline,
+            onTap: () {
+              _deleteProgram(context, doc.id, firestoreService);
+            },
+            isDestructive: true,
+          ),
+        ],
       ),
-    );
-  }
-
-  Widget _buildOptionTile(
-    BuildContext context,
-    String title,
-    IconData icon,
-    VoidCallback onTap, {
-    bool isDestructive = false,
-  }) {
-    final theme = Theme.of(context);
-    final color = isDestructive ? theme.colorScheme.error : theme.colorScheme.onSurface;
-    
-    return ListTile(
-      leading: Icon(icon, color: color),
-      title: Text(
-        title,
-        style: theme.textTheme.titleMedium?.copyWith(
-          color: color,
-        ),
-      ),
-      onTap: onTap,
     );
   }
 
@@ -461,71 +558,181 @@ class AddProgramDialogState extends State<AddProgramDialog> {
   int _mesocycleNumber = 1;
 
   @override
-  void dispose() {
-    _nameController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return AlertDialog(
-      title: const Text('Nuovo Programma'),
+      backgroundColor: colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppTheme.radii.xl),
+      ),
+      title: Text(
+        'Create New Program',
+        style: theme.textTheme.titleLarge?.copyWith(
+          color: colorScheme.onSurface,
+          fontWeight: FontWeight.w600,
+        ),
+        textAlign: TextAlign.center,
+      ),
       content: Form(
         key: _formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextFormField(
+            _buildTextField(
               controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Nome',
-              ),
+              label: 'Program Name',
+              hint: 'Enter program name',
+              icon: Icons.title,
+              theme: theme,
+              colorScheme: colorScheme,
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Inserisci un nome';
+                  return 'Please enter a name';
                 }
                 return null;
               },
             ),
-            const SizedBox(height: 16),
-            TextFormField(
+            SizedBox(height: AppTheme.spacing.md),
+            _buildTextField(
               controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Descrizione',
-              ),
+              label: 'Description',
+              hint: 'Enter program description',
+              icon: Icons.description,
+              theme: theme,
+              colorScheme: colorScheme,
             ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<int>(
-              value: _mesocycleNumber,
-              decoration: const InputDecoration(
-                labelText: 'Numero Mesociclo',
-              ),
-              items: List.generate(12, (index) => index + 1)
-                  .map((number) => DropdownMenuItem(
-                        value: number,
-                        child: Text(number.toString()),
-                      ))
-                  .toList(),
-              onChanged: (value) {
-                setState(() {
-                  _mesocycleNumber = value!;
-                });
-              },
-            ),
+            SizedBox(height: AppTheme.spacing.md),
+            _buildMesocycleDropdown(theme, colorScheme),
           ],
         ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Annulla'),
+          child: Text(
+            'Cancel',
+            style: TextStyle(color: colorScheme.primary),
+          ),
         ),
-        ElevatedButton(
-          onPressed: _submitForm,
-          child: const Text('Crea'),
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                colorScheme.primary,
+                colorScheme.primary.withOpacity(0.8),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(AppTheme.radii.md),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: _submitForm,
+              borderRadius: BorderRadius.circular(AppTheme.radii.md),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppTheme.spacing.lg,
+                  vertical: AppTheme.spacing.sm,
+                ),
+                child: Text(
+                  'Create',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: colorScheme.onPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
       ],
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    required ThemeData theme,
+    required ColorScheme colorScheme,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      validator: validator,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon, color: colorScheme.primary),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radii.md),
+          borderSide: BorderSide(
+            color: colorScheme.outline,
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radii.md),
+          borderSide: BorderSide(
+            color: colorScheme.outline.withOpacity(0.3),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radii.md),
+          borderSide: BorderSide(
+            color: colorScheme.primary,
+            width: 2,
+          ),
+        ),
+        filled: true,
+        fillColor: colorScheme.surface,
+      ),
+    );
+  }
+
+  Widget _buildMesocycleDropdown(ThemeData theme, ColorScheme colorScheme) {
+    return DropdownButtonFormField<int>(
+      value: _mesocycleNumber,
+      decoration: InputDecoration(
+        labelText: 'Mesocycle Number',
+        prefixIcon: Icon(Icons.fitness_center, color: colorScheme.primary),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radii.md),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radii.md),
+          borderSide: BorderSide(
+            color: colorScheme.outline.withOpacity(0.3),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radii.md),
+          borderSide: BorderSide(
+            color: colorScheme.primary,
+            width: 2,
+          ),
+        ),
+        filled: true,
+        fillColor: colorScheme.surface,
+      ),
+      items: List.generate(12, (index) => index + 1)
+          .map((number) => DropdownMenuItem(
+                value: number,
+                child: Text(
+                  number.toString(),
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              ))
+          .toList(),
+      onChanged: (value) {
+        setState(() {
+          _mesocycleNumber = value!;
+        });
+      },
     );
   }
 
