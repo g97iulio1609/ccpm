@@ -5,13 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../UI/components/card.dart';
 import 'exercise_model.dart';
 import '../providers/providers.dart';
 import 'widgets/exercise_widgets.dart';
 import 'controllers/exercise_list_controller.dart';
-import '../ExerciseRecords/exercise_autocomplete.dart';
-import '../ExerciseRecords/exercise_record_services.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
 import 'package:alphanessone/Main/app_theme.dart';
@@ -20,18 +17,14 @@ import 'package:alphanessone/UI/components/bottom_input_form.dart';
 
 // Providers per i muscleGroups e exerciseTypes
 final muscleGroupsProvider = StreamProvider<List<String>>((ref) {
-  return FirebaseFirestore.instance
-      .collection('muscleGroups')
-      .snapshots()
-      .map((snapshot) =>
+  return FirebaseFirestore.instance.collection('muscleGroups').snapshots().map(
+      (snapshot) =>
           snapshot.docs.map((doc) => doc['name'].toString()).toList());
 });
 
 final exerciseTypesProvider = StreamProvider<List<String>>((ref) {
-  return FirebaseFirestore.instance
-      .collection('ExerciseTypes')
-      .snapshots()
-      .map((snapshot) =>
+  return FirebaseFirestore.instance.collection('ExerciseTypes').snapshots().map(
+      (snapshot) =>
           snapshot.docs.map((doc) => doc['name'].toString()).toList());
 });
 
@@ -128,7 +121,8 @@ class ExercisesList extends HookConsumerWidget {
                               controller.clear();
                               Future.microtask(() {
                                 ref
-                                    .read(exerciseListControllerProvider.notifier)
+                                    .read(
+                                        exerciseListControllerProvider.notifier)
                                     .resetFilters();
                               });
                             },
@@ -145,7 +139,10 @@ class ExercisesList extends HookConsumerWidget {
               suggestionsCallback: (pattern) async {
                 if (pattern.length < 2) return [];
 
-                final exercises = await ref.read(exercisesServiceProvider).getExercises().first;
+                final exercises = await ref
+                    .read(exercisesServiceProvider)
+                    .getExercises()
+                    .first;
                 return exercises
                     .where((exercise) => exercise.name
                         .toLowerCase()
@@ -169,7 +166,7 @@ class ExercisesList extends HookConsumerWidget {
                 Future.microtask(() {
                   controller.updateFilters(searchText: exercise.name);
                 });
-                            },
+              },
               debounceDuration: const Duration(milliseconds: 500),
               hideOnEmpty: false,
               hideOnLoading: false,
@@ -217,8 +214,7 @@ class ExercisesList extends HookConsumerWidget {
                     scrollDirection: Axis.horizontal,
                     physics: const AlwaysScrollableScrollPhysics(),
                     child: Padding(
-                      padding:
-                          const EdgeInsets.symmetric(vertical: 8.0),
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
                       child: Row(
                         children: [
                           const SizedBox(width: 4),
@@ -226,8 +222,7 @@ class ExercisesList extends HookConsumerWidget {
                             final isSelected =
                                 selectedMuscleGroups.value.contains(group);
                             return Padding(
-                              padding:
-                                  const EdgeInsets.only(right: 8.0),
+                              padding: const EdgeInsets.only(right: 8.0),
                               child: SizedBox(
                                 height: 32,
                                 child: FilterChip(
@@ -236,10 +231,9 @@ class ExercisesList extends HookConsumerWidget {
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: isSelected
-                                          ? theme.colorScheme
-                                              .onSecondaryContainer
-                                          : theme.colorScheme
-                                              .onSurface,
+                                          ? theme
+                                              .colorScheme.onSecondaryContainer
+                                          : theme.colorScheme.onSurface,
                                     ),
                                   ),
                                   selected: isSelected,
@@ -256,8 +250,7 @@ class ExercisesList extends HookConsumerWidget {
                                               .toList();
                                     }
                                     controller.updateFilters(
-                                      muscleGroups:
-                                          selectedMuscleGroups.value,
+                                      muscleGroups: selectedMuscleGroups.value,
                                     );
                                   },
                                   showCheckmark: false,
@@ -271,18 +264,17 @@ class ExercisesList extends HookConsumerWidget {
                                       ? Icon(
                                           Icons.check,
                                           size: 16,
-                                          color: theme.colorScheme
-                                              .onSecondaryContainer,
+                                          color: theme
+                                              .colorScheme.onSecondaryContainer,
                                         )
                                       : null,
                                   selectedColor:
                                       theme.colorScheme.secondaryContainer,
-                                  backgroundColor: theme.colorScheme
-                                      .surfaceContainerHighest
+                                  backgroundColor: theme
+                                      .colorScheme.surfaceContainerHighest
                                       .withOpacity(0.5),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(16),
                                     side: BorderSide(
                                       color: isSelected
                                           ? theme.colorScheme.secondary
@@ -304,8 +296,7 @@ class ExercisesList extends HookConsumerWidget {
                                 child: TextButton.icon(
                                   onPressed: () {
                                     selectedMuscleGroups.value = [];
-                                    controller.updateFilters(
-                                        muscleGroups: []);
+                                    controller.updateFilters(muscleGroups: []);
                                   },
                                   icon: Icon(
                                     Icons.clear,
@@ -365,9 +356,9 @@ class ExercisesList extends HookConsumerWidget {
                     currentUserRole: currentUserRole,
                     currentUserId: currentUserId,
                     onEdit: (exercise) =>
-                        ExercisesManager.showEditExerciseBottomSheet(context, ref, exercise),
-                    onDelete: (exercise) =>
-                        _showDeleteConfirmationDialog(
+                        ExercisesManager.showEditExerciseBottomSheet(
+                            context, ref, exercise),
+                    onDelete: (exercise) => _showDeleteConfirmationDialog(
                       context,
                       exercise,
                       ref,
@@ -375,8 +366,7 @@ class ExercisesList extends HookConsumerWidget {
                     ),
                   );
                 },
-                loading: () =>
-                    const Center(child: CircularProgressIndicator()),
+                loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => Center(
                   child: Text('Error: $error'),
                 ),
@@ -644,9 +634,7 @@ class _ExercisesGridState extends ConsumerState<ExercisesGrid> {
           ),
           TextButton(
             onPressed: () {
-              ref
-                  .read(exercisesServiceProvider)
-                  .approveExercise(exercise.id);
+              ref.read(exercisesServiceProvider).approveExercise(exercise.id);
               Navigator.pop(dialogContext);
             },
             child: Text(
@@ -675,8 +663,8 @@ class _ExerciseForm extends HookConsumerWidget {
     final colorScheme = theme.colorScheme;
     final formKey = useMemoized(() => GlobalKey<FormState>());
     final nameController = useTextEditingController(text: exercise?.name);
-    final selectedMuscleGroups = useState<List<String>>(
-        exercise?.muscleGroups ?? []);
+    final selectedMuscleGroups =
+        useState<List<String>>(exercise?.muscleGroups ?? []);
     final selectedExerciseType = useState<String?>(exercise?.type);
 
     return MediaQuery.removePadding(
@@ -691,9 +679,7 @@ class _ExerciseForm extends HookConsumerWidget {
             bottom: MediaQuery.of(context).viewInsets.bottom + 16,
           ),
           child: BottomInputForm(
-            title: exercise == null
-                ? 'Add New Exercise'
-                : 'Modifica Esercizio',
+            title: exercise == null ? 'Add New Exercise' : 'Modifica Esercizio',
             subtitle: exercise?.name,
             leading: Container(
               padding: EdgeInsets.all(AppTheme.spacing.sm),
@@ -743,7 +729,8 @@ class _ExerciseForm extends HookConsumerWidget {
                   child: InkWell(
                     onTap: () {
                       if (formKey.currentState!.validate()) {
-                        final exercisesService = ref.read(exercisesServiceProvider);
+                        final exercisesService =
+                            ref.read(exercisesServiceProvider);
                         exercisesService.updateExercise(
                           exercise?.id ?? '',
                           nameController.text,
@@ -809,24 +796,33 @@ class _ExerciseForm extends HookConsumerWidget {
                         final muscleGroupsAsyncValue =
                             ref.watch(muscleGroupsProvider);
                         return muscleGroupsAsyncValue.when(
-                          data: (muscleGroups) => BottomInputForm.buildFormField(
+                          data: (muscleGroups) =>
+                              BottomInputForm.buildFormField(
                             label: 'Gruppi Muscolari',
                             theme: theme,
                             colorScheme: colorScheme,
-                            helperText: 'Seleziona i gruppi muscolari coinvolti',
+                            helperText:
+                                'Seleziona i gruppi muscolari coinvolti',
                             child: Wrap(
                               spacing: AppTheme.spacing.sm,
                               runSpacing: AppTheme.spacing.sm,
                               children: muscleGroups.map((group) {
-                                final isSelected = selectedMuscleGroups.value.contains(group);
+                                final isSelected =
+                                    selectedMuscleGroups.value.contains(group);
                                 return FilterChip(
                                   label: Text(group),
                                   selected: isSelected,
                                   onSelected: (selected) {
                                     if (selected) {
-                                      selectedMuscleGroups.value = [...selectedMuscleGroups.value, group];
+                                      selectedMuscleGroups.value = [
+                                        ...selectedMuscleGroups.value,
+                                        group
+                                      ];
                                     } else {
-                                      selectedMuscleGroups.value = selectedMuscleGroups.value.where((g) => g != group).toList();
+                                      selectedMuscleGroups.value =
+                                          selectedMuscleGroups.value
+                                              .where((g) => g != group)
+                                              .toList();
                                     }
                                   },
                                   selectedColor: colorScheme.primaryContainer,
@@ -836,8 +832,8 @@ class _ExerciseForm extends HookConsumerWidget {
                             ),
                           ),
                           loading: () => const CircularProgressIndicator(),
-                          error: (_, __) =>
-                              const Text('Errore nel caricamento dei gruppi muscolari'),
+                          error: (_, __) => const Text(
+                              'Errore nel caricamento dei gruppi muscolari'),
                         );
                       },
                     ),
@@ -849,15 +845,18 @@ class _ExerciseForm extends HookConsumerWidget {
                         final exerciseTypesAsyncValue =
                             ref.watch(exerciseTypesProvider);
                         return exerciseTypesAsyncValue.when(
-                          data: (exerciseTypes) => BottomInputForm.buildFormField(
+                          data: (exerciseTypes) =>
+                              BottomInputForm.buildFormField(
                             label: 'Tipo di Esercizio',
                             theme: theme,
                             colorScheme: colorScheme,
                             helperText: 'Seleziona il tipo di esercizio',
                             child: Container(
                               decoration: BoxDecoration(
-                                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
-                                borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                                color: colorScheme.surfaceContainerHighest
+                                    .withOpacity(0.3),
+                                borderRadius:
+                                    BorderRadius.circular(AppTheme.radii.lg),
                                 border: Border.all(
                                   color: colorScheme.outline.withOpacity(0.1),
                                 ),
@@ -870,10 +869,12 @@ class _ExerciseForm extends HookConsumerWidget {
                                     child: Text(type),
                                   );
                                 }).toList(),
-                                onChanged: (value) => selectedExerciseType.value = value,
+                                onChanged: (value) =>
+                                    selectedExerciseType.value = value,
                                 decoration: InputDecoration(
                                   border: InputBorder.none,
-                                  contentPadding: EdgeInsets.all(AppTheme.spacing.md),
+                                  contentPadding:
+                                      EdgeInsets.all(AppTheme.spacing.md),
                                   prefixIcon: Icon(
                                     Icons.category_outlined,
                                     color: colorScheme.primary,
@@ -890,8 +891,8 @@ class _ExerciseForm extends HookConsumerWidget {
                             ),
                           ),
                           loading: () => const CircularProgressIndicator(),
-                          error: (_, __) =>
-                              const Text('Errore nel caricamento dei tipi di esercizio'),
+                          error: (_, __) => const Text(
+                              'Errore nel caricamento dei tipi di esercizio'),
                         );
                       },
                     ),

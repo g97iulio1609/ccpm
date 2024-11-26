@@ -1,9 +1,12 @@
 import 'package:alphanessone/nutrition/models/meals_model.dart';
 import 'package:alphanessone/nutrition/services/meals_services.dart';
+import 'package:alphanessone/UI/components/dialog.dart';
+import 'package:alphanessone/UI/components/button.dart';
+import 'package:alphanessone/UI/components/badge.dart';
+import 'package:alphanessone/Main/app_theme.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class MealSelectionDialog extends ConsumerStatefulWidget {
   final String userId;
@@ -31,83 +34,223 @@ class _MealSelectionDialogState extends ConsumerState<MealSelectionDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final mealsService = ref.watch(mealsServiceProvider);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-    return AlertDialog(
-      title: Text('Select Meals', style: GoogleFonts.roboto()),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('All Meals', style: GoogleFonts.roboto()),
-                Switch(
-                  value: _showFavorites,
-                  onChanged: (value) {
-                    setState(() {
-                      _showFavorites = value;
-                    });
-                  },
-                ),
-                Text('Favorites', style: GoogleFonts.roboto()),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Expanded(
-              child: StreamBuilder<List<Meal>>(
-                stream: _showFavorites
-                    ? _getFavoriteMeals()
-                    : _getAllMeals(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Center(child: Text('Error loading meals', style: GoogleFonts.roboto()));
-                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return Center(child: Text('No meals found', style: GoogleFonts.roboto()));
-                  } else {
-                    final meals = snapshot.data!;
-                    return ListView.builder(
-                      itemCount: meals.length,
-                      itemBuilder: (context, index) {
-                        final meal = meals[index];
-                        final isSelected = _selectedMealIds.contains(meal.id);
-                        return CheckboxListTile(
-                          title: Text(meal.mealType, style: GoogleFonts.roboto()),
-                          subtitle: Text('Calories: ${meal.totalCalories} kcal', style: GoogleFonts.roboto()),
-                          value: isSelected,
-                          onChanged: (bool? value) {
-                            setState(() {
-                              if (value == true) {
-                                _selectedMealIds.add(meal.id!);
-                              } else {
-                                _selectedMealIds.remove(meal.id);
-                              }
-                            });
-                          },
-                        );
-                      },
-                    );
-                  }
-                },
-              ),
-            ),
-          ],
+    return AppDialog(
+      title: 'Seleziona i Pasti',
+      subtitle: 'Scegli i pasti da aggiungere al tuo diario',
+      leading: Container(
+        padding: EdgeInsets.all(AppTheme.spacing.sm),
+        decoration: BoxDecoration(
+          color: colorScheme.primary.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(AppTheme.radii.md),
+        ),
+        child: Icon(
+          Icons.restaurant_menu,
+          color: colorScheme.primary,
+          size: 24,
         ),
       ),
+      maxWidth: 480,
+      maxHeight: MediaQuery.of(context).size.height * 0.8,
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text('Cancel', style: GoogleFonts.roboto()),
+        AppDialog.buildCancelButton(context: context),
+        AppDialog.buildActionButton(
+          context: context,
+          label: 'Seleziona',
+          onPressed: () => Navigator.of(context).pop(_selectedMealIds),
+          icon: Icons.check_circle_outline,
         ),
-        ElevatedButton(
-          onPressed: () {
-            Navigator.of(context).pop(_selectedMealIds);
-          },
-          child: Text('Select', style: GoogleFonts.roboto()),
+      ],
+      children: [
+        // Filter Toggle
+        Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: AppTheme.spacing.lg,
+            vertical: AppTheme.spacing.md,
+          ),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Tutti i Pasti',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: !_showFavorites ? colorScheme.primary : colorScheme.onSurfaceVariant,
+                  fontWeight: !_showFavorites ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+              SizedBox(width: AppTheme.spacing.md),
+              Switch(
+                value: _showFavorites,
+                onChanged: (value) => setState(() => _showFavorites = value),
+                activeColor: colorScheme.primary,
+                activeTrackColor: colorScheme.primary.withOpacity(0.2),
+              ),
+              SizedBox(width: AppTheme.spacing.md),
+              Text(
+                'Preferiti',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: _showFavorites ? colorScheme.primary : colorScheme.onSurfaceVariant,
+                  fontWeight: _showFavorites ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Meals List
+        SizedBox(
+          height: 400,
+          child: StreamBuilder<List<Meal>>(
+            stream: _showFavorites ? _getFavoriteMeals() : _getAllMeals(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(
+                  child: CircularProgressIndicator(color: colorScheme.primary),
+                );
+              } else if (snapshot.hasError) {
+                return Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        color: colorScheme.error,
+                        size: 48,
+                      ),
+                      SizedBox(height: AppTheme.spacing.md),
+                      Text(
+                        'Errore nel caricamento dei pasti',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.no_meals,
+                        color: colorScheme.onSurfaceVariant,
+                        size: 48,
+                      ),
+                      SizedBox(height: AppTheme.spacing.md),
+                      Text(
+                        'Nessun pasto trovato',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              final meals = snapshot.data!;
+              return ListView.separated(
+                padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.md),
+                itemCount: meals.length,
+                separatorBuilder: (context, index) => SizedBox(height: AppTheme.spacing.sm),
+                itemBuilder: (context, index) {
+                  final meal = meals[index];
+                  final isSelected = _selectedMealIds.contains(meal.id);
+                  
+                  return Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          if (isSelected) {
+                            _selectedMealIds.remove(meal.id);
+                          } else {
+                            _selectedMealIds.add(meal.id!);
+                          }
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                      child: Container(
+                        padding: EdgeInsets.all(AppTheme.spacing.md),
+                        decoration: BoxDecoration(
+                          color: isSelected 
+                              ? colorScheme.primary.withOpacity(0.1)
+                              : colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                          border: Border.all(
+                            color: isSelected 
+                                ? colorScheme.primary
+                                : colorScheme.outline.withOpacity(0.1),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(AppTheme.spacing.sm),
+                              decoration: BoxDecoration(
+                                color: (isSelected ? colorScheme.primary : colorScheme.surfaceContainerHighest).withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(AppTheme.radii.md),
+                              ),
+                              child: Icon(
+                                isSelected ? Icons.check_circle : Icons.restaurant,
+                                color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
+                                size: 20,
+                              ),
+                            ),
+                            SizedBox(width: AppTheme.spacing.md),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    meal.mealType,
+                                    style: theme.textTheme.titleMedium?.copyWith(
+                                      color: colorScheme.onSurface,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  SizedBox(height: AppTheme.spacing.xs),
+                                  Row(
+                                    children: [
+                                      AppBadge(
+                                        text: '${meal.totalCalories} kcal',
+                                        backgroundColor: colorScheme.primary,
+                                        textColor: colorScheme.onPrimary,
+                                        isGradient: true,
+                                        size: AppBadgeSize.small,
+                                      ),
+                                      if (meal.isFavorite) ...[
+                                        SizedBox(width: AppTheme.spacing.sm),
+                                        AppBadge(
+                                          text: 'Preferito',
+                                          backgroundColor: colorScheme.secondary,
+                                          textColor: colorScheme.onSecondary,
+                                          icon: Icons.favorite,
+                                          size: AppBadgeSize.small,
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
         ),
       ],
     );

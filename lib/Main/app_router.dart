@@ -33,7 +33,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../Store/inAppPurchase.dart';
 import '../Store/subscriptions_screen.dart';
 import '../trainingBuilder/training_program.dart';
-import '../exerciseManager/exercises_Manager.dart';
+import '../exerciseManager/exercises_manager.dart';
 import '../exerciseManager/exercise_model.dart';
 import '../Coaching/coaching_screen.dart';
 import '../user_programs.dart';
