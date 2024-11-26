@@ -197,7 +197,6 @@ class FoodSelectorState extends ConsumerState<FoodSelector>
         userId: widget.meal.userId,
         mealId: widget.meal.id!,
         food: adjustedFood,
-        quantity: _quantity,
       );
     } else {
       await mealsService.addFoodToMeal(

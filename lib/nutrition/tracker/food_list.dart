@@ -468,15 +468,14 @@ class FoodListState extends ConsumerState<FoodList> {
   Future<void> showDuplicateDialog(WidgetRef ref, meals.Meal sourceMeal) async {
     final mealsList = await getAllMeals(sourceMeal.userId);
     final selectedMeal =
-        await showSelectMealDialog(mealsList, 'Select Destination Meal');
+        await showSelectMealDialog(mealsList, 'Select Target Meal');
     if (selectedMeal != null) {
       final overwriteExisting = await showOverwriteDialog();
       if (overwriteExisting != null) {
-        await ref.read(mealsServiceProvider).duplicateMeal(
+        await ref.read(mealsServiceProvider).copyMeal(
               userId: sourceMeal.userId,
               sourceMealId: sourceMeal.id!,
               targetMealId: selectedMeal.id!,
-              overwriteExisting: overwriteExisting,
             );
       }
     }
@@ -809,12 +808,13 @@ class FoodListState extends ConsumerState<FoodList> {
 
   List<PopupMenuEntry<String>> buildMealPopupMenuItems() {
     return [
-      PopupMenuItem(value: 'duplicate', child: Text('Duplica Pasto')),
-      PopupMenuItem(
+      const PopupMenuItem(value: 'duplicate', child: Text('Duplica Pasto')),
+      const PopupMenuItem(
           value: 'delete_all', child: Text('Elimina Tutti gli Alimenti')),
-      PopupMenuItem(
+      const PopupMenuItem(
           value: 'save_as_favorite', child: Text('Salva come Preferito')),
-      PopupMenuItem(value: 'apply_favorite', child: Text('Applica Preferito')),
+      const PopupMenuItem(
+          value: 'apply_favorite', child: Text('Applica Preferito')),
     ];
   }
 
@@ -824,7 +824,7 @@ class FoodListState extends ConsumerState<FoodList> {
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: ElevatedButton(
+      child: ElevatedButton.icon(
         onPressed: () async {
           if (dailyStatsId.isNotEmpty) {
             final mealsService = ref.read(mealsServiceProvider);
@@ -832,29 +832,15 @@ class FoodListState extends ConsumerState<FoodList> {
                 userId: userId, dailyStatsId: dailyStatsId, date: date);
           }
         },
+        icon: const Icon(Icons.add),
+        label: const Text('Aggiungi Snack'),
         style: ElevatedButton.styleFrom(
-          elevation: 0,
-          padding: const EdgeInsets.symmetric(vertical: 16.0),
           backgroundColor: theme.colorScheme.primaryContainer,
           foregroundColor: theme.colorScheme.onPrimaryContainer,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.0),
+            borderRadius: BorderRadius.circular(12),
           ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.add_circle_outline,
-                color: theme.colorScheme.onPrimaryContainer),
-            const SizedBox(width: 8),
-            Text(
-              'Aggiungi Snack ${currentSnacksCount + 1}',
-              style: GoogleFonts.roboto(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
         ),
       ),
     );
