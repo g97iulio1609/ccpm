@@ -68,9 +68,8 @@ enum MacroUpdateType { percentage, gramsPerKg, grams }
 final userDataProvider = StateNotifierProvider<UserDataNotifier, UserData>(
     (ref) => UserDataNotifier());
 
-final macrosProvider = StateNotifierProvider<MacrosNotifier, MacroData>((ref) {
-  return MacrosNotifier(ref);
-});
+final macrosProvider = StateNotifierProvider<MacrosNotifier, MacroData>(
+    (ref) => MacrosNotifier(ref));
 
 // Notifiers
 class UserDataNotifier extends StateNotifier<UserData> {
@@ -82,7 +81,7 @@ class UserDataNotifier extends StateNotifier<UserData> {
 }
 
 class MacrosNotifier extends StateNotifier<MacroData> {
-  final Ref ref;
+  final StateNotifierProviderRef<MacrosNotifier, MacroData> ref;
 
   MacrosNotifier(this.ref) : super(MacroData(carbs: 0, protein: 0, fat: 0));
 
