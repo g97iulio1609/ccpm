@@ -61,35 +61,55 @@ class Meal {
   String toJson() => json.encode(toMap());
 
   factory Meal.fromMap(Map<String, dynamic> map) {
+    DateTime parseDate(dynamic date) {
+      if (date is Timestamp) {
+        return date.toDate();
+      } else if (date is String) {
+        return DateTime.parse(date);
+      } else {
+        throw FormatException('Invalid date format: $date');
+      }
+    }
+
     return Meal(
       id: map['id'],
       userId: map['userId'],
       dailyStatsId: map['dailyStatsId'],
-      date: (map['date'] as Timestamp).toDate(),
+      date: parseDate(map['date']),
       mealType: map['mealType'],
       totalCalories: map['totalCalories']?.toDouble() ?? 0.0,
       totalCarbs: map['totalCarbs']?.toDouble() ?? 0.0,
       totalFat: map['totalFat']?.toDouble() ?? 0.0,
       totalProtein: map['totalProtein']?.toDouble() ?? 0.0,
-      isFavorite: map['isFavorite'] ?? false, // Aggiunto
-      favoriteName: map['favoriteName'], // Aggiunto
+      isFavorite: map['isFavorite'] ?? false,
+      favoriteName: map['favoriteName'],
     );
   }
 
   factory Meal.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    DateTime parseDate(dynamic date) {
+      if (date is Timestamp) {
+        return date.toDate();
+      } else if (date is String) {
+        return DateTime.parse(date);
+      } else {
+        throw FormatException('Invalid date format: $date');
+      }
+    }
+
     return Meal(
       id: doc.id,
       userId: data['userId'],
       dailyStatsId: data['dailyStatsId'],
-      date: (data['date'] as Timestamp).toDate(),
+      date: parseDate(data['date']),
       mealType: data['mealType'],
       totalCalories: data['totalCalories']?.toDouble() ?? 0.0,
       totalCarbs: data['totalCarbs']?.toDouble() ?? 0.0,
       totalFat: data['totalFat']?.toDouble() ?? 0.0,
       totalProtein: data['totalProtein']?.toDouble() ?? 0.0,
-      isFavorite: data['isFavorite'] ?? false, // Aggiunto
-      favoriteName: data['favoriteName'], // Aggiunto
+      isFavorite: data['isFavorite'] ?? false,
+      favoriteName: data['favoriteName'],
     );
   }
 
@@ -106,12 +126,13 @@ class Meal {
       'totalCarbs': totalCarbs,
       'totalFat': totalFat,
       'totalProtein': totalProtein,
-      'isFavorite': isFavorite, // Aggiunto
-      'favoriteName': favoriteName, // Aggiunto
+      'isFavorite': isFavorite,
+      'favoriteName': favoriteName,
     };
   }
 
-  static Meal emptyMeal(String userId, String dailyStatsId, DateTime date, String mealType) {
+  static Meal emptyMeal(
+      String userId, String dailyStatsId, DateTime date, String mealType) {
     return Meal(
       userId: userId,
       dailyStatsId: dailyStatsId,
@@ -182,7 +203,6 @@ class DailyStats {
     };
   }
 }
-
 
 class Food {
   String? id;
@@ -268,7 +288,8 @@ class FavoriteDay {
     required this.favoriteName,
   });
 
-  factory FavoriteDay.fromJson(String source) => FavoriteDay.fromMap(json.decode(source));
+  factory FavoriteDay.fromJson(String source) =>
+      FavoriteDay.fromMap(json.decode(source));
 
   String toJson() => json.encode(toMap());
 
