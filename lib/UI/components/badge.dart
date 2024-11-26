@@ -1,72 +1,87 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 
-enum BadgeStatus {
-  success,
-  warning,
-  error,
-  info,
-  neutral,
+enum AppBadgeVariant {
+  filled, // Badge con sfondo pieno
+  outlined, // Badge con bordo
+  subtle, // Badge con sfondo trasparente
+  gradient // Badge con sfondo sfumato
+}
+
+enum AppBadgeSize {
+  small, // Badge piccolo
+  medium, // Badge medio (default)
+  large // Badge grande
+}
+
+enum AppBadgeStatus {
+  primary, // Stato primario (default)
+  success, // Stato successo
+  warning, // Stato avviso
+  error, // Stato errore
+  info, // Stato informativo
+  neutral // Stato neutro
 }
 
 class AppBadge extends StatelessWidget {
   final String text;
-  final Color? backgroundColor;
-  final Color? textColor;
   final IconData? icon;
-  final double? size;
-  final bool isOutlined;
-  final bool isPulsing;
+  final AppBadgeVariant variant;
+  final AppBadgeSize size;
+  final AppBadgeStatus status;
+  final Color? customColor;
   final VoidCallback? onTap;
-  final bool isGradient;
-  final BadgeStatus? status;
+  final bool isInteractive;
 
   const AppBadge({
     super.key,
     required this.text,
-    this.backgroundColor,
-    this.textColor,
     this.icon,
-    this.size,
-    this.isOutlined = false,
-    this.isPulsing = false,
+    this.variant = AppBadgeVariant.filled,
+    this.size = AppBadgeSize.medium,
+    this.status = AppBadgeStatus.primary,
+    this.customColor,
     this.onTap,
-    this.isGradient = false,
-    this.status,
+    this.isInteractive = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
-    final badgeColor = backgroundColor ?? _getStatusColor(status, colorScheme) ?? colorScheme.primary;
-    final labelColor = textColor ?? (isOutlined ? badgeColor : colorScheme.onPrimary);
-    final textStyle = (size == AppBadgeSize.small 
-        ? theme.textTheme.labelSmall 
-        : theme.textTheme.labelMedium)?.copyWith(
-      color: labelColor,
-      fontWeight: FontWeight.w600,
-    );
+
+    final badgeColor = _getBadgeColor(colorScheme);
+    final textColor = _getTextColor(colorScheme);
+    final padding = _getPadding();
+    final fontSize = _getFontSize(theme);
+    final iconSize = _getIconSize();
+    final height = _getHeight();
+    final borderRadius = _getBorderRadius();
 
     Widget badge = Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: size == AppBadgeSize.small ? AppTheme.spacing.sm : AppTheme.spacing.md,
-        vertical: size == AppBadgeSize.small ? AppTheme.spacing.xxs : AppTheme.spacing.xs,
-      ),
+      height: height,
+      padding: padding,
       decoration: BoxDecoration(
-        gradient: isGradient ? LinearGradient(
-          colors: [
-            badgeColor,
-            badgeColor.withOpacity(0.8),
-          ],
-        ) : null,
-        color: isOutlined ? Colors.transparent : (isGradient ? null : badgeColor.withOpacity(0.2)),
-        borderRadius: BorderRadius.circular(AppTheme.radii.full),
-        border: isOutlined ? Border.all(
-          color: badgeColor,
-          width: 1.5,
-        ) : null,
+        gradient: variant == AppBadgeVariant.gradient
+            ? LinearGradient(
+                colors: [
+                  badgeColor,
+                  badgeColor.withOpacity(0.8),
+                ],
+              )
+            : null,
+        color: variant == AppBadgeVariant.filled
+            ? badgeColor
+            : variant == AppBadgeVariant.subtle
+                ? badgeColor.withOpacity(0.12)
+                : Colors.transparent,
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: variant == AppBadgeVariant.outlined
+            ? Border.all(
+                color: badgeColor,
+                width: 1.5,
+              )
+            : null,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -74,29 +89,30 @@ class AppBadge extends StatelessWidget {
           if (icon != null) ...[
             Icon(
               icon,
-              size: size == AppBadgeSize.small ? 12 : 16,
-              color: labelColor,
+              color: textColor,
+              size: iconSize,
             ),
-            SizedBox(width: AppTheme.spacing.xs),
+            SizedBox(width: AppTheme.spacing.xxs),
           ],
           Text(
             text,
-            style: textStyle,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: textColor,
+              fontSize: fontSize,
+              fontWeight: FontWeight.w600,
+              height: 1,
+            ),
           ),
         ],
       ),
     );
 
-    if (isPulsing) {
-      badge = _PulsingBadge(child: badge);
-    }
-
-    if (onTap != null) {
+    if (isInteractive && onTap != null) {
       badge = Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(AppTheme.radii.full),
+          borderRadius: BorderRadius.circular(borderRadius),
           child: badge,
         ),
       );
@@ -105,119 +121,165 @@ class AppBadge extends StatelessWidget {
     return badge;
   }
 
-  Color? _getStatusColor(BadgeStatus? status, ColorScheme colorScheme) {
-    if (status == null) return null;
-    
+  EdgeInsets _getPadding() {
+    switch (size) {
+      case AppBadgeSize.small:
+        return EdgeInsets.symmetric(
+          horizontal: AppTheme.spacing.xs,
+          vertical: AppTheme.spacing.xxs,
+        );
+      case AppBadgeSize.medium:
+        return EdgeInsets.symmetric(
+          horizontal: AppTheme.spacing.sm,
+          vertical: AppTheme.spacing.xs,
+        );
+      case AppBadgeSize.large:
+        return EdgeInsets.symmetric(
+          horizontal: AppTheme.spacing.md,
+          vertical: AppTheme.spacing.sm,
+        );
+    }
+  }
+
+  double _getHeight() {
+    switch (size) {
+      case AppBadgeSize.small:
+        return 20;
+      case AppBadgeSize.medium:
+        return 24;
+      case AppBadgeSize.large:
+        return 32;
+    }
+  }
+
+  double _getFontSize(ThemeData theme) {
+    switch (size) {
+      case AppBadgeSize.small:
+        return 11;
+      case AppBadgeSize.medium:
+        return 12;
+      case AppBadgeSize.large:
+        return 14;
+    }
+  }
+
+  double _getIconSize() {
+    switch (size) {
+      case AppBadgeSize.small:
+        return 12;
+      case AppBadgeSize.medium:
+        return 14;
+      case AppBadgeSize.large:
+        return 16;
+    }
+  }
+
+  double _getBorderRadius() {
+    switch (size) {
+      case AppBadgeSize.small:
+        return AppTheme.radii.full;
+      case AppBadgeSize.medium:
+        return AppTheme.radii.full;
+      case AppBadgeSize.large:
+        return AppTheme.radii.full;
+    }
+  }
+
+  Color _getBadgeColor(ColorScheme colorScheme) {
+    if (customColor != null) return customColor!;
+
     switch (status) {
-      case BadgeStatus.success:
-        return colorScheme.tertiary;
-      case BadgeStatus.warning:
-        return colorScheme.secondary;
-      case BadgeStatus.error:
-        return colorScheme.error;
-      case BadgeStatus.info:
+      case AppBadgeStatus.primary:
         return colorScheme.primary;
-      case BadgeStatus.neutral:
-        return colorScheme.outline;
+      case AppBadgeStatus.success:
+        return colorScheme.tertiary;
+      case AppBadgeStatus.warning:
+        return const Color(0xFFF59E0B);
+      case AppBadgeStatus.error:
+        return colorScheme.error;
+      case AppBadgeStatus.info:
+        return colorScheme.secondary;
+      case AppBadgeStatus.neutral:
+        return colorScheme.surfaceContainerHighest;
+    }
+  }
+
+  Color _getTextColor(ColorScheme colorScheme) {
+    if (variant == AppBadgeVariant.filled ||
+        variant == AppBadgeVariant.gradient) {
+      switch (status) {
+        case AppBadgeStatus.primary:
+          return colorScheme.onPrimary;
+        case AppBadgeStatus.success:
+          return colorScheme.onTertiary;
+        case AppBadgeStatus.warning:
+          return Colors.white;
+        case AppBadgeStatus.error:
+          return colorScheme.onError;
+        case AppBadgeStatus.info:
+          return colorScheme.onSecondary;
+        case AppBadgeStatus.neutral:
+          return colorScheme.onSurface;
+      }
+    } else {
+      return _getBadgeColor(colorScheme);
     }
   }
 
   // Factory constructors per casi comuni
   factory AppBadge.status({
     required String text,
-    required BadgeStatus status,
+    required AppBadgeStatus status,
     IconData? icon,
-    bool isPulsing = false,
-    VoidCallback? onTap,
   }) {
     return AppBadge(
       text: text,
       icon: icon,
-      isPulsing: isPulsing,
-      onTap: onTap,
-      isOutlined: true,
       status: status,
+      variant: AppBadgeVariant.filled,
+      size: AppBadgeSize.medium,
     );
   }
 
-  factory AppBadge.counter({
-    required String count,
-    Color? backgroundColor,
-    bool isPulsing = false,
-  }) {
-    return AppBadge(
-      text: count,
-      backgroundColor: backgroundColor,
-      size: AppBadgeSize.small,
-      isPulsing: isPulsing,
-      isGradient: true,
-    );
-  }
-
-  factory AppBadge.chip({
+  factory AppBadge.subtle({
     required String text,
+    required AppBadgeStatus status,
     IconData? icon,
-    Color? backgroundColor,
-    VoidCallback? onTap,
   }) {
     return AppBadge(
       text: text,
       icon: icon,
-      backgroundColor: backgroundColor,
-      onTap: onTap,
-      isOutlined: true,
+      status: status,
+      variant: AppBadgeVariant.subtle,
+      size: AppBadgeSize.medium,
+    );
+  }
+
+  factory AppBadge.outlined({
+    required String text,
+    required AppBadgeStatus status,
+    IconData? icon,
+  }) {
+    return AppBadge(
+      text: text,
+      icon: icon,
+      status: status,
+      variant: AppBadgeVariant.outlined,
+      size: AppBadgeSize.medium,
+    );
+  }
+
+  factory AppBadge.gradient({
+    required String text,
+    required AppBadgeStatus status,
+    IconData? icon,
+  }) {
+    return AppBadge(
+      text: text,
+      icon: icon,
+      status: status,
+      variant: AppBadgeVariant.gradient,
+      size: AppBadgeSize.medium,
     );
   }
 }
-
-// Widget per l'effetto pulsante
-class _PulsingBadge extends StatefulWidget {
-  final Widget child;
-
-  const _PulsingBadge({required this.child});
-
-  @override
-  State<_PulsingBadge> createState() => _PulsingBadgeState();
-}
-
-class _PulsingBadgeState extends State<_PulsingBadge> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    );
-    _animation = Tween<double>(begin: 1.0, end: 1.1).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeInOut,
-      ),
-    );
-    _controller.repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ScaleTransition(
-      scale: _animation,
-      child: widget.child,
-    );
-  }
-}
-
-// Dimensioni predefinite per i badge
-class AppBadgeSize {
-  static const double small = 16.0;
-  static const double medium = 20.0;
-  static const double large = 24.0;
-} 

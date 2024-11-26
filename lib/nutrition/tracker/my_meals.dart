@@ -59,7 +59,8 @@ class FavouritesMeals extends ConsumerWidget {
             return ListView.separated(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               itemCount: favoriteMeals.length,
-              separatorBuilder: (context, index) => SizedBox(height: AppTheme.spacing.md),
+              separatorBuilder: (context, index) =>
+                  SizedBox(height: AppTheme.spacing.md),
               itemBuilder: (context, index) {
                 final meal = favoriteMeals[index];
                 return _buildFavoriteMealTile(context, ref, meal);
@@ -106,7 +107,8 @@ class FavouritesMeals extends ConsumerWidget {
     );
   }
 
-  Widget _buildFavoriteMealTile(BuildContext context, WidgetRef ref, meals.Meal meal) {
+  Widget _buildFavoriteMealTile(
+      BuildContext context, WidgetRef ref, meals.Meal meal) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -189,16 +191,16 @@ class FavouritesMeals extends ConsumerWidget {
                       children: [
                         AppBadge(
                           text: meal.mealType,
-                          backgroundColor: colorScheme.secondary,
-                          textColor: colorScheme.onSecondary,
-                          isGradient: true,
+                          variant: AppBadgeVariant.gradient,
+                          status: AppBadgeStatus.info,
                           size: AppBadgeSize.small,
                         ),
                         SizedBox(width: AppTheme.spacing.sm),
                         AppBadge(
-                          text: '${meal.date.day}/${meal.date.month}/${meal.date.year}',
-                          backgroundColor: colorScheme.tertiary,
-                          textColor: colorScheme.onTertiary,
+                          text:
+                              '${meal.date.day}/${meal.date.month}/${meal.date.year}',
+                          variant: AppBadgeVariant.gradient,
+                          status: AppBadgeStatus.success,
                           icon: Icons.calendar_today,
                           size: AppBadgeSize.small,
                         ),
@@ -207,10 +209,12 @@ class FavouritesMeals extends ConsumerWidget {
                   ],
                 ),
               ),
-              AppButton.icon(
+              AppButton(
+                label: 'Modifica',
                 icon: Icons.edit_outlined,
-                onPressed: () => context.push('/mymeals/favorite_meal_detail', extra: meal),
-                isPrimary: false,
+                onPressed: () =>
+                    context.push('/mymeals/favorite_meal_detail', extra: meal),
+                variant: AppButtonVariant.secondary,
               ),
             ],
           ),
@@ -281,7 +285,8 @@ class FavouriteDays extends ConsumerWidget {
             return ListView.separated(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               itemCount: favoriteDays.length,
-              separatorBuilder: (context, index) => SizedBox(height: AppTheme.spacing.md),
+              separatorBuilder: (context, index) =>
+                  SizedBox(height: AppTheme.spacing.md),
               itemBuilder: (context, index) {
                 final day = favoriteDays[index];
                 return _buildFavoriteDayTile(context, ref, day);
@@ -328,7 +333,8 @@ class FavouriteDays extends ConsumerWidget {
     );
   }
 
-  Widget _buildFavoriteDayTile(BuildContext context, WidgetRef ref, meals.FavoriteDay day) {
+  Widget _buildFavoriteDayTile(
+      BuildContext context, WidgetRef ref, meals.FavoriteDay day) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -408,20 +414,22 @@ class FavouriteDays extends ConsumerWidget {
                     ),
                     SizedBox(height: AppTheme.spacing.xs),
                     AppBadge(
-                      text: '${day.date.day}/${day.date.month}/${day.date.year}',
-                      backgroundColor: colorScheme.tertiary,
-                      textColor: colorScheme.onTertiary,
+                      text:
+                          '${day.date.day}/${day.date.month}/${day.date.year}',
+                      variant: AppBadgeVariant.gradient,
+                      status: AppBadgeStatus.success,
                       icon: Icons.calendar_today,
                       size: AppBadgeSize.small,
-                      isGradient: true,
                     ),
                   ],
                 ),
               ),
-              AppButton.icon(
+              AppButton(
+                label: 'Modifica',
                 icon: Icons.edit_outlined,
-                onPressed: () => context.push('/mydays/favorite_day_detail', extra: day),
-                isPrimary: false,
+                onPressed: () =>
+                    context.push('/mydays/favorite_day_detail', extra: day),
+                variant: AppButtonVariant.secondary,
               ),
             ],
           ),

@@ -32,13 +32,15 @@ class FoodSelector extends ConsumerStatefulWidget {
   FoodSelectorState createState() => FoodSelectorState();
 }
 
-class FoodSelectorState extends ConsumerState<FoodSelector> with SingleTickerProviderStateMixin {
+class FoodSelectorState extends ConsumerState<FoodSelector>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
   final TextEditingController _searchController = TextEditingController();
-  final TextEditingController _quantityController = TextEditingController(text: '100');
+  final TextEditingController _quantityController =
+      TextEditingController(text: '100');
   String _selectedFoodId = '';
   double _quantity = 100.0;
   String _unit = 'g';
@@ -91,8 +93,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector> with SingleTickerPro
 
   Future<macros.Food?> _loadFoodData(String foodId) async {
     final mealsService = ref.read(mealsServiceProvider);
-    final food =
-        await mealsService.getMyFoodById(widget.meal.userId, foodId);
+    final food = await mealsService.getMyFoodById(widget.meal.userId, foodId);
     if (food != null) {
       if (mounted) {
         setState(() {
@@ -282,11 +283,12 @@ class FoodSelectorState extends ConsumerState<FoodSelector> with SingleTickerPro
               ),
             ),
           SizedBox(height: AppTheme.spacing.lg),
-          AppButton.primary(
-            label: 'Salva e torna indietro',
+          AppButton(
+            label: 'Salva',
             icon: Icons.check_circle_outline,
             onPressed: _saveFood,
-            isFullWidth: true,
+            size: AppButtonSize.full,
+            variant: AppButtonVariant.primary,
           ),
         ],
       ),
@@ -328,9 +330,8 @@ class FoodSelectorState extends ConsumerState<FoodSelector> with SingleTickerPro
                       ),
                       AppBadge(
                         text: '${_kcalValue.toStringAsFixed(0)} kcal',
-                        backgroundColor: colorScheme.primary,
-                        textColor: colorScheme.onPrimary,
-                        isGradient: true,
+                        variant: AppBadgeVariant.gradient,
+                        status: AppBadgeStatus.primary,
                       ),
                     ],
                   ),
@@ -468,7 +469,8 @@ class FoodSelectorState extends ConsumerState<FoodSelector> with SingleTickerPro
     );
   }
 
-  Widget _buildMacroItem(String label, double value, Color color, ThemeData theme) {
+  Widget _buildMacroItem(
+      String label, double value, Color color, ThemeData theme) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [

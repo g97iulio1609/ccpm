@@ -1,130 +1,269 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 
+enum AppButtonVariant {
+  primary, // Bottone principale con sfondo pieno
+  secondary, // Bottone secondario con sfondo trasparente
+  outlined, // Bottone con bordo
+  text, // Bottone solo testo
+  icon, // Bottone solo icona
+}
+
+enum AppButtonSize {
+  small, // Bottone piccolo
+  medium, // Bottone medio (default)
+  large, // Bottone grande
+  full, // Bottone a larghezza piena
+}
+
 class AppButton extends StatelessWidget {
-  final String label;
+  final String? label;
   final VoidCallback onPressed;
   final IconData? icon;
-  final bool isPrimary;
-  final bool isDestructive;
+  final AppButtonVariant variant;
+  final AppButtonSize size;
   final bool isLoading;
-  final bool isFullWidth;
-  final double? width;
-  final double? height;
-  final EdgeInsets? padding;
+  final bool isDisabled;
+  final Color? customColor;
+  final EdgeInsets? customPadding;
+  final double? customWidth;
+  final double? customHeight;
+  final double? customBorderRadius;
+  final TextStyle? customTextStyle;
 
   const AppButton({
     super.key,
-    required this.label,
+    this.label,
     required this.onPressed,
     this.icon,
-    this.isPrimary = true,
-    this.isDestructive = false,
+    this.variant = AppButtonVariant.primary,
+    this.size = AppButtonSize.medium,
     this.isLoading = false,
-    this.isFullWidth = false,
-    this.width,
-    this.height,
-    this.padding,
-  });
+    this.isDisabled = false,
+    this.customColor,
+    this.customPadding,
+    this.customWidth,
+    this.customHeight,
+    this.customBorderRadius,
+    this.customTextStyle,
+  }) : assert(label != null || icon != null,
+            'Either label or icon must be provided');
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Container(
-      width: isFullWidth ? double.infinity : width,
+    // Calcola dimensioni in base alla size
+    final padding = customPadding ?? _getPadding();
+    final height = customHeight ?? _getHeight();
+    final width = customWidth ?? _getWidth();
+    final borderRadius = customBorderRadius ?? AppTheme.radii.lg;
+
+    // Calcola colori in base alla variant
+    final backgroundColor = _getBackgroundColor(colorScheme);
+    final foregroundColor = _getForegroundColor(colorScheme);
+    final borderColor = _getBorderColor(colorScheme);
+
+    // Costruisce il contenuto del bottone
+    Widget content = Row(
+      mainAxisSize:
+          size == AppButtonSize.full ? MainAxisSize.max : MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (isLoading)
+          SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(foregroundColor),
+            ),
+          )
+        else ...[
+          if (icon != null) ...[
+            Icon(
+              icon,
+              color: foregroundColor,
+              size: _getIconSize(),
+            ),
+            if (label != null) SizedBox(width: AppTheme.spacing.sm),
+          ],
+          if (label != null)
+            Text(
+              label!,
+              style: customTextStyle ??
+                  theme.textTheme.labelLarge?.copyWith(
+                    color: foregroundColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+        ],
+      ],
+    );
+
+    // Costruisce il container del bottone
+    Widget button = Container(
+      width: width,
       height: height,
       decoration: BoxDecoration(
-        gradient: isPrimary && !isDestructive ? LinearGradient(
-          colors: [
-            isDestructive ? colorScheme.error : colorScheme.primary,
-            (isDestructive ? colorScheme.error : colorScheme.primary).withOpacity(0.8),
-          ],
-        ) : null,
-        color: !isPrimary ? colorScheme.surfaceContainerHighest.withOpacity(0.3) : null,
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        boxShadow: isPrimary ? [
-          BoxShadow(
-            color: (isDestructive ? colorScheme.error : colorScheme.primary).withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ] : null,
+        gradient: variant == AppButtonVariant.primary
+            ? LinearGradient(
+                colors: [
+                  backgroundColor,
+                  backgroundColor.withOpacity(0.8),
+                ],
+              )
+            : null,
+        color: variant != AppButtonVariant.primary ? backgroundColor : null,
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: variant == AppButtonVariant.outlined
+            ? Border.all(
+                color: borderColor,
+                width: 1.5,
+              )
+            : null,
+        boxShadow: variant == AppButtonVariant.primary
+            ? [
+                BoxShadow(
+                  color: backgroundColor.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : null,
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: isLoading ? null : onPressed,
-          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          onTap: isDisabled || isLoading ? null : onPressed,
+          borderRadius: BorderRadius.circular(borderRadius),
           child: Padding(
-            padding: padding ?? EdgeInsets.symmetric(
-              horizontal: AppTheme.spacing.lg,
-              vertical: AppTheme.spacing.md,
-            ),
-            child: Row(
-              mainAxisSize: isFullWidth ? MainAxisSize.max : MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (isLoading)
-                  SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        isPrimary ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  )
-                else ...[
-                  if (icon != null) ...[
-                    Icon(
-                      icon,
-                      color: isPrimary 
-                          ? colorScheme.onPrimary 
-                          : isDestructive 
-                              ? colorScheme.error 
-                              : colorScheme.onSurfaceVariant,
-                      size: 20,
-                    ),
-                    SizedBox(width: AppTheme.spacing.sm),
-                  ],
-                  Text(
-                    label,
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: isPrimary 
-                          ? colorScheme.onPrimary 
-                          : isDestructive 
-                              ? colorScheme.error 
-                              : colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ],
-            ),
+            padding: padding,
+            child: content,
           ),
         ),
       ),
     );
+
+    // Applica opacità se disabilitato
+    if (isDisabled) {
+      button = Opacity(
+        opacity: 0.5,
+        child: button,
+      );
+    }
+
+    return button;
   }
 
-  // Factory constructors per varianti comuni
+  EdgeInsets _getPadding() {
+    switch (size) {
+      case AppButtonSize.small:
+        return EdgeInsets.symmetric(
+          horizontal: AppTheme.spacing.md,
+          vertical: AppTheme.spacing.xs,
+        );
+      case AppButtonSize.medium:
+        return EdgeInsets.symmetric(
+          horizontal: AppTheme.spacing.lg,
+          vertical: AppTheme.spacing.sm,
+        );
+      case AppButtonSize.large:
+        return EdgeInsets.symmetric(
+          horizontal: AppTheme.spacing.xl,
+          vertical: AppTheme.spacing.md,
+        );
+      case AppButtonSize.full:
+        return EdgeInsets.symmetric(
+          horizontal: AppTheme.spacing.lg,
+          vertical: AppTheme.spacing.md,
+        );
+    }
+  }
+
+  double _getHeight() {
+    switch (size) {
+      case AppButtonSize.small:
+        return 32;
+      case AppButtonSize.medium:
+        return 40;
+      case AppButtonSize.large:
+        return 48;
+      case AppButtonSize.full:
+        return 48;
+    }
+  }
+
+  double? _getWidth() {
+    return size == AppButtonSize.full ? double.infinity : null;
+  }
+
+  double _getIconSize() {
+    switch (size) {
+      case AppButtonSize.small:
+        return 16;
+      case AppButtonSize.medium:
+        return 20;
+      case AppButtonSize.large:
+        return 24;
+      case AppButtonSize.full:
+        return 24;
+    }
+  }
+
+  Color _getBackgroundColor(ColorScheme colorScheme) {
+    if (customColor != null) return customColor!;
+
+    switch (variant) {
+      case AppButtonVariant.primary:
+        return colorScheme.primary;
+      case AppButtonVariant.secondary:
+        return colorScheme.surfaceContainerHighest.withOpacity(0.3);
+      case AppButtonVariant.outlined:
+      case AppButtonVariant.text:
+      case AppButtonVariant.icon:
+        return Colors.transparent;
+    }
+  }
+
+  Color _getForegroundColor(ColorScheme colorScheme) {
+    if (customColor != null) {
+      return variant == AppButtonVariant.primary ? Colors.white : customColor!;
+    }
+
+    switch (variant) {
+      case AppButtonVariant.primary:
+        return colorScheme.onPrimary;
+      case AppButtonVariant.secondary:
+      case AppButtonVariant.outlined:
+      case AppButtonVariant.text:
+      case AppButtonVariant.icon:
+        return colorScheme.primary;
+    }
+  }
+
+  Color _getBorderColor(ColorScheme colorScheme) {
+    return customColor ?? colorScheme.primary;
+  }
+
+  // Factory constructors per casi comuni
   factory AppButton.primary({
     required String label,
     required VoidCallback onPressed,
     IconData? icon,
+    AppButtonSize size = AppButtonSize.medium,
     bool isLoading = false,
-    bool isFullWidth = false,
+    bool isDisabled = false,
   }) {
     return AppButton(
       label: label,
       onPressed: onPressed,
       icon: icon,
-      isPrimary: true,
+      variant: AppButtonVariant.primary,
+      size: size,
       isLoading: isLoading,
-      isFullWidth: isFullWidth,
+      isDisabled: isDisabled,
     );
   }
 
@@ -132,175 +271,71 @@ class AppButton extends StatelessWidget {
     required String label,
     required VoidCallback onPressed,
     IconData? icon,
+    AppButtonSize size = AppButtonSize.medium,
     bool isLoading = false,
-    bool isFullWidth = false,
+    bool isDisabled = false,
   }) {
     return AppButton(
       label: label,
       onPressed: onPressed,
       icon: icon,
-      isPrimary: false,
+      variant: AppButtonVariant.secondary,
+      size: size,
       isLoading: isLoading,
-      isFullWidth: isFullWidth,
+      isDisabled: isDisabled,
     );
   }
 
-  factory AppButton.destructive({
+  factory AppButton.outlined({
     required String label,
     required VoidCallback onPressed,
     IconData? icon,
+    AppButtonSize size = AppButtonSize.medium,
     bool isLoading = false,
-    bool isFullWidth = false,
+    bool isDisabled = false,
   }) {
     return AppButton(
       label: label,
       onPressed: onPressed,
       icon: icon,
-      isPrimary: true,
-      isDestructive: true,
+      variant: AppButtonVariant.outlined,
+      size: size,
       isLoading: isLoading,
-      isFullWidth: isFullWidth,
+      isDisabled: isDisabled,
+    );
+  }
+
+  factory AppButton.text({
+    required String label,
+    required VoidCallback onPressed,
+    IconData? icon,
+    AppButtonSize size = AppButtonSize.medium,
+    bool isDisabled = false,
+  }) {
+    return AppButton(
+      label: label,
+      onPressed: onPressed,
+      icon: icon,
+      variant: AppButtonVariant.text,
+      size: size,
+      isDisabled: isDisabled,
     );
   }
 
   factory AppButton.icon({
     required IconData icon,
     required VoidCallback onPressed,
-    bool isPrimary = true,
-    bool isDestructive = false,
-    double? size,
+    AppButtonSize size = AppButtonSize.medium,
+    bool isDisabled = false,
+    Color? color,
   }) {
     return AppButton(
-      label: '',
-      onPressed: onPressed,
       icon: icon,
-      isPrimary: isPrimary,
-      isDestructive: isDestructive,
-      padding: EdgeInsets.all(size ?? 12),
+      onPressed: onPressed,
+      variant: AppButtonVariant.icon,
+      size: size,
+      isDisabled: isDisabled,
+      customColor: color,
     );
   }
 }
-
-// Pulsante con animazione di ripple circolare
-class CircleIconButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onPressed;
-  final bool isPrimary;
-  final bool isDestructive;
-  final double size;
-
-  const CircleIconButton({
-    super.key,
-    required this.icon,
-    required this.onPressed,
-    this.isPrimary = true,
-    this.isDestructive = false,
-    this.size = 48,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: isPrimary && !isDestructive ? LinearGradient(
-          colors: [
-            isDestructive ? colorScheme.error : colorScheme.primary,
-            (isDestructive ? colorScheme.error : colorScheme.primary).withOpacity(0.8),
-          ],
-        ) : null,
-        color: !isPrimary ? colorScheme.surfaceContainerHighest.withOpacity(0.3) : null,
-        boxShadow: isPrimary ? [
-          BoxShadow(
-            color: (isDestructive ? colorScheme.error : colorScheme.primary).withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ] : null,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onPressed,
-          customBorder: const CircleBorder(),
-          child: Icon(
-            icon,
-            color: isPrimary 
-                ? colorScheme.onPrimary 
-                : isDestructive 
-                    ? colorScheme.error 
-                    : colorScheme.onSurfaceVariant,
-            size: size * 0.5,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// Pulsante con effetto di pressione
-class PressableButton extends StatefulWidget {
-  final Widget child;
-  final VoidCallback onPressed;
-  final double scale;
-  final Duration duration;
-
-  const PressableButton({
-    super.key,
-    required this.child,
-    required this.onPressed,
-    this.scale = 0.95,
-    this.duration = const Duration(milliseconds: 100),
-  });
-
-  @override
-  State<PressableButton> createState() => _PressableButtonState();
-}
-
-class _PressableButtonState extends State<PressableButton> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-    );
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: widget.scale,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => _controller.forward(),
-      onTapUp: (_) {
-        _controller.reverse();
-        widget.onPressed();
-      },
-      onTapCancel: () => _controller.reverse(),
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: widget.child,
-      ),
-    );
-  }
-} 

@@ -12,14 +12,14 @@ class MealSelectionDialog extends ConsumerStatefulWidget {
   final String userId;
   final List<String> initialSelectedMealIds;
 
-  const MealSelectionDialog({
-    required this.userId,
-    this.initialSelectedMealIds = const [],
-    super.key
-  });
+  const MealSelectionDialog(
+      {required this.userId,
+      this.initialSelectedMealIds = const [],
+      super.key});
 
   @override
-  ConsumerState<MealSelectionDialog> createState() => _MealSelectionDialogState();
+  ConsumerState<MealSelectionDialog> createState() =>
+      _MealSelectionDialogState();
 }
 
 class _MealSelectionDialogState extends ConsumerState<MealSelectionDialog> {
@@ -80,8 +80,11 @@ class _MealSelectionDialogState extends ConsumerState<MealSelectionDialog> {
               Text(
                 'Tutti i Pasti',
                 style: theme.textTheme.labelLarge?.copyWith(
-                  color: !_showFavorites ? colorScheme.primary : colorScheme.onSurfaceVariant,
-                  fontWeight: !_showFavorites ? FontWeight.w600 : FontWeight.normal,
+                  color: !_showFavorites
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant,
+                  fontWeight:
+                      !_showFavorites ? FontWeight.w600 : FontWeight.normal,
                 ),
               ),
               SizedBox(width: AppTheme.spacing.md),
@@ -95,8 +98,11 @@ class _MealSelectionDialogState extends ConsumerState<MealSelectionDialog> {
               Text(
                 'Preferiti',
                 style: theme.textTheme.labelLarge?.copyWith(
-                  color: _showFavorites ? colorScheme.primary : colorScheme.onSurfaceVariant,
-                  fontWeight: _showFavorites ? FontWeight.w600 : FontWeight.normal,
+                  color: _showFavorites
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant,
+                  fontWeight:
+                      _showFavorites ? FontWeight.w600 : FontWeight.normal,
                 ),
               ),
             ],
@@ -159,11 +165,12 @@ class _MealSelectionDialogState extends ConsumerState<MealSelectionDialog> {
               return ListView.separated(
                 padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.md),
                 itemCount: meals.length,
-                separatorBuilder: (context, index) => SizedBox(height: AppTheme.spacing.sm),
+                separatorBuilder: (context, index) =>
+                    SizedBox(height: AppTheme.spacing.sm),
                 itemBuilder: (context, index) {
                   final meal = meals[index];
                   final isSelected = _selectedMealIds.contains(meal.id);
-                  
+
                   return Material(
                     color: Colors.transparent,
                     child: InkWell(
@@ -180,12 +187,14 @@ class _MealSelectionDialogState extends ConsumerState<MealSelectionDialog> {
                       child: Container(
                         padding: EdgeInsets.all(AppTheme.spacing.md),
                         decoration: BoxDecoration(
-                          color: isSelected 
+                          color: isSelected
                               ? colorScheme.primary.withOpacity(0.1)
-                              : colorScheme.surfaceContainerHighest.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                              : colorScheme.surfaceContainerHighest
+                                  .withOpacity(0.3),
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radii.lg),
                           border: Border.all(
-                            color: isSelected 
+                            color: isSelected
                                 ? colorScheme.primary
                                 : colorScheme.outline.withOpacity(0.1),
                             width: 1.5,
@@ -196,12 +205,20 @@ class _MealSelectionDialogState extends ConsumerState<MealSelectionDialog> {
                             Container(
                               padding: EdgeInsets.all(AppTheme.spacing.sm),
                               decoration: BoxDecoration(
-                                color: (isSelected ? colorScheme.primary : colorScheme.surfaceContainerHighest).withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(AppTheme.radii.md),
+                                color: (isSelected
+                                        ? colorScheme.primary
+                                        : colorScheme.surfaceContainerHighest)
+                                    .withOpacity(0.2),
+                                borderRadius:
+                                    BorderRadius.circular(AppTheme.radii.md),
                               ),
                               child: Icon(
-                                isSelected ? Icons.check_circle : Icons.restaurant,
-                                color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
+                                isSelected
+                                    ? Icons.check_circle
+                                    : Icons.restaurant,
+                                color: isSelected
+                                    ? colorScheme.primary
+                                    : colorScheme.onSurfaceVariant,
                                 size: 20,
                               ),
                             ),
@@ -212,7 +229,8 @@ class _MealSelectionDialogState extends ConsumerState<MealSelectionDialog> {
                                 children: [
                                   Text(
                                     meal.mealType,
-                                    style: theme.textTheme.titleMedium?.copyWith(
+                                    style:
+                                        theme.textTheme.titleMedium?.copyWith(
                                       color: colorScheme.onSurface,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -222,17 +240,16 @@ class _MealSelectionDialogState extends ConsumerState<MealSelectionDialog> {
                                     children: [
                                       AppBadge(
                                         text: '${meal.totalCalories} kcal',
-                                        backgroundColor: colorScheme.primary,
-                                        textColor: colorScheme.onPrimary,
-                                        isGradient: true,
+                                        variant: AppBadgeVariant.gradient,
+                                        status: AppBadgeStatus.primary,
                                         size: AppBadgeSize.small,
                                       ),
                                       if (meal.isFavorite) ...[
                                         SizedBox(width: AppTheme.spacing.sm),
                                         AppBadge(
                                           text: 'Preferito',
-                                          backgroundColor: colorScheme.secondary,
-                                          textColor: colorScheme.onSecondary,
+                                          variant: AppBadgeVariant.gradient,
+                                          status: AppBadgeStatus.info,
                                           icon: Icons.favorite,
                                           size: AppBadgeSize.small,
                                         ),
@@ -270,6 +287,7 @@ class _MealSelectionDialogState extends ConsumerState<MealSelectionDialog> {
         .collection('meals')
         .where('isFavorite', isEqualTo: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => Meal.fromFirestore(doc)).toList());
+        .map((snapshot) =>
+            snapshot.docs.map((doc) => Meal.fromFirestore(doc)).toList());
   }
 }
