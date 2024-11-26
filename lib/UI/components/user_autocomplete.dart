@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/user_model.dart';
-import '../common/generic_autocomplete.dart';
-import '../providers/providers.dart';
+import '../../../models/user_model.dart';
+import '../../../common/generic_autocomplete.dart';
+import '../../../providers/providers.dart';
 
 class UserTypeAheadField extends ConsumerWidget {
   final TextEditingController controller;

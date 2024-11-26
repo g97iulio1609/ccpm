@@ -1,17 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 
-class BottomMenu extends StatelessWidget {
-  final List<BottomMenuItem> items;
-  final String? title;
+class BottomMenuItem {
+  final IconData? icon;
+  final String title;
   final String? subtitle;
+  final Widget? trailing;
+  final Widget? leading;
+  final VoidCallback? onTap;
+  final bool isDestructive;
+
+  const BottomMenuItem({
+    this.icon,
+    required this.title,
+    this.subtitle,
+    this.trailing,
+    this.leading,
+    this.onTap,
+    this.isDestructive = false,
+  });
+}
+
+class BottomMenu extends StatelessWidget {
+  final String title;
+  final String? subtitle;
+  final List<BottomMenuItem>? items;
+  final List<Widget>? actions;
+  final double? height;
+  final bool isDismissible;
   final Widget? leading;
 
   const BottomMenu({
     super.key,
-    required this.items,
-    this.title,
+    required this.title,
     this.subtitle,
+    this.items,
+    this.actions,
+    this.height,
+    this.isDismissible = true,
     this.leading,
   });
 
@@ -21,170 +47,135 @@ class BottomMenu extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Container(
+      constraints: BoxConstraints(
+        maxHeight: height ?? MediaQuery.of(context).size.height * 0.85,
+      ),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(AppTheme.radii.xl),
         ),
-        boxShadow: AppTheme.elevations.large,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Handle bar
-          Center(
-            child: Container(
-              margin: EdgeInsets.only(top: AppTheme.spacing.md),
-              width: 32,
-              height: 4,
-              decoration: BoxDecoration(
-                color: colorScheme.onSurfaceVariant.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(AppTheme.radii.full),
-              ),
+          // Handle
+          Container(
+            margin: EdgeInsets.symmetric(vertical: AppTheme.spacing.sm),
+            width: 32,
+            height: 4,
+            decoration: BoxDecoration(
+              color: colorScheme.outline.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(AppTheme.radii.full),
             ),
           ),
 
-          if (title != null || subtitle != null || leading != null)
-            Container(
-              padding: EdgeInsets.all(AppTheme.spacing.lg),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: colorScheme.outline.withOpacity(0.1),
+          // Header
+          Padding(
+            padding: EdgeInsets.all(AppTheme.spacing.lg),
+            child: Row(
+              children: [
+                if (leading != null) ...[
+                  leading!,
+                  SizedBox(width: AppTheme.spacing.md),
+                ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color: colorScheme.onSurface,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (subtitle != null) ...[
+                        SizedBox(height: AppTheme.spacing.xs),
+                        Text(
+                          subtitle!,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-              ),
-              child: Row(
-                children: [
-                  if (leading != null) ...[
-                    leading!,
-                    SizedBox(width: AppTheme.spacing.md),
-                  ],
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (title != null)
-                          Text(
-                            title!,
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              color: colorScheme.onSurface,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        if (subtitle != null)
-                          Text(
-                            subtitle!,
+              ],
+            ),
+          ),
+
+          // Divider
+          Container(
+            height: 1,
+            color: colorScheme.outline.withOpacity(0.1),
+          ),
+
+          // Content
+          if (items != null && items!.isNotEmpty)
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                padding: EdgeInsets.symmetric(
+                  vertical: AppTheme.spacing.md,
+                ),
+                itemCount: items!.length,
+                itemBuilder: (context, index) {
+                  final item = items![index];
+                  return ListTile(
+                    leading: item.leading ??
+                        (item.icon != null
+                            ? Icon(
+                                item.icon,
+                                color: item.isDestructive
+                                    ? colorScheme.error
+                                    : colorScheme.onSurfaceVariant,
+                              )
+                            : null),
+                    title: Text(
+                      item.title,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: item.isDestructive
+                            ? colorScheme.error
+                            : colorScheme.onSurface,
+                      ),
+                    ),
+                    subtitle: item.subtitle != null
+                        ? Text(
+                            item.subtitle!,
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: colorScheme.onSurfaceVariant,
                             ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
+                          )
+                        : null,
+                    trailing: item.trailing,
+                    onTap: item.onTap,
+                  );
+                },
               ),
             ),
 
-          // Menu Items
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              final item = items[index];
-              final isDestructive = item.isDestructive ?? false;
-              final isLast = index == items.length - 1;
-
-              return Column(
+          // Actions
+          if (actions != null && actions!.isNotEmpty) ...[
+            Container(
+              height: 1,
+              color: colorScheme.outline.withOpacity(0.1),
+            ),
+            Padding(
+              padding: EdgeInsets.all(AppTheme.spacing.lg),
+              child: Column(
                 children: [
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.pop(context);
-                        item.onTap();
-                      },
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppTheme.spacing.lg,
-                          vertical: AppTheme.spacing.md,
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: EdgeInsets.all(AppTheme.spacing.sm),
-                              decoration: BoxDecoration(
-                                color: (isDestructive
-                                        ? colorScheme.error
-                                        : colorScheme.primary)
-                                    .withOpacity(0.1),
-                                borderRadius:
-                                    BorderRadius.circular(AppTheme.radii.md),
-                              ),
-                              child: Icon(
-                                item.icon,
-                                color: isDestructive
-                                    ? colorScheme.error
-                                    : colorScheme.primary,
-                                size: 20,
-                              ),
-                            ),
-                            SizedBox(width: AppTheme.spacing.md),
-                            Expanded(
-                              child: Text(
-                                item.title,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  color: isDestructive
-                                      ? colorScheme.error
-                                      : colorScheme.onSurface,
-                                ),
-                              ),
-                            ),
-                            if (item.trailing != null) ...[
-                              SizedBox(width: AppTheme.spacing.sm),
-                              item.trailing!,
-                            ],
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (!isLast)
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppTheme.spacing.lg,
-                      ),
-                      child: Divider(
-                        height: 1,
-                        color: colorScheme.outline.withOpacity(0.1),
-                      ),
-                    ),
+                  for (var i = 0; i < actions!.length; i++) ...[
+                    if (i > 0) SizedBox(height: AppTheme.spacing.md),
+                    actions![i],
+                  ],
                 ],
-              );
-            },
-          ),
-
-          // Bottom Padding for safe area
-          SizedBox(height: MediaQuery.of(context).padding.bottom),
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 }
-
-class BottomMenuItem {
-  final String title;
-  final IconData icon;
-  final VoidCallback onTap;
-  final bool? isDestructive;
-  final Widget? trailing;
-
-  const BottomMenuItem({
-    required this.title,
-    required this.icon,
-    required this.onTap,
-    this.isDestructive,
-    this.trailing,
-  });
-} 

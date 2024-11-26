@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/models/measurement_model.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/Main/app_theme.dart';
-import 'package:alphanessone/user_autocomplete.dart';
+import 'package:alphanessone/UI/components/user_autocomplete.dart';
 import 'widgets/measurement_card.dart';
 import 'widgets/measurement_chart.dart';
 import 'widgets/measurement_form.dart';

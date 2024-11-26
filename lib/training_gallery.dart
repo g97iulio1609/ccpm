@@ -384,11 +384,12 @@ class SetCurrentProgramDialog extends StatelessWidget {
         ),
       ),
       actions: [
-        AppButton.secondary(
+        AppButton(
           label: 'Annulla',
+          variant: AppButtonVariant.outline,
           onPressed: () => Navigator.of(context).pop(false),
         ),
-        AppButton.primary(
+        AppButton(
           label: 'Conferma',
           onPressed: () => Navigator.of(context).pop(true),
         ),

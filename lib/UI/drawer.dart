@@ -204,7 +204,7 @@ class CustomDrawer extends ConsumerWidget {
                 ),
                 if (isSelected)
                   AppBadge(
-                    text: 'Attivo',
+                    label: 'Attivo',
                     variant: AppBadgeVariant.filled,
                     status: AppBadgeStatus.success,
                     size: AppBadgeSize.small,
@@ -438,7 +438,7 @@ class CustomDrawer extends ConsumerWidget {
                     ),
                     SizedBox(height: AppTheme.spacing.xs),
                     AppBadge(
-                      text: userRole.toUpperCase(),
+                      label: userRole.toUpperCase(),
                       variant: AppBadgeVariant.filled,
                       status: AppBadgeStatus.info,
                       size: AppBadgeSize.small,

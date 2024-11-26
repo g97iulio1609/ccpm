@@ -199,7 +199,7 @@ class ExercisesList extends HookConsumerWidget {
             ),
             const SizedBox(height: 16),
             muscleGroupsAsyncValue.when(
-              data: (muscleGroups) => Container(
+              data: (muscleGroups) => SizedBox(
                 height: 48,
                 child: ScrollConfiguration(
                   behavior: ScrollConfiguration.of(context).copyWith(

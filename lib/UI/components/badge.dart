@@ -2,47 +2,45 @@ import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 
 enum AppBadgeVariant {
-  filled, // Badge con sfondo pieno
-  outlined, // Badge con bordo
-  subtle, // Badge con sfondo trasparente
-  gradient // Badge con sfondo sfumato
+  filled,
+  outline,
+  subtle,
+  gradient,
 }
 
 enum AppBadgeSize {
-  small, // Badge piccolo
-  medium, // Badge medio (default)
-  large // Badge grande
+  small,
+  medium,
+  large,
 }
 
 enum AppBadgeStatus {
-  primary, // Stato primario (default)
-  success, // Stato successo
-  warning, // Stato avviso
-  error, // Stato errore
-  info, // Stato informativo
-  neutral // Stato neutro
+  primary,
+  success,
+  warning,
+  error,
+  info,
+  neutral,
 }
 
 class AppBadge extends StatelessWidget {
-  final String text;
-  final IconData? icon;
+  final String label;
   final AppBadgeVariant variant;
+  final AppBadgeStatus? status;
   final AppBadgeSize size;
-  final AppBadgeStatus status;
-  final Color? customColor;
+  final Color? color;
+  final IconData? icon;
   final VoidCallback? onTap;
-  final bool isInteractive;
 
   const AppBadge({
     super.key,
-    required this.text,
-    this.icon,
+    required this.label,
     this.variant = AppBadgeVariant.filled,
+    this.status,
     this.size = AppBadgeSize.medium,
-    this.status = AppBadgeStatus.primary,
-    this.customColor,
+    this.color,
+    this.icon,
     this.onTap,
-    this.isInteractive = false,
   });
 
   @override
@@ -50,236 +48,113 @@ class AppBadge extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final badgeColor = _getBadgeColor(colorScheme);
-    final textColor = _getTextColor(colorScheme);
-    final padding = _getPadding();
-    final fontSize = _getFontSize(theme);
-    final iconSize = _getIconSize();
-    final height = _getHeight();
-    final borderRadius = _getBorderRadius();
+    Color getBadgeColor() {
+      if (color != null) return color!;
 
-    Widget badge = Container(
-      height: height,
-      padding: padding,
-      decoration: BoxDecoration(
-        gradient: variant == AppBadgeVariant.gradient
-            ? LinearGradient(
-                colors: [
-                  badgeColor,
-                  badgeColor.withOpacity(0.8),
-                ],
-              )
-            : null,
-        color: variant == AppBadgeVariant.filled
-            ? badgeColor
-            : variant == AppBadgeVariant.subtle
-                ? badgeColor.withOpacity(0.12)
-                : Colors.transparent,
-        borderRadius: BorderRadius.circular(borderRadius),
-        border: variant == AppBadgeVariant.outlined
-            ? Border.all(
-                color: badgeColor,
-                width: 1.5,
-              )
-            : null,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) ...[
-            Icon(
-              icon,
-              color: textColor,
-              size: iconSize,
-            ),
-            SizedBox(width: AppTheme.spacing.xxs),
-          ],
-          Text(
-            text,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: textColor,
-              fontSize: fontSize,
-              fontWeight: FontWeight.w600,
-              height: 1,
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (isInteractive && onTap != null) {
-      badge = Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(borderRadius),
-          child: badge,
-        ),
-      );
-    }
-
-    return badge;
-  }
-
-  EdgeInsets _getPadding() {
-    switch (size) {
-      case AppBadgeSize.small:
-        return EdgeInsets.symmetric(
-          horizontal: AppTheme.spacing.xs,
-          vertical: AppTheme.spacing.xxs,
-        );
-      case AppBadgeSize.medium:
-        return EdgeInsets.symmetric(
-          horizontal: AppTheme.spacing.sm,
-          vertical: AppTheme.spacing.xs,
-        );
-      case AppBadgeSize.large:
-        return EdgeInsets.symmetric(
-          horizontal: AppTheme.spacing.md,
-          vertical: AppTheme.spacing.sm,
-        );
-    }
-  }
-
-  double _getHeight() {
-    switch (size) {
-      case AppBadgeSize.small:
-        return 20;
-      case AppBadgeSize.medium:
-        return 24;
-      case AppBadgeSize.large:
-        return 32;
-    }
-  }
-
-  double _getFontSize(ThemeData theme) {
-    switch (size) {
-      case AppBadgeSize.small:
-        return 11;
-      case AppBadgeSize.medium:
-        return 12;
-      case AppBadgeSize.large:
-        return 14;
-    }
-  }
-
-  double _getIconSize() {
-    switch (size) {
-      case AppBadgeSize.small:
-        return 12;
-      case AppBadgeSize.medium:
-        return 14;
-      case AppBadgeSize.large:
-        return 16;
-    }
-  }
-
-  double _getBorderRadius() {
-    switch (size) {
-      case AppBadgeSize.small:
-        return AppTheme.radii.full;
-      case AppBadgeSize.medium:
-        return AppTheme.radii.full;
-      case AppBadgeSize.large:
-        return AppTheme.radii.full;
-    }
-  }
-
-  Color _getBadgeColor(ColorScheme colorScheme) {
-    if (customColor != null) return customColor!;
-
-    switch (status) {
-      case AppBadgeStatus.primary:
-        return colorScheme.primary;
-      case AppBadgeStatus.success:
-        return colorScheme.tertiary;
-      case AppBadgeStatus.warning:
-        return const Color(0xFFF59E0B);
-      case AppBadgeStatus.error:
-        return colorScheme.error;
-      case AppBadgeStatus.info:
-        return colorScheme.secondary;
-      case AppBadgeStatus.neutral:
-        return colorScheme.surfaceContainerHighest;
-    }
-  }
-
-  Color _getTextColor(ColorScheme colorScheme) {
-    if (variant == AppBadgeVariant.filled ||
-        variant == AppBadgeVariant.gradient) {
       switch (status) {
         case AppBadgeStatus.primary:
-          return colorScheme.onPrimary;
+          return colorScheme.primary;
         case AppBadgeStatus.success:
-          return colorScheme.onTertiary;
+          return colorScheme.tertiary;
         case AppBadgeStatus.warning:
-          return Colors.white;
+          return const Color(0xFFF59E0B);
         case AppBadgeStatus.error:
-          return colorScheme.onError;
+          return colorScheme.error;
         case AppBadgeStatus.info:
-          return colorScheme.onSecondary;
+          return colorScheme.secondary;
         case AppBadgeStatus.neutral:
-          return colorScheme.onSurface;
+          return colorScheme.surfaceContainerHighest;
+        default:
+          return colorScheme.primary;
       }
-    } else {
-      return _getBadgeColor(colorScheme);
     }
-  }
 
-  // Factory constructors per casi comuni
-  factory AppBadge.status({
-    required String text,
-    required AppBadgeStatus status,
-    IconData? icon,
-  }) {
-    return AppBadge(
-      text: text,
-      icon: icon,
-      status: status,
-      variant: AppBadgeVariant.filled,
-      size: AppBadgeSize.medium,
+    final badgeColor = getBadgeColor();
+    final double textSize = size == AppBadgeSize.small
+        ? 11
+        : size == AppBadgeSize.medium
+            ? 12
+            : 14;
+
+    BoxDecoration getDecoration() {
+      switch (variant) {
+        case AppBadgeVariant.filled:
+          return BoxDecoration(
+            color: badgeColor,
+            borderRadius: BorderRadius.circular(AppTheme.radii.full),
+          );
+        case AppBadgeVariant.outline:
+          return BoxDecoration(
+            color: badgeColor.withOpacity(0.1),
+            border: Border.all(color: badgeColor),
+            borderRadius: BorderRadius.circular(AppTheme.radii.full),
+          );
+        case AppBadgeVariant.subtle:
+          return BoxDecoration(
+            color: badgeColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(AppTheme.radii.full),
+          );
+        case AppBadgeVariant.gradient:
+          return BoxDecoration(
+            gradient: LinearGradient(
+              colors: [badgeColor, badgeColor.withOpacity(0.8)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(AppTheme.radii.full),
+          );
+      }
+    }
+
+    Color getTextColor() {
+      switch (variant) {
+        case AppBadgeVariant.filled:
+        case AppBadgeVariant.gradient:
+          return colorScheme.onPrimary;
+        case AppBadgeVariant.outline:
+        case AppBadgeVariant.subtle:
+          return badgeColor;
+      }
+    }
+
+    Widget badgeContent = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (icon != null) ...[
+          Icon(
+            icon,
+            size: textSize + 2,
+            color: getTextColor(),
+          ),
+          SizedBox(width: AppTheme.spacing.xs),
+        ],
+        Text(
+          label,
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: getTextColor(),
+            fontSize: textSize,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
-  }
 
-  factory AppBadge.subtle({
-    required String text,
-    required AppBadgeStatus status,
-    IconData? icon,
-  }) {
-    return AppBadge(
-      text: text,
-      icon: icon,
-      status: status,
-      variant: AppBadgeVariant.subtle,
-      size: AppBadgeSize.medium,
-    );
-  }
-
-  factory AppBadge.outlined({
-    required String text,
-    required AppBadgeStatus status,
-    IconData? icon,
-  }) {
-    return AppBadge(
-      text: text,
-      icon: icon,
-      status: status,
-      variant: AppBadgeVariant.outlined,
-      size: AppBadgeSize.medium,
-    );
-  }
-
-  factory AppBadge.gradient({
-    required String text,
-    required AppBadgeStatus status,
-    IconData? icon,
-  }) {
-    return AppBadge(
-      text: text,
-      icon: icon,
-      status: status,
-      variant: AppBadgeVariant.gradient,
-      size: AppBadgeSize.medium,
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppTheme.spacing.sm,
+        vertical: AppTheme.spacing.xs,
+      ),
+      decoration: getDecoration(),
+      child: onTap != null
+          ? Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onTap,
+                borderRadius: BorderRadius.circular(AppTheme.radii.full),
+                child: badgeContent,
+              ),
+            )
+          : badgeContent,
     );
   }
 }

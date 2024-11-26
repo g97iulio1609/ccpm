@@ -200,7 +200,7 @@ class AppCard extends StatelessWidget {
           if (badge != null) ...[
             SizedBox(width: AppTheme.spacing.md),
             AppBadge(
-              text: badge!,
+              label: badge!,
               status: badgeStatus ?? AppBadgeStatus.primary,
               size: AppBadgeSize.small,
             ),

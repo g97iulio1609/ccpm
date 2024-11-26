@@ -2,340 +2,190 @@ import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 
 enum AppButtonVariant {
-  primary, // Bottone principale con sfondo pieno
-  secondary, // Bottone secondario con sfondo trasparente
-  outlined, // Bottone con bordo
-  text, // Bottone solo testo
-  icon, // Bottone solo icona
+  filled,
+  outline,
+  ghost,
+  subtle,
+  primary,
+  secondary,
 }
 
 enum AppButtonSize {
-  small, // Bottone piccolo
-  medium, // Bottone medio (default)
-  large, // Bottone grande
-  full, // Bottone a larghezza piena
+  sm,
+  md,
+  lg,
+  full,
 }
 
 class AppButton extends StatelessWidget {
   final String? label;
-  final VoidCallback onPressed;
   final IconData? icon;
+  final VoidCallback? onPressed;
   final AppButtonVariant variant;
   final AppButtonSize size;
+  final bool block;
   final bool isLoading;
-  final bool isDisabled;
-  final Color? customColor;
-  final EdgeInsets? customPadding;
-  final double? customWidth;
-  final double? customHeight;
-  final double? customBorderRadius;
-  final TextStyle? customTextStyle;
+  final Color? backgroundColor;
+  final Color? iconColor;
 
   const AppButton({
     super.key,
     this.label,
-    required this.onPressed,
     this.icon,
-    this.variant = AppButtonVariant.primary,
-    this.size = AppButtonSize.medium,
+    this.onPressed,
+    this.variant = AppButtonVariant.filled,
+    this.size = AppButtonSize.md,
+    this.block = false,
     this.isLoading = false,
-    this.isDisabled = false,
-    this.customColor,
-    this.customPadding,
-    this.customWidth,
-    this.customHeight,
-    this.customBorderRadius,
-    this.customTextStyle,
-  }) : assert(label != null || icon != null,
-            'Either label or icon must be provided');
+    this.backgroundColor,
+    this.iconColor,
+  }) : assert(label != null || icon != null);
+
+  factory AppButton.icon({
+    required IconData icon,
+    VoidCallback? onPressed,
+    AppButtonVariant variant = AppButtonVariant.filled,
+    AppButtonSize size = AppButtonSize.md,
+    bool isLoading = false,
+    Color? backgroundColor,
+    Color? iconColor,
+  }) {
+    return AppButton(
+      icon: icon,
+      onPressed: onPressed,
+      variant: variant,
+      size: size,
+      isLoading: isLoading,
+      backgroundColor: backgroundColor,
+      iconColor: iconColor,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    // Calcola dimensioni in base alla size
-    final padding = customPadding ?? _getPadding();
-    final height = customHeight ?? _getHeight();
-    final width = customWidth ?? _getWidth();
-    final borderRadius = customBorderRadius ?? AppTheme.radii.lg;
+    final double height = size == AppButtonSize.sm
+        ? 32
+        : size == AppButtonSize.md
+            ? 40
+            : 48;
+    final double iconSize = size == AppButtonSize.sm
+        ? 16
+        : size == AppButtonSize.md
+            ? 20
+            : 24;
+    final double fontSize = size == AppButtonSize.sm
+        ? 14
+        : size == AppButtonSize.md
+            ? 16
+            : 18;
+    final double horizontalPadding = size == AppButtonSize.sm
+        ? 12
+        : size == AppButtonSize.md
+            ? 16
+            : 24;
 
-    // Calcola colori in base alla variant
-    final backgroundColor = _getBackgroundColor(colorScheme);
-    final foregroundColor = _getForegroundColor(colorScheme);
-    final borderColor = _getBorderColor(colorScheme);
+    Color getBackgroundColor() {
+      if (backgroundColor != null) return backgroundColor!;
+      switch (variant) {
+        case AppButtonVariant.filled:
+        case AppButtonVariant.primary:
+          return colorScheme.primary;
+        case AppButtonVariant.outline:
+        case AppButtonVariant.ghost:
+          return Colors.transparent;
+        case AppButtonVariant.subtle:
+          return colorScheme.primaryContainer.withOpacity(0.3);
+        case AppButtonVariant.secondary:
+          return colorScheme.secondary;
+      }
+    }
 
-    // Costruisce il contenuto del bottone
-    Widget content = Row(
-      mainAxisSize:
-          size == AppButtonSize.full ? MainAxisSize.max : MainAxisSize.min,
+    Color getForegroundColor() {
+      if (iconColor != null) return iconColor!;
+      switch (variant) {
+        case AppButtonVariant.filled:
+        case AppButtonVariant.primary:
+          return colorScheme.onPrimary;
+        case AppButtonVariant.outline:
+        case AppButtonVariant.ghost:
+        case AppButtonVariant.subtle:
+          return colorScheme.primary;
+        case AppButtonVariant.secondary:
+          return colorScheme.onSecondary;
+      }
+    }
+
+    BorderSide? getBorderSide() {
+      switch (variant) {
+        case AppButtonVariant.outline:
+          return BorderSide(
+            color: colorScheme.primary,
+            width: 1.5,
+          );
+        default:
+          return null;
+      }
+    }
+
+    Widget buttonChild = Row(
+      mainAxisSize: block ? MainAxisSize.max : MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        if (isLoading)
+        if (isLoading) ...[
           SizedBox(
-            width: 20,
-            height: 20,
+            width: iconSize,
+            height: iconSize,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(foregroundColor),
+              valueColor: AlwaysStoppedAnimation<Color>(getForegroundColor()),
             ),
-          )
-        else ...[
+          ),
+          if (label != null) SizedBox(width: AppTheme.spacing.sm),
+        ] else ...[
           if (icon != null) ...[
             Icon(
               icon,
-              color: foregroundColor,
-              size: _getIconSize(),
+              size: iconSize,
+              color: getForegroundColor(),
             ),
             if (label != null) SizedBox(width: AppTheme.spacing.sm),
           ],
-          if (label != null)
-            Text(
-              label!,
-              style: customTextStyle ??
-                  theme.textTheme.labelLarge?.copyWith(
-                    color: foregroundColor,
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
         ],
+        if (label != null)
+          Text(
+            label!,
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: getForegroundColor(),
+              fontSize: fontSize,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
       ],
     );
 
-    // Costruisce il container del bottone
-    Widget button = Container(
-      width: width,
+    return SizedBox(
+      width: block ? double.infinity : null,
       height: height,
-      decoration: BoxDecoration(
-        gradient: variant == AppButtonVariant.primary
-            ? LinearGradient(
-                colors: [
-                  backgroundColor,
-                  backgroundColor.withOpacity(0.8),
-                ],
-              )
-            : null,
-        color: variant != AppButtonVariant.primary ? backgroundColor : null,
-        borderRadius: BorderRadius.circular(borderRadius),
-        border: variant == AppButtonVariant.outlined
-            ? Border.all(
-                color: borderColor,
-                width: 1.5,
-              )
-            : null,
-        boxShadow: variant == AppButtonVariant.primary
-            ? [
-                BoxShadow(
-                  color: backgroundColor.withOpacity(0.2),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ]
-            : null,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: isDisabled || isLoading ? null : onPressed,
-          borderRadius: BorderRadius.circular(borderRadius),
-          child: Padding(
-            padding: padding,
-            child: content,
-          ),
+      child: MaterialButton(
+        onPressed: isLoading ? null : onPressed,
+        color: getBackgroundColor(),
+        elevation: 0,
+        focusElevation: 0,
+        hoverElevation: 0,
+        highlightElevation: 0,
+        disabledElevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          side: getBorderSide() ?? BorderSide.none,
         ),
+        padding: EdgeInsets.symmetric(
+          horizontal: horizontalPadding,
+        ),
+        child: buttonChild,
       ),
-    );
-
-    // Applica opacità se disabilitato
-    if (isDisabled) {
-      button = Opacity(
-        opacity: 0.5,
-        child: button,
-      );
-    }
-
-    return button;
-  }
-
-  EdgeInsets _getPadding() {
-    switch (size) {
-      case AppButtonSize.small:
-        return EdgeInsets.symmetric(
-          horizontal: AppTheme.spacing.md,
-          vertical: AppTheme.spacing.xs,
-        );
-      case AppButtonSize.medium:
-        return EdgeInsets.symmetric(
-          horizontal: AppTheme.spacing.lg,
-          vertical: AppTheme.spacing.sm,
-        );
-      case AppButtonSize.large:
-        return EdgeInsets.symmetric(
-          horizontal: AppTheme.spacing.xl,
-          vertical: AppTheme.spacing.md,
-        );
-      case AppButtonSize.full:
-        return EdgeInsets.symmetric(
-          horizontal: AppTheme.spacing.lg,
-          vertical: AppTheme.spacing.md,
-        );
-    }
-  }
-
-  double _getHeight() {
-    switch (size) {
-      case AppButtonSize.small:
-        return 32;
-      case AppButtonSize.medium:
-        return 40;
-      case AppButtonSize.large:
-        return 48;
-      case AppButtonSize.full:
-        return 48;
-    }
-  }
-
-  double? _getWidth() {
-    return size == AppButtonSize.full ? double.infinity : null;
-  }
-
-  double _getIconSize() {
-    switch (size) {
-      case AppButtonSize.small:
-        return 16;
-      case AppButtonSize.medium:
-        return 20;
-      case AppButtonSize.large:
-        return 24;
-      case AppButtonSize.full:
-        return 24;
-    }
-  }
-
-  Color _getBackgroundColor(ColorScheme colorScheme) {
-    if (customColor != null) return customColor!;
-
-    switch (variant) {
-      case AppButtonVariant.primary:
-        return colorScheme.primary;
-      case AppButtonVariant.secondary:
-        return colorScheme.surfaceContainerHighest.withOpacity(0.3);
-      case AppButtonVariant.outlined:
-      case AppButtonVariant.text:
-      case AppButtonVariant.icon:
-        return Colors.transparent;
-    }
-  }
-
-  Color _getForegroundColor(ColorScheme colorScheme) {
-    if (customColor != null) {
-      return variant == AppButtonVariant.primary ? Colors.white : customColor!;
-    }
-
-    switch (variant) {
-      case AppButtonVariant.primary:
-        return colorScheme.onPrimary;
-      case AppButtonVariant.secondary:
-      case AppButtonVariant.outlined:
-      case AppButtonVariant.text:
-      case AppButtonVariant.icon:
-        return colorScheme.primary;
-    }
-  }
-
-  Color _getBorderColor(ColorScheme colorScheme) {
-    return customColor ?? colorScheme.primary;
-  }
-
-  // Factory constructors per casi comuni
-  factory AppButton.primary({
-    required String label,
-    required VoidCallback onPressed,
-    IconData? icon,
-    AppButtonSize size = AppButtonSize.medium,
-    bool isLoading = false,
-    bool isDisabled = false,
-  }) {
-    return AppButton(
-      label: label,
-      onPressed: onPressed,
-      icon: icon,
-      variant: AppButtonVariant.primary,
-      size: size,
-      isLoading: isLoading,
-      isDisabled: isDisabled,
-    );
-  }
-
-  factory AppButton.secondary({
-    required String label,
-    required VoidCallback onPressed,
-    IconData? icon,
-    AppButtonSize size = AppButtonSize.medium,
-    bool isLoading = false,
-    bool isDisabled = false,
-  }) {
-    return AppButton(
-      label: label,
-      onPressed: onPressed,
-      icon: icon,
-      variant: AppButtonVariant.secondary,
-      size: size,
-      isLoading: isLoading,
-      isDisabled: isDisabled,
-    );
-  }
-
-  factory AppButton.outlined({
-    required String label,
-    required VoidCallback onPressed,
-    IconData? icon,
-    AppButtonSize size = AppButtonSize.medium,
-    bool isLoading = false,
-    bool isDisabled = false,
-  }) {
-    return AppButton(
-      label: label,
-      onPressed: onPressed,
-      icon: icon,
-      variant: AppButtonVariant.outlined,
-      size: size,
-      isLoading: isLoading,
-      isDisabled: isDisabled,
-    );
-  }
-
-  factory AppButton.text({
-    required String label,
-    required VoidCallback onPressed,
-    IconData? icon,
-    AppButtonSize size = AppButtonSize.medium,
-    bool isDisabled = false,
-  }) {
-    return AppButton(
-      label: label,
-      onPressed: onPressed,
-      icon: icon,
-      variant: AppButtonVariant.text,
-      size: size,
-      isDisabled: isDisabled,
-    );
-  }
-
-  factory AppButton.icon({
-    required IconData icon,
-    required VoidCallback onPressed,
-    AppButtonSize size = AppButtonSize.medium,
-    bool isDisabled = false,
-    Color? color,
-  }) {
-    return AppButton(
-      icon: icon,
-      onPressed: onPressed,
-      variant: AppButtonVariant.icon,
-      size: size,
-      isDisabled: isDisabled,
-      customColor: color,
     );
   }
 }

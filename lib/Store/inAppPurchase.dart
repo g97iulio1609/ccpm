@@ -574,7 +574,7 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen>
         if (dialogContext != null && mounted) {
           Navigator.of(dialogContext!).pop();
         }
-        throw e;
+        rethrow;
       }
     } catch (e) {
       if (!mounted) return;

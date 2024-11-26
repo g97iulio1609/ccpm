@@ -4,6 +4,7 @@ import 'package:alphanessone/Viewer/providers/training_program_provider.dart';
 import 'package:alphanessone/exerciseManager/exercises_manager.dart';
 import 'package:alphanessone/ExerciseRecords/maxrmdashboard.dart';
 import 'package:alphanessone/measurements/measurements.dart';
+import 'package:alphanessone/nutrition/models/meals_model.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -220,20 +221,45 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
     final userId = userService.getCurrentUserId();
     final selectedDate = ref.read(selectedDateProvider);
 
-    if (value == 'save_as_favorite_day') {
+    if (value == 'save_as_favorite') {
       final favoriteName = await _showFavoriteNameDialog();
       if (favoriteName != null && mounted) {
-        await mealsService.saveDayAsFavorite(userId, selectedDate,
-            favoriteName: favoriteName);
+        await mealsService.saveDayAsFavorite(
+          userId,
+          selectedDate,
+          favoriteName: favoriteName,
+        );
       }
     } else if (value == 'apply_favorite_day') {
       final favoriteDays = await mealsService.getFavoriteDays(userId);
-      if (favoriteDays.isNotEmpty && mounted) {
-        final selectedFavorite =
-            await _showFavoriteDaySelectionDialog(favoriteDays);
+      if (mounted) {
+        final selectedFavorite = await showDialog<FavoriteDay>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Seleziona un giorno preferito'),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: favoriteDays.length,
+                itemBuilder: (context, index) {
+                  final day = favoriteDays[index];
+                  return ListTile(
+                    title: Text(day.favoriteName),
+                    subtitle: Text(DateFormat('dd/MM/yyyy').format(day.date)),
+                    onTap: () => Navigator.of(context).pop(day),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
         if (selectedFavorite != null && mounted) {
           await mealsService.applyFavoriteDayToCurrent(
-              userId, selectedFavorite.id!, selectedDate);
+            userId,
+            selectedFavorite.id!,
+            selectedDate,
+          );
         }
       }
     } else if (value == 'add_diet_plan') {
@@ -717,7 +743,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
   List<PopupMenuEntry<String>> _buildDayMenuItems(BuildContext context) {
     return [
       const PopupMenuItem(
-        value: 'save_as_favorite_day',
+        value: 'save_as_favorite',
         child: Row(
           children: [
             Icon(Icons.favorite_border),

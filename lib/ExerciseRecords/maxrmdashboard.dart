@@ -12,7 +12,7 @@ import 'package:rxdart/rxdart.dart';
 import '../exerciseManager/exercise_model.dart';
 import 'package:alphanessone/services/users_services.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
-import '../../user_autocomplete.dart';
+import '../UI/components/user_autocomplete.dart';
 import '../../providers/providers.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 
@@ -37,7 +37,8 @@ class MaxRMDashboard extends HookConsumerWidget {
       Future<void> fetchUsers() async {
         if (currentUserRole == 'admin' || currentUserRole == 'coach') {
           try {
-            List<UserModel> users = await _fetchUsersByRole(currentUserRole, usersService, coachingService);
+            List<UserModel> users = await _fetchUsersByRole(
+                currentUserRole, usersService, coachingService);
             ref.read(userListProvider.notifier).state = users;
             ref.read(filteredUserListProvider.notifier).state = users;
           } catch (e) {
@@ -129,10 +130,11 @@ class MaxRMDashboard extends HookConsumerWidget {
         },
         onChanged: (String value) {
           final allUsers = ref.read(userListProvider);
-          final filteredUsers = allUsers.where((user) =>
-            user.name.toLowerCase().contains(value.toLowerCase()) ||
-            user.email.toLowerCase().contains(value.toLowerCase())
-          ).toList();
+          final filteredUsers = allUsers
+              .where((user) =>
+                  user.name.toLowerCase().contains(value.toLowerCase()) ||
+                  user.email.toLowerCase().contains(value.toLowerCase()))
+              .toList();
           ref.read(filteredUserListProvider.notifier).state = filteredUsers;
         },
       ),
@@ -153,10 +155,14 @@ class MaxRMDashboard extends HookConsumerWidget {
       return exercisesAsyncValue.when(
         data: (exercises) {
           final userId = selectedUserId ?? usersService.getCurrentUserId();
-          List<Stream<ExerciseRecord?>> exerciseRecordStreams = exercises.map((exercise) {
+          List<Stream<ExerciseRecord?>> exerciseRecordStreams =
+              exercises.map((exercise) {
             return exerciseRecordService
                 .getExerciseRecords(userId: userId, exerciseId: exercise.id)
-                .map((records) => records.isNotEmpty ? records.reduce((a, b) => a.date.compareTo(b.date) > 0 ? a : b) : null);
+                .map((records) => records.isNotEmpty
+                    ? records
+                        .reduce((a, b) => a.date.compareTo(b.date) > 0 ? a : b)
+                    : null);
           }).toList();
 
           return StreamBuilder<List<ExerciseRecord?>>(
@@ -212,7 +218,8 @@ class MaxRMDashboard extends HookConsumerWidget {
                         Text(
                           'Start adding your max records',
                           style: theme.textTheme.bodyLarge?.copyWith(
-                            color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+                            color:
+                                colorScheme.onSurfaceVariant.withOpacity(0.7),
                           ),
                         ),
                       ],
@@ -280,7 +287,7 @@ class MaxRMDashboard extends HookConsumerWidget {
   ) {
     return Builder(builder: (context) {
       final ref = ProviderScope.containerOf(context);
-      
+
       return Container(
         decoration: BoxDecoration(
           color: colorScheme.surface,
@@ -325,9 +332,9 @@ class MaxRMDashboard extends HookConsumerWidget {
                       ),
                     ),
                   ),
-                  
+
                   SizedBox(height: AppTheme.spacing.xs),
-                  
+
                   Text(
                     exercise.name,
                     style: theme.textTheme.titleSmall?.copyWith(
@@ -377,7 +384,8 @@ class MaxRMDashboard extends HookConsumerWidget {
 
                   // Date
                   Text(
-                    DateFormat('d MMM yyyy').format(DateTime.parse(record.date)),
+                    DateFormat('d MMM yyyy')
+                        .format(DateTime.parse(record.date)),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
@@ -393,7 +401,8 @@ class MaxRMDashboard extends HookConsumerWidget {
                       _buildActionButton(
                         icon: Icons.edit_outlined,
                         label: 'Edit',
-                        onTap: () => _showEditMaxRMDialog(context, ref, record, exercise),
+                        onTap: () => _showEditMaxRMDialog(
+                            context, ref, record, exercise),
                         colorScheme: colorScheme,
                         theme: theme,
                       ),
@@ -401,7 +410,8 @@ class MaxRMDashboard extends HookConsumerWidget {
                       _buildActionButton(
                         icon: Icons.delete_outline,
                         label: 'Delete',
-                        onTap: () => _showDeleteMaxRMDialog(context, ref, record, exercise),
+                        onTap: () => _showDeleteMaxRMDialog(
+                            context, ref, record, exercise),
                         colorScheme: colorScheme,
                         theme: theme,
                         isDestructive: true,
@@ -453,7 +463,8 @@ class MaxRMDashboard extends HookConsumerWidget {
               Text(
                 label,
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: isDestructive ? colorScheme.error : colorScheme.primary,
+                  color:
+                      isDestructive ? colorScheme.error : colorScheme.primary,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -464,15 +475,17 @@ class MaxRMDashboard extends HookConsumerWidget {
     );
   }
 
-  Future<List<UserModel>> _fetchUsersByRole(
-      String role, UsersService usersService, CoachingService coachingService) async {
+  Future<List<UserModel>> _fetchUsersByRole(String role,
+      UsersService usersService, CoachingService coachingService) async {
     List<UserModel> users = [];
     if (role == 'admin') {
-      final snapshot = await FirebaseFirestore.instance.collection('users').get();
+      final snapshot =
+          await FirebaseFirestore.instance.collection('users').get();
       users = snapshot.docs.map((doc) => UserModel.fromFirestore(doc)).toList();
     } else if (role == 'coach') {
       final currentUserId = usersService.getCurrentUserId();
-      final associations = await coachingService.getCoachAssociations(currentUserId).first;
+      final associations =
+          await coachingService.getCoachAssociations(currentUserId).first;
       for (var association in associations) {
         if (association.status == 'accepted') {
           final athlete = await usersService.getUserById(association.athleteId);
@@ -494,14 +507,16 @@ class MaxRMDashboard extends HookConsumerWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
       ),
       builder: (context) => _MaxRMForm(
-        onSubmit: (exerciseId, exerciseName, maxWeight, repetitions, date, keepWeight, selectedUserId) async {
+        onSubmit: (exerciseId, exerciseName, maxWeight, repetitions, date,
+            keepWeight, selectedUserId) async {
           final exerciseRecordService = ref.read(exerciseRecordServiceProvider);
           final usersService = ref.read(usersServiceProvider);
           final userId = selectedUserId ?? usersService.getCurrentUserId();
 
           double adjustedMaxWeight = maxWeight.toDouble();
           if (repetitions > 1) {
-            adjustedMaxWeight = (maxWeight / (1.0278 - (0.0278 * repetitions))).roundToDouble();
+            adjustedMaxWeight =
+                (maxWeight / (1.0278 - (0.0278 * repetitions))).roundToDouble();
           }
 
           await exerciseRecordService.addExerciseRecord(
@@ -579,14 +594,17 @@ class MaxRMDashboard extends HookConsumerWidget {
           actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+              child: Text('Cancel',
+                  style:
+                      TextStyle(color: Theme.of(context).colorScheme.primary)),
             ),
             TextButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop();
                 _performDelete(context, ref, record, exercise);
               },
-              child: Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              child: Text('Delete',
+                  style: TextStyle(color: Theme.of(context).colorScheme.error)),
             ),
           ],
         );
@@ -603,7 +621,7 @@ class MaxRMDashboard extends HookConsumerWidget {
     final exerciseRecordService = ref.read(exerciseRecordServiceProvider);
     final selectedUserId = ref.read(selectedUserIdProvider);
     final usersService = ref.read(usersServiceProvider);
-    
+
     try {
       await exerciseRecordService.deleteExerciseRecord(
         userId: selectedUserId ?? usersService.getCurrentUserId(),
@@ -641,8 +659,10 @@ class EditRecordDialog extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final maxWeightController = useTextEditingController(text: record.maxWeight.toString());
-    final repetitionsController = useTextEditingController(text: record.repetitions.toString());
+    final maxWeightController =
+        useTextEditingController(text: record.maxWeight.toString());
+    final repetitionsController =
+        useTextEditingController(text: record.repetitions.toString());
     final keepWeight = useState(false);
     final selectedDate = useState(DateTime.parse(record.date));
 
@@ -656,14 +676,17 @@ class EditRecordDialog extends HookConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildDialogTextFormField(maxWeightController, 'Max weight', context),
-            _buildDialogTextFormField(repetitionsController, 'Repetitions', context),
+            _buildDialogTextFormField(
+                maxWeightController, 'Max weight', context),
+            _buildDialogTextFormField(
+                repetitionsController, 'Repetitions', context),
             _buildDatePicker(context, selectedDate),
             Row(
               children: [
                 Text(
                   'Keep current weight',
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                  style:
+                      TextStyle(color: Theme.of(context).colorScheme.onSurface),
                 ),
                 Switch(
                   value: keepWeight.value,
@@ -679,27 +702,37 @@ class EditRecordDialog extends HookConsumerWidget {
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+          child: Text('Cancel',
+              style: TextStyle(color: Theme.of(context).colorScheme.primary)),
         ),
         TextButton(
           onPressed: () {
             Navigator.of(context).pop();
-            _handleSave(context, ref, maxWeightController.text, repetitionsController.text, selectedDate.value, keepWeight.value);
+            _handleSave(
+                context,
+                ref,
+                maxWeightController.text,
+                repetitionsController.text,
+                selectedDate.value,
+                keepWeight.value);
           },
-          child: Text('Save', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+          child: Text('Save',
+              style: TextStyle(color: Theme.of(context).colorScheme.primary)),
         ),
       ],
     );
   }
 
-  Widget _buildDialogTextFormField(TextEditingController controller, String labelText, BuildContext context) {
+  Widget _buildDialogTextFormField(TextEditingController controller,
+      String labelText, BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
         controller: controller,
         decoration: InputDecoration(
           labelText: labelText,
-          labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+          labelStyle:
+              TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         ),
         keyboardType: TextInputType.number,
@@ -708,7 +741,8 @@ class EditRecordDialog extends HookConsumerWidget {
     );
   }
 
-  Widget _buildDatePicker(BuildContext context, ValueNotifier<DateTime> selectedDate) {
+  Widget _buildDatePicker(
+      BuildContext context, ValueNotifier<DateTime> selectedDate) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: InkWell(
@@ -726,7 +760,8 @@ class EditRecordDialog extends HookConsumerWidget {
         child: InputDecorator(
           decoration: InputDecoration(
             labelText: 'Date',
-            labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+            labelStyle: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
           child: Row(
@@ -734,9 +769,11 @@ class EditRecordDialog extends HookConsumerWidget {
             children: [
               Text(
                 DateFormat('dd/MM/yyyy').format(selectedDate.value),
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                style:
+                    TextStyle(color: Theme.of(context).colorScheme.onSurface),
               ),
-              Icon(Icons.calendar_today, color: Theme.of(context).colorScheme.onSurface),
+              Icon(Icons.calendar_today,
+                  color: Theme.of(context).colorScheme.onSurface),
             ],
           ),
         ),
@@ -744,13 +781,15 @@ class EditRecordDialog extends HookConsumerWidget {
     );
   }
 
-  void _handleSave(BuildContext context, WidgetRef ref, String maxWeightText, String repetitionsText, DateTime selectedDate, bool keepWeight) async {
+  void _handleSave(BuildContext context, WidgetRef ref, String maxWeightText,
+      String repetitionsText, DateTime selectedDate, bool keepWeight) async {
     final selectedUserId = ref.read(selectedUserIdProvider);
     double newMaxWeight = double.parse(maxWeightText);
     int newRepetitions = int.parse(repetitionsText);
 
     if (newRepetitions > 1) {
-      newMaxWeight = (newMaxWeight / (1.0278 - (0.0278 * newRepetitions))).roundToDouble();
+      newMaxWeight =
+          (newMaxWeight / (1.0278 - (0.0278 * newRepetitions))).roundToDouble();
       newRepetitions = 1;
     }
 
@@ -867,7 +906,8 @@ class _MaxRMForm extends HookConsumerWidget {
                     children: [
                       Text(
                         'Keep current weight',
-                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface),
                       ),
                       Switch(
                         value: keepWeight.value,
@@ -882,23 +922,37 @@ class _MaxRMForm extends HookConsumerWidget {
                     child: ElevatedButton(
                       onPressed: () {
                         if (formKey.currentState!.validate()) {
-                          final exerciseId = selectedExerciseController.value?.id ?? '';
+                          final exerciseId =
+                              selectedExerciseController.value?.id ?? '';
                           final exerciseName = exerciseNameController.text;
-                          final maxWeight = num.tryParse(maxWeightController.text) ?? 0;
-                          final repetitions = int.tryParse(repetitionsController.text) ?? 0;
-                          final selectedUserId = ref.read(selectedUserIdProvider);
-                          onSubmit(exerciseId, exerciseName, maxWeight, repetitions, selectedDate.value, keepWeight.value, selectedUserId);
+                          final maxWeight =
+                              num.tryParse(maxWeightController.text) ?? 0;
+                          final repetitions =
+                              int.tryParse(repetitionsController.text) ?? 0;
+                          final selectedUserId =
+                              ref.read(selectedUserIdProvider);
+                          onSubmit(
+                              exerciseId,
+                              exerciseName,
+                              maxWeight,
+                              repetitions,
+                              selectedDate.value,
+                              keepWeight.value,
+                              selectedUserId);
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFD700), // Yellow color
+                        backgroundColor:
+                            const Color(0xFFFFD700), // Yellow color
                         foregroundColor: Colors.black,
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 32, vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text('Add Max RM', style: TextStyle(fontSize: 16)),
+                      child: const Text('Add Max RM',
+                          style: TextStyle(fontSize: 16)),
                     ),
                   ),
                 ],
@@ -909,7 +963,6 @@ class _MaxRMForm extends HookConsumerWidget {
       },
     );
   }
-
 
   Widget _buildTextField({
     required TextEditingController controller,
@@ -934,7 +987,8 @@ class _MaxRMForm extends HookConsumerWidget {
     );
   }
 
-  Widget _buildDatePicker(BuildContext context, ValueNotifier<DateTime> selectedDate) {
+  Widget _buildDatePicker(
+      BuildContext context, ValueNotifier<DateTime> selectedDate) {
     return InkWell(
       onTap: () async {
         final DateTime? picked = await showDatePicker(
