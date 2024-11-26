@@ -1,43 +1,43 @@
 // app_router.dart
 
-import 'package:alphanessone/Store/subscriptions_screen.dart';
-import 'package:alphanessone/Viewer/models/timer_model.dart';
 import 'package:alphanessone/Coaching/coaching_association.dart';
-import 'package:alphanessone/exerciseManager/exercise_model.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_stats.dart';
+import 'package:alphanessone/ExerciseRecords/maxrmdashboard.dart';
+import 'package:alphanessone/UI/home_screen.dart';
+import 'package:alphanessone/Viewer/UI/exercise_details.dart';
+import 'package:alphanessone/Viewer/UI/timer.dart';
+import 'package:alphanessone/Viewer/UI/training_viewer.dart';
+import 'package:alphanessone/Viewer/UI/week_details.dart';
+import 'package:alphanessone/Viewer/UI/workout_details.dart';
+import 'package:alphanessone/Viewer/models/timer_model.dart';
+import 'package:alphanessone/auth/auth_screen.dart';
+import 'package:alphanessone/measurements/measurements.dart';
+import 'package:alphanessone/nutrition/Calc/macros_selector.dart';
+import 'package:alphanessone/nutrition/Calc/tdee.dart';
 import 'package:alphanessone/nutrition/models/diet_plan_model.dart';
+import 'package:alphanessone/nutrition/models/meals_model.dart';
+import 'package:alphanessone/nutrition/tracker/daily_food_tracker.dart';
 import 'package:alphanessone/nutrition/tracker/diet_plan_screen.dart';
+import 'package:alphanessone/nutrition/tracker/favorite_meal_detail.dart';
+import 'package:alphanessone/nutrition/tracker/food_management.dart';
+import 'package:alphanessone/nutrition/tracker/food_selector.dart';
+import 'package:alphanessone/nutrition/tracker/my_meals.dart';
 import 'package:alphanessone/nutrition/tracker/view_diet_plans_screen.dart';
+import 'package:alphanessone/training_gallery.dart';
+import 'package:alphanessone/user_profile.dart';
+import 'package:alphanessone/users_dashboard.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import '../auth/auth_screen.dart';
-import '../UI/home_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../Store/inAppPurchase.dart';
+import '../Store/subscriptions_screen.dart';
+import '../trainingBuilder/training_program.dart';
+import '../exerciseManager/exercises_Manager.dart';
+import '../exerciseManager/exercise_model.dart';
 import '../Coaching/coaching_screen.dart';
 import '../user_programs.dart';
-import '../Viewer/UI/training_viewer.dart';
-import '../Viewer/UI/week_details.dart';
-import '../Viewer/UI/workout_details.dart';
-import '../Viewer/UI/exercise_details.dart';
-import '../Viewer/UI/timer.dart';
-import '../trainingBuilder/training_program.dart';
-import '../training_gallery.dart';
-import 'package:alphanessone/ExerciseRecords/maxrmdashboard.dart';
-import '../user_profile.dart';
-import '../users_dashboard.dart';
-import '../measurements/measurements.dart';
-import '../nutrition/Calc/tdee.dart';
-import '../nutrition/Calc/macros_selector.dart';
-import '../nutrition/tracker/food_management.dart';
-import '../nutrition/tracker/food_selector.dart';
-import '../nutrition/tracker/favorite_meal_detail.dart';
-import '../nutrition/tracker/daily_food_tracker.dart';
-import '../nutrition/tracker/my_meals.dart';
-import '../store/inAppPurchase.dart';
-import '../exerciseManager/exercises_manager.dart';
 import '../providers/providers.dart';
-import '../nutrition/models/meals_model.dart';
 
 class AppRouter {
   static GoRouter router(WidgetRef ref) => GoRouter(
@@ -225,7 +225,8 @@ class AppRouter {
               ),
               GoRoute(
                 path: '/subscriptions',
-                builder: (context, state) => const InAppSubscriptionsPage(),
+                name: 'subscriptions',
+                builder: (context, state) => const InAppPurchaseScreen(),
               ),
               GoRoute(
                 path: '/status',

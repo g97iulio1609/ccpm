@@ -1,341 +1,483 @@
 // lib/Store/inAppPurchase.dart
 
 import 'package:flutter/material.dart';
-import 'package:cloud_functions/cloud_functions.dart';
-import 'package:flutter_stripe/flutter_stripe.dart' hide Card;
-import 'package:alphanessone/Store/stripe_checkout_widget.dart';
-import 'package:alphanessone/Store/inAppPurchase_model.dart';
-import 'package:alphanessone/Store/inAppPurchase_services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:alphanessone/providers/providers.dart';
-import 'package:alphanessone/utils/debug_logger.dart' as logger;
+import '../Main/app_theme.dart';
+import 'inAppPurchase_model.dart';
+import 'inAppPurchase_services.dart';
+import 'stripe_checkout_widget.dart';
+import '../providers/providers.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
-class InAppSubscriptionsPage extends ConsumerStatefulWidget {
-  const InAppSubscriptionsPage({super.key});
+// Classe per lo stato degli acquisti in-app
+class InAppPurchaseState {
+  final bool isLoading;
+  final String? error;
+  final SubscriptionDetails? subscription;
+  final List<Product> products;
+  final bool isSubscribed;
 
-  @override
-  InAppSubscriptionsPageState createState() => InAppSubscriptionsPageState();
+  const InAppPurchaseState({
+    this.isLoading = false,
+    this.error,
+    this.subscription,
+    this.products = const [],
+    this.isSubscribed = false,
+  });
+
+  InAppPurchaseState copyWith({
+    bool? isLoading,
+    String? error,
+    SubscriptionDetails? subscription,
+    List<Product>? products,
+    bool? isSubscribed,
+  }) {
+    return InAppPurchaseState(
+      isLoading: isLoading ?? this.isLoading,
+      error: error ?? this.error,
+      subscription: subscription ?? this.subscription,
+      products: products ?? this.products,
+      isSubscribed: isSubscribed ?? this.isSubscribed,
+    );
+  }
 }
 
-class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> {
+// Provider per il servizio degli acquisti in-app
+final inAppPurchaseServiceProvider = Provider<InAppPurchaseService>((ref) => InAppPurchaseService());
+
+// Provider per lo stato degli acquisti
+final inAppPurchaseProvider = StateProvider<InAppPurchaseState>((ref) => const InAppPurchaseState());
+
+class InAppPurchaseScreen extends ConsumerStatefulWidget {
+  const InAppPurchaseScreen({super.key});
+
+  @override
+  ConsumerState<InAppPurchaseScreen> createState() => _InAppPurchaseScreenState();
+}
+
+class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
   late final InAppPurchaseService _inAppPurchaseService;
-  bool _loading = true;
-  final TextEditingController _promoCodeController = TextEditingController();
-  String? _promoCodeError;
-  bool _isAdmin = false;
+  bool _isLoading = true;
   List<Product> _products = [];
-  SubscriptionDetails? _currentSubscription;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    logger.debugLog('InAppSubscriptionsPage: initState called');
-    ref.read(usersServiceProvider);
-    _inAppPurchaseService = InAppPurchaseService();
-    _initialize();
-    _checkAdminStatus();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOut,
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    ));
+
+    _inAppPurchaseService = ref.read(inAppPurchaseServiceProvider);
+    _loadProducts();
+    _controller.forward();
   }
 
-  Future<void> _initialize() async {
-    logger.debugLog('Initializing store info...');
-    setState(() => _loading = true);
+  Future<void> _loadProducts() async {
     try {
-      // Carica i prodotti disponibili
-      final List<Product> products = await _inAppPurchaseService.getProducts();
-      // Carica l'abbonamento corrente se esiste
-      final subscription = await _inAppPurchaseService.getSubscriptionDetails();
-      
+      setState(() => _isLoading = true);
+      final products = await _inAppPurchaseService.getProducts();
       if (mounted) {
         setState(() {
           _products = products;
-          _currentSubscription = subscription;
-          _loading = false;
+          _isLoading = false;
+          _error = null;
         });
       }
-      logger.debugLog('Store info initialized successfully');
     } catch (e) {
-      logger.debugLog("Error during initialization: $e");
       if (mounted) {
-        _showSnackBar('Errore durante l\'inizializzazione dello store: $e');
-        setState(() => _loading = false);
-      }
-    }
-  }
-
-  Future<void> _checkAdminStatus() async {
-    logger.debugLog('Checking admin status...');
-    final userRole = ref.read(usersServiceProvider).getCurrentUserRole();
-    if (mounted) {
-      setState(() {
-        _isAdmin = userRole == 'admin';
-      });
-    }
-    logger.debugLog('Admin status: $_isAdmin');
-  }
-
-  Future<void> _handlePurchase(Product product) async {
-    logger.debugLog('Starting purchase for product: ${product.id}');
-    try {
-      // Crea il PaymentIntent
-      final result = await FirebaseFunctions.instance
-          .httpsCallable('createPaymentIntent')
-          .call({'productId': product.id});
-
-      final clientSecret = result.data['clientSecret'];
-      final amount = result.data['amount'] / 100; // Converti da centesimi
-      final currency = result.data['currency'];
-
-      if (mounted) {
-        // Mostra il widget di checkout
-        await showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (context) => Container(
-            height: MediaQuery.of(context).size.height * 0.9,
-            decoration: const BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            child: StripeCheckoutWidget(
-              clientSecret: clientSecret,
-              amount: amount,
-              currency: currency,
-              onPaymentSuccess: (String paymentId) async {
-                Navigator.of(context).pop(); // Chiudi il bottom sheet
-                await _initialize(); // Ricarica i dati
-                if (mounted) {
-                  _showSnackBar('Abbonamento attivato con successo!');
-                }
-              },
-              onPaymentError: (String error) {
-                if (mounted) {
-                  _showSnackBar('Errore nel pagamento: $error');
-                }
-              },
-            ),
-          ),
-        );
-      }
-    } catch (e) {
-      logger.debugLog('Error during purchase: $e');
-      if (mounted) {
-        _showSnackBar('Errore durante l\'acquisto: $e');
-      }
-    }
-  }
-
-  Future<void> _cancelSubscription() async {
-    logger.debugLog('Cancelling subscription');
-    try {
-      await _inAppPurchaseService.cancelSubscription();
-      await _initialize(); // Ricarica i dati
-      if (mounted) {
-        _showSnackBar('Abbonamento cancellato con successo');
-      }
-    } catch (e) {
-      logger.debugLog('Error cancelling subscription: $e');
-      if (mounted) {
-        _showSnackBar('Errore durante la cancellazione: $e');
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
       }
     }
   }
 
   @override
   void dispose() {
-    logger.debugLog('Disposing InAppSubscriptionsPage');
-    _promoCodeController.dispose();
+    _controller.dispose();
     super.dispose();
-  }
-
-  Future<void> _redeemPromoCode() async {
-    logger.debugLog('Redeeming promo code: ${_promoCodeController.text}');
-    setState(() {
-      _promoCodeError = null;
-    });
-    try {
-      await _inAppPurchaseService.redeemPromoCode(_promoCodeController.text);
-      if (mounted) {
-        _showSnackBar('Codice promozionale applicato con successo!');
-        await _initialize(); // Ricarica i dati
-      }
-    } catch (e) {
-      logger.debugLog('Error redeeming promo code: $e');
-      if (mounted) {
-        setState(() {
-          _promoCodeError = e.toString();
-        });
-        _showSnackBar('Errore nell\'applicazione del codice: $e');
-      }
-    }
-  }
-
-  void _showSnackBar(String message) {
-    logger.debugLog('Showing SnackBar: $message');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    if (_isLoading) {
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(
+            color: colorScheme.primary,
+          ),
+        ),
+      );
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 48,
+                color: AppTheme.error,
+              ),
+              SizedBox(height: AppTheme.spacing.md),
+              Text(
+                'Errore nel caricamento dei prodotti',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: AppTheme.error,
+                ),
+              ),
+              SizedBox(height: AppTheme.spacing.sm),
+              Text(
+                _error!,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: AppTheme.spacing.lg),
+              ElevatedButton.icon(
+                onPressed: _loadProducts,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Riprova'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.error.withOpacity(0.1),
+                  foregroundColor: AppTheme.error,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Abbonamenti'),
-        backgroundColor: Colors.black,
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar.large(
+            expandedHeight: 200,
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              title: Text(
+                'Premium',
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppTheme.primaryGold.withOpacity(0.15),
+                      AppTheme.primaryGoldLight.withOpacity(0.05),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SliverFadeTransition(
+            opacity: _fadeAnimation,
+            sliver: SliverToBoxAdapter(
+              child: SlideTransition(
+                position: _slideAnimation,
+                child: Padding(
+                  padding: EdgeInsets.all(AppTheme.spacing.lg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildFeatureSection(theme),
+                      SizedBox(height: AppTheme.spacing.xl),
+                      _buildProductList(context),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (_currentSubscription != null) ...[
-                _buildCurrentSubscriptionCard(),
-                const SizedBox(height: 24),
+    );
+  }
+
+  Widget _buildFeatureSection(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Caratteristiche Premium',
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        SizedBox(height: AppTheme.spacing.md),
+        _buildFeatureItem(
+          theme,
+          icon: Icons.fitness_center,
+          title: 'Programmi di Allenamento Illimitati',
+          description: 'Crea e personalizza tutti i programmi che desideri',
+        ),
+        _buildFeatureItem(
+          theme,
+          icon: Icons.person_outline,
+          title: 'Coaching Personalizzato',
+          description: 'Accesso a consigli e supporto professionale',
+        ),
+        _buildFeatureItem(
+          theme,
+          icon: Icons.analytics_outlined,
+          title: 'Analisi Dettagliate',
+          description: 'Monitora i tuoi progressi con statistiche avanzate',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFeatureItem(ThemeData theme, {
+    required IconData icon,
+    required String title,
+    required String description,
+  }) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.sm),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(AppTheme.spacing.sm),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(AppTheme.radii.md),
+            ),
+            child: Icon(
+              icon,
+              color: theme.colorScheme.primary,
+              size: 24,
+            ),
+          ),
+          SizedBox(width: AppTheme.spacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(height: AppTheme.spacing.xxs),
+                Text(
+                  description,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
               ],
-              ..._products.map((product) => _buildProductCard(product)),
-              if (_isAdmin) ...[
-                const SizedBox(height: 24),
-                _buildPromoCodeSection(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProductList(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Piani Disponibili',
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        SizedBox(height: AppTheme.spacing.lg),
+        ..._products.map((product) => Padding(
+          padding: EdgeInsets.only(bottom: AppTheme.spacing.md),
+          child: _buildProductCard(context, product),
+        )),
+      ],
+    );
+  }
+
+  Widget _buildProductCard(BuildContext context, Product product) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isPopular = product.id.contains('yearly');
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: isPopular ? theme.colorScheme.primary : theme.colorScheme.outline,
+          width: isPopular ? 2 : 1,
+        ),
+        gradient: isPopular
+          ? LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                colorScheme.surface,
+                colorScheme.surface.withOpacity(0.95),
               ],
-            ],
+            )
+          : null,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _handlePurchase(context, product),
+          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          child: Padding(
+            padding: EdgeInsets.all(AppTheme.spacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (isPopular) ...[
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppTheme.spacing.sm,
+                      vertical: AppTheme.spacing.xxs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary,
+                      borderRadius: BorderRadius.circular(AppTheme.radii.full),
+                    ),
+                    child: Text(
+                      'Più Popolare',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: AppTheme.spacing.sm),
+                ],
+                Text(
+                  product.title,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: AppTheme.spacing.xs),
+                Text(
+                  product.description,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                SizedBox(height: AppTheme.spacing.md),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      product.price,
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: isPopular ? theme.colorScheme.primary : null,
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () => _handlePurchase(context, product),
+                      icon: const Icon(Icons.shopping_cart_outlined),
+                      label: const Text('Acquista'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isPopular ? theme.colorScheme.primary : null,
+                        foregroundColor: isPopular ? theme.colorScheme.onPrimary : null,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildCurrentSubscriptionCard() {
-    return Card(
-      color: Colors.grey[900],
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Abbonamento Attivo',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Scade il: ${_currentSubscription!.currentPeriodEnd.toLocal().toString().split(' ')[0]}',
-              style: const TextStyle(color: Colors.white70),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _cancelSubscription,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Cancella Abbonamento'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Future<void> _handlePurchase(BuildContext context, Product product) async {
+    try {
+      final functions = ref.read(firebaseFunctionsProvider);
+      final result = await functions.httpsCallable('createPaymentIntent').call({
+        'productId': product.id,
+      });
 
-  Widget _buildProductCard(Product product) {
-    return Card(
-      color: Colors.grey[900],
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              product.title,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              product.description,
-              style: const TextStyle(color: Colors.white70),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  product.price,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: () => _handlePurchase(product),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text('Acquista'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+      if (!mounted) return;
 
-  Widget _buildPromoCodeSection() {
-    return Card(
-      color: Colors.grey[900],
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Codice Promozionale',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _promoCodeController,
-              decoration: InputDecoration(
-                hintText: 'Inserisci il codice',
-                errorText: _promoCodeError,
-                border: const OutlineInputBorder(),
-                filled: true,
-                fillColor: Colors.white10,
-              ),
-              style: const TextStyle(color: Colors.white),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _redeemPromoCode,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Applica Codice'),
-            ),
-          ],
+      final clientSecret = result.data['clientSecret'];
+      final amount = result.data['amount'] / 100;
+      final currency = result.data['currency'];
+
+      await showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => StripeCheckoutWidget(
+          clientSecret: clientSecret,
+          amount: amount,
+          currency: currency,
+          onPaymentSuccess: (String paymentId) async {
+            Navigator.of(context).pop();
+            final functions = ref.read(firebaseFunctionsProvider);
+            await functions.httpsCallable('handleSuccessfulPayment').call({
+              'paymentId': paymentId,
+              'productId': product.id,
+            });
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Abbonamento attivato con successo!'),
+                  backgroundColor: AppTheme.success,
+                ),
+              );
+            }
+          },
+          onPaymentError: (String error) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(error),
+                  backgroundColor: AppTheme.error,
+                ),
+              );
+            }
+          },
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Errore durante l\'acquisto: $e'),
+          backgroundColor: AppTheme.error,
+        ),
+      );
+    }
   }
 }
