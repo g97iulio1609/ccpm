@@ -6,6 +6,11 @@ import '../services/meals_services.dart';
 import 'food_autocomplete.dart';
 import 'package:go_router/go_router.dart';
 import '../../Main/app_theme.dart';
+import '../../UI/components/button.dart';
+import '../../UI/components/card.dart';
+import '../../UI/components/input.dart';
+import '../../UI/components/badge.dart';
+import '../../UI/components/spinner.dart';
 
 class FoodSelector extends ConsumerStatefulWidget {
   final meals.Meal meal;
@@ -277,15 +282,11 @@ class FoodSelectorState extends ConsumerState<FoodSelector> with SingleTickerPro
               ),
             ),
           SizedBox(height: AppTheme.spacing.lg),
-          ElevatedButton.icon(
+          AppButton.primary(
+            label: 'Salva e torna indietro',
+            icon: Icons.check_circle_outline,
             onPressed: _saveFood,
-            icon: const Icon(Icons.check_circle_outline),
-            label: const Text('Salva e torna indietro'),
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 48),
-              backgroundColor: colorScheme.primary,
-              foregroundColor: colorScheme.onPrimary,
-            ),
+            isFullWidth: true,
           ),
         ],
       ),
@@ -300,11 +301,15 @@ class FoodSelectorState extends ConsumerState<FoodSelector> with SingleTickerPro
       future: _foodFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(
+            child: CircularProgressIndicator(
+              color: colorScheme.primary,
+            ),
+          );
         } else if (snapshot.hasData) {
           final food = snapshot.data!;
           _loadedFood = food;
-          return Card(
+          return AppCard(
             child: Padding(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               child: Column(
@@ -321,22 +326,11 @@ class FoodSelectorState extends ConsumerState<FoodSelector> with SingleTickerPro
                           ),
                         ),
                       ),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppTheme.spacing.sm,
-                          vertical: AppTheme.spacing.xxs,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(AppTheme.radii.full),
-                        ),
-                        child: Text(
-                          '${_kcalValue.toStringAsFixed(0)} kcal',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: colorScheme.onPrimaryContainer,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                      AppBadge(
+                        text: '${_kcalValue.toStringAsFixed(0)} kcal',
+                        backgroundColor: colorScheme.primary,
+                        textColor: colorScheme.onPrimary,
+                        isGradient: true,
                       ),
                     ],
                   ),
@@ -375,7 +369,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector> with SingleTickerPro
             ),
           );
         } else if (snapshot.hasError) {
-          return Card(
+          return AppCard(
             child: Padding(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               child: Column(
@@ -419,19 +413,9 @@ class FoodSelectorState extends ConsumerState<FoodSelector> with SingleTickerPro
     return Row(
       children: [
         Expanded(
-          child: TextField(
+          child: AppInput(
             controller: _quantityController,
-            decoration: InputDecoration(
-              labelText: 'Quantità',
-              filled: true,
-              fillColor: colorScheme.surface,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppTheme.radii.md),
-                borderSide: BorderSide(
-                  color: colorScheme.outline.withOpacity(0.2),
-                ),
-              ),
-            ),
+            label: 'Quantità',
             keyboardType: TextInputType.number,
             onChanged: (value) {
               setState(() {
