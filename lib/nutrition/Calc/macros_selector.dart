@@ -81,7 +81,7 @@ class UserDataNotifier extends StateNotifier<UserData> {
 }
 
 class MacrosNotifier extends StateNotifier<MacroData> {
-  final StateNotifierProviderRef<MacrosNotifier, MacroData> ref;
+  final Ref ref;
 
   MacrosNotifier(this.ref) : super(MacroData(carbs: 0, protein: 0, fat: 0));
 

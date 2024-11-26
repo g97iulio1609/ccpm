@@ -1,13 +1,13 @@
-import 'package:alphanessone/UI/appBar_custom.dart';
-import 'package:alphanessone/models/user_model.dart';
-import 'package:alphanessone/providers/providers.dart';
-import 'package:alphanessone/user_autocomplete.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/meals_services.dart';
 import 'food_list.dart';
 import '../models/meals_model.dart' as meals;
-import 'package:google_fonts/google_fonts.dart';
+import '../../Main/app_theme.dart';
+import '../../UI/appBar_custom.dart';
+import '../../models/user_model.dart';
+import '../../providers/providers.dart';
+import '../../user_autocomplete.dart';
 
 class DailyFoodTracker extends ConsumerStatefulWidget {
   const DailyFoodTracker({super.key});
@@ -16,11 +16,13 @@ class DailyFoodTracker extends ConsumerStatefulWidget {
   DailyFoodTrackerState createState() => DailyFoodTrackerState();
 }
 
-class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
+class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> with SingleTickerProviderStateMixin {
   int _targetCalories = 2000;
   double _targetCarbs = 0;
   double _targetProteins = 0;
   double _targetFats = 0;
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
 
   final TextEditingController _userSearchController = TextEditingController();
   final FocusNode _userSearchFocusNode = FocusNode();
@@ -28,6 +30,16 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
   @override
   void initState() {
     super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOut,
+    );
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final userRole = ref.read(userRoleProvider);
       final currentUserId = ref.read(usersServiceProvider).getCurrentUserId();
@@ -41,11 +53,13 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
       }
 
       await _initializeUserData();
+      _controller.forward();
     });
   }
 
   @override
   void dispose() {
+    _controller.dispose();
     _userSearchController.dispose();
     _userSearchFocusNode.dispose();
     super.dispose();
@@ -82,6 +96,8 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final selectedDate = ref.watch(selectedDateProvider);
     final selectedUserId = ref.watch(selectedUserIdProvider);
     final userId = selectedUserId ?? ref.read(usersServiceProvider).getCurrentUserId();
@@ -93,43 +109,70 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
           children: [
             if (_shouldShowUserSelector())
               Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: UserTypeAheadField(
-                  controller: _userSearchController,
-                  focusNode: _userSearchFocusNode,
-                  onSelected: (UserModel selectedUser) async {
-                    ref.read(selectedUserIdProvider.notifier).state = selectedUser.id;
-                    _userSearchController.text = selectedUser.name;
-                    await _initializeData(selectedUser.id);
-                    await _loadUserTDEEAndMacros(selectedUser.id);
-                  },
-                  onChanged: (pattern) {
-                    final allUsers = ref.read(userListProvider);
-                    final filteredUsers = allUsers.where((user) =>
-                      user.name.toLowerCase().contains(pattern.toLowerCase()) ||
-                      user.email.toLowerCase().contains(pattern.toLowerCase())
-                    ).toList();
-                    ref.read(filteredUserListProvider.notifier).state = filteredUsers;
-                  },
+                padding: EdgeInsets.all(AppTheme.spacing.md),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                    boxShadow: AppTheme.elevations.small,
+                  ),
+                  child: UserTypeAheadField(
+                    controller: _userSearchController,
+                    focusNode: _userSearchFocusNode,
+                    onSelected: (UserModel selectedUser) async {
+                      ref.read(selectedUserIdProvider.notifier).state = selectedUser.id;
+                      _userSearchController.text = selectedUser.name;
+                      await _initializeData(selectedUser.id);
+                      await _loadUserTDEEAndMacros(selectedUser.id);
+                    },
+                    onChanged: (pattern) {
+                      final allUsers = ref.read(userListProvider);
+                      final filteredUsers = allUsers.where((user) =>
+                        user.name.toLowerCase().contains(pattern.toLowerCase()) ||
+                        user.email.toLowerCase().contains(pattern.toLowerCase())
+                      ).toList();
+                      ref.read(filteredUserListProvider.notifier).state = filteredUsers;
+                    },
+                  ),
                 ),
               ),
             userAsyncValue.when(
               data: (user) {
                 if (user == null) {
-                  return const Expanded(
-                    child: Center(child: Text('User not found')),
+                  return Expanded(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.person_off_outlined,
+                            size: 48,
+                            color: colorScheme.error,
+                          ),
+                          SizedBox(height: AppTheme.spacing.md),
+                          Text(
+                            'Utente non trovato',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              color: colorScheme.error,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   );
                 }
                 return Consumer(
                   builder: (context, ref, child) {
-                    final dailyStatsAsyncValue =
-                        ref.watch(dailyStatsProvider(selectedDate));
+                    final dailyStatsAsyncValue = ref.watch(dailyStatsProvider(selectedDate));
                     return dailyStatsAsyncValue.when(
                       data: (stats) => Expanded(
                         child: CustomScrollView(
                           slivers: [
                             SliverToBoxAdapter(
-                              child: _buildMacroSummary(stats),
+                              child: FadeTransition(
+                                opacity: _fadeAnimation,
+                                child: _buildMacroSummary(stats),
+                              ),
                             ),
                             SliverFillRemaining(
                               child: FoodList(
@@ -141,17 +184,69 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
                         ),
                       ),
                       loading: () => const Expanded(
-                          child: Center(child: CircularProgressIndicator())),
+                        child: Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                      ),
                       error: (err, stack) => Expanded(
-                          child: Center(child: Text('Error: $err'))),
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                size: 48,
+                                color: colorScheme.error,
+                              ),
+                              SizedBox(height: AppTheme.spacing.md),
+                              Text(
+                                'Errore nel caricamento',
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  color: colorScheme.error,
+                                ),
+                              ),
+                              SizedBox(height: AppTheme.spacing.sm),
+                              Text(
+                                err.toString(),
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     );
                   },
                 );
               },
               loading: () => const Expanded(
-                  child: Center(child: CircularProgressIndicator())),
+                child: Center(
+                  child: CircularProgressIndicator(),
+                ),
+              ),
               error: (err, stack) => Expanded(
-                  child: Center(child: Text('Error: $err'))),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 48,
+                        color: colorScheme.error,
+                      ),
+                      SizedBox(height: AppTheme.spacing.md),
+                      Text(
+                        'Errore nel caricamento',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color: colorScheme.error,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -160,99 +255,147 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> {
   }
 
   Widget _buildMacroSummary(meals.DailyStats stats) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
-      color: Theme.of(context).colorScheme.surface,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                  child: _buildMacroItem(
-                      'Protein', stats.totalProtein, _targetProteins,
-                      Theme.of(context).colorScheme.tertiary)),
-              const SizedBox(width: 8),
-              Expanded(
-                  child: _buildMacroItem(
-                      'Carbohydrates', stats.totalCarbs, _targetCarbs,
-                      Theme.of(context).colorScheme.secondary)),
-              const SizedBox(width: 8),
-              Expanded(
-                  child: _buildMacroItem(
-                      'Fat', stats.totalFat, _targetFats,
-                      Theme.of(context).colorScheme.error)),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                stats.totalCalories.toStringAsFixed(0),
-                style: GoogleFonts.roboto(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 24,
+      margin: EdgeInsets.all(AppTheme.spacing.md),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        boxShadow: AppTheme.elevations.small,
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(AppTheme.spacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Calorie Giornaliere',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              Text(
-                '${(_targetCalories - stats.totalCalories).toStringAsFixed(0)} Cal Remaining',
-                style: GoogleFonts.roboto(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 16,
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppTheme.spacing.sm,
+                    vertical: AppTheme.spacing.xxs,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(AppTheme.radii.full),
+                  ),
+                  child: Text(
+                    '${(_targetCalories - stats.totalCalories).toStringAsFixed(0)} rimanenti',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: colorScheme.onPrimaryContainer,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
+              ],
+            ),
+            SizedBox(height: AppTheme.spacing.md),
+            Row(
+              children: [
+                Text(
+                  stats.totalCalories.toStringAsFixed(0),
+                  style: theme.textTheme.displaySmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.primary,
+                  ),
+                ),
+                SizedBox(width: AppTheme.spacing.xs),
+                Text(
+                  '/ $_targetCalories kcal',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: AppTheme.spacing.lg),
+            _buildMacroItem(
+              'Proteine',
+              stats.totalProtein,
+              _targetProteins,
+              colorScheme.tertiary,
+              theme,
+            ),
+            SizedBox(height: AppTheme.spacing.md),
+            _buildMacroItem(
+              'Carboidrati',
+              stats.totalCarbs,
+              _targetCarbs,
+              colorScheme.secondary,
+              theme,
+            ),
+            SizedBox(height: AppTheme.spacing.md),
+            _buildMacroItem(
+              'Grassi',
+              stats.totalFat,
+              _targetFats,
+              colorScheme.error,
+              theme,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMacroItem(String title, double value, double target, Color color, ThemeData theme) {
+    final percentage = (value / target).clamp(0.0, 1.0);
+    final colorScheme = theme.colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
               ),
-            ],
+            ),
+            Text(
+              '${value.toStringAsFixed(0)} / ${target.toStringAsFixed(0)}g',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: AppTheme.spacing.xs),
+        Container(
+          height: 8,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(AppTheme.radii.full),
           ),
-          Text(
-            'of $_targetCalories Cal Goal',
-            style: GoogleFonts.roboto(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontSize: 12,
+          child: FractionallySizedBox(
+            widthFactor: percentage,
+            child: Container(
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(AppTheme.radii.full),
+              ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   bool _shouldShowUserSelector() {
     final userRole = ref.watch(userRoleProvider);
     return userRole == 'admin' || userRole == 'coach';
-  }
-
-  Widget _buildMacroItem(String title, double value, double target, Color color) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: GoogleFonts.roboto(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontSize: 16,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Container(
-          constraints: const BoxConstraints(maxWidth: double.infinity),
-          child: LinearProgressIndicator(
-            value: (value / target).clamp(0.0, 1.0),
-            backgroundColor: Theme.of(context).colorScheme.surface,
-            color: color,
-            minHeight: 8,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          '${value.toStringAsFixed(0)} / ${target.toStringAsFixed(0)} g',
-          style: GoogleFonts.roboto(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontSize: 16,
-          ),
-        ),
-      ],
-    );
   }
 }
 
