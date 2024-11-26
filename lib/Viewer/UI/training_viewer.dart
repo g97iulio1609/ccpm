@@ -6,6 +6,8 @@ import '../providers/training_program_provider.dart';
 import '../../Store/inAppPurchase_services.dart';
 import '../../utils/subscription_checker.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:alphanessone/Store/stripe_checkout_widget.dart';
 
 class TrainingViewer extends ConsumerStatefulWidget {
   final String programId;
@@ -299,12 +301,69 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
           ),
           actions: [
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.of(context).pop();
                 if (platform == 'stripe') {
                   context.go('/subscriptions');
                 } else {
-                  inAppPurchaseService.makePurchase('alphanessoneplussubscription');
+                  try {
+                    // Crea il PaymentIntent per l'abbonamento premium
+                    final result = await FirebaseFunctions.instance
+                        .httpsCallable('createPaymentIntent')
+                        .call({'productId': 'alphanessoneplussubscription'});
+
+                    final clientSecret = result.data['clientSecret'];
+                    final amount = result.data['amount'] / 100; // Converti da centesimi
+                    final currency = result.data['currency'];
+
+                    if (!mounted) return;
+
+                    // Mostra il widget di checkout
+                    await showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (context) => Container(
+                        height: MediaQuery.of(context).size.height * 0.9,
+                        decoration: const BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                        ),
+                        child: StripeCheckoutWidget(
+                          clientSecret: clientSecret,
+                          amount: amount,
+                          currency: currency,
+                          onPaymentSuccess: (String paymentId) async {
+                            Navigator.of(context).pop(); // Chiudi il bottom sheet
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Abbonamento attivato con successo!'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                            // Ricontrolla lo stato dell'abbonamento
+                            await _checkSubscriptionAndFetch();
+                          },
+                          onPaymentError: (String error) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Errore nel pagamento: $error'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    );
+                  } catch (e) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Errore durante l\'acquisto: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 }
               },
               child: Text(

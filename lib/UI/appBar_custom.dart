@@ -295,38 +295,22 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
   }
 
   Future<void> _syncProducts() async {
-    setState(() {
-      _syncing = true;
-    });
+    _showSnackBar('Sincronizzazione prodotti in corso...');
     try {
-      await _inAppPurchaseService.manualSyncProducts();
-      _showSnackBar('Products synced successfully');
+      await _inAppPurchaseService.syncProducts();
+      _showSnackBar('Prodotti sincronizzati con successo');
     } catch (e) {
       _showSnackBar('Errore durante la sincronizzazione dei prodotti: ${e.toString()}');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _syncing = false;
-        });
-      }
     }
   }
 
-  Future<void> _initialize() async {
-    setState(() {
-      _syncing = true;
-    });
+  Future<void> _initializeStore() async {
+    _showSnackBar('Inizializzazione store in corso...');
     try {
-      await _inAppPurchaseService.initStoreInfo();
-      _showSnackBar('Store info initialized successfully');
+      await _inAppPurchaseService.initialize();
+      _showSnackBar('Store inizializzato con successo');
     } catch (e) {
       _showSnackBar('Errore durante l\'inizializzazione dello store: ${e.toString()}');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _syncing = false;
-        });
-      }
     }
   }
 
@@ -643,7 +627,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
                   ),
                 )
               : const Icon(Icons.refresh),
-          onPressed: _syncing ? null : _initialize,
+          onPressed: _syncing ? null : _initializeStore,
           tooltip: 'Refresh',
         ),
       );

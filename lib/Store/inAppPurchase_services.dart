@@ -1,547 +1,140 @@
 // lib/Store/inAppPurchase_services.dart
 
-import 'package:alphanessone/utils/debug_logger.dart';
-import 'package:alphanessone/Store/inAppPurchase_model.dart';
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';// Assicurati di avere questo file
-import 'package:flutter/material.dart';
-import 'stripe_checkout_widget.dart';
+import 'package:alphanessone/Store/inAppPurchase_model.dart';
 
 class InAppPurchaseService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFunctions _functions = FirebaseFunctions.instance;
-  final bool isWeb = kIsWeb;
 
-  final InAppPurchase _inAppPurchase = InAppPurchase.instance;
-  final List<ProductDetails> _productDetails = [];
-  final List<Purchase> _purchases = [];
-
-  Map<String, String> productIdToRole = {
-    'alphanessoneplussubscription': 'client_premium',
-    'coachingalphaness': 'coach',
-  };
-
-  final Map<String, List<ProductDetails>> _productDetailsByProductId = {};
-  Map<String, List<ProductDetails>> get productDetailsByProductId => _productDetailsByProductId;
-
-  BuildContext? _context;
-
-  Future<void> initStoreInfo() async {
-    debugLog('initStoreInfo called');
-    if (isWeb) {
-      await _initStripe();
-    } else {
-      await _initGooglePlay();
-    }
-  }
-
-  Future<void> _initStripe() async {
-    debugLog('Initializing Stripe...');
+  // Funzione per ottenere i prodotti disponibili
+  Future<List<Product>> getProducts() async {
     try {
-      debugLog('Calling getStripeProducts Cloud Function...');
       final result = await _functions.httpsCallable('getStripeProducts').call();
-      debugLog('Cloud Function call successful. Raw result: ${result.data}');
-
-      if (result.data == null || !result.data.containsKey('products')) {
-        throw Exception('Invalid response format from getStripeProducts');
-      }
-
-      final products = List<Map<String, dynamic>>.from(result.data['products']);
-      debugLog('Number of products received: ${products.length}');
-
-      _productDetails.clear(); // Clear existing products before adding new ones
-      for (var product in products) {
-        debugLog('Processing product: ${product['id']}');
-        final productDetails = ProductDetails(
-          id: product['id'],
-          title: product['name'] ?? 'Unknown',
-          description: product['description'] ?? '',
-          price: ((product['price'] as double?)?.toStringAsFixed(2) ?? '0.00'),
-          rawPrice: (product['price'] as double?) ?? 0,
-          currencyCode: product['currency'] ?? 'USD',
-        );
-        _productDetails.add(productDetails);
-        _addToProductDetailsByProductId(productDetails);
-        debugLog('Added product: ${productDetails.id}');
-      }
-      debugLog('Stripe initialization completed successfully');
+      final products = (result.data['products'] as List)
+          .map((product) => Product(
+                id: product['id'],
+                title: product['name'],
+                description: product['description'] ?? '',
+                price: '${product['price']} ${product['currency'].toUpperCase()}',
+                rawPrice: product['price'].toDouble(),
+                currencyCode: product['currency'],
+              ))
+          .toList();
+      return products;
     } catch (e) {
-      debugLog('Error initializing Stripe: $e');
-      if (e is FirebaseFunctionsException) {
-        debugLog('Firebase Functions Error Code: ${e.code}');
-        debugLog('Firebase Functions Error Details: ${e.details}');
-        debugLog('Firebase Functions Error Message: ${e.message}');
-      }
-      rethrow;
+      throw Exception('Errore nel recupero dei prodotti: $e');
     }
   }
 
-  Future<void> _initGooglePlay() async {
-    debugLog('Initializing Google Play...');
-    try {
-      final bool available = await _inAppPurchase.isAvailable();
-      debugLog('Google Play Store available: $available');
-      if (!available) {
-        throw Exception("Store not available");
+  // Getter per i dettagli dei prodotti
+  Map<String, List<Product>> get productDetailsByProductId {
+    final Map<String, List<Product>> result = {};
+    _products.forEach((product) {
+      if (!result.containsKey(product.id)) {
+        result[product.id] = [];
       }
-
-      const Set<String> kIds = {'alphanessoneplussubscription', 'coachingalphaness'};
-      final ProductDetailsResponse response = await _inAppPurchase.queryProductDetails(kIds);
-
-      if (response.notFoundIDs.isNotEmpty) {
-        debugLog('Products not found: ${response.notFoundIDs}');
-      }
-
-      _productDetails.addAll(response.productDetails);
-      for (var product in response.productDetails) {
-        _addToProductDetailsByProductId(product);
-      }
-      debugLog('Google Play initialization completed successfully');
-    } catch (e) {
-      debugLog('Error initializing Google Play: $e');
-    }
-  }
-
-  void _addToProductDetailsByProductId(ProductDetails product) {
-    if (!_productDetailsByProductId.containsKey(product.id)) {
-      _productDetailsByProductId[product.id] = [];
-    }
-    _productDetailsByProductId[product.id]!.add(product);
-    _productDetailsByProductId[product.id]!.sort((a, b) => a.rawPrice.compareTo(b.rawPrice));
-  }
-
-  Future<void> makePurchase(String productId) async {
-    debugLog('makePurchase called for productId: $productId');
-    if (isWeb) {
-      await _makeStripePurchase(productId);
-    } else {
-      await _makeGooglePlayPurchase(productId);
-    }
-  }
-
-  Future<void> _makeStripePurchase(String productId) async {
-    debugLog('Making Stripe purchase for productId: $productId');
-    try {
-      final user = _auth.currentUser;
-      if (user == null) {
-        debugLog('User not authenticated');
-        throw Exception('User not authenticated');
-      }
-
-      debugLog('Calling createPaymentIntent Cloud Function...');
-      final result = await _functions.httpsCallable('createPaymentIntent').call({
-        'productId': productId,
-      });
-
-      debugLog('Cloud Function call successful. Result: ${result.data}');
-
-      if (result.data == null || 
-          !result.data.containsKey('clientSecret') || 
-          !result.data.containsKey('amount') || 
-          !result.data.containsKey('currency')) {
-        debugLog('Invalid response format from createPaymentIntent');
-        throw Exception('Invalid response format from createPaymentIntent');
-      }
-
-      // Mostra il dialog di checkout
-      final paymentResult = await showDialog<String>(
-        context: _context!,
-        barrierDismissible: false,
-        builder: (context) => Dialog(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 500),
-            child: StripeCheckoutWidget(
-              clientSecret: result.data['clientSecret'],
-              amount: result.data['amount'].toDouble(),
-              currency: result.data['currency'],
-              onPaymentSuccess: (paymentIntentId) {
-                Navigator.of(context).pop(paymentIntentId);
-              },
-              onPaymentError: (error) {
-                _showSnackBar(error);
-                Navigator.of(context).pop();
-              },
-            ),
-          ),
-        ),
-      );
-
-      if (paymentResult != null) {
-        debugLog('Payment successful');
-        await _verifyAndUpdateSubscription(paymentResult);
-      } else {
-        debugLog('Payment cancelled or failed');
-        throw Exception('Payment cancelled');
-      }
-    } catch (e) {
-      debugLog('Error making Stripe purchase: $e');
-      _showSnackBar('Errore durante l\'acquisto: $e');
-      rethrow;
-    }
-  }
-
-  Future<void> _makeGooglePlayPurchase(String productId) async {
-    debugLog('Making Google Play purchase for productId: $productId');
-    try {
-      final ProductDetails productDetails = _productDetails.firstWhere(
-        (element) => element.id == productId,
-        orElse: () => throw Exception('Product not found'),
-      );
-
-      final PurchaseParam purchaseParam = PurchaseParam(productDetails: productDetails);
-      debugLog('Starting Google Play purchase for productId: $productId');
-      await _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
-      debugLog('Google Play purchase initiated successfully');
-    } catch (e) {
-      debugLog('Error making Google Play purchase: $e');
-      rethrow;
-    }
-  }
-
-  Future<void> redeemPromoCode(String promoCode) async {
-    debugLog('Redeeming promo code: $promoCode');
-    try {
-      final result = await _functions.httpsCallable('redeemPromoCode').call({
-        'promoCode': promoCode,
-      });
-
-      debugLog('Promo code redemption result: ${result.data}');
-
-      if (result.data['success']) {
-        debugLog('Promo code redeemed successfully');
-      } else {
-        debugLog('Promo code redemption failed: ${result.data['message']}');
-        throw Exception(result.data['message']);
-      }
-    } catch (e) {
-      debugLog('Error redeeming promo code: $e');
-      rethrow;
-    }
-  }
-
-Future<void> syncStripeSubscription({bool syncAll = false}) async {
-  try {
-    final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('syncStripeSubscription');
-    final result = await callable.call(<String, dynamic>{
-      'syncAll': syncAll,
+      result[product.id]!.add(product);
     });
-
-    if (result.data['success']) {
-      debugLog(syncAll 
-        ? 'Tutte le sottoscrizioni Stripe sincronizzate con successo.'
-        : 'Abbonamento Stripe sincronizzato con successo.');
-    } else {
-      throw Exception(result.data['message']);
-    }
-  } catch (e) {
-    debugLog('Errore nella sincronizzazione dell\'abbonamento Stripe: $e');
-    rethrow;
-  }
-}
-
-
-  Stream<List<ProductDetails>> getProducts() {
-    debugLog('getProducts called');
-    return _firestore.collection('products').snapshots().map((snapshot) {
-      debugLog('Fetched ${snapshot.docs.length} products from Firestore');
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        return ProductDetails(
-          id: doc.id,
-          title: data['name'],
-          description: data['description'],
-          price: (data['price'] / 100).toStringAsFixed(2),
-          rawPrice: data['price'] / 100,
-          currencyCode: data['currency'],
-        );
-      }).toList();
-    });
+    return result;
   }
 
-  Future<void> handlePurchaseUpdates(List<PurchaseDetails> purchaseDetailsList) async {
-    debugLog('handlePurchaseUpdates called with ${purchaseDetailsList.length} purchases');
-    for (var purchaseDetails in purchaseDetailsList) {
-      debugLog('Processing purchase: ${purchaseDetails.productID}, status: ${purchaseDetails.status}');
-      if (purchaseDetails.status == PurchaseStatus.purchased) {
-        await _verifyAndUpdateSubscription(purchaseDetails.purchaseID ?? '');
-      }
-      if (purchaseDetails.pendingCompletePurchase) {
-        await _inAppPurchase.completePurchase(purchaseDetails);
-        debugLog('Completed purchase: ${purchaseDetails.productID}');
-      }
-    }
-  }
+  // Lista interna dei prodotti
+  final List<Product> _products = [];
 
-  Future<void> _verifyAndUpdateSubscription(String paymentIntentId) async {
-    debugLog('Verifying payment intent: $paymentIntentId');
+  // Funzione per verificare lo stato dell'abbonamento
+  Future<SubscriptionDetails?> getSubscriptionDetails({String? userId}) async {
     try {
-      final result = await _functions.httpsCallable('verifyPayment').call({
-        'paymentIntentId': paymentIntentId,
+      final result = await _functions.httpsCallable('getSubscriptionDetails').call({
+        if (userId != null) 'userId': userId,
       });
-
-      if (result.data['valid']) {
-        debugLog('Payment is valid. Updating subscription...');
-        // Aggiorna l'abbonamento
-      } else {
-        throw Exception('Invalid payment');
-      }
-    } catch (e) {
-      debugLog('Error verifying payment: $e');
-      rethrow;
-    }
-  }
-
-  Future<void> _updateUserSubscription(String userId, String productId, DateTime expiryDate) async {
-    debugLog('Updating subscription for userId: $userId, productId: $productId, expiryDate: $expiryDate');
-    try {
-      String? newRole = productIdToRole[productId];
-      if (newRole != null) {
-        await _firestore.collection('users').doc(userId).update({
-          'role': newRole,
-          'subscriptionProductId': productId,
-          'subscriptionPlatform': isWeb ? 'stripe' : 'google_play',
-          'subscriptionStartDate': FieldValue.serverTimestamp(),
-          'subscriptionExpiryDate': Timestamp.fromDate(expiryDate),
-          'subscriptionStatus': 'active',
-        });
-        debugLog('User subscription updated in Firestore');
-      } else {
-        debugLog('No role mapping found for productId: $productId');
-        throw Exception('No role mapping found for productId: $productId');
-      }
-    } catch (e) {
-      debugLog('Error updating user subscription: $e');
-      rethrow;
-    }
-  }
-
-  Future<void> cancelSubscription() async {
-    debugLog('Cancelling subscription');
-    try {
-      final user = _auth.currentUser;
-      if (user == null) {
-        debugLog('User not authenticated');
-        throw Exception('User not authenticated');
-      }
-
-      final result = await _functions.httpsCallable('cancelSubscription').call();
-
-      debugLog('Cancel subscription result: ${result.data}');
-
-      if (result.data['success']) {
-        await _firestore.collection('users').doc(user.uid).update({
-          'subscriptionStatus': 'cancelled',
-        });
-        debugLog('Subscription cancelled successfully');
-      } else {
-        debugLog('Failed to cancel subscription: ${result.data['message']}');
-        throw Exception('Failed to cancel subscription');
-      }
-    } catch (e) {
-      debugLog('Error cancelling subscription: $e');
-      rethrow;
-    }
-  }
-
-  Future<SubscriptionStatus> getSubscriptionStatus() async {
-    debugLog('Getting subscription status');
-    try {
-      final user = _auth.currentUser;
-      if (user == null) {
-        debugLog('User not authenticated');
-        throw Exception('User not authenticated');
-      }
-
-      final doc = await _firestore.collection('users').doc(user.uid).get();
-      final data = doc.data();
-
-      if (data == null || !data.containsKey('subscriptionStatus')) {
-        debugLog('No subscription status found');
-        return SubscriptionStatus.inactive;
-      }
-
-      switch (data['subscriptionStatus']) {
-        case 'active':
-          return SubscriptionStatus.active;
-        case 'cancelled':
-          return SubscriptionStatus.cancelled;
-        case 'expired':
-          return SubscriptionStatus.expired;
-        default:
-          return SubscriptionStatus.inactive;
-      }
-    } catch (e) {
-      debugLog('Error getting subscription status: $e');
-      return SubscriptionStatus.inactive;
-    }
-  }
-
-  Future<void> manualSyncProducts() async {
-    debugLog('manualSyncProducts called');
-    try {
-      final user = _auth.currentUser;
-      if (user == null) {
-        debugLog('User not authenticated');
-        throw Exception('User not authenticated');
-      }
-
-      // Verifica che l'utente sia un amministratore
-      final userDoc = await _firestore.collection('users').doc(user.uid).get();
-      if (userDoc.data()?['role'] != 'admin') {
-        debugLog('Unauthorized access: User is not admin');
-        throw Exception('Unauthorized access');
-      }
-
-      debugLog('Calling manualSyncStripeProducts Cloud Function...');
-      final result = await _functions.httpsCallable('manualSyncStripeProducts').call();
-
-      debugLog('manualSyncStripeProducts result: ${result.data}');
-
-      if (result.data['success']) {
-        debugLog('Products synced successfully');
-        await initStoreInfo();
-        debugLog('Products initialized successfully after sync');
-      } else {
-        debugLog('Failed to sync products: ${result.data['message']}');
-        throw Exception(result.data['message']);
-      }
-    } catch (e) {
-      debugLog('Error in manual sync: $e');
-      rethrow;
-    }
-  }
-
-  List<ProductDetails> get productDetails => _productDetails;
-  List<Purchase> get purchases => _purchases;
-
-  void _showSnackBar(String message) {
-    // Implementa la logica per mostrare uno SnackBar se necessario
-    debugLog('SnackBar message: $message');
-    // Potresti voler implementare un modo per mostrare SnackBar da qui, ad esempio tramite un callback
-  }
-
-  // Recupera i dettagli della sottoscrizione
-Future<SubscriptionDetails?> getSubscriptionDetails({String? userId}) async {
-    try {
-      final targetUserId = userId ?? _auth.currentUser?.uid;
-      if (targetUserId == null) return null;
-
-      final userDoc = await _firestore.collection('users').doc(targetUserId).get();
-      if (!userDoc.exists) return null;
-
-      final userData = userDoc.data()!;
       
-      // Verifica se l'utente ha un abbonamento attivo (inclusi gli abbonamenti regalo)
-      if (userData['subscriptionStatus'] == 'active') {
-        final expiryDate = (userData['subscriptionExpiryDate'] as Timestamp).toDate();
-        final platform = userData['subscriptionPlatform'] as String? ?? 'unknown';
-        final startDate = userData['subscriptionStartDate'] as Timestamp?;
-
-        return SubscriptionDetails(
-          id: userData['subscriptionId'] ?? 'gift-${targetUserId}',
-          status: userData['subscriptionStatus'],
-          currentPeriodEnd: expiryDate,
-          items: [
-            SubscriptionItem(
-              priceId: 'gift',
-              productId: userData['subscriptionProductId'] ?? 'gift',
-              quantity: 1,
-            ),
-          ],
-          platform: platform,
-          giftInfo: platform == 'gift' ? {
-            'giftedBy': userData['giftedBy'],
-            'giftedAt': startDate?.toDate(),
-          } : null,
-        );
+      if (!result.data['hasSubscription']) {
+        return null;
       }
 
-      // Se non è un abbonamento regalo, procedi con la logica esistente per Stripe
-      if (userData['subscriptionId'] != null) {
-        // ... resto del codice esistente per gli abbonamenti Stripe ...
-      }
-
-      return null;
+      final subscription = result.data['subscription'];
+      return SubscriptionDetails(
+        id: subscription['id'],
+        status: subscription['status'],
+        currentPeriodEnd: DateTime.fromMillisecondsSinceEpoch(
+          subscription['current_period_end'] * 1000,
+        ),
+        items: (subscription['items'] as List).map((item) => SubscriptionItem(
+          priceId: item['priceId'],
+          productId: item['productId'],
+          quantity: item['quantity'],
+        )).toList(),
+        platform: 'stripe',
+      );
     } catch (e) {
-      debugLog('Error getting subscription details: $e');
-      return null;
+      throw Exception('Errore nel recupero dei dettagli dell\'abbonamento: $e');
     }
-}
+  }
 
-  // Aggiorna la sottoscrizione
+  // Funzione per cancellare l'abbonamento
+  Future<void> cancelSubscription() async {
+    try {
+      await _functions.httpsCallable('cancelSubscription').call();
+    } catch (e) {
+      throw Exception('Errore nella cancellazione dell\'abbonamento: $e');
+    }
+  }
+
+  // Funzione per applicare un codice promozionale
+  Future<void> redeemPromoCode(String code) async {
+    try {
+      await _functions.httpsCallable('redeemPromoCode').call({
+        'code': code,
+      });
+    } catch (e) {
+      throw Exception('Errore nell\'applicazione del codice promozionale: $e');
+    }
+  }
+
+  // Funzione per aggiornare l'abbonamento
   Future<void> updateSubscription(String newPriceId) async {
     try {
       final result = await _functions.httpsCallable('updateSubscription').call({
         'newPriceId': newPriceId,
       });
-      if (result.data['success']) {
-        debugLog('Subscription updated successfully.');
-      } else {
-        throw Exception('Failed to update subscription.');
+
+      if (!result.data['success']) {
+        throw Exception(result.data['message'] ?? 'Errore nell\'aggiornamento dell\'abbonamento');
       }
     } catch (e) {
-      debugLog('Error updating subscription: $e');
-      rethrow;
+      throw Exception('Errore nell\'aggiornamento dell\'abbonamento: $e');
     }
   }
 
-  // Elenca tutte le sottoscrizioni (opzionale)
-  Future<List<SubscriptionDetails>> listSubscriptions() async {
-    try {
-      final result = await _functions.httpsCallable('listSubscriptions').call();
-      final List subscriptions = result.data['subscriptions'];
-      return subscriptions.map((sub) {
-        return SubscriptionDetails(
-          id: sub['id'],
-          status: sub['status'],
-          currentPeriodEnd: DateTime.fromMillisecondsSinceEpoch(sub['current_period_end'] * 1000),
-          items: List<SubscriptionItem>.from(
-            sub['items'].map((item) => SubscriptionItem(
-              priceId: item['priceId'],
-              productId: item['productId'],
-              quantity: item['quantity'],
-            )),
-          ),
-          platform: sub['platform'], // Add the platform field
-        );
-      }).toList();
-    } catch (e) {
-      debugLog('Error listing subscriptions: $e');
-      return [];
-    }
-  }
-
+  // Funzione per creare un abbonamento regalo
   Future<void> giftSubscription(String userId, int durationInDays) async {
-    debugLog('Creating gift subscription for userId: $userId, duration: $durationInDays days');
     try {
       final result = await _functions.httpsCallable('createGiftSubscription').call({
         'userId': userId,
         'durationInDays': durationInDays,
       });
 
-      if (result.data['success']) {
-        debugLog('Gift subscription created successfully');
-      } else {
-        throw Exception(result.data['message']);
+      if (!result.data['success']) {
+        throw Exception(result.data['message'] ?? 'Errore nella creazione dell\'abbonamento regalo');
       }
     } catch (e) {
-      debugLog('Error creating gift subscription: $e');
-      rethrow;
+      throw Exception('Errore nella creazione dell\'abbonamento regalo: $e');
     }
   }
 
-  void setContext(BuildContext context) {
-    _context = context;
+  // Funzione per sincronizzare i prodotti
+  Future<void> syncProducts() async {
+    try {
+      final products = await getProducts();
+      _products.clear();
+      _products.addAll(products);
+    } catch (e) {
+      throw Exception('Errore nella sincronizzazione dei prodotti: $e');
+    }
   }
-}
 
-enum SubscriptionStatus {
-  active,
-  cancelled,
-  expired,
-  inactive,
+  // Funzione per inizializzare il servizio
+  Future<void> initialize() async {
+    await syncProducts();
+  }
 }

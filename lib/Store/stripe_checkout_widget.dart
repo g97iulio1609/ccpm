@@ -25,9 +25,10 @@ class StripeCheckoutWidget extends StatefulWidget {
 class _StripeCheckoutWidgetState extends State<StripeCheckoutWidget> {
   bool _isLoading = false;
   bool _isCardComplete = false;
+  PaymentMethod? _selectedPaymentMethod;
 
   Future<void> _handlePayment() async {
-    if (!_isCardComplete) {
+    if (!_isCardComplete && _selectedPaymentMethod == null) {
       widget.onPaymentError('Please complete card details');
       return;
     }
@@ -35,26 +36,43 @@ class _StripeCheckoutWidgetState extends State<StripeCheckoutWidget> {
     setState(() => _isLoading = true);
     
     try {
-      final paymentResult = await Stripe.instance.confirmPayment(
+      // Procedi con il pagamento con carta
+      final paymentIntent = await Stripe.instance.confirmPayment(
         paymentIntentClientSecret: widget.clientSecret,
-        data: const PaymentMethodParams.card(
-          paymentMethodData: PaymentMethodData(),
+        data: PaymentMethodParams.card(
+          paymentMethodData: PaymentMethodData(
+            billingDetails: _selectedPaymentMethod?.billingDetails,
+          ),
         ),
       );
 
-      if (paymentResult.status == PaymentIntentsStatus.Succeeded) {
-        widget.onPaymentSuccess(paymentResult.id);
+      if (paymentIntent.status == PaymentIntentsStatus.Succeeded) {
+        widget.onPaymentSuccess(paymentIntent.id);
       } else {
-        widget.onPaymentError('Payment failed: ${paymentResult.status}');
+        widget.onPaymentError('Payment failed: ${paymentIntent.status}');
       }
     } catch (e) {
       debugLog('Error processing payment: $e');
-      widget.onPaymentError(e.toString());
+      widget.onPaymentError(_getErrorMessage(e));
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  String _getErrorMessage(dynamic error) {
+    if (error is StripeException) {
+      switch (error.error.code) {
+        case FailureCode.Canceled:
+          return 'Payment cancelled';
+        case FailureCode.Failed:
+          return 'Invalid card details';
+        default:
+          return error.error.message ?? 'Payment failed';
+      }
+    }
+    return error.toString();
   }
 
   @override
@@ -73,7 +91,7 @@ class _StripeCheckoutWidgetState extends State<StripeCheckoutWidget> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Amount: ${(widget.amount / 100).toStringAsFixed(2)} ${widget.currency.toUpperCase()}',
+              'Amount: ${(widget.amount).toStringAsFixed(2)} ${widget.currency.toUpperCase()}',
               style: Theme.of(context).textTheme.titleMedium,
               textAlign: TextAlign.center,
             ),

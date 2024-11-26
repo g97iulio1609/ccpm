@@ -8,18 +8,16 @@ import 'firebase_options.dart';
 import 'Main/app_router.dart';
 import 'Main/app_theme.dart';
 import 'Main/app_notifications.dart';
-import 'Store/url_redirect_web.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   
-  if (kIsWeb) {
-    await StripeCheckout.initStripe();
-  } else {
-    Stripe.publishableKey = 'pk_live_51Lk8noGIoD20nGKnKB5igqB4Kpry8VQpYgWwm0t5dJWTCOX4pQXdg9N24dM1fSgZP3oVoYPTZj4SGYIp9aT05Mrr00a4XOvZg6';
-    await Stripe.instance.applySettings();
-  }
+  // Inizializza Stripe con la chiave pubblica
+  Stripe.publishableKey = 'pk_live_51Lk8noGIoD20nGKnKB5igqB4Kpry8VQpYgWwm0t5dJWTCOX4pQXdg9N24dM1fSgZP3oVoYPTZj4SGYIp9aT05Mrr00a4XOvZg6';
+  
+  // Configura Stripe solo con le impostazioni di base
+  await Stripe.instance.applySettings();
 
   // Inizializza le notifiche solo se non è una piattaforma Web
   if (!kIsWeb) {
@@ -32,7 +30,6 @@ void main() async {
   final bool isVersionSupported = await appServices.isAppVersionSupported();
   if (isVersionSupported) {
     final bool hasActiveSubscription = await appServices.checkSubscriptionStatus();
-    // Puoi utilizzare hasActiveSubscription se necessario
     runApp(const ProviderScope(child: MyApp()));
   } else {
     runApp(const UnsupportedVersionApp());

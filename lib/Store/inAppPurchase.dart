@@ -1,12 +1,14 @@
 // lib/Store/inAppPurchase.dart
 
-import 'package:alphanessone/Store/inAppPurchase_services.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter_stripe/flutter_stripe.dart' hide Card;
+import 'package:alphanessone/Store/stripe_checkout_widget.dart';
+import 'package:alphanessone/Store/inAppPurchase_model.dart';
+import 'package:alphanessone/Store/inAppPurchase_services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/providers/providers.dart';
-import 'package:alphanessone/Main/app_theme.dart';
-import 'inAppPurchase_model.dart';
-import '../utils/debug_logger.dart';
+import 'package:alphanessone/utils/debug_logger.dart' as logger;
 
 class InAppSubscriptionsPage extends ConsumerStatefulWidget {
   const InAppSubscriptionsPage({super.key});
@@ -21,458 +23,317 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
   final TextEditingController _promoCodeController = TextEditingController();
   String? _promoCodeError;
   bool _isAdmin = false;
+  List<Product> _products = [];
+  SubscriptionDetails? _currentSubscription;
 
   @override
   void initState() {
     super.initState();
-    debugLog('InAppSubscriptionsPage: initState called');
+    logger.debugLog('InAppSubscriptionsPage: initState called');
     ref.read(usersServiceProvider);
     _inAppPurchaseService = InAppPurchaseService();
-    _inAppPurchaseService.setContext(context);
     _initialize();
     _checkAdminStatus();
   }
 
   Future<void> _initialize() async {
-    debugLog('Initializing store info...');
+    logger.debugLog('Initializing store info...');
+    setState(() => _loading = true);
     try {
-      await _inAppPurchaseService.initStoreInfo();
-      debugLog('Store info initialized successfully');
+      // Carica i prodotti disponibili
+      final List<Product> products = await _inAppPurchaseService.getProducts();
+      // Carica l'abbonamento corrente se esiste
+      final subscription = await _inAppPurchaseService.getSubscriptionDetails();
+      
+      if (mounted) {
+        setState(() {
+          _products = products;
+          _currentSubscription = subscription;
+          _loading = false;
+        });
+      }
+      logger.debugLog('Store info initialized successfully');
     } catch (e) {
-      debugLog("Error during initialization: $e");
-      _showSnackBar('Errore durante l\'inizializzazione dello store: $e');
-    }
-    if (mounted) {
-      setState(() {
-        _loading = false;
-      });
-      debugLog('Loading state set to false');
+      logger.debugLog("Error during initialization: $e");
+      if (mounted) {
+        _showSnackBar('Errore durante l\'inizializzazione dello store: $e');
+        setState(() => _loading = false);
+      }
     }
   }
 
   Future<void> _checkAdminStatus() async {
-    debugLog('Checking admin status...');
+    logger.debugLog('Checking admin status...');
     final userRole = ref.read(usersServiceProvider).getCurrentUserRole();
-    setState(() {
-      _isAdmin = userRole == 'admin';
-    });
-    debugLog('Admin status: $_isAdmin');
+    if (mounted) {
+      setState(() {
+        _isAdmin = userRole == 'admin';
+      });
+    }
+    logger.debugLog('Admin status: $_isAdmin');
+  }
+
+  Future<void> _handlePurchase(Product product) async {
+    logger.debugLog('Starting purchase for product: ${product.id}');
+    try {
+      // Crea il PaymentIntent
+      final result = await FirebaseFunctions.instance
+          .httpsCallable('createPaymentIntent')
+          .call({'productId': product.id});
+
+      final clientSecret = result.data['clientSecret'];
+      final amount = result.data['amount'] / 100; // Converti da centesimi
+      final currency = result.data['currency'];
+
+      if (mounted) {
+        // Mostra il widget di checkout
+        await showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (context) => Container(
+            height: MediaQuery.of(context).size.height * 0.9,
+            decoration: const BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: StripeCheckoutWidget(
+              clientSecret: clientSecret,
+              amount: amount,
+              currency: currency,
+              onPaymentSuccess: (String paymentId) async {
+                Navigator.of(context).pop(); // Chiudi il bottom sheet
+                await _initialize(); // Ricarica i dati
+                if (mounted) {
+                  _showSnackBar('Abbonamento attivato con successo!');
+                }
+              },
+              onPaymentError: (String error) {
+                if (mounted) {
+                  _showSnackBar('Errore nel pagamento: $error');
+                }
+              },
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      logger.debugLog('Error during purchase: $e');
+      if (mounted) {
+        _showSnackBar('Errore durante l\'acquisto: $e');
+      }
+    }
+  }
+
+  Future<void> _cancelSubscription() async {
+    logger.debugLog('Cancelling subscription');
+    try {
+      await _inAppPurchaseService.cancelSubscription();
+      await _initialize(); // Ricarica i dati
+      if (mounted) {
+        _showSnackBar('Abbonamento cancellato con successo');
+      }
+    } catch (e) {
+      logger.debugLog('Error cancelling subscription: $e');
+      if (mounted) {
+        _showSnackBar('Errore durante la cancellazione: $e');
+      }
+    }
   }
 
   @override
   void dispose() {
-    debugLog('Disposing InAppSubscriptionsPage');
+    logger.debugLog('Disposing InAppSubscriptionsPage');
     _promoCodeController.dispose();
     super.dispose();
   }
 
   Future<void> _redeemPromoCode() async {
-    debugLog('Redeeming promo code: ${_promoCodeController.text}');
+    logger.debugLog('Redeeming promo code: ${_promoCodeController.text}');
     setState(() {
       _promoCodeError = null;
     });
     try {
       await _inAppPurchaseService.redeemPromoCode(_promoCodeController.text);
       if (mounted) {
-        _showSnackBar('Promo code redeemed successfully!');
+        _showSnackBar('Codice promozionale applicato con successo!');
+        await _initialize(); // Ricarica i dati
       }
     } catch (e) {
-      debugLog('Error redeeming promo code: $e');
-      setState(() {
-        _promoCodeError = e.toString();
-      });
-      _showSnackBar('Errore nel redeem del promo code: $e');
+      logger.debugLog('Error redeeming promo code: $e');
+      if (mounted) {
+        setState(() {
+          _promoCodeError = e.toString();
+        });
+        _showSnackBar('Errore nell\'applicazione del codice: $e');
+      }
     }
   }
 
   void _showSnackBar(String message) {
-    debugLog('Showing SnackBar: $message');
+    logger.debugLog('Showing SnackBar: $message');
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
   }
 
-  void _showPromoCodeDialog() {
-    debugLog('Showing promo code dialog');
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('Redeem Promo Code', style: TextStyle(fontWeight: FontWeight.bold)),
-          content: TextField(
-            controller: _promoCodeController,
-            decoration: InputDecoration(
-              labelText: 'Enter Promo Code',
-              errorText: _promoCodeError,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-          ),
-          actions: [
-            TextButton(
-              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-              onPressed: () {
-                debugLog('Cancel promo code dialog');
-                Navigator.of(dialogContext).pop();
-              },
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              child: const Text('Redeem'),
-              onPressed: () {
-                debugLog('Redeem button pressed in promo code dialog');
-                Navigator.of(dialogContext).pop();
-                _redeemPromoCode();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _syncProducts() async {
-    debugLog('Syncing products...');
-    try {
-      await _inAppPurchaseService.manualSyncProducts();
-      _showSnackBar('Products synced successfully');
-      await _initialize();
-    } catch (e) {
-      debugLog('Error syncing products: $e');
-      _showSnackBar('Error syncing products: ${e.toString()}');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    debugLog('Building InAppSubscriptionsPage');
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withOpacity(0.5),
+      appBar: AppBar(
+        title: const Text('Abbonamenti'),
+        backgroundColor: Colors.black,
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (_currentSubscription != null) ...[
+                _buildCurrentSubscriptionCard(),
+                const SizedBox(height: 24),
+              ],
+              ..._products.map((product) => _buildProductCard(product)),
+              if (_isAdmin) ...[
+                const SizedBox(height: 24),
+                _buildPromoCodeSection(),
+              ],
             ],
-            stops: const [0.0, 1.0],
           ),
-        ),
-        child: SafeArea(
-          child: _loading
-              ? Center(
-                  child: CircularProgressIndicator(
-                    color: colorScheme.primary,
-                  ),
-                )
-              : CustomScrollView(
-                  slivers: [
-                    // Promo Code Button
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.all(AppTheme.spacing.xl),
-                        child: _buildPromoCodeButton(theme, colorScheme),
-                      ),
-                    ),
-
-                    // Subscription Plans
-                    SliverPadding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppTheme.spacing.xl,
-                        vertical: AppTheme.spacing.md,
-                      ),
-                      sliver: _buildSubscriptionPlans(theme, colorScheme),
-                    ),
-
-                    // Admin Sync Button
-                    if (_isAdmin)
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.all(AppTheme.spacing.xl),
-                          child: _buildSyncButton(theme, colorScheme),
-                        ),
-                      ),
-                  ],
-                ),
         ),
       ),
     );
   }
 
-  Widget _buildPromoCodeButton(ThemeData theme, ColorScheme colorScheme) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            colorScheme.primary,
-            colorScheme.primary.withOpacity(0.8),
+  Widget _buildCurrentSubscriptionCard() {
+    return Card(
+      color: Colors.grey[900],
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Abbonamento Attivo',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Scade il: ${_currentSubscription!.currentPeriodEnd.toLocal().toString().split(' ')[0]}',
+              style: const TextStyle(color: Colors.white70),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _cancelSubscription,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Cancella Abbonamento'),
+            ),
           ],
         ),
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.primary.withOpacity(0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: _showPromoCodeDialog,
-          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              vertical: AppTheme.spacing.lg,
+    );
+  }
+
+  Widget _buildProductCard(Product product) {
+    return Card(
+      color: Colors.grey[900],
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              product.title,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            const SizedBox(height: 8),
+            Text(
+              product.description,
+              style: const TextStyle(color: Colors.white70),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(
-                  Icons.redeem,
-                  color: colorScheme.onPrimary,
-                  size: 24,
-                ),
-                SizedBox(width: AppTheme.spacing.sm),
                 Text(
-                  'Redeem Promo Code',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: colorScheme.onPrimary,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
+                  product.price,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
+                ),
+                ElevatedButton(
+                  onPressed: () => _handlePurchase(product),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Acquista'),
                 ),
               ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSubscriptionPlans(ThemeData theme, ColorScheme colorScheme) {
-    return SliverGrid(
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 400,
-        mainAxisSpacing: 20,
-        crossAxisSpacing: 20,
-        childAspectRatio: 0.8,
-      ),
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          final productDetailsList = _inAppPurchaseService.productDetailsByProductId.values.expand((e) => e).toList();
-          if (index >= productDetailsList.length) return null;
-          
-          final productDetails = productDetailsList[index];
-          return _buildSubscriptionCard(productDetails, theme, colorScheme);
-        },
-        childCount: _inAppPurchaseService.productDetailsByProductId.values
-            .expand((e) => e)
-            .length,
-      ),
-    );
-  }
-
-  Widget _buildSubscriptionCard(
-    dynamic productDetails,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
-        ),
-        boxShadow: AppTheme.elevations.small,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            debugLog('Subscribe button pressed for productId: ${productDetails.id}');
-            _inAppPurchaseService.makePurchase(productDetails.id);
-          },
-          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-          child: Padding(
-            padding: EdgeInsets.all(AppTheme.spacing.md),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Plan Badge
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: AppTheme.spacing.sm,
-                    vertical: AppTheme.spacing.xs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
-                  ),
-                  child: Text(
-                    'Premium Plan',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-
-                SizedBox(height: AppTheme.spacing.sm),
-
-                // Plan Title
-                Text(
-                  productDetails.title,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: -0.5,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-
-                SizedBox(height: AppTheme.spacing.xs),
-
-                // Description
-                Text(
-                  productDetails.description ?? 'No description available.',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-
-                SizedBox(height: AppTheme.spacing.sm),
-
-                // Price
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: AppTheme.spacing.sm,
-                    vertical: AppTheme.spacing.xs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                  ),
-                  child: Text(
-                    '${productDetails.price} ${productDetails.currencyCode}',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-
-                SizedBox(height: AppTheme.spacing.sm),
-
-                // Subscribe Button
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        colorScheme.primary,
-                        colorScheme.primary.withOpacity(0.8),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                    boxShadow: [
-                      BoxShadow(
-                        color: colorScheme.primary.withOpacity(0.2),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      vertical: AppTheme.spacing.sm,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.star,
-                          color: colorScheme.onPrimary,
-                          size: 18,
-                        ),
-                        SizedBox(width: AppTheme.spacing.xs),
-                        Text(
-                          'Subscribe',
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            color: colorScheme.onPrimary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSyncButton(ThemeData theme, ColorScheme colorScheme) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            colorScheme.secondary,
-            colorScheme.secondary.withOpacity(0.8),
           ],
         ),
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        boxShadow: AppTheme.elevations.small,
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: _syncProducts,
-          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              vertical: AppTheme.spacing.lg,
+    );
+  }
+
+  Widget _buildPromoCodeSection() {
+    return Card(
+      color: Colors.grey[900],
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Codice Promozionale',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.sync,
-                  color: colorScheme.onSecondary,
-                  size: 24,
-                ),
-                SizedBox(width: AppTheme.spacing.sm),
-                Text(
-                  'Sync Products',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: colorScheme.onSecondary,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
+            const SizedBox(height: 16),
+            TextField(
+              controller: _promoCodeController,
+              decoration: InputDecoration(
+                hintText: 'Inserisci il codice',
+                errorText: _promoCodeError,
+                border: const OutlineInputBorder(),
+                filled: true,
+                fillColor: Colors.white10,
+              ),
+              style: const TextStyle(color: Colors.white),
             ),
-          ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _redeemPromoCode,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Applica Codice'),
+            ),
+          ],
         ),
       ),
     );
