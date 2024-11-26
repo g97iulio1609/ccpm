@@ -190,14 +190,14 @@ class FavouritesMeals extends ConsumerWidget {
                     Row(
                       children: [
                         AppBadge(
-                          text: meal.mealType,
+                          label: meal.mealType,
                           variant: AppBadgeVariant.gradient,
                           status: AppBadgeStatus.info,
                           size: AppBadgeSize.small,
                         ),
                         SizedBox(width: AppTheme.spacing.sm),
                         AppBadge(
-                          text:
+                          label:
                               '${meal.date.day}/${meal.date.month}/${meal.date.year}',
                           variant: AppBadgeVariant.gradient,
                           status: AppBadgeStatus.success,
@@ -414,7 +414,7 @@ class FavouriteDays extends ConsumerWidget {
                     ),
                     SizedBox(height: AppTheme.spacing.xs),
                     AppBadge(
-                      text:
+                      label:
                           '${day.date.day}/${day.date.month}/${day.date.year}',
                       variant: AppBadgeVariant.gradient,
                       status: AppBadgeStatus.success,

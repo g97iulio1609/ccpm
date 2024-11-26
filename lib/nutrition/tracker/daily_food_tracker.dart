@@ -1,3 +1,4 @@
+import 'package:alphanessone/UI/components/user_autocomplete.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/meals_services.dart';
@@ -7,7 +8,6 @@ import '../../Main/app_theme.dart';
 import '../../UI/appBar_custom.dart';
 import '../../models/user_model.dart';
 import '../../providers/providers.dart';
-import '../../user_autocomplete.dart';
 
 class DailyFoodTracker extends ConsumerStatefulWidget {
   const DailyFoodTracker({super.key});
@@ -16,7 +16,8 @@ class DailyFoodTracker extends ConsumerStatefulWidget {
   DailyFoodTrackerState createState() => DailyFoodTrackerState();
 }
 
-class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> with SingleTickerProviderStateMixin {
+class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
+    with SingleTickerProviderStateMixin {
   int _targetCalories = 2000;
   double _targetCarbs = 0;
   double _targetProteins = 0;
@@ -100,7 +101,8 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> with SingleT
     final colorScheme = theme.colorScheme;
     final selectedDate = ref.watch(selectedDateProvider);
     final selectedUserId = ref.watch(selectedUserIdProvider);
-    final userId = selectedUserId ?? ref.read(usersServiceProvider).getCurrentUserId();
+    final userId =
+        selectedUserId ?? ref.read(usersServiceProvider).getCurrentUserId();
     final userAsyncValue = ref.watch(userProvider(userId));
 
     return Scaffold(
@@ -120,18 +122,25 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> with SingleT
                     controller: _userSearchController,
                     focusNode: _userSearchFocusNode,
                     onSelected: (UserModel selectedUser) async {
-                      ref.read(selectedUserIdProvider.notifier).state = selectedUser.id;
+                      ref.read(selectedUserIdProvider.notifier).state =
+                          selectedUser.id;
                       _userSearchController.text = selectedUser.name;
                       await _initializeData(selectedUser.id);
                       await _loadUserTDEEAndMacros(selectedUser.id);
                     },
                     onChanged: (pattern) {
                       final allUsers = ref.read(userListProvider);
-                      final filteredUsers = allUsers.where((user) =>
-                        user.name.toLowerCase().contains(pattern.toLowerCase()) ||
-                        user.email.toLowerCase().contains(pattern.toLowerCase())
-                      ).toList();
-                      ref.read(filteredUserListProvider.notifier).state = filteredUsers;
+                      final filteredUsers = allUsers
+                          .where((user) =>
+                              user.name
+                                  .toLowerCase()
+                                  .contains(pattern.toLowerCase()) ||
+                              user.email
+                                  .toLowerCase()
+                                  .contains(pattern.toLowerCase()))
+                          .toList();
+                      ref.read(filteredUserListProvider.notifier).state =
+                          filteredUsers;
                     },
                   ),
                 ),
@@ -163,7 +172,8 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> with SingleT
                 }
                 return Consumer(
                   builder: (context, ref, child) {
-                    final dailyStatsAsyncValue = ref.watch(dailyStatsProvider(selectedDate));
+                    final dailyStatsAsyncValue =
+                        ref.watch(dailyStatsProvider(selectedDate));
                     return dailyStatsAsyncValue.when(
                       data: (stats) => Expanded(
                         child: CustomScrollView(
@@ -347,7 +357,8 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> with SingleT
     );
   }
 
-  Widget _buildMacroItem(String title, double value, double target, Color color, ThemeData theme) {
+  Widget _buildMacroItem(
+      String title, double value, double target, Color color, ThemeData theme) {
     final percentage = (value / target).clamp(0.0, 1.0);
     final colorScheme = theme.colorScheme;
 
@@ -399,7 +410,8 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker> with SingleT
   }
 }
 
-final dailyStatsProvider = StreamProvider.autoDispose.family<meals.DailyStats, DateTime>((ref, date) async* {
+final dailyStatsProvider = StreamProvider.autoDispose
+    .family<meals.DailyStats, DateTime>((ref, date) async* {
   final mealsService = ref.read(mealsServiceProvider);
   final selectedUserId = ref.watch(selectedUserIdProvider);
 

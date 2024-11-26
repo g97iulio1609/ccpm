@@ -382,7 +382,7 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         AppBadge(
-          text: 'Daily Total',
+          label: 'Daily Total',
           icon: Icons.local_fire_department,
           variant: AppBadgeVariant.gradient,
           status: AppBadgeStatus.primary,

@@ -239,7 +239,7 @@ class _MealSelectionDialogState extends ConsumerState<MealSelectionDialog> {
                                   Row(
                                     children: [
                                       AppBadge(
-                                        text: '${meal.totalCalories} kcal',
+                                        label: '${meal.totalCalories} kcal',
                                         variant: AppBadgeVariant.gradient,
                                         status: AppBadgeStatus.primary,
                                         size: AppBadgeSize.small,
@@ -247,7 +247,7 @@ class _MealSelectionDialogState extends ConsumerState<MealSelectionDialog> {
                                       if (meal.isFavorite) ...[
                                         SizedBox(width: AppTheme.spacing.sm),
                                         AppBadge(
-                                          text: 'Preferito',
+                                          label: 'Preferito',
                                           variant: AppBadgeVariant.gradient,
                                           status: AppBadgeStatus.info,
                                           icon: Icons.favorite,

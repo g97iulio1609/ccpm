@@ -10,7 +10,6 @@ import '../../UI/components/button.dart';
 import '../../UI/components/card.dart';
 import '../../UI/components/input.dart';
 import '../../UI/components/badge.dart';
-import '../../UI/components/spinner.dart';
 
 class FoodSelector extends ConsumerStatefulWidget {
   final meals.Meal meal;
@@ -329,7 +328,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector>
                         ),
                       ),
                       AppBadge(
-                        text: '${_kcalValue.toStringAsFixed(0)} kcal',
+                        label: '${_kcalValue.toStringAsFixed(0)} kcal',
                         variant: AppBadgeVariant.gradient,
                         status: AppBadgeStatus.primary,
                       ),
