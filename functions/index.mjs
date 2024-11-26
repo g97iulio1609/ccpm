@@ -23,7 +23,9 @@ const auth = getAuth();
 const packageName = 'com.alphaness.alphanessone';
 
 // Inizializza Stripe utilizzando le variabili d'ambiente
+//const stripeSecretKey = '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'; 
 const stripeSecretKey = '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'; 
+
 const stripeWebhookSecret = 'whsec_Btsi8YKXYiM1OZA3FxEhVD2IImblVB0O'; // Sostituisci con il tuo segreto webhook
 
 
