@@ -470,8 +470,8 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen>
         barrierDismissible: false,
         builder: (BuildContext context) {
           dialogContext = context;
-          return WillPopScope(
-            onWillPop: () async => false,
+          return PopScope(
+            canPop: false,
             child: const Center(
               child: CircularProgressIndicator(),
             ),
@@ -521,8 +521,8 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen>
                 barrierDismissible: false,
                 builder: (BuildContext context) {
                   confirmContext = context;
-                  return WillPopScope(
-                    onWillPop: () async => false,
+                  return PopScope(
+                    canPop: false,
                     child: const Center(
                       child: CircularProgressIndicator(),
                     ),

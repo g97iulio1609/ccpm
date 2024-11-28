@@ -12,7 +12,7 @@ final mealsServiceProvider = ChangeNotifierProvider<MealsService>((ref) {
 });
 
 class MealsService extends ChangeNotifier {
-  final ChangeNotifierProviderRef<MealsService> ref;
+  final Ref ref;
   final FirebaseFirestore _firestore;
 
   // Cache per i pasti e le statistiche giornaliere

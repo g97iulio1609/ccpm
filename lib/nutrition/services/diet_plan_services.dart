@@ -10,7 +10,7 @@ final dietPlanServiceProvider = Provider<DietPlanService>((ref) {
 });
 
 class DietPlanService {
-  final ProviderRef ref;
+  final Ref ref;
   final FirebaseFirestore _firestore;
 
   DietPlanService(this.ref, this._firestore);
@@ -22,14 +22,17 @@ class DietPlanService {
 
   // Crea un nuovo piano dietetico
   Future<String> createDietPlan(DietPlan dietPlan) async {
-    final docRef = await getDietPlansCollection(dietPlan.userId).add(dietPlan.toMap());
+    final docRef =
+        await getDietPlansCollection(dietPlan.userId).add(dietPlan.toMap());
     return docRef.id;
   }
 
   // Aggiorna un piano dietetico esistente
   Future<void> updateDietPlan(DietPlan dietPlan) async {
     if (dietPlan.id == null) throw Exception('DietPlan ID is null');
-    await getDietPlansCollection(dietPlan.userId).doc(dietPlan.id).update(dietPlan.toMap());
+    await getDietPlansCollection(dietPlan.userId)
+        .doc(dietPlan.id)
+        .update(dietPlan.toMap());
   }
 
   // Elimina un piano dietetico
@@ -57,12 +60,17 @@ class DietPlanService {
 
   // Ottieni la collezione dei template dei piani dietetici per un admin/coach
   CollectionReference getDietPlanTemplatesCollection(String adminId) {
-    return _firestore.collection('users').doc(adminId).collection('dietPlanTemplates');
+    return _firestore
+        .collection('users')
+        .doc(adminId)
+        .collection('dietPlanTemplates');
   }
 
   // Crea un nuovo piano dietetico come template
-  Future<String> createDietPlanTemplate(String adminId, DietPlan dietPlan) async {
-    final docRef = await getDietPlanTemplatesCollection(adminId).add(dietPlan.toMap());
+  Future<String> createDietPlanTemplate(
+      String adminId, DietPlan dietPlan) async {
+    final docRef =
+        await getDietPlanTemplatesCollection(adminId).add(dietPlan.toMap());
     return docRef.id;
   }
 
@@ -74,7 +82,8 @@ class DietPlanService {
   }
 
   // Duplica un piano dietetico esistente
-  Future<String> duplicateDietPlan(String userId, String dietPlanId, {String? newName}) async {
+  Future<String> duplicateDietPlan(String userId, String dietPlanId,
+      {String? newName}) async {
     // Ottieni il piano dietetico originale
     final originalDietPlan = await getDietPlanById(userId, dietPlanId);
     if (originalDietPlan == null) {
@@ -93,7 +102,8 @@ class DietPlanService {
     final newDietPlan = duplicatedDietPlan.copyWith(id: newDietPlanId);
 
     // Copia i giorni
-    final List<DietPlanDay> duplicatedDays = originalDietPlan.days.map((day) => day.copyWith()).toList();
+    final List<DietPlanDay> duplicatedDays =
+        originalDietPlan.days.map((day) => day.copyWith()).toList();
     final updatedDietPlan = newDietPlan.copyWith(days: duplicatedDays);
 
     // Aggiorna il nuovo piano dietetico con i giorni duplicati
@@ -122,7 +132,8 @@ class DietPlanService {
       );
 
       // Crea i pasti per la data corrente utilizzando gli ID selezionati
-      await mealsService.createMealsFromMealIdsBatch(userId, currentDate, dietPlanDay.mealIds, batch);
+      await mealsService.createMealsFromMealIdsBatch(
+          userId, currentDate, dietPlanDay.mealIds, batch);
     }
 
     // Esegui tutte le operazioni in batch

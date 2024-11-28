@@ -9,7 +9,7 @@ final macrosServiceProvider = Provider<MacrosService>((ref) {
 });
 
 class MacrosService {
-  final ProviderRef ref;
+  final Ref ref;
   final FirebaseFirestore _firestore;
 
   // Cache ottimizzata
