@@ -353,7 +353,7 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
                             ),
                             child: Column(
                               children: [
-                                _buildTableHeader(colorScheme, theme),
+                                _buildTableHeader(colorScheme, theme, false),
                                 // Righe per ogni settimana
                                 for (int weekIndex = 0;
                                     weekIndex < weekProgressions.length;
@@ -390,7 +390,8 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
     );
   }
 
-  Widget _buildTableHeader(ColorScheme colorScheme, ThemeData theme) {
+  Widget _buildTableHeader(
+      ColorScheme colorScheme, ThemeData theme, bool isSmallScreen) {
     return Container(
       padding: EdgeInsets.all(AppTheme.spacing.md),
       decoration: BoxDecoration(
@@ -401,17 +402,18 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
       ),
       child: Row(
         children: [
-          // Colonna Settimana
-          Expanded(
-            flex: 2,
-            child: Text(
-              'Settimana',
-              style: theme.textTheme.titleSmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.bold,
+          // Colonna Week solo su desktop
+          if (!isSmallScreen)
+            Expanded(
+              flex: 2,
+              child: Text(
+                'Week',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-          ),
           // Colonne dei campi
           ...['Reps', 'Sets', '1RM%', 'RPE', 'Weight'].map((header) {
             return Expanded(
@@ -425,11 +427,65 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
               ),
             );
           }),
-          // Spazio per il pulsante di azioni
           SizedBox(width: 48),
         ],
       ),
     );
+  }
+
+  Widget _buildGroupRow(
+    int weekIndex,
+    int sessionIndex,
+    int groupIndex,
+    ProgressionControllers controllers,
+    ColorScheme colorScheme,
+    ThemeData theme,
+    bool isSmallScreen,
+  ) {
+    final groupContent = Row(
+      children: [
+        Expanded(
+          child: _buildGroupFields(
+            weekIndex,
+            sessionIndex,
+            groupIndex,
+            controllers,
+            colorScheme,
+            theme,
+          ),
+        ),
+        if (!isSmallScreen)
+          IconButton(
+            icon:
+                Icon(Icons.delete_outline, size: 20, color: colorScheme.error),
+            onPressed: () =>
+                _removeSeriesGroup(weekIndex, sessionIndex, groupIndex),
+            tooltip: 'Rimuovi Gruppo',
+          ),
+      ],
+    );
+
+    if (isSmallScreen) {
+      return Slidable(
+        key: ValueKey('group-$weekIndex-$sessionIndex-$groupIndex'),
+        endActionPane: ActionPane(
+          motion: const ScrollMotion(),
+          children: [
+            SlidableAction(
+              onPressed: (_) =>
+                  _removeSeriesGroup(weekIndex, sessionIndex, groupIndex),
+              backgroundColor: colorScheme.error,
+              foregroundColor: colorScheme.onError,
+              icon: Icons.delete,
+              label: 'Rimuovi',
+            ),
+          ],
+        ),
+        child: groupContent,
+      );
+    }
+
+    return groupContent;
   }
 
   Widget _buildWeekRow(
@@ -440,6 +496,9 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
     ColorScheme colorScheme,
     ThemeData theme,
   ) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 768;
+
     return Container(
       decoration: BoxDecoration(
         border: Border(
@@ -450,83 +509,108 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
       ),
       child: Padding(
         padding: EdgeInsets.all(AppTheme.spacing.md),
-        child: Row(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Colonna Settimana
-            Expanded(
-              flex: 2,
-              child: Text(
-                '${weekIndex + 1}',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  color: colorScheme.onSurface,
-                  fontWeight: FontWeight.w500,
+            // Numero settimana come titolo su mobile
+            if (isSmallScreen)
+              Padding(
+                padding: EdgeInsets.only(bottom: AppTheme.spacing.md),
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppTheme.spacing.sm,
+                    vertical: AppTheme.spacing.xs,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(AppTheme.radii.full),
+                  ),
+                  child: Text(
+                    'Week ${weekIndex + 1}',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
-            ),
-            // Gruppi di serie
-            Expanded(
-              flex: 10,
-              child: Column(
-                children: [
-                  ...sessionControllers.asMap().entries.map((entry) {
-                    final groupIndex = entry.key;
-                    final controllers = entry.value;
-                    return Column(
-                      children: [
-                        if (groupIndex > 0)
-                          SizedBox(height: AppTheme.spacing.sm),
-                        Row(
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Colonna Week solo su desktop
+                if (!isSmallScreen)
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      '${weekIndex + 1}',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                // Gruppi di serie
+                Expanded(
+                  flex: isSmallScreen ? 12 : 10,
+                  child: Column(
+                    children: [
+                      ...sessionControllers.asMap().entries.map((entry) {
+                        final groupIndex = entry.key;
+                        final controllers = entry.value;
+                        return Column(
                           children: [
-                            Expanded(
-                              child: _buildGroupFields(
-                                weekIndex,
-                                sessionIndex,
-                                groupIndex,
-                                controllers,
-                                colorScheme,
-                                theme,
-                              ),
+                            if (groupIndex > 0)
+                              SizedBox(height: AppTheme.spacing.sm),
+                            _buildGroupRow(
+                              weekIndex,
+                              sessionIndex,
+                              groupIndex,
+                              controllers,
+                              colorScheme,
+                              theme,
+                              isSmallScreen,
                             ),
-                            // Delete button per ogni gruppo
-                            IconButton(
-                              icon: Icon(Icons.delete_outline,
-                                  size: 20, color: colorScheme.error),
-                              onPressed: () => _removeSeriesGroup(
-                                  weekIndex, sessionIndex, groupIndex),
-                              tooltip: 'Rimuovi Gruppo',
+                          ],
+                        );
+                      }),
+                      // Pulsante aggiungi gruppo
+                      Padding(
+                        padding: EdgeInsets.only(top: AppTheme.spacing.sm),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton.icon(
+                              onPressed: () {
+                                setState(() {
+                                  _addSeriesGroup(weekIndex, sessionIndex,
+                                      sessionControllers.length);
+                                });
+                              },
+                              icon: Icon(
+                                Icons.add_circle_outline,
+                                size: 16,
+                                color: colorScheme.primary,
+                              ),
+                              label: Text(
+                                'Aggiungi Gruppo',
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: colorScheme.primary,
+                                ),
+                              ),
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: AppTheme.spacing.md,
+                                  vertical: AppTheme.spacing.sm,
+                                ),
+                              ),
                             ),
                           ],
                         ),
-                      ],
-                    );
-                  }),
-                  // Pulsante aggiungi gruppo sotto l'ultimo gruppo
-                  Padding(
-                    padding: EdgeInsets.only(top: AppTheme.spacing.sm),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton.icon(
-                          onPressed: () {
-                            setState(() {
-                              _addSeriesGroup(weekIndex, sessionIndex,
-                                  sessionControllers.length);
-                            });
-                          },
-                          icon: Icon(Icons.add_circle_outline,
-                              size: 16, color: colorScheme.primary),
-                          label: Text(
-                            'Aggiungi Gruppo',
-                            style: theme.textTheme.labelSmall
-                                ?.copyWith(color: colorScheme.primary),
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ],
         ),
