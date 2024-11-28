@@ -395,14 +395,13 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
     return Container(
       padding: EdgeInsets.all(AppTheme.spacing.md),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant,
+        color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(AppTheme.radii.lg),
         ),
       ),
       child: Row(
         children: [
-          // Colonna Week solo su desktop
           if (!isSmallScreen)
             Expanded(
               flex: 2,
@@ -414,8 +413,7 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
                 ),
               ),
             ),
-          // Colonne dei campi
-          ...['Reps', 'Sets', '1RM%', 'RPE', 'Weight'].map((header) {
+          ...['Reps', 'Sets', 'Load'].map((header) {
             return Expanded(
               flex: 2,
               child: Text(
@@ -626,6 +624,44 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
     ColorScheme colorScheme,
     ThemeData theme,
   ) {
+    String getLoadDisplayText() {
+      final List<String> values = [];
+
+      // Mostra sia percentuale che peso calcolato
+      if (controllers.intensity.displayText.isNotEmpty) {
+        final minIntensity =
+            double.tryParse(controllers.intensity.min.text) ?? 0;
+        final maxIntensity = controllers.intensity.max.text.isNotEmpty
+            ? double.tryParse(controllers.intensity.max.text)
+            : null;
+
+        final minWeight = SeriesUtils.calculateWeightFromIntensity(
+            widget.latestMaxWeight.toDouble(), minIntensity);
+        final maxWeight = maxIntensity != null
+            ? SeriesUtils.calculateWeightFromIntensity(
+                widget.latestMaxWeight.toDouble(), maxIntensity)
+            : null;
+
+        if (maxIntensity != null) {
+          values.add(
+              '${controllers.intensity.displayText}% (${minWeight.toStringAsFixed(1)}-${maxWeight!.toStringAsFixed(1)}kg)');
+        } else {
+          values.add(
+              '${controllers.intensity.displayText}% (${minWeight.toStringAsFixed(1)}kg)');
+        }
+      }
+
+      if (controllers.rpe.displayText.isNotEmpty) {
+        values.add('RPE: ${controllers.rpe.displayText}');
+      }
+
+      if (controllers.weight.displayText.isNotEmpty) {
+        values.add('${controllers.weight.displayText}kg');
+      }
+
+      return values.join('\n');
+    }
+
     return Row(
       children: [
         // Reps
@@ -653,37 +689,14 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
           ),
         ),
         SizedBox(width: AppTheme.spacing.xs),
-        // Intensity
+        // Combined Load Fields
         Expanded(
+          flex: MediaQuery.of(context).size.width < 600 ? 2 : 1,
           child: _buildFieldContainer(
-            '1RM%',
-            controllers.intensity.displayText,
-            () => _showRangeDialog(weekIndex, sessionIndex, groupIndex,
-                'Intensity', controllers.intensity),
-            colorScheme,
-            theme,
-          ),
-        ),
-        SizedBox(width: AppTheme.spacing.xs),
-        // RPE
-        Expanded(
-          child: _buildFieldContainer(
-            'RPE',
-            controllers.rpe.displayText,
-            () => _showRangeDialog(
-                weekIndex, sessionIndex, groupIndex, 'RPE', controllers.rpe),
-            colorScheme,
-            theme,
-          ),
-        ),
-        SizedBox(width: AppTheme.spacing.xs),
-        // Weight
-        Expanded(
-          child: _buildFieldContainer(
-            'Weight',
-            controllers.weight.displayText,
-            () => _showRangeDialog(weekIndex, sessionIndex, groupIndex,
-                'Weight', controllers.weight),
+            'Load',
+            getLoadDisplayText(),
+            () => _showCombinedLoadDialog(weekIndex, sessionIndex, groupIndex,
+                controllers, colorScheme, theme),
             colorScheme,
             theme,
           ),
@@ -707,7 +720,7 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
         child: Container(
           padding: EdgeInsets.all(AppTheme.spacing.sm),
           decoration: BoxDecoration(
-            color: colorScheme.surfaceVariant.withOpacity(0.3),
+            color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
             borderRadius: BorderRadius.circular(AppTheme.radii.sm),
             border: Border.all(
               color: colorScheme.outline.withOpacity(0.1),
@@ -1183,6 +1196,241 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
     ref
         .read(trainingProgramControllerProvider)
         .updateWeekProgressions(weekProgressions, widget.exercise!.exerciseId!);
+  }
+
+  void _showCombinedLoadDialog(
+    int weekIndex,
+    int sessionIndex,
+    int groupIndex,
+    ProgressionControllers controllers,
+    ColorScheme colorScheme,
+    ThemeData theme,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Container(
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(AppTheme.radii.xl),
+                ),
+              ),
+              padding: EdgeInsets.all(AppTheme.spacing.xl),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Carico',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: AppTheme.spacing.lg),
+                  // 1RM% Fields
+                  Text(
+                    '1RM%',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  SizedBox(height: AppTheme.spacing.sm),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: controllers.intensity.min,
+                          decoration: InputDecoration(
+                            labelText: 'Minimo',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType:
+                              TextInputType.numberWithOptions(decimal: true),
+                          onChanged: (value) {
+                            setModalState(() {
+                              _updateSeriesWithRealTimeCalculations(
+                                  weekIndex,
+                                  sessionIndex,
+                                  groupIndex,
+                                  'Intensity',
+                                  value,
+                                  controllers.intensity.max.text);
+                            });
+                          },
+                        ),
+                      ),
+                      SizedBox(width: AppTheme.spacing.md),
+                      Expanded(
+                        child: TextField(
+                          controller: controllers.intensity.max,
+                          decoration: InputDecoration(
+                            labelText: 'Massimo',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType:
+                              TextInputType.numberWithOptions(decimal: true),
+                          onChanged: (value) {
+                            setModalState(() {
+                              _updateSeriesWithRealTimeCalculations(
+                                  weekIndex,
+                                  sessionIndex,
+                                  groupIndex,
+                                  'Intensity',
+                                  controllers.intensity.min.text,
+                                  value);
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: AppTheme.spacing.lg),
+                  // RPE Fields
+                  Text(
+                    'RPE',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  SizedBox(height: AppTheme.spacing.sm),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: controllers.rpe.min,
+                          decoration: InputDecoration(
+                            labelText: 'Minimo',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType:
+                              TextInputType.numberWithOptions(decimal: true),
+                          onChanged: (value) {
+                            setModalState(() {
+                              _updateSeriesWithRealTimeCalculations(
+                                  weekIndex,
+                                  sessionIndex,
+                                  groupIndex,
+                                  'RPE',
+                                  value,
+                                  controllers.rpe.max.text);
+                            });
+                          },
+                        ),
+                      ),
+                      SizedBox(width: AppTheme.spacing.md),
+                      Expanded(
+                        child: TextField(
+                          controller: controllers.rpe.max,
+                          decoration: InputDecoration(
+                            labelText: 'Massimo',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType:
+                              TextInputType.numberWithOptions(decimal: true),
+                          onChanged: (value) {
+                            setModalState(() {
+                              _updateSeriesWithRealTimeCalculations(
+                                  weekIndex,
+                                  sessionIndex,
+                                  groupIndex,
+                                  'RPE',
+                                  controllers.rpe.min.text,
+                                  value);
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: AppTheme.spacing.lg),
+                  // Weight Fields
+                  Text(
+                    'Weight',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  SizedBox(height: AppTheme.spacing.sm),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: controllers.weight.min,
+                          decoration: InputDecoration(
+                            labelText: 'Minimo',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType:
+                              TextInputType.numberWithOptions(decimal: true),
+                          onChanged: (value) {
+                            setModalState(() {
+                              _updateSeriesWithRealTimeCalculations(
+                                  weekIndex,
+                                  sessionIndex,
+                                  groupIndex,
+                                  'Weight',
+                                  value,
+                                  controllers.weight.max.text);
+                            });
+                          },
+                        ),
+                      ),
+                      SizedBox(width: AppTheme.spacing.md),
+                      Expanded(
+                        child: TextField(
+                          controller: controllers.weight.max,
+                          decoration: InputDecoration(
+                            labelText: 'Massimo',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType:
+                              TextInputType.numberWithOptions(decimal: true),
+                          onChanged: (value) {
+                            setModalState(() {
+                              _updateSeriesWithRealTimeCalculations(
+                                  weekIndex,
+                                  sessionIndex,
+                                  groupIndex,
+                                  'Weight',
+                                  controllers.weight.min.text,
+                                  value);
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: AppTheme.spacing.xl),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(dialogContext);
+                        setState(
+                            () {}); // Forza l'aggiornamento dell'UI principale
+                      },
+                      child: Text('Conferma'),
+                      style: ElevatedButton.styleFrom(
+                        padding:
+                            EdgeInsets.symmetric(vertical: AppTheme.spacing.md),
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                      height: MediaQuery.of(dialogContext).viewInsets.bottom),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 }
 
