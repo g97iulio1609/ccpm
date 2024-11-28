@@ -9,6 +9,7 @@ import 'package:alphanessone/trainingBuilder/List/workout_list.dart';
 import 'package:alphanessone/trainingBuilder/List/exercises_list.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'package:go_router/go_router.dart';
 
 class TrainingProgramPage extends HookConsumerWidget {
   final String programId;
@@ -310,7 +311,8 @@ class TrainingProgramPage extends HookConsumerWidget {
         _buildOptionSwitch(
           'Public Program',
           controller.program.status == 'public',
-          (value) => controller.updateProgramStatus(value ? 'public' : 'private'),
+          (value) =>
+              controller.updateProgramStatus(value ? 'public' : 'private'),
           theme,
           colorScheme,
         ),
@@ -400,7 +402,10 @@ class TrainingProgramPage extends HookConsumerWidget {
         gradient: LinearGradient(
           colors: isPrimary
               ? [colorScheme.primary, colorScheme.primary.withOpacity(0.8)]
-              : [colorScheme.surfaceContainerHighest, colorScheme.surfaceContainerHighest.withOpacity(0.8)],
+              : [
+                  colorScheme.surfaceContainerHighest,
+                  colorScheme.surfaceContainerHighest.withOpacity(0.8)
+                ],
         ),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         boxShadow: isPrimary ? AppTheme.elevations.small : null,
@@ -419,14 +424,18 @@ class TrainingProgramPage extends HookConsumerWidget {
               children: [
                 Icon(
                   icon,
-                  color: isPrimary ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
+                  color: isPrimary
+                      ? colorScheme.onPrimary
+                      : colorScheme.onSurfaceVariant,
                   size: 20,
                 ),
                 SizedBox(width: AppTheme.spacing.sm),
                 Text(
                   label,
                   style: theme.textTheme.titleMedium?.copyWith(
-                    color: isPrimary ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
+                    color: isPrimary
+                        ? colorScheme.onPrimary
+                        : colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -487,5 +496,24 @@ class TrainingProgramPage extends HookConsumerWidget {
       context: context,
       builder: (context) => AthleteSelectionDialog(controller: controller),
     );
+  }
+
+  void _navigateToWeek(
+      BuildContext context, String userId, String programId, int weekIndex) {
+    context.go('/user_programs/training_program', extra: {
+      'userId': userId,
+      'programId': programId,
+      'weekIndex': weekIndex
+    });
+  }
+
+  void _navigateToWorkout(BuildContext context, String userId, String programId,
+      int weekIndex, int workoutIndex) {
+    context.go('/user_programs/training_program', extra: {
+      'userId': userId,
+      'programId': programId,
+      'weekIndex': weekIndex,
+      'workoutIndex': workoutIndex
+    });
   }
 }

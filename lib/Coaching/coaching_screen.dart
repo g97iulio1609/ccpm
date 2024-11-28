@@ -133,7 +133,7 @@ class CoachingScreen extends HookConsumerWidget {
         controller: controller,
         focusNode: focusNode,
         onSelected: (UserModel selectedUser) {
-          context.go('/user_programs/${selectedUser.id}');
+          context.go('/user_programs', extra: {'userId': selectedUser.id});
         },
         onChanged: (pattern) {
           final allUsers = ref.read(userListProvider);
@@ -352,7 +352,7 @@ class CoachingScreen extends HookConsumerWidget {
 
   void _onAthleteCardTap(BuildContext context, String userId) {
     try {
-      context.go('/user_programs/$userId');
+      context.go('/user_programs', extra: {'userId': userId});
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error navigating to user profile: $e')),

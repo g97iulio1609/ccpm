@@ -300,13 +300,8 @@ class MaxRMDashboard extends HookConsumerWidget {
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: () => context.push(
-              '/maxrmdashboard/exercise_stats/${exercise.id}',
-              extra: {
-                'exercise': exercise,
-                'userId': record.id.split('_')[0],
-              },
-            ),
+            onTap: () => _navigateToExerciseStats(
+                context, exercise, record.id.split('_')[0]),
             borderRadius: BorderRadius.circular(AppTheme.radii.lg),
             child: Padding(
               padding: EdgeInsets.all(AppTheme.spacing.sm),
@@ -640,6 +635,12 @@ class MaxRMDashboard extends HookConsumerWidget {
         );
       }
     }
+  }
+
+  void _navigateToExerciseStats(
+      BuildContext context, ExerciseModel exercise, String userId) {
+    context.push('/maxrmdashboard/exercise_stats',
+        extra: {'exercise': exercise, 'userId': userId});
   }
 }
 

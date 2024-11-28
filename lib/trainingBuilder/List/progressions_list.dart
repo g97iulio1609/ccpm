@@ -649,7 +649,7 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
           intensityText = '$minIntensity-$maxIntensity';
         }
 
-        String weightText = '${minWeight.toStringAsFixed(1)}';
+        String weightText = minWeight.toStringAsFixed(1);
         if (maxWeight != null && maxWeight > minWeight) {
           weightText =
               '${minWeight.toStringAsFixed(1)}-${maxWeight.toStringAsFixed(1)}';

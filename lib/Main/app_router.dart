@@ -55,11 +55,9 @@ class AppRouter {
                   return Consumer(
                     builder: (context, ref, child) {
                       final userRole = ref.watch(userRoleProvider);
-                      //debugPrint('Navigating to /programs_screen with userRole: $userRole');
                       if (userRole == 'admin' || userRole == 'coach') {
                         return const CoachingScreen();
                       } else if (userRole.isEmpty) {
-                        // User role not yet loaded, show a loading indicator
                         return const Center(child: CircularProgressIndicator());
                       } else {
                         return const Center(child: Text('Access denied'));
@@ -69,53 +67,52 @@ class AppRouter {
                 },
               ),
               GoRoute(
-                path: '/user_programs/:userId',
+                path: '/user_programs',
                 builder: (context, state) {
-                  final userId = state.pathParameters['userId'];
-                  return UserProgramsScreen(userId: userId!);
+                  final extra = state.extra as Map<String, dynamic>;
+                  final userId = extra['userId'] as String;
+                  return UserProgramsScreen(userId: userId);
                 },
                 routes: [
                   GoRoute(
-                    path: 'training_program/:programId',
+                    path: 'training_program',
                     builder: (context, state) {
-                      final programId = state.pathParameters['programId'];
-                      final userId = state.pathParameters['userId'];
+                      final extra = state.extra as Map<String, dynamic>;
+                      final programId = extra['programId'] as String;
+                      final userId = extra['userId'] as String;
                       return TrainingProgramPage(
-                        programId: programId!,
-                        userId: userId!,
+                        programId: programId,
+                        userId: userId,
                       );
                     },
                     routes: [
                       GoRoute(
-                        path: 'week/:weekIndex',
+                        path: 'week',
                         builder: (context, state) {
-                          final programId = state.pathParameters['programId'];
-                          final userId = state.pathParameters['userId'];
-                          final weekIndex = state.pathParameters['weekIndex'];
-                          //debugPrint('Navigating to TrainingProgramPage with weekIndex: $weekIndex');
+                          final extra = state.extra as Map<String, dynamic>;
+                          final programId = extra['programId'] as String;
+                          final userId = extra['userId'] as String;
+                          final weekIndex = extra['weekIndex'] as int;
                           return TrainingProgramPage(
-                            programId: programId!,
-                            userId: userId!,
-                            weekIndex: int.parse(weekIndex!),
+                            programId: programId,
+                            userId: userId,
+                            weekIndex: weekIndex,
                           );
                         },
                         routes: [
                           GoRoute(
-                            path: 'workout/:workoutIndex',
+                            path: 'workout',
                             builder: (context, state) {
-                              final programId =
-                                  state.pathParameters['programId'];
-                              final userId = state.pathParameters['userId'];
-                              final weekIndex =
-                                  state.pathParameters['weekIndex'];
-                              final workoutIndex =
-                                  state.pathParameters['workoutIndex'];
-                              //debugPrint('Navigating to TrainingProgramPage with workoutIndex: $workoutIndex');
+                              final extra = state.extra as Map<String, dynamic>;
+                              final programId = extra['programId'] as String;
+                              final userId = extra['userId'] as String;
+                              final weekIndex = extra['weekIndex'] as int;
+                              final workoutIndex = extra['workoutIndex'] as int;
                               return TrainingProgramPage(
-                                programId: programId!,
-                                userId: userId!,
-                                weekIndex: int.parse(weekIndex!),
-                                workoutIndex: int.parse(workoutIndex!),
+                                programId: programId,
+                                userId: userId,
+                                weekIndex: weekIndex,
+                                workoutIndex: workoutIndex,
                               );
                             },
                           ),
@@ -124,79 +121,76 @@ class AppRouter {
                     ],
                   ),
                   GoRoute(
-                    path: 'training_viewer/:programId',
+                    path: 'training_viewer',
                     builder: (context, state) {
-                      final programId = state.pathParameters['programId'];
-                      final userId = state.pathParameters['userId'];
-                      //debugPrint('Navigating to TrainingViewer with programId: $programId, userId: $userId');
+                      final extra = state.extra as Map<String, dynamic>;
+                      final programId = extra['programId'] as String;
+                      final userId = extra['userId'] as String;
                       return TrainingViewer(
-                        programId: programId!,
-                        userId: userId!,
+                        programId: programId,
+                        userId: userId,
                       );
                     },
                     routes: [
                       GoRoute(
-                        path: 'week_details/:weekId',
+                        path: 'week_details',
                         builder: (context, state) {
-                          final programId = state.pathParameters['programId'];
-                          final weekId = state.pathParameters['weekId'];
-                          final userId = state.pathParameters['userId'];
-                          //debugPrint('Navigating to WeekDetails with weekId: $weekId');
+                          final extra = state.extra as Map<String, dynamic>;
+                          final programId = extra['programId'] as String;
+                          final weekId = extra['weekId'] as String;
+                          final userId = extra['userId'] as String;
                           return WeekDetails(
-                            programId: programId!,
-                            weekId: weekId!,
-                            userId: userId!,
+                            programId: programId,
+                            weekId: weekId,
+                            userId: userId,
                           );
                         },
                         routes: [
                           GoRoute(
-                            path: 'workout_details/:workoutId',
+                            path: 'workout_details',
                             builder: (context, state) {
-                              final programId =
-                                  state.pathParameters['programId'];
-                              final weekId = state.pathParameters['weekId'];
-                              final workoutId =
-                                  state.pathParameters['workoutId'];
-                              final userId = state.pathParameters['userId'];
-                              //debugPrint('Navigating to WorkoutDetails with workoutId: $workoutId');
+                              final extra = state.extra as Map<String, dynamic>;
+                              final programId = extra['programId'] as String;
+                              final weekId = extra['weekId'] as String;
+                              final workoutId = extra['workoutId'] as String;
+                              final userId = extra['userId'] as String;
                               return WorkoutDetails(
-                                programId: programId!,
-                                weekId: weekId!,
-                                workoutId: workoutId!,
-                                userId: userId!,
+                                programId: programId,
+                                weekId: weekId,
+                                workoutId: workoutId,
+                                userId: userId,
                               );
                             },
                             routes: [
                               GoRoute(
-                                path: 'exercise_details/:exerciseId',
+                                path: 'exercise_details',
                                 builder: (context, state) {
-                                  final programId = Uri.decodeComponent(
-                                      state.pathParameters['programId']!);
-                                  final weekId = Uri.decodeComponent(
-                                      state.pathParameters['weekId']!);
-                                  final workoutId = Uri.decodeComponent(
-                                      state.pathParameters['workoutId']!);
-                                  final exerciseId = Uri.decodeComponent(
-                                      state.pathParameters['exerciseId']!);
                                   final extra =
-                                      state.extra as Map<String, dynamic>?;
-                                  //debugPrint('Navigating to ExerciseDetails with exerciseId: $exerciseId');
+                                      state.extra as Map<String, dynamic>;
+                                  final programId =
+                                      extra['programId'] as String;
+                                  final weekId = extra['weekId'] as String;
+                                  final workoutId =
+                                      extra['workoutId'] as String;
+                                  final exerciseId =
+                                      extra['exerciseId'] as String;
+                                  final userId = extra['userId'] as String;
                                   return ExerciseDetails(
                                     programId: programId,
                                     weekId: weekId,
                                     workoutId: workoutId,
                                     exerciseId: exerciseId,
                                     superSetExercises:
-                                        extra?['superSetExercises'] != null
+                                        extra['superSetExercises'] != null
                                             ? List<Map<String, dynamic>>.from(
-                                                extra?['superSetExercises'])
+                                                extra['superSetExercises'])
                                             : [],
                                     superSetExerciseIndex:
-                                        extra?['superSetExerciseIndex'] ?? 0,
+                                        extra['superSetExerciseIndex'] ?? 0,
                                     seriesList: List<Map<String, dynamic>>.from(
-                                        extra?['seriesList'] ?? []),
-                                    startIndex: extra?['startIndex'] ?? 0,
-                                    userId: state.pathParameters['userId']!,
+                                        extra['seriesList'] ?? []),
+                                    startIndex: extra['startIndex'] ?? 0,
+                                    userId: userId,
                                   );
                                 },
                                 routes: [
@@ -205,7 +199,6 @@ class AppRouter {
                                     builder: (context, state) {
                                       final timerModel =
                                           state.extra as TimerModel;
-                                      //debugPrint('Navigating to TimerPage');
                                       return TimerPage(timerModel: timerModel);
                                     },
                                   ),
@@ -403,10 +396,10 @@ class AppRouter {
                 builder: (context, state) => const UsersDashboard(),
               ),
               GoRoute(
-                path: '/user_profile/:userId',
+                path: '/user_profile',
                 builder: (context, state) {
-                  final userId = state.pathParameters['userId'];
-                  //debugPrint('Navigating to UserProfile with userId: $userId');
+                  final extra = state.extra as Map<String, dynamic>;
+                  final userId = extra['userId'] as String;
                   return UserProfile(userId: userId);
                 },
               ),
@@ -426,31 +419,24 @@ class AuthWrapper extends ConsumerWidget {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        //debugPrint('AuthWrapper StreamBuilder: connectionState=${snapshot.connectionState}');
         if (snapshot.connectionState == ConnectionState.active) {
           final User? user = snapshot.data;
-          //debugPrint('AuthWrapper: user=${user?.uid}');
           if (user == null) {
             return const AuthScreen();
           } else {
-            // Usa FutureBuilder per attendere il completamento della fetch del ruolo
             return FutureBuilder(
               future: ref.read(usersServiceProvider).fetchUserRole(),
               builder: (context, roleSnapshot) {
                 if (roleSnapshot.connectionState == ConnectionState.waiting) {
-                  //debugPrint('AuthWrapper: fetching user role...');
                   return const Center(child: CircularProgressIndicator());
                 }
                 final userRole = ref.read(userRoleProvider);
-                //debugPrint('AuthWrapper: userRole=$userRole');
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (context.mounted) {
                     if (userRole == 'admin' || userRole == 'coach') {
-                      //debugPrint('AuthWrapper: Navigating to /programs_screen');
                       context.go('/programs_screen');
                     } else {
-                      //debugPrint('AuthWrapper: Navigating to /user_programs/${user.uid}');
-                      context.go('/user_programs/${user.uid}');
+                      context.go('/user_programs', extra: {'userId': user.uid});
                     }
                   }
                 });
@@ -459,7 +445,6 @@ class AuthWrapper extends ConsumerWidget {
             );
           }
         }
-        //debugPrint('AuthWrapper: StreamBuilder waiting...');
         return const Center(child: CircularProgressIndicator());
       },
     );

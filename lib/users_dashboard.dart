@@ -192,10 +192,10 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
     );
   }
 
-  Widget _buildUserCard(UserModel user, ThemeData theme, ColorScheme colorScheme) {
-    final String initials = user.name.isNotEmpty 
-        ? user.name.substring(0, 1).toUpperCase()
-        : '?';
+  Widget _buildUserCard(
+      UserModel user, ThemeData theme, ColorScheme colorScheme) {
+    final String initials =
+        user.name.isNotEmpty ? user.name.substring(0, 1).toUpperCase() : '?';
 
     return Container(
       decoration: BoxDecoration(
@@ -209,7 +209,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => context.go('/user_profile/${user.id}'),
+          onTap: () => _navigateToUserProfile(context, user.id),
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           child: Padding(
             padding: EdgeInsets.all(AppTheme.spacing.sm),
@@ -302,7 +302,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
                     _buildActionButton(
                       icon: Icons.visibility_outlined,
                       label: 'View',
-                      onTap: () => context.go('/user_profile/${user.id}'),
+                      onTap: () => _navigateToUserProfile(context, user.id),
                       colorScheme: colorScheme,
                       theme: theme,
                     ),
@@ -360,7 +360,8 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
               Text(
                 label,
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: isDestructive ? colorScheme.error : colorScheme.primary,
+                  color:
+                      isDestructive ? colorScheme.error : colorScheme.primary,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -377,7 +378,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
       builder: (BuildContext dialogContext) {
         final theme = Theme.of(dialogContext);
         final colorScheme = theme.colorScheme;
-        
+
         return AlertDialog(
           backgroundColor: colorScheme.surface,
           shape: RoundedRectangleBorder(
@@ -447,5 +448,9 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
         );
       }
     }
+  }
+
+  void _navigateToUserProfile(BuildContext context, String userId) {
+    context.go('/user_profile', extra: {'userId': userId});
   }
 }

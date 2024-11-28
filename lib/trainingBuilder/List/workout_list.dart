@@ -12,194 +12,90 @@ class TrainingProgramWorkoutListPage extends StatefulWidget {
   final int weekIndex;
 
   const TrainingProgramWorkoutListPage({
+    super.key,
     required this.controller,
     required this.weekIndex,
-    super.key,
   });
 
   @override
-  State<TrainingProgramWorkoutListPage> createState() => _TrainingProgramWorkoutListPageState();
+  State<TrainingProgramWorkoutListPage> createState() =>
+      _TrainingProgramWorkoutListPageState();
 }
 
-class _TrainingProgramWorkoutListPageState extends State<TrainingProgramWorkoutListPage> {
+class _TrainingProgramWorkoutListPageState
+    extends State<TrainingProgramWorkoutListPage> {
   @override
   Widget build(BuildContext context) {
-    final week = widget.controller.program.weeks[widget.weekIndex];
-    final workouts = week.workouts;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: Container(
+    return ListView.builder(
+      padding: EdgeInsets.all(AppTheme.spacing.xl),
+      itemCount:
+          widget.controller.program.weeks[widget.weekIndex].workouts.length,
+      itemBuilder: (context, index) => Container(
+        margin: EdgeInsets.only(bottom: AppTheme.spacing.md),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withOpacity(0.5),
-            ],
-            stops: const [0.0, 1.0],
-          ),
-        ),
-        child: SafeArea(
-          child: CustomScrollView(
-            slivers: [
-              // Workouts List
-              SliverPadding(
-                padding: EdgeInsets.all(AppTheme.spacing.xl),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) => _buildWorkoutSlidable(
-                      context,
-                      workouts[index],
-                      index,
-                      theme,
-                      colorScheme,
-                    ),
-                    childCount: workouts.length,
-                  ),
-                ),
-              ),
-
-              // Add Workout Button
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.all(AppTheme.spacing.xl),
-                  child: _buildAddWorkoutButton(theme, colorScheme),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildWorkoutSlidable(
-    BuildContext context,
-    Workout workout,
-    int index,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    return Slidable(
-      endActionPane: ActionPane(
-        motion: const ScrollMotion(),
-        children: [
-          SlidableAction(
-            onPressed: (context) {
-              widget.controller.removeWorkout(widget.weekIndex, workout.order);
-            },
-            backgroundColor: colorScheme.errorContainer,
-            foregroundColor: colorScheme.onErrorContainer,
-            borderRadius: BorderRadius.horizontal(
-              right: Radius.circular(AppTheme.radii.lg),
-            ),
-            icon: Icons.delete_outline,
-            label: 'Delete',
-          ),
-        ],
-      ),
-      startActionPane: ActionPane(
-        motion: const ScrollMotion(),
-        children: [
-          SlidableAction(
-            onPressed: (context) {
-              widget.controller.addWorkout(widget.weekIndex);
-            },
-            backgroundColor: colorScheme.primaryContainer,
-            foregroundColor: colorScheme.onPrimaryContainer,
-            borderRadius: BorderRadius.horizontal(
-              left: Radius.circular(AppTheme.radii.lg),
-            ),
-            icon: Icons.add,
-            label: 'Add',
-          ),
-        ],
-      ),
-      child: _buildWorkoutCard(context, workout, index, theme, colorScheme),
-    );
-  }
-
-  Widget _buildWorkoutCard(
-    BuildContext context,
-    Workout workout,
-    int index,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    return Container(
-      margin: EdgeInsets.symmetric(
-        vertical: AppTheme.spacing.xs,
-        horizontal: AppTheme.spacing.md,
-      ),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
-        ),
-        boxShadow: AppTheme.elevations.small,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => context.go(
-            '/user_programs/${widget.controller.program.athleteId}/training_program/${widget.controller.program.id}/week/${widget.weekIndex}/workout/$index',
-          ),
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-          child: Padding(
-            padding: EdgeInsets.all(AppTheme.spacing.lg),
-            child: Row(
-              children: [
-                // Workout Number Badge
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer.withOpacity(0.3),
-                    shape: BoxShape.circle,
+          border: Border.all(
+            color: colorScheme.outline.withOpacity(0.1),
+          ),
+          boxShadow: AppTheme.elevations.small,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => context
+                .go('/user_programs/training_program/week/workout', extra: {
+              'userId': widget.controller.program.athleteId,
+              'programId': widget.controller.program.id,
+              'weekIndex': widget.weekIndex,
+              'workoutIndex': index
+            }),
+            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+            child: Padding(
+              padding: EdgeInsets.all(AppTheme.spacing.lg),
+              child: Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(AppTheme.radii.md),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${index + 1}',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
                   ),
-                  child: Center(
+                  SizedBox(width: AppTheme.spacing.lg),
+                  Expanded(
                     child: Text(
-                      '${workout.order}',
+                      'Workout ${index + 1}',
                       style: theme.textTheme.titleLarge?.copyWith(
-                        color: colorScheme.primary,
+                        color: colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-                ),
-
-                SizedBox(width: AppTheme.spacing.lg),
-
-                // Workout Title
-                Expanded(
-                  child: Text(
-                    'Workout ${workout.order}',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: colorScheme.onSurface,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -0.5,
+                  IconButton(
+                    icon: Icon(Icons.more_vert, color: colorScheme.primary),
+                    onPressed: () => _showWorkoutOptions(
+                      context,
+                      index,
+                      theme,
+                      colorScheme,
                     ),
                   ),
-                ),
-
-                IconButton(
-                  icon: Icon(
-                    Icons.more_vert,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                  onPressed: () => _showWorkoutOptions(
-                    context,
-                    index,
-                    theme,
-                    colorScheme,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -319,8 +215,8 @@ class _TrainingProgramWorkoutListPageState extends State<TrainingProgramWorkoutL
   }
 
   void _showReorderWorkoutsDialog(BuildContext context) {
-    final workoutNames = widget.controller.program.weeks[widget.weekIndex]
-        .workouts
+    final workoutNames = widget
+        .controller.program.weeks[widget.weekIndex].workouts
         .map((workout) => 'Workout ${workout.order}')
         .toList();
 

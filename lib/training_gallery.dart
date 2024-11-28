@@ -181,7 +181,11 @@ class TrainingGalleryScreen extends HookConsumerWidget {
                                       BorderRadius.circular(AppTheme.radii.lg),
                                   child: InkWell(
                                     onTap: () => context.go(
-                                        '/programs_screen/training_viewer/${doc.id}'),
+                                        '/user_programs/training_viewer',
+                                        extra: {
+                                          'userId': currentUserId,
+                                          'programId': doc.id
+                                        }),
                                     borderRadius: BorderRadius.circular(
                                         AppTheme.radii.lg),
                                     child: Padding(

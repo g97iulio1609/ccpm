@@ -3,6 +3,7 @@ import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
 import 'package:alphanessone/trainingBuilder/List/progressions_list.dart';
+import 'package:alphanessone/trainingBuilder/models/series_model.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,6 +17,7 @@ import '../../UI/components/card.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/trainingBuilder/models/superseries_model.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
+import 'package:go_router/go_router.dart';
 
 class TrainingProgramExerciseList extends ConsumerWidget {
   final TrainingProgramController controller;
@@ -64,7 +66,8 @@ class TrainingProgramExerciseList extends ConsumerWidget {
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
                       if (index == exercises.length) {
-                        return _buildAddExerciseButton(context, colorScheme, theme);
+                        return _buildAddExerciseButton(
+                            context, colorScheme, theme);
                       }
                       return _buildExerciseCard(
                         context,
@@ -125,7 +128,8 @@ class TrainingProgramExerciseList extends ConsumerWidget {
               motion: const ScrollMotion(),
               children: [
                 SlidableAction(
-                  onPressed: (context) => controller.addExercise(weekIndex, workoutIndex, context),
+                  onPressed: (context) =>
+                      controller.addExercise(weekIndex, workoutIndex, context),
                   backgroundColor: colorScheme.primaryContainer,
                   foregroundColor: colorScheme.onPrimaryContainer,
                   borderRadius: BorderRadius.horizontal(
@@ -158,12 +162,21 @@ class TrainingProgramExerciseList extends ConsumerWidget {
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                onTap: () => controller.editExercise(
-                  weekIndex,
-                  workoutIndex,
-                  exercise.order - 1,
-                  context,
-                ),
+                onTap: () => _navigateToExerciseDetails(context,
+                    userId: controller.program.athleteId,
+                    programId: controller.program.id,
+                    weekId: controller.program.weeks[weekIndex].id,
+                    workoutId: controller
+                        .program.weeks[weekIndex].workouts[workoutIndex].id,
+                    exerciseId: exercise.id,
+                    superSets: superSets,
+                    superSetExerciseIndex:
+                        superSets.indexOf(superSets.firstWhere(
+                      (ss) => ss.exerciseIds.contains(exercise.id),
+                      orElse: () => SuperSet(id: '', exerciseIds: []),
+                    )),
+                    seriesList: exercise.series,
+                    startIndex: 0),
                 borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                 child: Padding(
                   padding: EdgeInsets.all(AppTheme.spacing.lg),
@@ -179,8 +192,10 @@ class TrainingProgramExerciseList extends ConsumerWidget {
                               vertical: AppTheme.spacing.xs,
                             ),
                             decoration: BoxDecoration(
-                              color: colorScheme.primaryContainer.withOpacity(0.3),
-                              borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
+                              color:
+                                  colorScheme.primaryContainer.withOpacity(0.3),
+                              borderRadius:
+                                  BorderRadius.circular(AppTheme.radii.xxl),
                             ),
                             child: Text(
                               exercise.type,
@@ -221,7 +236,8 @@ class TrainingProgramExerciseList extends ConsumerWidget {
                         ),
                       ),
 
-                      if (exercise.variant.isNotEmpty && exercise.variant != '') ...[
+                      if (exercise.variant.isNotEmpty &&
+                          exercise.variant != '') ...[
                         SizedBox(height: AppTheme.spacing.xs),
                         Text(
                           exercise.variant,
@@ -252,8 +268,10 @@ class TrainingProgramExerciseList extends ConsumerWidget {
                             vertical: AppTheme.spacing.xs,
                           ),
                           decoration: BoxDecoration(
-                            color: colorScheme.secondaryContainer.withOpacity(0.3),
-                            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                            color:
+                                colorScheme.secondaryContainer.withOpacity(0.3),
+                            borderRadius:
+                                BorderRadius.circular(AppTheme.radii.lg),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -504,7 +522,8 @@ class TrainingProgramExerciseList extends ConsumerWidget {
         );
       },
     ).then((destinationWorkoutIndex) {
-      if (destinationWorkoutIndex != null && destinationWorkoutIndex != sourceWorkoutIndex) {
+      if (destinationWorkoutIndex != null &&
+          destinationWorkoutIndex != sourceWorkoutIndex) {
         controller.moveExercise(
           weekIndex,
           sourceWorkoutIndex,
@@ -524,18 +543,23 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     DateFormat dateFormat,
     ColorScheme colorScheme,
   ) {
-    exerciseRecordService.getLatestExerciseRecord(
+    exerciseRecordService
+        .getLatestExerciseRecord(
       userId: athleteId,
       exerciseId: exercise.exerciseId!,
-    ).then((record) {
-      final maxWeightController = TextEditingController(text: record?.maxWeight.toString() ?? '');
-      final repetitionsController = TextEditingController(text: record?.repetitions.toString() ?? '');
+    )
+        .then((record) {
+      final maxWeightController =
+          TextEditingController(text: record?.maxWeight.toString() ?? '');
+      final repetitionsController =
+          TextEditingController(text: record?.repetitions.toString() ?? '');
 
       repetitionsController.addListener(() {
         var repetitions = int.tryParse(repetitionsController.text) ?? 0;
         if (repetitions > 1) {
           final maxWeight = double.tryParse(maxWeightController.text) ?? 0;
-          final calculatedMaxWeight = roundWeight(maxWeight / (1.0278 - (0.0278 * repetitions)), exercise.type);
+          final calculatedMaxWeight = roundWeight(
+              maxWeight / (1.0278 - (0.0278 * repetitions)), exercise.type);
           maxWeightController.text = calculatedMaxWeight.toString();
           repetitionsController.text = '1';
         }
@@ -552,7 +576,8 @@ class TrainingProgramExerciseList extends ConsumerWidget {
                 color: colorScheme.onSurface,
               ),
             ),
-            content: _buildMaxRMInputFields(maxWeightController, repetitionsController, colorScheme),
+            content: _buildMaxRMInputFields(
+                maxWeightController, repetitionsController, colorScheme),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext, false),
@@ -582,7 +607,8 @@ class TrainingProgramExerciseList extends ConsumerWidget {
             exercise,
             maxWeightController,
             repetitionsController,
-            exerciseRecordService,dateFormat,
+            exerciseRecordService,
+            dateFormat,
             exercise.type,
           );
         }
@@ -674,10 +700,7 @@ class TrainingProgramExerciseList extends ConsumerWidget {
   }
 
   void _showReorderExercisesDialog(
-    BuildContext context,
-    int weekIndex,
-    int workoutIndex
-  ) {
+      BuildContext context, int weekIndex, int workoutIndex) {
     final exerciseNames = controller
         .program.weeks[weekIndex].workouts[workoutIndex].exercises
         .map((exercise) => exercise.name)
@@ -698,11 +721,13 @@ class TrainingProgramExerciseList extends ConsumerWidget {
     ColorScheme colorScheme,
   ) {
     String? selectedSuperSetId;
-    final superSets = controller.program.weeks[weekIndex].workouts[workoutIndex].superSets;
+    final superSets =
+        controller.program.weeks[weekIndex].workouts[workoutIndex].superSets;
 
     if (superSets.isEmpty) {
       controller.createSuperSet(weekIndex, workoutIndex);
-      selectedSuperSetId = controller.program.weeks[weekIndex].workouts[workoutIndex].superSets.first.id;
+      selectedSuperSetId = controller
+          .program.weeks[weekIndex].workouts[workoutIndex].superSets.first.id;
       controller.addExerciseToSuperSet(
         weekIndex,
         workoutIndex,
@@ -773,7 +798,8 @@ class TrainingProgramExerciseList extends ConsumerWidget {
                       ),
                     ),
                   TextButton(
-                    onPressed: () => Navigator.of(dialogContext).pop(selectedSuperSetId),
+                    onPressed: () =>
+                        Navigator.of(dialogContext).pop(selectedSuperSetId),
                     child: Text(
                       'Aggiungi',
                       style: TextStyle(
@@ -819,5 +845,36 @@ class TrainingProgramExerciseList extends ConsumerWidget {
         controller.updateExercise(updatedExercise);
       }
     });
+  }
+
+  void _navigateToExerciseDetails(BuildContext context,
+      {required String? userId,
+      required String? programId,
+      required String? weekId,
+      required String? workoutId,
+      required String? exerciseId,
+      required List<SuperSet> superSets,
+      required int superSetExerciseIndex,
+      required List<Series> seriesList,
+      required int startIndex}) {
+    if (userId == null ||
+        programId == null ||
+        weekId == null ||
+        workoutId == null ||
+        exerciseId == null) return;
+
+    context.go(
+        '/user_programs/training_viewer/week_details/workout_details/exercise_details',
+        extra: {
+          'programId': programId,
+          'weekId': weekId,
+          'workoutId': workoutId,
+          'exerciseId': exerciseId,
+          'userId': userId,
+          'superSetExercises': superSets.map((s) => s.toMap()).toList(),
+          'superSetExerciseIndex': superSetExerciseIndex,
+          'seriesList': seriesList.map((s) => s.toMap()).toList(),
+          'startIndex': startIndex
+        });
   }
 }

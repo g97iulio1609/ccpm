@@ -60,9 +60,10 @@ class TimerPageState extends ConsumerState<TimerPage>
     _timer.cancel();
     final timerModel = ref.read(timerModelProvider);
     if (timerModel != null) {
-      final newSuperSetExerciseIndex = (timerModel.superSetExerciseIndex ) % timerModel.superSetExercises.length;
+      final newSuperSetExerciseIndex = (timerModel.superSetExerciseIndex) %
+          timerModel.superSetExercises.length;
       final nextSeriesIndex = newSuperSetExerciseIndex == 0
-          ? timerModel.currentSeriesIndex 
+          ? timerModel.currentSeriesIndex
           : timerModel.currentSeriesIndex;
 
       if (nextSeriesIndex < timerModel.totalSeries) {
@@ -87,15 +88,17 @@ class TimerPageState extends ConsumerState<TimerPage>
     _timer.cancel();
     final timerModel = ref.read(timerModelProvider);
     if (timerModel != null) {
-      final newSuperSetExerciseIndex = (timerModel.superSetExerciseIndex) % timerModel.superSetExercises.length;
+      final newSuperSetExerciseIndex = (timerModel.superSetExerciseIndex) %
+          timerModel.superSetExercises.length;
       final nextSeriesIndex = newSuperSetExerciseIndex == 0
-          ? timerModel.currentSeriesIndex 
+          ? timerModel.currentSeriesIndex
           : timerModel.currentSeriesIndex;
 
       if (nextSeriesIndex < timerModel.totalSeries) {
         final result = {
           'startIndex': nextSeriesIndex,
-          'superSetExerciseIndex': newSuperSetExerciseIndex, // Corrected to newSuperSetExerciseIndex
+          'superSetExerciseIndex':
+              newSuperSetExerciseIndex, // Corrected to newSuperSetExerciseIndex
         };
         context.pop(result);
       } else {
@@ -107,6 +110,38 @@ class TimerPageState extends ConsumerState<TimerPage>
       // Handle null timerModel case
       context.pop(); // Fallback to just popping the current route
     }
+  }
+
+  void _onTimerComplete() {
+    context.go(
+        '/user_programs/training_viewer/week_details/workout_details/exercise_details',
+        extra: {
+          'programId': widget.timerModel.programId,
+          'weekId': widget.timerModel.weekId,
+          'workoutId': widget.timerModel.workoutId,
+          'exerciseId': widget.timerModel.exerciseId,
+          'userId': widget.timerModel.userId,
+          'superSetExercises': widget.timerModel.superSetExercises,
+          'superSetExerciseIndex': widget.timerModel.superSetExerciseIndex,
+          'seriesList': widget.timerModel.seriesList,
+          'currentSeriesIndex': widget.timerModel.currentSeriesIndex
+        });
+  }
+
+  void _onSkipTimer() {
+    context.go(
+        '/user_programs/training_viewer/week_details/workout_details/exercise_details',
+        extra: {
+          'programId': widget.timerModel.programId,
+          'weekId': widget.timerModel.weekId,
+          'workoutId': widget.timerModel.workoutId,
+          'exerciseId': widget.timerModel.exerciseId,
+          'userId': widget.timerModel.userId,
+          'superSetExercises': widget.timerModel.superSetExercises,
+          'superSetExerciseIndex': widget.timerModel.superSetExerciseIndex,
+          'seriesList': widget.timerModel.seriesList,
+          'currentSeriesIndex': widget.timerModel.currentSeriesIndex
+        });
   }
 
   @override
@@ -162,7 +197,7 @@ class TimerPageState extends ConsumerState<TimerPage>
                   SizedBox(height: AppTheme.spacing.xl),
                   _buildTimerContainer(remainingSeconds, theme, colorScheme),
                   SizedBox(height: AppTheme.spacing.xl),
-                  if (!timerModel.isEmomMode) 
+                  if (!timerModel.isEmomMode)
                     _buildSkipButton(theme, colorScheme),
                 ],
               ),
@@ -173,7 +208,8 @@ class TimerPageState extends ConsumerState<TimerPage>
     );
   }
 
-  Widget _buildHeader(TimerModel timerModel, ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildHeader(
+      TimerModel timerModel, ThemeData theme, ColorScheme colorScheme) {
     return Container(
       padding: EdgeInsets.all(AppTheme.spacing.lg),
       decoration: BoxDecoration(
@@ -208,7 +244,8 @@ class TimerPageState extends ConsumerState<TimerPage>
     );
   }
 
-  Widget _buildTimerContainer(int remainingSeconds, ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildTimerContainer(
+      int remainingSeconds, ThemeData theme, ColorScheme colorScheme) {
     return Container(
       width: 320,
       height: 320,
@@ -241,7 +278,7 @@ class TimerPageState extends ConsumerState<TimerPage>
         children: [
           // Progress indicator più grande e sottile
           _buildProgressIndicator(colorScheme),
-          
+
           // Container centrale con sfondo sfumato
           Container(
             margin: const EdgeInsets.all(24),
@@ -257,7 +294,7 @@ class TimerPageState extends ConsumerState<TimerPage>
               ],
             ),
           ),
-          
+
           // Testo del timer
           _buildCountdownText(remainingSeconds, theme, colorScheme),
         ],
@@ -281,7 +318,8 @@ class TimerPageState extends ConsumerState<TimerPage>
     );
   }
 
-  Widget _buildCountdownText(int remainingSeconds, ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildCountdownText(
+      int remainingSeconds, ThemeData theme, ColorScheme colorScheme) {
     final minutes = (remainingSeconds ~/ 60).toString().padLeft(2, '0');
     final seconds = (remainingSeconds % 60).toString().padLeft(2, '0');
 

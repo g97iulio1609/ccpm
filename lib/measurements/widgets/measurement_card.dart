@@ -126,7 +126,7 @@ class MeasurementCard extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        return Container(
+        return SizedBox(
           width: constraints.maxWidth,
           child: FittedBox(
             fit: BoxFit.scaleDown,

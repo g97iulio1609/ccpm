@@ -157,7 +157,7 @@ class FavouritesMeals extends ConsumerWidget {
         ],
       ),
       child: AppCard(
-        onTap: () => context.push('/mymeals/favorite_meal_detail', extra: meal),
+        onTap: () => _navigateToMealDetail(context, meal),
         child: Padding(
           padding: EdgeInsets.all(AppTheme.spacing.lg),
           child: Row(
@@ -212,8 +212,7 @@ class FavouritesMeals extends ConsumerWidget {
               AppButton(
                 label: 'Modifica',
                 icon: Icons.edit_outlined,
-                onPressed: () =>
-                    context.push('/mymeals/favorite_meal_detail', extra: meal),
+                onPressed: () => _navigateToMealDetail(context, meal),
                 variant: AppButtonVariant.secondary,
               ),
             ],
@@ -221,6 +220,11 @@ class FavouritesMeals extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  void _navigateToMealDetail(BuildContext context, meals.Meal meal) {
+    context
+        .push('/mymeals/favorite_meal_detail', extra: {'meal': meal.toMap()});
   }
 }
 
@@ -383,7 +387,7 @@ class FavouriteDays extends ConsumerWidget {
         ],
       ),
       child: AppCard(
-        onTap: () => context.push('/mydays/favorite_day_detail', extra: day),
+        onTap: () => _navigateToDayDetail(context, day),
         child: Padding(
           padding: EdgeInsets.all(AppTheme.spacing.lg),
           child: Row(
@@ -427,8 +431,7 @@ class FavouriteDays extends ConsumerWidget {
               AppButton(
                 label: 'Modifica',
                 icon: Icons.edit_outlined,
-                onPressed: () =>
-                    context.push('/mydays/favorite_day_detail', extra: day),
+                onPressed: () => _navigateToDayDetail(context, day),
                 variant: AppButtonVariant.secondary,
               ),
             ],
@@ -436,5 +439,9 @@ class FavouriteDays extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  void _navigateToDayDetail(BuildContext context, meals.FavoriteDay day) {
+    context.push('/mydays/favorite_day_detail', extra: {'day': day.toMap()});
   }
 }

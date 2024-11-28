@@ -90,12 +90,13 @@ class SubmitButtonState extends ConsumerState<SubmitButton> {
     if (widget.formKey.currentState?.validate() ?? false) {
       setState(() => _isLoading = true);
       widget.formKey.currentState?.save();
-      
+
       try {
         final email = widget.userEmail.value.trim();
         final password = widget.userPassword.value.trim();
-        final UserCredential userCredential = await _performAuthentication(email, password);
-        
+        final UserCredential userCredential =
+            await _performAuthentication(email, password);
+
         final userId = userCredential.user?.uid;
         if (userId != null) {
           await widget.authService.updateUserName(userCredential.user!);
@@ -117,9 +118,11 @@ class SubmitButtonState extends ConsumerState<SubmitButton> {
     }
   }
 
-  Future<UserCredential> _performAuthentication(String email, String password) async {
+  Future<UserCredential> _performAuthentication(
+      String email, String password) async {
     if (widget.isLogin.value) {
-      return await widget.authService.signInWithEmailAndPassword(email, password);
+      return await widget.authService
+          .signInWithEmailAndPassword(email, password);
     } else {
       return await widget.authService.signUpWithEmailAndPassword(
         email,
@@ -132,10 +135,10 @@ class SubmitButtonState extends ConsumerState<SubmitButton> {
 
   void _navigateToAppropriateScreen(String userRole, String userId) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (userRole == 'admin') {
+      if (userRole == 'admin' || userRole == 'coach') {
         context.go('/programs_screen');
       } else {
-        context.go('/programs_screen/user_programs/$userId');
+        context.go('/user_programs', extra: {'userId': userId});
       }
     });
   }
@@ -253,12 +256,13 @@ class GoogleSignInButtonWrapper extends ConsumerWidget {
     );
   }
 
-  void _navigateToAppropriateScreen(BuildContext context, String userRole, String userId) {
+  void _navigateToAppropriateScreen(
+      BuildContext context, String userRole, String userId) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (userRole == 'admin') {
+      if (userRole == 'admin' || userRole == 'coach') {
         context.go('/programs_screen');
       } else {
-        context.go('/programs_screen/user_programs/$userId');
+        context.go('/user_programs', extra: {'userId': userId});
       }
     });
   }
@@ -275,7 +279,7 @@ class SignInWithGoogleButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return SizedBox(
       width: double.infinity,
       height: 48,
@@ -329,7 +333,9 @@ class ToggleAuthModeButton extends StatelessWidget {
     return TextButton(
       onPressed: () => isLogin.value = !isLogin.value,
       child: Text(
-        isLogin.value ? 'Not a Member? Create an Account' : 'I already have an account',
+        isLogin.value
+            ? 'Not a Member? Create an Account'
+            : 'I already have an account',
         style: const TextStyle(
           color: Colors.blue,
           fontSize: 16,

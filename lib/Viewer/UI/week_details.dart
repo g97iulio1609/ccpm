@@ -120,7 +120,7 @@ class _WeekDetailsState extends ConsumerState<WeekDetails> {
 
   Widget _buildWeekHeader(ThemeData theme, ColorScheme colorScheme) {
     final weekName = ref.watch(currentWeekNameProvider);
-    
+
     return Container(
       padding: EdgeInsets.all(AppTheme.spacing.lg),
       decoration: BoxDecoration(
@@ -165,9 +165,10 @@ class _WeekDetailsState extends ConsumerState<WeekDetails> {
     );
   }
 
-  Widget _buildWorkoutCard(Map<String, dynamic> workout, ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildWorkoutCard(
+      Map<String, dynamic> workout, ThemeData theme, ColorScheme colorScheme) {
     final workoutId = workout['id'];
-    
+
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surface,
@@ -180,13 +181,7 @@ class _WeekDetailsState extends ConsumerState<WeekDetails> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {
-            if (workoutId != null) {
-              context.go(
-                '/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/$workoutId',
-              );
-            }
-          },
+          onTap: () => _navigateToWorkoutDetails(context, workoutId),
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           child: Padding(
             padding: EdgeInsets.all(AppTheme.spacing.lg),
@@ -211,7 +206,7 @@ class _WeekDetailsState extends ConsumerState<WeekDetails> {
                     ),
                   ),
                 ),
-                
+
                 if (workout['description'] != null &&
                     workout['description'].toString().isNotEmpty) ...[
                   SizedBox(height: AppTheme.spacing.md),
@@ -225,9 +220,9 @@ class _WeekDetailsState extends ConsumerState<WeekDetails> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
-                
+
                 SizedBox(height: AppTheme.spacing.lg),
-                
+
                 // Start Button
                 Container(
                   decoration: BoxDecoration(
@@ -280,7 +275,8 @@ class _WeekDetailsState extends ConsumerState<WeekDetails> {
     );
   }
 
-  Widget _buildWorkoutsList(List<Map<String, dynamic>> workouts, ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildWorkoutsList(List<Map<String, dynamic>> workouts,
+      ThemeData theme, ColorScheme colorScheme) {
     return SliverGrid(
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 400,
@@ -289,9 +285,20 @@ class _WeekDetailsState extends ConsumerState<WeekDetails> {
         childAspectRatio: 1,
       ),
       delegate: SliverChildBuilderDelegate(
-        (context, index) => _buildWorkoutCard(workouts[index], theme, colorScheme),
+        (context, index) =>
+            _buildWorkoutCard(workouts[index], theme, colorScheme),
         childCount: workouts.length,
       ),
     );
+  }
+
+  void _navigateToWorkoutDetails(BuildContext context, String workoutId) {
+    context.go('/user_programs/training_viewer/week_details/workout_details',
+        extra: {
+          'programId': widget.programId,
+          'weekId': widget.weekId,
+          'workoutId': workoutId,
+          'userId': widget.userId
+        });
   }
 }

@@ -19,9 +19,20 @@ class CustomDrawer extends ConsumerWidget {
   final String userRole;
   final VoidCallback onLogout;
 
-  void _navigateTo(BuildContext context, String route) {
+  void _navigateTo(BuildContext context, String route,
+      [Map<String, dynamic>? extra]) {
     if (route != GoRouterState.of(context).uri.toString()) {
-      context.go(route);
+      if (route.contains('/user_programs/')) {
+        final userId = route.split('/user_programs/')[1];
+        context.go('/user_programs', extra: {'userId': userId});
+      } else if (route.contains('/user_profile/')) {
+        final userId = route.split('/user_profile/')[1];
+        context.go('/user_profile', extra: {'userId': userId});
+      } else if (extra != null) {
+        context.go(route, extra: extra);
+      } else {
+        context.go(route);
+      }
       if (!isLargeScreen) {
         Navigator.of(context).pop();
       }
@@ -407,7 +418,8 @@ class CustomDrawer extends ConsumerWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => _navigateTo(context, '/user_profile/${user?.uid}'),
+        onTap: () =>
+            _navigateTo(context, '/user_profile', {'userId': user?.uid}),
         child: Container(
           padding: EdgeInsets.all(AppTheme.spacing.lg),
           child: Row(

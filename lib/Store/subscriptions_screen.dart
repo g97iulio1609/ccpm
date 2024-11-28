@@ -1047,3 +1047,7 @@ extension StringCasingExtension on String {
     return '${this[0].toUpperCase()}${substring(1)}';
   }
 }
+
+void _navigateToSubscriptions(BuildContext context) async {
+  await context.push('/subscriptions');
+}

@@ -79,8 +79,10 @@ class ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
   }
 
   void _updateCurrentExerciseName() {
-    final currentExercise = widget.superSetExercises[currentSuperSetExerciseIndex];
-    final exerciseName = '${currentExercise['name']} ${currentExercise['variant'] ?? ''}';
+    final currentExercise =
+        widget.superSetExercises[currentSuperSetExerciseIndex];
+    final exerciseName =
+        '${currentExercise['name']} ${currentExercise['variant'] ?? ''}';
     ref.read(currentExerciseNameProvider.notifier).state = exerciseName;
   }
 
@@ -108,21 +110,20 @@ class ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
     if (!mounted) return;
 
     final result = await context.push<Map<String, dynamic>>(
-      '/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${widget.exerciseId}/timer',
+      '/user_programs/training_viewer/week_details/workout_details/exercise_details/timer',
       extra: TimerModel(
-        programId: widget.programId,
-        userId: widget.userId,
-        seriesList: widget.seriesList,
-        weekId: widget.weekId,
-        workoutId: widget.workoutId,
-        exerciseId: widget.exerciseId,
-        currentSeriesIndex: currentSeriesIndex,
-        totalSeries: widget.seriesList.length,
-        restTime: _getRestTimeInSeconds(),
-        isEmomMode: _isEmomMode,
-        superSetExerciseIndex: currentSuperSetExerciseIndex,
-        superSetExercises: widget.superSetExercises,
-      ),
+          programId: widget.programId,
+          userId: widget.userId,
+          weekId: widget.weekId,
+          workoutId: widget.workoutId,
+          exerciseId: widget.exerciseId,
+          currentSeriesIndex: currentSeriesIndex,
+          totalSeries: widget.seriesList.length,
+          restTime: _getRestTimeInSeconds(),
+          isEmomMode: _isEmomMode,
+          superSetExerciseIndex: currentSuperSetExerciseIndex,
+          superSetExercises: widget.superSetExercises,
+          seriesList: widget.seriesList),
     );
 
     if (!mounted) return;
@@ -188,11 +189,13 @@ class ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
                   _buildSeriesIndicator(theme, colorScheme),
                   SizedBox(height: AppTheme.spacing.lg),
                   if (currentSeries != null) ...[
-                    _buildInputFields(theme, colorScheme, currentExercise, currentSeries),
+                    _buildInputFields(
+                        theme, colorScheme, currentExercise, currentSeries),
                     SizedBox(height: AppTheme.spacing.lg),
                   ],
                   SizedBox(height: AppTheme.spacing.xl),
-                  if (currentSuperSetExerciseIndex < widget.superSetExercises.length - 1)
+                  if (currentSuperSetExerciseIndex <
+                      widget.superSetExercises.length - 1)
                     _buildNextExerciseIndicator(theme, colorScheme),
                   SizedBox(height: AppTheme.spacing.xl),
                   _buildRestTimeSelector(theme, colorScheme),
@@ -200,7 +203,8 @@ class ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
                   _buildEmomSwitch(theme, colorScheme),
                   SizedBox(height: AppTheme.spacing.xxl),
                   if (currentSeries != null)
-                    _buildNextButton(theme, colorScheme, currentExercise, currentSeries),
+                    _buildNextButton(
+                        theme, colorScheme, currentExercise, currentSeries),
                   SizedBox(height: AppTheme.spacing.lg),
                 ],
               ),
@@ -345,7 +349,7 @@ class ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
           labelStyle: theme.textTheme.titleMedium?.copyWith(
             color: colorScheme.onSurfaceVariant,
           ),
-          prefixIcon: icon != null 
+          prefixIcon: icon != null
               ? Icon(icon, color: colorScheme.onSurfaceVariant)
               : null,
           border: InputBorder.none,
@@ -451,7 +455,9 @@ class ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
         await _updateSeriesData(
           currentExercise['id'],
           currentSeries['id'],
-          int.tryParse(_repsControllers[currentExercise['id']]![currentSeries['id']]!.text),
+          int.tryParse(
+              _repsControllers[currentExercise['id']]![currentSeries['id']]!
+                  .text),
           _weightControllers[currentExercise['id']]![currentSeries['id']]!.text,
         );
         _moveToNextExercise();

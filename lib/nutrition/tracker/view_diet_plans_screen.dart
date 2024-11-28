@@ -203,8 +203,7 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
                                 }
                               }
                             } else if (value == 'edit') {
-                              context.go('/food_tracker/diet_plan/edit',
-                                  extra: dietPlan);
+                              _navigateToEditDietPlan(context, dietPlan);
                             }
                           },
                           itemBuilder: (context) => [
@@ -256,7 +255,7 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
                             ),
                           ],
                         ),
-                        onTap: () => _showDietPlanDetails(context, dietPlan),
+                        onTap: () => _navigateToEditDietPlan(context, dietPlan),
                       ),
                     ],
                   ),
@@ -293,7 +292,7 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.go('/food_tracker/diet_plan'),
+        onPressed: () => _navigateToNewDietPlan(context),
         icon: Icon(Icons.add),
         label: Text('Nuovo Piano'),
         backgroundColor: theme.colorScheme.primary,
@@ -458,5 +457,13 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
         );
       },
     );
+  }
+
+  void _navigateToEditDietPlan(BuildContext context, DietPlan dietPlan) {
+    context.go('/food_tracker/diet_plan/edit', extra: {'dietPlan': dietPlan});
+  }
+
+  void _navigateToNewDietPlan(BuildContext context) {
+    context.go('/food_tracker/diet_plan');
   }
 }

@@ -1,5 +1,6 @@
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 import 'package:alphanessone/trainingBuilder/models/series_model.dart';
+import 'package:alphanessone/trainingBuilder/models/superseries_model.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../controller/training_program_controller.dart';
@@ -9,6 +10,7 @@ import '../dialog/series_dialog.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
+import 'package:go_router/go_router.dart';
 
 final expansionStateProvider = StateNotifierProvider.autoDispose<
     ExpansionStateNotifier, Map<String, bool>>((ref) {
@@ -46,10 +48,12 @@ class TrainingProgramSeriesList extends ConsumerStatefulWidget {
   });
 
   @override
-  TrainingProgramSeriesListState createState() => TrainingProgramSeriesListState();
+  TrainingProgramSeriesListState createState() =>
+      TrainingProgramSeriesListState();
 }
 
-class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeriesList> {
+class TrainingProgramSeriesListState
+    extends ConsumerState<TrainingProgramSeriesList> {
   late num latestMaxWeight;
 
   @override
@@ -76,7 +80,8 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
 
   @override
   Widget build(BuildContext context) {
-    final workout = widget.controller.program.weeks[widget.weekIndex].workouts[widget.workoutIndex];
+    final workout = widget.controller.program.weeks[widget.weekIndex]
+        .workouts[widget.workoutIndex];
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -106,9 +111,11 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
             final isExpanded = expansionState[key] ?? false;
 
             if (item is List<Series>) {
-              return _buildSeriesGroupCard(context, item, index, isExpanded, key, theme, colorScheme);
+              return _buildSeriesGroupCard(
+                  context, item, index, isExpanded, key, theme, colorScheme);
             } else {
-              return _buildSeriesCard(context, item as Series, index, theme, colorScheme);
+              return _buildSeriesCard(
+                  context, item as Series, index, theme, colorScheme);
             }
           },
         ),
@@ -128,7 +135,7 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
     ColorScheme colorScheme,
   ) {
     final series = seriesGroup.first;
-    
+
     return Container(
       margin: EdgeInsets.only(bottom: AppTheme.spacing.sm),
       decoration: BoxDecoration(
@@ -278,7 +285,8 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
     );
   }
 
-  Widget _buildActionButtons(List<Series> series, ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildActionButtons(
+      List<Series> series, ThemeData theme, ColorScheme colorScheme) {
     return Row(
       children: [
         Expanded(
@@ -319,7 +327,10 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
         gradient: LinearGradient(
           colors: isPrimary
               ? [colorScheme.primary, colorScheme.primary.withOpacity(0.8)]
-              : [colorScheme.surfaceContainerHighest, colorScheme.surfaceContainerHighest.withOpacity(0.8)],
+              : [
+                  colorScheme.surfaceContainerHighest,
+                  colorScheme.surfaceContainerHighest.withOpacity(0.8)
+                ],
         ),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         boxShadow: isPrimary ? AppTheme.elevations.small : null,
@@ -338,14 +349,18 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
               children: [
                 Icon(
                   icon,
-                  color: isPrimary ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
+                  color: isPrimary
+                      ? colorScheme.onPrimary
+                      : colorScheme.onSurfaceVariant,
                   size: 20,
                 ),
                 SizedBox(width: AppTheme.spacing.sm),
                 Text(
                   label,
                   style: theme.textTheme.titleMedium?.copyWith(
-                    color: isPrimary ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
+                    color: isPrimary
+                        ? colorScheme.onPrimary
+                        : colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -402,14 +417,15 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
       builder: (context) => ReorderDialog(
         items: seriesNames,
         onReorder: (oldIndex, newIndex) {
-          widget.controller.reorderSeries(
-              widget.weekIndex, widget.workoutIndex, widget.exerciseIndex, oldIndex, newIndex);
+          widget.controller.reorderSeries(widget.weekIndex, widget.workoutIndex,
+              widget.exerciseIndex, oldIndex, newIndex);
         },
       ),
     );
   }
 
-  void _showEditSeriesDialog(List<Series>? seriesGroup, {bool isIndividualEdit = false}) {
+  void _showEditSeriesDialog(List<Series>? seriesGroup,
+      {bool isIndividualEdit = false}) {
     final exercise = widget.controller.program.weeks[widget.weekIndex]
         .workouts[widget.workoutIndex].exercises[widget.exerciseIndex];
 
@@ -438,25 +454,29 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
     });
   }
 
-  void _updateExistingSeries(List<Series> oldSeriesGroup, List<Series> updatedSeries) {
+  void _updateExistingSeries(
+      List<Series> oldSeriesGroup, List<Series> updatedSeries) {
     final exercise = widget.controller.program.weeks[widget.weekIndex]
         .workouts[widget.workoutIndex].exercises[widget.exerciseIndex];
-    
+
     // Trova l'indice di inizio del gruppo di serie da aggiornare
-    final startIndex = exercise.series.indexWhere((s) => s.serieId == oldSeriesGroup.first.serieId);
+    final startIndex = exercise.series
+        .indexWhere((s) => s.serieId == oldSeriesGroup.first.serieId);
     if (startIndex != -1) {
       // Rimuovi le vecchie serie
-      exercise.series.removeRange(startIndex, startIndex + oldSeriesGroup.length);
-      
+      exercise.series
+          .removeRange(startIndex, startIndex + oldSeriesGroup.length);
+
       // Inserisci le serie aggiornate
       exercise.series.insertAll(startIndex, updatedSeries);
-      
+
       // Aggiorna gli ordini delle serie
       for (int i = 0; i < exercise.series.length; i++) {
         exercise.series[i].order = i + 1;
       }
-      
-      widget.controller.updateSeries(widget.weekIndex, widget.workoutIndex, widget.exerciseIndex, exercise.series);
+
+      widget.controller.updateSeries(widget.weekIndex, widget.workoutIndex,
+          widget.exerciseIndex, exercise.series);
     }
   }
 
@@ -470,13 +490,17 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
       exercise.series[i].order = i + 1;
     }
 
-    widget.controller.updateSeries(widget.weekIndex, widget.workoutIndex, widget.exerciseIndex, exercise.series);
+    widget.controller.updateSeries(widget.weekIndex, widget.workoutIndex,
+        widget.exerciseIndex, exercise.series);
   }
 
   String _formatSeriesInfo(Series series) {
-    final reps = _formatRange(series.reps.toString(), series.maxReps?.toString());
-    final sets = _formatRange(series.sets.toString(), series.maxSets?.toString());
-    final weight = _formatRange(series.weight.toString(), series.maxWeight?.toString());
+    final reps =
+        _formatRange(series.reps.toString(), series.maxReps?.toString());
+    final sets =
+        _formatRange(series.sets.toString(), series.maxSets?.toString());
+    final weight =
+        _formatRange(series.weight.toString(), series.maxWeight?.toString());
     return '$sets set(s), $reps reps x $weight kg';
   }
 
@@ -492,7 +516,8 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Elimina Gruppo Di Serie'),
-        content: const Text('Confermi Di Voler Eliminare Questo Gruppo Di Serie'),
+        content:
+            const Text('Confermi Di Voler Eliminare Questo Gruppo Di Serie'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -511,8 +536,8 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
   }
 
   void _deleteSeriesGroup(List<Series> seriesGroup, int groupIndex) {
-    final exercise = widget.controller.program.weeks[widget.weekIndex].workouts[widget.workoutIndex]
-        .exercises[widget.exerciseIndex];
+    final exercise = widget.controller.program.weeks[widget.weekIndex]
+        .workouts[widget.workoutIndex].exercises[widget.exerciseIndex];
 
     List<Series> seriesToRemove = List.from(seriesGroup);
 
@@ -528,7 +553,8 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
       exercise.series[i].order = i + 1;
     }
 
-    widget.controller.updateSeries(widget.weekIndex, widget.workoutIndex, widget.exerciseIndex, exercise.series);
+    widget.controller.updateSeries(widget.weekIndex, widget.workoutIndex,
+        widget.exerciseIndex, exercise.series);
   }
 
   void _showSeriesOptions(
@@ -567,7 +593,8 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
           BottomMenuItem(
             title: 'Modifica',
             icon: Icons.edit_outlined,
-            onTap: () => _showEditSeriesDialog([series], isIndividualEdit: true),
+            onTap: () =>
+                _showEditSeriesDialog([series], isIndividualEdit: true),
           ),
           BottomMenuItem(
             title: 'Duplica Serie',
@@ -642,10 +669,13 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
             title: 'Duplica Gruppo',
             icon: Icons.content_copy_outlined,
             onTap: () {
-              final newSeriesGroup = seriesGroup.map((s) => s.copyWith(
-                serieId: generateRandomId(16),
-                order: exercise.series.length + seriesGroup.indexOf(s) + 1,
-              )).toList();
+              final newSeriesGroup = seriesGroup
+                  .map((s) => s.copyWith(
+                        serieId: generateRandomId(16),
+                        order:
+                            exercise.series.length + seriesGroup.indexOf(s) + 1,
+                      ))
+                  .toList();
               _addNewSeries(newSeriesGroup);
             },
           ),
@@ -663,5 +693,36 @@ class TrainingProgramSeriesListState extends ConsumerState<TrainingProgramSeries
         ],
       ),
     );
+  }
+
+  void _navigateToExerciseDetails(BuildContext context,
+      {required String? userId,
+      required String? programId,
+      required String? weekId,
+      required String? workoutId,
+      required String? exerciseId,
+      required List<SuperSet> superSets,
+      required int superSetExerciseIndex,
+      required List<Series> seriesList,
+      required int startIndex}) {
+    if (userId == null ||
+        programId == null ||
+        weekId == null ||
+        workoutId == null ||
+        exerciseId == null) return;
+
+    context.go(
+        '/user_programs/training_viewer/week_details/workout_details/exercise_details',
+        extra: {
+          'programId': programId,
+          'weekId': weekId,
+          'workoutId': workoutId,
+          'exerciseId': exerciseId,
+          'userId': userId,
+          'superSetExercises': superSets.map((s) => s.toMap()).toList(),
+          'superSetExerciseIndex': superSetExerciseIndex,
+          'seriesList': seriesList.map((s) => s.toMap()).toList(),
+          'startIndex': startIndex
+        });
   }
 }

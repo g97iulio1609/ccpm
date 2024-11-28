@@ -13,7 +13,8 @@ class TrainingViewer extends ConsumerStatefulWidget {
   final String programId;
   final String userId;
 
-  const TrainingViewer({super.key, required this.programId, required this.userId});
+  const TrainingViewer(
+      {super.key, required this.programId, required this.userId});
 
   @override
   TrainingViewerState createState() => TrainingViewerState();
@@ -35,7 +36,8 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
     }
 
     final subscriptionChecker = SubscriptionChecker();
-    final hasValidSubscription = await subscriptionChecker.checkSubscription(context);
+    final hasValidSubscription =
+        await subscriptionChecker.checkSubscription(context);
 
     if (!hasValidSubscription) {
       if (mounted) {
@@ -145,7 +147,8 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
     );
   }
 
-  Widget _buildWeekCard(Map<String, dynamic> week, ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildWeekCard(
+      Map<String, dynamic> week, ThemeData theme, ColorScheme colorScheme) {
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surface,
@@ -158,9 +161,7 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => context.go(
-            '/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${week['id']}',
-          ),
+          onTap: () => _navigateToWeekDetails(context, week),
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           child: Padding(
             padding: EdgeInsets.all(AppTheme.spacing.lg),
@@ -185,7 +186,7 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
                     ),
                   ),
                 ),
-                
+
                 if (week['description'] != null &&
                     week['description'].toString().isNotEmpty) ...[
                   SizedBox(height: AppTheme.spacing.md),
@@ -199,9 +200,9 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
-                
+
                 SizedBox(height: AppTheme.spacing.lg),
-                
+
                 // Start Button
                 Container(
                   decoration: BoxDecoration(
@@ -255,7 +256,8 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
     );
   }
 
-  Widget _buildWeeksList(List<Map<String, dynamic>> weeks, ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildWeeksList(List<Map<String, dynamic>> weeks, ThemeData theme,
+      ColorScheme colorScheme) {
     return SliverGrid(
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 400,
@@ -273,7 +275,8 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
   Future<void> showSubscriptionExpiredDialog(BuildContext context) async {
     final theme = Theme.of(context);
     final inAppPurchaseService = InAppPurchaseService();
-    final subscriptionDetails = await inAppPurchaseService.getSubscriptionDetails();
+    final subscriptionDetails =
+        await inAppPurchaseService.getSubscriptionDetails();
     final platform = subscriptionDetails?.platform ?? 'stripe';
 
     return showDialog(
@@ -313,7 +316,8 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
                         .call({'productId': 'alphanessoneplussubscription'});
 
                     final clientSecret = result.data['clientSecret'];
-                    final amount = result.data['amount'] / 100; // Converti da centesimi
+                    final amount =
+                        result.data['amount'] / 100; // Converti da centesimi
                     final currency = result.data['currency'];
 
                     if (!mounted) return;
@@ -327,17 +331,20 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
                         height: MediaQuery.of(context).size.height * 0.9,
                         decoration: const BoxDecoration(
                           color: Colors.black,
-                          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                          borderRadius:
+                              BorderRadius.vertical(top: Radius.circular(20)),
                         ),
                         child: StripeCheckoutWidget(
                           clientSecret: clientSecret,
                           amount: amount,
                           currency: currency,
                           onPaymentSuccess: (String paymentId) async {
-                            Navigator.of(context).pop(); // Chiudi il bottom sheet
+                            Navigator.of(context)
+                                .pop(); // Chiudi il bottom sheet
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Abbonamento attivato con successo!'),
+                                content:
+                                    Text('Abbonamento attivato con successo!'),
                                 backgroundColor: Colors.green,
                               ),
                             );
@@ -390,7 +397,9 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
   Future<void> fetchTrainingWeeks() async {
     ref.read(trainingLoadingProvider.notifier).state = true;
     try {
-      final weeks = await ref.read(trainingProgramServicesProvider).fetchTrainingWeeks(widget.programId);
+      final weeks = await ref
+          .read(trainingProgramServicesProvider)
+          .fetchTrainingWeeks(widget.programId);
       if (mounted) {
         ref.read(trainingWeeksProvider.notifier).state = weeks;
       }
@@ -402,5 +411,13 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
         ref.read(trainingLoadingProvider.notifier).state = false;
       }
     }
+  }
+
+  void _navigateToWeekDetails(BuildContext context, Map<String, dynamic> week) {
+    context.go('/user_programs/training_viewer/week_details', extra: {
+      'programId': widget.programId,
+      'weekId': week['id'],
+      'userId': widget.userId
+    });
   }
 }
