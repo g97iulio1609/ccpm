@@ -624,10 +624,12 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
     ColorScheme colorScheme,
     ThemeData theme,
   ) {
+    final isSmallScreen = MediaQuery.of(context).size.width < 600;
+
     String getLoadDisplayText() {
       final List<String> values = [];
 
-      // Mostra sia percentuale che peso calcolato
+      // Mostra percentuale e peso calcolato
       if (controllers.intensity.displayText.isNotEmpty) {
         final minIntensity =
             double.tryParse(controllers.intensity.min.text) ?? 0;
@@ -642,27 +644,40 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
                 widget.latestMaxWeight.toDouble(), maxIntensity)
             : null;
 
-        if (maxIntensity != null) {
-          values.add(
-              '${controllers.intensity.displayText}% (${minWeight.toStringAsFixed(1)}-${maxWeight!.toStringAsFixed(1)}kg)');
-        } else {
-          values.add(
-              '${controllers.intensity.displayText}% (${minWeight.toStringAsFixed(1)}kg)');
+        String intensityText = minIntensity.toString();
+        if (maxIntensity != null && maxIntensity > 0) {
+          intensityText = '$minIntensity-$maxIntensity';
         }
+
+        String weightText = '${minWeight.toStringAsFixed(1)}';
+        if (maxWeight != null && maxWeight > minWeight) {
+          weightText =
+              '${minWeight.toStringAsFixed(1)}-${maxWeight.toStringAsFixed(1)}';
+        }
+
+        values.add('$intensityText% ($weightText kg)');
       }
 
+      // RPE
       if (controllers.rpe.displayText.isNotEmpty) {
-        values.add('RPE: ${controllers.rpe.displayText}');
+        final minRpe = double.tryParse(controllers.rpe.min.text) ?? 0;
+        final maxRpe = controllers.rpe.max.text.isNotEmpty
+            ? double.tryParse(controllers.rpe.max.text)
+            : null;
+
+        String rpeText = minRpe.toString();
+        if (maxRpe != null && maxRpe > 0 && maxRpe != minRpe) {
+          rpeText = '$minRpe-$maxRpe';
+        }
+
+        values.add('RPE: $rpeText');
       }
 
-      if (controllers.weight.displayText.isNotEmpty) {
-        values.add('${controllers.weight.displayText}kg');
-      }
-
-      return values.join('\n');
+      return values.join('\n\n');
     }
 
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Reps
         Expanded(
@@ -673,6 +688,7 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
                 weekIndex, sessionIndex, groupIndex, 'Reps', controllers.reps),
             colorScheme,
             theme,
+            false,
           ),
         ),
         SizedBox(width: AppTheme.spacing.xs),
@@ -691,7 +707,7 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
         SizedBox(width: AppTheme.spacing.xs),
         // Combined Load Fields
         Expanded(
-          flex: MediaQuery.of(context).size.width < 600 ? 2 : 1,
+          flex: isSmallScreen ? 2 : 1,
           child: _buildFieldContainer(
             'Load',
             getLoadDisplayText(),
@@ -699,6 +715,7 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
                 controllers, colorScheme, theme),
             colorScheme,
             theme,
+            true,
           ),
         ),
       ],
@@ -711,7 +728,10 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
     VoidCallback onTap,
     ColorScheme colorScheme,
     ThemeData theme,
+    bool isLoadField,
   ) {
+    final isSmallScreen = MediaQuery.of(context).size.width < 600;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -719,15 +739,19 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
         borderRadius: BorderRadius.circular(AppTheme.radii.sm),
         child: Container(
           padding: EdgeInsets.all(AppTheme.spacing.sm),
+          constraints: isLoadField && isSmallScreen
+              ? BoxConstraints(minHeight: 80)
+              : null,
           decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(AppTheme.radii.sm),
             border: Border.all(
               color: colorScheme.outline.withOpacity(0.1),
             ),
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
@@ -735,14 +759,17 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
+                textAlign: TextAlign.center,
               ),
-              SizedBox(height: AppTheme.spacing.xs),
+              SizedBox(height: AppTheme.spacing.sm),
               Text(
                 value,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurface,
+                  height: isSmallScreen && isLoadField ? 1.5 : 1.2,
                 ),
-                maxLines: 1,
+                textAlign: TextAlign.center,
+                maxLines: isSmallScreen && isLoadField ? 4 : 2,
                 overflow: TextOverflow.ellipsis,
               ),
             ],
@@ -752,40 +779,39 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String labelText,
-    required TextInputType keyboardType,
-    required Function(String) onChanged,
-    required ColorScheme colorScheme,
-    required ThemeData theme,
-  }) {
+  Widget _buildTextField(
+      {required TextEditingController controller,
+      required String labelText,
+      required TextInputType keyboardType,
+      required Function(String) onChanged,
+      required ColorScheme colorScheme,
+      required ThemeData theme}) {
     return Container(
       padding: EdgeInsets.all(AppTheme.spacing.sm),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radii.md),
+        borderRadius: BorderRadius.circular(AppTheme.radii.sm),
         border: Border.all(
           color: colorScheme.outline.withOpacity(0.1),
         ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
             labelText,
             style: theme.textTheme.labelSmall?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
+            textAlign: TextAlign.center,
           ),
           SizedBox(height: AppTheme.spacing.xs),
-          TextFormField(
+          TextField(
             controller: controller,
             keyboardType: keyboardType,
-            textAlign: TextAlign.start,
-            style: theme.textTheme.titleMedium?.copyWith(
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurface,
-              fontWeight: FontWeight.w500,
             ),
             decoration: InputDecoration(
               isDense: true,
