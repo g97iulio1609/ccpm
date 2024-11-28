@@ -278,6 +278,7 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
     final programController = ref.watch(trainingProgramControllerProvider);
     final controllers = ref.watch(progressionControllersProvider);
     final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
 
     final weekProgressions = _buildWeekProgressions(
         programController.program.weeks, widget.exercise!);
@@ -291,251 +292,306 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    // Determina il numero massimo di sessioni
+    final maxSessions = weekProgressions.fold<int>(
+        0, (max, week) => week.length > max ? week.length : max);
+
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                itemCount: weekProgressions.length,
-                itemBuilder: (context, weekIndex) {
-                  return weekIndex < controllers.length
-                      ? _buildWeekItem(weekIndex, weekProgressions[weekIndex],
-                          controllers[weekIndex], colorScheme)
-                      : const SizedBox.shrink();
-                },
-              ),
-            ),
-            const SizedBox(height: 24),
-            _buildSaveButton(colorScheme),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildWeekItem(
-      int weekIndex,
-      List<WeekProgression> weekProgression,
-      List<List<ProgressionControllers>> weekControllers,
-      ColorScheme colorScheme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 24, bottom: 8),
-          child: Text(
-            'Week ${weekIndex + 1}',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
-            ),
-          ),
-        ),
-        ...weekProgression.asMap().entries.map((entry) {
-          final sessionIndex = entry.key;
-          final session = entry.value;
-          return _buildSessionItem(weekIndex, sessionIndex, session,
-              weekControllers[sessionIndex], colorScheme);
-        }),
-      ],
-    );
-  }
-
-  Widget _buildSessionItem(
-      int weekIndex,
-      int sessionIndex,
-      WeekProgression session,
-      List<ProgressionControllers> sessionControllers,
-      ColorScheme colorScheme) {
-    final groupedSeries = _groupSeries(session.series);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 16, bottom: 8),
-          child: Text(
-            'Session ${sessionIndex + 1}',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
-            ),
-          ),
-        ),
-        ...groupedSeries.asMap().entries.map((entry) {
-          final groupIndex = entry.key;
-          final seriesGroup = entry.value;
-          return _buildSeriesItem(weekIndex, sessionIndex, groupIndex,
-              seriesGroup, sessionControllers[groupIndex], colorScheme);
-        }),
-      ],
-    );
-  }
-
-  Widget _buildSeriesItem(
-      int weekIndex,
-      int sessionIndex,
-      int groupIndex,
-      List<Series> seriesGroup,
-      ProgressionControllers controllers,
-      ColorScheme colorScheme) {
-    return GestureDetector(
-      onHorizontalDragStart: (_) => setState(() => _isSwipeInProgress = true),
-      onHorizontalDragEnd: (_) => setState(() => _isSwipeInProgress = false),
-      onHorizontalDragCancel: () => setState(() => _isSwipeInProgress = false),
-      child: Slidable(
-        key: ValueKey('$weekIndex-$sessionIndex-$groupIndex'),
-        startActionPane: ActionPane(
-          motion: const ScrollMotion(),
-          children: [
-            SlidableAction(
-              onPressed: (_) =>
-                  _addSeriesGroup(weekIndex, sessionIndex, groupIndex),
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
-              icon: Icons.add,
-              label: 'Add',
-            ),
-          ],
-        ),
-        endActionPane: ActionPane(
-          motion: const ScrollMotion(),
-          children: [
-            SlidableAction(
-              onPressed: (_) =>
-                  _removeSeriesGroup(weekIndex, sessionIndex, groupIndex),
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              icon: Icons.delete,
-              label: 'Delete',
-            ),
-          ],
-        ),
-        child: AbsorbPointer(
-          absorbing: _isSwipeInProgress,
-          child: Container(
-            color: colorScheme.surface,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildSeriesFields(weekIndex, sessionIndex, groupIndex,
-                    seriesGroup.first, controllers),
-                const SizedBox(height: 24),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSeriesFields(int weekIndex, int sessionIndex, int groupIndex,
-      Series series, ProgressionControllers controllers) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: EdgeInsets.all(AppTheme.spacing.lg),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: Column(
         children: [
-          // Header con badge e titolo
-          Row(
-            children: [
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppTheme.spacing.sm,
-                  vertical: AppTheme.spacing.xs,
-                ),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(AppTheme.radii.full),
-                ),
-                child: Text(
-                  'Series ${groupIndex + 1}',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.all(AppTheme.spacing.lg),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Crea una tabella per ogni numero di sessione
+                    for (int sessionNumber = 0;
+                        sessionNumber < maxSessions;
+                        sessionNumber++)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                                vertical: AppTheme.spacing.lg),
+                            child: Text(
+                              'Sessione ${sessionNumber + 1}',
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                color: colorScheme.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: colorScheme.surface,
+                              borderRadius:
+                                  BorderRadius.circular(AppTheme.radii.lg),
+                              border: Border.all(
+                                color: colorScheme.outline.withOpacity(0.1),
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                // Header della tabella
+                                _buildTableHeader(colorScheme, theme),
+                                // Righe per ogni settimana
+                                for (int weekIndex = 0;
+                                    weekIndex < weekProgressions.length;
+                                    weekIndex++)
+                                  if (weekIndex < controllers.length &&
+                                      sessionNumber <
+                                          controllers[weekIndex].length)
+                                    _buildWeekRow(
+                                      weekIndex,
+                                      sessionNumber,
+                                      weekProgressions[weekIndex]
+                                          [sessionNumber],
+                                      controllers[weekIndex][sessionNumber],
+                                      colorScheme,
+                                      theme,
+                                    ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
-
-          SizedBox(height: AppTheme.spacing.md),
-
-          // Griglia di campi
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            mainAxisSpacing: AppTheme.spacing.md,
-            crossAxisSpacing: AppTheme.spacing.md,
-            childAspectRatio: 2.5,
-            children: [
-              _buildRangeField(
-                controllers.reps,
-                'Reps',
-                () => _showRangeDialog(weekIndex, sessionIndex, groupIndex,
-                    'Reps', controllers.reps),
-                colorScheme,
-                theme,
-              ),
-              _buildTextField(
-                controller: controllers.sets,
-                labelText: 'Sets',
-                keyboardType: TextInputType.number,
-                onChanged: (value) => _updateSeries(
-                    weekIndex, sessionIndex, groupIndex,
-                    sets: value),
-                colorScheme: colorScheme,
-                theme: theme,
-              ),
-              _buildRangeField(
-                controllers.intensity,
-                '1RM%',
-                () => _showRangeDialog(weekIndex, sessionIndex, groupIndex,
-                    'Intensity', controllers.intensity),
-                colorScheme,
-                theme,
-              ),
-              _buildRangeField(
-                controllers.rpe,
-                'RPE',
-                () => _showRangeDialog(weekIndex, sessionIndex, groupIndex,
-                    'RPE', controllers.rpe),
-                colorScheme,
-                theme,
-              ),
-              _buildRangeField(
-                controllers.weight,
-                'Weight',
-                () => _showRangeDialog(weekIndex, sessionIndex, groupIndex,
-                    'Weight', controllers.weight),
-                colorScheme,
-                theme,
-              ),
-            ],
-          ),
+          _buildSaveButton(colorScheme),
+          SizedBox(height: AppTheme.spacing.lg),
         ],
       ),
     );
   }
 
-  Widget _buildRangeField(
-    RangeControllers controllers,
+  Widget _buildTableHeader(ColorScheme colorScheme, ThemeData theme) {
+    return Container(
+      padding: EdgeInsets.all(AppTheme.spacing.md),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceVariant,
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppTheme.radii.lg),
+        ),
+      ),
+      child: Row(
+        children: [
+          // Colonna Settimana
+          Expanded(
+            flex: 2,
+            child: Text(
+              'Settimana',
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          // Colonne dei campi
+          ...['Reps', 'Sets', '1RM%', 'RPE', 'Weight'].map((header) {
+            return Expanded(
+              flex: 2,
+              child: Text(
+                header,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            );
+          }),
+          // Spazio per il pulsante di azioni
+          SizedBox(width: 48),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeekRow(
+    int weekIndex,
+    int sessionIndex,
+    WeekProgression session,
+    List<ProgressionControllers> sessionControllers,
+    ColorScheme colorScheme,
+    ThemeData theme,
+  ) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: colorScheme.outline.withOpacity(0.1),
+          ),
+        ),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(AppTheme.spacing.md),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Colonna Settimana
+            Expanded(
+              flex: 2,
+              child: Text(
+                '${weekIndex + 1}',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            // Gruppi di serie
+            Expanded(
+              flex: 10,
+              child: Column(
+                children: [
+                  ...sessionControllers.asMap().entries.map((entry) {
+                    final groupIndex = entry.key;
+                    final controllers = entry.value;
+                    return Column(
+                      children: [
+                        if (groupIndex > 0)
+                          SizedBox(height: AppTheme.spacing.sm),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildGroupFields(
+                                weekIndex,
+                                sessionIndex,
+                                groupIndex,
+                                controllers,
+                                colorScheme,
+                                theme,
+                              ),
+                            ),
+                            // Delete button per ogni gruppo
+                            IconButton(
+                              icon: Icon(Icons.delete_outline,
+                                  size: 20, color: colorScheme.error),
+                              onPressed: () => _removeSeriesGroup(
+                                  weekIndex, sessionIndex, groupIndex),
+                              tooltip: 'Rimuovi Gruppo',
+                            ),
+                          ],
+                        ),
+                      ],
+                    );
+                  }),
+                  // Pulsante aggiungi gruppo sotto l'ultimo gruppo
+                  Padding(
+                    padding: EdgeInsets.only(top: AppTheme.spacing.sm),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              _addSeriesGroup(weekIndex, sessionIndex,
+                                  sessionControllers.length);
+                            });
+                          },
+                          icon: Icon(Icons.add_circle_outline,
+                              size: 16, color: colorScheme.primary),
+                          label: Text(
+                            'Aggiungi Gruppo',
+                            style: theme.textTheme.labelSmall
+                                ?.copyWith(color: colorScheme.primary),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGroupFields(
+    int weekIndex,
+    int sessionIndex,
+    int groupIndex,
+    ProgressionControllers controllers,
+    ColorScheme colorScheme,
+    ThemeData theme,
+  ) {
+    return Row(
+      children: [
+        // Reps
+        Expanded(
+          child: _buildFieldContainer(
+            'Reps',
+            controllers.reps.displayText,
+            () => _showRangeDialog(
+                weekIndex, sessionIndex, groupIndex, 'Reps', controllers.reps),
+            colorScheme,
+            theme,
+          ),
+        ),
+        SizedBox(width: AppTheme.spacing.xs),
+        // Sets
+        Expanded(
+          child: _buildTextField(
+            controller: controllers.sets,
+            labelText: 'Sets',
+            keyboardType: TextInputType.number,
+            onChanged: (value) =>
+                _updateSeries(weekIndex, sessionIndex, groupIndex, sets: value),
+            colorScheme: colorScheme,
+            theme: theme,
+          ),
+        ),
+        SizedBox(width: AppTheme.spacing.xs),
+        // Intensity
+        Expanded(
+          child: _buildFieldContainer(
+            '1RM%',
+            controllers.intensity.displayText,
+            () => _showRangeDialog(weekIndex, sessionIndex, groupIndex,
+                'Intensity', controllers.intensity),
+            colorScheme,
+            theme,
+          ),
+        ),
+        SizedBox(width: AppTheme.spacing.xs),
+        // RPE
+        Expanded(
+          child: _buildFieldContainer(
+            'RPE',
+            controllers.rpe.displayText,
+            () => _showRangeDialog(
+                weekIndex, sessionIndex, groupIndex, 'RPE', controllers.rpe),
+            colorScheme,
+            theme,
+          ),
+        ),
+        SizedBox(width: AppTheme.spacing.xs),
+        // Weight
+        Expanded(
+          child: _buildFieldContainer(
+            'Weight',
+            controllers.weight.displayText,
+            () => _showRangeDialog(weekIndex, sessionIndex, groupIndex,
+                'Weight', controllers.weight),
+            colorScheme,
+            theme,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFieldContainer(
     String label,
+    String value,
     VoidCallback onTap,
     ColorScheme colorScheme,
     ThemeData theme,
@@ -544,18 +600,19 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppTheme.radii.md),
+        borderRadius: BorderRadius.circular(AppTheme.radii.sm),
         child: Container(
           padding: EdgeInsets.all(AppTheme.spacing.sm),
           decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: BorderRadius.circular(AppTheme.radii.md),
+            color: colorScheme.surfaceVariant.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(AppTheme.radii.sm),
             border: Border.all(
               color: colorScheme.outline.withOpacity(0.1),
             ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 label,
@@ -565,11 +622,12 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
               ),
               SizedBox(height: AppTheme.spacing.xs),
               Text(
-                controllers.displayText,
-                style: theme.textTheme.titleMedium?.copyWith(
+                value,
+                style: theme.textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurface,
-                  fontWeight: FontWeight.w500,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -816,30 +874,28 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
         ref.read(progressionControllersProvider.notifier);
 
     if (_isValidIndex(weekProgressions, weekIndex, sessionIndex)) {
+      final newSeries = Series(
+        serieId: generateRandomId(16).toString(),
+        reps: 0,
+        sets: 1,
+        intensity: '',
+        rpe: '',
+        weight: 0.0,
+        order: groupIndex + 1,
+        done: false,
+        reps_done: 0,
+        weight_done: 0.0,
+      );
+
       final currentSession = weekProgressions[weekIndex][sessionIndex];
-      final groupedSeries = _groupSeries(currentSession.series);
+      final updatedSeries = List<Series>.from(currentSession.series)
+        ..add(newSeries);
+      currentSession.series = updatedSeries;
 
-      if (groupIndex >= 0 && groupIndex < groupedSeries.length) {
-        final newSeries = Series(
-          serieId: generateRandomId(16).toString(),
-          reps: 0,
-          sets: 1,
-          intensity: '',
-          rpe: '',
-          weight: 0.0,
-          order: groupedSeries.length + 1,
-          done: false,
-          reps_done: 0,
-          weight_done: 0.0,
-        );
-
-        groupedSeries.insert(groupIndex + 1, [newSeries]);
-        currentSession.series = groupedSeries.expand((group) => group).toList();
-        _updateProgressionsWithNewSeries(weekProgressions);
-        controllersNotifier.addControllers(
-            weekIndex, sessionIndex, groupIndex + 1);
-        setState(() {});
-      }
+      weekProgressions[weekIndex][sessionIndex] = currentSession;
+      programController.updateWeekProgressions(
+          weekProgressions, widget.exercise!.exerciseId!);
+      controllersNotifier.addControllers(weekIndex, sessionIndex, groupIndex);
     }
   }
 
