@@ -296,6 +296,25 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
     final maxSessions = weekProgressions.fold<int>(
         0, (max, week) => week.length > max ? week.length : max);
 
+    // Crea una mappa per tenere traccia delle sessioni non vuote
+    final nonEmptySessions = <int>[];
+    for (int sessionNumber = 0; sessionNumber < maxSessions; sessionNumber++) {
+      bool hasData = false;
+      for (int weekIndex = 0;
+          weekIndex < weekProgressions.length;
+          weekIndex++) {
+        if (weekIndex < controllers.length &&
+            sessionNumber < controllers[weekIndex].length &&
+            controllers[weekIndex][sessionNumber].isNotEmpty) {
+          hasData = true;
+          break;
+        }
+      }
+      if (hasData) {
+        nonEmptySessions.add(sessionNumber);
+      }
+    }
+
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: Column(
@@ -307,11 +326,9 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Crea una tabella per ogni numero di sessione
-                    for (int sessionNumber = 0;
-                        sessionNumber < maxSessions;
-                        sessionNumber++)
-                      Column(
+                    // Crea una tabella per ogni sessione non vuota
+                    ...nonEmptySessions.map(
+                      (sessionNumber) => Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Padding(
@@ -336,7 +353,6 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
                             ),
                             child: Column(
                               children: [
-                                // Header della tabella
                                 _buildTableHeader(colorScheme, theme),
                                 // Righe per ogni settimana
                                 for (int weekIndex = 0;
@@ -344,7 +360,9 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
                                     weekIndex++)
                                   if (weekIndex < controllers.length &&
                                       sessionNumber <
-                                          controllers[weekIndex].length)
+                                          controllers[weekIndex].length &&
+                                      controllers[weekIndex][sessionNumber]
+                                          .isNotEmpty)
                                     _buildWeekRow(
                                       weekIndex,
                                       sessionNumber,
@@ -359,6 +377,7 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
                           ),
                         ],
                       ),
+                    ),
                   ],
                 ),
               ),
