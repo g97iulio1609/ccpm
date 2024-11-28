@@ -153,14 +153,28 @@ class ProgressionControllersNotifier
   }
 
   static List<List<Series>> _groupSeries(List<Series> series) {
+    if (series.isEmpty) return [];
+
     final groupedSeries = <List<Series>>[];
-    for (final s in series) {
-      if (groupedSeries.isEmpty || !_isSameGroup(s, groupedSeries.last.first)) {
-        groupedSeries.add([s]);
+    List<Series> currentGroup = [series[0]];
+
+    for (int i = 1; i < series.length; i++) {
+      final currentSeries = series[i];
+      final previousSeries = series[i - 1];
+
+      if (_isSameGroup(currentSeries, previousSeries)) {
+        currentGroup.add(currentSeries);
       } else {
-        groupedSeries.last.add(s);
+        groupedSeries.add(List<Series>.from(currentGroup));
+        currentGroup = [currentSeries];
       }
     }
+
+    // Aggiungi l'ultimo gruppo
+    if (currentGroup.isNotEmpty) {
+      groupedSeries.add(currentGroup);
+    }
+
     return groupedSeries;
   }
 
@@ -204,6 +218,43 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
   bool get wantKeepAlive => true;
 
   bool _isSwipeInProgress = false;
+
+  List<List<Series>> _groupSeries(List<Series> series) {
+    if (series.isEmpty) return [];
+
+    final groupedSeries = <List<Series>>[];
+    List<Series> currentGroup = [series[0]];
+
+    for (int i = 1; i < series.length; i++) {
+      final currentSeries = series[i];
+      final previousSeries = series[i - 1];
+
+      if (_isSameGroup(currentSeries, previousSeries)) {
+        currentGroup.add(currentSeries);
+      } else {
+        groupedSeries.add(List<Series>.from(currentGroup));
+        currentGroup = [currentSeries];
+      }
+    }
+
+    // Aggiungi l'ultimo gruppo
+    if (currentGroup.isNotEmpty) {
+      groupedSeries.add(currentGroup);
+    }
+
+    return groupedSeries;
+  }
+
+  bool _isSameGroup(Series a, Series b) {
+    return a.reps == b.reps &&
+        a.maxReps == b.maxReps &&
+        a.intensity == b.intensity &&
+        a.maxIntensity == b.maxIntensity &&
+        a.rpe == b.rpe &&
+        a.maxRpe == b.maxRpe &&
+        a.weight == b.weight &&
+        a.maxWeight == b.maxWeight;
+  }
 
   @override
   void initState() {
@@ -843,33 +894,39 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
             sessionIndex < controllers[weekIndex].length;
             sessionIndex++) {
           List<Series> updatedSeries = [];
+
+          // Itera attraverso ogni gruppo
           for (int groupIndex = 0;
               groupIndex < controllers[weekIndex][sessionIndex].length;
               groupIndex++) {
             final groupControllers =
                 controllers[weekIndex][sessionIndex][groupIndex];
-            // Creiamo una singola serie con il numero corretto di sets invece di multiple serie
-            updatedSeries.add(Series(
-              serieId: generateRandomId(16).toString(),
-              reps: int.tryParse(groupControllers.reps.min.text) ?? 0,
-              maxReps: int.tryParse(groupControllers.reps.max.text),
-              sets: int.tryParse(groupControllers.sets.text) ??
-                  1, // Manteniamo il numero di sets come specificato
-              intensity: groupControllers.intensity.min.text,
-              maxIntensity: groupControllers.intensity.max.text.isNotEmpty
-                  ? groupControllers.intensity.max.text
-                  : null,
-              rpe: groupControllers.rpe.min.text,
-              maxRpe: groupControllers.rpe.max.text.isNotEmpty
-                  ? groupControllers.rpe.max.text
-                  : null,
-              weight: double.tryParse(groupControllers.weight.min.text) ?? 0.0,
-              maxWeight: double.tryParse(groupControllers.weight.max.text),
-              order: updatedSeries.length + 1,
-              done: false,
-              reps_done: 0,
-              weight_done: 0.0,
-            ));
+            final sets = int.tryParse(groupControllers.sets.text) ?? 1;
+
+            // Crea il numero corretto di serie per questo gruppo
+            for (int i = 0; i < sets; i++) {
+              updatedSeries.add(Series(
+                serieId: generateRandomId(16).toString(),
+                reps: int.tryParse(groupControllers.reps.min.text) ?? 0,
+                maxReps: int.tryParse(groupControllers.reps.max.text),
+                sets: 1, // Ogni serie individuale ha sets=1
+                intensity: groupControllers.intensity.min.text,
+                maxIntensity: groupControllers.intensity.max.text.isNotEmpty
+                    ? groupControllers.intensity.max.text
+                    : null,
+                rpe: groupControllers.rpe.min.text,
+                maxRpe: groupControllers.rpe.max.text.isNotEmpty
+                    ? groupControllers.rpe.max.text
+                    : null,
+                weight:
+                    double.tryParse(groupControllers.weight.min.text) ?? 0.0,
+                maxWeight: double.tryParse(groupControllers.weight.max.text),
+                order: updatedSeries.length + 1,
+                done: false,
+                reps_done: 0,
+                weight_done: 0.0,
+              ));
+            }
           }
 
           weekProgressions.add(WeekProgression(
@@ -952,29 +1009,6 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
         }
       }).toList();
     });
-  }
-
-  List<List<Series>> _groupSeries(List<Series> series) {
-    final groupedSeries = <List<Series>>[];
-    for (final s in series) {
-      if (groupedSeries.isEmpty || !_isSameGroup(s, groupedSeries.last.first)) {
-        groupedSeries.add([s]);
-      } else {
-        groupedSeries.last.add(s);
-      }
-    }
-    return groupedSeries;
-  }
-
-  bool _isSameGroup(Series a, Series b) {
-    return a.reps == b.reps &&
-        a.maxReps == b.maxReps &&
-        a.intensity == b.intensity &&
-        a.maxIntensity == b.maxIntensity &&
-        a.rpe == b.rpe &&
-        a.maxRpe == b.maxRpe &&
-        a.weight == b.weight &&
-        a.maxWeight == b.maxWeight;
   }
 
   bool _isValidIndex(List list, int index1, [int? index2, int? index3]) {
