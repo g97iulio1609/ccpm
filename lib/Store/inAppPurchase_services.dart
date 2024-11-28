@@ -15,7 +15,8 @@ class InAppPurchaseService {
                 id: product['id'],
                 title: product['name'],
                 description: product['description'] ?? '',
-                price: '${product['price']} ${product['currency'].toUpperCase()}',
+                price:
+                    '${product['price']} ${product['currency'].toUpperCase()}',
                 rawPrice: product['price'].toDouble(),
                 currencyCode: product['currency'],
               ))
@@ -29,12 +30,12 @@ class InAppPurchaseService {
   // Getter per i dettagli dei prodotti
   Map<String, List<Product>> get productDetailsByProductId {
     final Map<String, List<Product>> result = {};
-    _products.forEach((product) {
+    for (var product in _products) {
       if (!result.containsKey(product.id)) {
         result[product.id] = [];
       }
       result[product.id]!.add(product);
-    });
+    }
     return result;
   }
 
@@ -44,10 +45,11 @@ class InAppPurchaseService {
   // Funzione per verificare lo stato dell'abbonamento
   Future<SubscriptionDetails?> getSubscriptionDetails({String? userId}) async {
     try {
-      final result = await _functions.httpsCallable('getSubscriptionDetails').call({
+      final result =
+          await _functions.httpsCallable('getSubscriptionDetails').call({
         if (userId != null) 'userId': userId,
       });
-      
+
       if (!result.data['hasSubscription']) {
         return null;
       }
@@ -59,11 +61,13 @@ class InAppPurchaseService {
         currentPeriodEnd: DateTime.fromMillisecondsSinceEpoch(
           subscription['current_period_end'] * 1000,
         ),
-        items: (subscription['items'] as List).map((item) => SubscriptionItem(
-          priceId: item['priceId'],
-          productId: item['productId'],
-          quantity: item['quantity'],
-        )).toList(),
+        items: (subscription['items'] as List)
+            .map((item) => SubscriptionItem(
+                  priceId: item['priceId'],
+                  productId: item['productId'],
+                  quantity: item['quantity'],
+                ))
+            .toList(),
         platform: 'stripe',
       );
     } catch (e) {
@@ -99,7 +103,8 @@ class InAppPurchaseService {
       });
 
       if (!result.data['success']) {
-        throw Exception(result.data['message'] ?? 'Errore nell\'aggiornamento dell\'abbonamento');
+        throw Exception(result.data['message'] ??
+            'Errore nell\'aggiornamento dell\'abbonamento');
       }
     } catch (e) {
       throw Exception('Errore nell\'aggiornamento dell\'abbonamento: $e');
@@ -109,13 +114,15 @@ class InAppPurchaseService {
   // Funzione per creare un abbonamento regalo
   Future<void> giftSubscription(String userId, int durationInDays) async {
     try {
-      final result = await _functions.httpsCallable('createGiftSubscription').call({
+      final result =
+          await _functions.httpsCallable('createGiftSubscription').call({
         'userId': userId,
         'durationInDays': durationInDays,
       });
 
       if (!result.data['success']) {
-        throw Exception(result.data['message'] ?? 'Errore nella creazione dell\'abbonamento regalo');
+        throw Exception(result.data['message'] ??
+            'Errore nella creazione dell\'abbonamento regalo');
       }
     } catch (e) {
       throw Exception('Errore nella creazione dell\'abbonamento regalo: $e');
