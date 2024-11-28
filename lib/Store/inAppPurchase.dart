@@ -463,6 +463,9 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen>
     try {
       final functions = ref.read(firebaseFunctionsProvider);
 
+      // Verifica se il widget è ancora montato prima di mostrare il dialogo
+      if (!mounted) return;
+
       // Mostra loading indicator usando un Builder per avere il contesto corretto
       BuildContext? dialogContext;
       showDialog(
@@ -486,6 +489,7 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen>
           'productId': product.id,
         });
 
+        // Verifica se il widget è ancora montato dopo la chiamata asincrona
         if (!mounted) return;
 
         // Chiudi il loading indicator in modo sicuro
@@ -497,7 +501,7 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen>
         final amount = result.data['amount'] / 100;
         final currency = result.data['currency'];
 
-        // Mostra il widget di checkout
+        // Verifica se il widget è ancora montato prima di mostrare il bottom sheet
         if (!mounted) return;
 
         await showModalBottomSheet(
@@ -511,8 +515,14 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen>
             amount: amount,
             currency: currency,
             onPaymentSuccess: (String paymentId) async {
+              // Verifica se il widget è ancora montato prima di procedere
+              if (!mounted) return;
+
               // Chiudi il bottom sheet
               Navigator.of(context).pop();
+
+              // Verifica se il widget è ancora montato prima di mostrare il nuovo dialogo
+              if (!mounted) return;
 
               // Mostra nuovo loading indicator
               BuildContext? confirmContext;
@@ -537,7 +547,10 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen>
                   'productId': product.id,
                 });
 
-                if (mounted && confirmContext != null) {
+                // Verifica se il widget è ancora montato dopo la chiamata asincrona
+                if (!mounted) return;
+
+                if (confirmContext != null) {
                   Navigator.of(confirmContext!).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -547,7 +560,10 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen>
                   );
                 }
               } catch (e) {
-                if (mounted && confirmContext != null) {
+                // Verifica se il widget è ancora montato dopo l'errore
+                if (!mounted) return;
+
+                if (confirmContext != null) {
                   Navigator.of(confirmContext!).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -559,6 +575,9 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen>
               }
             },
             onPaymentError: (String error) {
+              // Verifica se il widget è ancora montato prima di chiudere
+              if (!mounted) return;
+
               Navigator.of(context).pop();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -570,8 +589,11 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen>
           ),
         );
       } catch (e) {
+        // Verifica se il widget è ancora montato dopo l'errore
+        if (!mounted) return;
+
         // Chiudi il loading indicator in caso di errore
-        if (dialogContext != null && mounted) {
+        if (dialogContext != null) {
           Navigator.of(dialogContext!).pop();
         }
         rethrow;

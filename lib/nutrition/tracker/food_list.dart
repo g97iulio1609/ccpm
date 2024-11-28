@@ -32,6 +32,7 @@ class FoodListState extends ConsumerState<FoodList> {
   }
 
   Future<void> _initializeData() async {
+    if (!mounted) return;
     if (widget.userId != null) {
       final mealsService = ref.read(mealsServiceProvider);
       await mealsService.createDailyStatsIfNotExist(
@@ -436,6 +437,8 @@ class FoodListState extends ConsumerState<FoodList> {
   }
 
   void onMealMenuSelected(String value, meals.Meal meal) async {
+    if (!mounted) return;
+
     final mealsService = ref.read(mealsServiceProvider);
     if (value == 'duplicate') {
       await showDuplicateDialog(ref, meal);
@@ -706,13 +709,15 @@ class FoodListState extends ConsumerState<FoodList> {
     return snapshot;
   }
 
-  void showFoodSelectorBottomSheet(
+  Future<void> showFoodSelectorBottomSheet(
       BuildContext context, WidgetRef ref, meals.Meal meal,
-      {String? myFoodId}) {
-    showModalBottomSheet(
+      {String? myFoodId}) async {
+    if (!mounted) return;
+
+    await showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // Mantiene il modale a metà schermo
-      backgroundColor: Colors.transparent, // Rende lo sfondo trasparente
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) => DraggableScrollableSheet(
         expand: false,
         builder: (context, scrollController) => Container(
@@ -725,7 +730,9 @@ class FoodListState extends ConsumerState<FoodList> {
             meal: meal,
             myFoodId: myFoodId,
             onSave: () {
-              setState(() {});
+              if (mounted) {
+                setState(() {});
+              }
             },
             scrollController: scrollController,
           ),
