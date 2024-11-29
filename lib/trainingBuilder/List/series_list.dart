@@ -56,7 +56,7 @@ class TrainingProgramSeriesList extends ConsumerStatefulWidget {
 
 class TrainingProgramSeriesListState
     extends ConsumerState<TrainingProgramSeriesList> {
-  late num latestMaxWeight;
+  late num latestMaxWeight = 0;
 
   @override
   void initState() {
@@ -67,16 +67,16 @@ class TrainingProgramSeriesListState
   Future<void> _fetchLatestMaxWeight() async {
     final exercise = widget.controller.program.weeks[widget.weekIndex]
         .workouts[widget.workoutIndex].exercises[widget.exerciseIndex];
-    final exerciseId = exercise.exerciseId;
-    final athleteId = widget.controller.program.athleteId;
 
-    latestMaxWeight = await SeriesUtils.getLatestMaxWeight(
-      widget.exerciseRecordService,
-      athleteId,
-      exerciseId ?? '',
-    );
+    final maxWeight = await SeriesUtils.getLatestMaxWeight(
+        widget.exerciseRecordService,
+        widget.controller.program.athleteId,
+        exercise.exerciseId ?? '');
+
     if (mounted) {
-      setState(() {});
+      setState(() {
+        latestMaxWeight = maxWeight;
+      });
     }
   }
 
