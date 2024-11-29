@@ -11,6 +11,8 @@ import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:go_router/go_router.dart';
+import 'package:alphanessone/UI/components/weight_input_fields.dart';
+import 'package:alphanessone/UI/components/series_input_fields.dart';
 
 final expansionStateProvider = StateNotifierProvider.autoDispose<
     ExpansionStateNotifier, Map<String, bool>>((ref) {
@@ -232,6 +234,9 @@ class TrainingProgramSeriesListState
     int? seriesIndex,
     VoidCallback? onRemove,
   ]) {
+    final exercise = widget.controller.program.weeks[widget.weekIndex]
+        .workouts[widget.workoutIndex].exercises[widget.exerciseIndex];
+
     return Container(
       margin: EdgeInsets.symmetric(
         horizontal: AppTheme.spacing.md,
@@ -242,43 +247,87 @@ class TrainingProgramSeriesListState
         color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
         borderRadius: BorderRadius.circular(AppTheme.radii.md),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _formatSeriesInfo(series),
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: colorScheme.onSurface,
-                  ),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Serie ${series.order}',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SizedBox(height: AppTheme.spacing.xs),
+                    Text(
+                      _formatSeriesInfo(series),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
-                SizedBox(height: AppTheme.spacing.xs),
-                Text(
-                  'RPE: ${_formatRange(series.rpe, series.maxRpe)}, Intensity: ${_formatRange(series.intensity, series.maxIntensity)}',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
+              ),
+              if (onRemove != null)
+                IconButton(
+                  icon: Icon(
+                    Icons.remove_circle_outline,
+                    color: colorScheme.error,
                   ),
+                  onPressed: onRemove,
                 ),
-              ],
-            ),
+            ],
           ),
-          IconButton(
-            icon: Icon(
-              Icons.more_vert,
-              color: colorScheme.onSurfaceVariant,
-            ),
-            onPressed: () => _showSeriesOptions(
-              context,
-              series,
-              [series],
-              groupIndex,
-              seriesIndex,
-              onRemove,
-              theme,
-              colorScheme,
-            ),
+          SizedBox(height: AppTheme.spacing.sm),
+          SeriesInputFields(
+            maxWeight: latestMaxWeight,
+            exerciseName: exercise.name,
+            initialIntensity: series.intensity,
+            initialMaxIntensity: series.maxIntensity,
+            initialRpe: series.rpe,
+            initialMaxRpe: series.maxRpe,
+            initialWeight: series.weight?.toString(),
+            initialMaxWeight: series.maxWeight?.toString(),
+            onIntensityChanged: (intensity) {
+              setState(() {
+                series.intensity = intensity.toStringAsFixed(1);
+                widget.controller.notifyListeners();
+              });
+            },
+            onMaxIntensityChanged: (maxIntensity) {
+              setState(() {
+                series.maxIntensity = maxIntensity?.toStringAsFixed(1);
+                widget.controller.notifyListeners();
+              });
+            },
+            onRpeChanged: (rpe) {
+              setState(() {
+                series.rpe = rpe.toStringAsFixed(1);
+                widget.controller.notifyListeners();
+              });
+            },
+            onMaxRpeChanged: (maxRpe) {
+              setState(() {
+                series.maxRpe = maxRpe?.toStringAsFixed(1);
+                widget.controller.notifyListeners();
+              });
+            },
+            onWeightChanged: (weight) {
+              setState(() {
+                series.weight = weight;
+                widget.controller.notifyListeners();
+              });
+            },
+            onMaxWeightChanged: (maxWeight) {
+              setState(() {
+                series.maxWeight = maxWeight;
+                widget.controller.notifyListeners();
+              });
+            },
           ),
         ],
       ),
