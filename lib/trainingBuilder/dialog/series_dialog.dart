@@ -73,11 +73,9 @@ class _SeriesDialogState extends State<SeriesDialog> {
           border: Border.all(
             color: colorScheme.outline.withOpacity(0.1),
           ),
-          boxShadow: AppTheme.elevations.large,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Header
             Container(
@@ -89,106 +87,98 @@ class _SeriesDialogState extends State<SeriesDialog> {
                 ),
               ),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppTheme.spacing.sm,
-                      vertical: AppTheme.spacing.xs,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(AppTheme.radii.full),
-                    ),
-                    child: Icon(
-                      widget.currentSeriesGroup != null
-                          ? Icons.edit_outlined
-                          : Icons.add_circle_outline,
-                      color: colorScheme.primary,
-                      size: 20,
-                    ),
-                  ),
-                  SizedBox(width: AppTheme.spacing.md),
                   Text(
                     _getDialogTitle(),
-                    style: theme.textTheme.titleLarge?.copyWith(
+                    style: theme.textTheme.titleMedium?.copyWith(
                       color: colorScheme.onSurface,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w500,
                     ),
+                  ),
+                  IconButton(
+                    icon:
+                        Icon(Icons.close, color: colorScheme.onSurfaceVariant),
+                    onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
             ),
 
             // Content
-            Padding(
-              padding: EdgeInsets.all(AppTheme.spacing.xl),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildFormField(
-                    controller: _formController.repsController,
-                    maxController: _formController.maxRepsController,
-                    label: 'Ripetizioni',
-                    hint: 'Ripetizioni',
-                    maxHint: 'Max Ripetizioni',
-                    icon: Icons.repeat,
-                    theme: theme,
-                    colorScheme: colorScheme,
-                    focusNode: _formController.repsNode,
-                    maxFocusNode: _formController.maxRepsNode,
+            Flexible(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: EdgeInsets.all(AppTheme.spacing.xl),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildFormField(
+                        controller: _formController.repsController,
+                        maxController: _formController.maxRepsController,
+                        label: 'Ripetizioni',
+                        hint: 'Ripetizioni',
+                        maxHint: 'Max Ripetizioni',
+                        icon: Icons.repeat,
+                        theme: theme,
+                        colorScheme: colorScheme,
+                        focusNode: _formController.repsNode,
+                        maxFocusNode: _formController.maxRepsNode,
+                      ),
+                      SizedBox(height: AppTheme.spacing.lg),
+                      if (!_formController.isIndividualEdit) ...[
+                        _buildFormField(
+                          controller: _formController.setsController,
+                          label: 'Serie',
+                          hint: 'Numero di serie',
+                          icon: Icons.format_list_numbered,
+                          theme: theme,
+                          colorScheme: colorScheme,
+                          focusNode: _formController.setsNode,
+                        ),
+                        SizedBox(height: AppTheme.spacing.lg),
+                      ],
+                      _buildFormField(
+                        controller: _formController.intensityController,
+                        maxController: _formController.maxIntensityController,
+                        label: 'Intensità (%)',
+                        hint: 'Intensità',
+                        maxHint: 'Max Intensità',
+                        icon: Icons.speed,
+                        theme: theme,
+                        colorScheme: colorScheme,
+                        focusNode: _formController.intensityNode,
+                        maxFocusNode: _formController.maxIntensityNode,
+                      ),
+                      SizedBox(height: AppTheme.spacing.lg),
+                      _buildFormField(
+                        controller: _formController.rpeController,
+                        maxController: _formController.maxRpeController,
+                        label: 'RPE',
+                        hint: 'RPE',
+                        maxHint: 'Max RPE',
+                        icon: Icons.trending_up,
+                        theme: theme,
+                        colorScheme: colorScheme,
+                        focusNode: _formController.rpeNode,
+                        maxFocusNode: _formController.maxRpeNode,
+                      ),
+                      SizedBox(height: AppTheme.spacing.lg),
+                      _buildFormField(
+                        controller: _formController.weightController,
+                        maxController: _formController.maxWeightController,
+                        label: 'Peso (kg)',
+                        hint: 'Peso',
+                        maxHint: 'Max Peso',
+                        icon: Icons.fitness_center,
+                        theme: theme,
+                        colorScheme: colorScheme,
+                        focusNode: _formController.weightNode,
+                        maxFocusNode: _formController.maxWeightNode,
+                      ),
+                    ],
                   ),
-                  SizedBox(height: AppTheme.spacing.lg),
-                  if (!_formController.isIndividualEdit) ...[
-                    _buildFormField(
-                      controller: _formController.setsController,
-                      label: 'Serie',
-                      hint: 'Numero di serie',
-                      icon: Icons.format_list_numbered,
-                      theme: theme,
-                      colorScheme: colorScheme,
-                      focusNode: _formController.setsNode,
-                    ),
-                    SizedBox(height: AppTheme.spacing.lg),
-                  ],
-                  _buildFormField(
-                    controller: _formController.intensityController,
-                    maxController: _formController.maxIntensityController,
-                    label: 'Intensità (%)',
-                    hint: 'Intensità',
-                    maxHint: 'Max Intensità',
-                    icon: Icons.speed,
-                    theme: theme,
-                    colorScheme: colorScheme,
-                    focusNode: _formController.intensityNode,
-                    maxFocusNode: _formController.maxIntensityNode,
-                  ),
-                  SizedBox(height: AppTheme.spacing.lg),
-                  _buildFormField(
-                    controller: _formController.rpeController,
-                    maxController: _formController.maxRpeController,
-                    label: 'RPE',
-                    hint: 'RPE',
-                    maxHint: 'Max RPE',
-                    icon: Icons.trending_up,
-                    theme: theme,
-                    colorScheme: colorScheme,
-                    focusNode: _formController.rpeNode,
-                    maxFocusNode: _formController.maxRpeNode,
-                  ),
-                  SizedBox(height: AppTheme.spacing.lg),
-                  _buildFormField(
-                    controller: _formController.weightController,
-                    maxController: _formController.maxWeightController,
-                    label: 'Peso (kg)',
-                    hint: 'Peso',
-                    maxHint: 'Max Peso',
-                    icon: Icons.fitness_center,
-                    theme: theme,
-                    colorScheme: colorScheme,
-                    focusNode: _formController.weightNode,
-                    maxFocusNode: _formController.maxWeightNode,
-                  ),
-                ],
+                ),
               ),
             ),
 
@@ -206,57 +196,20 @@ class _SeriesDialogState extends State<SeriesDialog> {
                 children: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppTheme.spacing.lg,
-                        vertical: AppTheme.spacing.md,
-                      ),
-                    ),
                     child: Text(
                       'Annulla',
                       style: theme.textTheme.labelLarge?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                        color: colorScheme.primary,
                       ),
                     ),
                   ),
                   SizedBox(width: AppTheme.spacing.md),
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          colorScheme.primary,
-                          colorScheme.primary.withOpacity(0.8),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                      boxShadow: [
-                        BoxShadow(
-                          color: colorScheme.primary.withOpacity(0.2),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: _handleSubmit,
-                        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: AppTheme.spacing.lg,
-                            vertical: AppTheme.spacing.md,
-                          ),
-                          child: Text(
-                            widget.currentSeriesGroup != null
-                                ? 'Salva'
-                                : 'Aggiungi',
-                            style: theme.textTheme.labelLarge?.copyWith(
-                              color: colorScheme.onPrimary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
+                  FilledButton(
+                    onPressed: _handleSubmit,
+                    child: Text(
+                      'Conferma',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: colorScheme.onPrimary,
                       ),
                     ),
                   ),
