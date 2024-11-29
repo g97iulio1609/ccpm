@@ -20,6 +20,7 @@ import 'package:alphanessone/trainingBuilder/models/superseries_model.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
 import 'package:go_router/go_router.dart';
 import 'package:alphanessone/trainingBuilder/series_utils.dart';
+import 'package:alphanessone/UI/components/weight_input_fields.dart';
 
 // Controller per i range di valori
 class RangeControllers {
@@ -652,125 +653,23 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
             ),
             SizedBox(height: AppTheme.spacing.md),
             ...exercises.map((exercise) {
-              final weightController = TextEditingController();
-              final maxWeightController = TextEditingController();
-
-              // Calcola i pesi basati su intensità
-              final maxWeight = getMaxWeight(exercise);
-              final minIntensity =
-                  double.tryParse(localController.intensity.min.text) ?? 0;
-              final maxIntensity =
-                  double.tryParse(localController.intensity.max.text);
-
-              final calculatedWeight =
-                  maxWeight > 0 ? calculateWeight(maxWeight, minIntensity) : 0;
-              final calculatedMaxWeight = maxIntensity != null && maxWeight > 0
-                  ? calculateWeight(maxWeight, maxIntensity)
-                  : null;
-
-              // Imposta i valori iniziali dei controller
-              weightController.text = formatNumber(calculatedWeight);
-              if (calculatedMaxWeight != null) {
-                maxWeightController.text = formatNumber(calculatedMaxWeight);
-              }
-
-              return Container(
-                margin: EdgeInsets.only(bottom: AppTheme.spacing.md),
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                  border: Border.all(
-                    color: colorScheme.outline.withOpacity(0.1),
-                  ),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.all(AppTheme.spacing.md),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              exercise.name,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyLarge
-                                  ?.copyWith(
-                                    color: colorScheme.onSurface,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                            ),
-                          ),
-                          if (maxWeight > 0)
-                            Text(
-                              'Max: ${formatNumber(maxWeight)} kg',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
-                            ),
-                        ],
-                      ),
-                      SizedBox(height: AppTheme.spacing.sm),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: weightController,
-                              keyboardType: TextInputType.number,
-                              decoration: InputDecoration(
-                                hintText: 'Peso (kg)',
-                                border: OutlineInputBorder(
-                                  borderRadius:
-                                      BorderRadius.circular(AppTheme.radii.md),
-                                ),
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: AppTheme.spacing.md,
-                                  vertical: AppTheme.spacing.sm,
-                                ),
-                              ),
-                              onChanged: (value) {
-                                final weight = double.tryParse(value) ?? 0;
-                                for (var series in exercise.series) {
-                                  series.weight = weight;
-                                }
-                                controller.notifyListeners();
-                              },
-                            ),
-                          ),
-                          SizedBox(width: AppTheme.spacing.md),
-                          Expanded(
-                            child: TextField(
-                              controller: maxWeightController,
-                              keyboardType: TextInputType.number,
-                              decoration: InputDecoration(
-                                hintText: 'Peso Max (kg)',
-                                border: OutlineInputBorder(
-                                  borderRadius:
-                                      BorderRadius.circular(AppTheme.radii.md),
-                                ),
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: AppTheme.spacing.md,
-                                  vertical: AppTheme.spacing.sm,
-                                ),
-                              ),
-                              onChanged: (value) {
-                                final maxWeight = double.tryParse(value);
-                                for (var series in exercise.series) {
-                                  series.maxWeight = maxWeight;
-                                }
-                                controller.notifyListeners();
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+              return WeightInputFields(
+                maxWeight: getMaxWeight(exercise),
+                intensity: localController.intensity.min.text,
+                maxIntensity: localController.intensity.max.text,
+                exerciseName: exercise.name,
+                onWeightChanged: (weight) {
+                  exercise.series.forEach((series) {
+                    series.weight = weight;
+                  });
+                  controller.notifyListeners();
+                },
+                onMaxWeightChanged: (maxWeight) {
+                  exercise.series.forEach((series) {
+                    series.maxWeight = maxWeight;
+                  });
+                  controller.notifyListeners();
+                },
               );
             }).toList(),
           ],
