@@ -3,6 +3,7 @@
 import 'package:alphanessone/Coaching/coaching_association.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_stats.dart';
 import 'package:alphanessone/ExerciseRecords/maxrmdashboard.dart';
+import 'package:alphanessone/Main/routes.dart';
 import 'package:alphanessone/UI/home_screen.dart';
 import 'package:alphanessone/Viewer/UI/exercise_details.dart';
 import 'package:alphanessone/Viewer/UI/timer.dart';
@@ -46,11 +47,11 @@ class AppRouter {
             builder: (context, state, child) => HomeScreen(child: child),
             routes: [
               GoRoute(
-                path: '/',
+                path: Routes.home,
                 builder: (context, state) => const AuthWrapper(),
               ),
               GoRoute(
-                path: '/programs_screen',
+                path: Routes.programsScreen,
                 builder: (context, state) {
                   return Consumer(
                     builder: (context, ref, child) {
@@ -67,7 +68,7 @@ class AppRouter {
                 },
               ),
               GoRoute(
-                path: '/user_programs',
+                path: Routes.userPrograms,
                 builder: (context, state) {
                   final extra = state.extra as Map<String, dynamic>;
                   final userId = extra['userId'] as String;
@@ -75,7 +76,7 @@ class AppRouter {
                 },
                 routes: [
                   GoRoute(
-                    path: 'training_program',
+                    path: Routes.trainingProgram,
                     builder: (context, state) {
                       final extra = state.extra as Map<String, dynamic>;
                       final programId = extra['programId'] as String;
@@ -87,7 +88,7 @@ class AppRouter {
                     },
                     routes: [
                       GoRoute(
-                        path: 'week',
+                        path: Routes.week,
                         builder: (context, state) {
                           final extra = state.extra as Map<String, dynamic>;
                           final programId = extra['programId'] as String;
@@ -101,7 +102,7 @@ class AppRouter {
                         },
                         routes: [
                           GoRoute(
-                            path: 'workout',
+                            path: Routes.workout,
                             builder: (context, state) {
                               final extra = state.extra as Map<String, dynamic>;
                               final programId = extra['programId'] as String;
@@ -121,7 +122,7 @@ class AppRouter {
                     ],
                   ),
                   GoRoute(
-                    path: 'training_viewer',
+                    path: Routes.trainingViewer,
                     builder: (context, state) {
                       final extra = state.extra as Map<String, dynamic>;
                       final programId = extra['programId'] as String;
@@ -133,7 +134,7 @@ class AppRouter {
                     },
                     routes: [
                       GoRoute(
-                        path: 'week_details',
+                        path: Routes.weekDetails,
                         builder: (context, state) {
                           final extra = state.extra as Map<String, dynamic>;
                           final programId = extra['programId'] as String;
@@ -147,7 +148,7 @@ class AppRouter {
                         },
                         routes: [
                           GoRoute(
-                            path: 'workout_details',
+                            path: Routes.workoutDetails,
                             builder: (context, state) {
                               final extra = state.extra as Map<String, dynamic>;
                               final programId = extra['programId'] as String;
@@ -163,7 +164,7 @@ class AppRouter {
                             },
                             routes: [
                               GoRoute(
-                                path: 'exercise_details',
+                                path: Routes.exerciseDetails,
                                 builder: (context, state) {
                                   final extra =
                                       state.extra as Map<String, dynamic>;
@@ -195,7 +196,7 @@ class AppRouter {
                                 },
                                 routes: [
                                   GoRoute(
-                                    path: 'timer',
+                                    path: Routes.timer,
                                     builder: (context, state) {
                                       final timerModel =
                                           state.extra as TimerModel;
@@ -213,27 +214,24 @@ class AppRouter {
                 ],
               ),
               GoRoute(
-                path: '/training_gallery',
+                path: Routes.trainingGallery,
                 builder: (context, state) => const TrainingGalleryScreen(),
               ),
               GoRoute(
-                path: '/subscriptions',
+                path: Routes.subscriptions,
                 name: 'subscriptions',
                 builder: (context, state) => const InAppPurchaseScreen(),
               ),
               GoRoute(
-                path: '/status',
-                builder: (context, state) =>
-                    SubscriptionsScreen(), // Standalone SubscriptionsScreen senza userId
+                path: Routes.status,
+                builder: (context, state) => SubscriptionsScreen(),
               ),
               GoRoute(
-                path: '/measurements',
-                builder: (context, state) {
-                  return const MeasurementsPage();
-                },
+                path: Routes.measurements,
+                builder: (context, state) => const MeasurementsPage(),
               ),
               GoRoute(
-                path: '/tdee',
+                path: Routes.tdee,
                 builder: (context, state) {
                   return Consumer(
                     builder: (context, ref, child) {
@@ -256,7 +254,7 @@ class AppRouter {
                 },
               ),
               GoRoute(
-                path: '/macros_selector',
+                path: Routes.macrosSelector,
                 builder: (context, state) {
                   return Consumer(
                     builder: (context, ref, child) {
@@ -279,26 +277,25 @@ class AppRouter {
                 },
               ),
               GoRoute(
-                path: '/mymeals',
+                path: Routes.myMeals,
                 builder: (context, state) => const FavouritesMeals(),
                 routes: [
                   GoRoute(
-                    path: 'favorite_meal_detail',
+                    path: Routes.favoriteMealDetail,
                     builder: (context, state) {
                       final meal = state.extra as Meal;
-                      // //debugPrint('Navigating to FavoriteMealDetail for meal: ${meal.name}');
                       return FavoriteMealDetail(meal: meal);
                     },
                   ),
                 ],
               ),
               GoRoute(
-                path: '/associations',
+                path: Routes.associations,
                 builder: (context, state) =>
                     const CoachAthleteAssociationScreen(),
               ),
               GoRoute(
-                path: '/food_tracker',
+                path: Routes.foodTracker,
                 builder: (context, state) {
                   return Consumer(
                     builder: (context, ref, child) {
@@ -324,14 +321,13 @@ class AppRouter {
                 },
                 routes: [
                   GoRoute(
-                    path: 'food_selector',
+                    path: Routes.foodSelector,
                     builder: (context, state) {
                       final extra = state.extra as Map<String, dynamic>;
                       final mealMap = extra['meal'] as Map<String, dynamic>;
                       final meal = Meal.fromMap(mealMap);
                       final myFoodId = extra['myFoodId'] as String?;
                       final isFavoriteMeal = extra['isFavoriteMeal'] as bool;
-                      //     //debugPrint('Navigating to FoodSelector for meal: ${meal.name}');
                       return FoodSelector(
                         meal: meal,
                         myFoodId: myFoodId,
@@ -339,72 +335,61 @@ class AppRouter {
                       );
                     },
                   ),
-                  // Rotte per Diet Plan
                   GoRoute(
-                    path: 'diet_plan',
-                    builder: (context, state) {
-                      //debugPrint('Navigating to DietPlanScreen (creation mode)');
-                      return const DietPlanScreen();
-                    },
+                    path: Routes.dietPlan,
+                    builder: (context, state) => const DietPlanScreen(),
                   ),
                   GoRoute(
-                    path: 'diet_plan/edit',
+                    path: Routes.dietPlanEdit,
                     builder: (context, state) {
                       final dietPlan = state.extra as DietPlan;
-                      //debugPrint('Navigating to DietPlanScreen (edit mode) for dietPlan: ${dietPlan.name}');
                       return DietPlanScreen(existingDietPlan: dietPlan);
                     },
                   ),
                   GoRoute(
-                    path: 'view_diet_plans',
+                    path: Routes.viewDietPlans,
                     builder: (context, state) => const ViewDietPlansScreen(),
                   ),
                 ],
               ),
               GoRoute(
-                path: '/food_management',
+                path: Routes.foodManagement,
                 builder: (context, state) => const FoodManagement(),
               ),
               GoRoute(
-                path: '/exercises_list',
+                path: Routes.exercisesList,
                 builder: (context, state) => const ExercisesList(),
               ),
               GoRoute(
-                path: '/maxrmdashboard',
-                builder: (context, state) {
-                  //debugPrint('Navigating to MaxRMDashboard');
-                  return const MaxRMDashboard();
-                },
+                path: Routes.maxRmDashboard,
+                builder: (context, state) => const MaxRMDashboard(),
                 routes: [
                   GoRoute(
-                    path: 'exercise_stats/:exerciseId',
+                    path: Routes.exerciseStats,
                     builder: (context, state) {
                       final extra = state.extra as Map<String, dynamic>;
                       final exercise = extra['exercise'] as ExerciseModel;
                       final userId = extra['userId'] as String;
-                      //debugPrint('Navigating to ExerciseStats for exerciseId: ${exercise.id}, userId: $userId');
                       return ExerciseStats(
                         exercise: exercise,
-                        userId: userId, // Passing the user ID here
+                        userId: userId,
                       );
                     },
                   ),
                 ],
               ),
               GoRoute(
-                path: '/users_dashboard',
+                path: Routes.usersDashboard,
                 builder: (context, state) => const UsersDashboard(),
               ),
               GoRoute(
-                path: '/user_profile',
+                path: Routes.userProfile,
                 builder: (context, state) {
                   final extra = state.extra as Map<String, dynamic>;
                   final userId = extra['userId'] as String;
                   return UserProfile(userId: userId);
                 },
               ),
-
-              // Altre rotte...
             ],
           ),
         ],
@@ -434,9 +419,10 @@ class AuthWrapper extends ConsumerWidget {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (context.mounted) {
                     if (userRole == 'admin' || userRole == 'coach') {
-                      context.go('/programs_screen');
+                      context.go(Routes.programsScreen);
                     } else {
-                      context.go('/user_programs', extra: {'userId': user.uid});
+                      context
+                          .go(Routes.userPrograms, extra: {'userId': user.uid});
                     }
                   }
                 });
