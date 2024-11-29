@@ -5,6 +5,7 @@ import '../../exerciseManager/exercises_services.dart';
 import '../../exerciseManager/exercises_manager.dart';
 import '../../Main/app_theme.dart';
 import '../../UI/components/dialog.dart';
+import '../../common/generic_autocomplete.dart';
 
 class AddExerciseDialog extends HookConsumerWidget {
   final ExercisesService exercisesService;
@@ -21,6 +22,9 @@ class AddExerciseDialog extends HookConsumerWidget {
     final nameController = useTextEditingController();
     final muscleGroupController = useTextEditingController();
     final typeController = useTextEditingController();
+
+    // State per i muscoli target selezionati
+    final selectedMuscleGroups = useState<List<String>>([]);
 
     final muscleGroupsStream = ref.watch(muscleGroupsProvider);
     final exerciseTypesStream = ref.watch(exerciseTypesProvider);
@@ -64,61 +68,150 @@ class AddExerciseDialog extends HookConsumerWidget {
       );
     }
 
-    Widget buildAutocomplete({
-      required AsyncValue<List<String>> optionsValue,
-      required TextEditingController controller,
-      required String label,
-      required String errorMessage,
-      required IconData icon,
-    }) {
-      return optionsValue.when(
-        data: (options) => Container(
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-            border: Border.all(
-              color: colorScheme.outline.withOpacity(0.1),
+    Widget buildMuscleGroupsSelector() {
+      return muscleGroupsStream.when(
+        data: (muscleGroups) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            GenericAutocompleteField<String>(
+              controller: muscleGroupController,
+              labelText: 'Muscolo Target',
+              prefixIcon: Icons.sports_gymnastics,
+              suggestionsCallback: (pattern) async {
+                return muscleGroups
+                    .where((muscleGroup) =>
+                        muscleGroup
+                            .toLowerCase()
+                            .contains(pattern.toLowerCase()) &&
+                        !selectedMuscleGroups.value.contains(muscleGroup))
+                    .toList();
+              },
+              itemBuilder: (context, muscleGroup) => ListTile(
+                title: Text(muscleGroup),
+                leading: const Icon(Icons.fitness_center),
+              ),
+              onSelected: (muscleGroup) {
+                muscleGroupController.clear();
+                if (!selectedMuscleGroups.value.contains(muscleGroup)) {
+                  selectedMuscleGroups.value = [
+                    ...selectedMuscleGroups.value,
+                    muscleGroup
+                  ];
+                }
+              },
             ),
+            if (selectedMuscleGroups.value.isNotEmpty) ...[
+              SizedBox(height: AppTheme.spacing.md),
+              Wrap(
+                spacing: AppTheme.spacing.sm,
+                runSpacing: AppTheme.spacing.sm,
+                children: selectedMuscleGroups.value.map((muscleGroup) {
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(AppTheme.radii.full),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius:
+                            BorderRadius.circular(AppTheme.radii.full),
+                        onTap: () {
+                          selectedMuscleGroups.value = selectedMuscleGroups
+                              .value
+                              .where((m) => m != muscleGroup)
+                              .toList();
+                        },
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppTheme.spacing.md,
+                            vertical: AppTheme.spacing.sm,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.fitness_center,
+                                size: 16,
+                                color: colorScheme.primary,
+                              ),
+                              SizedBox(width: AppTheme.spacing.xs),
+                              Text(
+                                muscleGroup,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: colorScheme.primary,
+                                ),
+                              ),
+                              SizedBox(width: AppTheme.spacing.xs),
+                              Icon(
+                                Icons.close,
+                                size: 16,
+                                color: colorScheme.primary,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ],
+        ),
+        loading: () => const Center(
+          child: Padding(
+            padding: EdgeInsets.all(16.0),
+            child: CircularProgressIndicator(),
           ),
-          child: Autocomplete<String>(
-            optionsBuilder: (textEditingValue) {
-              return options.where((option) => option
-                  .toLowerCase()
-                  .startsWith(textEditingValue.text.toLowerCase()));
-            },
-            onSelected: (selection) {
-              controller.text = selection;
-            },
-            fieldViewBuilder:
-                (context, textEditingController, focusNode, onFieldSubmitted) {
-              return TextFormField(
-                controller: textEditingController,
-                focusNode: focusNode,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: colorScheme.onSurface,
-                ),
-                decoration: InputDecoration(
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.all(AppTheme.spacing.md),
-                  labelText: label,
-                  labelStyle: theme.textTheme.bodyLarge?.copyWith(
-                    color: colorScheme.onSurfaceVariant.withOpacity(0.7),
-                  ),
-                  prefixIcon: Icon(
-                    icon,
-                    color: colorScheme.onSurfaceVariant.withOpacity(0.5),
-                    size: 20,
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return errorMessage;
-                  }
-                  return null;
-                },
-              );
-            },
+        ),
+        error: (error, stack) => Container(
+          padding: const EdgeInsets.all(16.0),
+          decoration: BoxDecoration(
+            color: colorScheme.errorContainer.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.error_outline,
+                color: colorScheme.error,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Errore nel caricamento: $error',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.error,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    Widget buildTypeSelector() {
+      return exerciseTypesStream.when(
+        data: (types) => GenericAutocompleteField<String>(
+          controller: typeController,
+          labelText: 'Tipologia Esercizio',
+          prefixIcon: Icons.category_outlined,
+          suggestionsCallback: (pattern) async {
+            return types
+                .where((type) =>
+                    type.toLowerCase().contains(pattern.toLowerCase()))
+                .toList();
+          },
+          itemBuilder: (context, type) => ListTile(
+            title: Text(type),
+            leading: const Icon(Icons.category_outlined),
+          ),
+          onSelected: (type) {
+            typeController.text = type;
+          },
         ),
         loading: () => const Center(
           child: Padding(
@@ -175,18 +268,33 @@ class AddExerciseDialog extends HookConsumerWidget {
           label: 'Crea',
           icon: Icons.add,
           onPressed: () {
-            if (formKey.currentState!.validate()) {
+            if (formKey.currentState!.validate() &&
+                selectedMuscleGroups.value.isNotEmpty) {
               final name = nameController.text.trim();
-              final muscleGroup = [muscleGroupController.text.trim()];
               final type = typeController.text.trim();
 
               Navigator.pop(context);
 
               exercisesService.addExercise(
                 name,
-                muscleGroup,
+                selectedMuscleGroups.value,
                 type,
                 userId,
+              );
+            } else if (selectedMuscleGroups.value.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      Icon(Icons.warning_amber_rounded,
+                          color: colorScheme.onError),
+                      const SizedBox(width: 8),
+                      const Text('Seleziona almeno un muscolo target'),
+                    ],
+                  ),
+                  backgroundColor: colorScheme.error,
+                  behavior: SnackBarBehavior.floating,
+                ),
               );
             }
           },
@@ -218,21 +326,9 @@ class AddExerciseDialog extends HookConsumerWidget {
                 },
               ),
               SizedBox(height: AppTheme.spacing.lg),
-              buildAutocomplete(
-                optionsValue: muscleGroupsStream,
-                controller: muscleGroupController,
-                label: 'Muscolo Target',
-                errorMessage: 'Inserire Muscolo Target',
-                icon: Icons.sports_gymnastics,
-              ),
+              buildMuscleGroupsSelector(),
               SizedBox(height: AppTheme.spacing.lg),
-              buildAutocomplete(
-                optionsValue: exerciseTypesStream,
-                controller: typeController,
-                label: 'Tipologia Esercizio',
-                errorMessage: 'Inserire tipologia esercizio',
-                icon: Icons.category_outlined,
-              ),
+              buildTypeSelector(),
             ],
           ),
         ),
