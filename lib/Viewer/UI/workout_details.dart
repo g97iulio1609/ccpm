@@ -18,6 +18,10 @@ import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 // Add note provider
 final exerciseNotesProvider = StateProvider<Map<String, String>>((ref) => {});
 
+// Add cache providers at the top level
+final _exerciseCacheProvider = StateProvider<Map<String, List<Map<String, dynamic>>>>((ref) => {});
+final _workoutNameCacheProvider = StateProvider<Map<String, String>>((ref) => {});
+
 class WorkoutDetails extends ConsumerStatefulWidget {
   final String programId;
   final String userId;
@@ -42,6 +46,9 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   final List<StreamSubscription> _subscriptions = [];
   bool _isInitialized = false;
   final Map<String, ValueNotifier<double>> _weightNotifiers = {};
+
+  // Add memoization cache
+  final Map<String, Map<String?, List<Map<String, dynamic>>>> _groupedExercisesCache = {};
 
   @override
   void initState() {
@@ -225,10 +232,20 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   void _updateWorkoutName() async {
     final currentName = ref.read(currentWorkoutNameProvider);
     if (currentName != widget.workoutId) {
-      final workoutName =
-          await _workoutService.fetchWorkoutName(widget.workoutId);
+      // Check cache first
+      final cachedName = ref.read(_workoutNameCacheProvider)[widget.workoutId];
+      if (cachedName != null) {
+        ref.read(currentWorkoutNameProvider.notifier).state = cachedName;
+        return;
+      }
+      
+      final workoutName = await _workoutService.fetchWorkoutName(widget.workoutId);
       if (mounted) {
         ref.read(currentWorkoutNameProvider.notifier).state = workoutName;
+        // Update cache
+        final cache = Map<String, String>.from(ref.read(_workoutNameCacheProvider));
+        cache[widget.workoutId] = workoutName;
+        ref.read(_workoutNameCacheProvider.notifier).state = cache;
       }
     }
   }
@@ -236,11 +253,26 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   Future<void> _fetchExercises() async {
     if (!mounted) return;
 
+    // Check cache first
+    final cachedExercises = ref.read(_exerciseCacheProvider)[widget.workoutId];
+    if (cachedExercises != null) {
+      ref.read(exercisesProvider.notifier).state = cachedExercises;
+      // Setup subscriptions for cached exercises
+      for (final exercise in cachedExercises) {
+        _subscribeToSeriesUpdates(exercise);
+      }
+      return;
+    }
+
     ref.read(loadingProvider.notifier).state = true;
     try {
       final exercises = await _workoutService.fetchExercises(widget.workoutId);
       if (mounted) {
         ref.read(exercisesProvider.notifier).state = exercises;
+        // Update cache
+        final cache = Map<String, List<Map<String, dynamic>>>.from(ref.read(_exerciseCacheProvider));
+        cache[widget.workoutId] = exercises;
+        ref.read(_exerciseCacheProvider.notifier).state = cache;
       }
 
       for (final exercise in exercises) {
@@ -256,6 +288,15 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   }
 
   void _subscribeToSeriesUpdates(Map<String, dynamic> exercise) {
+    // Cancel existing subscription if any
+    _subscriptions.removeWhere((sub) {
+      if (sub.hashCode.toString().contains(exercise['id'])) {
+        sub.cancel();
+        return true;
+      }
+      return false;
+    });
+
     final seriesQuery = FirebaseFirestore.instance
         .collection('series')
         .where('exerciseId', isEqualTo: exercise['id'])
@@ -264,16 +305,22 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     final subscription = seriesQuery.snapshots().listen((querySnapshot) {
       if (!mounted) return;
 
-      final updatedExercises = ref.read(exercisesProvider.notifier).state;
-      final index =
-          updatedExercises.indexWhere((e) => e['id'] == exercise['id']);
+      final updatedExercises = ref.read(exercisesProvider);
+      final index = updatedExercises.indexWhere((e) => e['id'] == exercise['id']);
       if (index != -1) {
-        updatedExercises[index]['series'] = querySnapshot.docs
-            .map((doc) => doc.data()..['id'] = doc.id)
+        final newExercises = List<Map<String, dynamic>>.from(updatedExercises);
+        newExercises[index] = Map<String, dynamic>.from(newExercises[index]);
+        newExercises[index]['series'] = querySnapshot.docs
+            .map((doc) => {...doc.data(), 'id': doc.id})
             .toList();
+            
         if (mounted) {
-          ref.read(exercisesProvider.notifier).state =
-              List.from(updatedExercises);
+          ref.read(exercisesProvider.notifier).state = newExercises;
+          
+          // Update cache
+          final cache = Map<String, List<Map<String, dynamic>>>.from(ref.read(_exerciseCacheProvider));
+          cache[widget.workoutId] = newExercises;
+          ref.read(_exerciseCacheProvider.notifier).state = cache;
         }
       }
     });
@@ -281,8 +328,28 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     _subscriptions.add(subscription);
   }
 
+  Map<String?, List<Map<String, dynamic>>> _groupExercisesBySuperSet(
+      List<Map<String, dynamic>> exercises) {
+    // Use memoization for expensive calculations
+    final cacheKey = exercises.map((e) => e['id']).join('_');
+    if (_groupedExercisesCache.containsKey(cacheKey)) {
+      return _groupedExercisesCache[cacheKey]!;
+    }
+
+    final groupedExercises = <String?, List<Map<String, dynamic>>>{};
+    for (final exercise in exercises) {
+      final superSetId = exercise['superSetId'];
+      groupedExercises.putIfAbsent(superSetId, () => []).add(exercise);
+    }
+    
+    // Cache the result
+    _groupedExercisesCache[cacheKey] = groupedExercises;
+    return groupedExercises;
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Use select instead of watch to prevent unnecessary rebuilds
     final loading = ref.watch(loadingProvider);
     final exercises = ref.watch(exercisesProvider);
     final colorScheme = Theme.of(context).colorScheme;
@@ -307,6 +374,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
               : ListView.builder(
                   padding: EdgeInsets.all(AppTheme.spacing.md),
                   itemCount: exercises.length,
+                  // Add key to preserve scroll position and reduce rebuilds
+                  key: PageStorageKey('workout_exercises_${widget.workoutId}'),
                   itemBuilder: (context, index) =>
                       _buildExerciseCard(exercises[index], context),
                 ),
@@ -328,16 +397,6 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     } else {
       return _buildSingleExerciseCard(exercise, context);
     }
-  }
-
-  Map<String?, List<Map<String, dynamic>>> _groupExercisesBySuperSet(
-      List<Map<String, dynamic>> exercises) {
-    final groupedExercises = <String?, List<Map<String, dynamic>>>{};
-    for (final exercise in exercises) {
-      final superSetId = exercise['superSetId'];
-      groupedExercises.putIfAbsent(superSetId, () => []).add(exercise);
-    }
-    return groupedExercises;
   }
 
   Widget _buildSuperSetCard(
