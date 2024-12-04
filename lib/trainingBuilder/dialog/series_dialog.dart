@@ -12,7 +12,7 @@ import 'package:alphanessone/UI/components/series_input_fields.dart';
 class SeriesDialog extends StatefulWidget {
   final ExerciseRecordService exerciseRecordService;
   final String athleteId;
-  final String exerciseId;
+  final String exerciseId;  // This is the original exercise ID
   final int weekIndex;
   final Exercise exercise;
   final String exerciseType;
@@ -49,7 +49,7 @@ class _SeriesDialogState extends State<SeriesDialog> {
       currentSeriesGroup: widget.currentSeriesGroup,
       isIndividualEdit: widget.isIndividualEdit,
       latestMaxWeight: widget.latestMaxWeight,
-      exerciseType: widget.exerciseType,
+      originalExerciseId: widget.exercise.exerciseId,  // Pass the original exercise ID
     );
   }
 
@@ -370,69 +370,49 @@ class _SeriesDialogState extends State<SeriesDialog> {
 }
 
 class SeriesFormController {
-  final TextEditingController repsController;
-  final TextEditingController maxRepsController;
-  final TextEditingController setsController;
-  final TextEditingController intensityController;
-  final TextEditingController maxIntensityController;
-  final TextEditingController rpeController;
-  final TextEditingController maxRpeController;
-  final TextEditingController weightController;
-  final TextEditingController maxWeightController;
+  final TextEditingController repsController = TextEditingController();
+  final TextEditingController maxRepsController = TextEditingController();
+  final TextEditingController setsController = TextEditingController();
+  final TextEditingController intensityController = TextEditingController();
+  final TextEditingController maxIntensityController = TextEditingController();
+  final TextEditingController rpeController = TextEditingController();
+  final TextEditingController maxRpeController = TextEditingController();
+  final TextEditingController weightController = TextEditingController();
+  final TextEditingController maxWeightController = TextEditingController();
 
-  final FocusNode repsNode;
-  final FocusNode maxRepsNode;
-  final FocusNode setsNode;
-  final FocusNode intensityNode;
-  final FocusNode maxIntensityNode;
-  final FocusNode rpeNode;
-  final FocusNode maxRpeNode;
-  final FocusNode weightNode;
-  final FocusNode maxWeightNode;
+  final FocusNode repsNode = FocusNode();
+  final FocusNode maxRepsNode = FocusNode();
+  final FocusNode setsNode = FocusNode();
+  final FocusNode intensityNode = FocusNode();
+  final FocusNode maxIntensityNode = FocusNode();
+  final FocusNode rpeNode = FocusNode();
+  final FocusNode maxRpeNode = FocusNode();
+  final FocusNode weightNode = FocusNode();
+  final FocusNode maxWeightNode = FocusNode();
 
+  final List<Series>? currentSeriesGroup;
   final bool isIndividualEdit;
   final num latestMaxWeight;
-  final List<Series>? currentSeriesGroup;
+  final String? originalExerciseId;
 
   SeriesFormController({
-    List<Series>? currentSeriesGroup,
+    this.currentSeriesGroup,
     required this.isIndividualEdit,
     required this.latestMaxWeight,
-    required String exerciseType,
-  })  : repsController = TextEditingController(),
-        maxRepsController = TextEditingController(),
-        setsController = TextEditingController(text: '1'),
-        intensityController = TextEditingController(),
-        maxIntensityController = TextEditingController(),
-        rpeController = TextEditingController(),
-        maxRpeController = TextEditingController(),
-        weightController = TextEditingController(),
-        maxWeightController = TextEditingController(),
-        repsNode = FocusNode(),
-        maxRepsNode = FocusNode(),
-        setsNode = FocusNode(),
-        intensityNode = FocusNode(),
-        maxIntensityNode = FocusNode(),
-        rpeNode = FocusNode(),
-        maxRpeNode = FocusNode(),
-        weightNode = FocusNode(),
-        maxWeightNode = FocusNode(),
-        currentSeriesGroup = currentSeriesGroup {
-    if (currentSeriesGroup != null && currentSeriesGroup.isNotEmpty) {
-      final firstSeries = currentSeriesGroup.first;
+    this.originalExerciseId,
+  }) {
+    if (currentSeriesGroup != null && currentSeriesGroup!.isNotEmpty) {
+      final firstSeries = currentSeriesGroup!.first;
       repsController.text = firstSeries.reps.toString();
-      maxRepsController.text = firstSeries.maxReps?.toString() ?? '';
+      setsController.text = currentSeriesGroup!.length.toString();
+      intensityController.text = firstSeries.intensity;
+      rpeController.text = firstSeries.rpe;
+      weightController.text = firstSeries.weight.toString();
 
-      if (!isIndividualEdit) {
-        setsController.text = currentSeriesGroup.length.toString();
-      }
-
-      intensityController.text = firstSeries.intensity ?? '';
-      maxIntensityController.text = firstSeries.maxIntensity ?? '';
-      rpeController.text = firstSeries.rpe ?? '';
-      maxRpeController.text = firstSeries.maxRpe ?? '';
-      weightController.text = firstSeries.weight.toString() ?? '';
-      maxWeightController.text = firstSeries.maxWeight?.toString() ?? '';
+      if (firstSeries.maxReps != null) maxRepsController.text = firstSeries.maxReps.toString();
+      if (firstSeries.maxIntensity != null) maxIntensityController.text = firstSeries.maxIntensity!;
+      if (firstSeries.maxRpe != null) maxRpeController.text = firstSeries.maxRpe!;
+      if (firstSeries.maxWeight != null) maxWeightController.text = firstSeries.maxWeight.toString();
     }
   }
 
@@ -477,8 +457,7 @@ class SeriesFormController {
   void updateMaxWeightFromMaxIntensity() {
     final maxIntensity = double.tryParse(maxIntensityController.text) ?? 0.0;
     if (maxIntensity > 0) {
-      final maxWeight =
-          (latestMaxWeight * maxIntensity / 100).toStringAsFixed(1);
+      final maxWeight = (latestMaxWeight * maxIntensity / 100).toStringAsFixed(1);
       maxWeightController.text = maxWeight;
     }
   }
@@ -486,8 +465,7 @@ class SeriesFormController {
   void updateMaxIntensityFromMaxWeight() {
     final maxWeight = double.tryParse(maxWeightController.text) ?? 0.0;
     if (maxWeight > 0 && latestMaxWeight > 0) {
-      final maxIntensity =
-          ((maxWeight / latestMaxWeight) * 100).toStringAsFixed(1);
+      final maxIntensity = ((maxWeight / latestMaxWeight) * 100).toStringAsFixed(1);
       maxIntensityController.text = maxIntensity;
     }
   }
@@ -521,6 +499,7 @@ class SeriesFormController {
 
       newSeries.add(Series(
         serieId: serieId,
+        originalExerciseId: originalExerciseId,
         reps: reps,
         maxReps: maxReps,
         sets: 1,

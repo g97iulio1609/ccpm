@@ -7,7 +7,6 @@ import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
 import 'package:alphanessone/trainingBuilder/models/series_model.dart';
 import 'package:alphanessone/trainingBuilder/series_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/training_program_services.dart';
@@ -19,8 +18,10 @@ import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 final exerciseNotesProvider = StateProvider<Map<String, String>>((ref) => {});
 
 // Add cache providers at the top level
-final _exerciseCacheProvider = StateProvider<Map<String, List<Map<String, dynamic>>>>((ref) => {});
-final _workoutNameCacheProvider = StateProvider<Map<String, String>>((ref) => {});
+final _exerciseCacheProvider =
+    StateProvider<Map<String, List<Map<String, dynamic>>>>((ref) => {});
+final _workoutNameCacheProvider =
+    StateProvider<Map<String, String>>((ref) => {});
 
 class WorkoutDetails extends ConsumerStatefulWidget {
   final String programId;
@@ -42,35 +43,37 @@ class WorkoutDetails extends ConsumerStatefulWidget {
 
 class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   final TrainingProgramServices _workoutService = TrainingProgramServices();
-  final ExerciseRecordService _exerciseRecordService = ExerciseRecordService(FirebaseFirestore.instance);
+  late final ExerciseRecordService _exerciseRecordService;
   final List<StreamSubscription> _subscriptions = [];
   bool _isInitialized = false;
   final Map<String, ValueNotifier<double>> _weightNotifiers = {};
 
   // Add memoization cache
-  final Map<String, Map<String?, List<Map<String, dynamic>>>> _groupedExercisesCache = {};
+  final Map<String, Map<String?, List<Map<String, dynamic>>>>
+      _groupedExercisesCache = {};
 
   @override
   void initState() {
     super.initState();
+    _exerciseRecordService = ref.read(exerciseRecordServiceProvider);
     _initializeWorkout();
     _loadExerciseNotes();
   }
 
   void _loadExerciseNotes() async {
     if (!mounted) return;
-    
+
     try {
       final notesSnapshot = await FirebaseFirestore.instance
           .collection('exercise_notes')
           .where('workoutId', isEqualTo: widget.workoutId)
           .get();
-      
+
       final notes = {
         for (var doc in notesSnapshot.docs)
           doc['exerciseId'] as String: doc['note'] as String
       };
-      
+
       if (mounted) {
         ref.read(exerciseNotesProvider.notifier).state = notes;
       }
@@ -79,10 +82,12 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     }
   }
 
-  Future<void> _showNoteDialog(String exerciseId, String exerciseName, [String? existingNote]) async {
-    final TextEditingController noteController = TextEditingController(text: existingNote);
+  Future<void> _showNoteDialog(String exerciseId, String exerciseName,
+      [String? existingNote]) async {
+    final TextEditingController noteController =
+        TextEditingController(text: existingNote);
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -90,8 +95,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
         title: Text(
           'Note per $exerciseName',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            color: colorScheme.onSurface,
-          ),
+                color: colorScheme.onSurface,
+              ),
         ),
         content: TextField(
           controller: noteController,
@@ -159,16 +164,17 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       final docRef = FirebaseFirestore.instance
           .collection('exercise_notes')
           .doc('${widget.workoutId}_$exerciseId');
-          
+
       await docRef.set({
         'workoutId': widget.workoutId,
         'exerciseId': exerciseId,
         'note': note,
         'updatedAt': FieldValue.serverTimestamp(),
       });
-      
+
       if (mounted) {
-        final currentNotes = Map<String, String>.from(ref.read(exerciseNotesProvider));
+        final currentNotes =
+            Map<String, String>.from(ref.read(exerciseNotesProvider));
         currentNotes[exerciseId] = note;
         ref.read(exerciseNotesProvider.notifier).state = currentNotes;
       }
@@ -183,9 +189,10 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
           .collection('exercise_notes')
           .doc('${widget.workoutId}_$exerciseId')
           .delete();
-      
+
       if (mounted) {
-        final currentNotes = Map<String, String>.from(ref.read(exerciseNotesProvider));
+        final currentNotes =
+            Map<String, String>.from(ref.read(exerciseNotesProvider));
         currentNotes.remove(exerciseId);
         ref.read(exerciseNotesProvider.notifier).state = currentNotes;
       }
@@ -238,12 +245,14 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
         ref.read(currentWorkoutNameProvider.notifier).state = cachedName;
         return;
       }
-      
-      final workoutName = await _workoutService.fetchWorkoutName(widget.workoutId);
+
+      final workoutName =
+          await _workoutService.fetchWorkoutName(widget.workoutId);
       if (mounted) {
         ref.read(currentWorkoutNameProvider.notifier).state = workoutName;
         // Update cache
-        final cache = Map<String, String>.from(ref.read(_workoutNameCacheProvider));
+        final cache =
+            Map<String, String>.from(ref.read(_workoutNameCacheProvider));
         cache[widget.workoutId] = workoutName;
         ref.read(_workoutNameCacheProvider.notifier).state = cache;
       }
@@ -270,7 +279,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       if (mounted) {
         ref.read(exercisesProvider.notifier).state = exercises;
         // Update cache
-        final cache = Map<String, List<Map<String, dynamic>>>.from(ref.read(_exerciseCacheProvider));
+        final cache = Map<String, List<Map<String, dynamic>>>.from(
+            ref.read(_exerciseCacheProvider));
         cache[widget.workoutId] = exercises;
         ref.read(_exerciseCacheProvider.notifier).state = cache;
       }
@@ -306,19 +316,21 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       if (!mounted) return;
 
       final updatedExercises = ref.read(exercisesProvider);
-      final index = updatedExercises.indexWhere((e) => e['id'] == exercise['id']);
+      final index =
+          updatedExercises.indexWhere((e) => e['id'] == exercise['id']);
       if (index != -1) {
         final newExercises = List<Map<String, dynamic>>.from(updatedExercises);
         newExercises[index] = Map<String, dynamic>.from(newExercises[index]);
         newExercises[index]['series'] = querySnapshot.docs
             .map((doc) => {...doc.data(), 'id': doc.id})
             .toList();
-            
+
         if (mounted) {
           ref.read(exercisesProvider.notifier).state = newExercises;
-          
+
           // Update cache
-          final cache = Map<String, List<Map<String, dynamic>>>.from(ref.read(_exerciseCacheProvider));
+          final cache = Map<String, List<Map<String, dynamic>>>.from(
+              ref.read(_exerciseCacheProvider));
           cache[widget.workoutId] = newExercises;
           ref.read(_exerciseCacheProvider.notifier).state = cache;
         }
@@ -341,7 +353,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       final superSetId = exercise['superSetId'];
       groupedExercises.putIfAbsent(superSetId, () => []).add(exercise);
     }
-    
+
     // Cache the result
     _groupedExercisesCache[cacheKey] = groupedExercises;
     return groupedExercises;
@@ -660,8 +672,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: series != null
                 ? GestureDetector(
-                    onTap: () => _showEditSeriesDialog(
-                        series['exerciseId'], [series]),
+                    onTap: () =>
+                        _showEditSeriesDialog(series['exerciseId'], [series]),
                     child: Text(
                       _formatSeriesValue(series, field),
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -717,7 +729,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     final hasNote = notes.containsKey(exercise['id']);
     final userRole = ref.watch(userRoleProvider);
     final isAdmin = userRole == 'admin';
-    
+
     return Row(
       children: [
         if (hasNote)
@@ -754,9 +766,9 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
             child: Text(
               "${exercise['name']} ${exercise['variant'] ?? ''}",
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: colorScheme.onSurface,
-                fontWeight: FontWeight.w600,
-              ),
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
               textAlign: TextAlign.center,
             ),
           ),
@@ -1015,91 +1027,85 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   Future<void> _recalculateWeights(
       Map<String, dynamic> exercise, String newExerciseId) async {
     final exerciseRecordService = ref.read(exerciseRecordServiceProvider);
-    final newExerciseRecord = await exerciseRecordService.getLatestExerciseRecord(
-      userId: widget.userId,
-      exerciseId: newExerciseId,
-    );
-    final latestMaxWeight = newExerciseRecord?.maxWeight?.toDouble() ?? 0.0;
 
-    final series = exercise['series'] as List<Map<String, dynamic>>;
+    // Ottieni l'originalExerciseId dalle serie
+    final series = exercise['series'] as List<dynamic>;
+    final originalExerciseId = series.isNotEmpty
+        ? (series.first as Map<String, dynamic>)['originalExerciseId'] ??
+            newExerciseId
+        : newExerciseId;
 
-    for (var serie in series) {
-      final minIntensity = double.parse(serie['intensity']);
-      final maxIntensity = serie['maxIntensity'] != null
-          ? double.parse(serie['maxIntensity'])
-          : null;
+    final recordsStream = exerciseRecordService
+        .getExerciseRecords(
+          userId: widget.userId,
+          exerciseId: originalExerciseId,
+        )
+        .map((records) => records.isNotEmpty
+            ? records.reduce((a, b) => a.date.compareTo(b.date) > 0 ? a : b)
+            : null);
 
-      // Calcolo di weight
-      final newWeight = SeriesUtils.calculateWeightFromIntensity(
-          latestMaxWeight, minIntensity);
-      final roundedWeight =
-          SeriesUtils.roundWeight(newWeight, exercise['type'] ?? '');
+    final latestRecord = await recordsStream.first;
 
-      // Calcolo di maxWeight
-      double? newMaxWeight;
-      if (maxIntensity != null && maxIntensity > 0) {
-        final calculatedMaxWeight = SeriesUtils.calculateWeightFromIntensity(
-            latestMaxWeight, maxIntensity);
-        newMaxWeight = SeriesUtils.roundWeight(
-            calculatedMaxWeight, exercise['type'] ?? '');
-      } else {
-        newMaxWeight = null;
-      }
-
-      // Calcolo del nuovo RPE e RPE Max
-      final newRpe = SeriesUtils.calculateRPE(
-                  roundedWeight, latestMaxWeight, serie['reps'])
-              ?.toStringAsFixed(1) ??
-          '';
-      final newMaxRpe = newMaxWeight != null
-          ? SeriesUtils.calculateRPE(
-                  newMaxWeight, latestMaxWeight, serie['reps'])
-              ?.toStringAsFixed(1)
-          : null;
-
-      // Mantieni intensity, maxIntensity, rpe e rpeMax separati
-      final newIntensity =
-          minIntensity.toString(); // Mantieni solo il valore di intensity
-      final rpeValue =
-          newRpe; // Mantieni solo il valore di rpe, senza concatenare rpeMax
-      final rpeMaxValue = newMaxRpe; // Mantieni il valore di rpeMax separato
-
-      await _workoutService.updateSeriesWithMaxValues(
-        serie['id'] ?? '',
-        serie['reps'],
-        serie['maxReps'],
-        roundedWeight,
-        newMaxWeight,
-        serie['reps_done'] ?? 0,
-        serie['weight_done'] ?? 0.0,
-      );
-
-      // Aggiorna i valori locali
-      serie['weight'] = roundedWeight;
-      serie['maxWeight'] = newMaxWeight;
-      serie['intensity'] = newIntensity; // Aggiorna solo con intensity
-      serie['rpe'] = rpeValue; // Aggiorna solo con rpe
-      serie['rpeMax'] = rpeMaxValue; // Aggiorna solo con rpeMax
+    num latestMaxWeight = 0.0;
+    if (latestRecord != null) {
+      latestMaxWeight = latestRecord.maxWeight;
+    } else {
+      latestMaxWeight = 0.0;
     }
 
-    setState(() {});
+    // Ensure we have a weight notifier for this exercise
+    _weightNotifiers[exercise['id']] ??= ValueNotifier(0.0);
+
+    if (!mounted) return;
+
+    await showDialog(
+      context: context,
+      builder: (context) => SeriesDialog(
+        exerciseRecordService: _exerciseRecordService,
+        athleteId: widget.userId,
+        exerciseId: exercise['id'],
+        exerciseType: exercise['type'] ?? 'weight',
+        weekIndex: 0, // Not relevant in this context
+        exercise: Exercise.fromMap(exercise),
+        currentSeriesGroup: series
+            .map((s) => Series.fromMap(s as Map<String, dynamic>))
+            .toList(),
+        latestMaxWeight: latestMaxWeight.toDouble(),
+        weightNotifier: _weightNotifiers[exercise['id']]!,
+      ),
+    );
   }
 
-  void _showSeriesEditDialog(Map<String, dynamic> exercise, List<Map<String, dynamic>> series) async {
+  void _showSeriesEditDialog(
+      Map<String, dynamic> exercise, List<Map<String, dynamic>> series) async {
     final colorScheme = Theme.of(context).colorScheme;
-    
-    // Convert the series data to Series model
-    final seriesList = series.map((s) => Series.fromMap({
-      ...s,
-      'exerciseId': exercise['id'],
-    })).toList();
 
-    // Get latest max weight
-    final latestExerciseRecord = await _exerciseRecordService.getLatestExerciseRecord(
-      userId: widget.userId,
-      exerciseId: exercise['id'],
-    );
-    final latestMaxWeight = latestExerciseRecord?.maxWeight ?? 0.0;
+    // Convert the series data to Series model
+    final List<Series> seriesList =
+        series.map((s) => Series.fromMap(s)).toList();
+
+    final originalExerciseId = seriesList.first.originalExerciseId;
+    debugPrint('originalExerciseId: $originalExerciseId');
+
+    // Create a stream for the exercise records
+    final recordsStream = _exerciseRecordService
+        .getExerciseRecords(
+          userId: widget.userId,
+          exerciseId: originalExerciseId ?? exercise['id'],
+        )
+        .map((records) => records.isNotEmpty
+            ? records.reduce((a, b) => a.date.compareTo(b.date) > 0 ? a : b)
+            : null);
+
+    // Get the latest record
+    final latestRecord = await recordsStream.first;
+
+    num latestMaxWeight = 0.0;
+    if (latestRecord != null) {
+      latestMaxWeight = latestRecord.maxWeight;
+    } else {
+      latestMaxWeight = 0.0;
+    }
 
     // Ensure we have a weight notifier for this exercise
     _weightNotifiers[exercise['id']] ??= ValueNotifier(0.0);
@@ -1116,14 +1122,15 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
         weekIndex: 0, // Not relevant in this context
         exercise: Exercise.fromMap(exercise),
         currentSeriesGroup: seriesList,
-        latestMaxWeight: latestMaxWeight,
+        latestMaxWeight: latestMaxWeight.toDouble(),
         weightNotifier: _weightNotifiers[exercise['id']]!,
       ),
     );
   }
 
-  void _showEditSeriesDialog(Map<String, dynamic> exercise, List<Map<String, dynamic>> series) async {
-     _showSeriesEditDialog(exercise, series);
+  void _showEditSeriesDialog(
+      Map<String, dynamic> exercise, List<Map<String, dynamic>> series) {
+    _showSeriesEditDialog(exercise, series);
   }
 
   bool _isSeriesDone(Map<String, dynamic> seriesData) {

@@ -20,8 +20,13 @@ class SeriesController extends ChangeNotifier {
     }
 
     final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+    
+    // Use the exerciseId as originalExerciseId
+    final originalExerciseId = exercise.exerciseId;
+    debugPrint('Original Exercise ID: $originalExerciseId');
+    
     final latestMaxWeight = await SeriesUtils.getLatestMaxWeight(
-        exerciseRecordService, program.athleteId, exercise.exerciseId ?? '');
+        exerciseRecordService, program.athleteId, originalExerciseId ?? '');
 
     if (!context.mounted) return;
 
@@ -29,6 +34,11 @@ class SeriesController extends ChangeNotifier {
         context, exercise, weekIndex, null, exercise.type, latestMaxWeight);
 
     if (seriesList != null && seriesList.isNotEmpty) {
+      // Set originalExerciseId for each series
+      for (var series in seriesList) {
+        series.originalExerciseId = originalExerciseId;
+      }
+      
       exercise.series.addAll(seriesList);
       await SeriesUtils.updateSeriesWeights(
           program, weekIndex, workoutIndex, exerciseIndex, exerciseRecordService);

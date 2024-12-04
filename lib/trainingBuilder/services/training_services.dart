@@ -219,9 +219,7 @@ class FirestoreService {
         .orderBy('order')
         .get();
 
-    return seriesSnapshot.docs
-        .map((doc) => Series.fromFirestore(doc))
-        .toList();
+    return seriesSnapshot.docs.map((doc) => Series.fromFirestore(doc)).toList();
   }
 
   Future<void> addOrUpdateTrainingProgram(TrainingProgram program) async {
@@ -243,8 +241,7 @@ class FirestoreService {
 
   Future<void> _addOrUpdateProgram(
       WriteBatch batch, TrainingProgram program) async {
-    DocumentReference programRef =
-        _db.collection('programs').doc(program.id);
+    DocumentReference programRef = _db.collection('programs').doc(program.id);
     batch.set(
       programRef,
       program.toMap(),
@@ -327,7 +324,9 @@ class FirestoreService {
         'variant': exercise.variant,
         'workoutId': workoutId,
         'exerciseId': exercise.exerciseId,
+        'type': exercise.type,
         'superSetId': exercise.superSetId,
+        'latestMaxWeight': exercise.latestMaxWeight,
       },
       SetOptions(merge: true),
     );
@@ -341,12 +340,13 @@ class FirestoreService {
           : series.serieId;
       series.serieId = seriesId;
 
-      await _addOrUpdateSingleSeries(batch, series, exercise.id!, i + 1);
+      await _addOrUpdateSingleSeries(
+          batch, series, exercise.id!, i + 1, exercise.exerciseId);
     }
   }
 
-  Future<void> _addOrUpdateSingleSeries(
-      WriteBatch batch, Series series, String exerciseId, int order) async {
+  Future<void> _addOrUpdateSingleSeries(WriteBatch batch, Series series,
+      String exerciseId, int order, String? originalExerciseId) async {
     DocumentReference seriesRef = _db.collection('series').doc(series.serieId);
     batch.set(
       seriesRef,
@@ -358,6 +358,7 @@ class FirestoreService {
         'weight': series.weight,
         'exerciseId': exerciseId,
         'serieId': series.serieId,
+        'originalExerciseId': originalExerciseId,
         'order': order,
         'done': series.done,
         'reps_done': series.reps_done,

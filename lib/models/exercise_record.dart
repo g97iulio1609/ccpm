@@ -15,6 +15,23 @@ class ExerciseRecord {
     required this.date,
   });
 
+  dynamic operator [](String key) {
+    switch (key) {
+      case 'id':
+        return id;
+      case 'exerciseId':
+        return exerciseId;
+      case 'maxWeight':
+        return maxWeight;
+      case 'repetitions':
+        return repetitions;
+      case 'date':
+        return date;
+      default:
+        return null;
+    }
+  }
+
   factory ExerciseRecord.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return ExerciseRecord(
