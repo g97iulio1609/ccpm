@@ -2,7 +2,7 @@ name: alphanessone
 description: "Official AlphanessOne App"
 publish_to: 'none'
 
-version: 1.30.02+61
+version: 1.30.03+62
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -96,6 +96,3 @@ flutter_native_splash:
   web: true
   android_gravity: center # Posiziona l'icona al centro su Android
   ios_content_mode: center # Posiziona l'icona al centro su iOS
-
-
-
