@@ -124,14 +124,12 @@ void updateWeekProgressions(List<List<WeekProgression>> updatedProgressions, Str
         if (exerciseIndex != -1) {
           final exercise = workout.exercises[exerciseIndex];
 
-          if (exercise.series != null) {
-            for (final series in exercise.series) {
-              if (series.serieId != null && !program.trackToDeleteSeries.contains(series.serieId!)) {
-                program.trackToDeleteSeries.add(series.serieId!);
-              }
+          for (final series in exercise.series) {
+            if (series.serieId != null && !program.trackToDeleteSeries.contains(series.serieId!)) {
+              program.trackToDeleteSeries.add(series.serieId!);
             }
           }
-
+        
           // Update the series with the new progressions
           exercise.series = updatedProgressions[weekIndex][workoutIndex].series.map((s) => Series(
             serieId: s.serieId,

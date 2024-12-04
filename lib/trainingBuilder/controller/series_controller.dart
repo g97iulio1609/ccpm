@@ -81,10 +81,8 @@ class SeriesController extends ChangeNotifier {
       if (startIndex != -1) {
         // Remove old series from database
         for (var series in currentSeriesGroup) {
-          if (series.serieId != null) {
-            program.trackToDeleteSeries.add(series.serieId!);
-          }
-        }
+          program.trackToDeleteSeries.add(series.serieId!);
+                }
 
         // Replace old series with updated ones
         exercise.series.replaceRange(startIndex, startIndex + currentSeriesGroup.length, updatedSeries);
@@ -139,11 +137,9 @@ class SeriesController extends ChangeNotifier {
   }
 
   void removeSeriesData(TrainingProgram program, Series series) {
-    if (series.serieId != null) {
-      program.trackToDeleteSeries.add(series.serieId!);
-      notifyListeners();
+    program.trackToDeleteSeries.add(series.serieId!);
+    notifyListeners();
     }
-  }
 
   void updateSeries(TrainingProgram program, int weekIndex, int workoutIndex,
       int exerciseIndex, List<Series> updatedSeries) {

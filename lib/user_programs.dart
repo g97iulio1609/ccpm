@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:alphanessone/providers/providers.dart';
 import './trainingBuilder/controller/training_program_controller.dart';
 import './trainingBuilder/services/training_services.dart';
-import 'UI/components/card.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'UI/components/bottom_menu.dart';
 

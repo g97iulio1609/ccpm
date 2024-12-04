@@ -150,7 +150,7 @@ class _MeasurementFormState extends ConsumerState<MeasurementForm> {
                   SizedBox(height: AppTheme.spacing.lg),
                 ],
               );
-            }).toList(),
+            }),
           ],
         ),
       ),

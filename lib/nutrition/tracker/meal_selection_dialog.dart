@@ -1,7 +1,6 @@
 import 'package:alphanessone/nutrition/models/meals_model.dart';
 import 'package:alphanessone/nutrition/services/meals_services.dart';
 import 'package:alphanessone/UI/components/dialog.dart';
-import 'package:alphanessone/UI/components/button.dart';
 import 'package:alphanessone/UI/components/badge.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

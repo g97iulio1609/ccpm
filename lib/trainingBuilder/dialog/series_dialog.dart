@@ -431,7 +431,7 @@ class SeriesFormController {
       maxIntensityController.text = firstSeries.maxIntensity ?? '';
       rpeController.text = firstSeries.rpe ?? '';
       maxRpeController.text = firstSeries.maxRpe ?? '';
-      weightController.text = firstSeries.weight?.toString() ?? '';
+      weightController.text = firstSeries.weight.toString() ?? '';
       maxWeightController.text = firstSeries.maxWeight?.toString() ?? '';
     }
   }

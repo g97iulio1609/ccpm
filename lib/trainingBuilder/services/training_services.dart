@@ -336,9 +336,9 @@ class FirestoreService {
   Future<void> _addOrUpdateSeries(WriteBatch batch, Exercise exercise) async {
     for (int i = 0; i < exercise.series.length; i++) {
       Series series = exercise.series[i];
-      String seriesId = series.serieId?.trim().isEmpty ?? true
+      String seriesId = series.serieId.trim().isEmpty ?? true
           ? _db.collection('series').doc().id
-          : series.serieId!;
+          : series.serieId;
       series.serieId = seriesId;
 
       await _addOrUpdateSingleSeries(batch, series, exercise.id!, i + 1);

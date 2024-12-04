@@ -43,10 +43,8 @@ class WorkoutController {
   }
 
   void _removeSeriesData(TrainingProgram program, Series series) {
-    if (series.serieId != null) {
-      program.trackToDeleteSeries.add(series.serieId!);
+    program.trackToDeleteSeries.add(series.serieId!);
     }
-  }
 
   void _updateWorkoutOrders(TrainingProgram program, int weekIndex, int startIndex) {
     for (int i = startIndex; i < program.weeks[weekIndex].workouts.length; i++) {

@@ -286,7 +286,7 @@ class ExercisesList extends HookConsumerWidget {
                                 ),
                               ),
                             );
-                          }).toList(),
+                          }),
                           if (selectedMuscleGroups.value.isNotEmpty)
                             Padding(
                               padding:

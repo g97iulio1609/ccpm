@@ -79,7 +79,7 @@ class MacrosService {
           .collection('foods')
           .orderBy('name')
           .startAt([_searchQuery])
-          .endAt([_searchQuery + '\uf8ff'])
+          .endAt(['$_searchQuery\uf8ff'])
           .limit(10)
           .get();
 

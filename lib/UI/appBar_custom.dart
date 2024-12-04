@@ -47,7 +47,7 @@ class CustomAppBar extends ConsumerStatefulWidget
 
 class _CustomAppBarState extends ConsumerState<CustomAppBar> {
   late final InAppPurchaseService _inAppPurchaseService;
-  bool _syncing = false; // Stato di caricamento per sincronizzazione
+  final bool _syncing = false; // Stato di caricamento per sincronizzazione
 
   @override
   void initState() {

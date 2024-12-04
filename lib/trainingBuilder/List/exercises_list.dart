@@ -659,19 +659,19 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
                 maxIntensity: localController.intensity.max.text,
                 exerciseName: exercise.name,
                 onWeightChanged: (weight) {
-                  exercise.series.forEach((series) {
+                  for (var series in exercise.series) {
                     series.weight = weight;
-                  });
+                  }
                   controller.notifyListeners();
                 },
                 onMaxWeightChanged: (maxWeight) {
-                  exercise.series.forEach((series) {
+                  for (var series in exercise.series) {
                     series.maxWeight = maxWeight;
-                  });
+                  }
                   controller.notifyListeners();
                 },
               );
-            }).toList(),
+            }),
           ],
         ),
       ],

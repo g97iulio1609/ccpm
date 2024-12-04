@@ -20,7 +20,7 @@ class SeriesInputFields extends HookConsumerWidget {
   final Function(double? maxWeight) onMaxWeightChanged;
 
   const SeriesInputFields({
-    Key? key,
+    super.key,
     required this.maxWeight,
     required this.exerciseName,
     required this.onIntensityChanged,
@@ -35,7 +35,7 @@ class SeriesInputFields extends HookConsumerWidget {
     this.initialMaxRpe,
     this.initialWeight,
     this.initialMaxWeight,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

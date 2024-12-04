@@ -39,6 +39,7 @@ import '../exerciseManager/exercise_model.dart';
 import '../Coaching/coaching_screen.dart';
 import '../user_programs.dart';
 import '../providers/providers.dart';
+import 'package:alphanessone/Features/Dashboard/dashboard_screen.dart';
 
 class AppRouter {
   static GoRouter router(WidgetRef ref) => GoRouter(
@@ -389,6 +390,10 @@ class AppRouter {
                   final userId = extra['userId'] as String;
                   return UserProfile(userId: userId);
                 },
+              ),
+              GoRoute(
+                path: Routes.dashboard,
+                builder: (context, state) => const DashboardScreen(),
               ),
             ],
           ),

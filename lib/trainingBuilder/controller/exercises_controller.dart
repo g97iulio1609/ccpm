@@ -67,10 +67,8 @@ class ExerciseController extends ChangeNotifier {
   }
 
   void _removeSeriesData(TrainingProgram program, Series series) {
-    if (series.serieId != null) {
-      program.trackToDeleteSeries.add(series.serieId!);
+    program.trackToDeleteSeries.add(series.serieId!);
     }
-  }
 
   Future<void> updateExercise(TrainingProgram program, String exerciseId, String exerciseType) async {
     final newMaxWeight = await getLatestMaxWeight(_exerciseRecordService, program.athleteId, exerciseId);

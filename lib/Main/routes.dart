@@ -2,6 +2,7 @@ class Routes {
   // Auth & Home
   static const String home = '/';
   static const String auth = '/auth';
+  static const String dashboard = '/dashboard';
 
   // Programs
   static const String programsScreen = '/programs_screen';

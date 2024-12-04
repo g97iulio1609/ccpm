@@ -217,7 +217,7 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
   @override
   bool get wantKeepAlive => true;
 
-  bool _isSwipeInProgress = false;
+  final bool _isSwipeInProgress = false;
 
   List<List<Series>> _groupSeries(List<Series> series) {
     if (series.isEmpty) return [];
@@ -1441,11 +1441,11 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
                         setState(
                             () {}); // Forza l'aggiornamento dell'UI principale
                       },
-                      child: Text('Conferma'),
                       style: ElevatedButton.styleFrom(
                         padding:
                             EdgeInsets.symmetric(vertical: AppTheme.spacing.md),
                       ),
+                      child: Text('Conferma'),
                     ),
                   ),
                   SizedBox(

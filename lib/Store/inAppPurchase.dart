@@ -7,7 +7,6 @@ import 'inAppPurchase_model.dart';
 import 'inAppPurchase_services.dart';
 import 'stripe_checkout_widget.dart';
 import '../providers/providers.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 
 // Classe per lo stato degli acquisti in-app
 class InAppPurchaseState {

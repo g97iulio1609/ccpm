@@ -60,10 +60,8 @@ class WeekController {
   }
 
   void _removeSeriesData(TrainingProgram program, Series series) {
-    if (series.serieId != null) {
-      program.trackToDeleteSeries.add(series.serieId!);
+    program.trackToDeleteSeries.add(series.serieId!);
     }
-  }
 
   void _updateWeekNumbers(TrainingProgram program, int startIndex) {
     for (int i = startIndex; i < program.weeks.length; i++) {

@@ -290,7 +290,7 @@ class TrainingProgramSeriesListState
             initialMaxIntensity: series.maxIntensity,
             initialRpe: series.rpe,
             initialMaxRpe: series.maxRpe,
-            initialWeight: series.weight?.toString(),
+            initialWeight: series.weight.toString(),
             initialMaxWeight: series.maxWeight?.toString(),
             onIntensityChanged: (intensity) {
               setState(() {
@@ -591,10 +591,8 @@ class TrainingProgramSeriesListState
     List<Series> seriesToRemove = List.from(seriesGroup);
 
     for (Series series in seriesToRemove) {
-      if (series.serieId != null) {
-        widget.controller.program.trackToDeleteSeries.add(series.serieId!);
-      }
-    }
+      widget.controller.program.trackToDeleteSeries.add(series.serieId!);
+        }
 
     exercise.series.removeWhere((series) => seriesToRemove.contains(series));
 

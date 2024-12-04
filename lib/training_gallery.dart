@@ -5,9 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/Main/app_theme.dart';
-import 'package:alphanessone/UI/components/card.dart';
 import 'package:alphanessone/UI/components/button.dart';
-import 'package:alphanessone/UI/components/bottom_menu.dart';
 import './trainingBuilder/controller/training_program_controller.dart';
 
 class TrainingGalleryScreen extends HookConsumerWidget {
