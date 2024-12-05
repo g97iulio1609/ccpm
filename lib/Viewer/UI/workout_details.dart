@@ -767,7 +767,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
               "${exercise['name']} ${exercise['variant'] ?? ''}",
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w800,
                   ),
               textAlign: TextAlign.center,
             ),
@@ -887,6 +887,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       flex: flex,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 4),
+        alignment: Alignment.center,
         child: seriesData != null
             ? GestureDetector(
                 onTap: () {
@@ -901,6 +902,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: colorScheme.onSurface,
                       ),
+                  textAlign: TextAlign.center,
                 ),
               )
             : const SizedBox.shrink(),
@@ -931,13 +933,16 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     final colorScheme = Theme.of(context).colorScheme;
     return Expanded(
       flex: flex,
-      child: GestureDetector(
-        onTap: () => _toggleSeriesDone(seriesData),
-        child: Icon(
-          _isSeriesDone(seriesData) ? Icons.check_circle : Icons.cancel,
-          color: _isSeriesDone(seriesData)
-              ? colorScheme.primary
-              : colorScheme.onSurface,
+      child: Container(
+        alignment: Alignment.center,
+        child: GestureDetector(
+          onTap: () => _toggleSeriesDone(seriesData),
+          child: Icon(
+            _isSeriesDone(seriesData) ? Icons.check_circle : Icons.cancel,
+            color: _isSeriesDone(seriesData)
+                ? colorScheme.primary
+                : colorScheme.onSurface,
+          ),
         ),
       ),
     );
