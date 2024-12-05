@@ -232,7 +232,7 @@ class _MeasurementFormState extends ConsumerState<MeasurementForm> {
           ),
           child: TextFormField(
             controller: controller,
-            keyboardType: TextInputType.numberWithOptions(decimal: true),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
             style: theme.textTheme.bodyLarge?.copyWith(
               color: colorScheme.onSurface,
             ),

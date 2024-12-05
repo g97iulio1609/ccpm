@@ -317,7 +317,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                         ? NetworkImage(user.photoURL)
                                         : null,
                                     child: user.photoURL.isEmpty
-                                        ? Icon(Icons.person,
+                                        ? const Icon(Icons.person,
                                             color: AppTheme.surfaceDark)
                                         : null,
                                   ),
@@ -434,7 +434,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                       child: FadeTransition(
                         opacity: CurvedAnimation(
                           parent: _controller,
-                          curve: Interval(0.8, 1.0, curve: Curves.easeOut),
+                          curve: const Interval(0.8, 1.0, curve: Curves.easeOut),
                         ),
                         child: SlideTransition(
                           position: Tween<Offset>(
@@ -442,7 +442,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                             end: Offset.zero,
                           ).animate(CurvedAnimation(
                             parent: _controller,
-                            curve: Interval(0.8, 1.0, curve: Curves.easeOut),
+                            curve: const Interval(0.8, 1.0, curve: Curves.easeOut),
                           )),
                           child: Padding(
                             padding: EdgeInsets.all(AppTheme.spacing.md),
@@ -491,7 +491,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                             borderRadius: BorderRadius.circular(
                                                 AppTheme.radii.sm),
                                           ),
-                                          child: Icon(
+                                          child: const Icon(
                                             Icons.star,
                                             color: AppTheme.primaryGold,
                                             size: 24,
@@ -521,7 +521,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                             ],
                                           ),
                                         ),
-                                        Icon(
+                                        const Icon(
                                           Icons.chevron_right,
                                           color: Colors.white70,
                                         ),
@@ -540,7 +540,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                       child: FadeTransition(
                         opacity: CurvedAnimation(
                           parent: _controller,
-                          curve: Interval(0.8, 1.0, curve: Curves.easeOut),
+                          curve: const Interval(0.8, 1.0, curve: Curves.easeOut),
                         ),
                         child: SlideTransition(
                           position: Tween<Offset>(
@@ -548,7 +548,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                             end: Offset.zero,
                           ).animate(CurvedAnimation(
                             parent: _controller,
-                            curve: Interval(0.8, 1.0, curve: Curves.easeOut),
+                            curve: const Interval(0.8, 1.0, curve: Curves.easeOut),
                           )),
                           child: Padding(
                             padding: EdgeInsets.all(AppTheme.spacing.md),
@@ -598,7 +598,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                             borderRadius: BorderRadius.circular(
                                                 AppTheme.radii.sm),
                                           ),
-                                          child: Icon(
+                                          child: const Icon(
                                             Icons.star_border,
                                             color: AppTheme.primaryGold,
                                             size: 24,
@@ -628,7 +628,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                             ],
                                           ),
                                         ),
-                                        Icon(
+                                        const Icon(
                                           Icons.chevron_right,
                                           color: Colors.white70,
                                         ),

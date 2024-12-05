@@ -294,7 +294,7 @@ class _SeriesDialogState extends State<SeriesDialog> {
           child: TextField(
             controller: controller,
             focusNode: focusNode,
-            keyboardType: TextInputType.numberWithOptions(decimal: true),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
             ],
@@ -322,7 +322,7 @@ class _SeriesDialogState extends State<SeriesDialog> {
             child: TextField(
               controller: maxController,
               focusNode: maxFocusNode,
-              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
               ],

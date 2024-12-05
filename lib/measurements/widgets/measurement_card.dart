@@ -147,7 +147,7 @@ class MeasurementCard extends StatelessWidget {
   Widget _buildStatus(ThemeData theme, ColorScheme colorScheme) {
     final statusColor = _getStatusColor(status, colorScheme);
     return Container(
-      constraints: BoxConstraints(
+      constraints: const BoxConstraints(
         maxWidth: double.infinity,
       ),
       padding: EdgeInsets.symmetric(
@@ -176,7 +176,7 @@ class MeasurementCard extends StatelessWidget {
       final difference = value! - (entry.value ?? 0);
       final isPositive = difference >= 0;
       return Container(
-        constraints: BoxConstraints(
+        constraints: const BoxConstraints(
           maxWidth: double.infinity,
         ),
         padding: EdgeInsets.only(bottom: AppTheme.spacing.xs),
@@ -206,7 +206,7 @@ class MeasurementCard extends StatelessWidget {
                   size: isSmallScreen ? 14 : 16,
                   color: isPositive ? colorScheme.error : colorScheme.tertiary,
                 ),
-                SizedBox(width: 2),
+                const SizedBox(width: 2),
                 Text(
                   '${difference.abs().toStringAsFixed(1)} $unit',
                   style: (isSmallScreen

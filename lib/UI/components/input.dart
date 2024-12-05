@@ -299,7 +299,7 @@ class AppInput extends StatelessWidget {
       enabled: enabled,
       onChanged: onChanged,
       validator: validator,
-      keyboardType: TextInputType.numberWithOptions(decimal: true),
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [
         FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
       ],

@@ -37,6 +37,8 @@ class _StripeCheckoutWidgetState extends State<StripeCheckoutWidget> {
   }
 
   Future<void> _preloadStripe() async {
+    if (!kIsWeb) return;  // Skip if not on web platform
+    
     try {
       await Stripe.instance.dangerouslyUpdateCardDetails(
         CardDetails(

@@ -245,7 +245,7 @@ class _MealSelectionDialogState extends ConsumerState<MealSelectionDialog> {
                                       ),
                                       if (meal.isFavorite) ...[
                                         SizedBox(width: AppTheme.spacing.sm),
-                                        AppBadge(
+                                        const AppBadge(
                                           label: 'Preferito',
                                           variant: AppBadgeVariant.gradient,
                                           status: AppBadgeStatus.info,

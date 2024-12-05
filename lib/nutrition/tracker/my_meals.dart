@@ -143,7 +143,7 @@ class FavouritesMeals extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.delete_outline, size: 20),
+                const Icon(Icons.delete_outline, size: 20),
                 SizedBox(height: AppTheme.spacing.xs),
                 Text(
                   'Elimina',
@@ -373,7 +373,7 @@ class FavouriteDays extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.delete_outline, size: 20),
+                const Icon(Icons.delete_outline, size: 20),
                 SizedBox(height: AppTheme.spacing.xs),
                 Text(
                   'Elimina',

@@ -284,36 +284,82 @@ class _MeasurementsContent extends ConsumerWidget {
     );
   }
 
+  List<MapEntry<String, double?>> _calculateComparisonValues(
+      MeasurementModel referenceMeasurement,
+      List<MeasurementModel> previousMeasurements,
+      String key) {
+    if (previousMeasurements.isEmpty) return [];
+
+    final currentValue = _getMeasurementValue(referenceMeasurement, key);
+    final previousValue = _getMeasurementValue(previousMeasurements.first, key);
+
+    if (currentValue == null || previousValue == null) return [];
+
+    final difference = currentValue - previousValue;
+    final percentChange = (difference / previousValue) * 100;
+
+    return [
+      MapEntry('Absolute Change', difference),
+      MapEntry('Percent Change', percentChange),
+    ];
+  }
+
   Widget _buildMeasurementCards(
       ThemeData theme, ColorScheme colorScheme, WidgetRef ref) {
-    final referenceMeasurement =
-        measurements.isNotEmpty ? measurements.first : null;
-    if (referenceMeasurement == null) return const SizedBox.shrink();
+    final measurementsAsync = ref.watch(measurementsProvider(userId));
+    
+    return measurementsAsync.when(
+      data: (measurements) {
+        if (measurements.isEmpty) {
+          return const Center(child: Text('No measurements found'));
+        }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 600 ? 3 : 2;
-        final width = constraints.maxWidth / crossAxisCount - 16;
+        final referenceMeasurement = measurements.first;
+        final previousMeasurementsAsync = ref.watch(previousMeasurementsProvider);
 
-        return Wrap(
-          spacing: AppTheme.spacing.lg,
-          runSpacing: AppTheme.spacing.lg,
-          children: MeasurementConstants.measurementLabels.entries.map((entry) {
-            final value = _getMeasurementValue(referenceMeasurement, entry.key);
-            return SizedBox(
-              width: width,
-              child: MeasurementCard(
-                title: entry.value,
-                value: value,
-                unit: MeasurementConstants.measurementUnits[entry.key]!,
-                icon: MeasurementConstants.measurementIcons[entry.key]!,
-                status: _getMeasurementStatus(ref, entry.key, value ?? 0),
-                comparisonValues: const [], // TODO: Implement comparison values
+        return previousMeasurementsAsync.when(
+          data: (previousMeasurements) {
+            final filteredPreviousMeasurements = previousMeasurements
+                .where((m) => m.userId == referenceMeasurement.userId)
+                .toList();
+
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 1.2,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
               ),
+              itemCount: MeasurementConstants.measurementLabels.length,
+              itemBuilder: (context, index) {
+                final width = MediaQuery.of(context).size.width / 2.5;
+                final entry = MeasurementConstants.measurementLabels.entries.toList()[index];
+
+                final value = _getMeasurementValue(referenceMeasurement, entry.key);
+
+                return SizedBox(
+                  width: width,
+                  child: MeasurementCard(
+                    title: entry.value,
+                    value: value,
+                    unit: MeasurementConstants.measurementUnits[entry.key]!,
+                    icon: MeasurementConstants.measurementIcons[entry.key]!,
+                    status: _getMeasurementStatus(ref, entry.key, value ?? 0),
+                    comparisonValues: _calculateComparisonValues(
+                        referenceMeasurement, filteredPreviousMeasurements, entry.key),
+                  ),
+                );
+              },
             );
-          }).toList(),
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stack) => Center(child: Text('Error loading previous measurements: $error')),
         );
       },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(child: Text('Error loading measurements: $error')),
     );
   }
 

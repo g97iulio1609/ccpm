@@ -214,7 +214,7 @@ class CustomDrawer extends ConsumerWidget {
                   ),
                 ),
                 if (isSelected)
-                  AppBadge(
+                  const AppBadge(
                     label: 'Attivo',
                     variant: AppBadgeVariant.filled,
                     status: AppBadgeStatus.success,

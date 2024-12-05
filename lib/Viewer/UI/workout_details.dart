@@ -780,11 +780,11 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
               color: colorScheme.onSurfaceVariant,
             ),
             itemBuilder: (context) => [
-              PopupMenuItem(
+              const PopupMenuItem(
                 value: 'change',
                 child: Text('Cambia esercizio'),
               ),
-              PopupMenuItem(
+              const PopupMenuItem(
                 value: 'edit_series',
                 child: Text('Modifica serie'),
               ),
@@ -806,7 +806,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
         if (!isAdmin)
           PopupMenuButton<String>(
             itemBuilder: (context) => [
-              PopupMenuItem(
+              const PopupMenuItem(
                 value: 'change',
                 child: Text('Cambia esercizio'),
               ),

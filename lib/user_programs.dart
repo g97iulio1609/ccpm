@@ -580,7 +580,7 @@ class UserProgramsScreen extends HookConsumerWidget {
       String? programId, int? weekIndex, int? workoutIndex) {
     if (userId == null || programId == null) return;
 
-    final route = '/user_programs/training_program';
+    const route = '/user_programs/training_program';
     final extra = {
       'userId': userId,
       'programId': programId,

@@ -425,7 +425,7 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
               ),
             );
           }),
-          SizedBox(width: 48),
+          const SizedBox(width: 48),
         ],
       ),
     );
@@ -740,7 +740,7 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
         child: Container(
           padding: EdgeInsets.all(AppTheme.spacing.sm),
           constraints: isLoadField && isSmallScreen
-              ? BoxConstraints(minHeight: 80)
+              ? const BoxConstraints(minHeight: 80)
               : null,
           decoration: BoxDecoration(
             color: colorScheme.surface,
@@ -813,7 +813,7 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurface,
             ),
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               isDense: true,
               contentPadding: EdgeInsets.zero,
               border: InputBorder.none,
@@ -1272,12 +1272,12 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
                       Expanded(
                         child: TextField(
                           controller: controllers.intensity.min,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'Minimo',
                             border: OutlineInputBorder(),
                           ),
                           keyboardType:
-                              TextInputType.numberWithOptions(decimal: true),
+                              const TextInputType.numberWithOptions(decimal: true),
                           onChanged: (value) {
                             setModalState(() {
                               _updateSeriesWithRealTimeCalculations(
@@ -1295,12 +1295,12 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
                       Expanded(
                         child: TextField(
                           controller: controllers.intensity.max,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'Massimo',
                             border: OutlineInputBorder(),
                           ),
                           keyboardType:
-                              TextInputType.numberWithOptions(decimal: true),
+                              const TextInputType.numberWithOptions(decimal: true),
                           onChanged: (value) {
                             setModalState(() {
                               _updateSeriesWithRealTimeCalculations(
@@ -1330,12 +1330,12 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
                       Expanded(
                         child: TextField(
                           controller: controllers.rpe.min,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'Minimo',
                             border: OutlineInputBorder(),
                           ),
                           keyboardType:
-                              TextInputType.numberWithOptions(decimal: true),
+                              const TextInputType.numberWithOptions(decimal: true),
                           onChanged: (value) {
                             setModalState(() {
                               _updateSeriesWithRealTimeCalculations(
@@ -1353,12 +1353,12 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
                       Expanded(
                         child: TextField(
                           controller: controllers.rpe.max,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'Massimo',
                             border: OutlineInputBorder(),
                           ),
                           keyboardType:
-                              TextInputType.numberWithOptions(decimal: true),
+                              const TextInputType.numberWithOptions(decimal: true),
                           onChanged: (value) {
                             setModalState(() {
                               _updateSeriesWithRealTimeCalculations(
@@ -1388,12 +1388,12 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
                       Expanded(
                         child: TextField(
                           controller: controllers.weight.min,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'Minimo',
                             border: OutlineInputBorder(),
                           ),
                           keyboardType:
-                              TextInputType.numberWithOptions(decimal: true),
+                              const TextInputType.numberWithOptions(decimal: true),
                           onChanged: (value) {
                             setModalState(() {
                               _updateSeriesWithRealTimeCalculations(
@@ -1411,12 +1411,12 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
                       Expanded(
                         child: TextField(
                           controller: controllers.weight.max,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'Massimo',
                             border: OutlineInputBorder(),
                           ),
                           keyboardType:
-                              TextInputType.numberWithOptions(decimal: true),
+                              const TextInputType.numberWithOptions(decimal: true),
                           onChanged: (value) {
                             setModalState(() {
                               _updateSeriesWithRealTimeCalculations(
@@ -1445,7 +1445,7 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
                         padding:
                             EdgeInsets.symmetric(vertical: AppTheme.spacing.md),
                       ),
-                      child: Text('Conferma'),
+                      child: const Text('Conferma'),
                     ),
                   ),
                   SizedBox(

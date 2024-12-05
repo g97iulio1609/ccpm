@@ -23,6 +23,7 @@ import '../Coaching/coaching_service.dart';
 import '../models/measurement_model.dart';
 import '../models/user_model.dart';
 import '../exerciseManager/exercise_model.dart';
+import '../models/measurement_model.dart';
 
 // Firebase-related providers
 final firebaseAuthProvider =
@@ -174,4 +175,21 @@ final exerciseRecordsProvider =
 // Nutrition Service
 final nutritionServiceProvider = Provider<NutritionService>((ref) {
   return NutritionService(ref.watch(firebaseFirestoreProvider));
+});
+
+// Add a new provider for previous measurements
+final previousMeasurementsProvider = StreamProvider<List<MeasurementModel>>((ref) {
+  final measurementsService = ref.watch(measurementsServiceProvider);
+  final firestore = ref.watch(firebaseFirestoreProvider);
+  final auth = ref.watch(firebaseAuthProvider);
+
+  return firestore
+      .collection('users')
+      .doc(auth.currentUser?.uid)
+      .collection('measurements')
+      .orderBy('date', descending: true)
+      .snapshots()
+      .map((snapshot) => snapshot.docs
+          .map((doc) => MeasurementModel.fromJson(doc.data()))
+          .toList());
 });

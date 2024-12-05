@@ -359,7 +359,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
           icon: Icons.height,
           theme: theme,
           colorScheme: colorScheme,
-          keyboardType: TextInputType.numberWithOptions(decimal: true),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
           inputFormatters: [
             FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
           ],
@@ -373,7 +373,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
           icon: Icons.monitor_weight,
           theme: theme,
           colorScheme: colorScheme,
-          keyboardType: TextInputType.numberWithOptions(decimal: true),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
           inputFormatters: [
             FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
           ],
