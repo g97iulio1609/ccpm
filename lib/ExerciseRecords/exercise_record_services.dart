@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 import '../models/exercise_record.dart';
 
 class ExerciseRecordService {
@@ -30,14 +29,7 @@ class ExerciseRecordService {
     required int repetitions,
     required String date,
   }) async {
-    print('DEBUG: Adding exercise record');
-    print('DEBUG: userId: $userId');
-    print('DEBUG: exerciseId: $exerciseId');
-    print('DEBUG: exerciseName: $exerciseName');
-    print('DEBUG: maxWeight: $maxWeight');
-    print('DEBUG: repetitions: $repetitions');
-    print('DEBUG: date: $date');
-    
+
     await _addOrUpdateRecord(
       userId: userId,
       exerciseId: exerciseId,
@@ -50,7 +42,6 @@ class ExerciseRecordService {
         'userId': userId,
       },
     );
-    print('DEBUG: Exercise record added successfully');
   }
 
   Future<void> updateExerciseRecord({
@@ -79,7 +70,6 @@ class ExerciseRecordService {
     final userDoc = await _firestore.collection('users').doc(userId).get();
     final currentProgramId = userDoc.data()?['currentProgram'];
     if (currentProgramId != null) {
-      debugPrint('Updating intensity for program: $currentProgramId');
       await _updateIntensityForProgram(currentProgramId, exerciseId, newMaxWeight);
     }
   }
@@ -169,7 +159,6 @@ class ExerciseRecordService {
             for (var serie in series) {
               final weight = serie['weight'];
               final newIntensity = ((weight / newMaxWeight) * 100).toStringAsFixed(2);
-              debugPrint('Updating intensity for series: ${serie.id}, New Intensity: $newIntensity');
               await _firestore.collection('series').doc(serie.id).update({'intensity': newIntensity});
             }
           }
@@ -194,7 +183,6 @@ class ExerciseRecordService {
             for (var serie in series) {
               final intensity = double.parse(serie['intensity']);
               final calculatedWeight = (newMaxWeight * intensity) / 100;
-              debugPrint('Updating weight for series: ${serie.id}, New Weight: $calculatedWeight');
               await _firestore.collection('series').doc(serie.id).update({'weight': calculatedWeight});
             }
           }

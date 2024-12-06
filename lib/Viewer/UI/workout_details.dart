@@ -938,7 +938,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     final weightNotifier = ref.read(workout_provider.workoutServiceProvider).getWeightNotifier(exercise['id']) ??
         ValueNotifier<double>(0.0);
 
-    final result = await showDialog<List<Series>>(
+    final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => SeriesDialog(
         exerciseRecordService: ref.read(app_providers.exerciseRecordServiceProvider),
@@ -955,7 +955,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
 
     if (result != null && mounted) {
       try {
-        await ref.read(workout_provider.workoutServiceProvider).applySeriesChanges(exercise, result);
+        final List<Series> updatedSeries = result['series'] as List<Series>;
+        await ref.read(workout_provider.workoutServiceProvider).applySeriesChanges(exercise, updatedSeries);
       } catch (e) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(

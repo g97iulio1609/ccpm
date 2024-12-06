@@ -483,8 +483,8 @@ class WorkoutService {
         batch.update(seriesRef, {
           'weight': seriesMap['weight'],
           'maxWeight': seriesMap['maxWeight'],
-          'intensity': seriesMap['intensity'],
-          'maxIntensity': seriesMap['maxIntensity'],
+          'intensity': seriesMap['intensity'].toString(),
+          'maxIntensity': seriesMap['maxIntensity']?.toString(),
         });
       }
     }
