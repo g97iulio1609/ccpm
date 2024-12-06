@@ -5,7 +5,6 @@ import 'package:alphanessone/trainingBuilder/dialog/exercise_dialog.dart';
 import 'package:alphanessone/trainingBuilder/dialog/series_dialog.dart';
 import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
 import 'package:alphanessone/trainingBuilder/models/series_model.dart';
-import 'package:alphanessone/trainingBuilder/series_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

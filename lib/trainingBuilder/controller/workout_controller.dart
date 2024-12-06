@@ -33,7 +33,8 @@ class WorkoutController {
     }
   }
 
-  void _removeExerciseAndRelatedData(TrainingProgram program, Exercise exercise) {
+  void _removeExerciseAndRelatedData(
+      TrainingProgram program, Exercise exercise) {
     if (exercise.id != null) {
       program.trackToDeleteExercises.add(exercise.id!);
     }
@@ -43,11 +44,14 @@ class WorkoutController {
   }
 
   void _removeSeriesData(TrainingProgram program, Series series) {
-    program.trackToDeleteSeries.add(series.serieId!);
-    }
+    program.trackToDeleteSeries.add(series.serieId);
+  }
 
-  void _updateWorkoutOrders(TrainingProgram program, int weekIndex, int startIndex) {
-    for (int i = startIndex; i < program.weeks[weekIndex].workouts.length; i++) {
+  void _updateWorkoutOrders(
+      TrainingProgram program, int weekIndex, int startIndex) {
+    for (int i = startIndex;
+        i < program.weeks[weekIndex].workouts.length;
+        i++) {
       program.weeks[weekIndex].workouts[i].order = i + 1;
     }
   }
@@ -56,7 +60,8 @@ class WorkoutController {
       int workoutIndex, BuildContext context) async {
     final destinationWeekIndex = await _showCopyWorkoutDialog(program, context);
     if (destinationWeekIndex != null) {
-      final sourceWorkout = program.weeks[sourceWeekIndex].workouts[workoutIndex];
+      final sourceWorkout =
+          program.weeks[sourceWeekIndex].workouts[workoutIndex];
       final copiedWorkout = _copyWorkout(sourceWorkout);
 
       if (destinationWeekIndex < program.weeks.length) {
@@ -66,7 +71,8 @@ class WorkoutController {
         );
 
         if (existingWorkoutIndex != -1) {
-          final existingWorkout = destinationWeek.workouts[existingWorkoutIndex];
+          final existingWorkout =
+              destinationWeek.workouts[existingWorkoutIndex];
           if (existingWorkout.id != null) {
             program.trackToDeleteWorkouts.add(existingWorkout.id!);
           }
@@ -96,7 +102,8 @@ class WorkoutController {
   }
 
   Exercise _copyExercise(Exercise sourceExercise) {
-    final copiedSeries = sourceExercise.series.map((series) => _copySeries(series)).toList();
+    final copiedSeries =
+        sourceExercise.series.map((series) => _copySeries(series)).toList();
 
     return sourceExercise.copyWith(
       id: generateRandomId(16).toString(),
@@ -114,7 +121,8 @@ class WorkoutController {
     );
   }
 
-  Future<int?> _showCopyWorkoutDialog(TrainingProgram program, BuildContext context) async {
+  Future<int?> _showCopyWorkoutDialog(
+      TrainingProgram program, BuildContext context) async {
     return showDialog<int>(
       context: context,
       builder: (context) {
@@ -147,7 +155,8 @@ class WorkoutController {
     );
   }
 
-  void reorderWorkouts(TrainingProgram program, int weekIndex, int oldIndex, int newIndex) {
+  void reorderWorkouts(
+      TrainingProgram program, int weekIndex, int oldIndex, int newIndex) {
     if (oldIndex < newIndex) {
       newIndex -= 1;
     }

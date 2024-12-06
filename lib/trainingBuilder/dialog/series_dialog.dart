@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
-import 'package:alphanessone/trainingBuilder/series_utils.dart';
 import 'package:alphanessone/trainingBuilder/models/series_model.dart';
 import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:alphanessone/Main/app_theme.dart';
-import 'package:alphanessone/UI/components/weight_input_fields.dart';
-import 'package:alphanessone/UI/components/series_input_fields.dart';
 
 class SeriesDialog extends StatefulWidget {
   final ExerciseRecordService exerciseRecordService;
   final String athleteId;
-  final String exerciseId;  // This is the original exercise ID
+  final String exerciseId; // This is the original exercise ID
   final int weekIndex;
   final Exercise exercise;
   final String exerciseType;
@@ -49,7 +46,8 @@ class _SeriesDialogState extends State<SeriesDialog> {
       currentSeriesGroup: widget.currentSeriesGroup,
       isIndividualEdit: widget.isIndividualEdit,
       latestMaxWeight: widget.latestMaxWeight,
-      originalExerciseId: widget.exercise.exerciseId,  // Pass the original exercise ID
+      originalExerciseId:
+          widget.exercise.exerciseId, // Pass the original exercise ID
     );
   }
 
@@ -322,7 +320,8 @@ class _SeriesDialogState extends State<SeriesDialog> {
             child: TextField(
               controller: maxController,
               focusNode: maxFocusNode,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
               ],
@@ -409,10 +408,18 @@ class SeriesFormController {
       rpeController.text = firstSeries.rpe;
       weightController.text = firstSeries.weight.toString();
 
-      if (firstSeries.maxReps != null) maxRepsController.text = firstSeries.maxReps.toString();
-      if (firstSeries.maxIntensity != null) maxIntensityController.text = firstSeries.maxIntensity!;
-      if (firstSeries.maxRpe != null) maxRpeController.text = firstSeries.maxRpe!;
-      if (firstSeries.maxWeight != null) maxWeightController.text = firstSeries.maxWeight.toString();
+      if (firstSeries.maxReps != null) {
+        maxRepsController.text = firstSeries.maxReps.toString();
+      }
+      if (firstSeries.maxIntensity != null) {
+        maxIntensityController.text = firstSeries.maxIntensity!;
+      }
+      if (firstSeries.maxRpe != null) {
+        maxRpeController.text = firstSeries.maxRpe!;
+      }
+      if (firstSeries.maxWeight != null) {
+        maxWeightController.text = firstSeries.maxWeight.toString();
+      }
     }
   }
 
@@ -457,7 +464,8 @@ class SeriesFormController {
   void updateMaxWeightFromMaxIntensity() {
     final maxIntensity = double.tryParse(maxIntensityController.text) ?? 0.0;
     if (maxIntensity > 0) {
-      final maxWeight = (latestMaxWeight * maxIntensity / 100).toStringAsFixed(1);
+      final maxWeight =
+          (latestMaxWeight * maxIntensity / 100).toStringAsFixed(1);
       maxWeightController.text = maxWeight;
     }
   }
@@ -465,7 +473,8 @@ class SeriesFormController {
   void updateMaxIntensityFromMaxWeight() {
     final maxWeight = double.tryParse(maxWeightController.text) ?? 0.0;
     if (maxWeight > 0 && latestMaxWeight > 0) {
-      final maxIntensity = ((maxWeight / latestMaxWeight) * 100).toStringAsFixed(1);
+      final maxIntensity =
+          ((maxWeight / latestMaxWeight) * 100).toStringAsFixed(1);
       maxIntensityController.text = maxIntensity;
     }
   }

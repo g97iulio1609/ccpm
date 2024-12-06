@@ -6,7 +6,6 @@ import '../../Main/app_theme.dart';
 import '../../Main/routes.dart';
 import '../../providers/providers.dart';
 import '../../models/user_model.dart';
-import '../../models/measurement_model.dart';
 import '../../models/exercise_record.dart';
 import '../../exerciseManager/exercise_model.dart';
 import '../../trainingBuilder/models/training_model.dart';
@@ -434,7 +433,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                       child: FadeTransition(
                         opacity: CurvedAnimation(
                           parent: _controller,
-                          curve: const Interval(0.8, 1.0, curve: Curves.easeOut),
+                          curve:
+                              const Interval(0.8, 1.0, curve: Curves.easeOut),
                         ),
                         child: SlideTransition(
                           position: Tween<Offset>(
@@ -442,7 +442,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                             end: Offset.zero,
                           ).animate(CurvedAnimation(
                             parent: _controller,
-                            curve: const Interval(0.8, 1.0, curve: Curves.easeOut),
+                            curve:
+                                const Interval(0.8, 1.0, curve: Curves.easeOut),
                           )),
                           child: Padding(
                             padding: EdgeInsets.all(AppTheme.spacing.md),
@@ -540,7 +541,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                       child: FadeTransition(
                         opacity: CurvedAnimation(
                           parent: _controller,
-                          curve: const Interval(0.8, 1.0, curve: Curves.easeOut),
+                          curve:
+                              const Interval(0.8, 1.0, curve: Curves.easeOut),
                         ),
                         child: SlideTransition(
                           position: Tween<Offset>(
@@ -548,7 +550,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                             end: Offset.zero,
                           ).animate(CurvedAnimation(
                             parent: _controller,
-                            curve: const Interval(0.8, 1.0, curve: Curves.easeOut),
+                            curve:
+                                const Interval(0.8, 1.0, curve: Curves.easeOut),
                           )),
                           child: Padding(
                             padding: EdgeInsets.all(AppTheme.spacing.md),

@@ -7,7 +7,7 @@ import 'package:alphanessone/Main/routes.dart';
 import 'package:alphanessone/UI/home_screen.dart';
 import 'package:alphanessone/Viewer/UI/exercise_details.dart';
 import 'package:alphanessone/Viewer/UI/timer.dart';
-import 'package:alphanessone/Viewer/UI/training_viewer.dart';
+import 'package:alphanessone/Viewer/UI/unified_training_viewer.dart';
 import 'package:alphanessone/Viewer/UI/week_details.dart';
 import 'package:alphanessone/Viewer/UI/workout_details.dart';
 import 'package:alphanessone/Viewer/models/timer_model.dart';
@@ -128,83 +128,67 @@ class AppRouter {
                       final extra = state.extra as Map<String, dynamic>;
                       final programId = extra['programId'] as String;
                       final userId = extra['userId'] as String;
-                      return TrainingViewer(
+                      return UnifiedTrainingViewer(
                         programId: programId,
                         userId: userId,
                       );
                     },
                     routes: [
                       GoRoute(
-                        path: Routes.weekDetails,
+                        path: Routes.workoutDetails,
                         builder: (context, state) {
                           final extra = state.extra as Map<String, dynamic>;
                           final programId = extra['programId'] as String;
                           final weekId = extra['weekId'] as String;
+                          final workoutId = extra['workoutId'] as String;
                           final userId = extra['userId'] as String;
-                          return WeekDetails(
+                          return WorkoutDetails(
                             programId: programId,
                             weekId: weekId,
+                            workoutId: workoutId,
                             userId: userId,
                           );
                         },
                         routes: [
                           GoRoute(
-                            path: Routes.workoutDetails,
+                            path: Routes.exerciseDetails,
                             builder: (context, state) {
-                              final extra = state.extra as Map<String, dynamic>;
-                              final programId = extra['programId'] as String;
+                              final extra =
+                                  state.extra as Map<String, dynamic>;
+                              final programId =
+                                  extra['programId'] as String;
                               final weekId = extra['weekId'] as String;
-                              final workoutId = extra['workoutId'] as String;
+                              final workoutId =
+                                  extra['workoutId'] as String;
+                              final exerciseId =
+                                  extra['exerciseId'] as String;
                               final userId = extra['userId'] as String;
-                              return WorkoutDetails(
+                              return ExerciseDetails(
                                 programId: programId,
                                 weekId: weekId,
                                 workoutId: workoutId,
+                                exerciseId: exerciseId,
+                                superSetExercises:
+                                    extra['superSetExercises'] != null
+                                        ? List<Map<String, dynamic>>.from(
+                                            extra['superSetExercises'])
+                                        : [],
+                                superSetExerciseIndex:
+                                    extra['superSetExerciseIndex'] ?? 0,
+                                seriesList: List<Map<String, dynamic>>.from(
+                                    extra['seriesList'] ?? []),
+                                startIndex: extra['startIndex'] ?? 0,
                                 userId: userId,
                               );
                             },
                             routes: [
                               GoRoute(
-                                path: Routes.exerciseDetails,
+                                path: Routes.timer,
                                 builder: (context, state) {
-                                  final extra =
-                                      state.extra as Map<String, dynamic>;
-                                  final programId =
-                                      extra['programId'] as String;
-                                  final weekId = extra['weekId'] as String;
-                                  final workoutId =
-                                      extra['workoutId'] as String;
-                                  final exerciseId =
-                                      extra['exerciseId'] as String;
-                                  final userId = extra['userId'] as String;
-                                  return ExerciseDetails(
-                                    programId: programId,
-                                    weekId: weekId,
-                                    workoutId: workoutId,
-                                    exerciseId: exerciseId,
-                                    superSetExercises:
-                                        extra['superSetExercises'] != null
-                                            ? List<Map<String, dynamic>>.from(
-                                                extra['superSetExercises'])
-                                            : [],
-                                    superSetExerciseIndex:
-                                        extra['superSetExerciseIndex'] ?? 0,
-                                    seriesList: List<Map<String, dynamic>>.from(
-                                        extra['seriesList'] ?? []),
-                                    startIndex: extra['startIndex'] ?? 0,
-                                    userId: userId,
-                                  );
+                                  final timerModel =
+                                      state.extra as TimerModel;
+                                  return TimerPage(timerModel: timerModel);
                                 },
-                                routes: [
-                                  GoRoute(
-                                    path: Routes.timer,
-                                    builder: (context, state) {
-                                      final timerModel =
-                                          state.extra as TimerModel;
-                                      return TimerPage(timerModel: timerModel);
-                                    },
-                                  ),
-                                ],
                               ),
                             ],
                           ),

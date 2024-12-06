@@ -11,7 +11,6 @@ import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:go_router/go_router.dart';
-import 'package:alphanessone/UI/components/weight_input_fields.dart';
 import 'package:alphanessone/UI/components/series_input_fields.dart';
 
 final expansionStateProvider = StateNotifierProvider.autoDispose<
@@ -591,8 +590,8 @@ class TrainingProgramSeriesListState
     List<Series> seriesToRemove = List.from(seriesGroup);
 
     for (Series series in seriesToRemove) {
-      widget.controller.program.trackToDeleteSeries.add(series.serieId!);
-        }
+      widget.controller.program.trackToDeleteSeries.add(series.serieId);
+    }
 
     exercise.series.removeWhere((series) => seriesToRemove.contains(series));
 
