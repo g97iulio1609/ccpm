@@ -414,6 +414,13 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   Widget _buildSuperSetCard(
       List<Map<String, dynamic>> superSetExercises, BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    
+    // Check if all series in all exercises are completed
+    final allSeriesCompleted = superSetExercises.every((exercise) {
+      final series = List<Map<String, dynamic>>.from(exercise['series']);
+      return series.every((serie) => _isSeriesDone(serie));
+    });
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(16),
@@ -433,8 +440,10 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
           ...superSetExercises.asMap().entries.map((entry) =>
               _buildSuperSetExerciseName(entry.key, entry.value, context)),
           const SizedBox(height: 24),
-          _buildSuperSetStartButton(superSetExercises, context),
-          const SizedBox(height: 24),
+          if (!allSeriesCompleted) ...[
+            _buildSuperSetStartButton(superSetExercises, context),
+            const SizedBox(height: 24),
+          ],
           _buildSeriesHeaderRow(context),
           ..._buildSeriesRows(superSetExercises, context),
         ],
@@ -447,7 +456,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     final series = List<Map<String, dynamic>>.from(exercise['series']);
     final firstNotDoneSeriesIndex = _findFirstNotDoneSeriesIndex(series);
     final isContinueMode = firstNotDoneSeriesIndex > 0;
-    final allSeriesCompleted = firstNotDoneSeriesIndex == series.length;
+    final allSeriesCompleted = series.every((serie) => _isSeriesDone(serie));
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
