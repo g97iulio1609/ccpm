@@ -37,6 +37,9 @@ final userIdProvider = StateProvider<String?>((ref) {
   return user?.uid;
 });
 
+// Provider per l'ID dell'utente target del programma di allenamento
+final targetUserIdProvider = StateProvider<String>((ref) => '');
+
 // Provider per il service che si occupa della logica di business
 final trainingProgramServicesProvider =
     Provider<TrainingProgramServices>((ref) {

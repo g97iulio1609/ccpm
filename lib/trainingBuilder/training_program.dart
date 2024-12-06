@@ -36,10 +36,22 @@ class TrainingProgramPage extends HookConsumerWidget {
 
     useEffect(() {
       if (programId.isNotEmpty && program.id != programId) {
+        print('DEBUG: Loading program with ID: $programId');
         controller.loadProgram(programId);
       }
       return null;
     }, [programId]);
+
+    if (program == null) {
+      print('DEBUG: Program is null');
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    print('DEBUG: Program loaded - Name: ${program.name}');
+    print('DEBUG: Number of weeks: ${program.weeks.length}');
+    if (program.weeks.isNotEmpty) {
+      print('DEBUG: First week workouts: ${program.weeks.first.workouts.length}');
+    }
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -56,49 +68,43 @@ class TrainingProgramPage extends HookConsumerWidget {
           ),
         ),
         child: SafeArea(
-          child: program != null
-              ? weekIndex != null
-                  ? workoutIndex != null
-                      ? TrainingProgramExerciseList(
-                          controller: controller,
-                          weekIndex: weekIndex!,
-                          workoutIndex: workoutIndex!,
-                        )
-                      : TrainingProgramWorkoutListPage(
-                          controller: controller,
-                          weekIndex: weekIndex!,
-                        )
-                  : SingleChildScrollView(
-                      padding: EdgeInsets.all(AppTheme.spacing.xl),
-                      child: Form(
-                        key: formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            _buildProgramForm(
-                              controller,
-                              userRole,
-                              theme,
-                              colorScheme,
-                              context,
-                              ref,
-                            ),
-                            SizedBox(height: AppTheme.spacing.xl),
-                            _buildWeeksList(
-                              controller,
-                              programId,
-                              userId,
-                              theme,
-                              colorScheme,
-                              context,
-                            ),
-                          ],
-                        ),
-                      ),
+          child: weekIndex != null
+              ? workoutIndex != null
+                  ? TrainingProgramExerciseList(
+                      controller: controller,
+                      weekIndex: weekIndex!,
+                      workoutIndex: workoutIndex!,
                     )
-              : Center(
-                  child: CircularProgressIndicator(
-                    color: colorScheme.primary,
+                  : TrainingProgramWorkoutListPage(
+                      controller: controller,
+                      weekIndex: weekIndex!,
+                    )
+              : SingleChildScrollView(
+                  padding: EdgeInsets.all(AppTheme.spacing.xl),
+                  child: Form(
+                    key: formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildProgramForm(
+                          controller,
+                          userRole,
+                          theme,
+                          colorScheme,
+                          context,
+                          ref,
+                        ),
+                        SizedBox(height: AppTheme.spacing.xl),
+                        _buildWeeksList(
+                          controller,
+                          programId,
+                          userId,
+                          theme,
+                          colorScheme,
+                          context,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
         ),
@@ -497,6 +503,4 @@ class TrainingProgramPage extends HookConsumerWidget {
       builder: (context) => AthleteSelectionDialog(controller: controller),
     );
   }
-
-
 }

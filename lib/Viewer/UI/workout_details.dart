@@ -37,13 +37,12 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() async {
-      if (mounted && !_isInitialized) {
-        await ref
-            .read(workout_provider.workoutServiceProvider)
-            .initializeWorkout(widget.programId, widget.weekId, widget.workoutId);
-        _isInitialized = true;
-      }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(workout_provider.targetUserIdProvider.notifier).state = widget.userId;
+      ref
+          .read(workout_provider.workoutServiceProvider)
+          .initializeWorkout(widget.programId, widget.weekId, widget.workoutId);
+      _isInitialized = true;
     });
   }
 
@@ -52,13 +51,12 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     super.didUpdateWidget(oldWidget);
     if (widget.workoutId != oldWidget.workoutId) {
       _isInitialized = false;
-      Future.microtask(() async {
-        if (mounted && !_isInitialized) {
-          await ref
-              .read(workout_provider.workoutServiceProvider)
-              .initializeWorkout(widget.programId, widget.weekId, widget.workoutId);
-          _isInitialized = true;
-        }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(workout_provider.targetUserIdProvider.notifier).state = widget.userId;
+        ref
+            .read(workout_provider.workoutServiceProvider)
+            .initializeWorkout(widget.programId, widget.weekId, widget.workoutId);
+        _isInitialized = true;
       });
     }
   }

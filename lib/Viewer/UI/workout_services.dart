@@ -192,6 +192,7 @@ class WorkoutService {
 
       ref.read(exercisesProvider.notifier).state = updatedExercises;
 
+      // Passa l'exerciseId dell'esercizio selezionato invece dell'ID del documento
       await recalculateWeights(updatedExercises[exerciseIndex], newExercise.exerciseId ?? '');
 
       await trainingProgramServices.updateExercise(currentExercise['id'], updatedExercises[exerciseIndex]);
@@ -200,32 +201,100 @@ class WorkoutService {
 
   Future<void> recalculateWeights(
       Map<String, dynamic> exercise, String newExerciseId) async {
+    print('DEBUG: Inizio recalculateWeights per esercizio ${exercise['name']} con newExerciseId: $newExerciseId');
+    
     final series = exercise['series'] as List<dynamic>;
-    final originalExerciseId = series.isNotEmpty
-        ? (series.first as Map<String, dynamic>)['originalExerciseId'] ??
-            newExerciseId
-        : newExerciseId;
+    final originalExerciseId = newExerciseId;
 
+    // Ottieni l'userId del programma dal provider
+    final targetUserId = ref.read(targetUserIdProvider);
+    
+    print('DEBUG: Cerco il massimale per exerciseId: $originalExerciseId e userId: $targetUserId');
     final recordsStream = exerciseRecordService
         .getExerciseRecords(
-          userId: ref.read(userIdProvider) ?? '',
+          userId: targetUserId,
           exerciseId: originalExerciseId,
         )
-        .map((records) => records.isNotEmpty
-            ? records.reduce((a, b) => a.date.compareTo(b.date) > 0 ? a : b)
-            : null);
+        .map((records) {
+          if (records.isEmpty) return null;
+          // Trova il record con l'ID corrispondente
+          final record = records.firstWhere(
+            (record) => record.exerciseId == originalExerciseId,
+            orElse: () => records.first,
+          );
+          return record;
+        });
 
     final latestRecord = await recordsStream.first;
+    num latestMaxWeight = latestRecord?.maxWeight ?? 0.0;
+    print('DEBUG: Massimale trovato: $latestMaxWeight per record con data: ${latestRecord?.date}');
 
-    num latestMaxWeight = 0.0;
-    if (latestRecord != null) {
-      latestMaxWeight = latestRecord.maxWeight;
+    // Aggiorna il weight notifier
+    _weightNotifiers[exercise['id']] ??= ValueNotifier(0.0);
+    _weightNotifiers[exercise['id']]!.value = latestMaxWeight.toDouble();
+
+    // Ricalcola i pesi per tutte le serie usando le intensità
+    final batch = FirebaseFirestore.instance.batch();
+    print('DEBUG: Inizio aggiornamento serie con nuovo massimale: $latestMaxWeight');
+    
+    for (var serie in series) {
+      final Map<String, dynamic> seriesMap = serie as Map<String, dynamic>;
+      print('DEBUG: Elaboro serie con ID: ${seriesMap['id']}');
+      
+      // Aggiorna l'originalExerciseId con l'exerciseId dell'esercizio selezionato
+      seriesMap['originalExerciseId'] = originalExerciseId;
+      
+      // Calcola weight usando intensity
+      if (seriesMap['intensity'] != null) {
+        final double intensity = double.parse(seriesMap['intensity'].toString());
+        final double newWeight = (latestMaxWeight * intensity / 100).roundToDouble();
+        print('DEBUG: Calcolo nuovo peso - Intensità: $intensity%, Massimale: $latestMaxWeight, Nuovo peso: $newWeight');
+        seriesMap['weight'] = newWeight;
+      }
+      
+      // Calcola weightMax usando maxIntensity
+      if (seriesMap['maxIntensity'] != null) {
+        final double maxIntensity = double.parse(seriesMap['maxIntensity'].toString());
+        final double newMaxWeight = (latestMaxWeight * maxIntensity / 100).roundToDouble();
+        print('DEBUG: Calcolo nuovo peso massimo - Intensità max: $maxIntensity%, Massimale: $latestMaxWeight, Nuovo peso max: $newMaxWeight');
+        seriesMap['maxWeight'] = newMaxWeight;
+      }
+
+      // Aggiorna il documento della serie su Firestore
+      final seriesId = seriesMap['id'];
+      if (seriesId != null) {
+        final seriesRef = FirebaseFirestore.instance.collection('series').doc(seriesId);
+        final updateData = {
+          'weight': seriesMap['weight'],
+          'maxWeight': seriesMap['maxWeight'],
+          'intensity': seriesMap['intensity'].toString(),
+          'maxIntensity': seriesMap['maxIntensity']?.toString(),
+          'originalExerciseId': originalExerciseId,
+        };
+        print('DEBUG: Aggiorno serie $seriesId con dati: $updateData');
+        batch.update(seriesRef, updateData);
+      }
     }
 
-    _weightNotifiers[exercise['id']] ??= ValueNotifier(0.0);
-    // Questo metodo veniva chiamato per mostrare un dialog (SeriesDialog) 
-    // nella UI, non lo spostiamo qui perché la UI deve mostrare il dialog.
-    // Qui lasciamo la logica di calcolo, ma la visualizzazione resta in UI.
+    print('DEBUG: Eseguo batch update su Firestore...');
+    // Esegui il batch update
+    await batch.commit();
+    print('DEBUG: Batch update completato');
+
+    // Aggiorna l'esercizio nel provider
+    final exercises = ref.read(exercisesProvider);
+    final index = exercises.indexWhere((e) => e['id'] == exercise['id']);
+    if (index != -1) {
+      final updatedExercises = List<Map<String, dynamic>>.from(exercises);
+      updatedExercises[index] = {
+        ...exercise,
+        'series': series,
+      };
+      ref.read(exercisesProvider.notifier).state = updatedExercises;
+      print('DEBUG: Provider aggiornato con le nuove serie');
+    }
+    
+    print('DEBUG: recalculateWeights completato');
   }
 
   Future<void> applySeriesChanges(

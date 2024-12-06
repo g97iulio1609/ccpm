@@ -27,6 +27,14 @@ class _TrainingProgramWorkoutListPageState
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
+    print('DEBUG: Building workout list for week ${widget.weekIndex}');
+    print('DEBUG: Week data: ${widget.controller.program.weeks[widget.weekIndex]}');
+    print('DEBUG: Number of workouts: ${widget.controller.program.weeks[widget.weekIndex].workouts.length}');
+    
+    if (widget.controller.program.weeks[widget.weekIndex].workouts.isEmpty) {
+      print('DEBUG: No workouts found for week ${widget.weekIndex}');
+    }
+
     return ListView.builder(
       padding: EdgeInsets.all(AppTheme.spacing.xl),
       itemCount:

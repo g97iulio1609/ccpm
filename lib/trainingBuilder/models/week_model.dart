@@ -37,10 +37,8 @@ class Week {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return Week(
       id: doc.id,
-      number: data['number'],
-      workouts: (data['workouts'] as List<dynamic>? ?? [])
-          .map((doc) => Workout.fromFirestore(doc))
-          .toList(),
+      number: data['number'] ?? 1,
+      workouts: [], // Workouts will be fetched separately
     );
   }
 
