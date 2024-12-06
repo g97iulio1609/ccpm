@@ -1,26 +1,30 @@
 import 'package:alphanessone/providers/providers.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/training_program_provider.dart';
+import '../../Main/app_theme.dart';
 import '../../Store/inAppPurchase_services.dart';
 import '../../utils/subscription_checker.dart';
-import 'package:alphanessone/Main/app_theme.dart';
-import 'package:cloud_functions/cloud_functions.dart';
-import 'package:alphanessone/Store/stripe_checkout_widget.dart';
 
-class TrainingViewer extends ConsumerStatefulWidget {
+final expandedWeekProvider = StateProvider<String?>((ref) => null);
+
+class UnifiedTrainingViewer extends ConsumerStatefulWidget {
   final String programId;
   final String userId;
 
-  const TrainingViewer(
-      {super.key, required this.programId, required this.userId});
+  const UnifiedTrainingViewer({
+    super.key,
+    required this.programId,
+    required this.userId,
+  });
 
   @override
-  TrainingViewerState createState() => TrainingViewerState();
+  UnifiedTrainingViewerState createState() => UnifiedTrainingViewerState();
 }
 
-class TrainingViewerState extends ConsumerState<TrainingViewer> {
+class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
   @override
   void initState() {
     super.initState();
@@ -36,8 +40,7 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
     }
 
     final subscriptionChecker = SubscriptionChecker();
-    final hasValidSubscription =
-        await subscriptionChecker.checkSubscription(context);
+    final hasValidSubscription = await subscriptionChecker.checkSubscription(context);
 
     if (!hasValidSubscription) {
       if (mounted) {
@@ -54,6 +57,7 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
   Widget build(BuildContext context) {
     final loading = ref.watch(trainingLoadingProvider);
     final weeks = ref.watch(trainingWeeksProvider);
+    final expandedWeekId = ref.watch(expandedWeekProvider);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -80,14 +84,12 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
                 )
               : CustomScrollView(
                   slivers: [
-                    // Header Section
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: EdgeInsets.all(AppTheme.spacing.xl),
                         child: _buildHeader(theme, colorScheme),
                       ),
                     ),
-                    // Weeks Grid/List
                     SliverPadding(
                       padding: EdgeInsets.symmetric(
                         horizontal: AppTheme.spacing.xl,
@@ -147,9 +149,15 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
     );
   }
 
-  Widget _buildWeekCard(
-      Map<String, dynamic> week, ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildExpandableWeekCard(
+    Map<String, dynamic> week,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    final isExpanded = ref.watch(expandedWeekProvider) == week['id'];
+
     return Container(
+      margin: EdgeInsets.only(bottom: AppTheme.spacing.lg),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
@@ -160,51 +168,202 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
       ),
       child: Material(
         color: Colors.transparent,
+        child: Column(
+          children: [
+            InkWell(
+              onTap: () {
+                ref.read(expandedWeekProvider.notifier).state =
+                    isExpanded ? null : week['id'];
+              },
+              borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+              child: Padding(
+                padding: EdgeInsets.all(AppTheme.spacing.lg),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppTheme.spacing.md,
+                            vertical: AppTheme.spacing.xs,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.primaryContainer.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
+                          ),
+                          child: Text(
+                            'Week ${week['number']}',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: colorScheme.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        Icon(
+                          isExpanded
+                              ? Icons.keyboard_arrow_up
+                              : Icons.keyboard_arrow_down,
+                          color: colorScheme.primary,
+                        ),
+                      ],
+                    ),
+                    if (week['description'] != null &&
+                        week['description'].toString().isNotEmpty) ...[
+                      SizedBox(height: AppTheme.spacing.md),
+                      Text(
+                        week['description'],
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            if (isExpanded) _buildWorkoutsSection(week['id'], theme, colorScheme),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWorkoutsSection(
+    String weekId,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    final weekService = ref.watch(trainingProgramServicesProvider);
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: weekService.getWorkouts(weekId),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Padding(
+            padding: EdgeInsets.all(AppTheme.spacing.lg),
+            child: Text(
+              'Error: ${snapshot.error}',
+              style: theme.textTheme.titleLarge?.copyWith(
+                color: colorScheme.error,
+              ),
+            ),
+          );
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Padding(
+            padding: EdgeInsets.all(AppTheme.spacing.lg),
+            child: Center(
+              child: CircularProgressIndicator(
+                color: colorScheme.primary,
+              ),
+            ),
+          );
+        }
+
+        final workouts = snapshot.data!.docs
+            .map((doc) => {
+                  'id': doc.id,
+                  ...doc.data() as Map<String, dynamic>,
+                })
+            .toList();
+
+        return Column(
+          children: [
+            Divider(
+              color: colorScheme.outline.withOpacity(0.1),
+              height: 1,
+            ),
+            Padding(
+              padding: EdgeInsets.all(AppTheme.spacing.lg),
+              child: ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: workouts.length,
+                separatorBuilder: (context, index) =>
+                    SizedBox(height: AppTheme.spacing.md),
+                itemBuilder: (context, index) =>
+                    _buildWorkoutCard(workouts[index], theme, colorScheme),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildWorkoutCard(
+    Map<String, dynamic> workout,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
         child: InkWell(
-          onTap: () => _navigateToWeekDetails(context, week),
+          onTap: () => _navigateToWorkoutDetails(context, workout['id']),
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           child: Padding(
             padding: EdgeInsets.all(AppTheme.spacing.lg),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+            child: Row(
               children: [
-                // Week Number Badge
                 Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: AppTheme.spacing.md,
-                    vertical: AppTheme.spacing.xs,
-                  ),
+                  padding: EdgeInsets.all(AppTheme.spacing.sm),
                   decoration: BoxDecoration(
                     color: colorScheme.primaryContainer.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
+                    shape: BoxShape.circle,
                   ),
                   child: Text(
-                    'Week ${week['number']}',
+                    '${workout['order']}',
                     style: theme.textTheme.titleMedium?.copyWith(
                       color: colorScheme.primary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
-
-                if (week['description'] != null &&
-                    week['description'].toString().isNotEmpty) ...[
-                  SizedBox(height: AppTheme.spacing.md),
-                  Text(
-                    week['description'],
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                SizedBox(width: AppTheme.spacing.lg),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Workout ${workout['order']}',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: colorScheme.onSurface,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (workout['description'] != null &&
+                          workout['description'].toString().isNotEmpty) ...[
+                        SizedBox(height: AppTheme.spacing.xs),
+                        Text(
+                          workout['description'],
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
                   ),
-                ],
-
-                SizedBox(height: AppTheme.spacing.lg),
-
-                // Start Button
+                ),
                 Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppTheme.spacing.md,
+                    vertical: AppTheme.spacing.sm,
+                  ),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
@@ -213,39 +372,24 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
                       ],
                     ),
                     borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
-                    boxShadow: [
-                      BoxShadow(
-                        color: colorScheme.primary.withOpacity(0.2),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.play_arrow_rounded,
+                        color: colorScheme.onPrimary,
+                        size: 18,
+                      ),
+                      SizedBox(width: AppTheme.spacing.xs),
+                      Text(
+                        'START',
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: colorScheme.onPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppTheme.spacing.md,
-                      vertical: AppTheme.spacing.sm,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.fitness_center,
-                          color: colorScheme.onPrimary,
-                          size: 18,
-                        ),
-                        SizedBox(width: AppTheme.spacing.xs),
-                        Text(
-                          'START',
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            color: colorScheme.onPrimary,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ],
-                    ),
                   ),
                 ),
               ],
@@ -256,17 +400,15 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
     );
   }
 
-  Widget _buildWeeksList(List<Map<String, dynamic>> weeks, ThemeData theme,
-      ColorScheme colorScheme) {
-    return SliverGrid(
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 400,
-        mainAxisSpacing: 20,
-        crossAxisSpacing: 20,
-        childAspectRatio: 1,
-      ),
+  Widget _buildWeeksList(
+    List<Map<String, dynamic>> weeks,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    return SliverList(
       delegate: SliverChildBuilderDelegate(
-        (context, index) => _buildWeekCard(weeks[index], theme, colorScheme),
+        (context, index) =>
+            _buildExpandableWeekCard(weeks[index], theme, colorScheme),
         childCount: weeks.length,
       ),
     );
@@ -278,6 +420,8 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
     final subscriptionDetails =
         await inAppPurchaseService.getSubscriptionDetails();
     final platform = subscriptionDetails?.platform ?? 'stripe';
+
+    if (!mounted) return;
 
     return showDialog(
       context: context,
@@ -304,74 +448,9 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
           ),
           actions: [
             TextButton(
-              onPressed: () async {
+              onPressed: () {
                 Navigator.of(context).pop();
-                if (platform == 'stripe') {
-                  context.go('/subscriptions');
-                } else {
-                  try {
-                    // Crea il PaymentIntent per l'abbonamento premium
-                    final result = await FirebaseFunctions.instance
-                        .httpsCallable('createPaymentIntent')
-                        .call({'productId': 'alphanessoneplussubscription'});
-
-                    final clientSecret = result.data['clientSecret'];
-                    final amount =
-                        result.data['amount'] / 100; // Converti da centesimi
-                    final currency = result.data['currency'];
-
-                    if (!mounted) return;
-
-                    // Mostra il widget di checkout
-                    await showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (context) => Container(
-                        height: MediaQuery.of(context).size.height * 0.9,
-                        decoration: const BoxDecoration(
-                          color: Colors.black,
-                          borderRadius:
-                              BorderRadius.vertical(top: Radius.circular(20)),
-                        ),
-                        child: StripeCheckoutWidget(
-                          clientSecret: clientSecret,
-                          amount: amount,
-                          currency: currency,
-                          onPaymentSuccess: (String paymentId) async {
-                            Navigator.of(context)
-                                .pop(); // Chiudi il bottom sheet
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content:
-                                    Text('Abbonamento attivato con successo!'),
-                                backgroundColor: Colors.green,
-                              ),
-                            );
-                            // Ricontrolla lo stato dell'abbonamento
-                            await _checkSubscriptionAndFetch();
-                          },
-                          onPaymentError: (String error) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Errore nel pagamento: $error'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    );
-                  } catch (e) {
-                    if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Errore durante l\'acquisto: $e'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
+                context.go('/subscriptions');
               },
               child: Text(
                 'Rinnova Abbonamento',
@@ -404,8 +483,14 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
         ref.read(trainingWeeksProvider.notifier).state = weeks;
       }
     } catch (e) {
-      // Gestione degli errori
-      // Potresti mostrare un messaggio di errore all'utente qui
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading training weeks: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } finally {
       if (mounted) {
         ref.read(trainingLoadingProvider.notifier).state = false;
@@ -413,11 +498,16 @@ class TrainingViewerState extends ConsumerState<TrainingViewer> {
     }
   }
 
-  void _navigateToWeekDetails(BuildContext context, Map<String, dynamic> week) {
-    context.go('/user_programs/training_viewer/week_details', extra: {
-      'programId': widget.programId,
-      'weekId': week['id'],
-      'userId': widget.userId
-    });
+  void _navigateToWorkoutDetails(BuildContext context, String workoutId) {
+    final expandedWeekId = ref.read(expandedWeekProvider);
+    if (expandedWeekId == null) return;
+
+    context.go('/user_programs/training_viewer/workout_details',
+        extra: {
+          'programId': widget.programId,
+          'weekId': expandedWeekId,
+          'workoutId': workoutId,
+          'userId': widget.userId
+        });
   }
 }

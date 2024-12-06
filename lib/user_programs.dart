@@ -7,7 +7,7 @@ import './trainingBuilder/controller/training_program_controller.dart';
 import './trainingBuilder/services/training_services.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'UI/components/bottom_menu.dart';
-import 'package:alphanessone/Viewer/UI/unified_training_viewer.dart';
+import 'package:alphanessone/Viewer/UI/training_viewer.dart';
 
 class UserProgramsScreen extends HookConsumerWidget {
   final String userId;
