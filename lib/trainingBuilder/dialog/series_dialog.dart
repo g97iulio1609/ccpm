@@ -495,18 +495,37 @@ class SeriesFormController {
     final maxWeight = double.tryParse(maxWeightController.text);
 
     List<Series> newSeries = [];
-    int currentOrder = currentSeriesCount + 1;
-    List<String?> existingIds = isIndividualEdit
-        ? []
-        : currentSeriesGroup?.map((s) => s.serieId).toList() ?? [];
 
-    for (int i = 0; i < sets; i++) {
-      String serieId = existingIds.isNotEmpty
-          ? existingIds.removeAt(0) ?? generateRandomId(16)
-          : generateRandomId(16);
+    // Prima aggiungiamo le serie esistenti mantenendo i loro valori
+    if (currentSeriesGroup != null) {
+      for (int i = 0; i < currentSeriesGroup!.length && i < sets; i++) {
+        var existingSeries = currentSeriesGroup![i];
+        newSeries.add(Series(
+          id: existingSeries.id,
+          serieId: existingSeries.serieId,
+          originalExerciseId: existingSeries.originalExerciseId,
+          exerciseId: existingSeries.exerciseId,
+          reps: reps,
+          maxReps: maxReps,
+          sets: 1,
+          intensity: intensity,
+          maxIntensity: maxIntensity.isNotEmpty ? maxIntensity : null,
+          rpe: rpe,
+          maxRpe: maxRpe.isNotEmpty ? maxRpe : null,
+          weight: weight,
+          maxWeight: maxWeight,
+          order: i,
+          done: existingSeries.done,
+          reps_done: existingSeries.reps_done,
+          weight_done: existingSeries.weight_done,
+        ));
+      }
+    }
 
+    // Poi aggiungiamo le nuove serie se necessario
+    for (int i = (currentSeriesGroup?.length ?? 0); i < sets; i++) {
       newSeries.add(Series(
-        serieId: serieId,
+        serieId: generateRandomId(16),
         originalExerciseId: originalExerciseId,
         reps: reps,
         maxReps: maxReps,
@@ -517,7 +536,7 @@ class SeriesFormController {
         maxRpe: maxRpe.isNotEmpty ? maxRpe : null,
         weight: weight,
         maxWeight: maxWeight,
-        order: currentOrder++,
+        order: i,
         done: false,
         reps_done: 0,
         weight_done: 0.0,

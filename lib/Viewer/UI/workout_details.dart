@@ -1159,8 +1159,15 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
           final seriesRef = FirebaseFirestore.instance
               .collection('series')
               .doc();
-          final newSeries = series.copyWith(id: seriesRef.id);
-          batch.set(seriesRef, newSeries.toMap());
+          // Make sure to set the exerciseId for new series
+          final newSeries = series.copyWith(
+            id: seriesRef.id,
+            serieId: seriesRef.id,
+            exerciseId: exercise['id'],
+          );
+          final Map<String, dynamic> seriesData = newSeries.toMap();
+          seriesData['exerciseId'] = exercise['id']; // Add exerciseId to the map
+          batch.set(seriesRef, seriesData);
           updatedResult.add(newSeries);
         }
       }
@@ -1175,7 +1182,11 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
         if (index != -1) {
           updatedExercises[index] = {
             ...updatedExercises[index],
-            'series': updatedResult.map((s) => s.toMap()).toList(),
+            'series': updatedResult.map((s) {
+              final map = s.toMap();
+              map['exerciseId'] = exercise['id']; // Ensure exerciseId is set in the map
+              return map;
+            }).toList(),
           };
           
           ref.read(exercisesProvider.notifier).state = updatedExercises;
