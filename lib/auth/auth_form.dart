@@ -23,16 +23,19 @@ class AuthForm extends HookConsumerWidget {
     return Form(
       key: formKey,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
           // Title Section
-          Text(
-            isLogin.value ? 'Welcome Back' : 'Create Account',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.onSurface,
-              letterSpacing: -0.5,
+          Center(
+            child: Text(
+              isLogin.value ? 'Welcome Back' : 'Create Account',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.onSurface,
+                letterSpacing: -0.5,
+              ),
             ),
           ),
           const SizedBox(height: 8),

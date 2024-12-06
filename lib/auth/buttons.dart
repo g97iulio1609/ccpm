@@ -5,6 +5,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'auth_service.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class SubmitButton extends ConsumerStatefulWidget {
   const SubmitButton({
@@ -195,10 +196,10 @@ class GoogleSignInButtonWrapper extends ConsumerWidget {
               top: 0,
               bottom: 0,
               child: Center(
-                child: SvgPicture.asset(
-                  'assets/icons/google_logo.svg',
-                  height: 24,
-                  width: 24,
+                child: FaIcon(
+                  FontAwesomeIcons.google,
+                  size: 24,
+                  color: theme.colorScheme.primary,
                 ),
               ),
             ),
