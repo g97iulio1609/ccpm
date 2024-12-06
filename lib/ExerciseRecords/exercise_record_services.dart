@@ -30,6 +30,14 @@ class ExerciseRecordService {
     required int repetitions,
     required String date,
   }) async {
+    print('DEBUG: Adding exercise record');
+    print('DEBUG: userId: $userId');
+    print('DEBUG: exerciseId: $exerciseId');
+    print('DEBUG: exerciseName: $exerciseName');
+    print('DEBUG: maxWeight: $maxWeight');
+    print('DEBUG: repetitions: $repetitions');
+    print('DEBUG: date: $date');
+    
     await _addOrUpdateRecord(
       userId: userId,
       exerciseId: exerciseId,
@@ -42,6 +50,7 @@ class ExerciseRecordService {
         'userId': userId,
       },
     );
+    print('DEBUG: Exercise record added successfully');
   }
 
   Future<void> updateExerciseRecord({

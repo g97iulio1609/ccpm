@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 import '../services/training_program_services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // Provider per le note degli esercizi
 final exerciseNotesProvider = StateProvider<Map<String, String>>((ref) => {});
@@ -31,7 +32,10 @@ final currentWorkoutNameProvider = StateProvider<String>((ref) => '');
 final userRoleProvider = StateProvider<String?>((ref) => null);
 
 // Provider per l'ID dell'utente
-final userIdProvider = StateProvider<String?>((ref) => null);
+final userIdProvider = StateProvider<String?>((ref) {
+  final user = FirebaseAuth.instance.currentUser;
+  return user?.uid;
+});
 
 // Provider per il service che si occupa della logica di business
 final trainingProgramServicesProvider =
@@ -44,12 +48,8 @@ final exerciseRecordServiceProvider = Provider<ExerciseRecordService>((ref) {
 });
 
 // Provider per istanziare il WorkoutService, a cui passiamo i servizi necessari
-final workoutServiceProvider = Provider<WorkoutService>((ref) {
-  final trainingService = ref.watch(trainingProgramServicesProvider);
-  final exerciseRecordService = ref.watch(exerciseRecordServiceProvider);
-  return WorkoutService(
-    ref: ref,
-    trainingProgramServices: trainingService,
-    exerciseRecordService: exerciseRecordService,
-  );
-});
+final workoutServiceProvider = Provider((ref) => WorkoutService(
+  ref: ref,
+  trainingProgramServices: ref.read(trainingProgramServicesProvider),
+  exerciseRecordService: ref.read(exerciseRecordServiceProvider)
+));

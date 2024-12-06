@@ -194,12 +194,7 @@ class WorkoutService {
 
       await recalculateWeights(updatedExercises[exerciseIndex], newExercise.exerciseId ?? '');
 
-      await trainingProgramServices.updateExercise(currentExercise['id'], {
-        'name': newExercise.name,
-        'exerciseId': newExercise.exerciseId ?? '',
-        'type': newExercise.type,
-        'variant': newExercise.variant,
-      });
+      await trainingProgramServices.updateExercise(currentExercise['id'], updatedExercises[exerciseIndex]);
     }
   }
 
@@ -377,6 +372,71 @@ class WorkoutService {
 
   ValueNotifier<double>? getWeightNotifier(String exerciseId) {
     return _weightNotifiers[exerciseId];
+  }
+
+  Future<void> updateMaxWeight(
+      Map<String, dynamic> exercise, num newMaxWeight, String targetUserId) async {
+    print('DEBUG: Starting updateMaxWeight');
+    print('DEBUG: targetUserId: $targetUserId');
+    print('DEBUG: newMaxWeight: $newMaxWeight');
+    print('DEBUG: exercise: $exercise');
+
+    // Get originalExerciseId from the first series
+    final series = exercise['series'] as List<dynamic>;
+    final firstSeries = series.first as Map<String, dynamic>;
+    final exerciseId = firstSeries['originalExerciseId'] as String?;
+    final exerciseName = exercise['name'] as String?;
+
+    print('DEBUG: exerciseId (original from series): $exerciseId');
+    print('DEBUG: exerciseName: $exerciseName');
+
+    if (targetUserId.isEmpty) {
+      print('ERROR: Target User ID is empty');
+      throw Exception('Target User ID is not set');
+    }
+    if (exerciseId == null || exerciseId.isEmpty) {
+      print('ERROR: Exercise ID is missing or empty');
+      throw Exception('Exercise ID is missing or empty');
+    }
+    if (exerciseName == null || exerciseName.isEmpty) {
+      print('ERROR: Exercise name is missing or empty');
+      throw Exception('Exercise name is missing or empty');
+    }
+
+    print('DEBUG: All validations passed, proceeding with update');
+
+    // Add new record with updated max weight
+    await exerciseRecordService.addExerciseRecord(
+      userId: targetUserId,
+      exerciseId: exerciseId,
+      exerciseName: exerciseName,
+      maxWeight: newMaxWeight,
+      repetitions: 1,
+      date: DateTime.now().toIso8601String(),
+    );
+
+    print('DEBUG: Exercise record added, updating weight notifier');
+
+    // Update the weight notifier
+    _weightNotifiers[exerciseId]?.value = newMaxWeight.toDouble();
+
+    print('DEBUG: Weight notifier updated, recalculating series weights');
+
+    // Recalculate weights for all series
+    for (var serie in series) {
+      final Map<String, dynamic> seriesMap = serie as Map<String, dynamic>;
+      if (seriesMap['weight'] != null) {
+        final double percentage = seriesMap['percentage'] ?? 100.0;
+        seriesMap['weight'] = (newMaxWeight * percentage / 100).roundToDouble();
+      }
+    }
+
+    print('DEBUG: Series weights recalculated, updating exercise in Firestore');
+
+    // Update exercise in Firestore with the current exercise ID
+    await trainingProgramServices.updateExercise(exercise['id'], exercise);
+
+    print('DEBUG: Exercise updated in Firestore successfully');
   }
 }
 

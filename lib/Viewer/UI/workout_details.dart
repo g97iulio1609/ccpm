@@ -591,6 +591,10 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
                 value: 'edit_series',
                 child: Text('Modifica serie'),
               ),
+              const PopupMenuItem(
+                value: 'update_max',
+                child: Text('Aggiorna Massimale'),
+              ),
             ],
             onSelected: (value) {
               switch (value) {
@@ -603,6 +607,9 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
                     List<Map<String, dynamic>>.from(exercise['series'] ?? []),
                   );
                   break;
+                case 'update_max':
+                  _showUpdateMaxWeightDialog(context, exercise);
+                  break;
               }
             },
           )
@@ -613,14 +620,56 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
                 value: 'change',
                 child: Text('Cambia esercizio'),
               ),
+              const PopupMenuItem(
+                value: 'update_max',
+                child: Text('Aggiorna Massimale'),
+              ),
             ],
             onSelected: (value) {
               if (value == 'change') {
                 _showChangeExerciseDialog(context, exercise);
+              } else if (value == 'update_max') {
+                _showUpdateMaxWeightDialog(context, exercise);
               }
             },
           ),
       ],
+    );
+  }
+
+  Future<void> _showUpdateMaxWeightDialog(BuildContext context, Map<String, dynamic> exercise) async {
+    final TextEditingController controller = TextEditingController();
+    final currentWeight = ref.read(workout_provider.workoutServiceProvider).getWeightNotifier(exercise['id'])?.value ?? 0.0;
+    controller.text = currentWeight.toString();
+
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Aggiorna Massimale'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.numberWithOptions(decimal: true),
+          decoration: InputDecoration(
+            labelText: 'Nuovo massimale (kg)',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Annulla'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final newWeight = double.tryParse(controller.text);
+              if (newWeight != null) {
+                await ref.read(workout_provider.workoutServiceProvider).updateMaxWeight(exercise, newWeight, widget.userId);
+                Navigator.pop(context);
+              }
+            },
+            child: Text('Salva'),
+          ),
+        ],
+      ),
     );
   }
 
