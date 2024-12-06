@@ -73,6 +73,7 @@ class TimerPageState extends ConsumerState<TimerPage>
         // All series completed, navigate back to workout details
         context.pop(); // Pop timer
         context.pop(); // Pop exercise_details
+        _onTimerComplete(); // Call timer complete navigation
       }
     } else {
       context.pop();
@@ -102,22 +103,6 @@ class TimerPageState extends ConsumerState<TimerPage>
   }
 
   void _onTimerComplete() {
-    final path = '${Routes.userPrograms}/${widget.timerModel.userId}/${Routes.trainingViewer}/${widget.timerModel.programId}/${Routes.weekDetails}/${widget.timerModel.weekId}/${Routes.workoutDetails}/${widget.timerModel.workoutId}/${Routes.exerciseDetails}';
-    
-    context.go(path, extra: {
-      'programId': widget.timerModel.programId,
-      'weekId': widget.timerModel.weekId,
-      'workoutId': widget.timerModel.workoutId,
-      'exerciseId': widget.timerModel.exerciseId,
-      'userId': widget.timerModel.userId,
-      'superSetExercises': widget.timerModel.superSetExercises,
-      'superSetExerciseIndex': widget.timerModel.superSetExerciseIndex,
-      'seriesList': widget.timerModel.seriesList,
-      'currentSeriesIndex': widget.timerModel.currentSeriesIndex
-    });
-  }
-
-  void _onSkipTimer() {
     final path = '${Routes.userPrograms}/${widget.timerModel.userId}/${Routes.trainingViewer}/${widget.timerModel.programId}/${Routes.weekDetails}/${widget.timerModel.weekId}/${Routes.workoutDetails}/${widget.timerModel.workoutId}/${Routes.exerciseDetails}';
     
     context.go(path, extra: {
