@@ -28,6 +28,7 @@ class WorkoutDetails extends ConsumerStatefulWidget {
   final String userId;
   final String weekId;
   final String workoutId;
+  final List<Series>? currentSeriesGroup;
 
   const WorkoutDetails({
     super.key,
@@ -35,6 +36,7 @@ class WorkoutDetails extends ConsumerStatefulWidget {
     required this.programId,
     required this.weekId,
     required this.workoutId,
+    this.currentSeriesGroup,
   });
 
   @override
@@ -1146,6 +1148,18 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       final batch = FirebaseFirestore.instance.batch();
       
       final updatedResult = <Series>[];
+      
+      // Se stiamo riducendo il numero di serie, eliminiamo quelle in eccesso
+      if (result.length < seriesList.length) {
+        for (var i = result.length; i < seriesList.length; i++) {
+          final seriesRef = FirebaseFirestore.instance
+              .collection('series')
+              .doc(seriesList[i].id);
+          batch.delete(seriesRef);
+        }
+      }
+
+      // Aggiorna o crea le serie rimanenti
       for (var series in result) {
         if (series.id != null) {
           // Update existing series
