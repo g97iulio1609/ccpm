@@ -1,27 +1,15 @@
-import 'dart:async';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:alphanessone/providers/providers.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/trainingBuilder/dialog/exercise_dialog.dart';
 import 'package:alphanessone/trainingBuilder/dialog/series_dialog.dart';
 import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
 import 'package:alphanessone/trainingBuilder/models/series_model.dart';
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../services/training_program_services.dart';
-import '../providers/training_program_provider.dart';
-import 'package:alphanessone/Main/app_theme.dart';
-import 'package:alphanessone/Main/routes.dart';
-import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
-
-// Add note provider
-final exerciseNotesProvider = StateProvider<Map<String, String>>((ref) => {});
-
-// Add cache providers at the top level
-final _exerciseCacheProvider =
-    StateProvider<Map<String, List<Map<String, dynamic>>>>((ref) => {});
-final _workoutNameCacheProvider =
-    StateProvider<Map<String, String>>((ref) => {});
+import 'package:alphanessone/providers/providers.dart' as app_providers;
+import 'package:alphanessone/Viewer/UI/workout_provider.dart' as workout_provider;
+import 'package:alphanessone/Viewer/providers/training_program_provider.dart';
+import 'workout_services.dart';
 
 class WorkoutDetails extends ConsumerStatefulWidget {
   final String programId;
@@ -44,48 +32,44 @@ class WorkoutDetails extends ConsumerStatefulWidget {
 }
 
 class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
-  final TrainingProgramServices _workoutService = TrainingProgramServices();
-  late final ExerciseRecordService _exerciseRecordService;
-  final List<StreamSubscription> _subscriptions = [];
   bool _isInitialized = false;
-  final Map<String, ValueNotifier<double>> _weightNotifiers = {};
-
-  // Add memoization cache
-  final Map<String, Map<String?, List<Map<String, dynamic>>>>
-      _groupedExercisesCache = {};
 
   @override
   void initState() {
     super.initState();
-    _exerciseRecordService = ref.read(exerciseRecordServiceProvider);
-    _initializeWorkout();
-    _loadExerciseNotes();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(workout_provider.targetUserIdProvider.notifier).state = widget.userId;
+      ref
+          .read(workout_provider.workoutServiceProvider)
+          .initializeWorkout(widget.programId, widget.weekId, widget.workoutId);
+      _isInitialized = true;
+    });
   }
 
-  void _loadExerciseNotes() async {
-    if (!mounted) return;
-
-    try {
-      final notesSnapshot = await FirebaseFirestore.instance
-          .collection('exercise_notes')
-          .where('workoutId', isEqualTo: widget.workoutId)
-          .get();
-
-      final notes = {
-        for (var doc in notesSnapshot.docs)
-          doc['exerciseId'] as String: doc['note'] as String
-      };
-
-      if (mounted) {
-        ref.read(exerciseNotesProvider.notifier).state = notes;
-      }
-    } catch (e) {
-      // Handle error silently
+  @override
+  void didUpdateWidget(WorkoutDetails oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.workoutId != oldWidget.workoutId) {
+      _isInitialized = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(workout_provider.targetUserIdProvider.notifier).state = widget.userId;
+        ref
+            .read(workout_provider.workoutServiceProvider)
+            .initializeWorkout(widget.programId, widget.weekId, widget.workoutId);
+        _isInitialized = true;
+      });
     }
+  }
+
+  @override
+  void dispose() {
+    ref.read(workout_provider.workoutServiceProvider).dispose();
+    super.dispose();
   }
 
   Future<void> _showNoteDialog(String exerciseId, String exerciseName,
       [String? existingNote]) async {
+    if (!mounted) return;
     final TextEditingController noteController =
         TextEditingController(text: existingNote);
     final colorScheme = Theme.of(context).colorScheme;
@@ -125,7 +109,9 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
           if (existingNote != null)
             TextButton(
               onPressed: () async {
-                await _deleteNote(exerciseId);
+                await ref
+                    .read(workout_provider.workoutServiceProvider)
+                    .deleteNote(exerciseId, widget.workoutId);
                 if (mounted) Navigator.of(context).pop();
               },
               child: Text(
@@ -144,7 +130,9 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
             onPressed: () async {
               final note = noteController.text.trim();
               if (note.isNotEmpty) {
-                await _saveNote(exerciseId, note);
+                await ref
+                    .read(workout_provider.workoutServiceProvider)
+                    .showNoteDialog(exerciseId, exerciseName, widget.workoutId, note);
               }
               if (mounted) Navigator.of(context).pop();
             },
@@ -161,211 +149,14 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     );
   }
 
-  Future<void> _saveNote(String exerciseId, String note) async {
-    try {
-      final docRef = FirebaseFirestore.instance
-          .collection('exercise_notes')
-          .doc('${widget.workoutId}_$exerciseId');
-
-      await docRef.set({
-        'workoutId': widget.workoutId,
-        'exerciseId': exerciseId,
-        'note': note,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-
-      if (mounted) {
-        final currentNotes =
-            Map<String, String>.from(ref.read(exerciseNotesProvider));
-        currentNotes[exerciseId] = note;
-        ref.read(exerciseNotesProvider.notifier).state = currentNotes;
-      }
-    } catch (e) {
-      // Handle error
-    }
-  }
-
-  Future<void> _deleteNote(String exerciseId) async {
-    try {
-      await FirebaseFirestore.instance
-          .collection('exercise_notes')
-          .doc('${widget.workoutId}_$exerciseId')
-          .delete();
-
-      if (mounted) {
-        final currentNotes =
-            Map<String, String>.from(ref.read(exerciseNotesProvider));
-        currentNotes.remove(exerciseId);
-        ref.read(exerciseNotesProvider.notifier).state = currentNotes;
-      }
-    } catch (e) {
-      // Handle error
-    }
-  }
-
-  @override
-  void didUpdateWidget(WorkoutDetails oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.workoutId != oldWidget.workoutId) {
-      _isInitialized = false;
-      _initializeWorkout();
-      _loadExerciseNotes();
-    }
-  }
-
-  @override
-  void dispose() {
-    for (final subscription in _subscriptions) {
-      subscription.cancel();
-    }
-    super.dispose();
-  }
-
-  void _initializeWorkout() {
-    if (!_isInitialized) {
-      Future.microtask(() {
-        if (mounted) {
-          _updateWorkoutId();
-          _fetchExercises();
-          _updateWorkoutName();
-          _isInitialized = true;
-        }
-      });
-    }
-  }
-
-  void _updateWorkoutId() {
-    ref.read(workoutIdProvider.notifier).state = widget.workoutId;
-  }
-
-  void _updateWorkoutName() async {
-    final currentName = ref.read(currentWorkoutNameProvider);
-    if (currentName != widget.workoutId) {
-      // Check cache first
-      final cachedName = ref.read(_workoutNameCacheProvider)[widget.workoutId];
-      if (cachedName != null) {
-        ref.read(currentWorkoutNameProvider.notifier).state = cachedName;
-        return;
-      }
-
-      final workoutName =
-          await _workoutService.fetchWorkoutName(widget.workoutId);
-      if (mounted) {
-        ref.read(currentWorkoutNameProvider.notifier).state = workoutName;
-        // Update cache
-        final cache =
-            Map<String, String>.from(ref.read(_workoutNameCacheProvider));
-        cache[widget.workoutId] = workoutName;
-        ref.read(_workoutNameCacheProvider.notifier).state = cache;
-      }
-    }
-  }
-
-  Future<void> _fetchExercises() async {
-    if (!mounted) return;
-
-    // Check cache first
-    final cachedExercises = ref.read(_exerciseCacheProvider)[widget.workoutId];
-    if (cachedExercises != null) {
-      ref.read(exercisesProvider.notifier).state = cachedExercises;
-      // Setup subscriptions for cached exercises
-      for (final exercise in cachedExercises) {
-        _subscribeToSeriesUpdates(exercise);
-      }
-      return;
-    }
-
-    ref.read(loadingProvider.notifier).state = true;
-    try {
-      final exercises = await _workoutService.fetchExercises(widget.workoutId);
-      if (mounted) {
-        ref.read(exercisesProvider.notifier).state = exercises;
-        // Update cache
-        final cache = Map<String, List<Map<String, dynamic>>>.from(
-            ref.read(_exerciseCacheProvider));
-        cache[widget.workoutId] = exercises;
-        ref.read(_exerciseCacheProvider.notifier).state = cache;
-      }
-
-      for (final exercise in exercises) {
-        _subscribeToSeriesUpdates(exercise);
-      }
-    } catch (e) {
-      // Handle error
-    } finally {
-      if (mounted) {
-        ref.read(loadingProvider.notifier).state = false;
-      }
-    }
-  }
-
-  void _subscribeToSeriesUpdates(Map<String, dynamic> exercise) {
-    // Cancel existing subscription if any
-    _subscriptions.removeWhere((sub) {
-      if (sub.hashCode.toString().contains(exercise['id'])) {
-        sub.cancel();
-        return true;
-      }
-      return false;
-    });
-
-    final seriesQuery = FirebaseFirestore.instance
-        .collection('series')
-        .where('exerciseId', isEqualTo: exercise['id'])
-        .orderBy('order');
-
-    final subscription = seriesQuery.snapshots().listen((querySnapshot) {
-      if (!mounted) return;
-
-      final updatedExercises = ref.read(exercisesProvider);
-      final index =
-          updatedExercises.indexWhere((e) => e['id'] == exercise['id']);
-      if (index != -1) {
-        final newExercises = List<Map<String, dynamic>>.from(updatedExercises);
-        newExercises[index] = Map<String, dynamic>.from(newExercises[index]);
-        newExercises[index]['series'] = querySnapshot.docs
-            .map((doc) => {...doc.data(), 'id': doc.id})
-            .toList();
-
-        if (mounted) {
-          ref.read(exercisesProvider.notifier).state = newExercises;
-
-          // Update cache
-          final cache = Map<String, List<Map<String, dynamic>>>.from(
-              ref.read(_exerciseCacheProvider));
-          cache[widget.workoutId] = newExercises;
-          ref.read(_exerciseCacheProvider.notifier).state = cache;
-        }
-      }
-    });
-
-    _subscriptions.add(subscription);
-  }
-
-  Map<String?, List<Map<String, dynamic>>> _groupExercisesBySuperSet(
-      List<Map<String, dynamic>> exercises) {
-    // Use memoization for expensive calculations
-    final cacheKey = exercises.map((e) => e['id']).join('_');
-    if (_groupedExercisesCache.containsKey(cacheKey)) {
-      return _groupedExercisesCache[cacheKey]!;
-    }
-
-    final groupedExercises = <String?, List<Map<String, dynamic>>>{};
-    for (final exercise in exercises) {
-      final superSetId = exercise['superSetId'];
-      groupedExercises.putIfAbsent(superSetId, () => []).add(exercise);
-    }
-
-    // Cache the result
-    _groupedExercisesCache[cacheKey] = groupedExercises;
-    return groupedExercises;
+  void _showEditSeriesDialog(Map<String, dynamic> exercise, List<Map<String, dynamic>> series) {
+    _showSeriesEditDialog(exercise, series);
   }
 
   @override
   Widget build(BuildContext context) {
-    // Use select instead of watch to prevent unnecessary rebuilds
     final loading = ref.watch(loadingProvider);
-    final exercises = ref.watch(exercisesProvider);
+    final exercises = ref.watch(workout_provider.exercisesProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -388,7 +179,6 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
               : ListView.builder(
                   padding: EdgeInsets.all(AppTheme.spacing.md),
                   itemCount: exercises.length,
-                  // Add key to preserve scroll position and reduce rebuilds
                   key: PageStorageKey('workout_exercises_${widget.workoutId}'),
                   itemBuilder: (context, index) =>
                       _buildExerciseCard(exercises[index], context),
@@ -399,10 +189,10 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   Widget _buildExerciseCard(
       Map<String, dynamic> exercise, BuildContext context) {
     final superSetId = exercise['superSetId'];
+    final exercises = ref.read(workout_provider.exercisesProvider);
+    final grouped = ref.read(workout_provider.workoutServiceProvider).groupExercisesBySuperSet(exercises);
     if (superSetId != null) {
-      final groupedExercises =
-          _groupExercisesBySuperSet(ref.read(exercisesProvider));
-      final superSetExercises = groupedExercises[superSetId];
+      final superSetExercises = grouped[superSetId];
       if (superSetExercises != null && superSetExercises.first == exercise) {
         return _buildSuperSetCard(superSetExercises, context);
       } else {
@@ -416,13 +206,11 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   Widget _buildSuperSetCard(
       List<Map<String, dynamic>> superSetExercises, BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
-    // Check if all series in all exercises are completed
     final allSeriesCompleted = superSetExercises.every((exercise) {
       final series = List<Map<String, dynamic>>.from(exercise['series']);
-      return series.every((serie) => _isSeriesDone(serie));
+      return series.every((serie) => ref.read(workout_provider.workoutServiceProvider).isSeriesDone(serie));
     });
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(16),
@@ -456,9 +244,10 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   Widget _buildSingleExerciseCard(
       Map<String, dynamic> exercise, BuildContext context) {
     final series = List<Map<String, dynamic>>.from(exercise['series']);
-    final firstNotDoneSeriesIndex = _findFirstNotDoneSeriesIndex(series);
+    final firstNotDoneSeriesIndex =
+        ref.read(workout_provider.workoutServiceProvider).findFirstNotDoneSeriesIndex(series);
     final isContinueMode = firstNotDoneSeriesIndex > 0;
-    final allSeriesCompleted = series.every((serie) => _isSeriesDone(serie));
+    final allSeriesCompleted = series.every((serie) => ref.read(workout_provider.workoutServiceProvider).isSeriesDone(serie));
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
@@ -555,16 +344,16 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       List<Map<String, dynamic>> superSetExercises, BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final allSeriesCompleted = superSetExercises.every((exercise) =>
-        exercise['series'].every((series) => _isSeriesDone(series)));
+        exercise['series'].every((series) => ref.read(workout_provider.workoutServiceProvider).isSeriesDone(series)));
 
     if (allSeriesCompleted) return const SizedBox.shrink();
 
     final firstNotDoneExerciseIndex = superSetExercises.indexWhere((exercise) =>
-        exercise['series'].any((series) => !_isSeriesDone(series)));
+        exercise['series'].any((series) => !ref.read(workout_provider.workoutServiceProvider).isSeriesDone(series)));
 
     return GestureDetector(
-      onTap: () => _navigateToExerciseDetails(
-          superSetExercises[firstNotDoneExerciseIndex], superSetExercises),
+      onTap: () =>
+          _navigateToExerciseDetails(superSetExercises[firstNotDoneExerciseIndex], superSetExercises),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
@@ -684,7 +473,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
             child: series != null
                 ? GestureDetector(
                     onTap: () =>
-                        _showEditSeriesDialog(series['exerciseId'], [series]),
+                        _showEditSeriesDialog(exercise, [series]),
                     child: Text(
                       _formatSeriesValue(series, field),
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -718,10 +507,10 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: series != null
                 ? GestureDetector(
-                    onTap: () => _toggleSeriesDone(series),
+                    onTap: () => ref.read(workout_provider.workoutServiceProvider).toggleSeriesDone(series),
                     child: Icon(
-                      _isSeriesDone(series) ? Icons.check_circle : Icons.cancel,
-                      color: _isSeriesDone(series)
+                      ref.read(workout_provider.workoutServiceProvider).isSeriesDone(series) ? Icons.check_circle : Icons.cancel,
+                      color: ref.read(workout_provider.workoutServiceProvider).isSeriesDone(series)
                           ? colorScheme.primary
                           : colorScheme.onSurfaceVariant,
                     ),
@@ -736,9 +525,9 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   Widget _buildExerciseName(
       Map<String, dynamic> exercise, BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final notes = ref.watch(exerciseNotesProvider);
+    final notes = ref.watch(workout_provider.exerciseNotesProvider);
     final hasNote = notes.containsKey(exercise['id']);
-    final userRole = ref.watch(userRoleProvider);
+    final userRole = ref.watch(app_providers.userRoleProvider);
     final isAdmin = userRole == 'admin';
 
     return Row(
@@ -799,6 +588,10 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
                 value: 'edit_series',
                 child: Text('Modifica serie'),
               ),
+              const PopupMenuItem(
+                value: 'update_max',
+                child: Text('Aggiorna Massimale'),
+              ),
             ],
             onSelected: (value) {
               switch (value) {
@@ -811,24 +604,139 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
                     List<Map<String, dynamic>>.from(exercise['series'] ?? []),
                   );
                   break;
+                case 'update_max':
+                  _showUpdateMaxWeightDialog(context, exercise);
+                  break;
               }
             },
-          ),
-        if (!isAdmin)
+          )
+        else
           PopupMenuButton<String>(
             itemBuilder: (context) => [
               const PopupMenuItem(
                 value: 'change',
                 child: Text('Cambia esercizio'),
               ),
+              const PopupMenuItem(
+                value: 'update_max',
+                child: Text('Aggiorna Massimale'),
+              ),
             ],
             onSelected: (value) {
               if (value == 'change') {
                 _showChangeExerciseDialog(context, exercise);
+              } else if (value == 'update_max') {
+                _showUpdateMaxWeightDialog(context, exercise);
               }
             },
           ),
       ],
+    );
+  }
+
+  Future<void> _showUpdateMaxWeightDialog(BuildContext context, Map<String, dynamic> exercise) {
+    final weightController = TextEditingController();
+    final repsController = TextEditingController(text: "1");
+    final calculatedMaxWeight = ValueNotifier<double?>(null);
+    final keepWeightSwitch = ValueNotifier<bool>(false);
+
+    void calculateMaxWeight() {
+      final weight = double.tryParse(weightController.text);
+      final reps = int.tryParse(repsController.text);
+      
+      if (weight != null && reps != null && reps > 0) {
+        calculatedMaxWeight.value = (weight / (1.0278 - 0.0278 * reps)).roundToDouble();
+      } else {
+        calculatedMaxWeight.value = null;
+      }
+    }
+
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Aggiorna Massimale'),
+        content: StatefulBuilder(
+          builder: (context, setState) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: weightController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Peso (kg)',
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (_) => calculateMaxWeight(),
+              ),
+              SizedBox(height: 16),
+              TextField(
+                controller: repsController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Ripetizioni',
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (_) => calculateMaxWeight(),
+              ),
+              SizedBox(height: 16),
+              ValueListenableBuilder<double?>(
+                valueListenable: calculatedMaxWeight,
+                builder: (context, maxWeight, child) {
+                  return maxWeight != null
+                      ? Text(
+                          'Massimale calcolato (1RM): ${maxWeight.toStringAsFixed(1)} kg',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        )
+                      : SizedBox.shrink();
+                },
+              ),
+              SizedBox(height: 16),
+              Row(
+                children: [
+                  Text('Mantieni pesi attuali'),
+                  Switch(
+                    value: keepWeightSwitch.value,
+                    onChanged: (value) {
+                      setState(() {
+                        keepWeightSwitch.value = value;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Annulla'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final maxWeight = calculatedMaxWeight.value;
+              final weight = double.tryParse(weightController.text);
+              final reps = int.tryParse(repsController.text) ?? 1;
+              
+              if (maxWeight != null && weight != null) {
+                await ref.read(workout_provider.workoutServiceProvider).updateMaxWeight(
+                  exercise,
+                  maxWeight,  // Salviamo il massimale calcolato
+                  widget.userId,
+                  repetitions: 1,  // Sempre 1 per il massimale
+                  keepCurrentWeights: keepWeightSwitch.value
+                );
+                
+                Navigator.pop(context);
+              }
+            },
+            child: Text('Salva'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -899,24 +807,22 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 4),
         alignment: Alignment.center,
-        child: seriesData != null
-            ? GestureDetector(
-                onTap: () {
-                  final exercise = {
-                    'id': seriesData['exerciseId'],
-                    'type': seriesData['type'] ?? 'weight',
-                  };
-                  _showEditSeriesDialog(exercise, [seriesData]);
-                },
-                child: Text(
-                  _formatSeriesValue(seriesData, field),
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: colorScheme.onSurface,
-                      ),
-                  textAlign: TextAlign.center,
+        child: GestureDetector(
+          onTap: () {
+            final exercise = {
+              'id': seriesData['exerciseId'],
+              'type': seriesData['type'] ?? 'weight',
+            };
+            _showEditSeriesDialog(exercise, [seriesData]);
+          },
+          child: Text(
+            _formatSeriesValue(seriesData, field),
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.onSurface,
                 ),
-              )
-            : const SizedBox.shrink(),
+            textAlign: TextAlign.center,
+          ),
+        ),
       ),
     );
   }
@@ -925,10 +831,10 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     final value = seriesData[field];
     final maxValue = seriesData['max${field.capitalize()}'];
     final valueDone = seriesData['${field}_done'];
-    final isDone = seriesData['done'] == true;
+    final isDone = ref.read(workout_provider.workoutServiceProvider).isSeriesDone(seriesData);
     final unit = field == 'reps' ? 'R' : 'Kg';
 
-    if (isDone || (valueDone != null && valueDone != 0)) {
+    if (isDone || (valueDone != 0)) {
       return '$valueDone$unit';
     }
 
@@ -947,10 +853,10 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       child: Container(
         alignment: Alignment.center,
         child: GestureDetector(
-          onTap: () => _toggleSeriesDone(seriesData),
+          onTap: () => ref.read(workout_provider.workoutServiceProvider).toggleSeriesDone(seriesData),
           child: Icon(
-            _isSeriesDone(seriesData) ? Icons.check_circle : Icons.cancel,
-            color: _isSeriesDone(seriesData)
+            ref.read(workout_provider.workoutServiceProvider).isSeriesDone(seriesData) ? Icons.check_circle : Icons.cancel,
+            color: ref.read(workout_provider.workoutServiceProvider).isSeriesDone(seriesData)
                 ? colorScheme.primary
                 : colorScheme.onSurface,
           ),
@@ -963,7 +869,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       Map<String, dynamic> exercise, List<Map<String, dynamic>> exercises,
       [int startIndex = 0]) {
     if (!mounted) return;
-    
+
     final extra = {
       'programId': widget.programId,
       'weekId': widget.weekId,
@@ -971,87 +877,49 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       'exerciseId': exercise['id'],
       'userId': widget.userId,
       'superSetExercises': exercises,
-      'superSetExerciseIndex': exercises.indexWhere((e) => e['id'] == exercise['id']),
+      'superSetExerciseIndex':
+          exercises.indexWhere((e) => e['id'] == exercise['id']),
       'seriesList': exercise['series'],
       'startIndex': startIndex
     };
-    
+
     context.pushNamed('exercise_details', extra: extra);
   }
 
   void _showChangeExerciseDialog(
       BuildContext context, Map<String, dynamic> currentExercise) {
-    final exerciseRecordService = ref.read(exerciseRecordServiceProvider);
+    final exerciseRecordService = ref.read(app_providers.exerciseRecordServiceProvider);
 
     showDialog(
       context: context,
-      builder: (BuildContext dialogContext) {
-        return ExerciseDialog(
-          exerciseRecordService: exerciseRecordService,
-          athleteId: widget.userId,
-          exercise: Exercise(
-            id: currentExercise['id'] ?? '',
-            exerciseId: currentExercise['exerciseId'] ?? '',
-            name: currentExercise['name'] ?? '',
-            type: currentExercise['type'] ?? '',
-            variant: currentExercise['variant'] ?? '',
-            order: currentExercise['order'] ?? 0,
-            series: [],
-            weekProgressions: [],
-          ),
-        );
-      },
-    ).then((newExercise) {
+      builder: (BuildContext dialogContext) => ExerciseDialog(
+        exerciseRecordService: exerciseRecordService,
+        athleteId: widget.userId,
+        exercise: Exercise(
+          id: currentExercise['id'] ?? '',
+          exerciseId: currentExercise['exerciseId'] ?? '',
+          name: currentExercise['name'] ?? '',
+          type: currentExercise['type'] ?? '',
+          variant: currentExercise['variant'] ?? '',
+          order: currentExercise['order'] ?? 0,
+          series: [],
+          weekProgressions: [],
+        ),
+      ),
+    ).then((newExercise) async {
       if (newExercise != null) {
-        _updateExercise(currentExercise, newExercise as Exercise);
+        await ref.read(workout_provider.workoutServiceProvider).updateExercise(currentExercise, newExercise as Exercise);
       }
     });
   }
 
-  Future<void> _updateExercise(
-      Map<String, dynamic> currentExercise, Exercise newExercise) async {
-    final exerciseIndex = ref
-        .read(exercisesProvider.notifier)
-        .state
-        .indexWhere((e) => e['id'] == currentExercise['id']);
+  void _showSeriesEditDialog(
+      Map<String, dynamic> exercise, List<Map<String, dynamic>> series) async {
+    final List<Series> seriesList =
+        series.map((s) => Series.fromMap(s)).toList();
+    final originalExerciseId = seriesList.first.originalExerciseId ?? exercise['id'];
 
-    if (exerciseIndex != -1) {
-      final updatedExercises =
-          List<Map<String, dynamic>>.from(ref.read(exercisesProvider));
-      updatedExercises[exerciseIndex] = {
-        ...updatedExercises[exerciseIndex],
-        'name': newExercise.name,
-        'exerciseId': newExercise.exerciseId ?? '',
-        'type': newExercise.type,
-        'variant': newExercise.variant,
-      };
-
-      ref.read(exercisesProvider.notifier).state = updatedExercises;
-
-      await _recalculateWeights(
-          updatedExercises[exerciseIndex], newExercise.exerciseId ?? '');
-
-      await _workoutService.updateExercise(currentExercise['id'], {
-        'name': newExercise.name,
-        'exerciseId': newExercise.exerciseId ?? '',
-        'type': newExercise.type,
-        'variant': newExercise.variant,
-      });
-    }
-  }
-
-  Future<void> _recalculateWeights(
-      Map<String, dynamic> exercise, String newExerciseId) async {
-    final exerciseRecordService = ref.read(exerciseRecordServiceProvider);
-
-    // Ottieni l'originalExerciseId dalle serie
-    final series = exercise['series'] as List<dynamic>;
-    final originalExerciseId = series.isNotEmpty
-        ? (series.first as Map<String, dynamic>)['originalExerciseId'] ??
-            newExerciseId
-        : newExerciseId;
-
-    final recordsStream = exerciseRecordService
+    final recordsStream = ref.read(app_providers.exerciseRecordServiceProvider)
         .getExerciseRecords(
           userId: widget.userId,
           exerciseId: originalExerciseId,
@@ -1061,150 +929,32 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
             : null);
 
     final latestRecord = await recordsStream.first;
+    num latestMaxWeight = latestRecord?.maxWeight ?? 0.0;
 
-    num latestMaxWeight = 0.0;
-    if (latestRecord != null) {
-      latestMaxWeight = latestRecord.maxWeight;
-    } else {
-      latestMaxWeight = 0.0;
-    }
-
-    // Ensure we have a weight notifier for this exercise
-    _weightNotifiers[exercise['id']] ??= ValueNotifier(0.0);
-
-    if (!mounted) return;
-
-    await showDialog(
-      context: context,
-      builder: (context) => SeriesDialog(
-        exerciseRecordService: _exerciseRecordService,
-        athleteId: widget.userId,
-        exerciseId: exercise['id'],
-        exerciseType: exercise['type'] ?? 'weight',
-        weekIndex: 0, // Not relevant in this context
-        exercise: Exercise.fromMap(exercise),
-        currentSeriesGroup: series
-            .map((s) => Series.fromMap(s as Map<String, dynamic>))
-            .toList(),
-        latestMaxWeight: latestMaxWeight.toDouble(),
-        weightNotifier: _weightNotifiers[exercise['id']]!,
-      ),
-    );
-  }
-
-  void _showSeriesEditDialog(
-      Map<String, dynamic> exercise, List<Map<String, dynamic>> series) async {
     final colorScheme = Theme.of(context).colorScheme;
 
-    // Convert the series data to Series model
-    final List<Series> seriesList =
-        series.map((s) => Series.fromMap(s)).toList();
+    final weightNotifier = ref.read(workout_provider.workoutServiceProvider).getWeightNotifier(exercise['id']) ??
+        ValueNotifier<double>(0.0);
 
-    final originalExerciseId = seriesList.first.originalExerciseId;
-
-    // Create a stream for the exercise records
-    final recordsStream = _exerciseRecordService
-        .getExerciseRecords(
-          userId: widget.userId,
-          exerciseId: originalExerciseId ?? exercise['id'],
-        )
-        .map((records) => records.isNotEmpty
-            ? records.reduce((a, b) => a.date.compareTo(b.date) > 0 ? a : b)
-            : null);
-
-    // Get the latest record
-    final latestRecord = await recordsStream.first;
-
-    num latestMaxWeight = 0.0;
-    if (latestRecord != null) {
-      latestMaxWeight = latestRecord.maxWeight;
-    } else {
-      latestMaxWeight = 0.0;
-    }
-
-    // Ensure we have a weight notifier for this exercise
-    _weightNotifiers[exercise['id']] ??= ValueNotifier(0.0);
-
-    if (!mounted) return;
-
-    final result = await showDialog<List<Series>>(
+    final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => SeriesDialog(
-        exerciseRecordService: _exerciseRecordService,
+        exerciseRecordService: ref.read(app_providers.exerciseRecordServiceProvider),
         athleteId: widget.userId,
         exerciseId: exercise['id'],
         exerciseType: exercise['type'] ?? 'weight',
-        weekIndex: 0, // Not relevant in this context
+        weekIndex: 0,
         exercise: Exercise.fromMap(exercise),
         currentSeriesGroup: seriesList,
         latestMaxWeight: latestMaxWeight.toDouble(),
-        weightNotifier: _weightNotifiers[exercise['id']]!,
+        weightNotifier: weightNotifier,
       ),
     );
 
-    // Se l'utente ha confermato le modifiche
     if (result != null && mounted) {
-      // Aggiorna le serie nel database
-      final batch = FirebaseFirestore.instance.batch();
-      
-      final updatedResult = <Series>[];
-      
-      // Se stiamo riducendo il numero di serie, eliminiamo quelle in eccesso
-      if (result.length < seriesList.length) {
-        for (var i = result.length; i < seriesList.length; i++) {
-          final seriesRef = FirebaseFirestore.instance
-              .collection('series')
-              .doc(seriesList[i].id);
-          batch.delete(seriesRef);
-        }
-      }
-
-      // Aggiorna o crea le serie rimanenti
-      for (var series in result) {
-        if (series.id != null) {
-          // Update existing series
-          final seriesRef = FirebaseFirestore.instance
-              .collection('series')
-              .doc(series.id);
-          batch.update(seriesRef, series.toMap());
-          updatedResult.add(series);
-        } else {
-          // Create new series
-          final seriesRef = FirebaseFirestore.instance
-              .collection('series')
-              .doc();
-          // Make sure to set the exerciseId for new series
-          final newSeries = series.copyWith(
-            id: seriesRef.id,
-            serieId: seriesRef.id,
-            exerciseId: exercise['id'],
-          );
-          final Map<String, dynamic> seriesData = newSeries.toMap();
-          seriesData['exerciseId'] = exercise['id']; // Add exerciseId to the map
-          batch.set(seriesRef, seriesData);
-          updatedResult.add(newSeries);
-        }
-      }
-
       try {
-        await batch.commit();
-        
-        // Aggiorna lo stato locale
-        final updatedExercises = List<Map<String, dynamic>>.from(ref.read(exercisesProvider));
-        final index = updatedExercises.indexWhere((e) => e['id'] == exercise['id']);
-        
-        if (index != -1) {
-          updatedExercises[index] = {
-            ...updatedExercises[index],
-            'series': updatedResult.map((s) {
-              final map = s.toMap();
-              map['exerciseId'] = exercise['id']; // Ensure exerciseId is set in the map
-              return map;
-            }).toList(),
-          };
-          
-          ref.read(exercisesProvider.notifier).state = updatedExercises;
-        }
+        final List<Series> updatedSeries = result['series'] as List<Series>;
+        await ref.read(workout_provider.workoutServiceProvider).applySeriesChanges(exercise, updatedSeries);
       } catch (e) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1215,73 +965,5 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
         );
       }
     }
-  }
-
-  void _showEditSeriesDialog(
-      Map<String, dynamic> exercise, List<Map<String, dynamic>> series) {
-    _showSeriesEditDialog(exercise, series);
-  }
-
-  bool _isSeriesDone(Map<String, dynamic> seriesData) {
-    final repsDone = seriesData['reps_done'] ?? 0;
-    final weightDone = seriesData['weight_done'] ?? 0.0;
-    final reps = seriesData['reps'] ?? 0;
-    final maxReps = seriesData['maxReps'];
-    final weight = seriesData['weight'] ?? 0.0;
-    final maxWeight = seriesData['maxWeight'];
-
-    bool repsCompleted = maxReps != null
-        ? repsDone >= reps && (repsDone <= maxReps || repsDone > maxReps)
-        : repsDone >= reps;
-
-    bool weightCompleted = maxWeight != null
-        ? weightDone >= weight &&
-            (weightDone <= maxWeight || weightDone > maxWeight)
-        : weightDone >= weight;
-
-    return repsCompleted && weightCompleted;
-  }
-
-  void _toggleSeriesDone(Map<String, dynamic> series) async {
-    if (!mounted) return;
-
-    final seriesId = series['id'].toString();
-    final currentlyDone = _isSeriesDone(series);
-    final reps = series['reps'] ?? 0;
-    final maxReps = series['maxReps'];
-    final weight = (series['weight'] ?? 0.0).toDouble();
-    final maxWeight = series['maxWeight']?.toDouble();
-
-    if (!currentlyDone) {
-      await _workoutService.updateSeriesWithMaxValues(
-        seriesId,
-        reps,
-        maxReps,
-        weight,
-        maxWeight,
-        maxReps ?? reps,
-        maxWeight ?? weight,
-      );
-    } else {
-      await _workoutService.updateSeriesWithMaxValues(
-        seriesId,
-        reps,
-        maxReps,
-        weight,
-        maxWeight,
-        0,
-        0.0,
-      );
-    }
-  }
-
-  int _findFirstNotDoneSeriesIndex(List<Map<String, dynamic>> series) {
-    return series.indexWhere((serie) => !_isSeriesDone(serie));
-  }
-}
-
-extension StringExtension on String {
-  String capitalize() {
-    return "${this[0].toUpperCase()}${substring(1)}";
   }
 }

@@ -187,7 +187,6 @@ Future<void> updateSeriesForExerciseChange(String seriesId, {
       final number = weekDoc.data()?['number']?.toString() ?? '';
       return number.isNotEmpty ? 'Settimana $number' : 'Settimana';
     } catch (e) {
-      debugPrint('Error fetching workout name: $e');
       return 'Settimana';
     }
   }
@@ -198,7 +197,6 @@ Future<void> updateSeriesForExerciseChange(String seriesId, {
       final order = workoutDoc.data()?['order']?.toString() ?? '';
       return order.isNotEmpty ? 'Allenamento $order' : 'Allenamento';
     } catch (e) {
-      debugPrint('Error fetching workout name: $e');
       return 'Allenamento';
     }
   }

@@ -41,6 +41,10 @@ class TrainingProgramPage extends HookConsumerWidget {
       return null;
     }, [programId]);
 
+    if (program == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: Container(
@@ -56,49 +60,43 @@ class TrainingProgramPage extends HookConsumerWidget {
           ),
         ),
         child: SafeArea(
-          child: program != null
-              ? weekIndex != null
-                  ? workoutIndex != null
-                      ? TrainingProgramExerciseList(
-                          controller: controller,
-                          weekIndex: weekIndex!,
-                          workoutIndex: workoutIndex!,
-                        )
-                      : TrainingProgramWorkoutListPage(
-                          controller: controller,
-                          weekIndex: weekIndex!,
-                        )
-                  : SingleChildScrollView(
-                      padding: EdgeInsets.all(AppTheme.spacing.xl),
-                      child: Form(
-                        key: formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            _buildProgramForm(
-                              controller,
-                              userRole,
-                              theme,
-                              colorScheme,
-                              context,
-                              ref,
-                            ),
-                            SizedBox(height: AppTheme.spacing.xl),
-                            _buildWeeksList(
-                              controller,
-                              programId,
-                              userId,
-                              theme,
-                              colorScheme,
-                              context,
-                            ),
-                          ],
-                        ),
-                      ),
+          child: weekIndex != null
+              ? workoutIndex != null
+                  ? TrainingProgramExerciseList(
+                      controller: controller,
+                      weekIndex: weekIndex!,
+                      workoutIndex: workoutIndex!,
                     )
-              : Center(
-                  child: CircularProgressIndicator(
-                    color: colorScheme.primary,
+                  : TrainingProgramWorkoutListPage(
+                      controller: controller,
+                      weekIndex: weekIndex!,
+                    )
+              : SingleChildScrollView(
+                  padding: EdgeInsets.all(AppTheme.spacing.xl),
+                  child: Form(
+                    key: formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildProgramForm(
+                          controller,
+                          userRole,
+                          theme,
+                          colorScheme,
+                          context,
+                          ref,
+                        ),
+                        SizedBox(height: AppTheme.spacing.xl),
+                        _buildWeeksList(
+                          controller,
+                          programId,
+                          userId,
+                          theme,
+                          colorScheme,
+                          context,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
         ),
@@ -497,6 +495,4 @@ class TrainingProgramPage extends HookConsumerWidget {
       builder: (context) => AthleteSelectionDialog(controller: controller),
     );
   }
-
-
 }

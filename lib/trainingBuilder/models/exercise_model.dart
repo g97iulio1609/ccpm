@@ -84,20 +84,14 @@ class Exercise {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return Exercise(
       id: doc.id,
-      exerciseId: data['exerciseId'] ?? '',
-      superSetId: data['superSetId'],
       name: data['name'] ?? '',
       type: data['type'] ?? '',
+      exerciseId: data['exerciseId'],
+      superSetId: data['superSetId'],
       variant: data['variant'] ?? '',
-      order: data['order']?.toInt() ?? 0,
-      series: (data['series'] as List<dynamic>? ?? [])
-          .map((doc) => Series.fromFirestore(doc))
-          .toList(),
-      weekProgressions: (data['weekProgressions'] as List<dynamic>? ?? [])
-          .map((weekProgression) => (weekProgression as List<dynamic>)
-              .map((progression) => WeekProgression.fromMap(progression))
-              .toList())
-          .toList(),
+      order: data['order'] ?? 0,
+      series: [],  // Series will be loaded separately
+      weekProgressions: [],  // Progressions will be loaded separately if needed
       latestMaxWeight: data['latestMaxWeight'],
     );
   }

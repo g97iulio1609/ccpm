@@ -361,9 +361,17 @@ class _SeriesDialogState extends State<SeriesDialog> {
           order: i < widget.currentSeriesGroup!.length ? widget.currentSeriesGroup![i].order : i,
         );
       }
+      Navigator.pop(context, {
+        'action': 'update',
+        'series': updatedSeries,
+        'originalGroup': widget.currentSeriesGroup,
+      });
+    } else {
+      Navigator.pop(context, {
+        'action': 'add',
+        'series': updatedSeries,
+      });
     }
-    
-    Navigator.pop(context, updatedSeries);
   }
 }
 

@@ -127,15 +127,25 @@ class FirestoreService {
 
   Future<TrainingProgram> fetchTrainingProgram(String programId) async {
     try {
-      DocumentSnapshot programSnapshot =
-          await _db.collection('programs').doc(programId).get();
-      if (!programSnapshot.exists) {
-        throw Exception('Training program not found');
+      DocumentSnapshot<Map<String, dynamic>> doc = await _db.collection('programs').doc(programId).get();
+      
+      if (!doc.exists || doc.data() == null) {
+        throw Exception('No training program found with ID: $programId');
       }
-      TrainingProgram program = TrainingProgram.fromFirestore(programSnapshot);
-
+      
+      Map<String, dynamic> data = doc.data()!;
+      
+      TrainingProgram program = TrainingProgram(
+        id: doc.id,
+        name: data['name'] as String? ?? '',
+        hide: data['hide'] as bool? ?? false,
+        description: data['description'] as String? ?? '',
+        athleteId: data['athleteId'] as String? ?? '',
+        status: data['status'] as String? ?? 'private',
+        mesocycleNumber: data['mesocycleNumber'] as int? ?? 1,
+      );
+      
       program.weeks = await _fetchWeeks(programId);
-
       return program;
     } catch (e) {
       rethrow;
@@ -143,47 +153,51 @@ class FirestoreService {
   }
 
   Future<List<Week>> _fetchWeeks(String programId) async {
-    QuerySnapshot weeksSnapshot = await _db
-        .collection('weeks')
-        .where('programId', isEqualTo: programId)
-        .orderBy('number')
-        .get();
+    try {
+      QuerySnapshot<Map<String, dynamic>> weeksSnapshot = await _db
+          .collection('weeks')
+          .where('programId', isEqualTo: programId)
+          .orderBy('number')
+          .get();
 
-    List<Week> weeks =
-        weeksSnapshot.docs.map((doc) => Week.fromFirestore(doc)).toList();
+      List<Week> weeks = weeksSnapshot.docs.map((doc) => Week.fromFirestore(doc)).toList();
 
-    // Esegui le query dei workout in parallelo
-    List<Future<void>> fetchWorkoutsFutures = [];
-    for (Week week in weeks) {
-      fetchWorkoutsFutures.add(_fetchWorkouts(week.id!).then((workouts) {
-        week.workouts = workouts;
-      }));
+      List<Future<void>> fetchWorkoutsFutures = [];
+      for (Week week in weeks) {
+        fetchWorkoutsFutures.add(_fetchWorkouts(week.id!).then((workouts) {
+          week.workouts = workouts;
+        }));
+      }
+      await Future.wait(fetchWorkoutsFutures);
+
+      return weeks;
+    } catch (e) {
+      rethrow;
     }
-    await Future.wait(fetchWorkoutsFutures);
-
-    return weeks;
   }
 
   Future<List<Workout>> _fetchWorkouts(String weekId) async {
-    QuerySnapshot workoutsSnapshot = await _db
-        .collection('workouts')
-        .where('weekId', isEqualTo: weekId)
-        .orderBy('order')
-        .get();
+    try {
+      QuerySnapshot<Map<String, dynamic>> workoutsSnapshot = await _db
+          .collection('workouts')
+          .where('weekId', isEqualTo: weekId)
+          .orderBy('order')
+          .get();
 
-    List<Workout> workouts =
-        workoutsSnapshot.docs.map((doc) => Workout.fromFirestore(doc)).toList();
+      List<Workout> workouts = workoutsSnapshot.docs.map((doc) => Workout.fromFirestore(doc)).toList();
 
-    // Esegui le query degli esercizi in parallelo
-    List<Future<void>> fetchExercisesFutures = [];
-    for (Workout workout in workouts) {
-      fetchExercisesFutures.add(_fetchExercises(workout.id!).then((exercises) {
-        workout.exercises = exercises;
-      }));
+      List<Future<void>> fetchExercisesFutures = [];
+      for (Workout workout in workouts) {
+        fetchExercisesFutures.add(_fetchExercises(workout.id!).then((exercises) {
+          workout.exercises = exercises;
+        }));
+      }
+      await Future.wait(fetchExercisesFutures);
+
+      return workouts;
+    } catch (e) {
+      rethrow;
     }
-    await Future.wait(fetchExercisesFutures);
-
-    return workouts;
   }
 
   Future<List<Exercise>> _fetchExercises(String workoutId) async {
@@ -200,7 +214,6 @@ class FirestoreService {
       return exercise;
     }).toList();
 
-    // Esegui le query delle serie in parallelo
     List<Future<void>> fetchSeriesFutures = [];
     for (Exercise exercise in exercises) {
       fetchSeriesFutures.add(_fetchSeries(exercise.id!).then((series) {

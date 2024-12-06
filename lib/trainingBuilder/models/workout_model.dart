@@ -6,12 +6,14 @@ import 'superseries_model.dart';
 class Workout {
   String? id;
   int order;
+  String? name;
   List<Exercise> exercises;
   List<SuperSet> superSets;
 
   Workout({
     this.id,
     required this.order,
+    this.name,
     List<Exercise>? exercises,
     this.superSets = const [],
   }) : exercises = exercises ?? [];
@@ -19,12 +21,14 @@ class Workout {
   Workout copyWith({
     String? id,
     int? order,
+    String? name,
     List<Exercise>? exercises,
     List<SuperSet>? superSets,
   }) {
     return Workout(
       id: id ?? this.id,
       order: order ?? this.order,
+      name: name ?? this.name,
       exercises: exercises ?? this.exercises.map((exercise) => exercise.copyWith()).toList(),
       superSets: superSets ?? this.superSets.map((superSet) => SuperSet.fromMap(superSet.toMap())).toList(),
     );
@@ -34,6 +38,7 @@ class Workout {
     return Workout(
       id: map['id'],
       order: map['order'],
+      name: map['name'],
       exercises: List<Exercise>.from(
           map['exercises']?.map((x) => Exercise.fromMap(x)) ?? []),
       superSets: List<SuperSet>.from(
@@ -46,13 +51,10 @@ class Workout {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return Workout(
       id: doc.id,
-      order: data['order'],
-      exercises: (data['exercises'] as List<dynamic>? ?? [])
-          .map((doc) => Exercise.fromFirestore(doc))
-          .toList(),
-      superSets: (data['superSets'] as List<dynamic>? ?? [])
-          .map((doc) => SuperSet.fromMap(doc))
-          .toList(),
+      order: data['order'] ?? 0,
+      name: data['name'],
+      exercises: [],  // Exercises will be loaded separately
+      superSets: [],  // SuperSets will be loaded separately if needed
     );
   }
 
@@ -60,6 +62,7 @@ class Workout {
     return {
       'id': id,
       'order': order,
+      'name': name,  // Add this line
       'exercises': exercises.map((x) => x.toMap()).toList(),
       'superSets': superSets.map((x) => x.toMap()).toList(),
     };
