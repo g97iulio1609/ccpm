@@ -113,6 +113,16 @@ class BulkSeriesControllersNotifier
       state = newState;
     }
   }
+
+  void updateControllersForExercises(List<Exercise> exercises) {
+    final newState = List<SeriesControllers>.from(state);
+    for (int i = 0; i < exercises.length && i < state.length; i++) {
+      if (exercises[i].series.isNotEmpty) {
+        newState[i].initializeFromSeries(exercises[i].series.first);
+      }
+    }
+    state = newState;
+  }
 }
 
 // Provider per i controller
@@ -259,7 +269,6 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    Theme.of(context);
     final exerciseRecordService = ref.watch(exerciseRecordServiceProvider);
 
     // Stato per i massimali e il rebuild
@@ -532,7 +541,7 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
 
               exercise.series = newSeries;
             }
-            controller.notifyListeners();
+            ref.read(bulkSeriesControllersProvider.notifier).updateControllersForExercises(exercises);
 
             Navigator.pop(context);
             ScaffoldMessenger.of(context).showSnackBar(
@@ -626,7 +635,6 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
                     series.maxWeight = calculatedMaxWeight?.toDouble();
                   }
                 }
-                controller.notifyListeners();
                 forceUpdate.value++;
               },
             ),
@@ -662,13 +670,13 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
                   for (var series in exercise.series) {
                     series.weight = weight;
                   }
-                  controller.notifyListeners();
+                  forceUpdate.value++;
                 },
                 onMaxWeightChanged: (maxWeight) {
                   for (var series in exercise.series) {
                     series.maxWeight = maxWeight;
                   }
-                  controller.notifyListeners();
+                  forceUpdate.value++;
                 },
               );
             }),

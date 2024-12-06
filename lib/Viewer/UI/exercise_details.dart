@@ -109,8 +109,8 @@ class ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
   Future<void> _navigateToTimer() async {
     if (!mounted) return;
 
-    final result = await context.push<Map<String, dynamic>>(
-      '/user_programs/training_viewer/week_details/workout_details/exercise_details/timer',
+    final result = await context.pushNamed<Map<String, dynamic>>(
+      'timer',
       extra: TimerModel(
           programId: widget.programId,
           userId: widget.userId,
@@ -146,8 +146,14 @@ class ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
           currentSeriesIndex = nextIndex;
         });
       } else {
-        context.go(
-          '/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}',
+        context.pushNamed(
+          'workout_details',
+          extra: {
+            'programId': widget.programId,
+            'weekId': widget.weekId,
+            'workoutId': widget.workoutId,
+            'userId': widget.userId,
+          },
         );
       }
     }
@@ -494,20 +500,14 @@ class ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
   }
 
   void _moveToNextExercise() {
-    setState(() {
-      if (currentSuperSetExerciseIndex < widget.superSetExercises.length - 1) {
+    if (currentSuperSetExerciseIndex < widget.superSetExercises.length - 1) {
+      setState(() {
         currentSuperSetExerciseIndex++;
-      } else {
-        currentSuperSetExerciseIndex = 0;
-        currentSeriesIndex++;
-      }
-    });
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _updateCurrentExerciseName();
-    });
-
-    if (currentSuperSetExerciseIndex == 0) {
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _updateCurrentExerciseName();
+      });
+    } else {
       _navigateToTimer();
     }
   }

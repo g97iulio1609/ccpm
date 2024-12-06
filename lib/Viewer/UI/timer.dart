@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../models/timer_model.dart';
 import '../providers/training_program_provider.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/Main/routes.dart';
 
 class TimerPage extends ConsumerStatefulWidget {
   final TimerModel timerModel;
@@ -60,27 +61,21 @@ class TimerPageState extends ConsumerState<TimerPage>
     _timer.cancel();
     final timerModel = ref.read(timerModelProvider);
     if (timerModel != null) {
-      final newSuperSetExerciseIndex = (timerModel.superSetExerciseIndex) %
-          timerModel.superSetExercises.length;
-      final nextSeriesIndex = newSuperSetExerciseIndex == 0
-          ? timerModel.currentSeriesIndex
-          : timerModel.currentSeriesIndex;
-
+      final nextSeriesIndex = timerModel.currentSeriesIndex + 1;
+      
       if (nextSeriesIndex < timerModel.totalSeries) {
         final result = {
           'startIndex': nextSeriesIndex,
-          'superSetExerciseIndex': newSuperSetExerciseIndex,
+          'superSetExerciseIndex': 0,  // Reset to first exercise in superset
         };
         context.pop(result);
       } else {
         // All series completed, navigate back to workout details
-        context.go(
-          '/user_programs/${timerModel.userId}/training_viewer/${timerModel.programId}/week_details/${timerModel.weekId}/workout_details/${timerModel.workoutId}',
-        );
+        context.pop(); // Pop timer
+        context.pop(); // Pop exercise_details
       }
     } else {
-      // Handle null timerModel case
-      context.pop(); // Fallback to just popping the current route
+      context.pop();
     }
   }
 
@@ -88,60 +83,54 @@ class TimerPageState extends ConsumerState<TimerPage>
     _timer.cancel();
     final timerModel = ref.read(timerModelProvider);
     if (timerModel != null) {
-      final newSuperSetExerciseIndex = (timerModel.superSetExerciseIndex) %
-          timerModel.superSetExercises.length;
-      final nextSeriesIndex = newSuperSetExerciseIndex == 0
-          ? timerModel.currentSeriesIndex
-          : timerModel.currentSeriesIndex;
-
+      final nextSeriesIndex = timerModel.currentSeriesIndex + 1;
+      
       if (nextSeriesIndex < timerModel.totalSeries) {
         final result = {
           'startIndex': nextSeriesIndex,
-          'superSetExerciseIndex':
-              newSuperSetExerciseIndex, // Corrected to newSuperSetExerciseIndex
+          'superSetExerciseIndex': 0,  // Reset to first exercise in superset
         };
         context.pop(result);
       } else {
-        context.go(
-          '/user_programs/${timerModel.userId}/training_viewer/${timerModel.programId}/week_details/${timerModel.weekId}/workout_details/${timerModel.workoutId}',
-        );
+        // All series completed, navigate back to workout details
+        context.pop(); // Pop timer
+        context.pop(); // Pop exercise_details
       }
     } else {
-      // Handle null timerModel case
-      context.pop(); // Fallback to just popping the current route
+      context.pop();
     }
   }
 
   void _onTimerComplete() {
-    context.go(
-        '/user_programs/training_viewer/week_details/workout_details/exercise_details',
-        extra: {
-          'programId': widget.timerModel.programId,
-          'weekId': widget.timerModel.weekId,
-          'workoutId': widget.timerModel.workoutId,
-          'exerciseId': widget.timerModel.exerciseId,
-          'userId': widget.timerModel.userId,
-          'superSetExercises': widget.timerModel.superSetExercises,
-          'superSetExerciseIndex': widget.timerModel.superSetExerciseIndex,
-          'seriesList': widget.timerModel.seriesList,
-          'currentSeriesIndex': widget.timerModel.currentSeriesIndex
-        });
+    final path = '${Routes.userPrograms}/${widget.timerModel.userId}/${Routes.trainingViewer}/${widget.timerModel.programId}/${Routes.weekDetails}/${widget.timerModel.weekId}/${Routes.workoutDetails}/${widget.timerModel.workoutId}/${Routes.exerciseDetails}';
+    
+    context.go(path, extra: {
+      'programId': widget.timerModel.programId,
+      'weekId': widget.timerModel.weekId,
+      'workoutId': widget.timerModel.workoutId,
+      'exerciseId': widget.timerModel.exerciseId,
+      'userId': widget.timerModel.userId,
+      'superSetExercises': widget.timerModel.superSetExercises,
+      'superSetExerciseIndex': widget.timerModel.superSetExerciseIndex,
+      'seriesList': widget.timerModel.seriesList,
+      'currentSeriesIndex': widget.timerModel.currentSeriesIndex
+    });
   }
 
   void _onSkipTimer() {
-    context.go(
-        '/user_programs/training_viewer/week_details/workout_details/exercise_details',
-        extra: {
-          'programId': widget.timerModel.programId,
-          'weekId': widget.timerModel.weekId,
-          'workoutId': widget.timerModel.workoutId,
-          'exerciseId': widget.timerModel.exerciseId,
-          'userId': widget.timerModel.userId,
-          'superSetExercises': widget.timerModel.superSetExercises,
-          'superSetExerciseIndex': widget.timerModel.superSetExerciseIndex,
-          'seriesList': widget.timerModel.seriesList,
-          'currentSeriesIndex': widget.timerModel.currentSeriesIndex
-        });
+    final path = '${Routes.userPrograms}/${widget.timerModel.userId}/${Routes.trainingViewer}/${widget.timerModel.programId}/${Routes.weekDetails}/${widget.timerModel.weekId}/${Routes.workoutDetails}/${widget.timerModel.workoutId}/${Routes.exerciseDetails}';
+    
+    context.go(path, extra: {
+      'programId': widget.timerModel.programId,
+      'weekId': widget.timerModel.weekId,
+      'workoutId': widget.timerModel.workoutId,
+      'exerciseId': widget.timerModel.exerciseId,
+      'userId': widget.timerModel.userId,
+      'superSetExercises': widget.timerModel.superSetExercises,
+      'superSetExerciseIndex': widget.timerModel.superSetExerciseIndex,
+      'seriesList': widget.timerModel.seriesList,
+      'currentSeriesIndex': widget.timerModel.currentSeriesIndex
+    });
   }
 
   @override

@@ -294,37 +294,67 @@ class TrainingProgramSeriesListState
             onIntensityChanged: (intensity) {
               setState(() {
                 series.intensity = intensity.toStringAsFixed(1);
-                widget.controller.notifyListeners();
+                ref.read(trainingProgramControllerProvider.notifier).updateSeries(
+                  widget.weekIndex,
+                  widget.workoutIndex,
+                  widget.exerciseIndex,
+                  exercise.series,
+                );
               });
             },
             onMaxIntensityChanged: (maxIntensity) {
               setState(() {
                 series.maxIntensity = maxIntensity?.toStringAsFixed(1);
-                widget.controller.notifyListeners();
+                ref.read(trainingProgramControllerProvider.notifier).updateSeries(
+                  widget.weekIndex,
+                  widget.workoutIndex,
+                  widget.exerciseIndex,
+                  exercise.series,
+                );
               });
             },
             onRpeChanged: (rpe) {
               setState(() {
                 series.rpe = rpe.toStringAsFixed(1);
-                widget.controller.notifyListeners();
+                ref.read(trainingProgramControllerProvider.notifier).updateSeries(
+                  widget.weekIndex,
+                  widget.workoutIndex,
+                  widget.exerciseIndex,
+                  exercise.series,
+                );
               });
             },
             onMaxRpeChanged: (maxRpe) {
               setState(() {
                 series.maxRpe = maxRpe?.toStringAsFixed(1);
-                widget.controller.notifyListeners();
+                ref.read(trainingProgramControllerProvider.notifier).updateSeries(
+                  widget.weekIndex,
+                  widget.workoutIndex,
+                  widget.exerciseIndex,
+                  exercise.series,
+                );
               });
             },
             onWeightChanged: (weight) {
               setState(() {
                 series.weight = weight;
-                widget.controller.notifyListeners();
+                ref.read(trainingProgramControllerProvider.notifier).updateSeries(
+                  widget.weekIndex,
+                  widget.workoutIndex,
+                  widget.exerciseIndex,
+                  exercise.series,
+                );
               });
             },
             onMaxWeightChanged: (maxWeight) {
               setState(() {
                 series.maxWeight = maxWeight;
-                widget.controller.notifyListeners();
+                ref.read(trainingProgramControllerProvider.notifier).updateSeries(
+                  widget.weekIndex,
+                  widget.workoutIndex,
+                  widget.exerciseIndex,
+                  exercise.series,
+                );
               });
             },
           ),
@@ -523,8 +553,12 @@ class TrainingProgramSeriesListState
         exercise.series[i].order = i + 1;
       }
 
-      widget.controller.updateSeries(widget.weekIndex, widget.workoutIndex,
-          widget.exerciseIndex, exercise.series);
+      ref.read(trainingProgramControllerProvider.notifier).updateSeries(
+        widget.weekIndex,
+        widget.workoutIndex,
+        widget.exerciseIndex,
+        exercise.series,
+      );
     }
   }
 
@@ -538,8 +572,12 @@ class TrainingProgramSeriesListState
       exercise.series[i].order = i + 1;
     }
 
-    widget.controller.updateSeries(widget.weekIndex, widget.workoutIndex,
-        widget.exerciseIndex, exercise.series);
+    ref.read(trainingProgramControllerProvider.notifier).updateSeries(
+      widget.weekIndex,
+      widget.workoutIndex,
+      widget.exerciseIndex,
+      exercise.series,
+    );
   }
 
   String _formatSeriesInfo(Series series) {
@@ -599,8 +637,12 @@ class TrainingProgramSeriesListState
       exercise.series[i].order = i + 1;
     }
 
-    widget.controller.updateSeries(widget.weekIndex, widget.workoutIndex,
-        widget.exerciseIndex, exercise.series);
+    ref.read(trainingProgramControllerProvider.notifier).updateSeries(
+      widget.weekIndex,
+      widget.workoutIndex,
+      widget.exerciseIndex,
+      exercise.series,
+    );
   }
 
   void _showSeriesOptions(
@@ -660,7 +702,7 @@ class TrainingProgramSeriesListState
               if (onRemove != null) {
                 onRemove();
               } else {
-                widget.controller.removeSeries(
+                ref.read(trainingProgramControllerProvider.notifier).removeSeries(
                   widget.weekIndex,
                   widget.workoutIndex,
                   widget.exerciseIndex,

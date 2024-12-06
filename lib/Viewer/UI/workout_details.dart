@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/training_program_services.dart';
 import '../providers/training_program_provider.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/Main/routes.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 
 // Add note provider
@@ -951,20 +952,20 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       Map<String, dynamic> exercise, List<Map<String, dynamic>> exercises,
       [int startIndex = 0]) {
     if (!mounted) return;
-
-    context.go(
-        '/user_programs/training_viewer/week_details/workout_details/exercise_details',
-        extra: {
-          'programId': widget.programId,
-          'weekId': widget.weekId,
-          'workoutId': widget.workoutId,
-          'exerciseId': exercise['id'],
-          'userId': widget.userId,
-          'superSetExercises': exercises,
-          'superSetExerciseIndex':
-              exercises.indexWhere((e) => e['id'] == exercise['id']),
-          'seriesList': exercise['series']
-        });
+    
+    final extra = {
+      'programId': widget.programId,
+      'weekId': widget.weekId,
+      'workoutId': widget.workoutId,
+      'exerciseId': exercise['id'],
+      'userId': widget.userId,
+      'superSetExercises': exercises,
+      'superSetExerciseIndex': exercises.indexWhere((e) => e['id'] == exercise['id']),
+      'seriesList': exercise['series'],
+      'startIndex': startIndex
+    };
+    
+    context.pushNamed('exercise_details', extra: extra);
   }
 
   void _showChangeExerciseDialog(

@@ -150,6 +150,7 @@ class AppRouter {
                         },
                         routes: [
                           GoRoute(
+                            name: 'exercise_details',
                             path: Routes.exerciseDetails,
                             builder: (context, state) {
                               final extra =
@@ -182,6 +183,7 @@ class AppRouter {
                             },
                             routes: [
                               GoRoute(
+                                name: 'timer',
                                 path: Routes.timer,
                                 builder: (context, state) {
                                   final timerModel =

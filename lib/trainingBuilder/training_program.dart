@@ -498,22 +498,5 @@ class TrainingProgramPage extends HookConsumerWidget {
     );
   }
 
-  void _navigateToWeek(
-      BuildContext context, String userId, String programId, int weekIndex) {
-    context.go('/user_programs/training_program', extra: {
-      'userId': userId,
-      'programId': programId,
-      'weekIndex': weekIndex
-    });
-  }
 
-  void _navigateToWorkout(BuildContext context, String userId, String programId,
-      int weekIndex, int workoutIndex) {
-    context.go('/user_programs/training_program', extra: {
-      'userId': userId,
-      'programId': programId,
-      'weekIndex': weekIndex,
-      'workoutIndex': workoutIndex
-    });
-  }
 }

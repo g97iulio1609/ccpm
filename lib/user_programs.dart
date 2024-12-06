@@ -577,19 +577,6 @@ class UserProgramsScreen extends HookConsumerWidget {
         extra: {'userId': userId, 'programId': programId});
   }
 
-  void _navigateToTrainingProgram(BuildContext context, String? userId,
-      String? programId, int? weekIndex, int? workoutIndex) {
-    if (userId == null || programId == null) return;
-
-    const route = '/user_programs/training_program';
-    final extra = {
-      'userId': userId,
-      'programId': programId,
-      if (weekIndex != null) 'weekIndex': weekIndex,
-      if (workoutIndex != null) 'workoutIndex': workoutIndex
-    };
-    context.go(route, extra: extra);
-  }
 }
 
 class AddProgramDialog extends StatefulWidget {

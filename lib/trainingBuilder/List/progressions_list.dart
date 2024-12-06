@@ -1477,7 +1477,7 @@ class RangeEditDialog extends StatefulWidget {
   });
 
   @override
-  _RangeEditDialogState createState() => _RangeEditDialogState();
+  State<RangeEditDialog> createState() => _RangeEditDialogState();
 }
 
 class _RangeEditDialogState extends State<RangeEditDialog> {
