@@ -350,21 +350,20 @@ class _SeriesDialogState extends State<SeriesDialog> {
 
   void _handleSubmit() {
     final updatedSeries =
-        _formController.createSeries(widget.exercise.series.length);
+        _formController.createSeries(widget.currentSeriesGroup?.length ?? widget.exercise.series.length);
+    
+    // Se stiamo modificando serie esistenti, manteniamo gli ID originali
     if (widget.currentSeriesGroup != null) {
-      // Modifica delle serie esistenti
-      Navigator.pop(context, {
-        'action': 'update',
-        'series': updatedSeries,
-        'originalGroup': widget.currentSeriesGroup,
-      });
-    } else {
-      // Aggiunta di nuove serie
-      Navigator.pop(context, {
-        'action': 'add',
-        'series': updatedSeries,
-      });
+      for (var i = 0; i < updatedSeries.length; i++) {
+        updatedSeries[i] = updatedSeries[i].copyWith(
+          id: i < widget.currentSeriesGroup!.length ? widget.currentSeriesGroup![i].id : null,
+          originalExerciseId: i < widget.currentSeriesGroup!.length ? widget.currentSeriesGroup![i].originalExerciseId : widget.exercise.id,
+          order: i < widget.currentSeriesGroup!.length ? widget.currentSeriesGroup![i].order : i,
+        );
+      }
     }
+    
+    Navigator.pop(context, updatedSeries);
   }
 }
 

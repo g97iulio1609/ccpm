@@ -1099,7 +1099,6 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
         series.map((s) => Series.fromMap(s)).toList();
 
     final originalExerciseId = seriesList.first.originalExerciseId;
-    debugPrint('originalExerciseId: $originalExerciseId');
 
     // Create a stream for the exercise records
     final recordsStream = _exerciseRecordService
@@ -1126,7 +1125,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
 
     if (!mounted) return;
 
-    await showDialog(
+    final result = await showDialog<List<Series>>(
       context: context,
       builder: (context) => SeriesDialog(
         exerciseRecordService: _exerciseRecordService,
@@ -1140,6 +1139,57 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
         weightNotifier: _weightNotifiers[exercise['id']]!,
       ),
     );
+
+    // Se l'utente ha confermato le modifiche
+    if (result != null && mounted) {
+      // Aggiorna le serie nel database
+      final batch = FirebaseFirestore.instance.batch();
+      
+      final updatedResult = <Series>[];
+      for (var series in result) {
+        if (series.id != null) {
+          // Update existing series
+          final seriesRef = FirebaseFirestore.instance
+              .collection('series')
+              .doc(series.id);
+          batch.update(seriesRef, series.toMap());
+          updatedResult.add(series);
+        } else {
+          // Create new series
+          final seriesRef = FirebaseFirestore.instance
+              .collection('series')
+              .doc();
+          final newSeries = series.copyWith(id: seriesRef.id);
+          batch.set(seriesRef, newSeries.toMap());
+          updatedResult.add(newSeries);
+        }
+      }
+
+      try {
+        await batch.commit();
+        
+        // Aggiorna lo stato locale
+        final updatedExercises = List<Map<String, dynamic>>.from(ref.read(exercisesProvider));
+        final index = updatedExercises.indexWhere((e) => e['id'] == exercise['id']);
+        
+        if (index != -1) {
+          updatedExercises[index] = {
+            ...updatedExercises[index],
+            'series': updatedResult.map((s) => s.toMap()).toList(),
+          };
+          
+          ref.read(exercisesProvider.notifier).state = updatedExercises;
+        }
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Errore durante il salvataggio delle modifiche: $e'),
+            backgroundColor: colorScheme.error,
+          ),
+        );
+      }
+    }
   }
 
   void _showEditSeriesDialog(

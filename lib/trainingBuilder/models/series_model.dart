@@ -64,6 +64,7 @@ class Series {
   }
 
   Series copyWith({
+    String? id,
     String? serieId,
     String? originalExerciseId,
     int? reps,
@@ -82,6 +83,7 @@ class Series {
     double? maxWeight,
   }) {
     return Series(
+      id: id ?? this.id,
       serieId: serieId ?? this.serieId,
       originalExerciseId: originalExerciseId ?? this.originalExerciseId,
       reps: reps ?? this.reps,
