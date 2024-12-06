@@ -192,7 +192,6 @@ class WorkoutService {
 
       ref.read(exercisesProvider.notifier).state = updatedExercises;
 
-      // Passa l'exerciseId dell'esercizio selezionato invece dell'ID del documento
       await recalculateWeights(updatedExercises[exerciseIndex], newExercise.exerciseId ?? '');
 
       await trainingProgramServices.updateExercise(currentExercise['id'], updatedExercises[exerciseIndex]);
@@ -201,15 +200,11 @@ class WorkoutService {
 
   Future<void> recalculateWeights(
       Map<String, dynamic> exercise, String newExerciseId) async {
-    print('DEBUG: Inizio recalculateWeights per esercizio ${exercise['name']} con newExerciseId: $newExerciseId');
-    
     final series = exercise['series'] as List<dynamic>;
     final originalExerciseId = newExerciseId;
 
-    // Ottieni l'userId del programma dal provider
     final targetUserId = ref.read(targetUserIdProvider);
     
-    print('DEBUG: Cerco il massimale per exerciseId: $originalExerciseId e userId: $targetUserId');
     final recordsStream = exerciseRecordService
         .getExerciseRecords(
           userId: targetUserId,
@@ -217,7 +212,6 @@ class WorkoutService {
         )
         .map((records) {
           if (records.isEmpty) return null;
-          // Trova il record con l'ID corrispondente
           final record = records.firstWhere(
             (record) => record.exerciseId == originalExerciseId,
             orElse: () => records.first,
@@ -227,40 +221,29 @@ class WorkoutService {
 
     final latestRecord = await recordsStream.first;
     num latestMaxWeight = latestRecord?.maxWeight ?? 0.0;
-    print('DEBUG: Massimale trovato: $latestMaxWeight per record con data: ${latestRecord?.date}');
 
-    // Aggiorna il weight notifier
     _weightNotifiers[exercise['id']] ??= ValueNotifier(0.0);
     _weightNotifiers[exercise['id']]!.value = latestMaxWeight.toDouble();
 
-    // Ricalcola i pesi per tutte le serie usando le intensità
     final batch = FirebaseFirestore.instance.batch();
-    print('DEBUG: Inizio aggiornamento serie con nuovo massimale: $latestMaxWeight');
     
     for (var serie in series) {
       final Map<String, dynamic> seriesMap = serie as Map<String, dynamic>;
-      print('DEBUG: Elaboro serie con ID: ${seriesMap['id']}');
       
-      // Aggiorna l'originalExerciseId con l'exerciseId dell'esercizio selezionato
       seriesMap['originalExerciseId'] = originalExerciseId;
       
-      // Calcola weight usando intensity
       if (seriesMap['intensity'] != null) {
         final double intensity = double.parse(seriesMap['intensity'].toString());
         final double newWeight = (latestMaxWeight * intensity / 100).roundToDouble();
-        print('DEBUG: Calcolo nuovo peso - Intensità: $intensity%, Massimale: $latestMaxWeight, Nuovo peso: $newWeight');
         seriesMap['weight'] = newWeight;
       }
       
-      // Calcola weightMax usando maxIntensity
       if (seriesMap['maxIntensity'] != null) {
         final double maxIntensity = double.parse(seriesMap['maxIntensity'].toString());
         final double newMaxWeight = (latestMaxWeight * maxIntensity / 100).roundToDouble();
-        print('DEBUG: Calcolo nuovo peso massimo - Intensità max: $maxIntensity%, Massimale: $latestMaxWeight, Nuovo peso max: $newMaxWeight');
         seriesMap['maxWeight'] = newMaxWeight;
       }
 
-      // Aggiorna il documento della serie su Firestore
       final seriesId = seriesMap['id'];
       if (seriesId != null) {
         final seriesRef = FirebaseFirestore.instance.collection('series').doc(seriesId);
@@ -271,17 +254,12 @@ class WorkoutService {
           'maxIntensity': seriesMap['maxIntensity']?.toString(),
           'originalExerciseId': originalExerciseId,
         };
-        print('DEBUG: Aggiorno serie $seriesId con dati: $updateData');
         batch.update(seriesRef, updateData);
       }
     }
 
-    print('DEBUG: Eseguo batch update su Firestore...');
-    // Esegui il batch update
     await batch.commit();
-    print('DEBUG: Batch update completato');
 
-    // Aggiorna l'esercizio nel provider
     final exercises = ref.read(exercisesProvider);
     final index = exercises.indexWhere((e) => e['id'] == exercise['id']);
     if (index != -1) {
@@ -291,15 +269,11 @@ class WorkoutService {
         'series': series,
       };
       ref.read(exercisesProvider.notifier).state = updatedExercises;
-      print('DEBUG: Provider aggiornato con le nuove serie');
     }
-    
-    print('DEBUG: recalculateWeights completato');
   }
 
   Future<void> applySeriesChanges(
       Map<String, dynamic> exercise, List<Series> newSeriesList) async {
-    // Ottieni le serie originali
     final exercises = ref.read(exercisesProvider);
     final index = exercises.indexWhere((e) => e['id'] == exercise['id']);
     if (index == -1) return;
@@ -310,7 +284,6 @@ class WorkoutService {
 
     final batch = FirebaseFirestore.instance.batch();
 
-    // Se stiamo riducendo il numero di serie, eliminiamo quelle in eccesso
     if (newSeriesList.length < oldSeries.length) {
       for (var i = newSeriesList.length; i < oldSeries.length; i++) {
         final seriesRef = FirebaseFirestore.instance
@@ -320,18 +293,15 @@ class WorkoutService {
       }
     }
 
-    // Aggiorna o crea le serie rimanenti
     final updatedResult = <Series>[];
     for (var series in newSeriesList) {
       if (series.id != null) {
-        // Update existing series
         final seriesRef = FirebaseFirestore.instance
             .collection('series')
             .doc(series.id);
         batch.update(seriesRef, series.toMap());
         updatedResult.add(series);
       } else {
-        // Create new series
         final seriesRef = FirebaseFirestore.instance
             .collection('series')
             .doc();
@@ -362,7 +332,6 @@ class WorkoutService {
       ref.read(exercisesProvider.notifier).state = updatedExercises;
 
     } catch (e) {
-      // Gestione errore mostrata nella UI al chiamante
       rethrow;
     }
   }
@@ -450,38 +419,21 @@ class WorkoutService {
       int repetitions = 1,
       bool keepCurrentWeights = false
   }) async {
-    print('DEBUG: Starting updateMaxWeight');
-    print('DEBUG: targetUserId: $targetUserId');
-    print('DEBUG: newMaxWeight: $newMaxWeight');
-    print('DEBUG: repetitions: $repetitions');
-    print('DEBUG: keepCurrentWeights: $keepCurrentWeights');
-    print('DEBUG: exercise: $exercise');
-
-    // Get originalExerciseId from the first series
     final series = exercise['series'] as List<dynamic>;
-    final firstSeries = series.first as Map<String, dynamic>;
-    final exerciseId = firstSeries['originalExerciseId'] as String?;
+    final originalExerciseId = exercise['series'].first['originalExerciseId'] as String?;
+    final exerciseId = originalExerciseId;
     final exerciseName = exercise['name'] as String?;
 
-    print('DEBUG: exerciseId (original from series): $exerciseId');
-    print('DEBUG: exerciseName: $exerciseName');
-
     if (targetUserId.isEmpty) {
-      print('ERROR: Target User ID is empty');
       throw Exception('Target User ID is not set');
     }
     if (exerciseId == null || exerciseId.isEmpty) {
-      print('ERROR: Exercise ID is missing or empty');
       throw Exception('Exercise ID is missing or empty');
     }
     if (exerciseName == null || exerciseName.isEmpty) {
-      print('ERROR: Exercise name is missing or empty');
       throw Exception('Exercise name is missing or empty');
     }
 
-    print('DEBUG: All validations passed, proceeding with update');
-
-    // Add new record with updated max weight
     await exerciseRecordService.addExerciseRecord(
       userId: targetUserId,
       exerciseId: exerciseId,
@@ -491,59 +443,40 @@ class WorkoutService {
       date: DateTime.now().toIso8601String(),
     );
 
-    print('DEBUG: Exercise record added, updating weight notifier');
-
-    // Update the weight notifier
     _weightNotifiers[exerciseId]?.value = newMaxWeight.toDouble();
 
-    print('DEBUG: Weight notifier updated');
-
     if (!keepCurrentWeights) {
-      print('DEBUG: Recalculating series weights');
-      // Ricalcola i pesi per tutte le serie usando le intensità
       for (var serie in series) {
         final Map<String, dynamic> seriesMap = serie as Map<String, dynamic>;
         
-        // Calcola weight usando intensity
         if (seriesMap['intensity'] != null) {
-          // Converti intensity in double, gestendo sia stringhe che numeri
           final double intensity = double.parse(seriesMap['intensity'].toString());
           seriesMap['weight'] = (newMaxWeight * intensity / 100).roundToDouble();
         }
         
-        // Calcola weightMax usando maxIntensity (corretto il nome del campo)
         if (seriesMap['maxIntensity'] != null) {
-          // Converti maxIntensity in double, gestendo sia stringhe che numeri
           final double maxIntensity = double.parse(seriesMap['maxIntensity'].toString());
           seriesMap['maxWeight'] = (newMaxWeight * maxIntensity / 100).roundToDouble();
         }
       }
-      print('DEBUG: Series weights recalculated');
     } else {
-      print('DEBUG: Keeping current weights, updating intensities');
-      // Aggiorna solo le intensità basandosi sui pesi attuali
       for (var serie in series) {
         final Map<String, dynamic> seriesMap = serie as Map<String, dynamic>;
         
-        // Calcola intensity da weight
         if (seriesMap['weight'] != null) {
           final double currentWeight = double.parse(seriesMap['weight'].toString());
           seriesMap['intensity'] = ((currentWeight / newMaxWeight) * 100).roundToDouble();
         }
         
-        // Calcola maxIntensity da maxWeight
         if (seriesMap['maxWeight'] != null) {
           final double currentMaxWeight = double.parse(seriesMap['maxWeight'].toString());
           seriesMap['maxIntensity'] = ((currentMaxWeight / newMaxWeight) * 100).roundToDouble();
         }
       }
-      print('DEBUG: Series intensities updated');
     }
 
-    print('DEBUG: Starting batch update of series in Firestore');
     final batch = FirebaseFirestore.instance.batch();
     
-    // Update each series in Firestore
     for (var serie in series) {
       final Map<String, dynamic> seriesMap = serie as Map<String, dynamic>;
       final seriesId = seriesMap['id'];
@@ -558,15 +491,9 @@ class WorkoutService {
       }
     }
     
-    // Commit the batch update
     await batch.commit();
-    print('DEBUG: Batch update of series completed');
 
-    print('DEBUG: Updating exercise in Firestore');
-    // Update exercise in Firestore with the current exercise ID
     await trainingProgramServices.updateExercise(exercise['id'], exercise);
-
-    print('DEBUG: Exercise updated in Firestore successfully');
   }
 }
 

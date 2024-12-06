@@ -36,21 +36,13 @@ class TrainingProgramPage extends HookConsumerWidget {
 
     useEffect(() {
       if (programId.isNotEmpty && program.id != programId) {
-        print('DEBUG: Loading program with ID: $programId');
         controller.loadProgram(programId);
       }
       return null;
     }, [programId]);
 
     if (program == null) {
-      print('DEBUG: Program is null');
       return const Center(child: CircularProgressIndicator());
-    }
-
-    print('DEBUG: Program loaded - Name: ${program.name}');
-    print('DEBUG: Number of weeks: ${program.weeks.length}');
-    if (program.weeks.isNotEmpty) {
-      print('DEBUG: First week workouts: ${program.weeks.first.workouts.length}');
     }
 
     return Scaffold(
