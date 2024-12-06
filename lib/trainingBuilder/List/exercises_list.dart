@@ -293,8 +293,7 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
               exerciseId: exercise.exerciseId!,
             );
             weights[exercise.exerciseId!] = record?.maxWeight ?? 0;
-            print(
-                'DEBUG - Loaded maxWeight for ${exercise.name}: ${weights[exercise.exerciseId!]}');
+
           }
         }
         maxWeights.value = weights;
