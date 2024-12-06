@@ -509,8 +509,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: series != null
                 ? GestureDetector(
-                    onTap: () =>
-                        ref.read(workout_provider.workoutServiceProvider).toggleSeriesDone(series),
+                    onTap: () => ref.read(workout_provider.workoutServiceProvider).toggleSeriesDone(series),
                     child: Icon(
                       ref.read(workout_provider.workoutServiceProvider).isSeriesDone(series) ? Icons.check_circle : Icons.cancel,
                       color: ref.read(workout_provider.workoutServiceProvider).isSeriesDone(series)
@@ -637,20 +636,80 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     );
   }
 
-  Future<void> _showUpdateMaxWeightDialog(BuildContext context, Map<String, dynamic> exercise) async {
-    final TextEditingController controller = TextEditingController();
-    final currentWeight = ref.read(workout_provider.workoutServiceProvider).getWeightNotifier(exercise['id'])?.value ?? 0.0;
-    controller.text = currentWeight.toString();
+  Future<void> _showUpdateMaxWeightDialog(BuildContext context, Map<String, dynamic> exercise) {
+    final weightController = TextEditingController();
+    final repsController = TextEditingController(text: "1");
+    final calculatedMaxWeight = ValueNotifier<double?>(null);
+    final keepWeightSwitch = ValueNotifier<bool>(false);
+
+    void calculateMaxWeight() {
+      final weight = double.tryParse(weightController.text);
+      final reps = int.tryParse(repsController.text);
+      
+      if (weight != null && reps != null && reps > 0) {
+        calculatedMaxWeight.value = (weight / (1.0278 - 0.0278 * reps)).roundToDouble();
+      } else {
+        calculatedMaxWeight.value = null;
+      }
+    }
 
     return showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Aggiorna Massimale'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.numberWithOptions(decimal: true),
-          decoration: InputDecoration(
-            labelText: 'Nuovo massimale (kg)',
+        content: StatefulBuilder(
+          builder: (context, setState) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: weightController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Peso (kg)',
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (_) => calculateMaxWeight(),
+              ),
+              SizedBox(height: 16),
+              TextField(
+                controller: repsController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Ripetizioni',
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (_) => calculateMaxWeight(),
+              ),
+              SizedBox(height: 16),
+              ValueListenableBuilder<double?>(
+                valueListenable: calculatedMaxWeight,
+                builder: (context, maxWeight, child) {
+                  return maxWeight != null
+                      ? Text(
+                          'Massimale calcolato (1RM): ${maxWeight.toStringAsFixed(1)} kg',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        )
+                      : SizedBox.shrink();
+                },
+              ),
+              SizedBox(height: 16),
+              Row(
+                children: [
+                  Text('Mantieni pesi attuali'),
+                  Switch(
+                    value: keepWeightSwitch.value,
+                    onChanged: (value) {
+                      setState(() {
+                        keepWeightSwitch.value = value;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
         actions: [
@@ -660,9 +719,17 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
           ),
           TextButton(
             onPressed: () async {
-              final newWeight = double.tryParse(controller.text);
-              if (newWeight != null) {
-                await ref.read(workout_provider.workoutServiceProvider).updateMaxWeight(exercise, newWeight, widget.userId);
+              final maxWeight = calculatedMaxWeight.value;
+              
+              if (maxWeight != null) {
+                await ref.read(workout_provider.workoutServiceProvider).updateMaxWeight(
+                  exercise,
+                  maxWeight,  
+                  widget.userId,
+                  repetitions: 1,  
+                  keepCurrentWeights: keepWeightSwitch.value
+                );
+                
                 Navigator.pop(context);
               }
             },
@@ -825,22 +892,20 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
 
     showDialog(
       context: context,
-      builder: (BuildContext dialogContext) {
-        return ExerciseDialog(
-          exerciseRecordService: exerciseRecordService,
-          athleteId: widget.userId,
-          exercise: Exercise(
-            id: currentExercise['id'] ?? '',
-            exerciseId: currentExercise['exerciseId'] ?? '',
-            name: currentExercise['name'] ?? '',
-            type: currentExercise['type'] ?? '',
-            variant: currentExercise['variant'] ?? '',
-            order: currentExercise['order'] ?? 0,
-            series: [],
-            weekProgressions: [],
-          ),
-        );
-      },
+      builder: (BuildContext dialogContext) => ExerciseDialog(
+        exerciseRecordService: exerciseRecordService,
+        athleteId: widget.userId,
+        exercise: Exercise(
+          id: currentExercise['id'] ?? '',
+          exerciseId: currentExercise['exerciseId'] ?? '',
+          name: currentExercise['name'] ?? '',
+          type: currentExercise['type'] ?? '',
+          variant: currentExercise['variant'] ?? '',
+          order: currentExercise['order'] ?? 0,
+          series: [],
+          weekProgressions: [],
+        ),
+      ),
     ).then((newExercise) async {
       if (newExercise != null) {
         await ref.read(workout_provider.workoutServiceProvider).updateExercise(currentExercise, newExercise as Exercise);
@@ -850,7 +915,6 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
 
   void _showSeriesEditDialog(
       Map<String, dynamic> exercise, List<Map<String, dynamic>> series) async {
-    // Otteniamo l'originalExerciseId dalle serie
     final List<Series> seriesList =
         series.map((s) => Series.fromMap(s)).toList();
     final originalExerciseId = seriesList.first.originalExerciseId ?? exercise['id'];

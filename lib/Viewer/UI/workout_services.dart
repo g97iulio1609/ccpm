@@ -375,10 +375,17 @@ class WorkoutService {
   }
 
   Future<void> updateMaxWeight(
-      Map<String, dynamic> exercise, num newMaxWeight, String targetUserId) async {
+      Map<String, dynamic> exercise,
+      num newMaxWeight,
+      String targetUserId, {
+      int repetitions = 1,
+      bool keepCurrentWeights = false
+  }) async {
     print('DEBUG: Starting updateMaxWeight');
     print('DEBUG: targetUserId: $targetUserId');
     print('DEBUG: newMaxWeight: $newMaxWeight');
+    print('DEBUG: repetitions: $repetitions');
+    print('DEBUG: keepCurrentWeights: $keepCurrentWeights');
     print('DEBUG: exercise: $exercise');
 
     // Get originalExerciseId from the first series
@@ -411,7 +418,7 @@ class WorkoutService {
       exerciseId: exerciseId,
       exerciseName: exerciseName,
       maxWeight: newMaxWeight,
-      repetitions: 1,
+      repetitions: repetitions,
       date: DateTime.now().toIso8601String(),
     );
 
@@ -420,19 +427,33 @@ class WorkoutService {
     // Update the weight notifier
     _weightNotifiers[exerciseId]?.value = newMaxWeight.toDouble();
 
-    print('DEBUG: Weight notifier updated, recalculating series weights');
+    print('DEBUG: Weight notifier updated');
 
-    // Recalculate weights for all series
-    for (var serie in series) {
-      final Map<String, dynamic> seriesMap = serie as Map<String, dynamic>;
-      if (seriesMap['weight'] != null) {
-        final double percentage = seriesMap['percentage'] ?? 100.0;
-        seriesMap['weight'] = (newMaxWeight * percentage / 100).roundToDouble();
+    if (!keepCurrentWeights) {
+      print('DEBUG: Recalculating series weights');
+      // Recalculate weights for all series
+      for (var serie in series) {
+        final Map<String, dynamic> seriesMap = serie as Map<String, dynamic>;
+        if (seriesMap['weight'] != null) {
+          final double percentage = seriesMap['percentage'] ?? 100.0;
+          seriesMap['weight'] = (newMaxWeight * percentage / 100).roundToDouble();
+        }
       }
+      print('DEBUG: Series weights recalculated');
+    } else {
+      print('DEBUG: Keeping current weights, updating intensities');
+      // Update only the intensities based on the new max weight
+      for (var serie in series) {
+        final Map<String, dynamic> seriesMap = serie as Map<String, dynamic>;
+        if (seriesMap['weight'] != null) {
+          final double currentWeight = seriesMap['weight'] as double;
+          seriesMap['percentage'] = ((currentWeight / newMaxWeight) * 100).roundToDouble();
+        }
+      }
+      print('DEBUG: Series intensities updated');
     }
 
-    print('DEBUG: Series weights recalculated, updating exercise in Firestore');
-
+    print('DEBUG: Updating exercise in Firestore');
     // Update exercise in Firestore with the current exercise ID
     await trainingProgramServices.updateExercise(exercise['id'], exercise);
 
