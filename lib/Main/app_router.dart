@@ -1,43 +1,44 @@
 // app_router.dart
 
-import 'package:alphanessone/Store/subscriptions_screen.dart';
-import 'package:alphanessone/Viewer/models/timer_model.dart';
 import 'package:alphanessone/Coaching/coaching_association.dart';
-import 'package:alphanessone/exerciseManager/exercise_model.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_stats.dart';
+import 'package:alphanessone/ExerciseRecords/maxrmdashboard.dart';
+import 'package:alphanessone/Main/routes.dart';
+import 'package:alphanessone/UI/home_screen.dart';
+import 'package:alphanessone/Viewer/UI/exercise_details.dart';
+import 'package:alphanessone/Viewer/UI/timer.dart';
+import 'package:alphanessone/Viewer/UI/training_viewer.dart';
+import 'package:alphanessone/Viewer/UI/workout_details.dart';
+import 'package:alphanessone/Viewer/models/timer_model.dart';
+import 'package:alphanessone/auth/auth_screen.dart';
+import 'package:alphanessone/measurements/measurements.dart';
+import 'package:alphanessone/nutrition/Calc/macros_selector.dart';
+import 'package:alphanessone/nutrition/Calc/tdee.dart';
 import 'package:alphanessone/nutrition/models/diet_plan_model.dart';
+import 'package:alphanessone/nutrition/models/meals_model.dart';
+import 'package:alphanessone/nutrition/tracker/daily_food_tracker.dart';
 import 'package:alphanessone/nutrition/tracker/diet_plan_screen.dart';
+import 'package:alphanessone/nutrition/tracker/favorite_meal_detail.dart';
+import 'package:alphanessone/nutrition/tracker/food_management.dart';
+import 'package:alphanessone/nutrition/tracker/food_selector.dart';
+import 'package:alphanessone/nutrition/tracker/my_meals.dart';
 import 'package:alphanessone/nutrition/tracker/view_diet_plans_screen.dart';
+import 'package:alphanessone/training_gallery.dart';
+import 'package:alphanessone/user_profile.dart';
+import 'package:alphanessone/users_dashboard.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import '../auth/auth_screen.dart';
-import '../UI/home_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../Store/inAppPurchase.dart';
+import '../Store/subscriptions_screen.dart';
+import '../trainingBuilder/training_program.dart';
+import '../exerciseManager/exercises_manager.dart';
+import '../exerciseManager/exercise_model.dart';
 import '../Coaching/coaching_screen.dart';
 import '../user_programs.dart';
-import '../Viewer/UI/training_viewer.dart';
-import '../Viewer/UI/week_details.dart';
-import '../Viewer/UI/workout_details.dart';
-import '../Viewer/UI/exercise_details.dart';
-import '../Viewer/UI/timer.dart';
-import '../trainingBuilder/training_program.dart';
-import '../training_gallery.dart';
-import 'package:alphanessone/ExerciseRecords/maxrmdashboard.dart';
-import '../user_profile.dart';
-import '../users_dashboard.dart';
-import '../measurements/measurements.dart';
-import '../nutrition/Calc/tdee.dart';
-import '../nutrition/Calc/macros_selector.dart';
-import '../nutrition/tracker/food_management.dart';
-import '../nutrition/tracker/food_selector.dart';
-import '../nutrition/tracker/favorite_meal_detail.dart';
-import '../nutrition/tracker/daily_food_tracker.dart';
-import '../nutrition/tracker/my_meals.dart';
-import '../store/inAppPurchase.dart';
-import '../exerciseManager/exercises_manager.dart';
 import '../providers/providers.dart';
-import '../nutrition/models/meals_model.dart';
+import 'package:alphanessone/Features/Dashboard/dashboard_screen.dart';
 
 class AppRouter {
   static GoRouter router(WidgetRef ref) => GoRouter(
@@ -46,20 +47,18 @@ class AppRouter {
             builder: (context, state, child) => HomeScreen(child: child),
             routes: [
               GoRoute(
-                path: '/',
+                path: Routes.home,
                 builder: (context, state) => const AuthWrapper(),
               ),
               GoRoute(
-                path: '/programs_screen',
+                path: Routes.programsScreen,
                 builder: (context, state) {
                   return Consumer(
                     builder: (context, ref, child) {
                       final userRole = ref.watch(userRoleProvider);
-                      //debugPrint('Navigating to /programs_screen with userRole: $userRole');
                       if (userRole == 'admin' || userRole == 'coach') {
                         return const CoachingScreen();
                       } else if (userRole.isEmpty) {
-                        // User role not yet loaded, show a loading indicator
                         return const Center(child: CircularProgressIndicator());
                       } else {
                         return const Center(child: Text('Access denied'));
@@ -69,53 +68,52 @@ class AppRouter {
                 },
               ),
               GoRoute(
-                path: '/user_programs/:userId',
+                path: Routes.userPrograms,
                 builder: (context, state) {
-                  final userId = state.pathParameters['userId'];
-                  return UserProgramsScreen(userId: userId!);
+                  final extra = state.extra as Map<String, dynamic>;
+                  final userId = extra['userId'] as String;
+                  return UserProgramsScreen(userId: userId);
                 },
                 routes: [
                   GoRoute(
-                    path: 'training_program/:programId',
+                    path: Routes.trainingProgram,
                     builder: (context, state) {
-                      final programId = state.pathParameters['programId'];
-                      final userId = state.pathParameters['userId'];
+                      final extra = state.extra as Map<String, dynamic>;
+                      final programId = extra['programId'] as String;
+                      final userId = extra['userId'] as String;
                       return TrainingProgramPage(
-                        programId: programId!,
-                        userId: userId!,
+                        programId: programId,
+                        userId: userId,
                       );
                     },
                     routes: [
                       GoRoute(
-                        path: 'week/:weekIndex',
+                        path: Routes.week,
                         builder: (context, state) {
-                          final programId = state.pathParameters['programId'];
-                          final userId = state.pathParameters['userId'];
-                          final weekIndex = state.pathParameters['weekIndex'];
-                          //debugPrint('Navigating to TrainingProgramPage with weekIndex: $weekIndex');
+                          final extra = state.extra as Map<String, dynamic>;
+                          final programId = extra['programId'] as String;
+                          final userId = extra['userId'] as String;
+                          final weekIndex = extra['weekIndex'] as int;
                           return TrainingProgramPage(
-                            programId: programId!,
-                            userId: userId!,
-                            weekIndex: int.parse(weekIndex!),
+                            programId: programId,
+                            userId: userId,
+                            weekIndex: weekIndex,
                           );
                         },
                         routes: [
                           GoRoute(
-                            path: 'workout/:workoutIndex',
+                            path: Routes.workout,
                             builder: (context, state) {
-                              final programId =
-                                  state.pathParameters['programId'];
-                              final userId = state.pathParameters['userId'];
-                              final weekIndex =
-                                  state.pathParameters['weekIndex'];
-                              final workoutIndex =
-                                  state.pathParameters['workoutIndex'];
-                              //debugPrint('Navigating to TrainingProgramPage with workoutIndex: $workoutIndex');
+                              final extra = state.extra as Map<String, dynamic>;
+                              final programId = extra['programId'] as String;
+                              final userId = extra['userId'] as String;
+                              final weekIndex = extra['weekIndex'] as int;
+                              final workoutIndex = extra['workoutIndex'] as int;
                               return TrainingProgramPage(
-                                programId: programId!,
-                                userId: userId!,
-                                weekIndex: int.parse(weekIndex!),
-                                workoutIndex: int.parse(workoutIndex!),
+                                programId: programId,
+                                userId: userId,
+                                weekIndex: weekIndex,
+                                workoutIndex: workoutIndex,
                               );
                             },
                           ),
@@ -124,92 +122,74 @@ class AppRouter {
                     ],
                   ),
                   GoRoute(
-                    path: 'training_viewer/:programId',
+                    path: Routes.trainingViewer,
                     builder: (context, state) {
-                      final programId = state.pathParameters['programId'];
-                      final userId = state.pathParameters['userId'];
-                      //debugPrint('Navigating to TrainingViewer with programId: $programId, userId: $userId');
-                      return TrainingViewer(
-                        programId: programId!,
-                        userId: userId!,
+                      final extra = state.extra as Map<String, dynamic>;
+                      final programId = extra['programId'] as String;
+                      final userId = extra['userId'] as String;
+                      return UnifiedTrainingViewer(
+                        programId: programId,
+                        userId: userId,
                       );
                     },
                     routes: [
                       GoRoute(
-                        path: 'week_details/:weekId',
+                        path: Routes.workoutDetails,
                         builder: (context, state) {
-                          final programId = state.pathParameters['programId'];
-                          final weekId = state.pathParameters['weekId'];
-                          final userId = state.pathParameters['userId'];
-                          //debugPrint('Navigating to WeekDetails with weekId: $weekId');
-                          return WeekDetails(
-                            programId: programId!,
-                            weekId: weekId!,
-                            userId: userId!,
+                          final extra = state.extra as Map<String, dynamic>;
+                          final programId = extra['programId'] as String;
+                          final weekId = extra['weekId'] as String;
+                          final workoutId = extra['workoutId'] as String;
+                          final userId = extra['userId'] as String;
+                          return WorkoutDetails(
+                            programId: programId,
+                            weekId: weekId,
+                            workoutId: workoutId,
+                            userId: userId,
                           );
                         },
                         routes: [
                           GoRoute(
-                            path: 'workout_details/:workoutId',
+                            name: 'exercise_details',
+                            path: Routes.exerciseDetails,
                             builder: (context, state) {
+                              final extra =
+                                  state.extra as Map<String, dynamic>;
                               final programId =
-                                  state.pathParameters['programId'];
-                              final weekId = state.pathParameters['weekId'];
+                                  extra['programId'] as String;
+                              final weekId = extra['weekId'] as String;
                               final workoutId =
-                                  state.pathParameters['workoutId'];
-                              final userId = state.pathParameters['userId'];
-                              //debugPrint('Navigating to WorkoutDetails with workoutId: $workoutId');
-                              return WorkoutDetails(
-                                programId: programId!,
-                                weekId: weekId!,
-                                workoutId: workoutId!,
-                                userId: userId!,
+                                  extra['workoutId'] as String;
+                              final exerciseId =
+                                  extra['exerciseId'] as String;
+                              final userId = extra['userId'] as String;
+                              return ExerciseDetails(
+                                programId: programId,
+                                weekId: weekId,
+                                workoutId: workoutId,
+                                exerciseId: exerciseId,
+                                superSetExercises:
+                                    extra['superSetExercises'] != null
+                                        ? List<Map<String, dynamic>>.from(
+                                            extra['superSetExercises'])
+                                        : [],
+                                superSetExerciseIndex:
+                                    extra['superSetExerciseIndex'] ?? 0,
+                                seriesList: List<Map<String, dynamic>>.from(
+                                    extra['seriesList'] ?? []),
+                                startIndex: extra['startIndex'] ?? 0,
+                                userId: userId,
                               );
                             },
                             routes: [
                               GoRoute(
-                                path: 'exercise_details/:exerciseId',
+                                name: 'timer',
+                                path: Routes.timer,
                                 builder: (context, state) {
-                                  final programId = Uri.decodeComponent(
-                                      state.pathParameters['programId']!);
-                                  final weekId = Uri.decodeComponent(
-                                      state.pathParameters['weekId']!);
-                                  final workoutId = Uri.decodeComponent(
-                                      state.pathParameters['workoutId']!);
-                                  final exerciseId = Uri.decodeComponent(
-                                      state.pathParameters['exerciseId']!);
-                                  final extra =
-                                      state.extra as Map<String, dynamic>?;
-                                  //debugPrint('Navigating to ExerciseDetails with exerciseId: $exerciseId');
-                                  return ExerciseDetails(
-                                    programId: programId,
-                                    weekId: weekId,
-                                    workoutId: workoutId,
-                                    exerciseId: exerciseId,
-                                    superSetExercises:
-                                        extra?['superSetExercises'] != null
-                                            ? List<Map<String, dynamic>>.from(
-                                                extra?['superSetExercises'])
-                                            : [],
-                                    superSetExerciseIndex:
-                                        extra?['superSetExerciseIndex'] ?? 0,
-                                    seriesList: List<Map<String, dynamic>>.from(
-                                        extra?['seriesList'] ?? []),
-                                    startIndex: extra?['startIndex'] ?? 0,
-                                    userId: state.pathParameters['userId']!,
-                                  );
+                                  final timerModel =
+                                      state.extra as TimerModel;
+                                  return TimerPage(timerModel: timerModel);
                                 },
-                                routes: [
-                                  GoRoute(
-                                    path: 'timer',
-                                    builder: (context, state) {
-                                      final timerModel =
-                                          state.extra as TimerModel;
-                                      //debugPrint('Navigating to TimerPage');
-                                      return TimerPage(timerModel: timerModel);
-                                    },
-                                  ),
-                                ],
                               ),
                             ],
                           ),
@@ -220,26 +200,24 @@ class AppRouter {
                 ],
               ),
               GoRoute(
-                path: '/training_gallery',
+                path: Routes.trainingGallery,
                 builder: (context, state) => const TrainingGalleryScreen(),
               ),
               GoRoute(
-                path: '/subscriptions',
-                builder: (context, state) => const InAppSubscriptionsPage(),
+                path: Routes.subscriptions,
+                name: 'subscriptions',
+                builder: (context, state) => const InAppPurchaseScreen(),
               ),
               GoRoute(
-                path: '/status',
-                builder: (context, state) =>
-                    SubscriptionsScreen(), // Standalone SubscriptionsScreen senza userId
+                path: Routes.status,
+                builder: (context, state) => SubscriptionsScreen(),
               ),
               GoRoute(
-                path: '/measurements',
-                builder: (context, state) {
-                  return const MeasurementsPage();
-                },
+                path: Routes.measurements,
+                builder: (context, state) => const MeasurementsPage(),
               ),
               GoRoute(
-                path: '/tdee',
+                path: Routes.tdee,
                 builder: (context, state) {
                   return Consumer(
                     builder: (context, ref, child) {
@@ -262,7 +240,7 @@ class AppRouter {
                 },
               ),
               GoRoute(
-                path: '/macros_selector',
+                path: Routes.macrosSelector,
                 builder: (context, state) {
                   return Consumer(
                     builder: (context, ref, child) {
@@ -285,26 +263,25 @@ class AppRouter {
                 },
               ),
               GoRoute(
-                path: '/mymeals',
+                path: Routes.myMeals,
                 builder: (context, state) => const FavouritesMeals(),
                 routes: [
                   GoRoute(
-                    path: 'favorite_meal_detail',
+                    path: Routes.favoriteMealDetail,
                     builder: (context, state) {
                       final meal = state.extra as Meal;
-                      // //debugPrint('Navigating to FavoriteMealDetail for meal: ${meal.name}');
                       return FavoriteMealDetail(meal: meal);
                     },
                   ),
                 ],
               ),
               GoRoute(
-                path: '/associations',
+                path: Routes.associations,
                 builder: (context, state) =>
                     const CoachAthleteAssociationScreen(),
               ),
               GoRoute(
-                path: '/food_tracker',
+                path: Routes.foodTracker,
                 builder: (context, state) {
                   return Consumer(
                     builder: (context, ref, child) {
@@ -330,14 +307,13 @@ class AppRouter {
                 },
                 routes: [
                   GoRoute(
-                    path: 'food_selector',
+                    path: Routes.foodSelector,
                     builder: (context, state) {
                       final extra = state.extra as Map<String, dynamic>;
                       final mealMap = extra['meal'] as Map<String, dynamic>;
                       final meal = Meal.fromMap(mealMap);
                       final myFoodId = extra['myFoodId'] as String?;
                       final isFavoriteMeal = extra['isFavoriteMeal'] as bool;
-                      //     //debugPrint('Navigating to FoodSelector for meal: ${meal.name}');
                       return FoodSelector(
                         meal: meal,
                         myFoodId: myFoodId,
@@ -345,72 +321,65 @@ class AppRouter {
                       );
                     },
                   ),
-                  // Rotte per Diet Plan
                   GoRoute(
-                    path: 'diet_plan',
-                    builder: (context, state) {
-                      //debugPrint('Navigating to DietPlanScreen (creation mode)');
-                      return const DietPlanScreen();
-                    },
+                    path: Routes.dietPlan,
+                    builder: (context, state) => const DietPlanScreen(),
                   ),
                   GoRoute(
-                    path: 'diet_plan/edit',
+                    path: Routes.dietPlanEdit,
                     builder: (context, state) {
                       final dietPlan = state.extra as DietPlan;
-                      //debugPrint('Navigating to DietPlanScreen (edit mode) for dietPlan: ${dietPlan.name}');
                       return DietPlanScreen(existingDietPlan: dietPlan);
                     },
                   ),
                   GoRoute(
-                    path: 'view_diet_plans',
+                    path: Routes.viewDietPlans,
                     builder: (context, state) => const ViewDietPlansScreen(),
                   ),
                 ],
               ),
               GoRoute(
-                path: '/food_management',
+                path: Routes.foodManagement,
                 builder: (context, state) => const FoodManagement(),
               ),
               GoRoute(
-                path: '/exercises_list',
+                path: Routes.exercisesList,
                 builder: (context, state) => const ExercisesList(),
               ),
               GoRoute(
-                path: '/maxrmdashboard',
-                builder: (context, state) {
-                  //debugPrint('Navigating to MaxRMDashboard');
-                  return const MaxRMDashboard();
-                },
+                path: Routes.maxRmDashboard,
+                builder: (context, state) => const MaxRMDashboard(),
                 routes: [
                   GoRoute(
-                    path: 'exercise_stats/:exerciseId',
+                    path: Routes.exerciseStats,
                     builder: (context, state) {
                       final extra = state.extra as Map<String, dynamic>;
                       final exercise = extra['exercise'] as ExerciseModel;
                       final userId = extra['userId'] as String;
-                      //debugPrint('Navigating to ExerciseStats for exerciseId: ${exercise.id}, userId: $userId');
                       return ExerciseStats(
                         exercise: exercise,
-                        userId: userId, // Passing the user ID here
+                        userId: userId,
                       );
                     },
                   ),
                 ],
               ),
               GoRoute(
-                path: '/users_dashboard',
+                path: Routes.usersDashboard,
                 builder: (context, state) => const UsersDashboard(),
               ),
               GoRoute(
-                path: '/user_profile/:userId',
+                path: Routes.userProfile,
                 builder: (context, state) {
-                  final userId = state.pathParameters['userId'];
-                  //debugPrint('Navigating to UserProfile with userId: $userId');
+                  final extra = state.extra as Map<String, dynamic>;
+                  final userId = extra['userId'] as String;
                   return UserProfile(userId: userId);
                 },
               ),
-
-              // Altre rotte...
+              GoRoute(
+                path: Routes.dashboard,
+                builder: (context, state) => const DashboardScreen(),
+              ),
             ],
           ),
         ],
@@ -425,31 +394,25 @@ class AuthWrapper extends ConsumerWidget {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        //debugPrint('AuthWrapper StreamBuilder: connectionState=${snapshot.connectionState}');
         if (snapshot.connectionState == ConnectionState.active) {
           final User? user = snapshot.data;
-          //debugPrint('AuthWrapper: user=${user?.uid}');
           if (user == null) {
             return const AuthScreen();
           } else {
-            // Usa FutureBuilder per attendere il completamento della fetch del ruolo
             return FutureBuilder(
               future: ref.read(usersServiceProvider).fetchUserRole(),
               builder: (context, roleSnapshot) {
                 if (roleSnapshot.connectionState == ConnectionState.waiting) {
-                  //debugPrint('AuthWrapper: fetching user role...');
                   return const Center(child: CircularProgressIndicator());
                 }
                 final userRole = ref.read(userRoleProvider);
-                //debugPrint('AuthWrapper: userRole=$userRole');
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (context.mounted) {
                     if (userRole == 'admin' || userRole == 'coach') {
-                      //debugPrint('AuthWrapper: Navigating to /programs_screen');
-                      context.go('/programs_screen');
+                      context.go(Routes.programsScreen);
                     } else {
-                      //debugPrint('AuthWrapper: Navigating to /user_programs/${user.uid}');
-                      context.go('/user_programs/${user.uid}');
+                      context
+                          .go(Routes.userPrograms, extra: {'userId': user.uid});
                     }
                   }
                 });
@@ -458,7 +421,6 @@ class AuthWrapper extends ConsumerWidget {
             );
           }
         }
-        //debugPrint('AuthWrapper: StreamBuilder waiting...');
         return const Center(child: CircularProgressIndicator());
       },
     );

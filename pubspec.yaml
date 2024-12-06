@@ -2,13 +2,15 @@ name: alphanessone
 description: "Official AlphanessOne App"
 publish_to: 'none'
 
-version: 1.30.02+61
+version: 1.30.06+68
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
 
 dependencies:
   flutter:
+    sdk: flutter
+  flutter_web_plugins:
     sdk: flutter
   cupertino_icons: ^1.0.6
   firebase_core: ^3.0.0
@@ -19,7 +21,7 @@ dependencies:
   google_fonts: ^6.2.0
   hooks_riverpod: ^2.4.10
   flutter_hooks: ^0.20.5
-  intl: ^0.19.0
+  intl: ^0.20.1
   rxdart: ^0.28.0
   flutter_riverpod: ^2.4.10
   flutter_launcher_icons: ^0.14.1
@@ -96,6 +98,3 @@ flutter_native_splash:
   web: true
   android_gravity: center # Posiziona l'icona al centro su Android
   ios_content_mode: center # Posiziona l'icona al centro su iOS
-
-
-

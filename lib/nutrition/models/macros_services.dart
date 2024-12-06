@@ -9,46 +9,86 @@ final macrosServiceProvider = Provider<MacrosService>((ref) {
 });
 
 class MacrosService {
-  final ProviderRef ref;
+  final Ref ref;
   final FirebaseFirestore _firestore;
+
+  // Cache ottimizzata
+  final _foodsCache = <String, Food>{};
+  final _userFoodsCache = <String, Map<String, Food>>{};
+
+  // Stream controllers ottimizzati
   final _foodsStreamController = BehaviorSubject<List<Food>>.seeded([]);
   final _searchResultsStreamController = BehaviorSubject<List<Food>>.seeded([]);
+
+  // Gestione delle sottoscrizioni
+  final _subscriptions = <StreamSubscription>[];
+
+  // Gestione della ricerca
   String _searchQuery = '';
-  StreamSubscription? _foodsChangesSubscription;
+  Timer? _searchDebouncer;
+
+  // Batch operations
+  final _batchQueue = <Future Function()>[];
+  bool _isBatchProcessing = false;
 
   MacrosService(this.ref, this._firestore) {
-    _initializeFoodsStream();
+    _initializeService();
   }
 
-  void _initializeFoodsStream() {
-    _foodsChangesSubscription?.cancel();
-    _foodsChangesSubscription =
-        _firestore.collection('foods').snapshots().listen((snapshot) {
-      final foods =
-          snapshot.docs.map((doc) => Food.fromFirestore(doc)).toList();
-      _foodsStreamController.add(foods);
-    });
+  void _initializeService() {
+    _subscriptions.add(
+        _firestore.collection('foods').snapshots().listen(_handleFoodsUpdate));
+  }
+
+  void _handleFoodsUpdate(QuerySnapshot snapshot) {
+    final foods = snapshot.docs.map((doc) {
+      final food = Food.fromFirestore(doc);
+      _foodsCache[food.id!] = food;
+      return food;
+    }).toList();
+    _foodsStreamController.add(foods);
   }
 
   void setSearchQuery(String query) {
-    _searchQuery = query.trim().toLowerCase();
-    _searchFoods();
+    _searchDebouncer?.cancel();
+    _searchDebouncer = Timer(const Duration(milliseconds: 300), () {
+      _searchQuery = query.trim().toLowerCase();
+      _searchFoods();
+    });
   }
 
   Future<void> _searchFoods() async {
+    if (_searchQuery.isEmpty) {
+      _searchResultsStreamController.add(_foodsCache.values.toList());
+      return;
+    }
+
     try {
+      // Prima cerca nella cache
+      final cachedResults = _foodsCache.values
+          .where((food) => food.name.toLowerCase().contains(_searchQuery))
+          .toList();
+
+      if (cachedResults.isNotEmpty) {
+        _searchResultsStreamController.add(cachedResults);
+        return;
+      }
+
+      // Se non trova risultati nella cache, cerca su Firestore
       final firestoreResults = await _firestore
           .collection('foods')
           .orderBy('name')
           .startAt([_searchQuery])
-          .endAt([_searchQuery + '\uf8ff'])
+          .endAt(['$_searchQuery\uf8ff'])
           .limit(10)
           .get();
 
       final foods = firestoreResults.docs.map((doc) {
         final food = Food.fromFirestore(doc);
+        _foodsCache[food.id!] = food;
         return food;
       }).toList();
+
       _searchResultsStreamController.add(foods);
     } catch (e) {
       _searchResultsStreamController.addError(e);
@@ -60,34 +100,52 @@ class MacrosService {
     return _searchResultsStreamController.stream;
   }
 
+  // Ottimizzazione delle query con cache
   Future<Food?> getFoodById(String foodId) async {
-    final foodDoc = await _firestore.collection('foods').doc(foodId).get();
-    if (foodDoc.exists) {
-      return Food.fromFirestore(foodDoc);
+    if (_foodsCache.containsKey(foodId)) {
+      return _foodsCache[foodId];
     }
-    return null;
+
+    final foodDoc = await _firestore.collection('foods').doc(foodId).get();
+    if (!foodDoc.exists) return null;
+
+    final food = Food.fromFirestore(foodDoc);
+    _foodsCache[foodId] = food;
+    return food;
   }
 
+  // Batch processing ottimizzato
+  Future<void> _processBatchQueue() async {
+    if (_isBatchProcessing) return;
+    _isBatchProcessing = true;
+
+    try {
+      while (_batchQueue.isNotEmpty) {
+        final batch = _firestore.batch();
+        final operations =
+            _batchQueue.take(500).toList(); // Limite di Firestore
+        _batchQueue.removeRange(0, operations.length);
+
+        for (final operation in operations) {
+          await operation();
+        }
+
+        await batch.commit();
+      }
+    } finally {
+      _isBatchProcessing = false;
+    }
+  }
+
+  // Ottimizzazione delle operazioni di scrittura
   Future<void> addFood(Food food) async {
     final batch = _firestore.batch();
-    final foodRef = _firestore.collection('foods').doc(food.id);
+    final foodRef = _firestore.collection('foods').doc();
     food.name = food.name.toLowerCase();
+
+    _foodsCache[food.id!] = food;
+
     batch.set(foodRef, food.toMap());
-    await batch.commit();
-  }
-
-  Future<void> updateFood(String foodId, Food updatedFood) async {
-    final batch = _firestore.batch();
-    final foodRef = _firestore.collection('foods').doc(foodId);
-    updatedFood.name = updatedFood.name.toLowerCase();
-    batch.update(foodRef, updatedFood.toMap());
-    await batch.commit();
-  }
-
-  Future<void> deleteFood(String foodId) async {
-    final batch = _firestore.batch();
-    final foodRef = _firestore.collection('foods').doc(foodId);
-    batch.delete(foodRef);
     await batch.commit();
   }
 
@@ -98,58 +156,30 @@ class MacrosService {
     required DateTime date,
   }) async {
     final foodData = await getFoodById(foodId);
-    if (foodData != null) {
-      final batch = _firestore.batch();
-      final userFoodRef = _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('foods')
-          .doc();
-      final userFoodData = {
-        'foodId': foodId,
-        'quantity': quantity,
-        'date': Timestamp.fromDate(date),
-        'userId': userId,
-        ...foodData.toMap(),
-      };
-      batch.set(userFoodRef, userFoodData);
-      await batch.commit();
-    }
-  }
+    if (foodData == null) return;
 
-  Future<void> updateUserFood({
-    required String userId,
-    required String userFoodId,
-    required double quantity,
-    required DateTime date,
-  }) async {
     final batch = _firestore.batch();
-    final userFoodRef = _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('foods')
-        .doc(userFoodId);
-    batch.update(userFoodRef, {
+    final userFoodRef =
+        _firestore.collection('users').doc(userId).collection('foods').doc();
+
+    final userFoodData = {
+      'foodId': foodId,
       'quantity': quantity,
       'date': Timestamp.fromDate(date),
-    });
+      'userId': userId,
+      ...foodData.toMap(),
+    };
+
+    if (!_userFoodsCache.containsKey(userId)) {
+      _userFoodsCache[userId] = {};
+    }
+    _userFoodsCache[userId]![userFoodRef.id] = Food.fromMap(userFoodData);
+
+    batch.set(userFoodRef, userFoodData);
     await batch.commit();
   }
 
-  Future<void> deleteUserFood({
-    required String userId,
-    required String userFoodId,
-  }) async {
-    final batch = _firestore.batch();
-    final userFoodRef = _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('foods')
-        .doc(userFoodId);
-    batch.delete(userFoodRef);
-    await batch.commit();
-  }
-
+  // Stream ottimizzato con cache
   Stream<List<Food>> getUserFoods({required String userId}) {
     return _firestore
         .collection('users')
@@ -158,27 +188,31 @@ class MacrosService {
         .orderBy('date', descending: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        return Food.fromMap(data);
+      final foods = snapshot.docs.map((doc) {
+        final food = Food.fromFirestore(doc);
+        if (!_userFoodsCache.containsKey(userId)) {
+          _userFoodsCache[userId] = {};
+        }
+        _userFoodsCache[userId]![food.id!] = food;
+        return food;
       }).toList();
+      return foods;
     });
   }
 
-  Future<void> importFoods(List<Map<String, dynamic>> foodsData) async {
-    final batch = _firestore.batch();
-    for (final foodData in foodsData) {
-      final foodRef = _firestore.collection('foods').doc();
-      foodData['name'] = foodData['name'].toString().toLowerCase();
-      batch.set(foodRef, foodData);
-    }
-    await batch.commit();
+  // Gestione efficiente della memoria
+  void _clearCache() {
+    _foodsCache.clear();
+    _userFoodsCache.clear();
   }
 
-  Future<void> exportFoods() async {
-    final snapshot = await _firestore.collection('foods').get();
-    snapshot.docs.map((doc) => doc.data()).toList();
-    // Perform the export operation using the foodsData
-    // For example, you can convert it to JSON and save it to a file or send it to an API
+  void dispose() {
+    for (final subscription in _subscriptions) {
+      subscription.cancel();
+    }
+    _searchDebouncer?.cancel();
+    _foodsStreamController.close();
+    _searchResultsStreamController.close();
+    _clearCache();
   }
 }

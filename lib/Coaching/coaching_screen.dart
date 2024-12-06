@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
-import '../user_autocomplete.dart';
+import '../UI/components/user_autocomplete.dart';
 import '../../models/user_model.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 
@@ -13,7 +13,8 @@ class CoachingScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final TextEditingController typeAheadController = useTextEditingController();
+    final TextEditingController typeAheadController =
+        useTextEditingController();
     final FocusNode focusNode = useFocusNode();
     final usersService = ref.watch(usersServiceProvider);
     final coachingService = ref.watch(coachingServiceProvider);
@@ -25,14 +26,19 @@ class CoachingScreen extends HookConsumerWidget {
     // Recupero degli utenti in base al ruolo
     final usersFuture = useMemoized(() async {
       if (currentUserRole == 'admin') {
-        final snapshot = await FirebaseFirestore.instance.collection('users').get();
-        return snapshot.docs.map((doc) => UserModel.fromFirestore(doc)).toList();
+        final snapshot =
+            await FirebaseFirestore.instance.collection('users').get();
+        return snapshot.docs
+            .map((doc) => UserModel.fromFirestore(doc))
+            .toList();
       } else if (currentUserRole == 'coach') {
-        final associations = await coachingService.getCoachAssociations(currentUserId).first;
+        final associations =
+            await coachingService.getCoachAssociations(currentUserId).first;
         List<UserModel> users = [];
         for (var association in associations) {
           if (association.status == 'accepted') {
-            final athlete = await usersService.getUserById(association.athleteId);
+            final athlete =
+                await usersService.getUserById(association.athleteId);
             if (athlete != null) {
               users.add(athlete);
             }
@@ -127,14 +133,15 @@ class CoachingScreen extends HookConsumerWidget {
         controller: controller,
         focusNode: focusNode,
         onSelected: (UserModel selectedUser) {
-          context.go('/user_programs/${selectedUser.id}');
+          context.go('/user_programs', extra: {'userId': selectedUser.id});
         },
         onChanged: (pattern) {
           final allUsers = ref.read(userListProvider);
-          final filteredUsers = allUsers.where((user) =>
-            user.name.toLowerCase().contains(pattern.toLowerCase()) ||
-            user.email.toLowerCase().contains(pattern.toLowerCase())
-          ).toList();
+          final filteredUsers = allUsers
+              .where((user) =>
+                  user.name.toLowerCase().contains(pattern.toLowerCase()) ||
+                  user.email.toLowerCase().contains(pattern.toLowerCase()))
+              .toList();
           ref.read(filteredUserListProvider.notifier).state = filteredUsers;
         },
       ),
@@ -229,9 +236,8 @@ class CoachingScreen extends HookConsumerWidget {
     ColorScheme colorScheme,
     BuildContext context,
   ) {
-    final String initials = user.name.isNotEmpty 
-        ? user.name.substring(0, 1).toUpperCase()
-        : '?';
+    final String initials =
+        user.name.isNotEmpty ? user.name.substring(0, 1).toUpperCase() : '?';
 
     return Container(
       decoration: BoxDecoration(
@@ -270,9 +276,7 @@ class CoachingScreen extends HookConsumerWidget {
                     ),
                   ),
                 ),
-
                 SizedBox(height: AppTheme.spacing.xs),
-
                 Text(
                   user.name,
                   style: theme.textTheme.titleSmall?.copyWith(
@@ -284,9 +288,7 @@ class CoachingScreen extends HookConsumerWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-
                 SizedBox(height: AppTheme.spacing.xs),
-
                 Text(
                   user.email,
                   style: theme.textTheme.labelSmall?.copyWith(
@@ -296,9 +298,7 @@ class CoachingScreen extends HookConsumerWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-
                 SizedBox(height: AppTheme.spacing.xs),
-
                 Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -352,7 +352,7 @@ class CoachingScreen extends HookConsumerWidget {
 
   void _onAthleteCardTap(BuildContext context, String userId) {
     try {
-      context.go('/user_programs/$userId');
+      context.go('/user_programs', extra: {'userId': userId});
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error navigating to user profile: $e')),

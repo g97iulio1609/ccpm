@@ -371,12 +371,10 @@ class SeriesUtils {
     if (exerciseId != null) {
       final latestMaxWeight =
           await getLatestMaxWeight(exerciseRecordService, athleteId, exerciseId);
-      if (latestMaxWeight != null) {
-        for (final series in exercise.series) {
-          _calculateWeight(series, exercise.type, latestMaxWeight);
-        }
+      for (final series in exercise.series) {
+        _calculateWeight(series, exercise.type, latestMaxWeight);
       }
-    }
+        }
   }
 
   static void _calculateWeight(

@@ -1,5 +1,4 @@
 // lib/Store/url_redirect_web.dart
-import 'dart:html' as html;
 import 'package:js/js.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 

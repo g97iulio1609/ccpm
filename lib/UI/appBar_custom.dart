@@ -4,6 +4,7 @@ import 'package:alphanessone/Viewer/providers/training_program_provider.dart';
 import 'package:alphanessone/exerciseManager/exercises_manager.dart';
 import 'package:alphanessone/ExerciseRecords/maxrmdashboard.dart';
 import 'package:alphanessone/measurements/measurements.dart';
+import 'package:alphanessone/nutrition/models/meals_model.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -22,8 +23,8 @@ import 'package:alphanessone/Store/inAppPurchase_services.dart'; // Import aggiu
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/snackbar.dart';
 
-
-class CustomAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
+class CustomAppBar extends ConsumerStatefulWidget
+    implements PreferredSizeWidget {
   const CustomAppBar({
     super.key,
     required this.userRole,
@@ -46,7 +47,7 @@ class CustomAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget
 
 class _CustomAppBarState extends ConsumerState<CustomAppBar> {
   late final InAppPurchaseService _inAppPurchaseService;
-  bool _syncing = false; // Stato di caricamento per sincronizzazione
+  final bool _syncing = false; // Stato di caricamento per sincronizzazione
 
   @override
   void initState() {
@@ -220,17 +221,45 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
     final userId = userService.getCurrentUserId();
     final selectedDate = ref.read(selectedDateProvider);
 
-    if (value == 'save_as_favorite_day') {
+    if (value == 'save_as_favorite') {
       final favoriteName = await _showFavoriteNameDialog();
       if (favoriteName != null && mounted) {
-        await mealsService.saveDayAsFavorite(userId, selectedDate, favoriteName: favoriteName);
+        await mealsService.saveDayAsFavorite(
+          userId,
+          selectedDate,
+          favoriteName: favoriteName,
+        );
       }
     } else if (value == 'apply_favorite_day') {
       final favoriteDays = await mealsService.getFavoriteDays(userId);
-      if (favoriteDays.isNotEmpty && mounted) {
-        final selectedFavorite = await _showFavoriteDaySelectionDialog(favoriteDays);
+      if (mounted) {
+        final selectedFavorite = await showDialog<FavoriteDay>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Seleziona un giorno preferito'),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: favoriteDays.length,
+                itemBuilder: (context, index) {
+                  final day = favoriteDays[index];
+                  return ListTile(
+                    title: Text(day.favoriteName),
+                    subtitle: Text(DateFormat('dd/MM/yyyy').format(day.date)),
+                    onTap: () => Navigator.of(context).pop(day),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
         if (selectedFavorite != null && mounted) {
-          await mealsService.applyFavoriteDayToCurrent(userId, selectedFavorite.id!, selectedDate);
+          await mealsService.applyFavoriteDayToCurrent(
+            userId,
+            selectedFavorite.id!,
+            selectedDate,
+          );
         }
       }
     } else if (value == 'add_diet_plan') {
@@ -260,7 +289,8 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(nameController.text),
+              onPressed: () =>
+                  Navigator.of(dialogContext).pop(nameController.text),
               child: const Text('Save'),
             ),
           ],
@@ -269,12 +299,14 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
     );
   }
 
-  Future<meals.FavoriteDay?> _showFavoriteDaySelectionDialog(List<meals.FavoriteDay> favoriteDays) {
+  Future<meals.FavoriteDay?> _showFavoriteDaySelectionDialog(
+      List<meals.FavoriteDay> favoriteDays) {
     return showDialog<meals.FavoriteDay>(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: const Text('Select Favorite Day', style: TextStyle(fontSize: 16)),
+          title:
+              const Text('Select Favorite Day', style: TextStyle(fontSize: 16)),
           content: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
@@ -283,7 +315,8 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
               itemBuilder: (BuildContext context, int index) {
                 final favDay = favoriteDays[index];
                 return ListTile(
-                  title: Text(favDay.favoriteName, style: const TextStyle(fontSize: 14)),
+                  title: Text(favDay.favoriteName,
+                      style: const TextStyle(fontSize: 14)),
                   onTap: () => Navigator.of(dialogContext).pop(favDay),
                 );
               },
@@ -295,38 +328,24 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
   }
 
   Future<void> _syncProducts() async {
-    setState(() {
-      _syncing = true;
-    });
+    _showSnackBar('Sincronizzazione prodotti in corso...');
     try {
-      await _inAppPurchaseService.manualSyncProducts();
-      _showSnackBar('Products synced successfully');
+      await _inAppPurchaseService.syncProducts();
+      _showSnackBar('Prodotti sincronizzati con successo');
     } catch (e) {
-      _showSnackBar('Errore durante la sincronizzazione dei prodotti: ${e.toString()}');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _syncing = false;
-        });
-      }
+      _showSnackBar(
+          'Errore durante la sincronizzazione dei prodotti: ${e.toString()}');
     }
   }
 
-  Future<void> _initialize() async {
-    setState(() {
-      _syncing = true;
-    });
+  Future<void> _initializeStore() async {
+    _showSnackBar('Inizializzazione store in corso...');
     try {
-      await _inAppPurchaseService.initStoreInfo();
-      _showSnackBar('Store info initialized successfully');
+      await _inAppPurchaseService.initialize();
+      _showSnackBar('Store inizializzato con successo');
     } catch (e) {
-      _showSnackBar('Errore durante l\'inizializzazione dello store: ${e.toString()}');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _syncing = false;
-        });
-      }
+      _showSnackBar(
+          'Errore durante l\'inizializzazione dello store: ${e.toString()}');
     }
   }
 
@@ -363,7 +382,8 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: isBackButtonVisible ? _buildLeadingButtons(currentRoute) : null,
+        leading:
+            isBackButtonVisible ? _buildLeadingButtons(currentRoute) : null,
         title: _isDailyFoodTrackerRoute(currentRoute)
             ? _buildDateSelector(selectedDate)
             : _buildTitle(currentRoute),
@@ -414,21 +434,36 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
     if (currentPath.contains('/week_details/')) return Icons.calendar_today;
 
     switch (currentPath) {
-      case '/programs_screen': return Icons.people;
-      case '/user_programs': return Icons.fitness_center;
-      case '/exercises_list': return Icons.list;
-      case '/subscriptions': return Icons.card_membership;
-      case '/maxrmdashboard': return Icons.trending_up;
-      case '/user_profile': return Icons.person;
-      case '/training_program': return Icons.edit;
-      case '/users_dashboard': return Icons.group;
-      case '/volume_dashboard': return Icons.bar_chart;
-      case '/measurements': return Icons.straighten;
-      case '/tdee': return Icons.local_fire_department;
-      case '/macros_selector': return Icons.pie_chart;
-      case '/training_gallery': return Icons.photo_library;
-      case '/food_tracker': return Icons.restaurant_menu;
-      default: return Icons.dashboard;
+      case '/programs_screen':
+        return Icons.people;
+      case '/user_programs':
+        return Icons.fitness_center;
+      case '/exercises_list':
+        return Icons.list;
+      case '/subscriptions':
+        return Icons.card_membership;
+      case '/maxrmdashboard':
+        return Icons.trending_up;
+      case '/user_profile':
+        return Icons.person;
+      case '/training_program':
+        return Icons.edit;
+      case '/users_dashboard':
+        return Icons.group;
+      case '/volume_dashboard':
+        return Icons.bar_chart;
+      case '/measurements':
+        return Icons.straighten;
+      case '/tdee':
+        return Icons.local_fire_department;
+      case '/macros_selector':
+        return Icons.pie_chart;
+      case '/training_gallery':
+        return Icons.photo_library;
+      case '/food_tracker':
+        return Icons.restaurant_menu;
+      default:
+        return Icons.dashboard;
     }
   }
 
@@ -556,7 +591,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
           onPressed: () {
             final userId = FirebaseAuth.instance.currentUser?.uid;
             if (userId != null) {
-              MeasurementsPage.showAddMeasurementDialog(context, ref, userId);
+              MeasurementsPage.showAddMeasurementDialog(context, userId);
             }
           },
           icon: const Icon(Icons.add),
@@ -597,15 +632,21 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
                   id: null,
                   startDate: DateTime.now(),
                 );
-                final dietPlanId = await ref.read(dietPlanServiceProvider).createDietPlan(newDietPlan);
+                final dietPlanId = await ref
+                    .read(dietPlanServiceProvider)
+                    .createDietPlan(newDietPlan);
                 final createdDietPlan = newDietPlan.copyWith(id: dietPlanId);
-                await ref.read(dietPlanServiceProvider).applyDietPlan(createdDietPlan);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Template Applied as New Diet Plan')));
+                await ref
+                    .read(dietPlanServiceProvider)
+                    .applyDietPlan(createdDietPlan);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('Template Applied as New Diet Plan')));
               }
             }
           },
           itemBuilder: (context) => [
-            const PopupMenuItem(value: 'apply_template', child: Text('Apply Template')),
+            const PopupMenuItem(
+                value: 'apply_template', child: Text('Apply Template')),
           ],
         ),
       );
@@ -643,7 +684,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
                   ),
                 )
               : const Icon(Icons.refresh),
-          onPressed: _syncing ? null : _initialize,
+          onPressed: _syncing ? null : _initializeStore,
           tooltip: 'Refresh',
         ),
       );
@@ -655,10 +696,14 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
   Future<DietPlan?> _selectTemplate(BuildContext context) async {
     final userService = ref.read(usersServiceProvider);
     final adminId = userService.getCurrentUserId();
-    final templates = await ref.read(dietPlanServiceProvider).getDietPlanTemplatesStream(adminId).first;
+    final templates = await ref
+        .read(dietPlanServiceProvider)
+        .getDietPlanTemplatesStream(adminId)
+        .first;
 
     if (templates.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No templates available')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No templates available')));
       return null;
     }
 
@@ -666,7 +711,8 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Select a Template', style: GoogleFonts.roboto(fontWeight: FontWeight.bold)),
+          title: Text('Select a Template',
+              style: GoogleFonts.roboto(fontWeight: FontWeight.bold)),
           content: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
@@ -676,7 +722,8 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
                 final template = templates[index];
                 return ListTile(
                   title: Text(template.name, style: GoogleFonts.roboto()),
-                  subtitle: Text('Duration: ${template.durationDays} days', style: GoogleFonts.roboto()),
+                  subtitle: Text('Duration: ${template.durationDays} days',
+                      style: GoogleFonts.roboto()),
                   onTap: () => Navigator.of(context).pop(template),
                 );
               },
@@ -696,7 +743,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
   List<PopupMenuEntry<String>> _buildDayMenuItems(BuildContext context) {
     return [
       const PopupMenuItem(
-        value: 'save_as_favorite_day',
+        value: 'save_as_favorite',
         child: Row(
           children: [
             Icon(Icons.favorite_border),

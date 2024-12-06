@@ -1,22 +1,34 @@
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/trainingBuilder/dialog/exercise_dialog.dart';
+import 'package:alphanessone/trainingBuilder/dialog/series_dialog.dart';
 import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
-import 'package:alphanessone/trainingBuilder/series_utils.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:alphanessone/trainingBuilder/models/series_model.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/training_program_services.dart';
 import '../providers/training_program_provider.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/Main/routes.dart';
+import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
+
+// Add note provider
+final exerciseNotesProvider = StateProvider<Map<String, String>>((ref) => {});
+
+// Add cache providers at the top level
+final _exerciseCacheProvider =
+    StateProvider<Map<String, List<Map<String, dynamic>>>>((ref) => {});
+final _workoutNameCacheProvider =
+    StateProvider<Map<String, String>>((ref) => {});
 
 class WorkoutDetails extends ConsumerStatefulWidget {
   final String programId;
   final String userId;
   final String weekId;
   final String workoutId;
+  final List<Series>? currentSeriesGroup;
 
   const WorkoutDetails({
     super.key,
@@ -24,6 +36,7 @@ class WorkoutDetails extends ConsumerStatefulWidget {
     required this.programId,
     required this.weekId,
     required this.workoutId,
+    this.currentSeriesGroup,
   });
 
   @override
@@ -32,13 +45,162 @@ class WorkoutDetails extends ConsumerStatefulWidget {
 
 class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   final TrainingProgramServices _workoutService = TrainingProgramServices();
+  late final ExerciseRecordService _exerciseRecordService;
   final List<StreamSubscription> _subscriptions = [];
   bool _isInitialized = false;
+  final Map<String, ValueNotifier<double>> _weightNotifiers = {};
+
+  // Add memoization cache
+  final Map<String, Map<String?, List<Map<String, dynamic>>>>
+      _groupedExercisesCache = {};
 
   @override
   void initState() {
     super.initState();
+    _exerciseRecordService = ref.read(exerciseRecordServiceProvider);
     _initializeWorkout();
+    _loadExerciseNotes();
+  }
+
+  void _loadExerciseNotes() async {
+    if (!mounted) return;
+
+    try {
+      final notesSnapshot = await FirebaseFirestore.instance
+          .collection('exercise_notes')
+          .where('workoutId', isEqualTo: widget.workoutId)
+          .get();
+
+      final notes = {
+        for (var doc in notesSnapshot.docs)
+          doc['exerciseId'] as String: doc['note'] as String
+      };
+
+      if (mounted) {
+        ref.read(exerciseNotesProvider.notifier).state = notes;
+      }
+    } catch (e) {
+      // Handle error silently
+    }
+  }
+
+  Future<void> _showNoteDialog(String exerciseId, String exerciseName,
+      [String? existingNote]) async {
+    final TextEditingController noteController =
+        TextEditingController(text: existingNote);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: colorScheme.surface,
+        title: Text(
+          'Note per $exerciseName',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: colorScheme.onSurface,
+              ),
+        ),
+        content: TextField(
+          controller: noteController,
+          maxLines: 5,
+          decoration: InputDecoration(
+            hintText: 'Inserisci una nota...',
+            hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppTheme.radii.sm),
+              borderSide: BorderSide(color: colorScheme.outline),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppTheme.radii.sm),
+              borderSide: BorderSide(color: colorScheme.outline),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppTheme.radii.sm),
+              borderSide: BorderSide(color: colorScheme.primary, width: 2),
+            ),
+          ),
+          style: TextStyle(color: colorScheme.onSurface),
+        ),
+        actions: [
+          if (existingNote != null)
+            TextButton(
+              onPressed: () async {
+                await _deleteNote(exerciseId);
+                if (mounted) Navigator.of(context).pop();
+              },
+              child: Text(
+                'Elimina',
+                style: TextStyle(color: colorScheme.error),
+              ),
+            ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              'Annulla',
+              style: TextStyle(color: colorScheme.primary),
+            ),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final note = noteController.text.trim();
+              if (note.isNotEmpty) {
+                await _saveNote(exerciseId, note);
+              }
+              if (mounted) Navigator.of(context).pop();
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: colorScheme.primary,
+            ),
+            child: Text(
+              'Salva',
+              style: TextStyle(color: colorScheme.onPrimary),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _saveNote(String exerciseId, String note) async {
+    try {
+      final docRef = FirebaseFirestore.instance
+          .collection('exercise_notes')
+          .doc('${widget.workoutId}_$exerciseId');
+
+      await docRef.set({
+        'workoutId': widget.workoutId,
+        'exerciseId': exerciseId,
+        'note': note,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      if (mounted) {
+        final currentNotes =
+            Map<String, String>.from(ref.read(exerciseNotesProvider));
+        currentNotes[exerciseId] = note;
+        ref.read(exerciseNotesProvider.notifier).state = currentNotes;
+      }
+    } catch (e) {
+      // Handle error
+    }
+  }
+
+  Future<void> _deleteNote(String exerciseId) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('exercise_notes')
+          .doc('${widget.workoutId}_$exerciseId')
+          .delete();
+
+      if (mounted) {
+        final currentNotes =
+            Map<String, String>.from(ref.read(exerciseNotesProvider));
+        currentNotes.remove(exerciseId);
+        ref.read(exerciseNotesProvider.notifier).state = currentNotes;
+      }
+    } catch (e) {
+      // Handle error
+    }
   }
 
   @override
@@ -47,6 +209,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     if (widget.workoutId != oldWidget.workoutId) {
       _isInitialized = false;
       _initializeWorkout();
+      _loadExerciseNotes();
     }
   }
 
@@ -78,9 +241,22 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   void _updateWorkoutName() async {
     final currentName = ref.read(currentWorkoutNameProvider);
     if (currentName != widget.workoutId) {
-      final workoutName = await _workoutService.fetchWorkoutName(widget.workoutId);
+      // Check cache first
+      final cachedName = ref.read(_workoutNameCacheProvider)[widget.workoutId];
+      if (cachedName != null) {
+        ref.read(currentWorkoutNameProvider.notifier).state = cachedName;
+        return;
+      }
+
+      final workoutName =
+          await _workoutService.fetchWorkoutName(widget.workoutId);
       if (mounted) {
         ref.read(currentWorkoutNameProvider.notifier).state = workoutName;
+        // Update cache
+        final cache =
+            Map<String, String>.from(ref.read(_workoutNameCacheProvider));
+        cache[widget.workoutId] = workoutName;
+        ref.read(_workoutNameCacheProvider.notifier).state = cache;
       }
     }
   }
@@ -88,11 +264,27 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   Future<void> _fetchExercises() async {
     if (!mounted) return;
 
+    // Check cache first
+    final cachedExercises = ref.read(_exerciseCacheProvider)[widget.workoutId];
+    if (cachedExercises != null) {
+      ref.read(exercisesProvider.notifier).state = cachedExercises;
+      // Setup subscriptions for cached exercises
+      for (final exercise in cachedExercises) {
+        _subscribeToSeriesUpdates(exercise);
+      }
+      return;
+    }
+
     ref.read(loadingProvider.notifier).state = true;
     try {
       final exercises = await _workoutService.fetchExercises(widget.workoutId);
       if (mounted) {
         ref.read(exercisesProvider.notifier).state = exercises;
+        // Update cache
+        final cache = Map<String, List<Map<String, dynamic>>>.from(
+            ref.read(_exerciseCacheProvider));
+        cache[widget.workoutId] = exercises;
+        ref.read(_exerciseCacheProvider.notifier).state = cache;
       }
 
       for (final exercise in exercises) {
@@ -108,6 +300,15 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   }
 
   void _subscribeToSeriesUpdates(Map<String, dynamic> exercise) {
+    // Cancel existing subscription if any
+    _subscriptions.removeWhere((sub) {
+      if (sub.hashCode.toString().contains(exercise['id'])) {
+        sub.cancel();
+        return true;
+      }
+      return false;
+    });
+
     final seriesQuery = FirebaseFirestore.instance
         .collection('series')
         .where('exerciseId', isEqualTo: exercise['id'])
@@ -116,14 +317,24 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     final subscription = seriesQuery.snapshots().listen((querySnapshot) {
       if (!mounted) return;
 
-      final updatedExercises = ref.read(exercisesProvider.notifier).state;
-      final index = updatedExercises.indexWhere((e) => e['id'] == exercise['id']);
+      final updatedExercises = ref.read(exercisesProvider);
+      final index =
+          updatedExercises.indexWhere((e) => e['id'] == exercise['id']);
       if (index != -1) {
-        updatedExercises[index]['series'] = querySnapshot.docs
-            .map((doc) => doc.data()..['id'] = doc.id)
+        final newExercises = List<Map<String, dynamic>>.from(updatedExercises);
+        newExercises[index] = Map<String, dynamic>.from(newExercises[index]);
+        newExercises[index]['series'] = querySnapshot.docs
+            .map((doc) => {...doc.data(), 'id': doc.id})
             .toList();
+
         if (mounted) {
-          ref.read(exercisesProvider.notifier).state = List.from(updatedExercises);
+          ref.read(exercisesProvider.notifier).state = newExercises;
+
+          // Update cache
+          final cache = Map<String, List<Map<String, dynamic>>>.from(
+              ref.read(_exerciseCacheProvider));
+          cache[widget.workoutId] = newExercises;
+          ref.read(_exerciseCacheProvider.notifier).state = cache;
         }
       }
     });
@@ -131,8 +342,28 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     _subscriptions.add(subscription);
   }
 
+  Map<String?, List<Map<String, dynamic>>> _groupExercisesBySuperSet(
+      List<Map<String, dynamic>> exercises) {
+    // Use memoization for expensive calculations
+    final cacheKey = exercises.map((e) => e['id']).join('_');
+    if (_groupedExercisesCache.containsKey(cacheKey)) {
+      return _groupedExercisesCache[cacheKey]!;
+    }
+
+    final groupedExercises = <String?, List<Map<String, dynamic>>>{};
+    for (final exercise in exercises) {
+      final superSetId = exercise['superSetId'];
+      groupedExercises.putIfAbsent(superSetId, () => []).add(exercise);
+    }
+
+    // Cache the result
+    _groupedExercisesCache[cacheKey] = groupedExercises;
+    return groupedExercises;
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Use select instead of watch to prevent unnecessary rebuilds
     final loading = ref.watch(loadingProvider);
     final exercises = ref.watch(exercisesProvider);
     final colorScheme = Theme.of(context).colorScheme;
@@ -157,15 +388,20 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
               : ListView.builder(
                   padding: EdgeInsets.all(AppTheme.spacing.md),
                   itemCount: exercises.length,
-                  itemBuilder: (context, index) => _buildExerciseCard(exercises[index], context),
+                  // Add key to preserve scroll position and reduce rebuilds
+                  key: PageStorageKey('workout_exercises_${widget.workoutId}'),
+                  itemBuilder: (context, index) =>
+                      _buildExerciseCard(exercises[index], context),
                 ),
     );
   }
 
-  Widget _buildExerciseCard(Map<String, dynamic> exercise, BuildContext context) {
+  Widget _buildExerciseCard(
+      Map<String, dynamic> exercise, BuildContext context) {
     final superSetId = exercise['superSetId'];
     if (superSetId != null) {
-      final groupedExercises = _groupExercisesBySuperSet(ref.read(exercisesProvider));
+      final groupedExercises =
+          _groupExercisesBySuperSet(ref.read(exercisesProvider));
       final superSetExercises = groupedExercises[superSetId];
       if (superSetExercises != null && superSetExercises.first == exercise) {
         return _buildSuperSetCard(superSetExercises, context);
@@ -177,17 +413,16 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     }
   }
 
-  Map<String?, List<Map<String, dynamic>>> _groupExercisesBySuperSet(List<Map<String, dynamic>> exercises) {
-    final groupedExercises = <String?, List<Map<String, dynamic>>>{};
-    for (final exercise in exercises) {
-      final superSetId = exercise['superSetId'];
-      groupedExercises.putIfAbsent(superSetId, () => []).add(exercise);
-    }
-    return groupedExercises;
-  }
-
-  Widget _buildSuperSetCard(List<Map<String, dynamic>> superSetExercises, BuildContext context) {
+  Widget _buildSuperSetCard(
+      List<Map<String, dynamic>> superSetExercises, BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    
+    // Check if all series in all exercises are completed
+    final allSeriesCompleted = superSetExercises.every((exercise) {
+      final series = List<Map<String, dynamic>>.from(exercise['series']);
+      return series.every((serie) => _isSeriesDone(serie));
+    });
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(16),
@@ -204,11 +439,13 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
-          ...superSetExercises.asMap().entries.map((entry) => 
+          ...superSetExercises.asMap().entries.map((entry) =>
               _buildSuperSetExerciseName(entry.key, entry.value, context)),
           const SizedBox(height: 24),
-          _buildSuperSetStartButton(superSetExercises, context),
-          const SizedBox(height: 24),
+          if (!allSeriesCompleted) ...[
+            _buildSuperSetStartButton(superSetExercises, context),
+            const SizedBox(height: 24),
+          ],
           _buildSeriesHeaderRow(context),
           ..._buildSeriesRows(superSetExercises, context),
         ],
@@ -216,11 +453,12 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     );
   }
 
-  Widget _buildSingleExerciseCard(Map<String, dynamic> exercise, BuildContext context) {
+  Widget _buildSingleExerciseCard(
+      Map<String, dynamic> exercise, BuildContext context) {
     final series = List<Map<String, dynamic>>.from(exercise['series']);
     final firstNotDoneSeriesIndex = _findFirstNotDoneSeriesIndex(series);
     final isContinueMode = firstNotDoneSeriesIndex > 0;
-    final allSeriesCompleted = firstNotDoneSeriesIndex == series.length;
+    final allSeriesCompleted = series.every((serie) => _isSeriesDone(serie));
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
@@ -251,31 +489,29 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
               ),
               child: _buildExerciseName(exercise, context),
             ),
-
             Padding(
               padding: EdgeInsets.all(AppTheme.spacing.md),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (!allSeriesCompleted) ...[
-                    _buildStartButton(exercise, firstNotDoneSeriesIndex, isContinueMode, context),
+                    _buildStartButton(exercise, firstNotDoneSeriesIndex,
+                        isContinueMode, context),
                     SizedBox(height: AppTheme.spacing.md),
                   ],
-                  
                   Container(
                     padding: EdgeInsets.symmetric(
                       vertical: AppTheme.spacing.xs,
                       horizontal: AppTheme.spacing.sm,
                     ),
                     decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                      color:
+                          colorScheme.surfaceContainerHighest.withOpacity(0.3),
                       borderRadius: BorderRadius.circular(AppTheme.radii.sm),
                     ),
                     child: _buildSeriesHeaderRow(context),
                   ),
-                  
                   SizedBox(height: AppTheme.spacing.sm),
-                  
                   ..._buildSeriesContainers(series, context),
                 ],
               ),
@@ -301,7 +537,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     );
   }
 
-  Widget _buildSuperSetExerciseName(int index, Map<String, dynamic> exercise, BuildContext context) {
+  Widget _buildSuperSetExerciseName(
+      int index, Map<String, dynamic> exercise, BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -314,7 +551,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     );
   }
 
-  Widget _buildSuperSetStartButton(List<Map<String, dynamic>> superSetExercises, BuildContext context) {
+  Widget _buildSuperSetStartButton(
+      List<Map<String, dynamic>> superSetExercises, BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final allSeriesCompleted = superSetExercises.every((exercise) =>
         exercise['series'].every((series) => _isSeriesDone(series)));
@@ -325,7 +563,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
         exercise['series'].any((series) => !_isSeriesDone(series)));
 
     return GestureDetector(
-      onTap: () => _navigateToExerciseDetails(superSetExercises[firstNotDoneExerciseIndex], superSetExercises),
+      onTap: () => _navigateToExerciseDetails(
+          superSetExercises[firstNotDoneExerciseIndex], superSetExercises),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
@@ -347,7 +586,6 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   }
 
   Widget _buildSeriesHeaderRow(BuildContext context) {
-    
     return Row(
       children: [
         _buildHeaderText('Serie', context, 1),
@@ -360,21 +598,22 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
 
   Widget _buildHeaderText(String text, BuildContext context, int flex) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Expanded(
       flex: flex,
       child: Text(
         text,
         style: Theme.of(context).textTheme.labelLarge?.copyWith(
-          color: colorScheme.onSurfaceVariant,
-          fontWeight: FontWeight.w600,
-        ),
+              color: colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
         textAlign: TextAlign.center,
       ),
     );
   }
 
-  List<Widget> _buildSeriesRows(List<Map<String, dynamic>> superSetExercises, BuildContext context) {
+  List<Widget> _buildSeriesRows(
+      List<Map<String, dynamic>> superSetExercises, BuildContext context) {
     final maxSeriesCount = superSetExercises
         .map((exercise) => exercise['series'].length)
         .reduce((a, b) => a > b ? a : b);
@@ -385,7 +624,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
           Row(
             children: [
               _buildSeriesIndexText(seriesIndex, context, 1),
-              ..._buildSuperSetSeriesColumns(superSetExercises, seriesIndex, context),
+              ..._buildSuperSetSeriesColumns(
+                  superSetExercises, seriesIndex, context),
             ],
           ),
           if (seriesIndex < maxSeriesCount - 1)
@@ -395,7 +635,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     });
   }
 
-  Widget _buildSeriesIndexText(int seriesIndex, BuildContext context, int flex) {
+  Widget _buildSeriesIndexText(
+      int seriesIndex, BuildContext context, int flex) {
     final colorScheme = Theme.of(context).colorScheme;
     return Expanded(
       flex: flex,
@@ -409,15 +650,26 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     );
   }
 
-  List<Widget> _buildSuperSetSeriesColumns(List<Map<String, dynamic>> superSetExercises, int seriesIndex, BuildContext context) {
+  List<Widget> _buildSuperSetSeriesColumns(
+      List<Map<String, dynamic>> superSetExercises,
+      int seriesIndex,
+      BuildContext context) {
     return [
-      _buildSuperSetSeriesColumn(superSetExercises, seriesIndex, 'reps', context, 2),
-      _buildSuperSetSeriesColumn(superSetExercises, seriesIndex, 'weight', context, 2),
-      _buildSuperSetSeriesDoneColumn(superSetExercises, seriesIndex, context, 1),
+      _buildSuperSetSeriesColumn(
+          superSetExercises, seriesIndex, 'reps', context, 2),
+      _buildSuperSetSeriesColumn(
+          superSetExercises, seriesIndex, 'weight', context, 2),
+      _buildSuperSetSeriesDoneColumn(
+          superSetExercises, seriesIndex, context, 1),
     ];
   }
 
-  Widget _buildSuperSetSeriesColumn(List<Map<String, dynamic>> superSetExercises, int seriesIndex, String field, BuildContext context, int flex) {
+  Widget _buildSuperSetSeriesColumn(
+      List<Map<String, dynamic>> superSetExercises,
+      int seriesIndex,
+      String field,
+      BuildContext context,
+      int flex) {
     final colorScheme = Theme.of(context).colorScheme;
     return Expanded(
       flex: flex,
@@ -431,7 +683,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: series != null
                 ? GestureDetector(
-                    onTap: () => _showEditSeriesDialog(series['id'].toString(), series, context),
+                    onTap: () =>
+                        _showEditSeriesDialog(series['exerciseId'], [series]),
                     child: Text(
                       _formatSeriesValue(series, field),
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -447,7 +700,11 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     );
   }
 
-  Widget _buildSuperSetSeriesDoneColumn(List<Map<String, dynamic>> superSetExercises, int seriesIndex, BuildContext context, int flex) {
+  Widget _buildSuperSetSeriesDoneColumn(
+      List<Map<String, dynamic>> superSetExercises,
+      int seriesIndex,
+      BuildContext context,
+      int flex) {
     final colorScheme = Theme.of(context).colorScheme;
     return Expanded(
       flex: flex,
@@ -463,36 +720,125 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
                 ? GestureDetector(
                     onTap: () => _toggleSeriesDone(series),
                     child: Icon(
-_isSeriesDone(series) ? Icons.check_circle : Icons.cancel,
-                      color: _isSeriesDone(series) ? colorScheme.primary : colorScheme.onSurfaceVariant,
+                      _isSeriesDone(series) ? Icons.check_circle : Icons.cancel,
+                      color: _isSeriesDone(series)
+                          ? colorScheme.primary
+                          : colorScheme.onSurfaceVariant,
                     ),
-                  ): const SizedBox(),
+                  )
+                : const SizedBox(),
           );
         }).toList(),
       ),
     );
   }
 
-  Widget _buildExerciseName(Map<String, dynamic> exercise, BuildContext context) {
+  Widget _buildExerciseName(
+      Map<String, dynamic> exercise, BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return GestureDetector(
-      onTap: () => _showChangeExerciseDialog(context, exercise),
-      child: Text(
-        "${exercise['name']} ${exercise['variant'] ?? ''}",
-        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
+    final notes = ref.watch(exerciseNotesProvider);
+    final hasNote = notes.containsKey(exercise['id']);
+    final userRole = ref.watch(userRoleProvider);
+    final isAdmin = userRole == 'admin';
+
+    return Row(
+      children: [
+        if (hasNote)
+          GestureDetector(
+            onTap: () => _showNoteDialog(
+              exercise['id'],
+              exercise['name'],
+              notes[exercise['id']],
             ),
-        textAlign: TextAlign.center,
-      ),
+            child: Container(
+              margin: EdgeInsets.only(right: AppTheme.spacing.xs),
+              padding: EdgeInsets.all(AppTheme.spacing.xxs),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: colorScheme.primaryContainer,
+              ),
+              child: Text(
+                'N',
+                style: TextStyle(
+                  color: colorScheme.onPrimaryContainer,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        Expanded(
+          child: GestureDetector(
+            onLongPress: () => _showNoteDialog(
+              exercise['id'],
+              exercise['name'],
+              notes[exercise['id']],
+            ),
+            child: Text(
+              "${exercise['name']} ${exercise['variant'] ?? ''}",
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w800,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+        if (isAdmin)
+          PopupMenuButton<String>(
+            icon: Icon(
+              Icons.more_vert,
+              color: colorScheme.onSurfaceVariant,
+            ),
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'change',
+                child: Text('Cambia esercizio'),
+              ),
+              const PopupMenuItem(
+                value: 'edit_series',
+                child: Text('Modifica serie'),
+              ),
+            ],
+            onSelected: (value) {
+              switch (value) {
+                case 'change':
+                  _showChangeExerciseDialog(context, exercise);
+                  break;
+                case 'edit_series':
+                  _showSeriesEditDialog(
+                    exercise,
+                    List<Map<String, dynamic>>.from(exercise['series'] ?? []),
+                  );
+                  break;
+              }
+            },
+          ),
+        if (!isAdmin)
+          PopupMenuButton<String>(
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'change',
+                child: Text('Cambia esercizio'),
+              ),
+            ],
+            onSelected: (value) {
+              if (value == 'change') {
+                _showChangeExerciseDialog(context, exercise);
+              }
+            },
+          ),
+      ],
     );
   }
 
-  Widget _buildStartButton(Map<String, dynamic> exercise, int firstNotDoneSeriesIndex, bool isContinueMode, BuildContext context) {
+  Widget _buildStartButton(Map<String, dynamic> exercise,
+      int firstNotDoneSeriesIndex, bool isContinueMode, BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return ElevatedButton(
-      onPressed: () => _navigateToExerciseDetails(exercise, [exercise], firstNotDoneSeriesIndex),
+      onPressed: () => _navigateToExerciseDetails(
+          exercise, [exercise], firstNotDoneSeriesIndex),
       style: ElevatedButton.styleFrom(
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
@@ -506,20 +852,27 @@ _isSeriesDone(series) ? Icons.check_circle : Icons.cancel,
       child: Text(
         isContinueMode ? 'CONTINUA' : 'INIZIA',
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-          color: colorScheme.onPrimary,
-          fontWeight: FontWeight.w600,
-        ),
+              color: colorScheme.onPrimary,
+              fontWeight: FontWeight.w600,
+            ),
       ),
     );
   }
 
-  List<Widget> _buildSeriesContainers(List<Map<String, dynamic>> series, BuildContext context) {
+  List<Widget> _buildSeriesContainers(
+      List<Map<String, dynamic>> series, BuildContext context) {
     return series.asMap().entries.map((entry) {
       final seriesIndex = entry.key;
       final seriesData = entry.value;
 
       return GestureDetector(
-        onTap: () => _showEditSeriesDialog(seriesData['id']?.toString() ?? '', seriesData, context),
+        onTap: () {
+          final exercise = {
+            'id': seriesData['exerciseId'],
+            'type': seriesData['type'] ?? 'weight',
+          };
+          _showEditSeriesDialog(exercise, [seriesData]);
+        },
         child: Column(
           children: [
             Row(
@@ -538,16 +891,32 @@ _isSeriesDone(series) ? Icons.check_circle : Icons.cancel,
     }).toList();
   }
 
-  Widget _buildSeriesDataText(String field, Map<String, dynamic> seriesData, BuildContext context, int flex) {
+  Widget _buildSeriesDataText(String field, Map<String, dynamic> seriesData,
+      BuildContext context, int flex) {
     final colorScheme = Theme.of(context).colorScheme;
     return Expanded(
       flex: flex,
-      child: Text(
-        _formatSeriesValue(seriesData, field),
-        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: colorScheme.onSurface,
-            ),
-        textAlign: TextAlign.center,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        alignment: Alignment.center,
+        child: seriesData != null
+            ? GestureDetector(
+                onTap: () {
+                  final exercise = {
+                    'id': seriesData['exerciseId'],
+                    'type': seriesData['type'] ?? 'weight',
+                  };
+                  _showEditSeriesDialog(exercise, [seriesData]);
+                },
+                child: Text(
+                  _formatSeriesValue(seriesData, field),
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: colorScheme.onSurface,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+              )
+            : const SizedBox.shrink(),
       ),
     );
   }
@@ -570,272 +939,287 @@ _isSeriesDone(series) ? Icons.check_circle : Icons.cancel,
     return text;
   }
 
-  Widget _buildSeriesDoneIcon(Map<String, dynamic> seriesData, BuildContext context, int flex) {
+  Widget _buildSeriesDoneIcon(
+      Map<String, dynamic> seriesData, BuildContext context, int flex) {
     final colorScheme = Theme.of(context).colorScheme;
     return Expanded(
       flex: flex,
-      child: GestureDetector(
-        onTap: () => _toggleSeriesDone(seriesData),
-        child: Icon(
-          _isSeriesDone(seriesData) ? Icons.check_circle : Icons.cancel,
-          color: _isSeriesDone(seriesData) ? colorScheme.primary : colorScheme.onSurface,
+      child: Container(
+        alignment: Alignment.center,
+        child: GestureDetector(
+          onTap: () => _toggleSeriesDone(seriesData),
+          child: Icon(
+            _isSeriesDone(seriesData) ? Icons.check_circle : Icons.cancel,
+            color: _isSeriesDone(seriesData)
+                ? colorScheme.primary
+                : colorScheme.onSurface,
+          ),
         ),
       ),
     );
   }
 
-  void _navigateToExerciseDetails(Map<String, dynamic> exercise, List<Map<String, dynamic>> exercises, [int startIndex = 0]) {
+  void _navigateToExerciseDetails(
+      Map<String, dynamic> exercise, List<Map<String, dynamic>> exercises,
+      [int startIndex = 0]) {
     if (!mounted) return;
-
-    context.go(
-      '/user_programs/${widget.userId}/training_viewer/${widget.programId}/week_details/${widget.weekId}/workout_details/${widget.workoutId}/exercise_details/${exercise['id']}',
-      extra: {
-        'exerciseName': exercise['name'],
-        'exerciseVariant': exercise['variant'] ?? '',
-        'seriesList': exercise['series'],
-        'startIndex': startIndex,
-        'superSetExercises': exercises,
-      },
-    );
-  }
-
-void _showChangeExerciseDialog(BuildContext context, Map<String, dynamic> currentExercise) {
-  final exerciseRecordService = ref.read(exerciseRecordServiceProvider);
-  
-  showDialog(
-    context: context,
-    builder: (BuildContext dialogContext) {
-      return ExerciseDialog(
-        exerciseRecordService: exerciseRecordService,
-        athleteId: widget.userId,
-        exercise: Exercise(
-          id: currentExercise['id'] ?? '',
-          exerciseId: currentExercise['exerciseId'] ?? '',
-          name: currentExercise['name'] ?? '',
-          type: currentExercise['type'] ?? '',
-          variant: currentExercise['variant'] ?? '',
-          order: currentExercise['order'] ?? 0,
-          series: [],
-          weekProgressions: [],
-        ),
-      );
-    },
-  ).then((newExercise) {
-    if (newExercise != null) {
-      _updateExercise(currentExercise, newExercise as Exercise);
-    }
-  });
-}
-
-Future<void> _updateExercise(Map<String, dynamic> currentExercise, Exercise newExercise) async {
-  final exerciseIndex = ref.read(exercisesProvider.notifier).state
-      .indexWhere((e) => e['id'] == currentExercise['id']);
-
-  if (exerciseIndex != -1) {
-    final updatedExercises = List<Map<String, dynamic>>.from(ref.read(exercisesProvider));
-    updatedExercises[exerciseIndex] = {
-      ...updatedExercises[exerciseIndex],
-      'name': newExercise.name,
-      'exerciseId': newExercise.exerciseId ?? '',
-      'type': newExercise.type,
-      'variant': newExercise.variant,
+    
+    final extra = {
+      'programId': widget.programId,
+      'weekId': widget.weekId,
+      'workoutId': widget.workoutId,
+      'exerciseId': exercise['id'],
+      'userId': widget.userId,
+      'superSetExercises': exercises,
+      'superSetExerciseIndex': exercises.indexWhere((e) => e['id'] == exercise['id']),
+      'seriesList': exercise['series'],
+      'startIndex': startIndex
     };
-
-    ref.read(exercisesProvider.notifier).state = updatedExercises;
-
-    await _recalculateWeights(updatedExercises[exerciseIndex], newExercise.exerciseId ?? '');
-
-    await _workoutService.updateExercise(currentExercise['id'], {
-      'name': newExercise.name,
-      'exerciseId': newExercise.exerciseId ?? '',
-      'type': newExercise.type,
-      'variant': newExercise.variant,
-    });
-  }
-}
-
-Future<void> _recalculateWeights(Map<String, dynamic> exercise, String newExerciseId) async {
-  final exerciseRecordService = ref.read(exerciseRecordServiceProvider);
-  final newExerciseMaxWeight = await SeriesUtils.getLatestMaxWeight(
-    exerciseRecordService,
-    widget.userId,
-    newExerciseId,
-  );
-  
-  final series = exercise['series'] as List<Map<String, dynamic>>;
-
-  for (var serie in series) {
-    final minIntensity = double.tryParse(serie['intensity']?.toString() ?? '0') ?? 0;
-    final maxIntensity = double.tryParse(serie['maxIntensity']?.toString() ?? '0');
-
-    // Calcolo di weight
-    final newWeight = SeriesUtils.calculateWeightFromIntensity(newExerciseMaxWeight.toDouble(), minIntensity);
-    final roundedWeight = SeriesUtils.roundWeight(newWeight, exercise['type'] ?? '');
-
-    // Calcolo di maxWeight solo se maxIntensity è presente e valida
-    double? newMaxWeight;
-    if (maxIntensity != null && maxIntensity > 0) {
-      final calculatedMaxWeight = SeriesUtils.calculateWeightFromIntensity(newExerciseMaxWeight.toDouble(), maxIntensity);
-      newMaxWeight = SeriesUtils.roundWeight(calculatedMaxWeight, exercise['type'] ?? '');
-    } else {
-      newMaxWeight = null; // Mantieni maxWeight null se maxIntensity era null o non valido
-    }
-
-    // Calcolo del nuovo RPE e RPE Max
-    final newRpe = SeriesUtils.calculateRPE(roundedWeight, newExerciseMaxWeight, serie['reps'])?.toStringAsFixed(1) ?? '';
-    final newMaxRpe = newMaxWeight != null 
-      ? SeriesUtils.calculateRPE(newMaxWeight, newExerciseMaxWeight, serie['reps'])?.toStringAsFixed(1) 
-      : null;
-
-    // Mantieni intensity, maxIntensity, rpe e rpeMax separati
-    final newIntensity = minIntensity.toString(); // Mantieni solo il valore di intensity
-    final rpeValue = newRpe; // Mantieni solo il valore di rpe, senza concatenare rpeMax
-    final rpeMaxValue = newMaxRpe; // Mantieni il valore di rpeMax separato
-
-    await _workoutService.updateSeriesForExerciseChange(
-      serie['id'] ?? '',
-      weight: roundedWeight,
-      maxWeight: newMaxWeight, // Passa newMaxWeight che può essere null
-      reps: serie['reps'],
-      intensity: newIntensity, // Mantieni solo intensity
-      rpe: rpeValue, // Mantieni solo rpe
-      rpeMax: rpeMaxValue, // Mantieni solo rpeMax separato
-    );
-
-    // Aggiorna i valori locali
-    serie['weight'] = roundedWeight;
-    serie['maxWeight'] = newMaxWeight; // Mantieni maxWeight null se applicabile
-    serie['intensity'] = newIntensity; // Aggiorna solo con intensity
-    serie['rpe'] = rpeValue; // Aggiorna solo con rpe
-    serie['rpeMax'] = rpeMaxValue; // Aggiorna solo con rpeMax
+    
+    context.pushNamed('exercise_details', extra: extra);
   }
 
-  setState(() {});
-}
+  void _showChangeExerciseDialog(
+      BuildContext context, Map<String, dynamic> currentExercise) {
+    final exerciseRecordService = ref.read(exerciseRecordServiceProvider);
 
-
-  Future<void> _showEditSeriesDialog(String seriesId, Map<String, dynamic> series, BuildContext context) async {
-    final userRole = ref.read(userRoleProvider);
-    final isCoachOrAdmin = userRole == 'coach' || userRole == 'admin';
-
-    final repsController = TextEditingController(text: series['reps']?.toString() ?? '');
-    final maxRepsController = TextEditingController(text: series['maxReps']?.toString() ?? '');
-    final weightController = TextEditingController(text: series['weight']?.toString() ?? '');
-    final maxWeightController = TextEditingController(text: series['maxWeight']?.toString() ?? '');
-    final repsDoneController = TextEditingController(text: series['reps_done']?.toString() ?? series['reps']?.toString() ?? '');
-    final weightDoneController = TextEditingController(text: series['weight_done']?.toString() ?? series['weight']?.toString() ?? '');
-
-    return showDialog(
+    showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text('Modifica Serie'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (isCoachOrAdmin) ...[
-                  TextField(
-                    controller: repsController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Reps'),
-                  ),
-                  TextField(
-                    controller: maxRepsController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Max Reps'),
-                  ),
-                  TextField(
-                    controller: weightController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
-                      TextInputFormatter.withFunction((oldValue, newValue) {
-                        final text = newValue.text.replaceAll(',', '.');
-                        return newValue.copyWith(
-                          text: text,
-                          selection: TextSelection.collapsed(offset: text.length),
-                        );
-                      }),
-                    ],
-                    decoration: const InputDecoration(labelText: 'Peso (kg)'),
-                  ),
-                  TextField(
-                    controller: maxWeightController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
-                      TextInputFormatter.withFunction((oldValue, newValue) {
-                        final text = newValue.text.replaceAll(',', '.');
-                        return newValue.copyWith(
-                          text: text,
-                          selection: TextSelection.collapsed(offset: text.length),
-                        );
-                      }),
-                    ],
-                    decoration: const InputDecoration(labelText: 'Max Peso (kg)'),
-                  ),
-                ],
-                TextField(
-                  controller: repsDoneController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Reps Svolte'),
-                ),
-                TextField(
-                  controller: weightDoneController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*')),
-                    TextInputFormatter.withFunction((oldValue, newValue) {
-                      final text = newValue.text.replaceAll(',', '.');
-                      return newValue.copyWith(
-                        text: text,
-                        selection: TextSelection.collapsed(offset: text.length),
-                      );
-                    }),
-                  ],
-                  decoration: const InputDecoration(labelText: 'Peso Svolto (kg)'),
-                ),
-              ],
-            ),
+        return ExerciseDialog(
+          exerciseRecordService: exerciseRecordService,
+          athleteId: widget.userId,
+          exercise: Exercise(
+            id: currentExercise['id'] ?? '',
+            exerciseId: currentExercise['exerciseId'] ?? '',
+            name: currentExercise['name'] ?? '',
+            type: currentExercise['type'] ?? '',
+            variant: currentExercise['variant'] ?? '',
+            order: currentExercise['order'] ?? 0,
+            series: [],
+            weekProgressions: [],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Annulla'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final repsDone = int.tryParse(repsDoneController.text) ?? 0;
-                final weightDone = double.tryParse(weightDoneController.text.replaceAll(',', '.')) ?? 0.0;
-
-                if (isCoachOrAdmin) {
-                  final reps = int.tryParse(repsController.text) ?? 0;
-                  final maxReps = int.tryParse(maxRepsController.text);
-                  final weight = double.tryParse(weightController.text.replaceAll(',', '.')) ?? 0.0;
-                  final maxWeight = double.tryParse(maxWeightController.text.replaceAll(',', '.'));
-
-                  _workoutService.updateSeriesWithMaxValues(
-                    seriesId,
-                    reps,
-                    maxReps,
-                    weight,
-                    maxWeight,
-                    repsDone,
-                    weightDone,
-                  );
-                } else {
-                  _workoutService.updateSeriesData(seriesId, repsDone, weightDone);
-                }
-
-                Navigator.pop(dialogContext);
-              },
-              child: const Text('Salva'),
-            ),
-          ],
         );
       },
+    ).then((newExercise) {
+      if (newExercise != null) {
+        _updateExercise(currentExercise, newExercise as Exercise);
+      }
+    });
+  }
+
+  Future<void> _updateExercise(
+      Map<String, dynamic> currentExercise, Exercise newExercise) async {
+    final exerciseIndex = ref
+        .read(exercisesProvider.notifier)
+        .state
+        .indexWhere((e) => e['id'] == currentExercise['id']);
+
+    if (exerciseIndex != -1) {
+      final updatedExercises =
+          List<Map<String, dynamic>>.from(ref.read(exercisesProvider));
+      updatedExercises[exerciseIndex] = {
+        ...updatedExercises[exerciseIndex],
+        'name': newExercise.name,
+        'exerciseId': newExercise.exerciseId ?? '',
+        'type': newExercise.type,
+        'variant': newExercise.variant,
+      };
+
+      ref.read(exercisesProvider.notifier).state = updatedExercises;
+
+      await _recalculateWeights(
+          updatedExercises[exerciseIndex], newExercise.exerciseId ?? '');
+
+      await _workoutService.updateExercise(currentExercise['id'], {
+        'name': newExercise.name,
+        'exerciseId': newExercise.exerciseId ?? '',
+        'type': newExercise.type,
+        'variant': newExercise.variant,
+      });
+    }
+  }
+
+  Future<void> _recalculateWeights(
+      Map<String, dynamic> exercise, String newExerciseId) async {
+    final exerciseRecordService = ref.read(exerciseRecordServiceProvider);
+
+    // Ottieni l'originalExerciseId dalle serie
+    final series = exercise['series'] as List<dynamic>;
+    final originalExerciseId = series.isNotEmpty
+        ? (series.first as Map<String, dynamic>)['originalExerciseId'] ??
+            newExerciseId
+        : newExerciseId;
+
+    final recordsStream = exerciseRecordService
+        .getExerciseRecords(
+          userId: widget.userId,
+          exerciseId: originalExerciseId,
+        )
+        .map((records) => records.isNotEmpty
+            ? records.reduce((a, b) => a.date.compareTo(b.date) > 0 ? a : b)
+            : null);
+
+    final latestRecord = await recordsStream.first;
+
+    num latestMaxWeight = 0.0;
+    if (latestRecord != null) {
+      latestMaxWeight = latestRecord.maxWeight;
+    } else {
+      latestMaxWeight = 0.0;
+    }
+
+    // Ensure we have a weight notifier for this exercise
+    _weightNotifiers[exercise['id']] ??= ValueNotifier(0.0);
+
+    if (!mounted) return;
+
+    await showDialog(
+      context: context,
+      builder: (context) => SeriesDialog(
+        exerciseRecordService: _exerciseRecordService,
+        athleteId: widget.userId,
+        exerciseId: exercise['id'],
+        exerciseType: exercise['type'] ?? 'weight',
+        weekIndex: 0, // Not relevant in this context
+        exercise: Exercise.fromMap(exercise),
+        currentSeriesGroup: series
+            .map((s) => Series.fromMap(s as Map<String, dynamic>))
+            .toList(),
+        latestMaxWeight: latestMaxWeight.toDouble(),
+        weightNotifier: _weightNotifiers[exercise['id']]!,
+      ),
     );
+  }
+
+  void _showSeriesEditDialog(
+      Map<String, dynamic> exercise, List<Map<String, dynamic>> series) async {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    // Convert the series data to Series model
+    final List<Series> seriesList =
+        series.map((s) => Series.fromMap(s)).toList();
+
+    final originalExerciseId = seriesList.first.originalExerciseId;
+
+    // Create a stream for the exercise records
+    final recordsStream = _exerciseRecordService
+        .getExerciseRecords(
+          userId: widget.userId,
+          exerciseId: originalExerciseId ?? exercise['id'],
+        )
+        .map((records) => records.isNotEmpty
+            ? records.reduce((a, b) => a.date.compareTo(b.date) > 0 ? a : b)
+            : null);
+
+    // Get the latest record
+    final latestRecord = await recordsStream.first;
+
+    num latestMaxWeight = 0.0;
+    if (latestRecord != null) {
+      latestMaxWeight = latestRecord.maxWeight;
+    } else {
+      latestMaxWeight = 0.0;
+    }
+
+    // Ensure we have a weight notifier for this exercise
+    _weightNotifiers[exercise['id']] ??= ValueNotifier(0.0);
+
+    if (!mounted) return;
+
+    final result = await showDialog<List<Series>>(
+      context: context,
+      builder: (context) => SeriesDialog(
+        exerciseRecordService: _exerciseRecordService,
+        athleteId: widget.userId,
+        exerciseId: exercise['id'],
+        exerciseType: exercise['type'] ?? 'weight',
+        weekIndex: 0, // Not relevant in this context
+        exercise: Exercise.fromMap(exercise),
+        currentSeriesGroup: seriesList,
+        latestMaxWeight: latestMaxWeight.toDouble(),
+        weightNotifier: _weightNotifiers[exercise['id']]!,
+      ),
+    );
+
+    // Se l'utente ha confermato le modifiche
+    if (result != null && mounted) {
+      // Aggiorna le serie nel database
+      final batch = FirebaseFirestore.instance.batch();
+      
+      final updatedResult = <Series>[];
+      
+      // Se stiamo riducendo il numero di serie, eliminiamo quelle in eccesso
+      if (result.length < seriesList.length) {
+        for (var i = result.length; i < seriesList.length; i++) {
+          final seriesRef = FirebaseFirestore.instance
+              .collection('series')
+              .doc(seriesList[i].id);
+          batch.delete(seriesRef);
+        }
+      }
+
+      // Aggiorna o crea le serie rimanenti
+      for (var series in result) {
+        if (series.id != null) {
+          // Update existing series
+          final seriesRef = FirebaseFirestore.instance
+              .collection('series')
+              .doc(series.id);
+          batch.update(seriesRef, series.toMap());
+          updatedResult.add(series);
+        } else {
+          // Create new series
+          final seriesRef = FirebaseFirestore.instance
+              .collection('series')
+              .doc();
+          // Make sure to set the exerciseId for new series
+          final newSeries = series.copyWith(
+            id: seriesRef.id,
+            serieId: seriesRef.id,
+            exerciseId: exercise['id'],
+          );
+          final Map<String, dynamic> seriesData = newSeries.toMap();
+          seriesData['exerciseId'] = exercise['id']; // Add exerciseId to the map
+          batch.set(seriesRef, seriesData);
+          updatedResult.add(newSeries);
+        }
+      }
+
+      try {
+        await batch.commit();
+        
+        // Aggiorna lo stato locale
+        final updatedExercises = List<Map<String, dynamic>>.from(ref.read(exercisesProvider));
+        final index = updatedExercises.indexWhere((e) => e['id'] == exercise['id']);
+        
+        if (index != -1) {
+          updatedExercises[index] = {
+            ...updatedExercises[index],
+            'series': updatedResult.map((s) {
+              final map = s.toMap();
+              map['exerciseId'] = exercise['id']; // Ensure exerciseId is set in the map
+              return map;
+            }).toList(),
+          };
+          
+          ref.read(exercisesProvider.notifier).state = updatedExercises;
+        }
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Errore durante il salvataggio delle modifiche: $e'),
+            backgroundColor: colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showEditSeriesDialog(
+      Map<String, dynamic> exercise, List<Map<String, dynamic>> series) {
+    _showSeriesEditDialog(exercise, series);
   }
 
   bool _isSeriesDone(Map<String, dynamic> seriesData) {
@@ -851,7 +1235,8 @@ Future<void> _recalculateWeights(Map<String, dynamic> exercise, String newExerci
         : repsDone >= reps;
 
     bool weightCompleted = maxWeight != null
-        ? weightDone >= weight && (weightDone <= maxWeight || weightDone > maxWeight)
+        ? weightDone >= weight &&
+            (weightDone <= maxWeight || weightDone > maxWeight)
         : weightDone >= weight;
 
     return repsCompleted && weightCompleted;
@@ -868,7 +1253,7 @@ Future<void> _recalculateWeights(Map<String, dynamic> exercise, String newExerci
     final maxWeight = series['maxWeight']?.toDouble();
 
     if (!currentlyDone) {
-await _workoutService.updateSeriesWithMaxValues(
+      await _workoutService.updateSeriesWithMaxValues(
         seriesId,
         reps,
         maxReps,

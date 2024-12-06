@@ -5,20 +5,25 @@ import '../models/meals_model.dart' as meals;
 import '../services/meals_services.dart';
 import 'food_autocomplete.dart';
 import 'package:go_router/go_router.dart';
+import '../../Main/app_theme.dart';
+import '../../UI/components/button.dart';
+import '../../UI/components/card.dart';
+import '../../UI/components/input.dart';
+import '../../UI/components/badge.dart';
 
 class FoodSelector extends ConsumerStatefulWidget {
   final meals.Meal meal;
   final String? myFoodId;
   final VoidCallback? onSave;
   final bool isFavoriteMeal;
-  final ScrollController? scrollController; // Aggiunto il parametro
+  final ScrollController? scrollController;
 
   const FoodSelector({
     required this.meal,
     this.myFoodId,
     this.onSave,
     this.isFavoriteMeal = false,
-    this.scrollController, // Aggiunto il parametro
+    this.scrollController,
     super.key,
   });
 
@@ -26,7 +31,12 @@ class FoodSelector extends ConsumerStatefulWidget {
   FoodSelectorState createState() => FoodSelectorState();
 }
 
-class FoodSelectorState extends ConsumerState<FoodSelector> {
+class FoodSelectorState extends ConsumerState<FoodSelector>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _quantityController =
       TextEditingController(text: '100');
@@ -46,16 +56,43 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
   @override
   void initState() {
     super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOut,
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    ));
+
     if (widget.myFoodId != null) {
       _selectedFoodId = widget.myFoodId!;
       _foodFuture = _loadFoodData(widget.myFoodId!);
     }
+
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _searchController.dispose();
+    _quantityController.dispose();
+    super.dispose();
   }
 
   Future<macros.Food?> _loadFoodData(String foodId) async {
     final mealsService = ref.read(mealsServiceProvider);
-    final food =
-        await mealsService.getMyFoodById(widget.meal.userId, foodId);
+    final food = await mealsService.getMyFoodById(widget.meal.userId, foodId);
     if (food != null) {
       if (mounted) {
         setState(() {
@@ -160,7 +197,6 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
         userId: widget.meal.userId,
         mealId: widget.meal.id!,
         food: adjustedFood,
-        quantity: _quantity,
       );
     } else {
       await mealsService.addFoodToMeal(
@@ -198,40 +234,59 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return SingleChildScrollView(
-      controller: widget.scrollController, // Utilizza lo scrollController passato
+      controller: widget.scrollController,
       padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        left: AppTheme.spacing.lg,
+        right: AppTheme.spacing.lg,
+        top: AppTheme.spacing.lg,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppTheme.spacing.lg,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          AutoTypeField(
-            controller: _searchController,
-            focusNode: FocusNode(),
-            onSelected: (macros.Food food) {
-              setState(() {
-                _updateLoadedFood(food);
-                _quantity = 100.0;
-                _unit = 'g';
-                _quantityController.text = '100';
-                _foodFuture = Future.value(food);
-                _updateMacronutrientValues(food);
-              });
-            },
-            onChanged: (String pattern) {
-              // Gestione dei cambiamenti nel campo di ricerca se necessario
-            },
+          Container(
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+              boxShadow: AppTheme.elevations.small,
+            ),
+            child: AutoTypeField(
+              controller: _searchController,
+              focusNode: FocusNode(),
+              onSelected: (macros.Food food) {
+                setState(() {
+                  _updateLoadedFood(food);
+                  _quantity = 100.0;
+                  _unit = 'g';
+                  _quantityController.text = '100';
+                  _foodFuture = Future.value(food);
+                  _updateMacronutrientValues(food);
+                });
+              },
+              onChanged: (String pattern) {
+                // Pattern handling remains unchanged
+              },
+            ),
           ),
           if (_selectedFoodId.isNotEmpty || widget.myFoodId != null)
-            _buildSelectedFoodDetails(context),
-          const SizedBox(height: 16),
-          ElevatedButton(
+            FadeTransition(
+              opacity: _fadeAnimation,
+              child: SlideTransition(
+                position: _slideAnimation,
+                child: _buildSelectedFoodDetails(context),
+              ),
+            ),
+          SizedBox(height: AppTheme.spacing.lg),
+          AppButton(
+            label: 'Salva',
+            icon: Icons.check_circle_outline,
             onPressed: _saveFood,
-            child: const Text('Salva e torna indietro'),
+            size: AppButtonSize.full,
+            variant: AppButtonVariant.primary,
           ),
         ],
       ),
@@ -239,50 +294,127 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
   }
 
   Widget _buildSelectedFoodDetails(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return FutureBuilder<macros.Food?>(
       future: _foodFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(
+            child: CircularProgressIndicator(
+              color: colorScheme.primary,
+            ),
+          );
         } else if (snapshot.hasData) {
           final food = snapshot.data!;
           _loadedFood = food;
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Divider(),
-              Text(
-                food.name,
-                style: Theme.of(context).textTheme.titleLarge,
+          return AppCard(
+            child: Padding(
+              padding: EdgeInsets.all(AppTheme.spacing.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          food.name,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      AppBadge(
+                        label: '${_kcalValue.toStringAsFixed(0)} kcal',
+                        variant: AppBadgeVariant.gradient,
+                        status: AppBadgeStatus.primary,
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: AppTheme.spacing.md),
+                  _buildQuantityInput(food),
+                  SizedBox(height: AppTheme.spacing.lg),
+                  Text(
+                    'Macronutrienti',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: AppTheme.spacing.md),
+                  _buildMacroItem(
+                    'Proteine',
+                    _proteinValue,
+                    colorScheme.tertiary,
+                    theme,
+                  ),
+                  SizedBox(height: AppTheme.spacing.sm),
+                  _buildMacroItem(
+                    'Carboidrati',
+                    _carbsValue,
+                    colorScheme.secondary,
+                    theme,
+                  ),
+                  SizedBox(height: AppTheme.spacing.sm),
+                  _buildMacroItem(
+                    'Grassi',
+                    _fatValue,
+                    colorScheme.error,
+                    theme,
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              _buildQuantityInput(food),
-              const SizedBox(height: 16),
-              const Text('Macronutrienti:'),
-              Text('Proteine: ${_proteinValue.toStringAsFixed(2)}g'),
-              Text('Carboidrati: ${_carbsValue.toStringAsFixed(2)}g'),
-              Text('Grassi: ${_fatValue.toStringAsFixed(2)}g'),
-              Text('Calorie: ${_kcalValue.toStringAsFixed(2)}kcal'),
-            ],
+            ),
           );
         } else if (snapshot.hasError) {
-          return Text('Errore: ${snapshot.error}');
+          return AppCard(
+            child: Padding(
+              padding: EdgeInsets.all(AppTheme.spacing.lg),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 48,
+                    color: colorScheme.error,
+                  ),
+                  SizedBox(height: AppTheme.spacing.md),
+                  Text(
+                    'Errore nel caricamento',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: colorScheme.error,
+                    ),
+                  ),
+                  SizedBox(height: AppTheme.spacing.sm),
+                  Text(
+                    snapshot.error.toString(),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          );
         } else {
-          return const Text('Nessun dato disponibile');
+          return const SizedBox.shrink();
         }
       },
     );
   }
 
   Widget _buildQuantityInput(macros.Food food) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Row(
       children: [
         Expanded(
-          child: TextField(
+          child: AppInput(
             controller: _quantityController,
-            decoration: const InputDecoration(
-              labelText: 'Quantità',
-            ),
+            label: 'Quantità',
             keyboardType: TextInputType.number,
             onChanged: (value) {
               setState(() {
@@ -292,21 +424,83 @@ class FoodSelectorState extends ConsumerState<FoodSelector> {
             },
           ),
         ),
-        const SizedBox(width: 8),
-        DropdownButton<String>(
-          value: _unit,
-          items: <String>['g', 'ml', 'oz'].map((String value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Text(value),
-            );
-          }).toList(),
-          onChanged: (String? newValue) {
-            setState(() {
-              _unit = newValue!;
-              _updateMacronutrientValues(food);
-            });
-          },
+        SizedBox(width: AppTheme.spacing.md),
+        Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: AppTheme.spacing.md,
+            vertical: AppTheme.spacing.xs,
+          ),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(AppTheme.radii.md),
+            border: Border.all(
+              color: colorScheme.outline.withOpacity(0.2),
+            ),
+          ),
+          child: DropdownButton<String>(
+            value: _unit,
+            items: <String>['g', 'ml', 'oz'].map((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(
+                  value,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              );
+            }).toList(),
+            onChanged: (String? newValue) {
+              setState(() {
+                _unit = newValue!;
+                _updateMacronutrientValues(food);
+              });
+            },
+            underline: const SizedBox.shrink(),
+            icon: Icon(
+              Icons.arrow_drop_down,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMacroItem(
+      String label, double value, Color color, ThemeData theme) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(AppTheme.radii.full),
+                border: Border.all(
+                  color: color,
+                  width: 2,
+                ),
+              ),
+            ),
+            SizedBox(width: AppTheme.spacing.sm),
+            Text(
+              label,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+          ],
+        ),
+        Text(
+          '${value.toStringAsFixed(1)}g',
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: color,
+          ),
         ),
       ],
     );

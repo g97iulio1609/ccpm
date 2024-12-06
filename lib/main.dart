@@ -1,23 +1,28 @@
 import 'package:alphanessone/Main/app_services.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 import 'firebase_options.dart';
 import 'Main/app_router.dart';
 import 'Main/app_theme.dart';
 import 'Main/app_notifications.dart';
-import 'Store/url_redirect_web.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Rimuove il # dall'URL
+  usePathUrlStrategy();
+
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  
+
+  // Inizializza Stripe con la chiave pubblica solo su web
   if (kIsWeb) {
-    await StripeCheckout.initStripe();
-  } else {
-    Stripe.publishableKey = 'pk_live_51Lk8noGIoD20nGKnKB5igqB4Kpry8VQpYgWwm0t5dJWTCOX4pQXdg9N24dM1fSgZP3oVoYPTZj4SGYIp9aT05Mrr00a4XOvZg6';
+    Stripe.publishableKey =
+        'pk_live_51Lk8noGIoD20nGKnKB5igqB4Kpry8VQpYgWwm0t5dJWTCOX4pQXdg9N24dM1fSgZP3oVoYPTZj4SGYIp9aT05Mrr00a4XOvZg6';
+    // Configura Stripe solo con le impostazioni di base
     await Stripe.instance.applySettings();
   }
 
@@ -26,13 +31,13 @@ void main() async {
     await initializeNotifications();
     await requestNotificationPermission();
   }
-  
+
   await appServices.initialize();
 
   final bool isVersionSupported = await appServices.isAppVersionSupported();
   if (isVersionSupported) {
-    final bool hasActiveSubscription = await appServices.checkSubscriptionStatus();
-    // Puoi utilizzare hasActiveSubscription se necessario
+    final bool hasActiveSubscription =
+        await appServices.checkSubscriptionStatus();
     runApp(const ProviderScope(child: MyApp()));
   } else {
     runApp(const UnsupportedVersionApp());
@@ -63,7 +68,10 @@ class UnsupportedVersionApp extends StatelessWidget {
                 const SizedBox(height: 24),
                 const Text(
                   "L'App Deve Essere Aggiornata",
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white),
                 ),
                 const SizedBox(height: 16),
                 const Text(
@@ -80,12 +88,15 @@ class UnsupportedVersionApp extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: const Color(0xFF2196F3),
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 32, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24)),
                     ),
                     child: const Text(
                       'Aggiorna',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ),
               ],

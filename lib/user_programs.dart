@@ -5,9 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:alphanessone/providers/providers.dart';
 import './trainingBuilder/controller/training_program_controller.dart';
 import './trainingBuilder/services/training_services.dart';
-import 'UI/components/card.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'UI/components/bottom_menu.dart';
+import 'package:alphanessone/Viewer/UI/training_viewer.dart';
 
 class UserProgramsScreen extends HookConsumerWidget {
   final String userId;
@@ -39,18 +39,22 @@ class UserProgramsScreen extends HookConsumerWidget {
           child: CustomScrollView(
             slivers: [
               // Add Program Button (if applicable)
-              if (userRole == 'admin' || userRole == 'client_premium' || userRole == 'coach')
+              if (userRole == 'admin' ||
+                  userRole == 'client_premium' ||
+                  userRole == 'coach')
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.all(AppTheme.spacing.xl),
-                    child: _buildAddProgramButton(context, userId, theme, colorScheme),
+                    child: _buildAddProgramButton(
+                        context, userId, theme, colorScheme),
                   ),
                 ),
 
               // Programs Grid
               SliverPadding(
                 padding: EdgeInsets.all(AppTheme.spacing.xl),
-                sliver: _buildProgramList(context, ref, userId, userRole, firestoreService),
+                sliver: _buildProgramList(
+                    context, ref, userId, userRole, firestoreService),
               ),
             ],
           ),
@@ -59,7 +63,8 @@ class UserProgramsScreen extends HookConsumerWidget {
     );
   }
 
-  Widget _buildAddProgramButton(BuildContext context, String userId, ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildAddProgramButton(BuildContext context, String userId,
+      ThemeData theme, ColorScheme colorScheme) {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -111,8 +116,13 @@ class UserProgramsScreen extends HookConsumerWidget {
     );
   }
 
-  Widget _buildProgramCard(BuildContext context, WidgetRef ref,
-      DocumentSnapshot doc, String userId, String userRole, FirestoreService firestoreService) {
+  Widget _buildProgramCard(
+      BuildContext context,
+      WidgetRef ref,
+      DocumentSnapshot doc,
+      String userId,
+      String userRole,
+      FirestoreService firestoreService) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isHidden = doc['hide'] ?? false;
@@ -132,7 +142,7 @@ class UserProgramsScreen extends HookConsumerWidget {
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         child: InkWell(
-          onTap: () => context.go('/user_programs/$userId/training_viewer/${doc.id}'),
+          onTap: () => _navigateToTrainingViewer(context, userId, doc.id),
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           child: Padding(
             padding: EdgeInsets.all(AppTheme.spacing.lg),
@@ -157,9 +167,9 @@ class UserProgramsScreen extends HookConsumerWidget {
                     ),
                   ),
                 ),
-                
+
                 SizedBox(height: AppTheme.spacing.md),
-                
+
                 Text(
                   doc['name'],
                   style: theme.textTheme.titleLarge?.copyWith(
@@ -193,20 +203,27 @@ class UserProgramsScreen extends HookConsumerWidget {
                   children: [
                     if (userRole == 'admin' || userRole == 'coach')
                       _buildActionButton(
-                        icon: isHidden ? Icons.visibility_off : Icons.visibility,
+                        icon:
+                            isHidden ? Icons.visibility_off : Icons.visibility,
                         label: isHidden ? 'Hidden' : 'Visible',
                         onTap: () => _toggleProgramVisibility(doc.id, isHidden),
                         colorScheme: colorScheme,
                         theme: theme,
                       ),
-
-                    if (userRole == 'admin' || userRole == 'client_premium' || userRole == 'coach') ...[
+                    if (userRole == 'admin' ||
+                        userRole == 'client_premium' ||
+                        userRole == 'coach') ...[
                       SizedBox(width: AppTheme.spacing.sm),
                       _buildActionButton(
                         icon: Icons.more_horiz,
                         label: 'Options',
                         onTap: () => _showProgramOptions(
-                          context, doc, userId, controller, firestoreService, theme,
+                          context,
+                          doc,
+                          userId,
+                          controller,
+                          firestoreService,
+                          theme,
                         ),
                         colorScheme: colorScheme,
                         theme: theme,
@@ -308,8 +325,8 @@ class UserProgramsScreen extends HookConsumerWidget {
               child: Text(
                 'Si è verificato un errore: ${snapshot.error}',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.error,
-                ),
+                      color: Theme.of(context).colorScheme.error,
+                    ),
               ),
             ),
           );
@@ -335,9 +352,9 @@ class UserProgramsScreen extends HookConsumerWidget {
         final documents = snapshot.data!.docs;
         final crossAxisCount = switch (MediaQuery.of(context).size.width) {
           > 1200 => 4, // Desktop large
-          > 900 => 3,  // Desktop
-          > 600 => 2,  // Tablet
-          _ => 1,      // Mobile
+          > 900 => 3, // Desktop
+          > 600 => 2, // Tablet
+          _ => 1, // Mobile
         };
 
         return SliverGrid(
@@ -397,9 +414,8 @@ class UserProgramsScreen extends HookConsumerWidget {
             title: 'Modifica Programma',
             icon: Icons.edit_outlined,
             onTap: () {
-              final route = '/user_programs/$userId/training_program/${doc.id}';
-              debugPrint('Navigating to: $route');
-              context.go(route);
+              context.go('/user_programs/training_program',
+                  extra: {'userId': userId, 'programId': doc.id});
             },
           ),
           BottomMenuItem(
@@ -433,11 +449,11 @@ class UserProgramsScreen extends HookConsumerWidget {
     Query query = FirebaseFirestore.instance
         .collection('programs')
         .where('athleteId', isEqualTo: userId);
-    
+
     if (userRole != 'admin') {
       query = query.where('hide', isNotEqualTo: true);
     }
-    
+
     return query.orderBy('mesocycleNumber', descending: false).snapshots();
   }
 
@@ -458,13 +474,15 @@ class UserProgramsScreen extends HookConsumerWidget {
     }
   }
 
-  Future<void> _deleteProgram(BuildContext context, String id, FirestoreService firestoreService) async {
+  Future<void> _deleteProgram(BuildContext context, String id,
+      FirestoreService firestoreService) async {
     final bool? shouldDelete = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Conferma eliminazione'),
-          content: const Text('Sei sicuro di voler eliminare questo programma?'),
+          content:
+              const Text('Sei sicuro di voler eliminare questo programma?'),
           actions: [
             TextButton(
               child: const Text('Annulla'),
@@ -484,13 +502,15 @@ class UserProgramsScreen extends HookConsumerWidget {
     }
   }
 
-  Future<void> _toggleProgramVisibility(String id, bool currentVisibility) async {
+  Future<void> _toggleProgramVisibility(
+      String id, bool currentVisibility) async {
     await FirebaseFirestore.instance.collection('programs').doc(id).update({
       'hide': !currentVisibility,
     });
   }
 
-  Future<void> _duplicateProgram(BuildContext context, String docId, TrainingProgramController controller) async {
+  Future<void> _duplicateProgram(BuildContext context, String docId,
+      TrainingProgramController controller) async {
     String? newProgramName = await showDialog<String>(
       context: context,
       builder: (BuildContext context) {
@@ -509,7 +529,8 @@ class UserProgramsScreen extends HookConsumerWidget {
               child: const Text('Annulla'),
             ),
             ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(nameController.text.trim()),
+              onPressed: () =>
+                  Navigator.of(context).pop(nameController.text.trim()),
               child: const Text('OK'),
             ),
           ],
@@ -519,27 +540,43 @@ class UserProgramsScreen extends HookConsumerWidget {
 
     if (newProgramName != null && newProgramName.isNotEmpty) {
       try {
-        final result = await controller.duplicateProgram(docId, newProgramName, context);
+        final result =
+            await controller.duplicateProgram(docId, newProgramName, context);
         if (context.mounted) {
           if (result != null) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Programma duplicato con successo: $newProgramName')),
+              SnackBar(
+                  content: Text(
+                      'Programma duplicato con successo: $newProgramName')),
             );
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Errore durante la duplicazione del programma')),
+              const SnackBar(
+                  content:
+                      Text('Errore durante la duplicazione del programma')),
             );
           }
         }
       } catch (e) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Errore durante la duplicazione del programma: $e')),
+            SnackBar(
+                content:
+                    Text('Errore durante la duplicazione del programma: $e')),
           );
         }
       }
     }
   }
+
+  void _navigateToTrainingViewer(
+      BuildContext context, String? userId, String? programId) {
+    if (userId == null || programId == null) return;
+
+    context.go('/user_programs/training_viewer',
+        extra: {'userId': userId, 'programId': programId});
+  }
+
 }
 
 class AddProgramDialog extends StatefulWidget {

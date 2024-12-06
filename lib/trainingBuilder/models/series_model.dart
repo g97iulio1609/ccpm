@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class Series {
   String? id;
   String serieId;
+  String? originalExerciseId;
+  String? exerciseId;
   int reps;
   int sets;
   String intensity;
@@ -23,6 +25,8 @@ class Series {
   Series({
     this.id,
     required this.serieId,
+    this.originalExerciseId,
+    this.exerciseId,
     required this.reps,
     required this.sets,
     required this.intensity,
@@ -43,6 +47,8 @@ class Series {
     return Series(
       id: map['id'],
       serieId: map['serieId'] ?? '',
+      originalExerciseId: map['originalExerciseId'],
+      exerciseId: map['exerciseId'],
       reps: map['reps'] ?? 0,
       sets: map['sets'] ?? 1,
       intensity: map['intensity'] ?? '0',
@@ -60,47 +66,13 @@ class Series {
     );
   }
 
-  Series copyWith({
-    String? serieId,
-    int? reps,
-    int? sets,
-    String? intensity,
-    String? rpe,
-    double? weight,
-    int? order,
-    bool? done,
-    int? reps_done,
-    double? weight_done,
-    int? maxReps,
-    int? maxSets,
-    String? maxIntensity,
-    String? maxRpe,
-    double? maxWeight,
-  }) {
-    return Series(
-      serieId: serieId ?? this.serieId,
-      reps: reps ?? this.reps,
-      sets: sets ?? this.sets,
-      intensity: intensity ?? this.intensity,
-      rpe: rpe ?? this.rpe,
-      weight: weight ?? this.weight,
-      order: order ?? this.order,
-      done: done ?? this.done,
-      reps_done: reps_done ?? this.reps_done,
-      weight_done: weight_done ?? this.weight_done,
-      maxReps: maxReps ?? this.maxReps,
-      maxSets: maxSets ?? this.maxSets,
-      maxIntensity: maxIntensity ?? this.maxIntensity,
-      maxRpe: maxRpe ?? this.maxRpe,
-      maxWeight: maxWeight ?? this.maxWeight,
-    );
-  }
-
   factory Series.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return Series(
       id: doc.id,
       serieId: data['serieId'] ?? '',
+      originalExerciseId: data['originalExerciseId'],
+      exerciseId: data['exerciseId'],
       reps: data['reps'] ?? 0,
       sets: data['sets'] ?? 1,
       intensity: data['intensity'] ?? '0',
@@ -122,6 +94,8 @@ class Series {
     return {
       'id': id,
       'serieId': serieId,
+      'originalExerciseId': originalExerciseId,
+      'exerciseId': exerciseId,
       'reps': reps,
       'sets': sets,
       'intensity': intensity,
@@ -142,6 +116,8 @@ class Series {
   Map<String, dynamic> toFirestore() {
     return {
       'serieId': serieId,
+      'originalExerciseId': originalExerciseId,
+      'exerciseId': exerciseId,
       'reps': reps,
       'sets': sets,
       'intensity': intensity,
@@ -159,9 +135,51 @@ class Series {
     };
   }
 
+  Series copyWith({
+    String? id,
+    String? serieId,
+    String? originalExerciseId,
+    String? exerciseId,
+    int? reps,
+    int? sets,
+    String? intensity,
+    String? rpe,
+    double? weight,
+    int? order,
+    bool? done,
+    int? reps_done,
+    double? weight_done,
+    int? maxReps,
+    int? maxSets,
+    String? maxIntensity,
+    String? maxRpe,
+    double? maxWeight,
+  }) {
+    return Series(
+      id: id ?? this.id,
+      serieId: serieId ?? this.serieId,
+      originalExerciseId: originalExerciseId ?? this.originalExerciseId,
+      exerciseId: exerciseId ?? this.exerciseId,
+      reps: reps ?? this.reps,
+      sets: sets ?? this.sets,
+      intensity: intensity ?? this.intensity,
+      rpe: rpe ?? this.rpe,
+      weight: weight ?? this.weight,
+      order: order ?? this.order,
+      done: done ?? this.done,
+      reps_done: reps_done ?? this.reps_done,
+      weight_done: weight_done ?? this.weight_done,
+      maxReps: maxReps ?? this.maxReps,
+      maxSets: maxSets ?? this.maxSets,
+      maxIntensity: maxIntensity ?? this.maxIntensity,
+      maxRpe: maxRpe ?? this.maxRpe,
+      maxWeight: maxWeight ?? this.maxWeight,
+    );
+  }
+
   @override
   String toString() {
-    return 'Series(id: $id, serieId: $serieId, reps: $reps, sets: $sets, intensity: $intensity, rpe: $rpe, weight: $weight, order: $order, done: $done, reps_done: $reps_done, weight_done: $weight_done, maxReps: $maxReps, maxSets: $maxSets, maxIntensity: $maxIntensity, maxRpe: $maxRpe, maxWeight: $maxWeight)';
+    return 'Series(id: $id, serieId: $serieId, originalExerciseId: $originalExerciseId, exerciseId: $exerciseId, reps: $reps, sets: $sets, intensity: $intensity, rpe: $rpe, weight: $weight, order: $order, done: $done, reps_done: $reps_done, weight_done: $weight_done, maxReps: $maxReps, maxSets: $maxSets, maxIntensity: $maxIntensity, maxRpe: $maxRpe, maxWeight: $maxWeight)';
   }
 
   @override
@@ -171,6 +189,8 @@ class Series {
     return other is Series &&
       other.id == id &&
       other.serieId == serieId &&
+      other.originalExerciseId == originalExerciseId &&
+      other.exerciseId == exerciseId &&
       other.reps == reps &&
       other.sets == sets &&
       other.intensity == intensity &&
@@ -191,6 +211,8 @@ class Series {
   int get hashCode {
     return id.hashCode ^
       serieId.hashCode ^
+      originalExerciseId.hashCode ^
+      exerciseId.hashCode ^
       reps.hashCode ^
       sets.hashCode ^
       intensity.hashCode ^

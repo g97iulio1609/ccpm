@@ -15,7 +15,9 @@ String formatNumber(dynamic value) {
   if (value == null) return '';
   if (value is int) return value.toString();
   if (value is double) {
-    return value == value.roundToDouble() ? value.toInt().toString() : value.toStringAsFixed(1);
+    return value == value.roundToDouble()
+        ? value.toInt().toString()
+        : value.toStringAsFixed(1);
   }
   if (value is String) {
     if (value.isEmpty) return '';
@@ -75,27 +77,37 @@ class ProgressionControllers {
   }
 }
 
-class ProgressionControllersNotifier extends StateNotifier<List<List<List<ProgressionControllers>>>> {
+class ProgressionControllersNotifier
+    extends StateNotifier<List<List<List<ProgressionControllers>>>> {
   ProgressionControllersNotifier() : super([]);
 
   void initialize(List<List<WeekProgression>> weekProgressions) {
-    state = weekProgressions.map((week) => 
-      week.map((session) => 
-        _groupSeries(session.series).map((_) => ProgressionControllers()).toList()
-      ).toList()
-    ).toList();
+    state = weekProgressions
+        .map((week) => week
+            .map((session) => _groupSeries(session.series)
+                .map((_) => ProgressionControllers())
+                .toList())
+            .toList())
+        .toList();
 
     for (int weekIndex = 0; weekIndex < weekProgressions.length; weekIndex++) {
-      for (int sessionIndex = 0; sessionIndex < weekProgressions[weekIndex].length; sessionIndex++) {
-        final groupedSeries = _groupSeries(weekProgressions[weekIndex][sessionIndex].series);
-        for (int groupIndex = 0; groupIndex < groupedSeries.length; groupIndex++) {
-          updateControllers(weekIndex, sessionIndex, groupIndex, groupedSeries[groupIndex].first);
+      for (int sessionIndex = 0;
+          sessionIndex < weekProgressions[weekIndex].length;
+          sessionIndex++) {
+        final groupedSeries =
+            _groupSeries(weekProgressions[weekIndex][sessionIndex].series);
+        for (int groupIndex = 0;
+            groupIndex < groupedSeries.length;
+            groupIndex++) {
+          updateControllers(weekIndex, sessionIndex, groupIndex,
+              groupedSeries[groupIndex].first);
         }
       }
     }
   }
 
-  void updateControllers(int weekIndex, int sessionIndex, int groupIndex, Series series) {
+  void updateControllers(
+      int weekIndex, int sessionIndex, int groupIndex, Series series) {
     if (_isValidIndex(state, weekIndex, sessionIndex, groupIndex)) {
       final controllers = state[weekIndex][sessionIndex][groupIndex];
       controllers.reps.min.text = formatNumber(series.reps);
@@ -128,21 +140,41 @@ class ProgressionControllersNotifier extends StateNotifier<List<List<List<Progre
     }
   }
 
-  bool _isValidIndex(List<List<List<ProgressionControllers>>> list, int weekIndex, [int? sessionIndex, int? groupIndex]) {
-    return weekIndex >= 0 && weekIndex < list.length &&
-           (sessionIndex == null || (sessionIndex >= 0 && sessionIndex < list[weekIndex].length)) &&
-           (groupIndex == null || (groupIndex >= 0 && groupIndex < list[weekIndex][sessionIndex!].length));
+  bool _isValidIndex(
+      List<List<List<ProgressionControllers>>> list, int weekIndex,
+      [int? sessionIndex, int? groupIndex]) {
+    return weekIndex >= 0 &&
+        weekIndex < list.length &&
+        (sessionIndex == null ||
+            (sessionIndex >= 0 && sessionIndex < list[weekIndex].length)) &&
+        (groupIndex == null ||
+            (groupIndex >= 0 &&
+                groupIndex < list[weekIndex][sessionIndex!].length));
   }
 
   static List<List<Series>> _groupSeries(List<Series> series) {
+    if (series.isEmpty) return [];
+
     final groupedSeries = <List<Series>>[];
-    for (final s in series) {
-      if (groupedSeries.isEmpty || !_isSameGroup(s, groupedSeries.last.first)) {
-        groupedSeries.add([s]);
+    List<Series> currentGroup = [series[0]];
+
+    for (int i = 1; i < series.length; i++) {
+      final currentSeries = series[i];
+      final previousSeries = series[i - 1];
+
+      if (_isSameGroup(currentSeries, previousSeries)) {
+        currentGroup.add(currentSeries);
       } else {
-        groupedSeries.last.add(s);
+        groupedSeries.add(List<Series>.from(currentGroup));
+        currentGroup = [currentSeries];
       }
     }
+
+    // Aggiungi l'ultimo gruppo
+    if (currentGroup.isNotEmpty) {
+      groupedSeries.add(currentGroup);
+    }
+
     return groupedSeries;
   }
 
@@ -158,7 +190,9 @@ class ProgressionControllersNotifier extends StateNotifier<List<List<List<Progre
   }
 }
 
-final progressionControllersProvider = StateNotifierProvider<ProgressionControllersNotifier, List<List<List<ProgressionControllers>>>>((ref) {
+final progressionControllersProvider = StateNotifierProvider<
+    ProgressionControllersNotifier,
+    List<List<List<ProgressionControllers>>>>((ref) {
   return ProgressionControllersNotifier();
 });
 
@@ -178,22 +212,64 @@ class ProgressionsList extends ConsumerStatefulWidget {
   ConsumerState<ProgressionsList> createState() => _ProgressionsListState();
 }
 
-class _ProgressionsListState extends ConsumerState<ProgressionsList> with AutomaticKeepAliveClientMixin {
+class _ProgressionsListState extends ConsumerState<ProgressionsList>
+    with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
 
-  bool _isSwipeInProgress = false;
+  final bool _isSwipeInProgress = false;
+
+  List<List<Series>> _groupSeries(List<Series> series) {
+    if (series.isEmpty) return [];
+
+    final groupedSeries = <List<Series>>[];
+    List<Series> currentGroup = [series[0]];
+
+    for (int i = 1; i < series.length; i++) {
+      final currentSeries = series[i];
+      final previousSeries = series[i - 1];
+
+      if (_isSameGroup(currentSeries, previousSeries)) {
+        currentGroup.add(currentSeries);
+      } else {
+        groupedSeries.add(List<Series>.from(currentGroup));
+        currentGroup = [currentSeries];
+      }
+    }
+
+    // Aggiungi l'ultimo gruppo
+    if (currentGroup.isNotEmpty) {
+      groupedSeries.add(currentGroup);
+    }
+
+    return groupedSeries;
+  }
+
+  bool _isSameGroup(Series a, Series b) {
+    return a.reps == b.reps &&
+        a.maxReps == b.maxReps &&
+        a.intensity == b.intensity &&
+        a.maxIntensity == b.maxIntensity &&
+        a.rpe == b.rpe &&
+        a.maxRpe == b.maxRpe &&
+        a.weight == b.weight &&
+        a.maxWeight == b.maxWeight;
+  }
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _initializeControllers());
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _initializeControllers());
   }
 
   void _initializeControllers() {
     final programController = ref.read(trainingProgramControllerProvider);
-    final weekProgressions = _buildWeekProgressions(programController.program.weeks, widget.exercise!);
-    ref.read(progressionControllersProvider.notifier).initialize(weekProgressions);
+    final weekProgressions = _buildWeekProgressions(
+        programController.program.weeks, widget.exercise!);
+    ref
+        .read(progressionControllersProvider.notifier)
+        .initialize(weekProgressions);
   }
 
   @override
@@ -202,267 +278,499 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
     final programController = ref.watch(trainingProgramControllerProvider);
     final controllers = ref.watch(progressionControllersProvider);
     final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
 
-    final weekProgressions = _buildWeekProgressions(programController.program.weeks, widget.exercise!);
+    final weekProgressions = _buildWeekProgressions(
+        programController.program.weeks, widget.exercise!);
 
     if (controllers.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(progressionControllersProvider.notifier).initialize(weekProgressions);
+        ref
+            .read(progressionControllersProvider.notifier)
+            .initialize(weekProgressions);
       });
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    // Determina il numero massimo di sessioni
+    final maxSessions = weekProgressions.fold<int>(
+        0, (max, week) => week.length > max ? week.length : max);
+
+    // Crea una mappa per tenere traccia delle sessioni non vuote
+    final nonEmptySessions = <int>[];
+    for (int sessionNumber = 0; sessionNumber < maxSessions; sessionNumber++) {
+      bool hasData = false;
+      for (int weekIndex = 0;
+          weekIndex < weekProgressions.length;
+          weekIndex++) {
+        if (weekIndex < controllers.length &&
+            sessionNumber < controllers[weekIndex].length &&
+            controllers[weekIndex][sessionNumber].isNotEmpty) {
+          hasData = true;
+          break;
+        }
+      }
+      if (hasData) {
+        nonEmptySessions.add(sessionNumber);
+      }
+    }
+
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                itemCount: weekProgressions.length,
-                itemBuilder: (context, weekIndex) {
-                  return weekIndex < controllers.length
-                      ? _buildWeekItem(weekIndex, weekProgressions[weekIndex], controllers[weekIndex], colorScheme)
-                      : const SizedBox.shrink();
-                },
-              ),
-            ),
-            const SizedBox(height: 24),
-            _buildSaveButton(colorScheme),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildWeekItem(int weekIndex, List<WeekProgression> weekProgression, List<List<ProgressionControllers>> weekControllers, ColorScheme colorScheme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 24, bottom: 8),
-          child: Text(
-            'Week ${weekIndex + 1}',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
-            ),
-          ),
-        ),
-        ...weekProgression.asMap().entries.map((entry) {
-          final sessionIndex = entry.key;
-          final session = entry.value;
-          return _buildSessionItem(weekIndex, sessionIndex, session, weekControllers[sessionIndex], colorScheme);
-        }),
-      ],
-    );
-  }
-
-  Widget _buildSessionItem(int weekIndex, int sessionIndex, WeekProgression session, List<ProgressionControllers> sessionControllers, ColorScheme colorScheme) {
-    final groupedSeries = _groupSeries(session.series);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 16, bottom: 8),
-          child: Text(
-            'Session ${sessionIndex + 1}',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
-            ),
-          ),
-        ),
-        ...groupedSeries.asMap().entries.map((entry) {
-          final groupIndex = entry.key;
-          final seriesGroup = entry.value;
-          return _buildSeriesItem(weekIndex, sessionIndex, groupIndex, seriesGroup, sessionControllers[groupIndex], colorScheme);
-        }),
-      ],
-    );
-  }
-
-  Widget _buildSeriesItem(int weekIndex, int sessionIndex, int groupIndex, List<Series> seriesGroup, ProgressionControllers controllers, ColorScheme colorScheme) {
-    return GestureDetector(
-      onHorizontalDragStart: (_) => setState(() => _isSwipeInProgress = true),
-      onHorizontalDragEnd: (_) => setState(() => _isSwipeInProgress = false),
-      onHorizontalDragCancel: () => setState(() => _isSwipeInProgress = false),
-      child: Slidable(
-        key: ValueKey('$weekIndex-$sessionIndex-$groupIndex'),
-        startActionPane: ActionPane(
-          motion: const ScrollMotion(),
-          children: [
-            SlidableAction(
-              onPressed: (_) => _addSeriesGroup(weekIndex, sessionIndex, groupIndex),
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
-              icon: Icons.add,
-              label: 'Add',
-            ),
-          ],
-        ),
-        endActionPane: ActionPane(
-          motion: const ScrollMotion(),
-          children: [
-            SlidableAction(
-              onPressed: (_) => _removeSeriesGroup(weekIndex, sessionIndex, groupIndex),
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              icon: Icons.delete,
-              label: 'Delete',
-            ),
-          ],
-        ),
-        child: AbsorbPointer(
-          absorbing: _isSwipeInProgress,
-          child: Container(
-            color: colorScheme.surface,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildSeriesFields(weekIndex, sessionIndex, groupIndex, seriesGroup.first, controllers),
-                const SizedBox(height: 24),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSeriesFields(int weekIndex, int sessionIndex, int groupIndex, Series series, ProgressionControllers controllers) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: EdgeInsets.all(AppTheme.spacing.lg),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: Column(
         children: [
-          // Header con badge e titolo
-          Row(
-            children: [
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppTheme.spacing.sm,
-                  vertical: AppTheme.spacing.xs,
-                ),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(AppTheme.radii.full),
-                ),
-                child: Text(
-                  'Series ${groupIndex + 1}',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.all(AppTheme.spacing.lg),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Crea una tabella per ogni sessione non vuota
+                    ...nonEmptySessions.map(
+                      (sessionNumber) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                                vertical: AppTheme.spacing.lg),
+                            child: Text(
+                              'Sessione ${sessionNumber + 1}',
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                color: colorScheme.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: colorScheme.surface,
+                              borderRadius:
+                                  BorderRadius.circular(AppTheme.radii.lg),
+                              border: Border.all(
+                                color: colorScheme.outline.withOpacity(0.1),
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                _buildTableHeader(colorScheme, theme, false),
+                                // Righe per ogni settimana
+                                for (int weekIndex = 0;
+                                    weekIndex < weekProgressions.length;
+                                    weekIndex++)
+                                  if (weekIndex < controllers.length &&
+                                      sessionNumber <
+                                          controllers[weekIndex].length &&
+                                      controllers[weekIndex][sessionNumber]
+                                          .isNotEmpty)
+                                    _buildWeekRow(
+                                      weekIndex,
+                                      sessionNumber,
+                                      weekProgressions[weekIndex]
+                                          [sessionNumber],
+                                      controllers[weekIndex][sessionNumber],
+                                      colorScheme,
+                                      theme,
+                                    ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
-
-          SizedBox(height: AppTheme.spacing.md),
-
-          // Griglia di campi
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            mainAxisSpacing: AppTheme.spacing.md,
-            crossAxisSpacing: AppTheme.spacing.md,
-            childAspectRatio: 2.5,
-            children: [
-              _buildRangeField(
-                controllers.reps,
-                'Reps',
-                () => _showRangeDialog(weekIndex, sessionIndex, groupIndex, 'Reps', controllers.reps),
-                colorScheme,
-                theme,
-              ),
-              _buildTextField(
-                controller: controllers.sets,
-                labelText: 'Sets',
-                keyboardType: TextInputType.number,
-                onChanged: (value) => _updateSeries(weekIndex, sessionIndex, groupIndex, sets: value),
-                colorScheme: colorScheme,
-                theme: theme,
-              ),
-              _buildRangeField(
-                controllers.intensity,
-                '1RM%',
-                () => _showRangeDialog(weekIndex, sessionIndex, groupIndex, 'Intensity', controllers.intensity),
-                colorScheme,
-                theme,
-              ),
-              _buildRangeField(
-                controllers.rpe,
-                'RPE',
-                () => _showRangeDialog(weekIndex, sessionIndex, groupIndex, 'RPE', controllers.rpe),
-                colorScheme,
-                theme,
-              ),
-              _buildRangeField(
-                controllers.weight,
-                'Weight',
-                () => _showRangeDialog(weekIndex, sessionIndex, groupIndex, 'Weight', controllers.weight),
-                colorScheme,
-                theme,
-              ),
-            ],
-          ),
+          _buildSaveButton(colorScheme),
+          SizedBox(height: AppTheme.spacing.lg),
         ],
       ),
     );
   }
 
-  Widget _buildRangeField(
-    RangeControllers controllers,
-    String label,
-    VoidCallback onTap,
+  Widget _buildTableHeader(
+      ColorScheme colorScheme, ThemeData theme, bool isSmallScreen) {
+    return Container(
+      padding: EdgeInsets.all(AppTheme.spacing.md),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppTheme.radii.lg),
+        ),
+      ),
+      child: Row(
+        children: [
+          if (!isSmallScreen)
+            Expanded(
+              flex: 2,
+              child: Text(
+                'Week',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ...['Reps', 'Sets', 'Load'].map((header) {
+            return Expanded(
+              flex: 2,
+              child: Text(
+                header,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            );
+          }),
+          const SizedBox(width: 48),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGroupRow(
+    int weekIndex,
+    int sessionIndex,
+    int groupIndex,
+    ProgressionControllers controllers,
+    ColorScheme colorScheme,
+    ThemeData theme,
+    bool isSmallScreen,
+  ) {
+    final groupContent = Row(
+      children: [
+        Expanded(
+          child: _buildGroupFields(
+            weekIndex,
+            sessionIndex,
+            groupIndex,
+            controllers,
+            colorScheme,
+            theme,
+          ),
+        ),
+        if (!isSmallScreen)
+          IconButton(
+            icon:
+                Icon(Icons.delete_outline, size: 20, color: colorScheme.error),
+            onPressed: () =>
+                _removeSeriesGroup(weekIndex, sessionIndex, groupIndex),
+            tooltip: 'Rimuovi Gruppo',
+          ),
+      ],
+    );
+
+    if (isSmallScreen) {
+      return Slidable(
+        key: ValueKey('group-$weekIndex-$sessionIndex-$groupIndex'),
+        endActionPane: ActionPane(
+          motion: const ScrollMotion(),
+          children: [
+            SlidableAction(
+              onPressed: (_) =>
+                  _removeSeriesGroup(weekIndex, sessionIndex, groupIndex),
+              backgroundColor: colorScheme.error,
+              foregroundColor: colorScheme.onError,
+              icon: Icons.delete,
+              label: 'Rimuovi',
+            ),
+          ],
+        ),
+        child: groupContent,
+      );
+    }
+
+    return groupContent;
+  }
+
+  Widget _buildWeekRow(
+    int weekIndex,
+    int sessionIndex,
+    WeekProgression session,
+    List<ProgressionControllers> sessionControllers,
     ColorScheme colorScheme,
     ThemeData theme,
   ) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 768;
+
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: colorScheme.outline.withOpacity(0.1),
+          ),
+        ),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(AppTheme.spacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Numero settimana come titolo su mobile
+            if (isSmallScreen)
+              Padding(
+                padding: EdgeInsets.only(bottom: AppTheme.spacing.md),
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppTheme.spacing.sm,
+                    vertical: AppTheme.spacing.xs,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(AppTheme.radii.full),
+                  ),
+                  child: Text(
+                    'Week ${weekIndex + 1}',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Colonna Week solo su desktop
+                if (!isSmallScreen)
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      '${weekIndex + 1}',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                // Gruppi di serie
+                Expanded(
+                  flex: isSmallScreen ? 12 : 10,
+                  child: Column(
+                    children: [
+                      ...sessionControllers.asMap().entries.map((entry) {
+                        final groupIndex = entry.key;
+                        final controllers = entry.value;
+                        return Column(
+                          children: [
+                            if (groupIndex > 0)
+                              SizedBox(height: AppTheme.spacing.sm),
+                            _buildGroupRow(
+                              weekIndex,
+                              sessionIndex,
+                              groupIndex,
+                              controllers,
+                              colorScheme,
+                              theme,
+                              isSmallScreen,
+                            ),
+                          ],
+                        );
+                      }),
+                      // Pulsante aggiungi gruppo
+                      Padding(
+                        padding: EdgeInsets.only(top: AppTheme.spacing.sm),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton.icon(
+                              onPressed: () {
+                                setState(() {
+                                  _addSeriesGroup(weekIndex, sessionIndex,
+                                      sessionControllers.length);
+                                });
+                              },
+                              icon: Icon(
+                                Icons.add_circle_outline,
+                                size: 16,
+                                color: colorScheme.primary,
+                              ),
+                              label: Text(
+                                'Aggiungi Gruppo',
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: colorScheme.primary,
+                                ),
+                              ),
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: AppTheme.spacing.md,
+                                  vertical: AppTheme.spacing.sm,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGroupFields(
+    int weekIndex,
+    int sessionIndex,
+    int groupIndex,
+    ProgressionControllers controllers,
+    ColorScheme colorScheme,
+    ThemeData theme,
+  ) {
+    final isSmallScreen = MediaQuery.of(context).size.width < 600;
+
+    String getLoadDisplayText() {
+      final List<String> values = [];
+
+      // Mostra percentuale e peso calcolato
+      if (controllers.intensity.displayText.isNotEmpty) {
+        final minIntensity =
+            double.tryParse(controllers.intensity.min.text) ?? 0;
+        final maxIntensity = controllers.intensity.max.text.isNotEmpty
+            ? double.tryParse(controllers.intensity.max.text)
+            : null;
+
+        final minWeight = SeriesUtils.calculateWeightFromIntensity(
+            widget.latestMaxWeight.toDouble(), minIntensity);
+        final maxWeight = maxIntensity != null
+            ? SeriesUtils.calculateWeightFromIntensity(
+                widget.latestMaxWeight.toDouble(), maxIntensity)
+            : null;
+
+        String intensityText = minIntensity.toString();
+        if (maxIntensity != null && maxIntensity > 0) {
+          intensityText = '$minIntensity-$maxIntensity';
+        }
+
+        String weightText = minWeight.toStringAsFixed(1);
+        if (maxWeight != null && maxWeight > minWeight) {
+          weightText =
+              '${minWeight.toStringAsFixed(1)}-${maxWeight.toStringAsFixed(1)}';
+        }
+
+        values.add('$intensityText% ($weightText kg)');
+      }
+
+      // RPE
+      if (controllers.rpe.displayText.isNotEmpty) {
+        final minRpe = double.tryParse(controllers.rpe.min.text) ?? 0;
+        final maxRpe = controllers.rpe.max.text.isNotEmpty
+            ? double.tryParse(controllers.rpe.max.text)
+            : null;
+
+        String rpeText = minRpe.toString();
+        if (maxRpe != null && maxRpe > 0 && maxRpe != minRpe) {
+          rpeText = '$minRpe-$maxRpe';
+        }
+
+        values.add('RPE: $rpeText');
+      }
+
+      return values.join('\n\n');
+    }
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Reps
+        Expanded(
+          child: _buildFieldContainer(
+            'Reps',
+            controllers.reps.displayText,
+            () => _showRangeDialog(
+                weekIndex, sessionIndex, groupIndex, 'Reps', controllers.reps),
+            colorScheme,
+            theme,
+            false,
+          ),
+        ),
+        SizedBox(width: AppTheme.spacing.xs),
+        // Sets
+        Expanded(
+          child: _buildTextField(
+            controller: controllers.sets,
+            labelText: 'Sets',
+            keyboardType: TextInputType.number,
+            onChanged: (value) =>
+                _updateSeries(weekIndex, sessionIndex, groupIndex, sets: value),
+            colorScheme: colorScheme,
+            theme: theme,
+          ),
+        ),
+        SizedBox(width: AppTheme.spacing.xs),
+        // Combined Load Fields
+        Expanded(
+          flex: isSmallScreen ? 2 : 1,
+          child: _buildFieldContainer(
+            'Load',
+            getLoadDisplayText(),
+            () => _showCombinedLoadDialog(weekIndex, sessionIndex, groupIndex,
+                controllers, colorScheme, theme),
+            colorScheme,
+            theme,
+            true,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFieldContainer(
+    String label,
+    String value,
+    VoidCallback onTap,
+    ColorScheme colorScheme,
+    ThemeData theme,
+    bool isLoadField,
+  ) {
+    final isSmallScreen = MediaQuery.of(context).size.width < 600;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppTheme.radii.md),
+        borderRadius: BorderRadius.circular(AppTheme.radii.sm),
         child: Container(
           padding: EdgeInsets.all(AppTheme.spacing.sm),
+          constraints: isLoadField && isSmallScreen
+              ? const BoxConstraints(minHeight: 80)
+              : null,
           decoration: BoxDecoration(
             color: colorScheme.surface,
-            borderRadius: BorderRadius.circular(AppTheme.radii.md),
+            borderRadius: BorderRadius.circular(AppTheme.radii.sm),
             border: Border.all(
               color: colorScheme.outline.withOpacity(0.1),
             ),
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 label,
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
+                textAlign: TextAlign.center,
               ),
-              SizedBox(height: AppTheme.spacing.xs),
+              SizedBox(height: AppTheme.spacing.sm),
               Text(
-                controllers.displayText,
-                style: theme.textTheme.titleMedium?.copyWith(
+                value,
+                style: theme.textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurface,
-                  fontWeight: FontWeight.w500,
+                  height: isSmallScreen && isLoadField ? 1.5 : 1.2,
                 ),
+                textAlign: TextAlign.center,
+                maxLines: isSmallScreen && isLoadField ? 4 : 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -471,42 +779,41 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String labelText,
-    required TextInputType keyboardType,
-    required Function(String) onChanged,
-    required ColorScheme colorScheme,
-    required ThemeData theme,
-  }) {
+  Widget _buildTextField(
+      {required TextEditingController controller,
+      required String labelText,
+      required TextInputType keyboardType,
+      required Function(String) onChanged,
+      required ColorScheme colorScheme,
+      required ThemeData theme}) {
     return Container(
       padding: EdgeInsets.all(AppTheme.spacing.sm),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radii.md),
+        borderRadius: BorderRadius.circular(AppTheme.radii.sm),
         border: Border.all(
           color: colorScheme.outline.withOpacity(0.1),
         ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
             labelText,
             style: theme.textTheme.labelSmall?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
+            textAlign: TextAlign.center,
           ),
           SizedBox(height: AppTheme.spacing.xs),
-          TextFormField(
+          TextField(
             controller: controller,
             keyboardType: keyboardType,
-            textAlign: TextAlign.start,
-            style: theme.textTheme.titleMedium?.copyWith(
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurface,
-              fontWeight: FontWeight.w500,
             ),
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               isDense: true,
               contentPadding: EdgeInsets.zero,
               border: InputBorder.none,
@@ -518,9 +825,10 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
     );
   }
 
-  void _showRangeDialog(int weekIndex, int sessionIndex, int groupIndex, String title, RangeControllers controllers) {
+  void _showRangeDialog(int weekIndex, int sessionIndex, int groupIndex,
+      String title, RangeControllers controllers) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -576,7 +884,8 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
     String min,
     String max,
   ) {
-    final controllers = ref.read(progressionControllersProvider)[weekIndex][sessionIndex][groupIndex];
+    final controllers = ref.read(progressionControllersProvider)[weekIndex]
+        [sessionIndex][groupIndex];
 
     switch (title) {
       case 'Intensity':
@@ -606,35 +915,48 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
     );
   }
 
-  void _updateWeightFromIntensity(ProgressionControllers controllers, String min, String max) {
+  void _updateWeightFromIntensity(
+      ProgressionControllers controllers, String min, String max) {
     final minIntensity = double.tryParse(min) ?? 0;
-    final minWeight = SeriesUtils.calculateWeightFromIntensity(widget.latestMaxWeight.toDouble(), minIntensity);
-    controllers.weight.min.text = SeriesUtils.roundWeight(minWeight, widget.exercise!.type).toStringAsFixed(1);
+    final minWeight = SeriesUtils.calculateWeightFromIntensity(
+        widget.latestMaxWeight.toDouble(), minIntensity);
+    controllers.weight.min.text =
+        SeriesUtils.roundWeight(minWeight, widget.exercise!.type)
+            .toStringAsFixed(1);
 
     if (max.isNotEmpty) {
       final maxIntensity = double.tryParse(max) ?? 0;
-      final maxWeight = SeriesUtils.calculateWeightFromIntensity(widget.latestMaxWeight.toDouble(), maxIntensity);
-      controllers.weight.max.text = SeriesUtils.roundWeight(maxWeight, widget.exercise!.type).toStringAsFixed(1);
+      final maxWeight = SeriesUtils.calculateWeightFromIntensity(
+          widget.latestMaxWeight.toDouble(), maxIntensity);
+      controllers.weight.max.text =
+          SeriesUtils.roundWeight(maxWeight, widget.exercise!.type)
+              .toStringAsFixed(1);
     } else {
       controllers.weight.max.text = '';
     }
   }
 
-  void _updateIntensityFromWeight(ProgressionControllers controllers, String min, String max) {
+  void _updateIntensityFromWeight(
+      ProgressionControllers controllers, String min, String max) {
     final minWeight = double.tryParse(min) ?? 0;
-    final minIntensity = SeriesUtils.calculateIntensityFromWeight(minWeight, widget.latestMaxWeight);
+    final minIntensity = SeriesUtils.calculateIntensityFromWeight(
+        minWeight, widget.latestMaxWeight);
     controllers.intensity.min.text = minIntensity.toStringAsFixed(1);
 
     if (max.isNotEmpty) {
       final maxWeight = double.tryParse(max) ?? 0;
-      final maxIntensity = SeriesUtils.calculateIntensityFromWeight(maxWeight, widget.latestMaxWeight);
+      final maxIntensity = SeriesUtils.calculateIntensityFromWeight(
+          maxWeight, widget.latestMaxWeight);
       controllers.intensity.max.text = maxIntensity.toStringAsFixed(1);
     } else {
       controllers.intensity.max.text = '';
     }
   }
 
-  void _updateSeries(int weekIndex, int sessionIndex, int groupIndex, {
+  void _updateSeries(
+    int weekIndex,
+    int sessionIndex,
+    int groupIndex, {
     String? reps,
     String? maxReps,
     String? sets,
@@ -646,32 +968,41 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
     String? maxWeight,
   }) {
     final programController = ref.read(trainingProgramControllerProvider);
-    final weekProgressions = _buildWeekProgressions(programController.program.weeks, widget.exercise!);
+    final weekProgressions = _buildWeekProgressions(
+        programController.program.weeks, widget.exercise!);
 
     if (_isValidIndex(weekProgressions, weekIndex, sessionIndex)) {
-      final groupedSeries = _groupSeries(weekProgressions[weekIndex][sessionIndex].series);
+      final groupedSeries =
+          _groupSeries(weekProgressions[weekIndex][sessionIndex].series);
       if (groupIndex >= 0 && groupIndex < groupedSeries.length) {
         final updatedGroup = groupedSeries[groupIndex].map((series) {
           return series.copyWith(
-            reps: reps != null ? int.tryParse(reps) ?? series.reps : series.reps,
+            reps:
+                reps != null ? int.tryParse(reps) ?? series.reps : series.reps,
             maxReps: maxReps?.isEmpty == true ? null : int.tryParse(maxReps!),
-            sets: sets != null ? int.tryParse(sets) ?? series.sets : series.sets,
+            sets:
+                sets != null ? int.tryParse(sets) ?? series.sets : series.sets,
             intensity: intensity?.isEmpty == true ? null : intensity,
             maxIntensity: maxIntensity?.isEmpty == true ? null : maxIntensity,
             rpe: rpe?.isEmpty == true ? null : rpe,
             maxRpe: maxRpe?.isEmpty == true ? null : maxRpe,
-            weight: weight != null ? double.tryParse(weight) ?? series.weight : series.weight,
-            maxWeight: maxWeight?.isEmpty == true ? null : double.tryParse(maxWeight!),
+            weight: weight != null
+                ? double.tryParse(weight) ?? series.weight
+                : series.weight,
+            maxWeight:
+                maxWeight?.isEmpty == true ? null : double.tryParse(maxWeight!),
           );
         }).toList();
 
         groupedSeries[groupIndex] = updatedGroup;
-        weekProgressions[weekIndex][sessionIndex].series = groupedSeries.expand((group) => group).toList();
+        weekProgressions[weekIndex][sessionIndex].series =
+            groupedSeries.expand((group) => group).toList();
         _updateProgressionsWithNewSeries(weekProgressions);
-        
+
         final controllers = ref.read(progressionControllersProvider.notifier);
-        controllers.updateControllers(weekIndex, sessionIndex, groupIndex, updatedGroup.first);
-        
+        controllers.updateControllers(
+            weekIndex, sessionIndex, groupIndex, updatedGroup.first);
+
         setState(() {});
       }
     }
@@ -679,47 +1010,53 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
 
   void _addSeriesGroup(int weekIndex, int sessionIndex, int groupIndex) {
     final programController = ref.read(trainingProgramControllerProvider);
-    final weekProgressions = _buildWeekProgressions(programController.program.weeks, widget.exercise!);
-    final controllersNotifier = ref.read(progressionControllersProvider.notifier);
+    final weekProgressions = _buildWeekProgressions(
+        programController.program.weeks, widget.exercise!);
+    final controllersNotifier =
+        ref.read(progressionControllersProvider.notifier);
 
     if (_isValidIndex(weekProgressions, weekIndex, sessionIndex)) {
+      final newSeries = Series(
+        serieId: generateRandomId(16).toString(),
+        reps: 0,
+        sets: 1,
+        intensity: '',
+        rpe: '',
+        weight: 0.0,
+        order: groupIndex + 1,
+        done: false,
+        reps_done: 0,
+        weight_done: 0.0,
+      );
+
       final currentSession = weekProgressions[weekIndex][sessionIndex];
-      final groupedSeries = _groupSeries(currentSession.series);
+      final updatedSeries = List<Series>.from(currentSession.series)
+        ..add(newSeries);
+      currentSession.series = updatedSeries;
 
-      if (groupIndex >= 0 && groupIndex < groupedSeries.length) {
-        final newSeries = Series(
-          serieId: generateRandomId(16).toString(),
-          reps: 0,
-          sets: 1,
-          intensity: '',
-          rpe: '',
-          weight: 0.0,
-          order: groupedSeries.length + 1,
-          done: false,
-          reps_done: 0,
-          weight_done: 0.0,
-        );
-
-        groupedSeries.insert(groupIndex + 1, [newSeries]);
-        currentSession.series = groupedSeries.expand((group) => group).toList();
-        _updateProgressionsWithNewSeries(weekProgressions);
-        controllersNotifier.addControllers(weekIndex, sessionIndex, groupIndex + 1);
-        setState(() {});
-      }
+      weekProgressions[weekIndex][sessionIndex] = currentSession;
+      programController.updateWeekProgressions(
+          weekProgressions, widget.exercise!.exerciseId!);
+      controllersNotifier.addControllers(weekIndex, sessionIndex, groupIndex);
     }
   }
 
   void _removeSeriesGroup(int weekIndex, int sessionIndex, int groupIndex) {
     final programController = ref.read(trainingProgramControllerProvider);
-    final weekProgressions = _buildWeekProgressions(programController.program.weeks, widget.exercise!);
+    final weekProgressions = _buildWeekProgressions(
+        programController.program.weeks, widget.exercise!);
 
     if (_isValidIndex(weekProgressions, weekIndex, sessionIndex)) {
-      final groupedSeries = _groupSeries(weekProgressions[weekIndex][sessionIndex].series);
+      final groupedSeries =
+          _groupSeries(weekProgressions[weekIndex][sessionIndex].series);
       if (groupIndex >= 0 && groupIndex < groupedSeries.length) {
         groupedSeries.removeAt(groupIndex);
-        weekProgressions[weekIndex][sessionIndex].series = groupedSeries.expand((group) => group).toList();
+        weekProgressions[weekIndex][sessionIndex].series =
+            groupedSeries.expand((group) => group).toList();
         _updateProgressionsWithNewSeries(weekProgressions);
-        ref.read(progressionControllersProvider.notifier).removeControllers(weekIndex, sessionIndex, groupIndex);
+        ref
+            .read(progressionControllersProvider.notifier)
+            .removeControllers(weekIndex, sessionIndex, groupIndex);
       }
     }
   }
@@ -745,29 +1082,42 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
   Future<void> _handleSave() async {
     final programController = ref.read(trainingProgramControllerProvider);
     final controllers = ref.read(progressionControllersProvider);
-    
+
     try {
       List<List<WeekProgression>> updatedWeekProgressions = [];
-      
+
       for (int weekIndex = 0; weekIndex < controllers.length; weekIndex++) {
         List<WeekProgression> weekProgressions = [];
-        for (int sessionIndex = 0; sessionIndex < controllers[weekIndex].length; sessionIndex++) {
+        for (int sessionIndex = 0;
+            sessionIndex < controllers[weekIndex].length;
+            sessionIndex++) {
           List<Series> updatedSeries = [];
-          for (int groupIndex = 0; groupIndex < controllers[weekIndex][sessionIndex].length; groupIndex++) {
-            final groupControllers = controllers[weekIndex][sessionIndex][groupIndex];
+
+          // Itera attraverso ogni gruppo
+          for (int groupIndex = 0;
+              groupIndex < controllers[weekIndex][sessionIndex].length;
+              groupIndex++) {
+            final groupControllers =
+                controllers[weekIndex][sessionIndex][groupIndex];
             final sets = int.tryParse(groupControllers.sets.text) ?? 1;
-            
+
+            // Crea il numero corretto di serie per questo gruppo
             for (int i = 0; i < sets; i++) {
               updatedSeries.add(Series(
                 serieId: generateRandomId(16).toString(),
                 reps: int.tryParse(groupControllers.reps.min.text) ?? 0,
                 maxReps: int.tryParse(groupControllers.reps.max.text),
-                sets: 1,
+                sets: 1, // Ogni serie individuale ha sets=1
                 intensity: groupControllers.intensity.min.text,
-                maxIntensity: groupControllers.intensity.max.text.isNotEmpty ? groupControllers.intensity.max.text : null,
+                maxIntensity: groupControllers.intensity.max.text.isNotEmpty
+                    ? groupControllers.intensity.max.text
+                    : null,
                 rpe: groupControllers.rpe.min.text,
-                maxRpe: groupControllers.rpe.max.text.isNotEmpty ? groupControllers.rpe.max.text : null,
-                weight: double.tryParse(groupControllers.weight.min.text) ?? 0.0,
+                maxRpe: groupControllers.rpe.max.text.isNotEmpty
+                    ? groupControllers.rpe.max.text
+                    : null,
+                weight:
+                    double.tryParse(groupControllers.weight.min.text) ?? 0.0,
                 maxWeight: double.tryParse(groupControllers.weight.max.text),
                 order: updatedSeries.length + 1,
                 done: false,
@@ -785,11 +1135,12 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
         }
         updatedWeekProgressions.add(weekProgressions);
       }
-      
-      programController.updateWeekProgressions(updatedWeekProgressions, widget.exercise!.exerciseId!);
-      
+
+      programController.updateWeekProgressions(
+          updatedWeekProgressions, widget.exercise!.exerciseId!);
+
       if (!mounted) return;
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Progressions saved successfully')),
       );
@@ -803,7 +1154,8 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
     }
   }
 
-  List<List<WeekProgression>> _buildWeekProgressions(List<Week> weeks, Exercise exercise) {
+  List<List<WeekProgression>> _buildWeekProgressions(
+      List<Week> weeks, Exercise exercise) {
     return List.generate(weeks.length, (weekIndex) {
       final week = weeks[weekIndex];
       return week.workouts.map((workout) {
@@ -814,10 +1166,14 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
 
         final existingProgressions = exerciseInWorkout.weekProgressions;
         WeekProgression? sessionProgression;
-        if (existingProgressions.isNotEmpty && existingProgressions.length > weekIndex) {
+        if (existingProgressions.isNotEmpty &&
+            existingProgressions.length > weekIndex) {
           sessionProgression = existingProgressions[weekIndex].firstWhere(
             (progression) => progression.sessionNumber == workout.order,
-            orElse: () => WeekProgression(weekNumber: weekIndex + 1, sessionNumber: workout.order, series: []),
+            orElse: () => WeekProgression(
+                weekNumber: weekIndex + 1,
+                sessionNumber: workout.order,
+                series: []),
           );
         }
 
@@ -834,7 +1190,7 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList> with Automa
                 serieId: firstSeries.serieId,
                 reps: firstSeries.reps,
                 maxReps: firstSeries.maxReps,
-sets: group.length,
+                sets: group.length,
                 intensity: firstSeries.intensity,
                 maxIntensity: firstSeries.maxIntensity,
                 rpe: firstSeries.rpe,
@@ -853,37 +1209,254 @@ sets: group.length,
     });
   }
 
-  List<List<Series>> _groupSeries(List<Series> series) {
-    final groupedSeries = <List<Series>>[];
-    for (final s in series) {
-      if (groupedSeries.isEmpty || !_isSameGroup(s, groupedSeries.last.first)) {
-        groupedSeries.add([s]);
-      } else {
-        groupedSeries.last.add(s);
-      }
-    }
-    return groupedSeries;
-  }
-
-  bool _isSameGroup(Series a, Series b) {
-    return a.reps == b.reps &&
-        a.maxReps == b.maxReps &&
-        a.intensity == b.intensity &&
-        a.maxIntensity == b.maxIntensity &&
-        a.rpe == b.rpe &&
-        a.maxRpe == b.maxRpe &&
-        a.weight == b.weight &&
-        a.maxWeight == b.maxWeight;
-  }
-
   bool _isValidIndex(List list, int index1, [int? index2, int? index3]) {
-    return index1 >= 0 && index1 < list.length &&
-           (index2 == null || (index2 >= 0 && index2 < list[index1].length)) &&
-           (index3 == null || (index3 >= 0 && index3 < list[index1][index2].length));
+    return index1 >= 0 &&
+        index1 < list.length &&
+        (index2 == null || (index2 >= 0 && index2 < list[index1].length)) &&
+        (index3 == null ||
+            (index3 >= 0 && index3 < list[index1][index2].length));
   }
 
-  void _updateProgressionsWithNewSeries(List<List<WeekProgression>> weekProgressions) {
-    ref.read(trainingProgramControllerProvider).updateWeekProgressions(weekProgressions, widget.exercise!.exerciseId!);
+  void _updateProgressionsWithNewSeries(
+      List<List<WeekProgression>> weekProgressions) {
+    ref
+        .read(trainingProgramControllerProvider)
+        .updateWeekProgressions(weekProgressions, widget.exercise!.exerciseId!);
+  }
+
+  void _showCombinedLoadDialog(
+    int weekIndex,
+    int sessionIndex,
+    int groupIndex,
+    ProgressionControllers controllers,
+    ColorScheme colorScheme,
+    ThemeData theme,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Container(
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(AppTheme.radii.xl),
+                ),
+              ),
+              padding: EdgeInsets.all(AppTheme.spacing.xl),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Carico',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: AppTheme.spacing.lg),
+                  // 1RM% Fields
+                  Text(
+                    '1RM%',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  SizedBox(height: AppTheme.spacing.sm),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: controllers.intensity.min,
+                          decoration: const InputDecoration(
+                            labelText: 'Minimo',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType:
+                              const TextInputType.numberWithOptions(decimal: true),
+                          onChanged: (value) {
+                            setModalState(() {
+                              _updateSeriesWithRealTimeCalculations(
+                                  weekIndex,
+                                  sessionIndex,
+                                  groupIndex,
+                                  'Intensity',
+                                  value,
+                                  controllers.intensity.max.text);
+                            });
+                          },
+                        ),
+                      ),
+                      SizedBox(width: AppTheme.spacing.md),
+                      Expanded(
+                        child: TextField(
+                          controller: controllers.intensity.max,
+                          decoration: const InputDecoration(
+                            labelText: 'Massimo',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType:
+                              const TextInputType.numberWithOptions(decimal: true),
+                          onChanged: (value) {
+                            setModalState(() {
+                              _updateSeriesWithRealTimeCalculations(
+                                  weekIndex,
+                                  sessionIndex,
+                                  groupIndex,
+                                  'Intensity',
+                                  controllers.intensity.min.text,
+                                  value);
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: AppTheme.spacing.lg),
+                  // RPE Fields
+                  Text(
+                    'RPE',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  SizedBox(height: AppTheme.spacing.sm),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: controllers.rpe.min,
+                          decoration: const InputDecoration(
+                            labelText: 'Minimo',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType:
+                              const TextInputType.numberWithOptions(decimal: true),
+                          onChanged: (value) {
+                            setModalState(() {
+                              _updateSeriesWithRealTimeCalculations(
+                                  weekIndex,
+                                  sessionIndex,
+                                  groupIndex,
+                                  'RPE',
+                                  value,
+                                  controllers.rpe.max.text);
+                            });
+                          },
+                        ),
+                      ),
+                      SizedBox(width: AppTheme.spacing.md),
+                      Expanded(
+                        child: TextField(
+                          controller: controllers.rpe.max,
+                          decoration: const InputDecoration(
+                            labelText: 'Massimo',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType:
+                              const TextInputType.numberWithOptions(decimal: true),
+                          onChanged: (value) {
+                            setModalState(() {
+                              _updateSeriesWithRealTimeCalculations(
+                                  weekIndex,
+                                  sessionIndex,
+                                  groupIndex,
+                                  'RPE',
+                                  controllers.rpe.min.text,
+                                  value);
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: AppTheme.spacing.lg),
+                  // Weight Fields
+                  Text(
+                    'Weight',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  SizedBox(height: AppTheme.spacing.sm),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: controllers.weight.min,
+                          decoration: const InputDecoration(
+                            labelText: 'Minimo',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType:
+                              const TextInputType.numberWithOptions(decimal: true),
+                          onChanged: (value) {
+                            setModalState(() {
+                              _updateSeriesWithRealTimeCalculations(
+                                  weekIndex,
+                                  sessionIndex,
+                                  groupIndex,
+                                  'Weight',
+                                  value,
+                                  controllers.weight.max.text);
+                            });
+                          },
+                        ),
+                      ),
+                      SizedBox(width: AppTheme.spacing.md),
+                      Expanded(
+                        child: TextField(
+                          controller: controllers.weight.max,
+                          decoration: const InputDecoration(
+                            labelText: 'Massimo',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType:
+                              const TextInputType.numberWithOptions(decimal: true),
+                          onChanged: (value) {
+                            setModalState(() {
+                              _updateSeriesWithRealTimeCalculations(
+                                  weekIndex,
+                                  sessionIndex,
+                                  groupIndex,
+                                  'Weight',
+                                  controllers.weight.min.text,
+                                  value);
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: AppTheme.spacing.xl),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(dialogContext);
+                        setState(
+                            () {}); // Forza l'aggiornamento dell'UI principale
+                      },
+                      style: ElevatedButton.styleFrom(
+                        padding:
+                            EdgeInsets.symmetric(vertical: AppTheme.spacing.md),
+                      ),
+                      child: const Text('Conferma'),
+                    ),
+                  ),
+                  SizedBox(
+                      height: MediaQuery.of(dialogContext).viewInsets.bottom),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 }
 
@@ -904,7 +1477,7 @@ class RangeEditDialog extends StatefulWidget {
   });
 
   @override
-  _RangeEditDialogState createState() => _RangeEditDialogState();
+  State<RangeEditDialog> createState() => _RangeEditDialogState();
 }
 
 class _RangeEditDialogState extends State<RangeEditDialog> {
@@ -940,7 +1513,8 @@ class _RangeEditDialogState extends State<RangeEditDialog> {
             TextField(
               controller: _minController,
               decoration: InputDecoration(labelText: 'Minimum ${widget.title}'),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               onChanged: (value) {
                 widget.onChanged(value, _maxController.text);
               },
@@ -949,7 +1523,8 @@ class _RangeEditDialogState extends State<RangeEditDialog> {
             TextField(
               controller: _maxController,
               decoration: InputDecoration(labelText: 'Maximum ${widget.title}'),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               onChanged: (value) {
                 widget.onChanged(_minController.text, value);
               },
@@ -961,7 +1536,8 @@ class _RangeEditDialogState extends State<RangeEditDialog> {
                 onPressed: () {
                   final min = _minController.text.trim();
                   final max = _maxController.text.trim();
-                  widget.onSave(min.isNotEmpty ? min : null, max.isNotEmpty ? max : null);
+                  widget.onSave(
+                      min.isNotEmpty ? min : null, max.isNotEmpty ? max : null);
                 },
                 child: const Text('Save'),
               ),

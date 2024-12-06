@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/providers/providers.dart';
-import 'package:intl/intl.dart';
 import 'package:alphanessone/Main/app_theme.dart';
-import 'package:alphanessone/UI/components/bottom_menu.dart';
 import 'package:alphanessone/UI/components/bottom_input_form.dart';
 import 'package:flutter/services.dart';
 import 'package:alphanessone/UI/components/date_picker_field.dart';
@@ -361,7 +359,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
           icon: Icons.height,
           theme: theme,
           colorScheme: colorScheme,
-          keyboardType: TextInputType.numberWithOptions(decimal: true),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
           inputFormatters: [
             FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
           ],
@@ -375,7 +373,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
           icon: Icons.monitor_weight,
           theme: theme,
           colorScheme: colorScheme,
-          keyboardType: TextInputType.numberWithOptions(decimal: true),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
           inputFormatters: [
             FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
           ],

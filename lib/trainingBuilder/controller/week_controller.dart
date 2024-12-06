@@ -50,7 +50,8 @@ class WeekController {
     }
   }
 
-  void _removeExerciseAndRelatedData(TrainingProgram program, Exercise exercise) {
+  void _removeExerciseAndRelatedData(
+      TrainingProgram program, Exercise exercise) {
     if (exercise.id != null) {
       program.trackToDeleteExercises.add(exercise.id!);
     }
@@ -60,9 +61,7 @@ class WeekController {
   }
 
   void _removeSeriesData(TrainingProgram program, Series series) {
-    if (series.serieId != null) {
-      program.trackToDeleteSeries.add(series.serieId!);
-    }
+    program.trackToDeleteSeries.add(series.serieId);
   }
 
   void _updateWeekNumbers(TrainingProgram program, int startIndex) {
@@ -71,7 +70,8 @@ class WeekController {
     }
   }
 
-  Future<void> copyWeek(TrainingProgram program, int sourceWeekIndex, BuildContext context) async {
+  Future<void> copyWeek(TrainingProgram program, int sourceWeekIndex,
+      BuildContext context) async {
     final destinationWeekIndex = await _showCopyWeekDialog(program, context);
     if (destinationWeekIndex != null) {
       final sourceWeek = program.weeks[sourceWeekIndex];
@@ -88,7 +88,8 @@ class WeekController {
     }
   }
 
-  Future<int?> _showCopyWeekDialog(TrainingProgram program, BuildContext context) async {
+  Future<int?> _showCopyWeekDialog(
+      TrainingProgram program, BuildContext context) async {
     return showDialog<int>(
       context: context,
       builder: (context) {
@@ -123,8 +124,9 @@ class WeekController {
     );
   }
 
-Week _copyWeek(Week sourceWeek) {
-    final copiedWorkouts = sourceWeek.workouts.map((workout) => _copyWorkout(workout)).toList();
+  Week _copyWeek(Week sourceWeek) {
+    final copiedWorkouts =
+        sourceWeek.workouts.map((workout) => _copyWorkout(workout)).toList();
 
     return Week(
       id: null,
@@ -148,7 +150,8 @@ Week _copyWeek(Week sourceWeek) {
       final copiedExerciseIds = superSet.exerciseIds.map((exerciseId) {
         final newExerciseId = exerciseIdMap[exerciseId];
         if (newExerciseId != null) {
-          final copiedExercise = copiedExercises.firstWhere((e) => e.id == newExerciseId);
+          final copiedExercise =
+              copiedExercises.firstWhere((e) => e.id == newExerciseId);
           copiedExercise.superSetId = newSuperSetId;
           return newExerciseId;
         }
@@ -178,7 +181,8 @@ Week _copyWeek(Week sourceWeek) {
       id: generateRandomId(16).toString(),
       exerciseId: sourceExercise.exerciseId,
       series: copiedSeries,
-      superSetId: null, // We'll update this in _copyWorkout if it's part of a superset
+      superSetId:
+          null, // We'll update this in _copyWorkout if it's part of a superset
     );
   }
 

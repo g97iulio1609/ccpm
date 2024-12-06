@@ -1,428 +1,454 @@
 // lib/Store/inAppPurchase.dart
 
-import 'package:alphanessone/Store/inAppPurchase_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:alphanessone/providers/providers.dart';
-import 'package:alphanessone/Main/app_theme.dart';
+import '../Main/app_theme.dart';
 import 'inAppPurchase_model.dart';
-import '../utils/debug_logger.dart';
+import 'inAppPurchase_services.dart';
+import 'stripe_checkout_widget.dart';
+import '../providers/providers.dart';
 
-class InAppSubscriptionsPage extends ConsumerStatefulWidget {
-  const InAppSubscriptionsPage({super.key});
+// Classe per lo stato degli acquisti in-app
+class InAppPurchaseState {
+  final bool isLoading;
+  final String? error;
+  final SubscriptionDetails? subscription;
+  final List<Product> products;
+  final bool isSubscribed;
 
-  @override
-  InAppSubscriptionsPageState createState() => InAppSubscriptionsPageState();
+  const InAppPurchaseState({
+    this.isLoading = false,
+    this.error,
+    this.subscription,
+    this.products = const [],
+    this.isSubscribed = false,
+  });
+
+  InAppPurchaseState copyWith({
+    bool? isLoading,
+    String? error,
+    SubscriptionDetails? subscription,
+    List<Product>? products,
+    bool? isSubscribed,
+  }) {
+    return InAppPurchaseState(
+      isLoading: isLoading ?? this.isLoading,
+      error: error ?? this.error,
+      subscription: subscription ?? this.subscription,
+      products: products ?? this.products,
+      isSubscribed: isSubscribed ?? this.isSubscribed,
+    );
+  }
 }
 
-class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> {
+// Provider per il servizio degli acquisti in-app
+final inAppPurchaseServiceProvider =
+    Provider<InAppPurchaseService>((ref) => InAppPurchaseService());
+
+// Provider per lo stato degli acquisti
+final inAppPurchaseProvider =
+    StateProvider<InAppPurchaseState>((ref) => const InAppPurchaseState());
+
+class InAppPurchaseScreen extends ConsumerStatefulWidget {
+  const InAppPurchaseScreen({super.key});
+
+  @override
+  ConsumerState<InAppPurchaseScreen> createState() =>
+      _InAppPurchaseScreenState();
+}
+
+class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
   late final InAppPurchaseService _inAppPurchaseService;
-  bool _loading = true;
-  final TextEditingController _promoCodeController = TextEditingController();
-  String? _promoCodeError;
-  bool _isAdmin = false;
+  bool _isLoading = true;
+  List<Product> _products = [];
+  String? _error;
+
+  // Cache per i prodotti
+  static List<Product>? _cachedProducts;
+  static DateTime? _lastFetchTime;
+  static const Duration _cacheDuration = Duration(minutes: 5);
 
   @override
   void initState() {
     super.initState();
-    debugLog('InAppSubscriptionsPage: initState called');
-    ref.read(usersServiceProvider);
-    _inAppPurchaseService = InAppPurchaseService();
-    _inAppPurchaseService.setContext(context);
-    _initialize();
-    _checkAdminStatus();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 500), // Ridotto da 800ms a 500ms
+      vsync: this,
+    );
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOut,
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    ));
+
+    _inAppPurchaseService = ref.read(inAppPurchaseServiceProvider);
+
+    // Caricamento ottimizzato con cache
+    _loadProductsOptimized();
   }
 
-  Future<void> _initialize() async {
-    debugLog('Initializing store info...');
+  Future<void> _loadProductsOptimized() async {
     try {
-      await _inAppPurchaseService.initStoreInfo();
-      debugLog('Store info initialized successfully');
-    } catch (e) {
-      debugLog("Error during initialization: $e");
-      _showSnackBar('Errore durante l\'inizializzazione dello store: $e');
-    }
-    if (mounted) {
-      setState(() {
-        _loading = false;
-      });
-      debugLog('Loading state set to false');
-    }
-  }
+      // Verifica se abbiamo una cache valida
+      if (_cachedProducts != null && _lastFetchTime != null) {
+        final now = DateTime.now();
+        if (now.difference(_lastFetchTime!) < _cacheDuration) {
+          if (mounted) {
+            setState(() {
+              _products = _cachedProducts!;
+              _isLoading = false;
+              _error = null;
+            });
+            _controller.forward();
+            return;
+          }
+        }
+      }
 
-  Future<void> _checkAdminStatus() async {
-    debugLog('Checking admin status...');
-    final userRole = ref.read(usersServiceProvider).getCurrentUserRole();
-    setState(() {
-      _isAdmin = userRole == 'admin';
-    });
-    debugLog('Admin status: $_isAdmin');
+      setState(() => _isLoading = true);
+
+      // Caricamento asincrono dei prodotti
+      final products = await _inAppPurchaseService.getProducts();
+
+      // Aggiorna la cache
+      _cachedProducts = products;
+      _lastFetchTime = DateTime.now();
+
+      if (mounted) {
+        setState(() {
+          _products = products;
+          _isLoading = false;
+          _error = null;
+        });
+        _controller.forward();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
   void dispose() {
-    debugLog('Disposing InAppSubscriptionsPage');
-    _promoCodeController.dispose();
+    _controller.dispose();
     super.dispose();
-  }
-
-  Future<void> _redeemPromoCode() async {
-    debugLog('Redeeming promo code: ${_promoCodeController.text}');
-    setState(() {
-      _promoCodeError = null;
-    });
-    try {
-      await _inAppPurchaseService.redeemPromoCode(_promoCodeController.text);
-      if (mounted) {
-        _showSnackBar('Promo code redeemed successfully!');
-      }
-    } catch (e) {
-      debugLog('Error redeeming promo code: $e');
-      setState(() {
-        _promoCodeError = e.toString();
-      });
-      _showSnackBar('Errore nel redeem del promo code: $e');
-    }
-  }
-
-  void _showSnackBar(String message) {
-    debugLog('Showing SnackBar: $message');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-  }
-
-  void _showPromoCodeDialog() {
-    debugLog('Showing promo code dialog');
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('Redeem Promo Code', style: TextStyle(fontWeight: FontWeight.bold)),
-          content: TextField(
-            controller: _promoCodeController,
-            decoration: InputDecoration(
-              labelText: 'Enter Promo Code',
-              errorText: _promoCodeError,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-          ),
-          actions: [
-            TextButton(
-              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-              onPressed: () {
-                debugLog('Cancel promo code dialog');
-                Navigator.of(dialogContext).pop();
-              },
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              child: const Text('Redeem'),
-              onPressed: () {
-                debugLog('Redeem button pressed in promo code dialog');
-                Navigator.of(dialogContext).pop();
-                _redeemPromoCode();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _syncProducts() async {
-    debugLog('Syncing products...');
-    try {
-      await _inAppPurchaseService.manualSyncProducts();
-      _showSnackBar('Products synced successfully');
-      await _initialize();
-    } catch (e) {
-      debugLog('Error syncing products: $e');
-      _showSnackBar('Error syncing products: ${e.toString()}');
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    debugLog('Building InAppSubscriptionsPage');
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withOpacity(0.5),
-            ],
-            stops: const [0.0, 1.0],
+    if (_isLoading) {
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(
+            color: colorScheme.primary,
           ),
         ),
-        child: SafeArea(
-          child: _loading
-              ? Center(
-                  child: CircularProgressIndicator(
-                    color: colorScheme.primary,
-                  ),
-                )
-              : CustomScrollView(
-                  slivers: [
-                    // Promo Code Button
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.all(AppTheme.spacing.xl),
-                        child: _buildPromoCodeButton(theme, colorScheme),
-                      ),
-                    ),
+      );
+    }
 
-                    // Subscription Plans
-                    SliverPadding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppTheme.spacing.xl,
-                        vertical: AppTheme.spacing.md,
-                      ),
-                      sliver: _buildSubscriptionPlans(theme, colorScheme),
-                    ),
-
-                    // Admin Sync Button
-                    if (_isAdmin)
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.all(AppTheme.spacing.xl),
-                          child: _buildSyncButton(theme, colorScheme),
-                        ),
-                      ),
-                  ],
+    if (_error != null) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 48,
+                color: AppTheme.error,
+              ),
+              SizedBox(height: AppTheme.spacing.md),
+              Text(
+                'Errore nel caricamento dei prodotti',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: AppTheme.error,
                 ),
+              ),
+              SizedBox(height: AppTheme.spacing.sm),
+              Text(
+                _error!,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: AppTheme.spacing.lg),
+              ElevatedButton.icon(
+                onPressed: _loadProductsOptimized,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Riprova'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.error.withOpacity(0.1),
+                  foregroundColor: AppTheme.error,
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-    );
-  }
+      );
+    }
 
-  Widget _buildPromoCodeButton(ThemeData theme, ColorScheme colorScheme) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            colorScheme.primary,
-            colorScheme.primary.withOpacity(0.8),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.primary.withOpacity(0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+    return Scaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar.large(
+            expandedHeight: 200,
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              title: Text(
+                'Premium',
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppTheme.primaryGold.withOpacity(0.15),
+                      AppTheme.primaryGoldLight.withOpacity(0.05),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SliverFadeTransition(
+            opacity: _fadeAnimation,
+            sliver: SliverToBoxAdapter(
+              child: SlideTransition(
+                position: _slideAnimation,
+                child: Padding(
+                  padding: EdgeInsets.all(AppTheme.spacing.lg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildFeatureSection(theme),
+                      SizedBox(height: AppTheme.spacing.xl),
+                      _buildProductList(context),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: _showPromoCodeDialog,
-          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              vertical: AppTheme.spacing.lg,
+    );
+  }
+
+  Widget _buildFeatureSection(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Caratteristiche Premium',
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        SizedBox(height: AppTheme.spacing.md),
+        _buildFeatureItem(
+          theme,
+          icon: Icons.fitness_center,
+          title: 'Programmi di Allenamento Illimitati',
+          description: 'Crea e personalizza tutti i programmi che desideri',
+        ),
+        _buildFeatureItem(
+          theme,
+          icon: Icons.person_outline,
+          title: 'Coaching Personalizzato',
+          description: 'Accesso a consigli e supporto professionale',
+        ),
+        _buildFeatureItem(
+          theme,
+          icon: Icons.analytics_outlined,
+          title: 'Analisi Dettagliate',
+          description: 'Monitora i tuoi progressi con statistiche avanzate',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFeatureItem(
+    ThemeData theme, {
+    required IconData icon,
+    required String title,
+    required String description,
+  }) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.sm),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(AppTheme.spacing.sm),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(AppTheme.radii.md),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            child: Icon(
+              icon,
+              color: theme.colorScheme.primary,
+              size: 24,
+            ),
+          ),
+          SizedBox(width: AppTheme.spacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Icons.redeem,
-                  color: colorScheme.onPrimary,
-                  size: 24,
-                ),
-                SizedBox(width: AppTheme.spacing.sm),
                 Text(
-                  'Redeem Promo Code',
+                  title,
                   style: theme.textTheme.titleMedium?.copyWith(
-                    color: colorScheme.onPrimary,
                     fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
+                  ),
+                ),
+                SizedBox(height: AppTheme.spacing.xxs),
+                Text(
+                  description,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProductList(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Piani Disponibili',
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
         ),
-      ),
+        SizedBox(height: AppTheme.spacing.lg),
+        ..._products.map((product) => Padding(
+              padding: EdgeInsets.only(bottom: AppTheme.spacing.md),
+              child: _buildProductCard(context, product),
+            )),
+      ],
     );
   }
 
-  Widget _buildSubscriptionPlans(ThemeData theme, ColorScheme colorScheme) {
-    return SliverGrid(
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 400,
-        mainAxisSpacing: 20,
-        crossAxisSpacing: 20,
-        childAspectRatio: 0.8,
-      ),
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          final productDetailsList = _inAppPurchaseService.productDetailsByProductId.values.expand((e) => e).toList();
-          if (index >= productDetailsList.length) return null;
-          
-          final productDetails = productDetailsList[index];
-          return _buildSubscriptionCard(productDetails, theme, colorScheme);
-        },
-        childCount: _inAppPurchaseService.productDetailsByProductId.values
-            .expand((e) => e)
-            .length,
-      ),
-    );
-  }
+  Widget _buildProductCard(BuildContext context, Product product) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isPopular = product.id.contains('yearly');
 
-  Widget _buildSubscriptionCard(
-    dynamic productDetails,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color:
+              isPopular ? theme.colorScheme.primary : theme.colorScheme.outline,
+          width: isPopular ? 2 : 1,
         ),
-        boxShadow: AppTheme.elevations.small,
+        gradient: isPopular
+            ? LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  colorScheme.surface,
+                  colorScheme.surface.withOpacity(0.95),
+                ],
+              )
+            : null,
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {
-            debugLog('Subscribe button pressed for productId: ${productDetails.id}');
-            _inAppPurchaseService.makePurchase(productDetails.id);
-          },
+          onTap: () => _handlePurchase(context, product),
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           child: Padding(
-            padding: EdgeInsets.all(AppTheme.spacing.md),
+            padding: EdgeInsets.all(AppTheme.spacing.lg),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Plan Badge
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: AppTheme.spacing.sm,
-                    vertical: AppTheme.spacing.xs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
-                  ),
-                  child: Text(
-                    'Premium Plan',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.w600,
+                if (isPopular) ...[
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppTheme.spacing.sm,
+                      vertical: AppTheme.spacing.xxs,
                     ),
-                    textAlign: TextAlign.center,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary,
+                      borderRadius: BorderRadius.circular(AppTheme.radii.full),
+                    ),
+                    child: Text(
+                      'Più Popolare',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                ),
-
-                SizedBox(height: AppTheme.spacing.sm),
-
-                // Plan Title
+                  SizedBox(height: AppTheme.spacing.sm),
+                ],
                 Text(
-                  productDetails.title,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: -0.5,
+                  product.title,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-
                 SizedBox(height: AppTheme.spacing.xs),
-
-                // Description
                 Text(
-                  productDetails.description ?? 'No description available.',
-                  style: theme.textTheme.bodySmall?.copyWith(
+                  product.description,
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
-
-                SizedBox(height: AppTheme.spacing.sm),
-
-                // Price
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: AppTheme.spacing.sm,
-                    vertical: AppTheme.spacing.xs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                  ),
-                  child: Text(
-                    '${productDetails.price} ${productDetails.currencyCode}',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-
-                SizedBox(height: AppTheme.spacing.sm),
-
-                // Subscribe Button
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        colorScheme.primary,
-                        colorScheme.primary.withOpacity(0.8),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                    boxShadow: [
-                      BoxShadow(
-                        color: colorScheme.primary.withOpacity(0.2),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
+                SizedBox(height: AppTheme.spacing.md),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      product.price,
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: isPopular ? theme.colorScheme.primary : null,
                       ),
-                    ],
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      vertical: AppTheme.spacing.sm,
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.star,
-                          color: colorScheme.onPrimary,
-                          size: 18,
-                        ),
-                        SizedBox(width: AppTheme.spacing.xs),
-                        Text(
-                          'Subscribe',
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            color: colorScheme.onPrimary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
+                    ElevatedButton.icon(
+                      onPressed: () => _handlePurchase(context, product),
+                      icon: const Icon(Icons.shopping_cart_outlined),
+                      label: const Text('Acquista'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            isPopular ? theme.colorScheme.primary : null,
+                        foregroundColor:
+                            isPopular ? theme.colorScheme.onPrimary : null,
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ],
             ),
@@ -432,49 +458,153 @@ class InAppSubscriptionsPageState extends ConsumerState<InAppSubscriptionsPage> 
     );
   }
 
-  Widget _buildSyncButton(ThemeData theme, ColorScheme colorScheme) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            colorScheme.secondary,
-            colorScheme.secondary.withOpacity(0.8),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        boxShadow: AppTheme.elevations.small,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: _syncProducts,
-          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              vertical: AppTheme.spacing.lg,
+  Future<void> _handlePurchase(BuildContext context, Product product) async {
+    try {
+      final functions = ref.read(firebaseFunctionsProvider);
+
+      // Verifica se il widget è ancora montato prima di mostrare il dialogo
+      if (!mounted) return;
+
+      // Mostra loading indicator usando un Builder per avere il contesto corretto
+      BuildContext? dialogContext;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          dialogContext = context;
+          return PopScope(
+            canPop: false,
+            child: const Center(
+              child: CircularProgressIndicator(),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.sync,
-                  color: colorScheme.onSecondary,
-                  size: 24,
+          );
+        },
+      );
+
+      try {
+        // Chiamata asincrona per creare l'intent di pagamento
+        final result =
+            await functions.httpsCallable('createPaymentIntent').call({
+          'productId': product.id,
+        });
+
+        // Verifica se il widget è ancora montato dopo la chiamata asincrona
+        if (!mounted) return;
+
+        // Chiudi il loading indicator in modo sicuro
+        if (dialogContext != null) {
+          Navigator.of(dialogContext!).pop();
+        }
+
+        final clientSecret = result.data['clientSecret'];
+        final amount = result.data['amount'] / 100;
+        final currency = result.data['currency'];
+
+        // Verifica se il widget è ancora montato prima di mostrare il bottom sheet
+        if (!mounted) return;
+
+        await showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          isDismissible: false,
+          enableDrag: false,
+          builder: (context) => StripeCheckoutWidget(
+            clientSecret: clientSecret,
+            amount: amount,
+            currency: currency,
+            onPaymentSuccess: (String paymentId) async {
+              // Verifica se il widget è ancora montato prima di procedere
+              if (!mounted) return;
+
+              // Chiudi il bottom sheet
+              Navigator.of(context).pop();
+
+              // Verifica se il widget è ancora montato prima di mostrare il nuovo dialogo
+              if (!mounted) return;
+
+              // Mostra nuovo loading indicator
+              BuildContext? confirmContext;
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (BuildContext context) {
+                  confirmContext = context;
+                  return PopScope(
+                    canPop: false,
+                    child: const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                },
+              );
+
+              try {
+                final functions = ref.read(firebaseFunctionsProvider);
+                await functions.httpsCallable('handleSuccessfulPayment').call({
+                  'paymentId': paymentId,
+                  'productId': product.id,
+                });
+
+                // Verifica se il widget è ancora montato dopo la chiamata asincrona
+                if (!mounted) return;
+
+                if (confirmContext != null) {
+                  Navigator.of(confirmContext!).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Abbonamento attivato con successo!'),
+                      backgroundColor: AppTheme.success,
+                    ),
+                  );
+                }
+              } catch (e) {
+                // Verifica se il widget è ancora montato dopo l'errore
+                if (!mounted) return;
+
+                if (confirmContext != null) {
+                  Navigator.of(confirmContext!).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Errore durante l\'attivazione: $e'),
+                      backgroundColor: AppTheme.error,
+                    ),
+                  );
+                }
+              }
+            },
+            onPaymentError: (String error) {
+              // Verifica se il widget è ancora montato prima di chiudere
+              if (!mounted) return;
+
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(error),
+                  backgroundColor: AppTheme.error,
                 ),
-                SizedBox(width: AppTheme.spacing.sm),
-                Text(
-                  'Sync Products',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: colorScheme.onSecondary,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
-            ),
+              );
+            },
           ),
+        );
+      } catch (e) {
+        // Verifica se il widget è ancora montato dopo l'errore
+        if (!mounted) return;
+
+        // Chiudi il loading indicator in caso di errore
+        if (dialogContext != null) {
+          Navigator.of(dialogContext!).pop();
+        }
+        rethrow;
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Errore durante l\'acquisto: $e'),
+          backgroundColor: AppTheme.error,
         ),
-      ),
-    );
+      );
+    }
   }
 }

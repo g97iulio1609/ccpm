@@ -26,9 +26,9 @@ class FavoriteMealDetailState extends ConsumerState<FavoriteMealDetail> {
     final mealsService = ref.watch(mealsServiceProvider);
 
     return Scaffold(
-
       body: StreamBuilder<List<macros.Food>>(
-        stream: mealsService.getFoodsForMealStream(userId: widget.meal.userId, mealId: widget.meal.id!),
+        stream: mealsService.getFoodsForMealStream(
+            userId: widget.meal.userId, mealId: widget.meal.id!),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             final foods = snapshot.data!;
@@ -40,7 +40,10 @@ class FavoriteMealDetailState extends ConsumerState<FavoriteMealDetail> {
               },
             );
           } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}', style: TextStyle(color: Theme.of(context).colorScheme.onError)));
+            return Center(
+                child: Text('Error: ${snapshot.error}',
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onError)));
           } else {
             return const Center(child: CircularProgressIndicator());
           }
@@ -51,7 +54,8 @@ class FavoriteMealDetailState extends ConsumerState<FavoriteMealDetail> {
           context.push(
             '/food_tracker/food_selector',
             extra: {
-              'meal': widget.meal.toMap(), // Convertiamo l'oggetto Meal in Map<String, dynamic>
+              'meal': widget.meal
+                  .toMap(), // Convertiamo l'oggetto Meal in Map<String, dynamic>
               'isFavoriteMeal': true,
             },
           );
@@ -82,7 +86,8 @@ class FavoriteMealDetailState extends ConsumerState<FavoriteMealDetail> {
                       queryParameters: {'myFoodId': food.id},
                     ).toString(),
                     extra: {
-                      'meal': widget.meal.toMap(), // Convertiamo l'oggetto Meal in Map<String, dynamic>
+                      'meal': widget.meal
+                          .toMap(), // Convertiamo l'oggetto Meal in Map<String, dynamic>
                       'myFoodId': food.id,
                       'isFavoriteMeal': true,
                     },
@@ -108,10 +113,13 @@ class FavoriteMealDetailState extends ConsumerState<FavoriteMealDetail> {
             ],
           ),
           child: ListTile(
-            title: Text(food.name, style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface)),
+            title: Text(food.name,
+                style: GoogleFonts.roboto(
+                    color: Theme.of(context).colorScheme.onSurface)),
             subtitle: Text(
               'C:${food.carbs.toStringAsFixed(2)}g P:${food.protein.toStringAsFixed(2)}g F:${food.fat.toStringAsFixed(2)}g, ${food.kcal.toStringAsFixed(2)}Kcal',
-              style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface),
+              style: GoogleFonts.roboto(
+                  color: Theme.of(context).colorScheme.onSurface),
             ),
           ),
         ),
@@ -124,7 +132,8 @@ class FavoriteMealDetailState extends ConsumerState<FavoriteMealDetail> {
       _isSelectionMode = true;
       _selectedFoods.add(foodId);
     });
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selection mode enabled')));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Selection mode enabled')));
   }
 
   void _onFoodTap(BuildContext context, String foodId) {
@@ -143,7 +152,8 @@ class FavoriteMealDetailState extends ConsumerState<FavoriteMealDetail> {
           queryParameters: {'myFoodId': foodId},
         ).toString(),
         extra: {
-          'meal': widget.meal.toMap(), // Convertiamo l'oggetto Meal in Map<String, dynamic>
+          'meal': widget.meal
+              .toMap(), // Convertiamo l'oggetto Meal in Map<String, dynamic>
           'myFoodId': foodId,
           'isFavoriteMeal': true,
         },
@@ -153,9 +163,18 @@ class FavoriteMealDetailState extends ConsumerState<FavoriteMealDetail> {
 
   void _removeFood(String foodId) async {
     final mealsService = ref.read(mealsServiceProvider);
-    await mealsService.removeFoodFromFavoriteMeal(userId: widget.meal.userId, mealId: widget.meal.id!, myFoodId: foodId);
+    await mealsService.removeFoodFromFavoriteMeal(
+        userId: widget.meal.userId, mealId: widget.meal.id!, myFoodId: foodId);
     setState(() {
       _selectedFoods.remove(foodId);
+    });
+  }
+
+  void _navigateToFoodSelector(BuildContext context, String? myFoodId) {
+    context.push('/food_tracker/food_selector', extra: {
+      'meal': widget.meal.toMap(),
+      'myFoodId': myFoodId,
+      'isFavoriteMeal': true
     });
   }
 }

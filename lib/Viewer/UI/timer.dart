@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../models/timer_model.dart';
 import '../providers/training_program_provider.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/Main/routes.dart';
 
 class TimerPage extends ConsumerStatefulWidget {
   final TimerModel timerModel;
@@ -60,26 +61,22 @@ class TimerPageState extends ConsumerState<TimerPage>
     _timer.cancel();
     final timerModel = ref.read(timerModelProvider);
     if (timerModel != null) {
-      final newSuperSetExerciseIndex = (timerModel.superSetExerciseIndex ) % timerModel.superSetExercises.length;
-      final nextSeriesIndex = newSuperSetExerciseIndex == 0
-          ? timerModel.currentSeriesIndex 
-          : timerModel.currentSeriesIndex;
-
+      final nextSeriesIndex = timerModel.currentSeriesIndex + 1;
+      
       if (nextSeriesIndex < timerModel.totalSeries) {
         final result = {
           'startIndex': nextSeriesIndex,
-          'superSetExerciseIndex': newSuperSetExerciseIndex,
+          'superSetExerciseIndex': 0,  // Reset to first exercise in superset
         };
         context.pop(result);
       } else {
         // All series completed, navigate back to workout details
-        context.go(
-          '/user_programs/${timerModel.userId}/training_viewer/${timerModel.programId}/week_details/${timerModel.weekId}/workout_details/${timerModel.workoutId}',
-        );
+        context.pop(); // Pop timer
+        context.pop(); // Pop exercise_details
+        _onTimerComplete(); // Call timer complete navigation
       }
     } else {
-      // Handle null timerModel case
-      context.pop(); // Fallback to just popping the current route
+      context.pop();
     }
   }
 
@@ -87,26 +84,38 @@ class TimerPageState extends ConsumerState<TimerPage>
     _timer.cancel();
     final timerModel = ref.read(timerModelProvider);
     if (timerModel != null) {
-      final newSuperSetExerciseIndex = (timerModel.superSetExerciseIndex) % timerModel.superSetExercises.length;
-      final nextSeriesIndex = newSuperSetExerciseIndex == 0
-          ? timerModel.currentSeriesIndex 
-          : timerModel.currentSeriesIndex;
-
+      final nextSeriesIndex = timerModel.currentSeriesIndex + 1;
+      
       if (nextSeriesIndex < timerModel.totalSeries) {
         final result = {
           'startIndex': nextSeriesIndex,
-          'superSetExerciseIndex': newSuperSetExerciseIndex, // Corrected to newSuperSetExerciseIndex
+          'superSetExerciseIndex': 0,  // Reset to first exercise in superset
         };
         context.pop(result);
       } else {
-        context.go(
-          '/user_programs/${timerModel.userId}/training_viewer/${timerModel.programId}/week_details/${timerModel.weekId}/workout_details/${timerModel.workoutId}',
-        );
+        // All series completed, navigate back to workout details
+        context.pop(); // Pop timer
+        context.pop(); // Pop exercise_details
       }
     } else {
-      // Handle null timerModel case
-      context.pop(); // Fallback to just popping the current route
+      context.pop();
     }
+  }
+
+  void _onTimerComplete() {
+    final path = '${Routes.userPrograms}/${widget.timerModel.userId}/${Routes.trainingViewer}/${widget.timerModel.programId}/${Routes.weekDetails}/${widget.timerModel.weekId}/${Routes.workoutDetails}/${widget.timerModel.workoutId}/${Routes.exerciseDetails}';
+    
+    context.go(path, extra: {
+      'programId': widget.timerModel.programId,
+      'weekId': widget.timerModel.weekId,
+      'workoutId': widget.timerModel.workoutId,
+      'exerciseId': widget.timerModel.exerciseId,
+      'userId': widget.timerModel.userId,
+      'superSetExercises': widget.timerModel.superSetExercises,
+      'superSetExerciseIndex': widget.timerModel.superSetExerciseIndex,
+      'seriesList': widget.timerModel.seriesList,
+      'currentSeriesIndex': widget.timerModel.currentSeriesIndex
+    });
   }
 
   @override
@@ -162,7 +171,7 @@ class TimerPageState extends ConsumerState<TimerPage>
                   SizedBox(height: AppTheme.spacing.xl),
                   _buildTimerContainer(remainingSeconds, theme, colorScheme),
                   SizedBox(height: AppTheme.spacing.xl),
-                  if (!timerModel.isEmomMode) 
+                  if (!timerModel.isEmomMode)
                     _buildSkipButton(theme, colorScheme),
                 ],
               ),
@@ -173,7 +182,8 @@ class TimerPageState extends ConsumerState<TimerPage>
     );
   }
 
-  Widget _buildHeader(TimerModel timerModel, ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildHeader(
+      TimerModel timerModel, ThemeData theme, ColorScheme colorScheme) {
     return Container(
       padding: EdgeInsets.all(AppTheme.spacing.lg),
       decoration: BoxDecoration(
@@ -208,7 +218,8 @@ class TimerPageState extends ConsumerState<TimerPage>
     );
   }
 
-  Widget _buildTimerContainer(int remainingSeconds, ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildTimerContainer(
+      int remainingSeconds, ThemeData theme, ColorScheme colorScheme) {
     return Container(
       width: 320,
       height: 320,
@@ -241,7 +252,7 @@ class TimerPageState extends ConsumerState<TimerPage>
         children: [
           // Progress indicator più grande e sottile
           _buildProgressIndicator(colorScheme),
-          
+
           // Container centrale con sfondo sfumato
           Container(
             margin: const EdgeInsets.all(24),
@@ -257,7 +268,7 @@ class TimerPageState extends ConsumerState<TimerPage>
               ],
             ),
           ),
-          
+
           // Testo del timer
           _buildCountdownText(remainingSeconds, theme, colorScheme),
         ],
@@ -281,7 +292,8 @@ class TimerPageState extends ConsumerState<TimerPage>
     );
   }
 
-  Widget _buildCountdownText(int remainingSeconds, ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildCountdownText(
+      int remainingSeconds, ThemeData theme, ColorScheme colorScheme) {
     final minutes = (remainingSeconds ~/ 60).toString().padLeft(2, '0');
     final seconds = (remainingSeconds % 60).toString().padLeft(2, '0');
 

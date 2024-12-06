@@ -4,18 +4,25 @@ import '../models/series_model.dart';
 class SeriesService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  Future<String> addSeriesToExercise(
-      String exerciseId, Map<String, dynamic> seriesData) async {
-    DocumentReference ref = await _db.collection('series').add({
-      ...seriesData,
-      'exerciseId': exerciseId,
-    });
+  Future<String> addSeriesToExercise(String exerciseId, Series series,
+      {String? originalExerciseId}) async {
+    // Assicuriamoci che l'originalExerciseId sia impostato
+    if (originalExerciseId != null) {
+      series = series.copyWith(originalExerciseId: originalExerciseId);
+    }
+
+    // Use the toFirestore method from the Series class
+    Map<String, dynamic> seriesData = series.toFirestore();
+    seriesData['exerciseId'] =
+        exerciseId; // Add the exerciseId for the relationship
+
+    DocumentReference ref = await _db.collection('series').add(seriesData);
     return ref.id;
   }
 
-  Future<void> updateSeries(
-      String seriesId, Map<String, dynamic> seriesData) async {
-    await _db.collection('series').doc(seriesId).update(seriesData);
+  Future<void> updateSeries(String seriesId, Series series) async {
+    // Use the toFirestore method from the Series class
+    await _db.collection('series').doc(seriesId).update(series.toFirestore());
   }
 
   Future<void> removeSeries(String seriesId) async {

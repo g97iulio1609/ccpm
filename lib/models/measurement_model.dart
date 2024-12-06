@@ -27,20 +27,63 @@ class MeasurementModel {
     required this.bicepsCircumference,
   });
 
-  factory MeasurementModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  factory MeasurementModel.fromJson(Map<String, dynamic> json) {
     return MeasurementModel(
-      id: doc.id,
-      userId: data['userId'],
-      date: (data['date'] as Timestamp).toDate(),
-      weight: data['weight'],
-      height: data['height'],
-      bmi: data['bmi'],
-      bodyFatPercentage: data['bodyFatPercentage'],
-      waistCircumference: data['waistCircumference'],
-      hipCircumference: data['hipCircumference'],
-      chestCircumference: data['chestCircumference'],
-      bicepsCircumference: data['bicepsCircumference'],
+      id: json['id'] as String,
+      userId: json['userId'] as String,
+      date: (json['date'] as Timestamp).toDate(),
+      weight: (json['weight'] as num).toDouble(),
+      height: (json['height'] as num).toDouble(),
+      bmi: (json['bmi'] as num).toDouble(),
+      bodyFatPercentage: (json['bodyFatPercentage'] as num).toDouble(),
+      waistCircumference: (json['waistCircumference'] as num).toDouble(),
+      hipCircumference: (json['hipCircumference'] as num).toDouble(),
+      chestCircumference: (json['chestCircumference'] as num).toDouble(),
+      bicepsCircumference: (json['bicepsCircumference'] as num).toDouble(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'userId': userId,
+      'date': Timestamp.fromDate(date),
+      'weight': weight,
+      'height': height,
+      'bmi': bmi,
+      'bodyFatPercentage': bodyFatPercentage,
+      'waistCircumference': waistCircumference,
+      'hipCircumference': hipCircumference,
+      'chestCircumference': chestCircumference,
+      'bicepsCircumference': bicepsCircumference,
+    };
+  }
+
+  MeasurementModel copyWith({
+    String? id,
+    String? userId,
+    DateTime? date,
+    double? weight,
+    double? height,
+    double? bmi,
+    double? bodyFatPercentage,
+    double? waistCircumference,
+    double? hipCircumference,
+    double? chestCircumference,
+    double? bicepsCircumference,
+  }) {
+    return MeasurementModel(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      date: date ?? this.date,
+      weight: weight ?? this.weight,
+      height: height ?? this.height,
+      bmi: bmi ?? this.bmi,
+      bodyFatPercentage: bodyFatPercentage ?? this.bodyFatPercentage,
+      waistCircumference: waistCircumference ?? this.waistCircumference,
+      hipCircumference: hipCircumference ?? this.hipCircumference,
+      chestCircumference: chestCircumference ?? this.chestCircumference,
+      bicepsCircumference: bicepsCircumference ?? this.bicepsCircumference,
     );
   }
 }

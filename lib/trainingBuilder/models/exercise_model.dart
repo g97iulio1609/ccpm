@@ -13,6 +13,7 @@ class Exercise {
   String? superSetId;
   List<Series> series;
   List<List<WeekProgression>> weekProgressions;
+  num? latestMaxWeight;
 
   Exercise({
     this.id,
@@ -24,6 +25,7 @@ class Exercise {
     this.superSetId,
     List<Series>? series,
     List<List<WeekProgression>>? weekProgressions,
+    this.latestMaxWeight,
   })  : series = series ?? [],
         weekProgressions = weekProgressions ?? [];
 
@@ -36,8 +38,13 @@ class Exercise {
       superSetId: map['superSetId'],
       variant: map['variant'] ?? '',
       order: map['order'] ?? 0,
-      series: List<Series>.from(map['series']?.map((x) => Series.fromMap(x)) ?? []),
-      weekProgressions: List<List<WeekProgression>>.from(map['weekProgressions']?.map((x) => List<WeekProgression>.from(x.map((y) => WeekProgression.fromMap(y)))) ?? []),
+      series:
+          List<Series>.from(map['series']?.map((x) => Series.fromMap(x)) ?? []),
+      weekProgressions: List<List<WeekProgression>>.from(map['weekProgressions']
+              ?.map((x) => List<WeekProgression>.from(
+                  x.map((y) => WeekProgression.fromMap(y)))) ??
+          []),
+      latestMaxWeight: map['latestMaxWeight'],
     );
   }
 
@@ -51,6 +58,7 @@ class Exercise {
     int? order,
     List<Series>? series,
     List<List<WeekProgression>>? weekProgressions,
+    num? latestMaxWeight,
   }) {
     return Exercise(
       id: id ?? this.id,
@@ -61,7 +69,14 @@ class Exercise {
       variant: variant ?? this.variant,
       order: order ?? this.order,
       series: series ?? this.series.map((series) => series.copyWith()).toList(),
-      weekProgressions: weekProgressions ?? this.weekProgressions.map((weekProgression) => weekProgression.map((progression) => progression.copyWith()).toList()).toList(),
+      weekProgressions: weekProgressions ??
+          this
+              .weekProgressions
+              .map((weekProgression) => weekProgression
+                  .map((progression) => progression.copyWith())
+                  .toList())
+              .toList(),
+      latestMaxWeight: latestMaxWeight ?? this.latestMaxWeight,
     );
   }
 
@@ -75,8 +90,15 @@ class Exercise {
       type: data['type'] ?? '',
       variant: data['variant'] ?? '',
       order: data['order']?.toInt() ?? 0,
-      series: (data['series'] as List<dynamic>? ?? []).map((doc) => Series.fromFirestore(doc)).toList(),
-      weekProgressions: (data['weekProgressions'] as List<dynamic>? ?? []).map((weekProgression) => (weekProgression as List<dynamic>).map((progression) => WeekProgression.fromMap(progression)).toList()).toList(),
+      series: (data['series'] as List<dynamic>? ?? [])
+          .map((doc) => Series.fromFirestore(doc))
+          .toList(),
+      weekProgressions: (data['weekProgressions'] as List<dynamic>? ?? [])
+          .map((weekProgression) => (weekProgression as List<dynamic>)
+              .map((progression) => WeekProgression.fromMap(progression))
+              .toList())
+          .toList(),
+      latestMaxWeight: data['latestMaxWeight'],
     );
   }
 
@@ -90,7 +112,10 @@ class Exercise {
       'variant': variant,
       'order': order,
       'series': series.map((x) => x.toMap()).toList(),
-      'weekProgressions': weekProgressions.map((x) => x.map((y) => y.toMap()).toList()).toList(),
+      'weekProgressions': weekProgressions
+          .map((x) => x.map((y) => y.toMap()).toList())
+          .toList(),
+      'latestMaxWeight': latestMaxWeight,
     };
   }
 }

@@ -97,6 +97,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
+      drawerEdgeDragWidth: 0,
       appBar: user != null
           ? CustomAppBar(
               userRole: userRole,
@@ -111,61 +112,68 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
               onLogout: _logout,
             )
           : null,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withOpacity(0.5),
-            ],
-            stops: const [0.0, 1.0],
-          ),
-        ),
-        child: Row(
-          children: [
-            if (user != null && isLargeScreen)
-              Container(
-                width: 300,
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  border: Border(
-                    right: BorderSide(
-                      color: colorScheme.outline.withOpacity(0.1),
-                    ),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: colorScheme.shadow.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(2, 0),
-                    ),
-                  ],
-                ),
-                child: CustomDrawer(
-                  isLargeScreen: isLargeScreen,
-                  userRole: userRole,
-                  onLogout: _logout,
-                ),
-              ),
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  borderRadius: BorderRadius.only(
-                    topLeft: isLargeScreen ? Radius.circular(AppTheme.radii.xl) : Radius.zero,
-                  ),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.only(
-                    topLeft: isLargeScreen ? Radius.circular(AppTheme.radii.xl) : Radius.zero,
-                  ),
-                  child: widget.child,
-                ),
-              ),
+      body: PopScope(
+        canPop: true,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                colorScheme.surface,
+                colorScheme.surfaceContainerHighest.withOpacity(0.5),
+              ],
+              stops: const [0.0, 1.0],
             ),
-          ],
+          ),
+          child: Row(
+            children: [
+              if (user != null && isLargeScreen)
+                Container(
+                  width: 300,
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    border: Border(
+                      right: BorderSide(
+                        color: colorScheme.outline.withOpacity(0.1),
+                      ),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: colorScheme.shadow.withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: const Offset(2, 0),
+                      ),
+                    ],
+                  ),
+                  child: CustomDrawer(
+                    isLargeScreen: isLargeScreen,
+                    userRole: userRole,
+                    onLogout: _logout,
+                  ),
+                ),
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    borderRadius: BorderRadius.only(
+                      topLeft: isLargeScreen
+                          ? Radius.circular(AppTheme.radii.xl)
+                          : Radius.zero,
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.only(
+                      topLeft: isLargeScreen
+                          ? Radius.circular(AppTheme.radii.xl)
+                          : Radius.zero,
+                    ),
+                    child: widget.child,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

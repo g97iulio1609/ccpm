@@ -73,7 +73,7 @@ class CoachingService {
         .collection('users')
         .where('role', isEqualTo: 'coach')
         .where('name', isGreaterThanOrEqualTo: query)
-        .where('name', isLessThanOrEqualTo: query + '\uf8ff')
+        .where('name', isLessThanOrEqualTo: '$query\uf8ff')
         .limit(10)
         .get();
 
@@ -81,7 +81,7 @@ class CoachingService {
         .collection('users')
         .where('role', isEqualTo: 'coach')
         .where('email', isGreaterThanOrEqualTo: query)
-        .where('email', isLessThanOrEqualTo: query + '\uf8ff')
+        .where('email', isLessThanOrEqualTo: '$query\uf8ff')
         .limit(10)
         .get();
 

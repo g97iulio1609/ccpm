@@ -1,7 +1,7 @@
 // subscriptions_screen.dart
 
 import 'package:alphanessone/models/user_model.dart';
-import 'package:alphanessone/user_autocomplete.dart';
+import 'package:alphanessone/UI/components/user_autocomplete.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -39,7 +39,8 @@ class SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
   Future<void> _initializeScreen() async {
     //debugPrint('Initializing SubscriptionsScreen');
     await _checkIfAdmin();
-    await _fetchSubscriptionDetails(userId: widget.userId); // Passa userId se disponibile
+    await _fetchSubscriptionDetails(
+        userId: widget.userId); // Passa userId se disponibile
     if (ref.read(isAdminProvider) && widget.userId == null) {
       await _loadAllUsers();
     }
@@ -53,7 +54,8 @@ class SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
 
     final user = firebaseAuth.currentUser;
     if (user != null) {
-      final userDoc = await firebaseFirestore.collection('users').doc(user.uid).get();
+      final userDoc =
+          await firebaseFirestore.collection('users').doc(user.uid).get();
       if (userDoc.exists && userDoc.data()?['role'] == 'admin') {
         ref.read(isAdminProvider.notifier).state = true;
         //debugPrint('User is admin');
@@ -94,22 +96,24 @@ class SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
     try {
       final isAdmin = ref.read(isAdminProvider);
       final targetUserId = userId ??
-          (isAdmin ? ref.read(selectedUserIdProvider) : FirebaseAuth.instance.currentUser!.uid);
+          (isAdmin
+              ? ref.read(selectedUserIdProvider)
+              : FirebaseAuth.instance.currentUser!.uid);
       //debugPrint('isAdmin: $isAdmin, targetUserId: $targetUserId');
 
-  // Nel metodo _fetchSubscriptionDetails
-if (isAdmin && userId != null) {
-  // Admin viewing another user's subscription
-  //debugPrint('Admin viewing subscription for userId: $targetUserId');
-  final details = await _inAppPurchaseService.getSubscriptionDetails(userId: targetUserId);
-  ref.read(selectedUserSubscriptionProvider.notifier).state = details;
-  //debugPrint('Fetched subscription details for userId: $targetUserId');
-  
-  // Imposta selectedUserIdProvider
-  ref.read(selectedUserIdProvider.notifier).state = targetUserId;
-  //debugPrint('selectedUserIdProvider set to: $targetUserId');
-}
- else {
+      // Nel metodo _fetchSubscriptionDetails
+      if (isAdmin && userId != null) {
+        // Admin viewing another user's subscription
+        //debugPrint('Admin viewing subscription for userId: $targetUserId');
+        final details = await _inAppPurchaseService.getSubscriptionDetails(
+            userId: targetUserId);
+        ref.read(selectedUserSubscriptionProvider.notifier).state = details;
+        //debugPrint('Fetched subscription details for userId: $targetUserId');
+
+        // Imposta selectedUserIdProvider
+        ref.read(selectedUserIdProvider.notifier).state = targetUserId;
+        //debugPrint('selectedUserIdProvider set to: $targetUserId');
+      } else {
         // Regular user viewing their own subscription
         //debugPrint('Regular user viewing own subscription');
         final details = await _inAppPurchaseService.getSubscriptionDetails();
@@ -144,7 +148,8 @@ if (isAdmin && userId != null) {
 
     showModalBottomSheet(
       context: context,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
       builder: (BuildContext context) {
         return Padding(
           padding: const EdgeInsets.all(16.0),
@@ -156,13 +161,17 @@ if (isAdmin && userId != null) {
                   height: 5,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurfaceVariant
+                        .withOpacity(0.5),
                     borderRadius: BorderRadius.circular(2.5),
                   ),
                 ),
               ),
               ListTile(
-                leading: Icon(Icons.update, color: Theme.of(context).colorScheme.primary),
+                leading: Icon(Icons.update,
+                    color: Theme.of(context).colorScheme.primary),
                 title: Text('Aggiorna Piano'),
                 onTap: () {
                   Navigator.pop(context);
@@ -170,7 +179,8 @@ if (isAdmin && userId != null) {
                 },
               ),
               ListTile(
-                leading: Icon(Icons.cancel, color: Theme.of(context).colorScheme.error),
+                leading: Icon(Icons.cancel,
+                    color: Theme.of(context).colorScheme.error),
                 title: Text(
                   'Annulla Abbonamento',
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
@@ -194,7 +204,10 @@ if (isAdmin && userId != null) {
       context: context,
       builder: (BuildContext context) {
         String? selectedPriceId;
-        final availableProducts = _inAppPurchaseService.productDetailsByProductId.values.expand((e) => e).toList();
+        final availableProducts = _inAppPurchaseService
+            .productDetailsByProductId.values
+            .expand((e) => e)
+            .toList();
         //debugPrint('Available products for update: ${availableProducts.map((p) => p.id).toList()}');
 
         return AlertDialog(
@@ -205,7 +218,8 @@ if (isAdmin && userId != null) {
                 items: availableProducts.map((product) {
                   return DropdownMenuItem<String>(
                     value: product.id,
-                    child: Text('${product.title} - ${product.price} ${product.currencyCode}'),
+                    child: Text(
+                        '${product.title} - ${product.price} ${product.currencyCode}'),
                   );
                 }).toList(),
                 onChanged: (value) {
@@ -234,18 +248,23 @@ if (isAdmin && userId != null) {
                   ? null
                   : () async {
                       Navigator.pop(context);
-                      ref.read(managingSubscriptionProvider.notifier).state = true;
+                      ref.read(managingSubscriptionProvider.notifier).state =
+                          true;
                       //debugPrint('Updating subscription to priceId: $selectedPriceId');
                       try {
-                        await _inAppPurchaseService.updateSubscription(selectedPriceId!);
+                        await _inAppPurchaseService
+                            .updateSubscription(selectedPriceId!);
                         _showSnackBar('Abbonamento aggiornato con successo.');
-                        await _fetchSubscriptionDetails(userId: ref.read(selectedUserIdProvider));
+                        await _fetchSubscriptionDetails(
+                            userId: ref.read(selectedUserIdProvider));
                         //debugPrint('Subscription updated and details refetched');
                       } catch (e) {
-                        _showSnackBar('Errore nell\'aggiornamento dell\'abbonamento: $e');
+                        _showSnackBar(
+                            'Errore nell\'aggiornamento dell\'abbonamento: $e');
                         //debugPrint('Error updating subscription: $e');
                       } finally {
-                        ref.read(managingSubscriptionProvider.notifier).state = false;
+                        ref.read(managingSubscriptionProvider.notifier).state =
+                            false;
                       }
                     },
               child: Text('Aggiorna'),
@@ -289,7 +308,8 @@ if (isAdmin && userId != null) {
       try {
         await _inAppPurchaseService.cancelSubscription();
         _showSnackBar('Abbonamento annullato con successo.');
-        await _fetchSubscriptionDetails(userId: ref.read(selectedUserIdProvider));
+        await _fetchSubscriptionDetails(
+            userId: ref.read(selectedUserIdProvider));
         //debugPrint('Subscription cancelled and details refetched');
       } catch (e) {
         _showSnackBar('Errore nell\'annullamento dell\'abbonamento: $e');
@@ -321,16 +341,20 @@ if (isAdmin && userId != null) {
 
     try {
       final firebaseFunctions = ref.read(firebaseFunctionsProvider);
-      final HttpsCallable callable = firebaseFunctions.httpsCallable('syncStripeSubscription');
+      final HttpsCallable callable =
+          firebaseFunctions.httpsCallable('syncStripeSubscription');
       final result = await callable.call(<String, dynamic>{
-        'syncAll': ref.read(isAdminProvider), // Passa true se admin per sincronizzare tutte le sottoscrizioni
+        'syncAll': ref.read(
+            isAdminProvider), // Passa true se admin per sincronizzare tutte le sottoscrizioni
       });
 
       if (result.data['success']) {
         _showSnackBar(result.data['message']);
         //debugPrint('Stripe synchronization successful: ${result.data['message']}');
-        if (ref.read(isAdminProvider) && ref.read(selectedUserIdProvider) != null) {
-          await _fetchSubscriptionDetails(userId: ref.read(selectedUserIdProvider));
+        if (ref.read(isAdminProvider) &&
+            ref.read(selectedUserIdProvider) != null) {
+          await _fetchSubscriptionDetails(
+              userId: ref.read(selectedUserIdProvider));
         } else {
           await _fetchSubscriptionDetails();
         }
@@ -347,402 +371,426 @@ if (isAdmin && userId != null) {
     }
   }
 
-Future<void> _showGiftSubscriptionDialog(String userId, String userName) async {
-  final durationOptions = [
-    {'days': 7, 'label': '1 Settimana', 'icon': Icons.calendar_today},
-    {'days': 30, 'label': '1 Mese', 'icon': Icons.calendar_month},
-    {'days': 90, 'label': '3 Mesi', 'icon': Icons.calendar_today},
-    {'days': 180, 'label': '6 Mesi', 'icon': Icons.calendar_view_month},
-    {'days': 365, 'label': '1 Anno', 'icon': Icons.calendar_today},
-  ];
+  Future<void> _showGiftSubscriptionDialog(
+      String userId, String userName) async {
+    final durationOptions = [
+      {'days': 7, 'label': '1 Settimana', 'icon': Icons.calendar_today},
+      {'days': 30, 'label': '1 Mese', 'icon': Icons.calendar_month},
+      {'days': 90, 'label': '3 Mesi', 'icon': Icons.calendar_today},
+      {'days': 180, 'label': '6 Mesi', 'icon': Icons.calendar_view_month},
+      {'days': 365, 'label': '1 Anno', 'icon': Icons.calendar_today},
+    ];
 
-  return showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.card_giftcard, 
-                    color: Theme.of(context).colorScheme.primary,
-                    size: 28,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Regalo Abbonamento',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.card_giftcard,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 28,
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Seleziona la durata dell\'abbonamento da regalare a $userName:',
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-              const SizedBox(height: 24),
-              ...durationOptions.map((option) => 
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onPressed: () async {
-                      Navigator.of(context).pop();
-                      try {
-                        await _inAppPurchaseService.giftSubscription(
-                          userId,
-                          option['days'] as int,
-                        );
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Abbonamento regalato con successo'),
-                              backgroundColor: Colors.green,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Regalo Abbonamento',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
                             ),
-                          );
-                          await _fetchSubscriptionDetails(userId: userId);
-                        }
-                      } catch (e) {
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Errore: $e'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      }
-                    },
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(option['icon'] as IconData),
-                            const SizedBox(width: 12),
-                            Text(option['label'] as String),
-                          ],
-                        ),
-                        const Icon(Icons.arrow_forward_ios, size: 16),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Annulla'),
-              ),
-            ],
-          ),
-        ),
-      );
-    },
-  );
-}
-
-@override
-Widget build(BuildContext context) {
-  final colorScheme = Theme.of(context).colorScheme;
-
-  final isAdmin = ref.watch(isAdminProvider);
-  final allUsers = ref.watch(userListProvider);
-  ref.watch(filteredUserListProvider);
-  final selectedUserId = ref.watch(selectedUserIdProvider);
-  final subscriptionDetails = ref.watch(subscriptionDetailsProvider);
-  final selectedUserSubscription = ref.watch(selectedUserSubscriptionProvider);
-  final isLoading = ref.watch(subscriptionLoadingProvider);
-  ref.watch(managingSubscriptionProvider);
-  final isSyncing = ref.watch(syncingProvider);
-
-  //debugPrint('Building SubscriptionsScreen: isAdmin=$isAdmin, selectedUserId=$selectedUserId, isLoading=$isLoading');
-
-  // Determina quale subscriptionDetails usare
-  final SubscriptionDetails? targetSubscriptionDetails;
-  if (isAdmin && widget.userId != null) {
-    targetSubscriptionDetails = selectedUserSubscription;
-  } else if (isAdmin && selectedUserId != null) {
-    targetSubscriptionDetails = selectedUserSubscription;
-  } else {
-    targetSubscriptionDetails = subscriptionDetails;
-  }
-
-  return Scaffold(
-    backgroundColor: colorScheme.surface,
-    body: Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            colorScheme.surface,
-            colorScheme.surfaceContainerHighest.withOpacity(0.5),
-          ],
-          stops: const [0.0, 1.0],
-        ),
-      ),
-      child: SafeArea(
-        child: Column(
-          children: [
-            // Search Bar per Admin
-            if (isAdmin && widget.userId == null)
-              Padding(
-                padding: EdgeInsets.all(AppTheme.spacing.xl),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                    border: Border.all(
-                      color: colorScheme.outline.withOpacity(0.1),
-                    ),
-                    boxShadow: AppTheme.elevations.small,
-                  ),
-                  padding: EdgeInsets.all(AppTheme.spacing.md),
-                  child: UserTypeAheadField(
-                    controller: _userSearchController,
-                    focusNode: _userSearchFocusNode,
-                    onSelected: (UserModel user) {
-                      _userSearchController.text = user.name;
-                      ref.read(selectedUserIdProvider.notifier).state = user.id;
-                      _fetchSubscriptionDetails(userId: user.id);
-                      FocusScope.of(context).unfocus();
-                      //debugPrint('Selected user for subscription viewing: ${user.id}');
-                    },
-                    onChanged: (pattern) {
-                      final filtered = allUsers.where((user) =>
-                          user.name.toLowerCase().contains(pattern.toLowerCase()) ||
-                          user.email.toLowerCase().contains(pattern.toLowerCase())).toList();
-                      ref.read(filteredUserListProvider.notifier).state = filtered;
-                      //debugPrint('Filtered users based on search pattern: $pattern');
-                    },
-                  ),
-                ),
-              ),
-
-            // Contenuto principale
-            Expanded(
-              child: isLoading
-                  ? Center(
-                      child: CircularProgressIndicator(
-                        color: colorScheme.primary,
                       ),
-                    )
-                  : isAdmin && (widget.userId != null || selectedUserId != null)
-                      ? _buildAdminView(
-                          userId: widget.userId ?? selectedUserId!,
-                          subscriptionDetails: targetSubscriptionDetails,
-                        )
-                      : _buildUserView(
-                          subscriptionDetails: targetSubscriptionDetails,
-                        ),
-            ),
-          ],
-        ),
-      ),
-    ),
-    floatingActionButton: isAdmin && widget.userId == null
-        ? Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  colorScheme.primary,
-                  colorScheme.primary.withOpacity(0.8),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(AppTheme.radii.full),
-              boxShadow: [
-                BoxShadow(
-                  color: colorScheme.primary.withOpacity(0.2),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: FloatingActionButton.extended(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              onPressed: isSyncing ? null : _syncStripeSubscription,
-              label: Text(
-                isSyncing ? 'Sincronizzazione...' : 'Sincronizza Tutti',
-                style: TextStyle(
-                  color: colorScheme.onPrimary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              icon: isSyncing
-                  ? SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        color: colorScheme.onPrimary,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : Icon(Icons.sync, color: colorScheme.onPrimary),
-            ),
-          )
-        : null,
-  );
-}
-
-
-  // Builds the admin view (with selectedUserId)
-Widget _buildAdminView({
-  required String userId,
-  required SubscriptionDetails? subscriptionDetails,
-}) {
-  return Builder(builder: (context) {
-    //debugPrint('Building admin view: userId=$userId');
-
-    final usersService = ref.read(usersServiceProvider);
-    final Future<UserModel?> userFuture = usersService.getUserById(userId);
-
-    return FutureBuilder<UserModel?>(
-      future: userFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        }
-        if (!snapshot.hasData || snapshot.data == null) {
-          return Center(
-            child: Text('Utente non trovato.', style: Theme.of(context).textTheme.titleLarge),
-          );
-        }
-
-        final user = snapshot.data!;
-        final bool isGiftSubscription = subscriptionDetails?.platform == 'gift';
-
-        return SingleChildScrollView(
-          padding: EdgeInsets.all(AppTheme.spacing.xl),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Action Buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildActionButton(
-                      icon: Icons.card_giftcard,
-                      label: 'Regala Abbonamento',
-                      onTap: () => _showGiftSubscriptionDialog(userId, user.name),
-                      isPrimary: true,
                     ),
-                  ),
-                  SizedBox(width: AppTheme.spacing.md),
-                  Expanded(
-                    child: _buildActionButton(
-                      icon: Icons.sync,
-                      label: 'Sincronizza',
-                      onTap: ref.watch(syncingProvider) ? null : _syncStripeSubscription,
-                      isPrimary: false,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: AppTheme.spacing.xl),
-
-              // Subscription Details
-              if (subscriptionDetails != null) ...[
-                SubscriptionCard(
-                  title: '${user.name}\'s Abbonamento',
-                  status: subscriptionDetails.status.capitalize(),
-                  expiry: DateFormat.yMMMd().add_jm().format(subscriptionDetails.currentPeriodEnd),
-                  isGift: isGiftSubscription,
-                  giftInfo: isGiftSubscription ? 'Abbonamento regalo' : null,
+                  ],
                 ),
-                SizedBox(height: AppTheme.spacing.xl),
+                const SizedBox(height: 16),
                 Text(
-                  'Dettagli Abbonamento',
-                  style: Theme.of(context).textTheme.titleLarge,
+                  'Seleziona la durata dell\'abbonamento da regalare a $userName:',
+                  style: Theme.of(context).textTheme.bodyLarge,
                 ),
-                Divider(),
-                ...subscriptionDetails.items.map((item) {
-                  return SubscriptionItemTile(item: item);
-                }),
-              ] else ...[
-                Center(
-                  child: Text(
-                    'L\'utente non ha un abbonamento attivo',
-                    style: Theme.of(context).textTheme.titleMedium,
+                const SizedBox(height: 24),
+                ...durationOptions.map(
+                  (option) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 16, horizontal: 24),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () async {
+                        Navigator.of(context).pop();
+                        try {
+                          await _inAppPurchaseService.giftSubscription(
+                            userId,
+                            option['days'] as int,
+                          );
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content:
+                                    Text('Abbonamento regalato con successo'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                            await _fetchSubscriptionDetails(userId: userId);
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Errore: $e'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(option['icon'] as IconData),
+                              const SizedBox(width: 12),
+                              Text(option['label'] as String),
+                            ],
+                          ),
+                          const Icon(Icons.arrow_forward_ios, size: 16),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Annulla'),
+                ),
               ],
-            ],
+            ),
           ),
         );
       },
     );
-  });
-}
+  }
 
-Widget _buildActionButton({
-  required IconData icon,
-  required String label,
-  required VoidCallback? onTap,
-  required bool isPrimary,
-}) {
-  return Builder(builder: (context) {
+  @override
+  Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isPrimary
-              ? [colorScheme.primary, colorScheme.primary.withOpacity(0.8)]
-              : [colorScheme.secondary, colorScheme.secondary.withOpacity(0.8)],
+
+    final isAdmin = ref.watch(isAdminProvider);
+    final allUsers = ref.watch(userListProvider);
+    ref.watch(filteredUserListProvider);
+    final selectedUserId = ref.watch(selectedUserIdProvider);
+    final subscriptionDetails = ref.watch(subscriptionDetailsProvider);
+    final selectedUserSubscription =
+        ref.watch(selectedUserSubscriptionProvider);
+    final isLoading = ref.watch(subscriptionLoadingProvider);
+    ref.watch(managingSubscriptionProvider);
+    final isSyncing = ref.watch(syncingProvider);
+
+    //debugPrint('Building SubscriptionsScreen: isAdmin=$isAdmin, selectedUserId=$selectedUserId, isLoading=$isLoading');
+
+    // Determina quale subscriptionDetails usare
+    final SubscriptionDetails? targetSubscriptionDetails;
+    if (isAdmin && widget.userId != null) {
+      targetSubscriptionDetails = selectedUserSubscription;
+    } else if (isAdmin && selectedUserId != null) {
+      targetSubscriptionDetails = selectedUserSubscription;
+    } else {
+      targetSubscriptionDetails = subscriptionDetails;
+    }
+
+    return Scaffold(
+      backgroundColor: colorScheme.surface,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              colorScheme.surface,
+              colorScheme.surfaceContainerHighest.withOpacity(0.5),
+            ],
+            stops: const [0.0, 1.0],
+          ),
         ),
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        boxShadow: AppTheme.elevations.small,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              vertical: AppTheme.spacing.lg,
-              horizontal: AppTheme.spacing.md,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  icon,
-                  color: colorScheme.onPrimary,
-                  size: 20,
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Search Bar per Admin
+              if (isAdmin && widget.userId == null)
+                Padding(
+                  padding: EdgeInsets.all(AppTheme.spacing.xl),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                      border: Border.all(
+                        color: colorScheme.outline.withOpacity(0.1),
+                      ),
+                      boxShadow: AppTheme.elevations.small,
+                    ),
+                    padding: EdgeInsets.all(AppTheme.spacing.md),
+                    child: UserTypeAheadField(
+                      controller: _userSearchController,
+                      focusNode: _userSearchFocusNode,
+                      onSelected: (UserModel user) {
+                        _userSearchController.text = user.name;
+                        ref.read(selectedUserIdProvider.notifier).state =
+                            user.id;
+                        _fetchSubscriptionDetails(userId: user.id);
+                        FocusScope.of(context).unfocus();
+                        //debugPrint('Selected user for subscription viewing: ${user.id}');
+                      },
+                      onChanged: (pattern) {
+                        final filtered = allUsers
+                            .where((user) =>
+                                user.name
+                                    .toLowerCase()
+                                    .contains(pattern.toLowerCase()) ||
+                                user.email
+                                    .toLowerCase()
+                                    .contains(pattern.toLowerCase()))
+                            .toList();
+                        ref.read(filteredUserListProvider.notifier).state =
+                            filtered;
+                        //debugPrint('Filtered users based on search pattern: $pattern');
+                      },
+                    ),
+                  ),
                 ),
-                SizedBox(width: AppTheme.spacing.sm),
-                Text(
-                  label,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+
+              // Contenuto principale
+              Expanded(
+                child: isLoading
+                    ? Center(
+                        child: CircularProgressIndicator(
+                          color: colorScheme.primary,
+                        ),
+                      )
+                    : isAdmin &&
+                            (widget.userId != null || selectedUserId != null)
+                        ? _buildAdminView(
+                            userId: widget.userId ?? selectedUserId!,
+                            subscriptionDetails: targetSubscriptionDetails,
+                          )
+                        : _buildUserView(
+                            subscriptionDetails: targetSubscriptionDetails,
+                          ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      floatingActionButton: isAdmin && widget.userId == null
+          ? Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    colorScheme.primary,
+                    colorScheme.primary.withOpacity(0.8),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(AppTheme.radii.full),
+                boxShadow: [
+                  BoxShadow(
+                    color: colorScheme.primary.withOpacity(0.2),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: FloatingActionButton.extended(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                onPressed: isSyncing ? null : _syncStripeSubscription,
+                label: Text(
+                  isSyncing ? 'Sincronizzazione...' : 'Sincronizza Tutti',
+                  style: TextStyle(
                     color: colorScheme.onPrimary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
+                icon: isSyncing
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: colorScheme.onPrimary,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : Icon(Icons.sync, color: colorScheme.onPrimary),
+              ),
+            )
+          : null,
+    );
+  }
+
+  // Builds the admin view (with selectedUserId)
+  Widget _buildAdminView({
+    required String userId,
+    required SubscriptionDetails? subscriptionDetails,
+  }) {
+    return Builder(builder: (context) {
+      //debugPrint('Building admin view: userId=$userId');
+
+      final usersService = ref.read(usersServiceProvider);
+      final Future<UserModel?> userFuture = usersService.getUserById(userId);
+
+      return FutureBuilder<UserModel?>(
+        future: userFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+          if (!snapshot.hasData || snapshot.data == null) {
+            return Center(
+              child: Text('Utente non trovato.',
+                  style: Theme.of(context).textTheme.titleLarge),
+            );
+          }
+
+          final user = snapshot.data!;
+          final bool isGiftSubscription =
+              subscriptionDetails?.platform == 'gift';
+
+          return SingleChildScrollView(
+            padding: EdgeInsets.all(AppTheme.spacing.xl),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Action Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildActionButton(
+                        icon: Icons.card_giftcard,
+                        label: 'Regala Abbonamento',
+                        onTap: () =>
+                            _showGiftSubscriptionDialog(userId, user.name),
+                        isPrimary: true,
+                      ),
+                    ),
+                    SizedBox(width: AppTheme.spacing.md),
+                    Expanded(
+                      child: _buildActionButton(
+                        icon: Icons.sync,
+                        label: 'Sincronizza',
+                        onTap: ref.watch(syncingProvider)
+                            ? null
+                            : _syncStripeSubscription,
+                        isPrimary: false,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: AppTheme.spacing.xl),
+
+                // Subscription Details
+                if (subscriptionDetails != null) ...[
+                  SubscriptionCard(
+                    title: '${user.name}\'s Abbonamento',
+                    status: subscriptionDetails.status.capitalize(),
+                    expiry: DateFormat.yMMMd()
+                        .add_jm()
+                        .format(subscriptionDetails.currentPeriodEnd),
+                    isGift: isGiftSubscription,
+                    giftInfo: isGiftSubscription ? 'Abbonamento regalo' : null,
+                  ),
+                  SizedBox(height: AppTheme.spacing.xl),
+                  Text(
+                    'Dettagli Abbonamento',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  Divider(),
+                  ...subscriptionDetails.items.map((item) {
+                    return SubscriptionItemTile(item: item);
+                  }),
+                ] else ...[
+                  Center(
+                    child: Text(
+                      'L\'utente non ha un abbonamento attivo',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                ],
               ],
+            ),
+          );
+        },
+      );
+    });
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback? onTap,
+    required bool isPrimary,
+  }) {
+    return Builder(builder: (context) {
+      final colorScheme = Theme.of(context).colorScheme;
+
+      return Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isPrimary
+                ? [colorScheme.primary, colorScheme.primary.withOpacity(0.8)]
+                : [
+                    colorScheme.secondary,
+                    colorScheme.secondary.withOpacity(0.8)
+                  ],
+          ),
+          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          boxShadow: AppTheme.elevations.small,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                vertical: AppTheme.spacing.lg,
+                horizontal: AppTheme.spacing.md,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    icon,
+                    color: colorScheme.onPrimary,
+                    size: 20,
+                  ),
+                  SizedBox(width: AppTheme.spacing.sm),
+                  Text(
+                    label,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: colorScheme.onPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
-      ),
-    );
-  });
-}
+      );
+    });
+  }
 
   // Builds the user view (own subscription)
   Widget _buildUserView({
@@ -780,11 +828,15 @@ Widget _buildActionButton({
           SubscriptionCard(
             title: 'Il Tuo Abbonamento',
             status: subscriptionDetails.status.capitalize(),
-            expiry: DateFormat.yMMMd().add_jm().format(subscriptionDetails.currentPeriodEnd),
+            expiry: DateFormat.yMMMd()
+                .add_jm()
+                .format(subscriptionDetails.currentPeriodEnd),
             actionButton: ElevatedButton.icon(
               icon: Icon(Icons.manage_accounts),
               label: Text('Gestisci Abbonamento'),
-              onPressed: ref.read(managingSubscriptionProvider) ? null : _showManageSubscriptionOptions,
+              onPressed: ref.read(managingSubscriptionProvider)
+                  ? null
+                  : _showManageSubscriptionOptions,
             ),
           ),
           SizedBox(height: 16),
@@ -798,7 +850,8 @@ Widget _buildActionButton({
           }),
           SizedBox(height: 24),
           ElevatedButton(
-            onPressed: ref.watch(syncingProvider) ? null : _syncStripeSubscription,
+            onPressed:
+                ref.watch(syncingProvider) ? null : _syncStripeSubscription,
             style: ElevatedButton.styleFrom(
               padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
@@ -850,7 +903,7 @@ class SubscriptionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surface,
@@ -885,9 +938,9 @@ class SubscriptionCard extends StatelessWidget {
                   child: Text(
                     title,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -0.5,
-                    ),
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: -0.5,
+                        ),
                   ),
                 ),
               ],
@@ -920,9 +973,9 @@ class SubscriptionCard extends StatelessWidget {
                 child: Text(
                   giftInfo!,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w500,
-                  ),
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
                 ),
               ),
             ],
@@ -943,7 +996,7 @@ class SubscriptionCard extends StatelessWidget {
     IconData icon,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Row(
       children: [
         Icon(
@@ -955,15 +1008,15 @@ class SubscriptionCard extends StatelessWidget {
         Text(
           '$label: ',
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-          ),
+                color: colorScheme.onSurfaceVariant,
+              ),
         ),
         Text(
           value,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: colorScheme.onSurface,
-            fontWeight: FontWeight.w500,
-          ),
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w500,
+              ),
         ),
       ],
     );
@@ -993,4 +1046,8 @@ extension StringCasingExtension on String {
     if (length <= 1) return toUpperCase();
     return '${this[0].toUpperCase()}${substring(1)}';
   }
+}
+
+void _navigateToSubscriptions(BuildContext context) async {
+  await context.push('/subscriptions');
 }
