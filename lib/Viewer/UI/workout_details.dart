@@ -720,13 +720,15 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
           TextButton(
             onPressed: () async {
               final maxWeight = calculatedMaxWeight.value;
+              final weight = double.tryParse(weightController.text);
+              final reps = int.tryParse(repsController.text) ?? 1;
               
-              if (maxWeight != null) {
+              if (maxWeight != null && weight != null) {
                 await ref.read(workout_provider.workoutServiceProvider).updateMaxWeight(
                   exercise,
-                  maxWeight,  
+                  maxWeight,  // Salviamo il massimale calcolato
                   widget.userId,
-                  repetitions: 1,  
+                  repetitions: 1,  // Sempre 1 per il massimale
                   keepCurrentWeights: keepWeightSwitch.value
                 );
                 

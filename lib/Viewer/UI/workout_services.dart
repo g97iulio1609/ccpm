@@ -431,27 +431,67 @@ class WorkoutService {
 
     if (!keepCurrentWeights) {
       print('DEBUG: Recalculating series weights');
-      // Recalculate weights for all series
+      // Ricalcola i pesi per tutte le serie usando le intensità
       for (var serie in series) {
         final Map<String, dynamic> seriesMap = serie as Map<String, dynamic>;
-        if (seriesMap['weight'] != null) {
-          final double percentage = seriesMap['percentage'] ?? 100.0;
-          seriesMap['weight'] = (newMaxWeight * percentage / 100).roundToDouble();
+        
+        // Calcola weight usando intensity
+        if (seriesMap['intensity'] != null) {
+          // Converti intensity in double, gestendo sia stringhe che numeri
+          final double intensity = double.parse(seriesMap['intensity'].toString());
+          seriesMap['weight'] = (newMaxWeight * intensity / 100).roundToDouble();
+        }
+        
+        // Calcola weightMax usando maxIntensity (corretto il nome del campo)
+        if (seriesMap['maxIntensity'] != null) {
+          // Converti maxIntensity in double, gestendo sia stringhe che numeri
+          final double maxIntensity = double.parse(seriesMap['maxIntensity'].toString());
+          seriesMap['maxWeight'] = (newMaxWeight * maxIntensity / 100).roundToDouble();
         }
       }
       print('DEBUG: Series weights recalculated');
     } else {
       print('DEBUG: Keeping current weights, updating intensities');
-      // Update only the intensities based on the new max weight
+      // Aggiorna solo le intensità basandosi sui pesi attuali
       for (var serie in series) {
         final Map<String, dynamic> seriesMap = serie as Map<String, dynamic>;
+        
+        // Calcola intensity da weight
         if (seriesMap['weight'] != null) {
-          final double currentWeight = seriesMap['weight'] as double;
-          seriesMap['percentage'] = ((currentWeight / newMaxWeight) * 100).roundToDouble();
+          final double currentWeight = double.parse(seriesMap['weight'].toString());
+          seriesMap['intensity'] = ((currentWeight / newMaxWeight) * 100).roundToDouble();
+        }
+        
+        // Calcola maxIntensity da maxWeight
+        if (seriesMap['maxWeight'] != null) {
+          final double currentMaxWeight = double.parse(seriesMap['maxWeight'].toString());
+          seriesMap['maxIntensity'] = ((currentMaxWeight / newMaxWeight) * 100).roundToDouble();
         }
       }
       print('DEBUG: Series intensities updated');
     }
+
+    print('DEBUG: Starting batch update of series in Firestore');
+    final batch = FirebaseFirestore.instance.batch();
+    
+    // Update each series in Firestore
+    for (var serie in series) {
+      final Map<String, dynamic> seriesMap = serie as Map<String, dynamic>;
+      final seriesId = seriesMap['id'];
+      if (seriesId != null) {
+        final seriesRef = FirebaseFirestore.instance.collection('series').doc(seriesId);
+        batch.update(seriesRef, {
+          'weight': seriesMap['weight'],
+          'maxWeight': seriesMap['maxWeight'],
+          'intensity': seriesMap['intensity'],
+          'maxIntensity': seriesMap['maxIntensity'],
+        });
+      }
+    }
+    
+    // Commit the batch update
+    await batch.commit();
+    print('DEBUG: Batch update of series completed');
 
     print('DEBUG: Updating exercise in Firestore');
     // Update exercise in Firestore with the current exercise ID
