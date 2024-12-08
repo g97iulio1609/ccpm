@@ -1,4 +1,6 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.alphaness.alphanessone">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.alphaness.alphanessone">
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
@@ -10,10 +12,11 @@
     <application
         android:label="AlphanessOne"
         android:name="${applicationName}"
-        android:roundIcon="@mipmap/round_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:icon="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true"
-        android:showOnLockScreen="true">
+        android:showOnLockScreen="true"
+        tools:replace="android:roundIcon">
 
         <activity
             android:name=".MainActivity"

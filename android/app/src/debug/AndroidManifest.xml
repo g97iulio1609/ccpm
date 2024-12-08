@@ -11,7 +11,7 @@
     <application
         android:label="AlphanessOne"
         android:name="${applicationName}"
-        android:roundIcon="@mipmap/round_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:icon="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true"
         android:showOnLockScreen="true">

@@ -73,29 +73,30 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/training_background.svg
+    - assets/icon.png
 
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/icon/icon.png"
-  min_sdk_android: 21
+  image_path: "assets/icon.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icon.png"
+  remove_alpha_ios: true
   web:
     generate: true
-    background_color: null
-    theme_color: "#hexcode"
-  windows:
-    generate: true
-    icon_size: 48
-  macos:
-    generate: true
+    image_path: "assets/icon.png"
+    background_color: "#FFFFFF"
+    theme_color: "#FFFFFF"
+  min_sdk_android: 21
+  android_play_store_icon: true
 
 flutter_native_splash:
-  color: "#000000" # Colore di sfondo, simile al design del background
-  background_image: assets/splash/background.png # Percorso dell'immagine del background
-  image: assets/splash/icon.png # Percorso dell'icona trasparente
+  color: "#FFFFFF"
+  image: assets/icon.png
+  branding_mode: bottom
   android: true
   ios: true
   web: true
-  android_gravity: center # Posiziona l'icona al centro su Android
-  ios_content_mode: center # Posiziona l'icona al centro su iOS
+  android_gravity: center
+  ios_content_mode: center
+  web_image_mode: center
