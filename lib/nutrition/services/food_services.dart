@@ -228,19 +228,19 @@ class FoodService {
       'id': product.barcode,
       'name': product.productName ?? 'Unknown',
       'name_it':
-          product.productNameInLanguages?[OpenFoodFactsLanguage.ITALIAN.code] ??
+          product.productNameInLanguages?[OpenFoodFactsLanguage.ITALIAN] ??
               product.productName ??
               'Unknown',
       'name_en':
-          product.productNameInLanguages?[OpenFoodFactsLanguage.ENGLISH.code] ??
+          product.productNameInLanguages?[OpenFoodFactsLanguage.ENGLISH] ??
               product.productName ??
               'Unknown',
       'name_fr':
-          product.productNameInLanguages?[OpenFoodFactsLanguage.FRENCH.code] ??
+          product.productNameInLanguages?[OpenFoodFactsLanguage.FRENCH] ??
               product.productName ??
               'Unknown',
       'name_es':
-          product.productNameInLanguages?[OpenFoodFactsLanguage.SPANISH.code] ??
+          product.productNameInLanguages?[OpenFoodFactsLanguage.SPANISH] ??
               product.productName ??
               'Unknown',
       'brands': product.brands ?? 'Unknown',
@@ -266,7 +266,7 @@ class FoodService {
     final snapshot = await _firestore.collection('foods').get();
     for (var doc in snapshot.docs) {
       final foodData = doc.data();
-      if (foodData['id'] != null) {
+      if (foodData['id']?.toString() != null) {
         final barcode = foodData['id'];
         await _retryUpdateProductTranslations(barcode);
       }
@@ -311,19 +311,19 @@ class FoodService {
       await _firestore.collection('foods').doc(barcode).update({
         'name': product.productName ?? 'Unknown',
         'name_it': product
-                .productNameInLanguages?[OpenFoodFactsLanguage.ITALIAN.code] ??
+                .productNameInLanguages?[OpenFoodFactsLanguage.ITALIAN] ??
             product.productName ??
             'Unknown',
         'name_en': product
-                .productNameInLanguages?[OpenFoodFactsLanguage.ENGLISH.code] ??
+                .productNameInLanguages?[OpenFoodFactsLanguage.ENGLISH] ??
             product.productName ??
             'Unknown',
         'name_fr': product
-                .productNameInLanguages?[OpenFoodFactsLanguage.FRENCH.code] ??
+                .productNameInLanguages?[OpenFoodFactsLanguage.FRENCH] ??
             product.productName ??
             'Unknown',
         'name_es': product
-                .productNameInLanguages?[OpenFoodFactsLanguage.SPANISH.code] ??
+                .productNameInLanguages?[OpenFoodFactsLanguage.SPANISH] ??
             product.productName ??
             'Unknown',
       });

@@ -723,7 +723,7 @@ class UserProfileState extends ConsumerState<UserProfile>
                           letterSpacing: -0.5,
                         ),
                         tabs: const [
-                          Tab(text: 'Info Personali'),
+                          Tab(text: 'Info'),
                           Tab(text: 'Account'),
                           Tab(text: 'Dati Fitness'),
                           Tab(text: 'Abbonamenti'),

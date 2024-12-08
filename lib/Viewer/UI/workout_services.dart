@@ -7,9 +7,11 @@ import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
 import 'package:alphanessone/trainingBuilder/models/series_model.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 import 'package:alphanessone/Viewer/UI/workout_provider.dart';
+import 'package:logging/logging.dart';
 
 class WorkoutService {
   final Ref ref;
+  static final Logger _logger = Logger('WorkoutService');
   final TrainingProgramServices trainingProgramServices;
   final ExerciseRecordService exerciseRecordService;
 
@@ -150,7 +152,7 @@ class WorkoutService {
       _workoutCache[workoutId] = exercises;
       _cacheExerciseData(exercises);
     } catch (e) {
-      print('Error initializing workout: $e');
+      _logger.severe('Error initializing workout', e);
     } finally {
       ref.read(loadingProvider.notifier).state = false;
     }
