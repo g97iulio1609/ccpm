@@ -6,8 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
 import 'package:alphanessone/trainingBuilder/models/series_model.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
-import 'workout_provider.dart';
-
+import 'package:alphanessone/Viewer/UI/workout_provider.dart';
 
 class WorkoutService {
   final Ref ref;
@@ -18,6 +17,7 @@ class WorkoutService {
   final List<StreamSubscription> _subscriptions = [];
   final Map<String, Map<String?, List<Map<String, dynamic>>>>
       _groupedExercisesCache = {};
+  final Map<String, List<Map<String, dynamic>>> _workoutCache = {};
 
   WorkoutService({
     required this.ref,
@@ -82,11 +82,92 @@ class WorkoutService {
     }
   }
 
-  Future<void> initializeWorkout(String programId, String weekId, String workoutId) async {
-    ref.read(workoutIdProvider.notifier).update((state) => workoutId);
-    await updateWorkoutName(workoutId);
-    await fetchExercises(workoutId);
-    await loadExerciseNotes(workoutId);
+  Future<void> prefetchWorkout(String workoutId) async {
+    // Se il workout è già in cache, non fare nulla
+    if (_workoutCache.containsKey(workoutId)) return;
+
+    try {
+      // Fetch workout name and exercises in parallel
+      final futures = await Future.wait([
+        trainingProgramServices.fetchWorkoutName(workoutId),
+        trainingProgramServices.fetchExercises(workoutId),
+      ]);
+
+      final workoutName = futures[0] as String;
+      final exercises = futures[1] as List<Map<String, dynamic>>;
+
+      // Salva nella cache
+      _workoutCache[workoutId] = exercises;
+      
+      // Cache exercise data
+      _cacheExerciseData(exercises);
+      
+      // Aggiorna la cache del nome del workout
+      final workoutNames = Map<String, String>.from(ref.read(workoutNameCacheProvider));
+      workoutNames[workoutId] = workoutName;
+      ref.read(workoutNameCacheProvider.notifier).state = workoutNames;
+    } catch (e) {
+      debugPrint('Error prefetching workout: $e');
+    }
+  }
+
+  Future<void> prefetchWeekWorkouts(List<String> workoutIds) async {
+    for (final workoutId in workoutIds) {
+      prefetchWorkout(workoutId);
+    }
+  }
+
+  Future<void> initializeWorkout(String workoutId) async {
+    ref.read(loadingProvider.notifier).state = true;
+    ref.read(workoutIdProvider.notifier).state = workoutId;
+    ref.read(exercisesProvider.notifier).state = []; // Reset exercises immediately
+
+    try {
+      // Check if workout is in cache
+      if (_workoutCache.containsKey(workoutId)) {
+        final exercises = _workoutCache[workoutId]!;
+        final workoutName = ref.read(workoutNameCacheProvider)[workoutId] ?? '';
+        
+        ref.read(currentWorkoutNameProvider.notifier).state = workoutName;
+        ref.read(exercisesProvider.notifier).state = exercises;
+        return;
+      }
+
+      // If not in cache, fetch normally
+      final futures = await Future.wait([
+        trainingProgramServices.fetchWorkoutName(workoutId),
+        trainingProgramServices.fetchExercises(workoutId),
+      ]);
+
+      final workoutName = futures[0] as String;
+      final exercises = futures[1] as List<Map<String, dynamic>>;
+
+      // Update providers with fetched data
+      ref.read(currentWorkoutNameProvider.notifier).state = workoutName;
+      ref.read(exercisesProvider.notifier).state = exercises;
+
+      // Cache the data for future use
+      _workoutCache[workoutId] = exercises;
+      _cacheExerciseData(exercises);
+    } catch (e) {
+      print('Error initializing workout: $e');
+    } finally {
+      ref.read(loadingProvider.notifier).state = false;
+    }
+  }
+
+  void _cacheExerciseData(List<Map<String, dynamic>> exercises) {
+    final exerciseCache = <String, List<Map<String, dynamic>>>{};
+    
+    for (final exercise in exercises) {
+      final superSetId = exercise['superSetId'];
+      if (superSetId != null) {
+        exerciseCache.putIfAbsent(superSetId, () => []).add(exercise);
+      }
+    }
+
+    _groupedExercisesCache.clear();
+    _groupedExercisesCache[ref.read(workoutIdProvider) ?? ''] = exerciseCache;
   }
 
   Future<void> updateWorkoutName(String workoutId) async {
@@ -385,6 +466,27 @@ class WorkoutService {
         0.0,
       );
     }
+
+    // Update the local state to reflect the changes immediately
+    final exercises = List<Map<String, dynamic>>.from(ref.read(exercisesProvider));
+    for (int i = 0; i < exercises.length; i++) {
+      final seriesList = List<Map<String, dynamic>>.from(exercises[i]['series'] ?? []);
+      for (int j = 0; j < seriesList.length; j++) {
+        if (seriesList[j]['id'] == seriesId) {
+          seriesList[j] = {
+            ...seriesList[j],
+            'reps_done': !currentlyDone ? (maxReps ?? reps) : 0,
+            'weight_done': !currentlyDone ? (maxWeight ?? weight) : 0.0,
+          };
+          exercises[i] = {
+            ...exercises[i],
+            'series': seriesList,
+          };
+          break;
+        }
+      }
+    }
+    ref.read(exercisesProvider.notifier).state = exercises;
   }
 
   int findFirstNotDoneSeriesIndex(List<Map<String, dynamic>> seriesList) {
@@ -494,6 +596,44 @@ class WorkoutService {
     await batch.commit();
 
     await trainingProgramServices.updateExercise(exercise['id'], exercise);
+  }
+
+  Future<void> updateSeriesData(String exerciseId, Map<String, dynamic> seriesData) async {
+    final seriesId = seriesData['id'];
+    if (seriesId == null) return;
+
+    // Update Firestore
+    final seriesRef = FirebaseFirestore.instance.collection('series').doc(seriesId);
+    await seriesRef.update({
+      'reps_done': seriesData['reps_done'],
+      'weight_done': seriesData['weight_done'],
+    });
+
+    // Update local state
+    final exercises = List<Map<String, dynamic>>.from(ref.read(exercisesProvider));
+    bool updated = false;
+
+    for (int i = 0; i < exercises.length && !updated; i++) {
+      final seriesList = List<Map<String, dynamic>>.from(exercises[i]['series'] ?? []);
+      for (int j = 0; j < seriesList.length && !updated; j++) {
+        if (seriesList[j]['id'] == seriesId) {
+          seriesList[j] = {
+            ...seriesList[j],
+            'reps_done': seriesData['reps_done'],
+            'weight_done': seriesData['weight_done'],
+          };
+          exercises[i] = {
+            ...exercises[i],
+            'series': seriesList,
+          };
+          updated = true;
+        }
+      }
+    }
+
+    if (updated) {
+      ref.read(exercisesProvider.notifier).state = exercises;
+    }
   }
 }
 

@@ -1,27 +1,46 @@
 import 'package:flutter/material.dart';
 import '../Store/inAppPurchase_services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SubscriptionChecker {
   final InAppPurchaseService _inAppPurchaseService = InAppPurchaseService();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   Future<bool> checkSubscription(BuildContext context) async {
     try {
+      final user = _auth.currentUser;
+      if (user == null) return false;
+
+      // Check subscription through Cloud Function first
       final subscriptionDetails = await _inAppPurchaseService.getSubscriptionDetails();
       
-      if (subscriptionDetails == null) {
-        return false;
+      if (subscriptionDetails != null) {
+        if (subscriptionDetails.status.toLowerCase() == 'active' && 
+            subscriptionDetails.currentPeriodEnd.isAfter(DateTime.now())) {
+          return true;
+        }
       }
 
-      // Check if subscription is expired
-      final now = DateTime.now();
-      if (subscriptionDetails.currentPeriodEnd.isBefore(now)) {
-        return false;
-      }
+      // If no valid subscription from Cloud Function, check Firestore for gift subscription
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) return false;
 
-      // Check if subscription status is active
-      return subscriptionDetails.status.toLowerCase() == 'active';
+      final data = userDoc.data()!;
+      final isGifted = data['giftedAt'] != null;
+      
+      if (!isGifted) return false;
+
+      final subscriptionStatus = data['subscriptionStatus'] as String?;
+      final subscriptionExpiryDate = data['subscriptionExpiryDate'] as Timestamp?;
+
+      if (subscriptionStatus == null || subscriptionExpiryDate == null) return false;
+
+      return subscriptionStatus.toLowerCase() == 'active' && 
+             subscriptionExpiryDate.toDate().isAfter(DateTime.now());
+
     } catch (e) {
-      debugPrint('Error checking subscription: $e');
       return false;
     }
   }

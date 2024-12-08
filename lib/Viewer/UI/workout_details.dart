@@ -37,12 +37,17 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
       ref.read(workout_provider.targetUserIdProvider.notifier).state = widget.userId;
-      ref
+      await ref
           .read(workout_provider.workoutServiceProvider)
-          .initializeWorkout(widget.programId, widget.weekId, widget.workoutId);
-      _isInitialized = true;
+          .initializeWorkout(widget.workoutId);
+      if (mounted) {
+        setState(() {
+          _isInitialized = true;
+        });
+      }
     });
   }
 
@@ -51,19 +56,30 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     super.didUpdateWidget(oldWidget);
     if (widget.workoutId != oldWidget.workoutId) {
       _isInitialized = false;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Reset exercises immediately
+      ref.read(workout_provider.exercisesProvider.notifier).state = [];
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
         ref.read(workout_provider.targetUserIdProvider.notifier).state = widget.userId;
-        ref
+        await ref
             .read(workout_provider.workoutServiceProvider)
-            .initializeWorkout(widget.programId, widget.weekId, widget.workoutId);
-        _isInitialized = true;
+            .initializeWorkout(widget.workoutId);
+        if (mounted) {
+          setState(() {
+            _isInitialized = true;
+          });
+        }
       });
     }
   }
 
   @override
   void dispose() {
-    ref.read(workout_provider.workoutServiceProvider).dispose();
+    // Clear the exercises state when disposing
+    if (mounted) {
+      ref.read(workout_provider.exercisesProvider.notifier).state = [];
+      ref.read(workout_provider.workoutServiceProvider).dispose();
+    }
     super.dispose();
   }
 
@@ -163,26 +179,44 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       backgroundColor: colorScheme.surface,
       body: loading
           ? Center(
-              child: CircularProgressIndicator(
-                color: colorScheme.primary,
-              ),
-            )
-          : exercises.isEmpty
-              ? Center(
-                  child: Text(
-                    'Nessun esercizio trovato',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    color: colorScheme.primary,
+                  ),
+                  SizedBox(height: AppTheme.spacing.md),
+                  Text(
+                    'Caricamento esercizi...',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: colorScheme.onSurface,
                         ),
                   ),
+                ],
+              ),
+            )
+          : ref.watch(workout_provider.loadingProvider)
+              ? Center(
+                  child: CircularProgressIndicator(
+                    color: colorScheme.primary,
+                  ),
                 )
-              : ListView.builder(
-                  padding: EdgeInsets.all(AppTheme.spacing.md),
-                  itemCount: exercises.length,
-                  key: PageStorageKey('workout_exercises_${widget.workoutId}'),
-                  itemBuilder: (context, index) =>
-                      _buildExerciseCard(exercises[index], context),
-                ),
+              : exercises.isEmpty
+                  ? Center(
+                      child: Text(
+                        'Nessun esercizio trovato',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              color: colorScheme.onSurface,
+                            ),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: EdgeInsets.all(AppTheme.spacing.md),
+                      itemCount: exercises.length,
+                      key: PageStorageKey('workout_exercises_${widget.workoutId}'),
+                      itemBuilder: (context, index) =>
+                          _buildExerciseCard(exercises[index], context),
+                    ),
     );
   }
 
@@ -472,8 +506,13 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: series != null
                 ? GestureDetector(
-                    onTap: () =>
-                        _showEditSeriesDialog(exercise, [series]),
+                    onTap: () {
+                      final exercise = {
+                        'id': series['exerciseId'],
+                        'series': [series],
+                      };
+                      _showEditSeriesDialog(exercise, [series]);
+                    },
                     child: Text(
                       _formatSeriesValue(series, field),
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -520,6 +559,26 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
         }).toList(),
       ),
     );
+  }
+
+  String _formatSeriesValue(Map<String, dynamic> seriesData, String field) {
+    final value = seriesData[field];
+    final maxValue = seriesData['max${field.capitalize()}'];
+    final valueDone = seriesData['${field}_done'];
+    final isDone = ref.read(workout_provider.workoutServiceProvider).isSeriesDone(seriesData);
+    final unit = field == 'reps' ? 'R' : 'Kg';
+
+    // Show done values if they are available and not zero
+    if (valueDone != null && valueDone != 0) {
+      return '$valueDone$unit';
+    }
+
+    // Otherwise show target values
+    String text = maxValue != null && maxValue != value
+        ? '$value-$maxValue$unit'
+        : '$value$unit';
+
+    return text;
   }
 
   Widget _buildExerciseName(
@@ -772,15 +831,20 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     return series.asMap().entries.map((entry) {
       final seriesIndex = entry.key;
       final seriesData = entry.value;
+      final userRole = ref.watch(app_providers.userRoleProvider);
+      final isAdminOrCoach = userRole == 'admin' || userRole == 'coach';
 
       return GestureDetector(
         onTap: () {
+          _showUserSeriesInputDialog(seriesData, 'reps');
+        },
+        onLongPress: isAdminOrCoach ? () {
           final exercise = {
             'id': seriesData['exerciseId'],
             'type': seriesData['type'] ?? 'weight',
           };
           _showEditSeriesDialog(exercise, [seriesData]);
-        },
+        } : null,
         child: Column(
           children: [
             Row(
@@ -802,47 +866,29 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   Widget _buildSeriesDataText(String field, Map<String, dynamic> seriesData,
       BuildContext context, int flex) {
     final colorScheme = Theme.of(context).colorScheme;
+    final userRole = ref.watch(app_providers.userRoleProvider);
+    final isAdminOrCoach = userRole == 'admin' || userRole == 'coach';
+
     return Expanded(
       flex: flex,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        alignment: Alignment.center,
-        child: GestureDetector(
-          onTap: () {
-            final exercise = {
-              'id': seriesData['exerciseId'],
-              'type': seriesData['type'] ?? 'weight',
-            };
-            _showEditSeriesDialog(exercise, [seriesData]);
-          },
-          child: Text(
-            _formatSeriesValue(seriesData, field),
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: colorScheme.onSurface,
-                ),
-            textAlign: TextAlign.center,
-          ),
+      child: GestureDetector(
+        onTap: () {
+          _showUserSeriesInputDialog(seriesData, field);
+        },
+        onLongPress: isAdminOrCoach ? () {
+          _showEditSeriesDialog(
+              {'id': seriesData['exerciseId'], 'series': [seriesData]},
+              [seriesData]);
+        } : null,
+        child: Text(
+          _formatSeriesValue(seriesData, field),
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurface,
+              ),
+          textAlign: TextAlign.center,
         ),
       ),
     );
-  }
-
-  String _formatSeriesValue(Map<String, dynamic> seriesData, String field) {
-    final value = seriesData[field];
-    final maxValue = seriesData['max${field.capitalize()}'];
-    final valueDone = seriesData['${field}_done'];
-    final isDone = ref.read(workout_provider.workoutServiceProvider).isSeriesDone(seriesData);
-    final unit = field == 'reps' ? 'R' : 'Kg';
-
-    if (isDone || (valueDone != 0)) {
-      return '$valueDone$unit';
-    }
-
-    String text = maxValue != null && maxValue != value
-        ? '$value-$maxValue$unit'
-        : '$value$unit';
-
-    return text;
   }
 
   Widget _buildSeriesDoneIcon(
@@ -965,5 +1011,113 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
         );
       }
     }
+  }
+
+  void _showUserSeriesInputDialog(Map<String, dynamic> seriesData, String field) {
+    final TextEditingController repsController = TextEditingController();
+    final TextEditingController weightController = TextEditingController();
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    // Initialize controllers with current values if they exist
+    final currentReps = seriesData['reps_done'];
+    final currentWeight = seriesData['weight_done'];
+    if (currentReps != null) {
+      repsController.text = currentReps.toString();
+    }
+    if (currentWeight != null) {
+      weightController.text = currentWeight.toString();
+    }
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: colorScheme.surface,
+        title: Text(
+          'Inserisci ripetizioni e peso',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: colorScheme.onSurface,
+              ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Obiettivo ripetizioni: ${_formatSeriesValue(seriesData, "reps")}',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: repsController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'Ripetizioni eseguite',
+                hintText: 'Inserisci le ripetizioni',
+                hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Obiettivo peso: ${_formatSeriesValue(seriesData, "weight")}',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: weightController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'Peso eseguito',
+                hintText: 'Inserisci il peso',
+                hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Annulla',
+              style: TextStyle(color: colorScheme.primary),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              final reps = int.tryParse(repsController.text);
+              final weight = int.tryParse(weightController.text);
+              
+              if (reps != null) {
+                seriesData['reps_done'] = reps;
+              }
+              if (weight != null) {
+                seriesData['weight_done'] = weight;
+              }
+              
+              if (reps != null || weight != null) {
+                ref.read(workout_provider.workoutServiceProvider).updateSeriesData(
+                  seriesData['exerciseId'],
+                  seriesData,
+                );
+              }
+              Navigator.pop(context);
+            },
+            child: Text(
+              'Salva',
+              style: TextStyle(color: colorScheme.primary),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
