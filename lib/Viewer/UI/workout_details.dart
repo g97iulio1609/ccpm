@@ -41,7 +41,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       ref.read(workout_provider.targetUserIdProvider.notifier).state = widget.userId;
       ref
           .read(workout_provider.workoutServiceProvider)
-          .initializeWorkout(widget.programId, widget.weekId, widget.workoutId);
+          .initializeWorkout(widget.workoutId);
       _isInitialized = true;
     });
   }
@@ -51,11 +51,13 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     super.didUpdateWidget(oldWidget);
     if (widget.workoutId != oldWidget.workoutId) {
       _isInitialized = false;
+      // Reset exercises immediately
+      ref.read(workout_provider.exercisesProvider.notifier).state = [];
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ref.read(workout_provider.targetUserIdProvider.notifier).state = widget.userId;
         ref
             .read(workout_provider.workoutServiceProvider)
-            .initializeWorkout(widget.programId, widget.weekId, widget.workoutId);
+            .initializeWorkout(widget.workoutId);
         _isInitialized = true;
       });
     }
@@ -163,17 +165,26 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       backgroundColor: colorScheme.surface,
       body: loading
           ? Center(
-              child: CircularProgressIndicator(
-                color: colorScheme.primary,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    color: colorScheme.primary,
+                  ),
+                  SizedBox(height: AppTheme.spacing.md),
+                  Text(
+                    'Caricamento esercizi...',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: colorScheme.onSurface,
+                        ),
+                  ),
+                ],
               ),
             )
           : exercises.isEmpty
               ? Center(
-                  child: Text(
-                    'Nessun esercizio trovato',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: colorScheme.onSurface,
-                        ),
+                  child: CircularProgressIndicator(
+                    color: colorScheme.primary,
                   ),
                 )
               : ListView.builder(

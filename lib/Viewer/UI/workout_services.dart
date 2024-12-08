@@ -6,8 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
 import 'package:alphanessone/trainingBuilder/models/series_model.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
-import 'workout_provider.dart';
-
+import 'package:alphanessone/Viewer/UI/workout_provider.dart';
 
 class WorkoutService {
   final Ref ref;
@@ -82,11 +81,49 @@ class WorkoutService {
     }
   }
 
-  Future<void> initializeWorkout(String programId, String weekId, String workoutId) async {
-    ref.read(workoutIdProvider.notifier).update((state) => workoutId);
-    await updateWorkoutName(workoutId);
-    await fetchExercises(workoutId);
-    await loadExerciseNotes(workoutId);
+  Future<void> initializeWorkout(String workoutId) async {
+    ref.read(loadingProvider.notifier).state = true;
+    ref.read(workoutIdProvider.notifier).state = workoutId;
+
+    try {
+      // Fetch workout name and exercises in parallel
+      final futures = await Future.wait([
+        trainingProgramServices.fetchWorkoutName(workoutId),
+        trainingProgramServices.fetchExercises(workoutId),
+      ]);
+
+      final workoutName = futures[0] as String;
+      final exercises = futures[1] as List<Map<String, dynamic>>;
+
+      // Update providers with fetched data
+      ref.read(currentWorkoutNameProvider.notifier).state = workoutName;
+      ref.read(exercisesProvider.notifier).state = exercises;
+
+      // Load exercise notes in parallel
+      unawaited(loadExerciseNotes(workoutId));
+
+      // Cache exercise data for better performance
+      _cacheExerciseData(exercises);
+    } catch (e) {
+      // Handle error silently but ensure loading state is reset
+      debugPrint('Error initializing workout: $e');
+    } finally {
+      ref.read(loadingProvider.notifier).state = false;
+    }
+  }
+
+  void _cacheExerciseData(List<Map<String, dynamic>> exercises) {
+    final exerciseCache = <String, List<Map<String, dynamic>>>{};
+    
+    for (final exercise in exercises) {
+      final superSetId = exercise['superSetId'];
+      if (superSetId != null) {
+        exerciseCache.putIfAbsent(superSetId, () => []).add(exercise);
+      }
+    }
+
+    _groupedExercisesCache.clear();
+    _groupedExercisesCache[ref.read(workoutIdProvider) ?? ''] = exerciseCache;
   }
 
   Future<void> updateWorkoutName(String workoutId) async {
