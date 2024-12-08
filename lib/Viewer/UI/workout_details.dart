@@ -181,19 +181,28 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
                 ],
               ),
             )
-          : exercises.isEmpty
+          : ref.watch(workout_provider.loadingProvider)
               ? Center(
                   child: CircularProgressIndicator(
                     color: colorScheme.primary,
                   ),
                 )
-              : ListView.builder(
-                  padding: EdgeInsets.all(AppTheme.spacing.md),
-                  itemCount: exercises.length,
-                  key: PageStorageKey('workout_exercises_${widget.workoutId}'),
-                  itemBuilder: (context, index) =>
-                      _buildExerciseCard(exercises[index], context),
-                ),
+              : exercises.isEmpty
+                  ? Center(
+                      child: Text(
+                        'Nessun esercizio trovato',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              color: colorScheme.onSurface,
+                            ),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: EdgeInsets.all(AppTheme.spacing.md),
+                      itemCount: exercises.length,
+                      key: PageStorageKey('workout_exercises_${widget.workoutId}'),
+                      itemBuilder: (context, index) =>
+                          _buildExerciseCard(exercises[index], context),
+                    ),
     );
   }
 

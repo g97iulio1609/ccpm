@@ -84,6 +84,7 @@ class WorkoutService {
   Future<void> initializeWorkout(String workoutId) async {
     ref.read(loadingProvider.notifier).state = true;
     ref.read(workoutIdProvider.notifier).state = workoutId;
+    ref.read(exercisesProvider.notifier).state = []; // Reset exercises immediately
 
     try {
       // Fetch workout name and exercises in parallel
@@ -105,8 +106,8 @@ class WorkoutService {
       // Cache exercise data for better performance
       _cacheExerciseData(exercises);
     } catch (e) {
-      // Handle error silently but ensure loading state is reset
-      debugPrint('Error initializing workout: $e');
+      // Handle error if needed
+      print('Error initializing workout: $e');
     } finally {
       ref.read(loadingProvider.notifier).state = false;
     }
