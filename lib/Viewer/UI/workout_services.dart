@@ -466,6 +466,27 @@ class WorkoutService {
         0.0,
       );
     }
+
+    // Update the local state to reflect the changes immediately
+    final exercises = List<Map<String, dynamic>>.from(ref.read(exercisesProvider));
+    for (int i = 0; i < exercises.length; i++) {
+      final seriesList = List<Map<String, dynamic>>.from(exercises[i]['series'] ?? []);
+      for (int j = 0; j < seriesList.length; j++) {
+        if (seriesList[j]['id'] == seriesId) {
+          seriesList[j] = {
+            ...seriesList[j],
+            'reps_done': !currentlyDone ? (maxReps ?? reps) : 0,
+            'weight_done': !currentlyDone ? (maxWeight ?? weight) : 0.0,
+          };
+          exercises[i] = {
+            ...exercises[i],
+            'series': seriesList,
+          };
+          break;
+        }
+      }
+    }
+    ref.read(exercisesProvider.notifier).state = exercises;
   }
 
   int findFirstNotDoneSeriesIndex(List<Map<String, dynamic>> seriesList) {

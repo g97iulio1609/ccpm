@@ -37,12 +37,17 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
       ref.read(workout_provider.targetUserIdProvider.notifier).state = widget.userId;
-      ref
+      await ref
           .read(workout_provider.workoutServiceProvider)
           .initializeWorkout(widget.workoutId);
-      _isInitialized = true;
+      if (mounted) {
+        setState(() {
+          _isInitialized = true;
+        });
+      }
     });
   }
 
@@ -53,12 +58,17 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       _isInitialized = false;
       // Reset exercises immediately
       ref.read(workout_provider.exercisesProvider.notifier).state = [];
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
         ref.read(workout_provider.targetUserIdProvider.notifier).state = widget.userId;
-        ref
+        await ref
             .read(workout_provider.workoutServiceProvider)
             .initializeWorkout(widget.workoutId);
-        _isInitialized = true;
+        if (mounted) {
+          setState(() {
+            _isInitialized = true;
+          });
+        }
       });
     }
   }

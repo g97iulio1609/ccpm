@@ -624,9 +624,6 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
   void navigateToWorkoutDetails(String workoutId) {
     if (!mounted) return;
     
-    // Clear any existing workout state before navigation
-    ref.read(workout_provider.exercisesProvider.notifier).state = [];
-    
     if (mounted) {
       context.go('/user_programs/training_viewer/workout_details', extra: {
         'programId': widget.programId,
