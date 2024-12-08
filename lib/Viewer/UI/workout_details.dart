@@ -472,8 +472,13 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: series != null
                 ? GestureDetector(
-                    onTap: () =>
-                        _showEditSeriesDialog(exercise, [series]),
+                    onTap: () {
+                      final exercise = {
+                        'id': series['exerciseId'],
+                        'series': [series],
+                      };
+                      _showEditSeriesDialog(exercise, [series]);
+                    },
                     child: Text(
                       _formatSeriesValue(series, field),
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -779,7 +784,14 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
             'id': seriesData['exerciseId'],
             'type': seriesData['type'] ?? 'weight',
           };
-          _showEditSeriesDialog(exercise, [seriesData]);
+          final userRole = ref.watch(app_providers.userRoleProvider);
+          final isAdminOrCoach = userRole == 'admin' || userRole == 'coach';
+
+          if (isAdminOrCoach) {
+            _showEditSeriesDialog(exercise, [seriesData]);
+          } else {
+            _showUserSeriesInputDialog(seriesData, 'reps');
+          }
         },
         child: Column(
           children: [
@@ -802,26 +814,27 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   Widget _buildSeriesDataText(String field, Map<String, dynamic> seriesData,
       BuildContext context, int flex) {
     final colorScheme = Theme.of(context).colorScheme;
+    final userRole = ref.watch(app_providers.userRoleProvider);
+    final isAdminOrCoach = userRole == 'admin' || userRole == 'coach';
+
     return Expanded(
       flex: flex,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        alignment: Alignment.center,
-        child: GestureDetector(
-          onTap: () {
-            final exercise = {
-              'id': seriesData['exerciseId'],
-              'type': seriesData['type'] ?? 'weight',
-            };
-            _showEditSeriesDialog(exercise, [seriesData]);
-          },
-          child: Text(
-            _formatSeriesValue(seriesData, field),
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: colorScheme.onSurface,
-                ),
-            textAlign: TextAlign.center,
-          ),
+      child: GestureDetector(
+        onTap: () {
+          if (isAdminOrCoach) {
+            _showEditSeriesDialog(
+                {'id': seriesData['exerciseId'], 'series': [seriesData]},
+                [seriesData]);
+          } else {
+            _showUserSeriesInputDialog(seriesData, field);
+          }
+        },
+        child: Text(
+          _formatSeriesValue(seriesData, field),
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurface,
+              ),
+          textAlign: TextAlign.center,
         ),
       ),
     );
@@ -965,5 +978,82 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
         );
       }
     }
+  }
+
+  void _showUserSeriesInputDialog(Map<String, dynamic> seriesData, String field) {
+    final TextEditingController controller = TextEditingController();
+    final colorScheme = Theme.of(context).colorScheme;
+    final isReps = field == 'reps';
+    final currentValue = isReps ? seriesData['reps_done'] : seriesData['weight_done'];
+    if (currentValue != null) {
+      controller.text = currentValue.toString();
+    }
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: colorScheme.surface,
+        title: Text(
+          'Inserisci ${isReps ? 'ripetizioni' : 'peso'} eseguito',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: colorScheme.onSurface,
+              ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Obiettivo: ${_formatSeriesValue(seriesData, field)}',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                hintText: 'Inserisci il valore eseguito',
+                hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Annulla',
+              style: TextStyle(color: colorScheme.primary),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              final value = int.tryParse(controller.text);
+              if (value != null) {
+                if (isReps) {
+                  seriesData['reps_done'] = value;
+                } else {
+                  seriesData['weight_done'] = value;
+                }
+                ref.read(workout_provider.workoutServiceProvider).updateSeriesData(
+                  seriesData['exerciseId'],
+                  seriesData,
+                );
+                Navigator.pop(context);
+              }
+            },
+            child: Text(
+              'Salva',
+              style: TextStyle(color: colorScheme.primary),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

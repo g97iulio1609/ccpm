@@ -495,6 +495,29 @@ class WorkoutService {
 
     await trainingProgramServices.updateExercise(exercise['id'], exercise);
   }
+
+  Future<void> updateSeriesData(String exerciseId, Map<String, dynamic> seriesData) async {
+    try {
+      final seriesId = seriesData['id'];
+      final repsDone = seriesData['reps_done'];
+      final weightDone = seriesData['weight_done'];
+
+      final expectedReps = seriesData['reps'];
+      final expectedWeight = seriesData['weight'];
+
+      final done = (repsDone != null && repsDone >= expectedReps) &&
+          (weightDone != null && weightDone >= expectedWeight);
+
+      await FirebaseFirestore.instance.collection('series').doc(seriesId).update({
+        'done': done,
+        'reps_done': repsDone,
+        'weight_done': weightDone,
+      });
+    } catch (e) {
+      // Handle error silently or log it
+      print('Error updating series data: $e');
+    }
+  }
 }
 
 extension StringExtension on String {
