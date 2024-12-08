@@ -51,8 +51,10 @@ final exerciseRecordServiceProvider = Provider<ExerciseRecordService>((ref) {
 });
 
 // Provider per istanziare il WorkoutService, a cui passiamo i servizi necessari
-final workoutServiceProvider = Provider((ref) => WorkoutService(
-  ref: ref,
-  trainingProgramServices: ref.read(trainingProgramServicesProvider),
-  exerciseRecordService: ref.read(exerciseRecordServiceProvider)
-));
+final workoutServiceProvider = Provider<WorkoutService>((ref) {
+  return WorkoutService(
+    ref: ref,
+    trainingProgramServices: ref.read(trainingProgramServicesProvider),
+    exerciseRecordService: ref.read(exerciseRecordServiceProvider),
+  );
+});

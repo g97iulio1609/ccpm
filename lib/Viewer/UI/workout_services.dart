@@ -17,6 +17,7 @@ class WorkoutService {
   final List<StreamSubscription> _subscriptions = [];
   final Map<String, Map<String?, List<Map<String, dynamic>>>>
       _groupedExercisesCache = {};
+  final Map<String, List<Map<String, dynamic>>> _workoutCache = {};
 
   WorkoutService({
     required this.ref,
@@ -81,13 +82,58 @@ class WorkoutService {
     }
   }
 
+  Future<void> prefetchWorkout(String workoutId) async {
+    // Se il workout è già in cache, non fare nulla
+    if (_workoutCache.containsKey(workoutId)) return;
+
+    try {
+      // Fetch workout name and exercises in parallel
+      final futures = await Future.wait([
+        trainingProgramServices.fetchWorkoutName(workoutId),
+        trainingProgramServices.fetchExercises(workoutId),
+      ]);
+
+      final workoutName = futures[0] as String;
+      final exercises = futures[1] as List<Map<String, dynamic>>;
+
+      // Salva nella cache
+      _workoutCache[workoutId] = exercises;
+      
+      // Cache exercise data
+      _cacheExerciseData(exercises);
+      
+      // Aggiorna la cache del nome del workout
+      final workoutNames = Map<String, String>.from(ref.read(workoutNameCacheProvider));
+      workoutNames[workoutId] = workoutName;
+      ref.read(workoutNameCacheProvider.notifier).state = workoutNames;
+    } catch (e) {
+      debugPrint('Error prefetching workout: $e');
+    }
+  }
+
+  Future<void> prefetchWeekWorkouts(List<String> workoutIds) async {
+    for (final workoutId in workoutIds) {
+      prefetchWorkout(workoutId);
+    }
+  }
+
   Future<void> initializeWorkout(String workoutId) async {
     ref.read(loadingProvider.notifier).state = true;
     ref.read(workoutIdProvider.notifier).state = workoutId;
     ref.read(exercisesProvider.notifier).state = []; // Reset exercises immediately
 
     try {
-      // Fetch workout name and exercises in parallel
+      // Check if workout is in cache
+      if (_workoutCache.containsKey(workoutId)) {
+        final exercises = _workoutCache[workoutId]!;
+        final workoutName = ref.read(workoutNameCacheProvider)[workoutId] ?? '';
+        
+        ref.read(currentWorkoutNameProvider.notifier).state = workoutName;
+        ref.read(exercisesProvider.notifier).state = exercises;
+        return;
+      }
+
+      // If not in cache, fetch normally
       final futures = await Future.wait([
         trainingProgramServices.fetchWorkoutName(workoutId),
         trainingProgramServices.fetchExercises(workoutId),
@@ -100,13 +146,10 @@ class WorkoutService {
       ref.read(currentWorkoutNameProvider.notifier).state = workoutName;
       ref.read(exercisesProvider.notifier).state = exercises;
 
-      // Load exercise notes in parallel
-      unawaited(loadExerciseNotes(workoutId));
-
-      // Cache exercise data for better performance
+      // Cache the data for future use
+      _workoutCache[workoutId] = exercises;
       _cacheExerciseData(exercises);
     } catch (e) {
-      // Handle error if needed
       print('Error initializing workout: $e');
     } finally {
       ref.read(loadingProvider.notifier).state = false;

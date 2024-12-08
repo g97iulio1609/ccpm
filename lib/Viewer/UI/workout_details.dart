@@ -65,7 +65,11 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
 
   @override
   void dispose() {
-    ref.read(workout_provider.workoutServiceProvider).dispose();
+    // Clear the exercises state when disposing
+    if (mounted) {
+      ref.read(workout_provider.exercisesProvider.notifier).state = [];
+      ref.read(workout_provider.workoutServiceProvider).dispose();
+    }
     super.dispose();
   }
 
