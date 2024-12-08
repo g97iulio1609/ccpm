@@ -561,6 +561,26 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     );
   }
 
+  String _formatSeriesValue(Map<String, dynamic> seriesData, String field) {
+    final value = seriesData[field];
+    final maxValue = seriesData['max${field.capitalize()}'];
+    final valueDone = seriesData['${field}_done'];
+    final isDone = ref.read(workout_provider.workoutServiceProvider).isSeriesDone(seriesData);
+    final unit = field == 'reps' ? 'R' : 'Kg';
+
+    // Show done values if they are available and not zero
+    if (valueDone != null && valueDone != 0) {
+      return '$valueDone$unit';
+    }
+
+    // Otherwise show target values
+    String text = maxValue != null && maxValue != value
+        ? '$value-$maxValue$unit'
+        : '$value$unit';
+
+    return text;
+  }
+
   Widget _buildExerciseName(
       Map<String, dynamic> exercise, BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -811,22 +831,20 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     return series.asMap().entries.map((entry) {
       final seriesIndex = entry.key;
       final seriesData = entry.value;
+      final userRole = ref.watch(app_providers.userRoleProvider);
+      final isAdminOrCoach = userRole == 'admin' || userRole == 'coach';
 
       return GestureDetector(
         onTap: () {
+          _showUserSeriesInputDialog(seriesData, 'reps');
+        },
+        onLongPress: isAdminOrCoach ? () {
           final exercise = {
             'id': seriesData['exerciseId'],
             'type': seriesData['type'] ?? 'weight',
           };
-          final userRole = ref.watch(app_providers.userRoleProvider);
-          final isAdminOrCoach = userRole == 'admin' || userRole == 'coach';
-
-          if (isAdminOrCoach) {
-            _showEditSeriesDialog(exercise, [seriesData]);
-          } else {
-            _showUserSeriesInputDialog(seriesData, 'reps');
-          }
-        },
+          _showEditSeriesDialog(exercise, [seriesData]);
+        } : null,
         child: Column(
           children: [
             Row(
@@ -855,14 +873,13 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       flex: flex,
       child: GestureDetector(
         onTap: () {
-          if (isAdminOrCoach) {
-            _showEditSeriesDialog(
-                {'id': seriesData['exerciseId'], 'series': [seriesData]},
-                [seriesData]);
-          } else {
-            _showUserSeriesInputDialog(seriesData, field);
-          }
+          _showUserSeriesInputDialog(seriesData, field);
         },
+        onLongPress: isAdminOrCoach ? () {
+          _showEditSeriesDialog(
+              {'id': seriesData['exerciseId'], 'series': [seriesData]},
+              [seriesData]);
+        } : null,
         child: Text(
           _formatSeriesValue(seriesData, field),
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -872,24 +889,6 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
         ),
       ),
     );
-  }
-
-  String _formatSeriesValue(Map<String, dynamic> seriesData, String field) {
-    final value = seriesData[field];
-    final maxValue = seriesData['max${field.capitalize()}'];
-    final valueDone = seriesData['${field}_done'];
-    final isDone = ref.read(workout_provider.workoutServiceProvider).isSeriesDone(seriesData);
-    final unit = field == 'reps' ? 'R' : 'Kg';
-
-    if (isDone || (valueDone != 0)) {
-      return '$valueDone$unit';
-    }
-
-    String text = maxValue != null && maxValue != value
-        ? '$value-$maxValue$unit'
-        : '$value$unit';
-
-    return text;
   }
 
   Widget _buildSeriesDoneIcon(

@@ -599,25 +599,40 @@ class WorkoutService {
   }
 
   Future<void> updateSeriesData(String exerciseId, Map<String, dynamic> seriesData) async {
-    try {
-      final seriesId = seriesData['id'];
-      final repsDone = seriesData['reps_done'];
-      final weightDone = seriesData['weight_done'];
+    final seriesId = seriesData['id'];
+    if (seriesId == null) return;
 
-      final expectedReps = seriesData['reps'];
-      final expectedWeight = seriesData['weight'];
+    // Update Firestore
+    final seriesRef = FirebaseFirestore.instance.collection('series').doc(seriesId);
+    await seriesRef.update({
+      'reps_done': seriesData['reps_done'],
+      'weight_done': seriesData['weight_done'],
+    });
 
-      final done = (repsDone != null && repsDone >= expectedReps) &&
-          (weightDone != null && weightDone >= expectedWeight);
+    // Update local state
+    final exercises = List<Map<String, dynamic>>.from(ref.read(exercisesProvider));
+    bool updated = false;
 
-      await FirebaseFirestore.instance.collection('series').doc(seriesId).update({
-        'done': done,
-        'reps_done': repsDone,
-        'weight_done': weightDone,
-      });
-    } catch (e) {
-      // Handle error silently or log it
-      print('Error updating series data: $e');
+    for (int i = 0; i < exercises.length && !updated; i++) {
+      final seriesList = List<Map<String, dynamic>>.from(exercises[i]['series'] ?? []);
+      for (int j = 0; j < seriesList.length && !updated; j++) {
+        if (seriesList[j]['id'] == seriesId) {
+          seriesList[j] = {
+            ...seriesList[j],
+            'reps_done': seriesData['reps_done'],
+            'weight_done': seriesData['weight_done'],
+          };
+          exercises[i] = {
+            ...exercises[i],
+            'series': seriesList,
+          };
+          updated = true;
+        }
+      }
+    }
+
+    if (updated) {
+      ref.read(exercisesProvider.notifier).state = exercises;
     }
   }
 }
