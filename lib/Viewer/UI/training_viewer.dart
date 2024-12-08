@@ -60,6 +60,8 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
     final expandedWeekId = ref.watch(expandedWeekProvider);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final screenSize = MediaQuery.of(context).size;
+    final isSmallScreen = screenSize.width < 600;
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -86,16 +88,16 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
                   slivers: [
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: EdgeInsets.all(AppTheme.spacing.xl),
-                        child: _buildHeader(theme, colorScheme),
+                        padding: EdgeInsets.all(isSmallScreen ? AppTheme.spacing.md : AppTheme.spacing.xl),
+                        child: _buildHeader(theme, colorScheme, isSmallScreen),
                       ),
                     ),
                     SliverPadding(
                       padding: EdgeInsets.symmetric(
-                        horizontal: AppTheme.spacing.xl,
+                        horizontal: isSmallScreen ? AppTheme.spacing.md : AppTheme.spacing.xl,
                         vertical: AppTheme.spacing.md,
                       ),
-                      sliver: _buildWeeksList(weeks, theme, colorScheme),
+                      sliver: _buildWeeksList(weeks, theme, colorScheme, isSmallScreen),
                     ),
                   ],
                 ),
@@ -104,9 +106,9 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
     );
   }
 
-  Widget _buildHeader(ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildHeader(ThemeData theme, ColorScheme colorScheme, bool isSmallScreen) {
     return Container(
-      padding: EdgeInsets.all(AppTheme.spacing.lg),
+      padding: EdgeInsets.all(isSmallScreen ? AppTheme.spacing.md : AppTheme.spacing.lg),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.xl),
@@ -117,19 +119,22 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
       ),
       child: Column(
         children: [
-          Text(
-            'Training Program',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              color: colorScheme.onSurface,
-              fontWeight: FontWeight.bold,
-              letterSpacing: -0.5,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              'Training Program',
+              style: (isSmallScreen ? theme.textTheme.titleLarge : theme.textTheme.headlineSmall)?.copyWith(
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.bold,
+                letterSpacing: -0.5,
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
           ),
-          SizedBox(height: AppTheme.spacing.sm),
+          SizedBox(height: isSmallScreen ? AppTheme.spacing.xs : AppTheme.spacing.sm),
           Container(
             padding: EdgeInsets.symmetric(
-              horizontal: AppTheme.spacing.md,
+              horizontal: isSmallScreen ? AppTheme.spacing.sm : AppTheme.spacing.md,
               vertical: AppTheme.spacing.xs,
             ),
             decoration: BoxDecoration(
@@ -138,7 +143,7 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
             ),
             child: Text(
               'Your Journey to Excellence',
-              style: theme.textTheme.titleMedium?.copyWith(
+              style: (isSmallScreen ? theme.textTheme.titleSmall : theme.textTheme.titleMedium)?.copyWith(
                 color: colorScheme.primary,
                 fontWeight: FontWeight.w500,
               ),
@@ -301,92 +306,154 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
     ThemeData theme,
     ColorScheme colorScheme,
   ) {
+    final screenSize = MediaQuery.of(context).size;
+    final isSmallScreen = screenSize.width < 600;
+
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colorScheme.surfaceContainerHighest,
+            colorScheme.surfaceContainerHighest.withOpacity(0.8),
+          ],
         ),
+        borderRadius: BorderRadius.circular(AppTheme.radii.xl),
+        border: Border.all(
+          color: colorScheme.primary.withOpacity(0.1),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.primary.withOpacity(0.05),
+            offset: const Offset(0, 4),
+            blurRadius: 20,
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            offset: const Offset(0, 2),
+            blurRadius: 8,
+          ),
+        ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: () => _navigateToWorkoutDetails(context, workout['id']),
-          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          borderRadius: BorderRadius.circular(AppTheme.radii.xl),
           child: Padding(
-            padding: EdgeInsets.all(AppTheme.spacing.lg),
-            child: Row(
+            padding: EdgeInsets.all(isSmallScreen ? AppTheme.spacing.lg : AppTheme.spacing.xl),
+            child: Column(
               children: [
-                Container(
-                  padding: EdgeInsets.all(AppTheme.spacing.sm),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer.withOpacity(0.3),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    '${workout['order']}',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                SizedBox(width: AppTheme.spacing.lg),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Workout ${workout['order']}',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: colorScheme.onSurface,
-                          fontWeight: FontWeight.w600,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(AppTheme.spacing.md),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            colorScheme.primary,
+                            colorScheme.primary.withOpacity(0.8),
+                          ],
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: colorScheme.primary.withOpacity(0.3),
+                            offset: const Offset(0, 2),
+                            blurRadius: 8,
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        '${workout['order']}',
+                        style: (isSmallScreen ? theme.textTheme.titleLarge : theme.textTheme.headlineSmall)?.copyWith(
+                          color: colorScheme.onPrimary,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                      if (workout['description'] != null &&
-                          workout['description'].toString().isNotEmpty) ...[
-                        SizedBox(height: AppTheme.spacing.xs),
-                        Text(
-                          workout['description'],
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ],
-                  ),
+                    ),
+                    SizedBox(width: isSmallScreen ? AppTheme.spacing.md : AppTheme.spacing.lg),
+                    Text(
+                      'Workout ${workout['order']}',
+                      style: (isSmallScreen ? theme.textTheme.titleLarge : theme.textTheme.headlineSmall)?.copyWith(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
+                if (workout['description'] != null &&
+                    workout['description'].toString().isNotEmpty) ...[
+                  SizedBox(height: AppTheme.spacing.md),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppTheme.spacing.md,
+                      vertical: AppTheme.spacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(AppTheme.radii.full),
+                    ),
+                    child: Text(
+                      workout['description'],
+                      style: (isSmallScreen ? theme.textTheme.bodyMedium : theme.textTheme.bodyLarge)?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        height: 1.4,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+                SizedBox(height: AppTheme.spacing.lg),
                 Container(
+                  width: double.infinity,
                   padding: EdgeInsets.symmetric(
                     horizontal: AppTheme.spacing.md,
                     vertical: AppTheme.spacing.sm,
                   ),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
                       colors: [
                         colorScheme.primary,
                         colorScheme.primary.withOpacity(0.8),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
+                    boxShadow: [
+                      BoxShadow(
+                        color: colorScheme.primary.withOpacity(0.3),
+                        offset: const Offset(0, 2),
+                        blurRadius: 8,
+                      ),
+                    ],
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
                         Icons.play_arrow_rounded,
                         color: colorScheme.onPrimary,
-                        size: 18,
+                        size: isSmallScreen ? 20 : 24,
                       ),
                       SizedBox(width: AppTheme.spacing.xs),
                       Text(
                         'START',
-                        style: theme.textTheme.labelLarge?.copyWith(
+                        style: (isSmallScreen ? theme.textTheme.labelLarge : theme.textTheme.titleMedium)?.copyWith(
                           color: colorScheme.onPrimary,
                           fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ],
@@ -404,6 +471,7 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
     List<Map<String, dynamic>> weeks,
     ThemeData theme,
     ColorScheme colorScheme,
+    bool isSmallScreen,
   ) {
     return SliverList(
       delegate: SliverChildBuilderDelegate(
