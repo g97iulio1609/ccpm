@@ -981,12 +981,18 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   }
 
   void _showUserSeriesInputDialog(Map<String, dynamic> seriesData, String field) {
-    final TextEditingController controller = TextEditingController();
+    final TextEditingController repsController = TextEditingController();
+    final TextEditingController weightController = TextEditingController();
     final colorScheme = Theme.of(context).colorScheme;
-    final isReps = field == 'reps';
-    final currentValue = isReps ? seriesData['reps_done'] : seriesData['weight_done'];
-    if (currentValue != null) {
-      controller.text = currentValue.toString();
+    
+    // Initialize controllers with current values if they exist
+    final currentReps = seriesData['reps_done'];
+    final currentWeight = seriesData['weight_done'];
+    if (currentReps != null) {
+      repsController.text = currentReps.toString();
+    }
+    if (currentWeight != null) {
+      weightController.text = currentWeight.toString();
     }
     
     showDialog(
@@ -994,7 +1000,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       builder: (context) => AlertDialog(
         backgroundColor: colorScheme.surface,
         title: Text(
-          'Inserisci ${isReps ? 'ripetizioni' : 'peso'} eseguito',
+          'Inserisci ripetizioni e peso',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 color: colorScheme.onSurface,
               ),
@@ -1004,17 +1010,38 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Obiettivo: ${_formatSeriesValue(seriesData, field)}',
+              'Obiettivo ripetizioni: ${_formatSeriesValue(seriesData, "reps")}',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             TextField(
-              controller: controller,
+              controller: repsController,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
-                hintText: 'Inserisci il valore eseguito',
+                labelText: 'Ripetizioni eseguite',
+                hintText: 'Inserisci le ripetizioni',
+                hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Obiettivo peso: ${_formatSeriesValue(seriesData, "weight")}',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: weightController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'Peso eseguito',
+                hintText: 'Inserisci il peso',
                 hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -1033,19 +1060,23 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
           ),
           TextButton(
             onPressed: () {
-              final value = int.tryParse(controller.text);
-              if (value != null) {
-                if (isReps) {
-                  seriesData['reps_done'] = value;
-                } else {
-                  seriesData['weight_done'] = value;
-                }
+              final reps = int.tryParse(repsController.text);
+              final weight = int.tryParse(weightController.text);
+              
+              if (reps != null) {
+                seriesData['reps_done'] = reps;
+              }
+              if (weight != null) {
+                seriesData['weight_done'] = weight;
+              }
+              
+              if (reps != null || weight != null) {
                 ref.read(workout_provider.workoutServiceProvider).updateSeriesData(
                   seriesData['exerciseId'],
                   seriesData,
                 );
-                Navigator.pop(context);
               }
+              Navigator.pop(context);
             },
             child: Text(
               'Salva',
