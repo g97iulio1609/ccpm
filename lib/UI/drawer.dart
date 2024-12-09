@@ -525,6 +525,8 @@ class CustomDrawer extends ConsumerWidget {
       'Misurazioni': '/measurements',
       'Meals Preferiti': '/mymeals',
       'Abbonamenti': '/subscriptions',
+      'Impostazioni AI': '/settings/ai',
+      'Chat AI': '/ai/chat',
     };
     return routes[menuItem];
   }
@@ -546,6 +548,8 @@ class CustomDrawer extends ConsumerWidget {
       'Misurazioni': Icons.straighten,
       'Meals Preferiti': Icons.favorite,
       'Abbonamenti': Icons.subscriptions,
+      'Impostazioni AI': Icons.smart_toy,
+      'Chat AI': Icons.chat,
     };
     return icons[menuItem] ?? Icons.menu;
   }
@@ -566,7 +570,9 @@ class CustomDrawer extends ConsumerWidget {
       'Food Tracker',
       'Food Management',
       'Misurazioni',
-      'Meals Preferiti'
+      'Meals Preferiti',
+      'Chat AI',
+      'Impostazioni AI',
     ];
     final clientItems = [
       'I Miei Allenamenti',
@@ -578,7 +584,9 @@ class CustomDrawer extends ConsumerWidget {
       'Fabbisogno Calorico',
       'Calcolatore Macronutrienti',
       'Food Tracker',
-      'Misurazioni'
+      'Misurazioni',
+      'Chat AI',
+      'Impostazioni AI',
     ];
     return (userRole == 'admin' || userRole == 'coach')
         ? adminItems

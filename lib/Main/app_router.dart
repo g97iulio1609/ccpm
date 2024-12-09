@@ -5,6 +5,7 @@ import 'package:alphanessone/ExerciseRecords/exercise_stats.dart';
 import 'package:alphanessone/ExerciseRecords/maxrmdashboard.dart';
 import 'package:alphanessone/Main/routes.dart';
 import 'package:alphanessone/UI/home_screen.dart';
+import 'package:alphanessone/UI/settings/ai_settings_screen.dart';
 import 'package:alphanessone/Viewer/UI/exercise_details.dart';
 import 'package:alphanessone/Viewer/UI/timer.dart';
 import 'package:alphanessone/Viewer/UI/training_viewer.dart';
@@ -39,6 +40,7 @@ import '../Coaching/coaching_screen.dart';
 import '../user_programs.dart';
 import '../providers/providers.dart';
 import 'package:alphanessone/Features/Dashboard/dashboard_screen.dart';
+import '../widgets/ai_chat_widget.dart';
 
 class AppRouter {
   static GoRouter router(WidgetRef ref) => GoRouter(
@@ -379,6 +381,14 @@ class AppRouter {
               GoRoute(
                 path: Routes.dashboard,
                 builder: (context, state) => const DashboardScreen(),
+              ),
+              GoRoute(
+                path: '/settings/ai',
+                builder: (context, state) => const AISettingsScreen(),
+              ),
+              GoRoute(
+                path: '/ai/chat',
+                builder: (context, state) => const AIChatWidget(),
               ),
             ],
           ),
