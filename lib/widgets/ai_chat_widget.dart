@@ -7,9 +7,17 @@ import '../services/ai/ai_settings_service.dart';
 import '../services/ai/training_ai_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
+import '../ExerciseRecords/exercise_record_services.dart';
+import 'package:alphanessone/services/users_services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AIChatWidget extends HookConsumerWidget {
-  const AIChatWidget({Key? key}) : super(key: key);
+  const AIChatWidget({
+    super.key,
+    required this.userService,
+  });
+
+  final UsersService userService;
 
   // Helper method to extract user info for display
   String _getUserInfo(UserModel user, String field) {
@@ -93,20 +101,281 @@ class AIChatWidget extends HookConsumerWidget {
     return hasUpdates ? updates : null;
   }
 
+  // Helper method to parse max RM updates from AI response
+  Future<Map<String, Map<String, dynamic>>?> _parseMaxRMUpdates(String message) async {
+    debugPrint('Parsing message: $message');
+    final regex = RegExp(r'Aggiorna il mio massimale - exercise: (.*?) - max weight: (\d+)kg, reps: (\d+)');
+    final match = regex.firstMatch(message);
+    
+    if (match != null) {
+      final exerciseName = match.group(1)!;
+      final maxWeight = int.parse(match.group(2)!);
+      final repetitions = int.parse(match.group(3)!);
+      
+      debugPrint('Parsed values - name: $exerciseName, weight: $maxWeight, reps: $repetitions');
+      
+      // Query Firestore to get the exercise ID
+      final exerciseQuery = await FirebaseFirestore.instance
+          .collection('exercises')
+          .where('name', isEqualTo: exerciseName)
+          .get();
+          
+      debugPrint('Query result size: ${exerciseQuery.docs.length}');
+          
+      if (exerciseQuery.docs.isEmpty) {
+        debugPrint('Exercise not found: $exerciseName');
+        return null;
+      }
+      
+      final exerciseDoc = exerciseQuery.docs.first;
+      final exerciseId = exerciseDoc.id;
+      debugPrint('Found exercise - ID: $exerciseId, Name: ${exerciseDoc.data()['name']}');
+      
+      final result = {
+        exerciseId: {
+          'maxWeight': maxWeight,
+          'repetitions': repetitions,
+          'date': DateTime.now().toIso8601String(),
+          'exerciseName': exerciseName,
+        }
+      };
+      
+      debugPrint('Returning result: $result');
+      return result;
+    }
+    
+    debugPrint('No match found in message');
+    return null;
+  }
+
+  Future<String?> _findExerciseId(String exerciseName) async {
+    final exerciseQuery = await FirebaseFirestore.instance
+        .collection('exercises')
+        .where('name', isEqualTo: exerciseName)
+        .get();
+        
+    if (exerciseQuery.docs.isEmpty) {
+      debugPrint('Exercise not found: $exerciseName');
+      return null;
+    }
+    
+    return exerciseQuery.docs.first.id;
+  }
+
+  Future<Map<String, dynamic>?> _getExerciseMaxRM(String exerciseName) async {
+    final exerciseId = await _findExerciseId(exerciseName);
+    if (exerciseId == null) return null;
+
+    final userId = await userService.getCurrentUserId();
+    if (userId == null) return null;
+
+    final recordsQuery = await FirebaseFirestore.instance
+        .collection('records')
+        .where('userId', isEqualTo: userId)
+        .where('exerciseId', isEqualTo: exerciseId)
+        .orderBy('date', descending: true)
+        .limit(1)
+        .get();
+
+    if (recordsQuery.docs.isEmpty) {
+      return {'message': 'Non ho trovato nessun massimale registrato per $exerciseName'};
+    }
+
+    final record = recordsQuery.docs.first.data();
+    return {
+      'message': 'Il tuo massimale più recente per $exerciseName è: ${record['maxWeight']}kg x ${record['repetitions']} ripetizioni (${record['date']})'
+    };
+  }
+
+  Future<String?> _handleMaxRMQuery(String message) async {
+    final regex = RegExp(r'qual[ie] .*massimal[ei] .*(?:di|per)? (.*?)\??$', caseSensitive: false);
+    final match = regex.firstMatch(message);
+    
+    if (match != null) {
+      final exerciseName = match.group(1)?.trim();
+      if (exerciseName != null) {
+        debugPrint('Cercando massimale per: $exerciseName');
+        final result = await _getExerciseMaxRM(exerciseName);
+        return result?['message'];
+      }
+    }
+    return null;
+  }
+
+  Future<String?> _handleMaxRMOperations(String message) async {
+    // Lista di tutti i massimali
+    if (message.toLowerCase().contains('lista dei massimali') || 
+        message.toLowerCase().contains('tutti i massimali')) {
+      final userId = await userService.getCurrentUserId();
+      if (userId == null) return null;
+
+      final recordsQuery = await FirebaseFirestore.instance
+          .collection('records')
+          .where('userId', isEqualTo: userId)
+          .orderBy('date', descending: true)
+          .get();
+
+      if (recordsQuery.docs.isEmpty) {
+        return 'Non hai ancora registrato nessun massimale.';
+      }
+
+      // Raggruppa i record per esercizio
+      final recordsByExercise = <String, List<Map<String, dynamic>>>{};
+      for (var doc in recordsQuery.docs) {
+        final data = doc.data();
+        final exerciseName = data['exerciseName'] as String;
+        recordsByExercise.putIfAbsent(exerciseName, () => []).add({
+          ...data,
+          'id': doc.id,
+        });
+      }
+
+      // Crea il messaggio di risposta
+      final buffer = StringBuffer('Ecco i tuoi massimali più recenti:\n\n');
+      for (var entry in recordsByExercise.entries) {
+        final latestRecord = entry.value.first;
+        buffer.writeln('${entry.key}: ${latestRecord['maxWeight']}kg x ${latestRecord['repetitions']} reps (${latestRecord['date']})');
+      }
+      return buffer.toString();
+    }
+
+    // Modifica massimale
+    final updateRegex = RegExp(r'modifica massimale (?:di|per) (.*?) a (\d+)kg(?: x| con) (\d+) (?:rep|reps|ripetizioni)', caseSensitive: false);
+    final updateMatch = updateRegex.firstMatch(message);
+    if (updateMatch != null) {
+      final exerciseName = updateMatch.group(1)!;
+      final newWeight = int.parse(updateMatch.group(2)!);
+      final newReps = int.parse(updateMatch.group(3)!);
+
+      // Trova l'ultimo record
+      final exerciseId = await _findExerciseId(exerciseName);
+      if (exerciseId == null) return 'Esercizio non trovato: $exerciseName';
+
+      final userId = await userService.getCurrentUserId();
+      if (userId == null) return null;
+
+      final latestRecord = await FirebaseFirestore.instance
+          .collection('records')
+          .where('userId', isEqualTo: userId)
+          .where('exerciseId', isEqualTo: exerciseId)
+          .orderBy('date', descending: true)
+          .limit(1)
+          .get();
+
+      if (latestRecord.docs.isEmpty) {
+        return 'Nessun massimale trovato da modificare per $exerciseName';
+      }
+
+      // Aggiorna il record
+      await FirebaseFirestore.instance
+          .collection('records')
+          .doc(latestRecord.docs.first.id)
+          .update({
+            'maxWeight': newWeight,
+            'repetitions': newReps,
+            'date': DateTime.now().toIso8601String(),
+          });
+
+      return 'Ho aggiornato il massimale di $exerciseName a ${newWeight}kg x $newReps reps';
+    }
+
+    // Elimina massimale
+    final deleteRegex = RegExp(r'elimina (?:il )?massimale (?:di|per) (.*)', caseSensitive: false);
+    final deleteMatch = deleteRegex.firstMatch(message);
+    if (deleteMatch != null) {
+      final exerciseName = deleteMatch.group(1)!;
+      
+      final exerciseId = await _findExerciseId(exerciseName);
+      if (exerciseId == null) return 'Esercizio non trovato: $exerciseName';
+
+      final userId = await userService.getCurrentUserId();
+      if (userId == null) return null;
+
+      final latestRecord = await FirebaseFirestore.instance
+          .collection('records')
+          .where('userId', isEqualTo: userId)
+          .where('exerciseId', isEqualTo: exerciseId)
+          .orderBy('date', descending: true)
+          .limit(1)
+          .get();
+
+      if (latestRecord.docs.isEmpty) {
+        return 'Nessun massimale trovato da eliminare per $exerciseName';
+      }
+
+      // Elimina il record
+      await FirebaseFirestore.instance
+          .collection('records')
+          .doc(latestRecord.docs.first.id)
+          .delete();
+
+      return 'Ho eliminato il massimale più recente di $exerciseName';
+    }
+
+    // Query singolo massimale (già implementato)
+    return _handleMaxRMQuery(message);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(aiSettingsProvider);
-    final settingsNotifier = ref.read(aiSettingsProvider.notifier);
     final textController = TextEditingController();
     final messages = ValueNotifier<List<Map<String, String>>>([]);
     final aiService = ref.watch(trainingAIServiceProvider);
-    final userService = ref.watch(usersServiceProvider);
+    final exerciseRecordService = ref.watch(exerciseRecordServiceProvider);
 
-    Future<void> sendMessage() async {
-      final messageText = textController.text.trim();
-      if (messageText.isEmpty) return;
-
+    Future<void> sendMessage(String messageText) async {
       try {
+        // First check for max RM operations
+        final maxRMResponse = await _handleMaxRMOperations(messageText);
+        if (maxRMResponse != null) {
+          messages.value = [
+            ...messages.value,
+            {'role': 'assistant', 'content': maxRMResponse}
+          ];
+          return;
+        }
+
+        // Then check for max RM updates
+        final maxRMUpdates = await _parseMaxRMUpdates(messageText);
+        debugPrint('Parsed max RM updates: $maxRMUpdates');
+        if (maxRMUpdates != null && maxRMUpdates.isNotEmpty) {
+          // Get current user data
+          final userId = userService.getCurrentUserId();
+          debugPrint('User ID from service: $userId');
+          
+          if (userId.isEmpty) {
+            throw Exception('User ID is empty');
+          }
+          
+          // Update each exercise max RM
+          final List<String> updatesList = [];
+          for (final entry in maxRMUpdates.entries) {
+            final exerciseId = entry.key;
+            final data = entry.value as Map<String, dynamic>;
+            
+            debugPrint('Processing exercise: $exerciseId with data: $data');
+            
+            await exerciseRecordService.addExerciseRecord(
+              userId: userId,
+              exerciseId: exerciseId,
+              exerciseName: data['exerciseName'] as String,
+              maxWeight: data['maxWeight'] as num,
+              repetitions: data['repetitions'] as int,
+              date: data['date'] as String,
+            );
+            
+            updatesList.add('- ${data['exerciseName']}: ${data['maxWeight']}kg x ${data['repetitions']} reps');
+          }
+          
+          final updateMessage = 'Ho aggiornato i seguenti massimali:\n${updatesList.join('\n')}';
+          messages.value = [
+            ...messages.value,
+            {'role': 'assistant', 'content': updateMessage.trim()}
+          ];
+          return;
+        }
+
         // Add user message to chat
         messages.value = [
           ...messages.value,
@@ -209,12 +478,49 @@ class AIChatWidget extends HookConsumerWidget {
           context: {
             'userProfile': profileData,
             'chatHistory': chatHistory,
-            'exercises': [], // TODO: Add actual exercises
+            'exercises': [], // Actual exercises will be fetched from Firestore
             'trainingProgram': {}, // TODO: Add actual training program
           },
         );
 
-        // Check if the response contains profile update instructions
+        final aiMaxRMUpdates = await _parseMaxRMUpdates(response);
+        if (aiMaxRMUpdates != null && aiMaxRMUpdates.isNotEmpty) {
+          final userId = profileData['id'] as String?;
+          debugPrint('User ID: $userId');
+          
+          if (userId == null) {
+            throw Exception('User ID is null');
+          }
+          
+          // Update each exercise max RM
+          final List<String> updatesList = [];
+          for (final entry in aiMaxRMUpdates.entries) {
+            final exerciseId = entry.key;
+            final data = entry.value as Map<String, dynamic>;
+            
+            debugPrint('Processing exercise: $exerciseId with data: $data');
+            
+            await exerciseRecordService.addExerciseRecord(
+              userId: userId,
+              exerciseId: exerciseId,
+              exerciseName: data['exerciseName'] as String,
+              maxWeight: data['maxWeight'] as num,
+              repetitions: data['repetitions'] as int,
+              date: data['date'] as String,
+            );
+            
+            updatesList.add('- ${data['exerciseName']}: ${data['maxWeight']}kg x ${data['repetitions']} reps');
+          }
+          
+          final updateMessage = 'Ho aggiornato i seguenti massimali:\n${updatesList.join('\n')}';
+          messages.value = [
+            ...messages.value,
+            {'role': 'assistant', 'content': updateMessage.trim()}
+          ];
+          return;
+        }
+        
+        // Then check for profile updates in the AI response
         final profileUpdates = _parseProfileUpdates(response);
         if (profileUpdates != null && profileUpdates.isNotEmpty) {
           final profileService = ref.read(profileUpdateServiceProvider);
@@ -300,7 +606,7 @@ class AIChatWidget extends HookConsumerWidget {
                       }).toList(),
                       onChanged: (provider) {
                         if (provider != null) {
-                          settingsNotifier.updateSelectedProvider(provider);
+                          ref.read(aiSettingsProvider.notifier).updateSelectedProvider(provider);
                         }
                       },
                     ),
@@ -325,7 +631,7 @@ class AIChatWidget extends HookConsumerWidget {
                       }).toList(),
                       onChanged: (model) {
                         if (model != null) {
-                          settingsNotifier.updateSelectedModel(model);
+                          ref.read(aiSettingsProvider.notifier).updateSelectedModel(model);
                         }
                       },
                     ),
@@ -462,14 +768,14 @@ class AIChatWidget extends HookConsumerWidget {
                           vertical: 12,
                         ),
                       ),
-                      onSubmitted: (_) => sendMessage(),
+                      onSubmitted: (_) => sendMessage(_.trim()),
                       maxLines: null,
                     ),
                   ),
                   const SizedBox(width: 8),
                   IconButton(
                     icon: const Icon(Icons.send),
-                    onPressed: sendMessage,
+                    onPressed: () => sendMessage(textController.text.trim()),
                     style: IconButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Theme.of(context).colorScheme.onPrimary,

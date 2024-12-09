@@ -388,7 +388,9 @@ class AppRouter {
               ),
               GoRoute(
                 path: '/ai/chat',
-                builder: (context, state) => const AIChatWidget(),
+                builder: (context, state) => AIChatWidget(
+                  userService: ref.read(usersServiceProvider),
+                ),
               ),
             ],
           ),
