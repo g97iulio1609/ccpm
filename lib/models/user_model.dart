@@ -12,9 +12,11 @@ class UserModel {
   final DateTime? subscriptionExpiryDate;
   final String? productId;
   final String? purchaseToken;
+  final String? phoneNumber; // Add phone number field
   final DateTime? _birthdate; // Private field for birthdate
   final double? _height; // Private field for height
   final String? currentProgram; // Aggiunto campo currentProgram
+  final double? activityLevel; // Activity level stored as double
 
   UserModel({
     required this.id,
@@ -29,6 +31,8 @@ class UserModel {
     this.productId,
     this.purchaseToken,
     this.currentProgram, // Aggiunto al costruttore
+    this.phoneNumber, // Add to constructor
+    this.activityLevel, // Add to constructor
     DateTime? birthdate, // Add birthdate to the constructor
     double? height, // Add height to the constructor
   })  : _birthdate = birthdate,
@@ -51,6 +55,8 @@ class UserModel {
       productId: data['productId'],
       purchaseToken: data['purchaseToken'],
       currentProgram: data['currentProgram'], // Aggiunto al fromFirestore
+      phoneNumber: data['phoneNumber'], // Add phoneNumber to fromFirestore
+      activityLevel: (data['activityLevel'] as num?)?.toDouble(), // Convert to double when reading from Firestore
       birthdate: (data['birthdate'] as Timestamp?)?.toDate(),
       height: (data['height'] as num?)?.toDouble(),
     );
@@ -72,6 +78,8 @@ class UserModel {
       'productId': productId,
       'purchaseToken': purchaseToken,
       'currentProgram': currentProgram, // Aggiunto al toMap
+      'phoneNumber': phoneNumber, // Add phoneNumber to toMap
+      'activityLevel': activityLevel, // Add activityLevel to toMap
       'birthdate': _birthdate != null
           ? Timestamp.fromDate(_birthdate)
           : null, // Add birthdate to Firestore map

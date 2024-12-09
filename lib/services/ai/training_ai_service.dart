@@ -20,6 +20,11 @@ class TrainingAIService {
     return aiService.processNaturalLanguageQuery(query, context: context);
   }
 
+  Future<String> processNaturalLanguageQuery(String query, {Map<String, dynamic>? context}) async {
+    // Delegate to the underlying AI service with an optional context
+    return aiService.processNaturalLanguageQuery(query, context: context);
+  }
+
   Future<Map<String, dynamic>> analyzeExercise(String exerciseName, Map<String, dynamic> exerciseData) async {
     final query = '''
       Analyze this exercise: $exerciseName
@@ -27,7 +32,7 @@ class TrainingAIService {
       Provide insights about proper form, common mistakes, and progression recommendations.
     ''';
 
-    final response = await aiService.processNaturalLanguageQuery(query);
+    final response = await processNaturalLanguageQuery(query);
     return {
       'exercise': exerciseName,
       'analysis': response,
@@ -41,7 +46,7 @@ class TrainingAIService {
       Suggest modifications to optimize this workout program for the user's goals.
     ''';
 
-    return aiService.processNaturalLanguageQuery(query);
+    return processNaturalLanguageQuery(query);
   }
 }
 
