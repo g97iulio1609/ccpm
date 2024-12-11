@@ -54,186 +54,6 @@ class AIChatService {
     ),
   );
 
-  // Regex precompilate
-  static final RegExp _phoneRegex = RegExp(
-    r'(?:telefono|numero|phone|number)[:\s]*(?:in\s)?(?:3\d{8,9}|\+39\d{10}|\d{10})',
-    caseSensitive: false,
-  );
-
-  static final RegExp _dateRegex = RegExp(
-    r'(?:birth(?:day|date)|nascita|compleanno|dob)\s*[:|=]\s*(\d{4}-\d{2}-\d{2})',
-    caseSensitive: false,
-  );
-
-  static final RegExp _heightRegex = RegExp(
-    r'(?:height|altezza)\s*[:|=]\s*(\d+(?:\.\d+)?)\s*(?:cm)?',
-    caseSensitive: false,
-  );
-
-  static final RegExp _activityRegex = RegExp(
-    r'(?:activity|attività)\s*(?:level|livello)?\s*[:|=]\s*(sedentary|light|moderate|very active|extremely active|sedentario|leggero|moderato|molto attivo|estremamente attivo)',
-    caseSensitive: false,
-  );
-
-  // Altre regex per massimali
-  static final List<RegExp> _maxRMUpdatePatterns = [
-    RegExp(
-      r'(?:aggiorna|update|set|imposta).*?massimale.*?(?:di|per|of)?\s*[:-]?\s*([\w\s]+?)(?:\s*[-:])?\s*(?:a|to)?\s*(\d+)\s*(?:kg|kgs|chili)?\s*(?:x|per|con|reps?|ripetizioni)?\s*(\d+)',
-      caseSensitive: false,
-    ),
-    RegExp(
-      r'([\w\s]+?)\s*[:]\s*(\d+)\s*(?:kg|kgs|chili)?\s*(?:x|per|con)\s*(\d+)',
-      caseSensitive: false,
-    ),
-    RegExp(
-      r'(?:ho fatto|faccio|fatto)\s+([\w\s]+?)\s+(?:con|a|per|di)\s+(\d+)\s*(?:kg|kgs|chili)?\s*(?:x|per|con|reps?|ripetizioni)?\s*(\d+)',
-      caseSensitive: false,
-    ),
-    RegExp(
-      r'(?:il mio|nuovo|)\s*massimale\s+(?:di|per|del)?\s*([\w\s]+?)\s+(?:è|e|a)?\s*(\d+)\s*(?:kg|kgs|chili)?\s*(?:x|per|con|reps?|ripetizioni)?\s*(\d+)',
-      caseSensitive: false,
-    ),
-  ];
-
-  static final List<RegExp> _maxRMQueryPatterns = [
-    RegExp(r'qual[ie] .*massimal[ei] .*(?:di|per)? (.*?)\??$',
-        caseSensitive: false),
-    RegExp(r'massimal[ei] (?:di|per|del) ([\w\s]+)', caseSensitive: false),
-    RegExp(r'dimmi (?:il|i) massimal[ei] (?:di|per|del) ([\w\s]+)',
-        caseSensitive: false),
-    RegExp(
-        r'(?:voglio|vorrei) sapere (?:il|i) massimal[ei] (?:di|per|del) ([\w\s]+)',
-        caseSensitive: false),
-  ];
-
-  static final RegExp _updateMassimalRegex = RegExp(
-    r'modifica massimale (?:di|per) (.*?) a (\d+)kg(?: x| con) (\d+) (?:rep|reps|ripetizioni)',
-    caseSensitive: false,
-  );
-
-  static final RegExp _deleteMassimalRegex = RegExp(
-    r'elimina (?:il )?massimale (?:di|per) (.*)',
-    caseSensitive: false,
-  );
-
-  /// Estrae le informazioni dell'utente per visualizzazione
-  String getUserInfo(UserModel user, String field) {
-    switch (field.toLowerCase()) {
-      case 'phone':
-      case 'phonenumber':
-      case 'telefono':
-      case 'numero di telefono':
-        return user.phoneNumber ?? 'Numero di telefono non impostato';
-      case 'height':
-      case 'altezza':
-        return user.height != null
-            ? '${user.height} cm'
-            : 'Altezza non impostata';
-      case 'birthdate':
-      case 'data di nascita':
-      case 'compleanno':
-        return user.birthdate?.toString().split(' ')[0] ??
-            'Data di nascita non impostata';
-      case 'activity':
-      case 'activitylevel':
-      case 'livello di attività':
-        return user.activityLevel != null
-            ? _activityLevelToString(user.activityLevel!)
-            : 'Livello di attività non impostato';
-      default:
-        return 'Informazione non disponibile';
-    }
-  }
-
-  String _activityLevelToString(double level) {
-    if (level < 1.5) return 'Sedentario';
-    if (level < 3.0) return 'Leggero';
-    if (level < 4.5) return 'Moderato';
-    if (level < 6.0) return 'Molto attivo';
-    return 'Estremamente attivo';
-  }
-
-  /// Analizza gli aggiornamenti del profilo dalla risposta dell'AI
-  Map<String, dynamic>? parseProfileUpdates(String aiResponse) {
-    final updates = <String, dynamic>{};
-    bool hasUpdates = false;
-
-    // Numero di telefono
-    final phoneMatch = _phoneRegex.firstMatch(aiResponse);
-    if (phoneMatch != null) {
-      String phone = phoneMatch.group(0)!.replaceAll(RegExp(r'[^\d+]'), '');
-      if (!phone.startsWith('+39') && phone.startsWith('3')) {
-        phone = '+39$phone';
-      } else if (phone.startsWith('3')) {
-        phone = '+39$phone';
-      }
-      updates['phoneNumber'] = phone;
-      hasUpdates = true;
-    }
-
-    // Data di nascita
-    final dateMatch = _dateRegex.firstMatch(aiResponse);
-    if (dateMatch != null) {
-      final dateStr = dateMatch.group(1)?.trim();
-      if (dateStr != null) {
-        try {
-          final date = DateTime.parse(dateStr);
-          updates['birthdate'] = Timestamp.fromDate(date);
-          hasUpdates = true;
-        } catch (e) {
-          throw Exception('Formato data non valido. Usa YYYY-MM-DD');
-        }
-      }
-    }
-
-    // Altezza
-    final heightMatch = _heightRegex.firstMatch(aiResponse);
-    if (heightMatch != null) {
-      final heightStr = heightMatch.group(1)?.trim();
-      if (heightStr != null) {
-        final height = double.tryParse(heightStr);
-        if (height == null || height < 50 || height > 250) {
-          throw Exception(
-              'Altezza non valida. Inserisci un valore tra 50 e 250 cm');
-        }
-        updates['height'] = height;
-        hasUpdates = true;
-      }
-    }
-
-    // Livello di attività
-    final activityMatch = _activityRegex.firstMatch(aiResponse);
-    if (activityMatch != null) {
-      updates['activityLevel'] =
-          _stringToActivityLevel(activityMatch.group(1)!);
-      hasUpdates = true;
-    }
-
-    return hasUpdates ? updates : null;
-  }
-
-  double _stringToActivityLevel(String level) {
-    switch (level.toLowerCase()) {
-      case 'sedentary':
-      case 'sedentario':
-        return 1.0;
-      case 'light':
-      case 'leggero':
-        return 2.5;
-      case 'moderate':
-      case 'moderato':
-        return 3.5;
-      case 'very active':
-      case 'molto attivo':
-        return 5.0;
-      case 'extremely active':
-      case 'estremamente attivo':
-        return 6.0;
-      default:
-        return 3.0; // Default a moderato
-    }
-  }
-
   /// Trova l'ID dell'esercizio dato il nome
   Future<String?> findExerciseId(String exerciseName) async {
     // Converti il nome dell'esercizio nel formato corretto
@@ -318,148 +138,74 @@ class AIChatService {
     }
   }
 
-  /// Gestisce le query sui massimali
-  Future<String?> handleMaxRMQuery(String message, String userId) async {
-    for (var regex in _maxRMQueryPatterns) {
-      final match = regex.firstMatch(message.toLowerCase());
-      if (match != null) {
-        final exerciseName = match.group(1)?.trim();
-        if (exerciseName != null && exerciseName.isNotEmpty) {
-          // Ottieni il massimale dell'esercizio
-          final maxRM = await getExerciseMaxRM(exerciseName, userId);
-          if (maxRM != null) {
-            return maxRM['message'] as String?;
-          } else {
-            return 'Non ho trovato nessun massimale per l\'esercizio "$exerciseName".';
-          }
-        }
+  /// Recupera la lista dei massimali di tutti gli esercizi dell'utente
+  Future<String> listAllMaxRMs(String userId) async {
+    final exercisesRef =
+        _firestore.collection('users').doc(userId).collection('exercises');
+
+    final exercisesSnapshot = await exercisesRef.get();
+    if (exercisesSnapshot.docs.isEmpty) {
+      return 'Non hai ancora registrato nessun massimale.';
+    }
+
+    final buffer = StringBuffer('# I tuoi massimali più recenti\n\n');
+
+    for (var exerciseDoc in exercisesSnapshot.docs) {
+      final exerciseId = exerciseDoc.id;
+      final exerciseData = exerciseDoc.data();
+      final exerciseName = exerciseData['name'] as String;
+
+      // Prendiamo il record più recente
+      final recordsQuery = await exercisesRef
+          .doc(exerciseId)
+          .collection('records')
+          .orderBy('date', descending: true)
+          .limit(1)
+          .get();
+
+      if (recordsQuery.docs.isNotEmpty) {
+        final record = ExerciseRecord.fromFirestore(recordsQuery.docs.first);
+        buffer.writeln(
+            '- **$exerciseName**: ${record.maxWeight}kg x ${record.repetitions} reps _(${record.date.toIso8601String()})_');
       }
     }
 
-    return 'La tua richiesta non è chiara. Per favore, riformula la domanda.';
+    return buffer.toString();
   }
 
-  /// Gestisce le operazioni sui massimali come lista, modifica ed eliminazione
-  Future<String?> handleMaxRMOperations(String message, String userId) async {
-    final lowerMessage = message.toLowerCase();
-
-    // Lista di tutti i massimali
-    if (lowerMessage.contains('lista dei massimali') ||
-        lowerMessage.contains('tutti i massimali')) {
-      // Recupera tutti i record dall'utente
-      final exercisesRef =
-          _firestore.collection('users').doc(userId).collection('exercises');
-
-      final exercisesSnapshot = await exercisesRef.get();
-      if (exercisesSnapshot.docs.isEmpty) {
-        return 'Non hai ancora registrato nessun massimale.';
-      }
-
-      final buffer = StringBuffer('# I tuoi massimali più recenti\n\n');
-
-      for (var exerciseDoc in exercisesSnapshot.docs) {
-        final exerciseId = exerciseDoc.id;
-        final exerciseData = exerciseDoc.data();
-        final exerciseName = exerciseData['name'] as String;
-
-        // Prendiamo il record più recente
-        final recordsQuery = await exercisesRef
-            .doc(exerciseId)
-            .collection('records')
-            .orderBy('date', descending: true)
-            .limit(1)
-            .get();
-
-        if (recordsQuery.docs.isNotEmpty) {
-          final record = ExerciseRecord.fromFirestore(recordsQuery.docs.first);
-          buffer.writeln(
-              '- **$exerciseName**: ${record.maxWeight}kg x ${record.repetitions} reps _(${record.date.toIso8601String()})_');
-        }
-      }
-
-      return buffer.toString();
+  /// Aggiunge o aggiorna il massimale di un esercizio
+  Future<String> updateExerciseMaxRM(String exerciseName, num maxWeight,
+      int repetitions, String userId) async {
+    final exerciseId = await findExerciseId(exerciseName);
+    if (exerciseId == null) {
+      return 'Non ho trovato l\'esercizio "$exerciseName" nel database. Verifica il nome e riprova.';
     }
 
-    // Modifica massimale
-    final updateMatch = _updateMassimalRegex.firstMatch(message);
-    if (updateMatch != null) {
-      final exerciseName = updateMatch.group(1)!.trim();
-      final newWeight = int.parse(updateMatch.group(2)!);
-      final newReps = int.parse(updateMatch.group(3)!);
+    final recordId = '${userId}_${DateTime.now().millisecondsSinceEpoch}';
+    final recordData = {
+      'id': recordId,
+      'exerciseId': exerciseId,
+      'exerciseName': exerciseName,
+      'maxWeight': maxWeight,
+      'repetitions': repetitions,
+      'date': Timestamp.fromDate(DateTime.now()),
+      'userId': userId,
+    };
 
-      final exerciseId = await findExerciseId(exerciseName);
-      if (exerciseId == null) return 'Esercizio non trovato: $exerciseName';
-
-      final recordsQuery = await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('exercises')
-          .doc(exerciseId)
-          .collection('records')
-          .orderBy('date', descending: true)
-          .limit(1)
-          .get();
-
-      if (recordsQuery.docs.isEmpty) {
-        return 'Nessun massimale trovato da modificare per $exerciseName';
-      }
-
-      final latestRecord =
-          ExerciseRecord.fromFirestore(recordsQuery.docs.first);
+    try {
       await _firestore
           .collection('users')
           .doc(userId)
           .collection('exercises')
           .doc(exerciseId)
           .collection('records')
-          .doc(latestRecord.id)
-          .update({
-        'maxWeight': newWeight,
-        'repetitions': newReps,
-        'date': Timestamp.fromDate(DateTime.now()),
-      });
+          .doc(recordId)
+          .set(recordData);
 
-      return 'Ho aggiornato il massimale di $exerciseName a ${newWeight}kg x $newReps reps';
+      return 'Ho aggiornato il massimale di $exerciseName a ${maxWeight}kg x $repetitions reps.';
+    } catch (e) {
+      return 'C\'è stato un problema nell\'aggiornamento del massimale: $e';
     }
-
-    // Elimina massimale
-    final deleteMatch = _deleteMassimalRegex.firstMatch(message);
-    if (deleteMatch != null) {
-      final exerciseName = deleteMatch.group(1)!.trim();
-
-      final exerciseId = await findExerciseId(exerciseName);
-      if (exerciseId == null) return 'Esercizio non trovato: $exerciseName';
-
-      final recordsQuery = await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('exercises')
-          .doc(exerciseId)
-          .collection('records')
-          .orderBy('date', descending: true)
-          .limit(1)
-          .get();
-
-      if (recordsQuery.docs.isEmpty) {
-        return 'Nessun massimale trovato da eliminare per $exerciseName';
-      }
-
-      final latestRecord =
-          ExerciseRecord.fromFirestore(recordsQuery.docs.first);
-      await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('exercises')
-          .doc(exerciseId)
-          .collection('records')
-          .doc(latestRecord.id)
-          .delete();
-
-      return 'Ho eliminato il massimale più recente di $exerciseName';
-    }
-
-    // Query singolo massimale
-    return await handleMaxRMQuery(message, userId);
   }
 }
 
@@ -487,7 +233,6 @@ class AIChatWidget extends HookConsumerWidget {
     final chatMessages = ref.watch(chatMessagesProvider);
     final chatNotifier = ref.read(chatMessagesProvider.notifier);
     final aiService = ref.watch(trainingAIServiceProvider);
-    final exerciseRecordService = ref.watch(exerciseRecordServiceProvider);
     final aiChatService = AIChatService();
     final isProcessing =
         useState(false); // Stato per indicare se è in corso una richiesta
@@ -509,96 +254,50 @@ class AIChatWidget extends HookConsumerWidget {
         final user = await userService.getUserById(userId);
         if (user == null) throw Exception('Utente non trovato');
 
-        // Interpreta il messaggio usando l'AI
+        // Interpreta il messaggio usando l'AI per i massimali
         final interpretation =
             await aiService.interpretMaxRMMessage(messageText);
         if (interpretation != null) {
           switch (interpretation['type']) {
             case 'update':
-              final exerciseName = interpretation['exercise'] as String;
-              final maxWeight = interpretation['weight'] as num;
-              final repetitions = interpretation['reps'] as int;
+              final exerciseName = interpretation['exercise'] as String?;
+              final maxWeight = interpretation['weight'] as num?;
+              final repetitions = interpretation['reps'] as int?;
 
-              final exerciseId =
-                  await aiChatService.findExerciseId(exerciseName);
-              if (exerciseId == null) {
+              if (exerciseName == null ||
+                  maxWeight == null ||
+                  repetitions == null) {
                 chatNotifier.addMessage(ChatMessage(
                   role: 'assistant',
                   content:
-                      'Non ho trovato l\'esercizio "$exerciseName" nel database. Verifica il nome e riprova.',
+                      'Non sono riuscito a determinare i dettagli per l\'aggiornamento del massimale.',
                 ));
-                final result =
-                    await aiChatService.getExerciseMaxRM(exerciseName, userId);
-                _logger.d('Exercise record result: $result');
-
-                if (result != null) {
-                  chatNotifier.addMessage(ChatMessage(
-                    role: 'assistant',
-                    content: result['message'] as String,
-                  ));
-                  return;
-                } else {
-                  _logger.w('No exercise record found for: $exerciseName');
-                  chatNotifier.addMessage(ChatMessage(
-                    role: 'assistant',
-                    content:
-                        'Non ho trovato nessun record per l\'esercizio "$exerciseName".',
-                  ));
-                  return;
-                }
+                isProcessing.value = false;
+                return;
               }
 
-              // Se l'esercizio esiste, aggiorna il massimale aggiungendo un nuovo record
-              final recordId =
-                  '${userId}_${DateTime.now().millisecondsSinceEpoch}';
-              final newRecord = ExerciseRecord(
-                id: recordId,
-                exerciseId: exerciseId,
-                maxWeight: maxWeight,
-                repetitions: repetitions,
-                date: DateTime.now(),
-              );
+              final result = await aiChatService.updateExerciseMaxRM(
+                  exerciseName, maxWeight, repetitions, userId);
 
-              final recordData = {
-                'id': recordId,
-                'exerciseId': exerciseId,
-                'exerciseName': exerciseName,
-                'maxWeight': maxWeight,
-                'repetitions': repetitions,
-                'date': Timestamp.fromDate(DateTime.now()),
-                'userId': userId,
-              };
-
-              try {
-                await aiChatService._firestore
-                    .collection('users')
-                    .doc(userId)
-                    .collection('exercises')
-                    .doc(exerciseId)
-                    .collection('records')
-                    .doc(recordId)
-                    .set(recordData);
-
-                chatNotifier.addMessage(ChatMessage(
-                  role: 'assistant',
-                  content:
-                      'Ho aggiornato il massimale di $exerciseName a ${maxWeight}kg x $repetitions reps.',
-                ));
-              } catch (e) {
-                chatNotifier.addMessage(ChatMessage(
-                  role: 'assistant',
-                  content:
-                      'C\'è stato un problema nell\'aggiornamento del massimale: $e',
-                ));
-              }
+              chatNotifier.addMessage(ChatMessage(
+                role: 'assistant',
+                content: result,
+              ));
               isProcessing.value = false;
               return;
 
             case 'query':
-              final exerciseName = interpretation['exercise'] as String;
-              _logger.d('Processing query for exercise: $exerciseName');
+              final exerciseName = interpretation['exercise'] as String?;
+              if (exerciseName == null) {
+                chatNotifier.addMessage(ChatMessage(
+                  role: 'assistant',
+                  content:
+                      'Non sono riuscito a capire di quale esercizio vuoi conoscere il massimale.',
+                ));
+                isProcessing.value = false;
+                return;
+              }
 
-              // Recupera il massimale dal database
               final result =
                   await aiChatService.getExerciseMaxRM(exerciseName, userId);
 
@@ -618,24 +317,21 @@ class AIChatWidget extends HookConsumerWidget {
               return;
 
             case 'list':
-              final records = interpretation['records'] as List<dynamic>;
-              final formattedRecords = records.map((record) {
-                final recordMap = record as Map<String, dynamic>;
-                return '**${recordMap['exercise']}**: ${recordMap['weight']}kg x ${recordMap['reps']} reps _(${recordMap['date']})_';
-              }).join('\n');
+              // Mostra la lista di tutti i massimali dell'utente
+              final listResponse = await aiChatService.listAllMaxRMs(userId);
               chatNotifier.addMessage(ChatMessage(
                 role: 'assistant',
-                content:
-                    '**Ecco i tuoi massimali più recenti:**\n$formattedRecords',
+                content: listResponse,
               ));
               isProcessing.value = false;
               return;
 
             case 'error':
-              final errorMessage = interpretation['error_message'] as String;
+              final errorMessage = interpretation['error_message'] as String?;
               chatNotifier.addMessage(ChatMessage(
                 role: 'assistant',
-                content: errorMessage,
+                content:
+                    errorMessage ?? 'Si è verificato un errore sconosciuto.',
               ));
               isProcessing.value = false;
               return;

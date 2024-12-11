@@ -9,12 +9,13 @@ class OpenAIService implements AIService {
 
   OpenAIService({
     String? apiKey,
-    required this.model, // Model is now required
+    required this.model,
     this.baseUrl = 'https://api.openai.com/v1/chat/completions',
   }) : apiKey = apiKey ?? const String.fromEnvironment('OPENAI_API_KEY');
 
   @override
-  Future<String> processNaturalLanguageQuery(String query, {Map<String, dynamic>? context}) async {
+  Future<String> processNaturalLanguageQuery(String query,
+      {Map<String, dynamic>? context}) async {
     try {
       final response = await http.post(
         Uri.parse(baseUrl),
@@ -27,8 +28,9 @@ class OpenAIService implements AIService {
           'messages': [
             {
               'role': 'system',
-              'content': 'You are a helpful assistant for a fitness training application. '
-                  'You can help with exercises, training programs, and fitness-related queries.',
+              'content':
+                  'You are a helpful assistant for a fitness training application. '
+                      'You can help with exercises, training programs, and fitness-related queries.',
             },
             if (context != null) ...[
               {'role': 'system', 'content': jsonEncode(context)},
@@ -47,7 +49,8 @@ class OpenAIService implements AIService {
           throw Exception('Failed to decode JSON response: $e');
         }
       } else {
-        throw Exception('Failed to process query: ${response.statusCode} - ${response.body}');
+        throw Exception(
+            'Failed to process query: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
       throw Exception('Error processing query: $e');

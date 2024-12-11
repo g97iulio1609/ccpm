@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logger/logger.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'ai_service.dart';
 import 'openai_service.dart';
 import 'gemini_service.dart';
@@ -118,10 +116,6 @@ class TrainingAIService {
           _logger.w('Invalid response type: ${result['type']}');
           return null;
         }
-
-        // Non eseguiamo più query qui stesse come in passato,
-        // lasciamo che sia il widget (AIChatService) a gestire le query effettive.
-        // Questa funzione si limita a interpretare il messaggio.
 
         return result;
       } catch (e, stackTrace) {

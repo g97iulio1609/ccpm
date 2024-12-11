@@ -18,12 +18,14 @@ class GeminiService implements AIService {
   );
 
   GeminiService({
-    required this.apiKey, // Require apiKey in constructor
-    this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
+    required this.apiKey,
+    this.baseUrl =
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
   });
 
   @override
-  Future<String> processNaturalLanguageQuery(String query, {Map<String, dynamic>? context}) async {
+  Future<String> processNaturalLanguageQuery(String query,
+      {Map<String, dynamic>? context}) async {
     try {
       _logger.i('Processing query: $query');
       if (context != null) {
@@ -41,43 +43,12 @@ class GeminiService implements AIService {
             {
               'role': 'user',
               'parts': [
-                {
-                  'text': '''Sei un assistente specializzato nell'interpretazione di messaggi relativi ai massimali (PR) di allenamento.
-
-IMPORTANTE: Devi SEMPRE rispondere SOLO con un oggetto JSON valido, anche in caso di errori o mancanza di dati.
-NON aggiungere MAI testo esplicativo o commenti fuori dal JSON.
-NON usare markdown o backticks nel JSON.
-
-Se l'utente sta:
-1. Aggiornando un massimale → type: "update"
-2. Chiedendo info su un massimale → type: "query"
-3. Altro o errori → type: "error"
-
-Formato JSON richiesto:
-{
-  "type": "update" | "query" | "error",
-  "exercise": "nome esercizio" (opzionale per error),
-  "weight": numero (solo per update),
-  "reps": numero (solo per update),
-  "error_message": "messaggio di errore" (solo per error)
-}
-
-Se non hai accesso ai dati o non puoi determinare l'esercizio, rispondi con:
-{
-  "type": "error",
-  "error_message": "Dati non disponibili"
-}
-
-Query: $query'''
-                }
+                {'text': query}
               ]
             }
           ],
           'safetySettings': [
-            {
-              'category': 'HARM_CATEGORY_HARASSMENT',
-              'threshold': 'BLOCK_NONE'
-            }
+            {'category': 'HARM_CATEGORY_HARASSMENT', 'threshold': 'BLOCK_NONE'}
           ]
         }),
       );
@@ -88,24 +59,24 @@ Query: $query'''
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final text = data['candidates'][0]['content']['parts'][0]['text'];
-        
-        // Clean up the response text to ensure it's valid JSON
-        final cleanText = text.trim()
+
+        // Pulizia della risposta per assicurare che sia JSON valido
+        final cleanText = text
+            .trim()
             .replaceAll(RegExp(r'```json\s*'), '')
             .replaceAll(RegExp(r'\s*```'), '')
             .replaceAll(RegExp(r'^\s*\{'), '{')
             .replaceAll(RegExp(r'\}\s*$'), '}');
-          
+
         _logger.d('Cleaned response text: $cleanText');
 
-        // Validate that it's actually JSON before returning
+        // Validazione del JSON
         try {
-          json.decode(cleanText); // Test if it's valid JSON
+          json.decode(cleanText); // Test se è JSON valido
           _logger.i('Successfully parsed JSON response');
           return cleanText;
         } catch (e) {
           _logger.e('Invalid JSON response: $cleanText', error: e);
-          // If the response is not valid JSON, create a valid error JSON
           return jsonEncode({
             "type": "error",
             "error_message": "Risposta non valida: formato JSON non corretto"
@@ -119,15 +90,15 @@ Query: $query'''
         });
       }
     } catch (e, stackTrace) {
-      _logger.e('Exception in processNaturalLanguageQuery', error: e, stackTrace: stackTrace);
-      return jsonEncode({
-        "type": "error",
-        "error_message": "Errore interno del servizio"
-      });
+      _logger.e('Exception in processNaturalLanguageQuery',
+          error: e, stackTrace: stackTrace);
+      return jsonEncode(
+          {"type": "error", "error_message": "Errore interno del servizio"});
     }
   }
 
-  Future<String> processTrainingQuery(String query, {
+  Future<String> processTrainingQuery(
+    String query, {
     Map<String, dynamic>? userProfile,
     List<Map<String, dynamic>>? chatHistory,
     List<Map<String, dynamic>>? exercises,
@@ -149,25 +120,25 @@ Query: $query'''
       }
 
       final url = Uri.parse('$baseUrl?key=$apiKey');
-      
-      // Convert chat history to Gemini format
+
       final List<Map<String, dynamic>> contents = [];
-      
-      // Add chat history if available
+
       if (chatHistory != null) {
         for (final message in chatHistory) {
           contents.add({
             'role': message['role'],
-            'parts': [{'text': message['content']}],
+            'parts': [
+              {'text': message['content']}
+            ],
           });
         }
       }
-      
-      // Add current query with context
+
       contents.add({
         'role': 'user',
-        'parts': [{
-          'text': '''
+        'parts': [
+          {
+            'text': '''
 Context:
 ${userProfile != null ? 'User Profile: ${jsonEncode(userProfile)}' : ''}
 ${exercises != null ? 'Exercises: ${jsonEncode(exercises)}' : ''}
@@ -175,7 +146,8 @@ ${trainingProgram != null ? 'Training Program: ${jsonEncode(trainingProgram)}' :
 
 Query: $query
 '''
-        }],
+          }
+        ],
       });
 
       final response = await http.post(
@@ -186,10 +158,7 @@ Query: $query
         body: jsonEncode({
           'contents': contents,
           'safetySettings': [
-            {
-              'category': 'HARM_CATEGORY_HARASSMENT',
-              'threshold': 'BLOCK_NONE'
-            }
+            {'category': 'HARM_CATEGORY_HARASSMENT', 'threshold': 'BLOCK_NONE'}
           ]
         }),
       );
@@ -200,24 +169,22 @@ Query: $query
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final text = data['candidates'][0]['content']['parts'][0]['text'];
-        
-        // Clean up the response text to ensure it's valid JSON
-        final cleanText = text.trim()
+
+        final cleanText = text
+            .trim()
             .replaceAll(RegExp(r'```json\s*'), '')
             .replaceAll(RegExp(r'\s*```'), '')
             .replaceAll(RegExp(r'^\s*\{'), '{')
             .replaceAll(RegExp(r'\}\s*$'), '}');
-          
+
         _logger.d('Cleaned response text: $cleanText');
 
-        // Validate that it's actually JSON before returning
         try {
-          json.decode(cleanText); // Test if it's valid JSON
+          json.decode(cleanText);
           _logger.i('Successfully parsed JSON response');
           return cleanText;
         } catch (e) {
           _logger.e('Invalid JSON response: $cleanText', error: e);
-          // If the response is not valid JSON, create a valid error JSON
           return jsonEncode({
             "type": "error",
             "error_message": "Risposta non valida: formato JSON non corretto"
@@ -231,11 +198,10 @@ Query: $query
         });
       }
     } catch (e, stackTrace) {
-      _logger.e('Exception in processTrainingQuery', error: e, stackTrace: stackTrace);
-      return jsonEncode({
-        "type": "error",
-        "error_message": "Errore interno del servizio"
-      });
+      _logger.e('Exception in processTrainingQuery',
+          error: e, stackTrace: stackTrace);
+      return jsonEncode(
+          {"type": "error", "error_message": "Errore interno del servizio"});
     }
   }
 }
