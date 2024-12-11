@@ -379,8 +379,7 @@ class MaxRMDashboard extends HookConsumerWidget {
 
                   // Date
                   Text(
-                    DateFormat('d MMM yyyy')
-                        .format(DateTime.parse(record.date)),
+                    DateFormat('d MMM yyyy').format(record.date),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
@@ -665,7 +664,7 @@ class EditRecordDialog extends HookConsumerWidget {
     final repetitionsController =
         useTextEditingController(text: record.repetitions.toString());
     final keepWeight = useState(false);
-    final selectedDate = useState(DateTime.parse(record.date));
+    final selectedDate = useState(record.date);
 
     return AlertDialog(
       title: Text(

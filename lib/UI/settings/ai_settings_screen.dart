@@ -3,7 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../services/ai/ai_settings_service.dart';
 
 class AISettingsScreen extends HookConsumerWidget {
-  const AISettingsScreen({Key? key}) : super(key: key);
+  const AISettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

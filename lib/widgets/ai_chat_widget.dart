@@ -1,26 +1,123 @@
 import 'package:alphanessone/providers/providers.dart';
-import 'package:alphanessone/services/profile/profile_update_service.dart';
+import 'package:alphanessone/services/users_services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:logger/logger.dart';
+
+import '../models/user_model.dart';
+import '../models/exercise_record.dart'; // Importa il modello ExerciseRecord
 import '../services/ai/ai_settings_service.dart';
 import '../services/ai/training_ai_service.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/user_model.dart';
-import '../ExerciseRecords/exercise_record_services.dart';
-import 'package:alphanessone/services/users_services.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
-class AIChatWidget extends HookConsumerWidget {
-  const AIChatWidget({
-    super.key,
-    required this.userService,
-  });
+/// Stato dei messaggi di chat
+final chatMessagesProvider =
+    StateNotifierProvider<ChatMessagesNotifier, List<ChatMessage>>(
+  (ref) => ChatMessagesNotifier(),
+);
 
-  final UsersService userService;
+/// Notifier per gestire i messaggi di chat
+class ChatMessagesNotifier extends StateNotifier<List<ChatMessage>> {
+  ChatMessagesNotifier() : super([]);
 
-  // Helper method to extract user info for display
-  String _getUserInfo(UserModel user, String field) {
+  void addMessage(ChatMessage message) {
+    state = [...state, message];
+  }
+
+  void clearMessages() {
+    state = [];
+  }
+}
+
+/// Modello per un messaggio di chat
+class ChatMessage {
+  final String role; // 'user' o 'assistant'
+  final String content;
+
+  ChatMessage({required this.role, required this.content});
+}
+
+/// Servizio per la logica di chat AI
+class AIChatService {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final Logger _logger = Logger(
+    printer: PrettyPrinter(
+      methodCount: 0,
+      errorMethodCount: 5,
+      lineLength: 50,
+      colors: true,
+      printEmojis: true,
+      dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
+    ),
+  );
+
+  // Regex precompilate
+  static final RegExp _phoneRegex = RegExp(
+    r'(?:telefono|numero|phone|number)[:\s]*(?:in\s)?(?:3\d{8,9}|\+39\d{10}|\d{10})',
+    caseSensitive: false,
+  );
+
+  static final RegExp _dateRegex = RegExp(
+    r'(?:birth(?:day|date)|nascita|compleanno|dob)\s*[:|=]\s*(\d{4}-\d{2}-\d{2})',
+    caseSensitive: false,
+  );
+
+  static final RegExp _heightRegex = RegExp(
+    r'(?:height|altezza)\s*[:|=]\s*(\d+(?:\.\d+)?)\s*(?:cm)?',
+    caseSensitive: false,
+  );
+
+  static final RegExp _activityRegex = RegExp(
+    r'(?:activity|attività)\s*(?:level|livello)?\s*[:|=]\s*(sedentary|light|moderate|very active|extremely active|sedentario|leggero|moderato|molto attivo|estremamente attivo)',
+    caseSensitive: false,
+  );
+
+  // Altre regex per massimali
+  static final List<RegExp> _maxRMUpdatePatterns = [
+    RegExp(
+      r'(?:aggiorna|update|set|imposta).*?massimale.*?(?:di|per|of)?\s*[:-]?\s*([\w\s]+?)(?:\s*[-:])?\s*(?:a|to)?\s*(\d+)\s*(?:kg|kgs|chili)?\s*(?:x|per|con|reps?|ripetizioni)?\s*(\d+)',
+      caseSensitive: false,
+    ),
+    RegExp(
+      r'([\w\s]+?)\s*[:]\s*(\d+)\s*(?:kg|kgs|chili)?\s*(?:x|per|con)\s*(\d+)',
+      caseSensitive: false,
+    ),
+    RegExp(
+      r'(?:ho fatto|faccio|fatto)\s+([\w\s]+?)\s+(?:con|a|per|di)\s+(\d+)\s*(?:kg|kgs|chili)?\s*(?:x|per|con|reps?|ripetizioni)?\s*(\d+)',
+      caseSensitive: false,
+    ),
+    RegExp(
+      r'(?:il mio|nuovo|)\s*massimale\s+(?:di|per|del)?\s*([\w\s]+?)\s+(?:è|e|a)?\s*(\d+)\s*(?:kg|kgs|chili)?\s*(?:x|per|con|reps?|ripetizioni)?\s*(\d+)',
+      caseSensitive: false,
+    ),
+  ];
+
+  static final List<RegExp> _maxRMQueryPatterns = [
+    RegExp(r'qual[ie] .*massimal[ei] .*(?:di|per)? (.*?)\??$',
+        caseSensitive: false),
+    RegExp(r'massimal[ei] (?:di|per|del) ([\w\s]+)', caseSensitive: false),
+    RegExp(r'dimmi (?:il|i) massimal[ei] (?:di|per|del) ([\w\s]+)',
+        caseSensitive: false),
+    RegExp(
+        r'(?:voglio|vorrei) sapere (?:il|i) massimal[ei] (?:di|per|del) ([\w\s]+)',
+        caseSensitive: false),
+  ];
+
+  static final RegExp _updateMassimalRegex = RegExp(
+    r'modifica massimale (?:di|per) (.*?) a (\d+)kg(?: x| con) (\d+) (?:rep|reps|ripetizioni)',
+    caseSensitive: false,
+  );
+
+  static final RegExp _deleteMassimalRegex = RegExp(
+    r'elimina (?:il )?massimale (?:di|per) (.*)',
+    caseSensitive: false,
+  );
+
+  /// Estrae le informazioni dell'utente per visualizzazione
+  String getUserInfo(UserModel user, String field) {
     switch (field.toLowerCase()) {
       case 'phone':
       case 'phonenumber':
@@ -29,30 +126,43 @@ class AIChatWidget extends HookConsumerWidget {
         return user.phoneNumber ?? 'Numero di telefono non impostato';
       case 'height':
       case 'altezza':
-        return user.height != null ? '${user.height} cm' : 'Altezza non impostata';
+        return user.height != null
+            ? '${user.height} cm'
+            : 'Altezza non impostata';
       case 'birthdate':
       case 'data di nascita':
       case 'compleanno':
-        return user.birthdate?.toString().split(' ')[0] ?? 'Data di nascita non impostata';
+        return user.birthdate?.toString().split(' ')[0] ??
+            'Data di nascita non impostata';
       case 'activity':
       case 'activitylevel':
       case 'livello di attività':
-        return user.activityLevel != null ? user.activityLevel!.toStringAsFixed(2) : 'Livello di attività non impostato';
+        return user.activityLevel != null
+            ? _activityLevelToString(user.activityLevel!)
+            : 'Livello di attività non impostato';
       default:
         return 'Informazione non disponibile';
     }
   }
 
-  // Helper method to parse profile updates from AI response
-  Map<String, dynamic>? _parseProfileUpdates(String aiResponse) {
+  String _activityLevelToString(double level) {
+    if (level < 1.5) return 'Sedentario';
+    if (level < 3.0) return 'Leggero';
+    if (level < 4.5) return 'Moderato';
+    if (level < 6.0) return 'Molto attivo';
+    return 'Estremamente attivo';
+  }
+
+  /// Analizza gli aggiornamenti del profilo dalla risposta dell'AI
+  Map<String, dynamic>? parseProfileUpdates(String aiResponse) {
     final updates = <String, dynamic>{};
     bool hasUpdates = false;
 
-    // Parse phone number - improved regex to catch more variations
-    final phoneMatch = RegExp(r'(?:telefono|numero|phone|number)[:\s]*(?:in\s)?(?:3\d{8,9}|\+39\d{10}|\d{10})').firstMatch(aiResponse);
+    // Numero di telefono
+    final phoneMatch = _phoneRegex.firstMatch(aiResponse);
     if (phoneMatch != null) {
       String phone = phoneMatch.group(0)!.replaceAll(RegExp(r'[^\d+]'), '');
-      if (!phone.startsWith('+39') && !phone.startsWith('3')) {
+      if (!phone.startsWith('+39') && phone.startsWith('3')) {
         phone = '+39$phone';
       } else if (phone.startsWith('3')) {
         phone = '+39$phone';
@@ -61,8 +171,8 @@ class AIChatWidget extends HookConsumerWidget {
       hasUpdates = true;
     }
 
-    // Parse birthdate
-    final dateMatch = RegExp(r'(?:birth(?:day|date)|nascita|compleanno|dob)\s*[:|=]\s*(\d{4}-\d{2}-\d{2})').firstMatch(aiResponse);
+    // Data di nascita
+    final dateMatch = _dateRegex.firstMatch(aiResponse);
     if (dateMatch != null) {
       final dateStr = dateMatch.group(1)?.trim();
       if (dateStr != null) {
@@ -76,491 +186,487 @@ class AIChatWidget extends HookConsumerWidget {
       }
     }
 
-    // Parse height
-    final heightMatch = RegExp(r'(?:height|altezza)\s*[:|=]\s*(\d+(?:\.\d+)?)\s*(?:cm)?').firstMatch(aiResponse);
+    // Altezza
+    final heightMatch = _heightRegex.firstMatch(aiResponse);
     if (heightMatch != null) {
       final heightStr = heightMatch.group(1)?.trim();
       if (heightStr != null) {
         final height = double.tryParse(heightStr);
         if (height == null || height < 50 || height > 250) {
-          throw Exception('Altezza non valida. Inserisci un valore tra 50 e 250 cm');
+          throw Exception(
+              'Altezza non valida. Inserisci un valore tra 50 e 250 cm');
         }
         updates['height'] = height;
         hasUpdates = true;
       }
     }
 
-    // Parse activity level
-    final activityMatch = RegExp(r'(?:activity|attività)\s*(?:level|livello)?\s*[:|=]\s*(sedentary|light|moderate|very active|extremely active|sedentario|leggero|moderato|molto attivo|estremamente attivo)', 
-      caseSensitive: false).firstMatch(aiResponse);
+    // Livello di attività
+    final activityMatch = _activityRegex.firstMatch(aiResponse);
     if (activityMatch != null) {
-      updates['activityLevel'] = activityMatch.group(1)?.toLowerCase().trim();
+      updates['activityLevel'] =
+          _stringToActivityLevel(activityMatch.group(1)!);
       hasUpdates = true;
     }
 
     return hasUpdates ? updates : null;
   }
 
-  // Helper method to parse max RM updates from AI response
-  Future<Map<String, Map<String, dynamic>>?> _parseMaxRMUpdates(String message) async {
-    debugPrint('Parsing message: $message');
-    final regex = RegExp(r'Aggiorna il mio massimale - exercise: (.*?) - max weight: (\d+)kg, reps: (\d+)');
-    final match = regex.firstMatch(message);
-    
-    if (match != null) {
-      final exerciseName = match.group(1)!;
-      final maxWeight = int.parse(match.group(2)!);
-      final repetitions = int.parse(match.group(3)!);
-      
-      debugPrint('Parsed values - name: $exerciseName, weight: $maxWeight, reps: $repetitions');
-      
-      // Query Firestore to get the exercise ID
-      final exerciseQuery = await FirebaseFirestore.instance
+  double _stringToActivityLevel(String level) {
+    switch (level.toLowerCase()) {
+      case 'sedentary':
+      case 'sedentario':
+        return 1.0;
+      case 'light':
+      case 'leggero':
+        return 2.5;
+      case 'moderate':
+      case 'moderato':
+        return 3.5;
+      case 'very active':
+      case 'molto attivo':
+        return 5.0;
+      case 'extremely active':
+      case 'estremamente attivo':
+        return 6.0;
+      default:
+        return 3.0; // Default a moderato
+    }
+  }
+
+  /// Trova l'ID dell'esercizio dato il nome
+  Future<String?> findExerciseId(String exerciseName) async {
+    // Converti il nome dell'esercizio nel formato corretto
+    final formattedName = exerciseName
+        .split(' ')
+        .map((word) => word.isEmpty
+            ? ''
+            : '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}')
+        .join(' ');
+
+    _logger.d('Searching for exercise: $formattedName');
+
+    try {
+      final exerciseQuery = await _firestore
           .collection('exercises')
-          .where('name', isEqualTo: exerciseName)
+          .where('name', isEqualTo: formattedName)
           .get();
-          
-      debugPrint('Query result size: ${exerciseQuery.docs.length}');
-          
+
+      _logger.d('Exercise query result size: ${exerciseQuery.docs.length}');
+
       if (exerciseQuery.docs.isEmpty) {
-        debugPrint('Exercise not found: $exerciseName');
+        _logger.w('Exercise not found: $exerciseName');
         return null;
       }
-      
-      final exerciseDoc = exerciseQuery.docs.first;
-      final exerciseId = exerciseDoc.id;
-      debugPrint('Found exercise - ID: $exerciseId, Name: ${exerciseDoc.data()['name']}');
-      
-      final result = {
-        exerciseId: {
-          'maxWeight': maxWeight,
-          'repetitions': repetitions,
-          'date': DateTime.now().toIso8601String(),
-          'exerciseName': exerciseName,
-        }
-      };
-      
-      debugPrint('Returning result: $result');
-      return result;
-    }
-    
-    debugPrint('No match found in message');
-    return null;
-  }
 
-  Future<String?> _findExerciseId(String exerciseName) async {
-    final exerciseQuery = await FirebaseFirestore.instance
-        .collection('exercises')
-        .where('name', isEqualTo: exerciseName)
-        .get();
-        
-    if (exerciseQuery.docs.isEmpty) {
-      debugPrint('Exercise not found: $exerciseName');
+      final exerciseId = exerciseQuery.docs.first.id;
+      _logger.d('Found exercise ID: $exerciseId');
+      return exerciseId;
+    } catch (e) {
+      _logger.e('Error finding exercise: $e');
       return null;
     }
-    
-    return exerciseQuery.docs.first.id;
   }
 
-  Future<Map<String, dynamic>?> _getExerciseMaxRM(String exerciseName) async {
-    final exerciseId = await _findExerciseId(exerciseName);
+  /// Ottiene il massimale più recente per un esercizio dal percorso users/userId/exercises/exerciseId/records
+  Future<Map<String, dynamic>?> getExerciseMaxRM(
+      String exerciseName, String userId) async {
+    // Converti il nome dell'esercizio nel formato corretto
+    final formattedName = exerciseName
+        .split(' ')
+        .map((word) => word.isEmpty
+            ? ''
+            : '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}')
+        .join(' ');
+
+    final exerciseId = await findExerciseId(formattedName);
     if (exerciseId == null) return null;
 
-    final userId = await userService.getCurrentUserId();
-    if (userId == null) return null;
+    _logger
+        .d('Querying records for exercise: $formattedName (ID: $exerciseId)');
 
-    final recordsQuery = await FirebaseFirestore.instance
-        .collection('records')
-        .where('userId', isEqualTo: userId)
-        .where('exerciseId', isEqualTo: exerciseId)
-        .orderBy('date', descending: true)
-        .limit(1)
-        .get();
-
-    if (recordsQuery.docs.isEmpty) {
-      return {'message': 'Non ho trovato nessun massimale registrato per $exerciseName'};
-    }
-
-    final record = recordsQuery.docs.first.data();
-    return {
-      'message': 'Il tuo massimale più recente per $exerciseName è: ${record['maxWeight']}kg x ${record['repetitions']} ripetizioni (${record['date']})'
-    };
-  }
-
-  Future<String?> _handleMaxRMQuery(String message) async {
-    final regex = RegExp(r'qual[ie] .*massimal[ei] .*(?:di|per)? (.*?)\??$', caseSensitive: false);
-    final match = regex.firstMatch(message);
-    
-    if (match != null) {
-      final exerciseName = match.group(1)?.trim();
-      if (exerciseName != null) {
-        debugPrint('Cercando massimale per: $exerciseName');
-        final result = await _getExerciseMaxRM(exerciseName);
-        return result?['message'];
-      }
-    }
-    return null;
-  }
-
-  Future<String?> _handleMaxRMOperations(String message) async {
-    // Lista di tutti i massimali
-    if (message.toLowerCase().contains('lista dei massimali') || 
-        message.toLowerCase().contains('tutti i massimali')) {
-      final userId = await userService.getCurrentUserId();
-      if (userId == null) return null;
-
-      final recordsQuery = await FirebaseFirestore.instance
+    try {
+      final recordsQuery = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('exercises')
+          .doc(exerciseId)
           .collection('records')
-          .where('userId', isEqualTo: userId)
-          .orderBy('date', descending: true)
-          .get();
-
-      if (recordsQuery.docs.isEmpty) {
-        return 'Non hai ancora registrato nessun massimale.';
-      }
-
-      // Raggruppa i record per esercizio
-      final recordsByExercise = <String, List<Map<String, dynamic>>>{};
-      for (var doc in recordsQuery.docs) {
-        final data = doc.data();
-        final exerciseName = data['exerciseName'] as String;
-        recordsByExercise.putIfAbsent(exerciseName, () => []).add({
-          ...data,
-          'id': doc.id,
-        });
-      }
-
-      // Crea il messaggio di risposta
-      final buffer = StringBuffer('Ecco i tuoi massimali più recenti:\n\n');
-      for (var entry in recordsByExercise.entries) {
-        final latestRecord = entry.value.first;
-        buffer.writeln('${entry.key}: ${latestRecord['maxWeight']}kg x ${latestRecord['repetitions']} reps (${latestRecord['date']})');
-      }
-      return buffer.toString();
-    }
-
-    // Modifica massimale
-    final updateRegex = RegExp(r'modifica massimale (?:di|per) (.*?) a (\d+)kg(?: x| con) (\d+) (?:rep|reps|ripetizioni)', caseSensitive: false);
-    final updateMatch = updateRegex.firstMatch(message);
-    if (updateMatch != null) {
-      final exerciseName = updateMatch.group(1)!;
-      final newWeight = int.parse(updateMatch.group(2)!);
-      final newReps = int.parse(updateMatch.group(3)!);
-
-      // Trova l'ultimo record
-      final exerciseId = await _findExerciseId(exerciseName);
-      if (exerciseId == null) return 'Esercizio non trovato: $exerciseName';
-
-      final userId = await userService.getCurrentUserId();
-      if (userId == null) return null;
-
-      final latestRecord = await FirebaseFirestore.instance
-          .collection('records')
-          .where('userId', isEqualTo: userId)
-          .where('exerciseId', isEqualTo: exerciseId)
           .orderBy('date', descending: true)
           .limit(1)
           .get();
 
-      if (latestRecord.docs.isEmpty) {
+      _logger.d('Found ${recordsQuery.docs.length} records');
+
+      if (recordsQuery.docs.isEmpty) {
+        return {
+          'message':
+              'Non ho trovato nessun massimale registrato per $formattedName'
+        };
+      }
+
+      final record = ExerciseRecord.fromFirestore(recordsQuery.docs.first);
+      _logger.d('Record data: ${record.toMap()}');
+
+      return {
+        'message':
+            'Il tuo massimale più recente per $formattedName è: ${record.maxWeight}kg x ${record.repetitions} ripetizioni (${record.date.toIso8601String()})'
+      };
+    } catch (e) {
+      _logger.e('Error querying records: $e');
+      return {'message': 'Errore durante la ricerca dei massimali: $e'};
+    }
+  }
+
+  /// Gestisce le query sui massimali
+  Future<String?> handleMaxRMQuery(String message, String userId) async {
+    for (var regex in _maxRMQueryPatterns) {
+      final match = regex.firstMatch(message.toLowerCase());
+      if (match != null) {
+        final exerciseName = match.group(1)?.trim();
+        if (exerciseName != null && exerciseName.isNotEmpty) {
+          // Ottieni il massimale dell'esercizio
+          final maxRM = await getExerciseMaxRM(exerciseName, userId);
+          if (maxRM != null) {
+            return maxRM['message'] as String?;
+          } else {
+            return 'Non ho trovato nessun massimale per l\'esercizio "$exerciseName".';
+          }
+        }
+      }
+    }
+
+    return 'La tua richiesta non è chiara. Per favore, riformula la domanda.';
+  }
+
+  /// Gestisce le operazioni sui massimali come lista, modifica ed eliminazione
+  Future<String?> handleMaxRMOperations(String message, String userId) async {
+    final lowerMessage = message.toLowerCase();
+
+    // Lista di tutti i massimali
+    if (lowerMessage.contains('lista dei massimali') ||
+        lowerMessage.contains('tutti i massimali')) {
+      // Recupera tutti i record dall'utente
+      final exercisesRef =
+          _firestore.collection('users').doc(userId).collection('exercises');
+
+      final exercisesSnapshot = await exercisesRef.get();
+      if (exercisesSnapshot.docs.isEmpty) {
+        return 'Non hai ancora registrato nessun massimale.';
+      }
+
+      final buffer = StringBuffer('# I tuoi massimali più recenti\n\n');
+
+      for (var exerciseDoc in exercisesSnapshot.docs) {
+        final exerciseId = exerciseDoc.id;
+        final exerciseData = exerciseDoc.data();
+        final exerciseName = exerciseData['name'] as String;
+
+        // Prendiamo il record più recente
+        final recordsQuery = await exercisesRef
+            .doc(exerciseId)
+            .collection('records')
+            .orderBy('date', descending: true)
+            .limit(1)
+            .get();
+
+        if (recordsQuery.docs.isNotEmpty) {
+          final record = ExerciseRecord.fromFirestore(recordsQuery.docs.first);
+          buffer.writeln(
+              '- **$exerciseName**: ${record.maxWeight}kg x ${record.repetitions} reps _(${record.date.toIso8601String()})_');
+        }
+      }
+
+      return buffer.toString();
+    }
+
+    // Modifica massimale
+    final updateMatch = _updateMassimalRegex.firstMatch(message);
+    if (updateMatch != null) {
+      final exerciseName = updateMatch.group(1)!.trim();
+      final newWeight = int.parse(updateMatch.group(2)!);
+      final newReps = int.parse(updateMatch.group(3)!);
+
+      final exerciseId = await findExerciseId(exerciseName);
+      if (exerciseId == null) return 'Esercizio non trovato: $exerciseName';
+
+      final recordsQuery = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('exercises')
+          .doc(exerciseId)
+          .collection('records')
+          .orderBy('date', descending: true)
+          .limit(1)
+          .get();
+
+      if (recordsQuery.docs.isEmpty) {
         return 'Nessun massimale trovato da modificare per $exerciseName';
       }
 
-      // Aggiorna il record
-      await FirebaseFirestore.instance
+      final latestRecord =
+          ExerciseRecord.fromFirestore(recordsQuery.docs.first);
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('exercises')
+          .doc(exerciseId)
           .collection('records')
-          .doc(latestRecord.docs.first.id)
+          .doc(latestRecord.id)
           .update({
-            'maxWeight': newWeight,
-            'repetitions': newReps,
-            'date': DateTime.now().toIso8601String(),
-          });
+        'maxWeight': newWeight,
+        'repetitions': newReps,
+        'date': Timestamp.fromDate(DateTime.now()),
+      });
 
       return 'Ho aggiornato il massimale di $exerciseName a ${newWeight}kg x $newReps reps';
     }
 
     // Elimina massimale
-    final deleteRegex = RegExp(r'elimina (?:il )?massimale (?:di|per) (.*)', caseSensitive: false);
-    final deleteMatch = deleteRegex.firstMatch(message);
+    final deleteMatch = _deleteMassimalRegex.firstMatch(message);
     if (deleteMatch != null) {
-      final exerciseName = deleteMatch.group(1)!;
-      
-      final exerciseId = await _findExerciseId(exerciseName);
+      final exerciseName = deleteMatch.group(1)!.trim();
+
+      final exerciseId = await findExerciseId(exerciseName);
       if (exerciseId == null) return 'Esercizio non trovato: $exerciseName';
 
-      final userId = await userService.getCurrentUserId();
-      if (userId == null) return null;
-
-      final latestRecord = await FirebaseFirestore.instance
+      final recordsQuery = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('exercises')
+          .doc(exerciseId)
           .collection('records')
-          .where('userId', isEqualTo: userId)
-          .where('exerciseId', isEqualTo: exerciseId)
           .orderBy('date', descending: true)
           .limit(1)
           .get();
 
-      if (latestRecord.docs.isEmpty) {
+      if (recordsQuery.docs.isEmpty) {
         return 'Nessun massimale trovato da eliminare per $exerciseName';
       }
 
-      // Elimina il record
-      await FirebaseFirestore.instance
+      final latestRecord =
+          ExerciseRecord.fromFirestore(recordsQuery.docs.first);
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('exercises')
+          .doc(exerciseId)
           .collection('records')
-          .doc(latestRecord.docs.first.id)
+          .doc(latestRecord.id)
           .delete();
 
       return 'Ho eliminato il massimale più recente di $exerciseName';
     }
 
-    // Query singolo massimale (già implementato)
-    return _handleMaxRMQuery(message);
+    // Query singolo massimale
+    return await handleMaxRMQuery(message, userId);
   }
+}
+
+class AIChatWidget extends HookConsumerWidget {
+  AIChatWidget({
+    super.key,
+    required this.userService,
+  });
+
+  final UsersService userService;
+  final Logger _logger = Logger(
+    printer: PrettyPrinter(
+      methodCount: 0,
+      errorMethodCount: 5,
+      lineLength: 50,
+      colors: true,
+      printEmojis: true,
+      dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
+    ),
+  );
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(aiSettingsProvider);
-    final textController = TextEditingController();
-    final messages = ValueNotifier<List<Map<String, String>>>([]);
+    final chatMessages = ref.watch(chatMessagesProvider);
+    final chatNotifier = ref.read(chatMessagesProvider.notifier);
     final aiService = ref.watch(trainingAIServiceProvider);
     final exerciseRecordService = ref.watch(exerciseRecordServiceProvider);
+    final aiChatService = AIChatService();
+    final isProcessing =
+        useState(false); // Stato per indicare se è in corso una richiesta
 
+    /// Invia un messaggio nella chat
     Future<void> sendMessage(String messageText) async {
+      if (messageText.isEmpty || isProcessing.value) return;
+
+      isProcessing.value = true; // Imposta lo stato di elaborazione
+
       try {
-        // First check for max RM operations
-        final maxRMResponse = await _handleMaxRMOperations(messageText);
-        if (maxRMResponse != null) {
-          messages.value = [
-            ...messages.value,
-            {'role': 'assistant', 'content': maxRMResponse}
-          ];
-          return;
-        }
+        // Aggiungi il messaggio dell'utente
+        chatNotifier
+            .addMessage(ChatMessage(role: 'user', content: messageText));
 
-        // Then check for max RM updates
-        final maxRMUpdates = await _parseMaxRMUpdates(messageText);
-        debugPrint('Parsed max RM updates: $maxRMUpdates');
-        if (maxRMUpdates != null && maxRMUpdates.isNotEmpty) {
-          // Get current user data
-          final userId = userService.getCurrentUserId();
-          debugPrint('User ID from service: $userId');
-          
-          if (userId.isEmpty) {
-            throw Exception('User ID is empty');
-          }
-          
-          // Update each exercise max RM
-          final List<String> updatesList = [];
-          for (final entry in maxRMUpdates.entries) {
-            final exerciseId = entry.key;
-            final data = entry.value as Map<String, dynamic>;
-            
-            debugPrint('Processing exercise: $exerciseId with data: $data');
-            
-            await exerciseRecordService.addExerciseRecord(
-              userId: userId,
-              exerciseId: exerciseId,
-              exerciseName: data['exerciseName'] as String,
-              maxWeight: data['maxWeight'] as num,
-              repetitions: data['repetitions'] as int,
-              date: data['date'] as String,
-            );
-            
-            updatesList.add('- ${data['exerciseName']}: ${data['maxWeight']}kg x ${data['repetitions']} reps');
-          }
-          
-          final updateMessage = 'Ho aggiornato i seguenti massimali:\n${updatesList.join('\n')}';
-          messages.value = [
-            ...messages.value,
-            {'role': 'assistant', 'content': updateMessage.trim()}
-          ];
-          return;
-        }
-
-        // Add user message to chat
-        messages.value = [
-          ...messages.value,
-          {'role': 'user', 'content': messageText}
-        ];
-        textController.clear();
-
-        // Get current user data
-        final userId = userService.getCurrentUserId();
+        // Ottieni i dati dell'utente corrente
+        final userId = await userService.getCurrentUserId();
+        if (userId == null) throw Exception('Utente non autenticato');
         final user = await userService.getUserById(userId);
         if (user == null) throw Exception('Utente non trovato');
 
-        // Check for profile update intent
-        final updates = _parseProfileUpdates(messageText);
-        if (updates != null && updates.isNotEmpty) {
-          // Use ProfileUpdateService to update the profile
-          final profileService = ref.read(profileUpdateServiceProvider);
-          await profileService.updateProfile(updates);
-          
-          // Format the update message based on what was changed
-          final List<String> updatesList = [];
-          if (updates.containsKey('phoneNumber')) {
-            updatesList.add('- Numero di telefono: ${updates['phoneNumber']}');
+        // Interpreta il messaggio usando l'AI
+        final interpretation =
+            await aiService.interpretMaxRMMessage(messageText);
+        if (interpretation != null) {
+          switch (interpretation['type']) {
+            case 'update':
+              final exerciseName = interpretation['exercise'] as String;
+              final maxWeight = interpretation['weight'] as num;
+              final repetitions = interpretation['reps'] as int;
+
+              final exerciseId =
+                  await aiChatService.findExerciseId(exerciseName);
+              if (exerciseId == null) {
+                chatNotifier.addMessage(ChatMessage(
+                  role: 'assistant',
+                  content:
+                      'Non ho trovato l\'esercizio "$exerciseName" nel database. Verifica il nome e riprova.',
+                ));
+                final result =
+                    await aiChatService.getExerciseMaxRM(exerciseName, userId);
+                _logger.d('Exercise record result: $result');
+
+                if (result != null) {
+                  chatNotifier.addMessage(ChatMessage(
+                    role: 'assistant',
+                    content: result['message'] as String,
+                  ));
+                  return;
+                } else {
+                  _logger.w('No exercise record found for: $exerciseName');
+                  chatNotifier.addMessage(ChatMessage(
+                    role: 'assistant',
+                    content:
+                        'Non ho trovato nessun record per l\'esercizio "$exerciseName".',
+                  ));
+                  return;
+                }
+              }
+
+              // Se l'esercizio esiste, aggiorna il massimale aggiungendo un nuovo record
+              final newRecord = ExerciseRecord(
+                id: '', // L'ID verrà assegnato automaticamente da Firestore
+                exerciseId: exerciseId,
+                maxWeight: maxWeight,
+                repetitions: repetitions,
+                date: DateTime.now(),
+              );
+
+              final newRecordRef = await aiChatService._firestore
+                  .collection('users')
+                  .doc(userId)
+                  .collection('exercises')
+                  .doc(exerciseId)
+                  .collection('records')
+                  .add(newRecord.toMap());
+
+              if (newRecordRef.id.isNotEmpty) {
+                chatNotifier.addMessage(ChatMessage(
+                  role: 'assistant',
+                  content:
+                      'Ho aggiornato il massimale di $exerciseName a ${maxWeight}kg x $repetitions reps.',
+                ));
+              } else {
+                chatNotifier.addMessage(ChatMessage(
+                  role: 'assistant',
+                  content:
+                      'C\'è stato un problema nell\'aggiornamento del massimale.',
+                ));
+              }
+              isProcessing.value = false;
+              return;
+
+            case 'query':
+              final exerciseName = interpretation['exercise'] as String;
+              _logger.d('Processing query for exercise: $exerciseName');
+
+              // Recupera il massimale dal database
+              final result =
+                  await aiChatService.getExerciseMaxRM(exerciseName, userId);
+
+              if (result == null) {
+                chatNotifier.addMessage(ChatMessage(
+                  role: 'assistant',
+                  content:
+                      'Non ho trovato l\'esercizio "$exerciseName" nel database.',
+                ));
+              } else {
+                chatNotifier.addMessage(ChatMessage(
+                  role: 'assistant',
+                  content: result['message'],
+                ));
+              }
+              isProcessing.value = false;
+              return;
+
+            case 'list':
+              final records = interpretation['records'] as List<dynamic>;
+              final formattedRecords = records.map((record) {
+                final recordMap = record as Map<String, dynamic>;
+                return '**${recordMap['exercise']}**: ${recordMap['weight']}kg x ${recordMap['reps']} reps _(${recordMap['date']})_';
+              }).join('\n');
+              chatNotifier.addMessage(ChatMessage(
+                role: 'assistant',
+                content:
+                    '**Ecco i tuoi massimali più recenti:**\n$formattedRecords',
+              ));
+              isProcessing.value = false;
+              return;
+
+            case 'error':
+              final errorMessage = interpretation['error_message'] as String;
+              chatNotifier.addMessage(ChatMessage(
+                role: 'assistant',
+                content: errorMessage,
+              ));
+              isProcessing.value = false;
+              return;
+
+            default:
+              break;
           }
-          if (updates.containsKey('height')) {
-            updatesList.add('- Altezza: ${updates['height']} cm');
-          }
-          if (updates.containsKey('birthdate')) {
-            updatesList.add('- Data di nascita: ${updates['birthdate']}');
-          }
-          if (updates.containsKey('activityLevel')) {
-            updatesList.add('- Livello di attività: ${updates['activityLevel']}');
-          }
-          
-          final updateMessage = 'Ho aggiornato i seguenti dati:\n${updatesList.join('\n')}';
-          messages.value = [
-            ...messages.value,
-            {'role': 'assistant', 'content': updateMessage.trim()}
-          ];
-          return;
         }
 
-        // Process user query about profile info
-        if (messageText.toLowerCase().contains('numero') || 
-            messageText.toLowerCase().contains('telefono')) {
-          final phoneInfo = _getUserInfo(user, 'phone');
-          messages.value = [
-            ...messages.value,
-            {'role': 'assistant', 'content': 'Il tuo numero di telefono è: $phoneInfo'}
-          ];
-          return;
-        }
+        // Se non è un messaggio sui massimali, procedi con la normale elaborazione
+        Map<String, dynamic> profileData = user.toMap();
 
-        // Get current user's profile
-        final userProfile = await userService.getUserById(userId);
-        if (userProfile == null) {
-          throw Exception('Profilo utente non trovato');
-        }
-
-        // Check if this is an info request
-        if (messageText.contains('qual è') || messageText.contains('qual e') || messageText.contains('dimmi') || 
-            messageText.contains('mostrami') || messageText.contains('visualizza')) {
-          // Extract the requested field
-          String? requestedField;
-          if (messageText.contains('telefono')) requestedField = 'telefono';
-          else if (messageText.contains('altezza')) requestedField = 'altezza';
-          else if (messageText.contains('nascita')) requestedField = 'data di nascita';
-          else if (messageText.contains('attività')) requestedField = 'livello di attività';
-
-          if (requestedField != null) {
-            final info = _getUserInfo(userProfile, requestedField);
-            messages.value = [
-              ...messages.value,
-              {'role': 'assistant', 'content': info}
-            ];
-            return;
-          }
-        }
-
-        Map<String, dynamic> profileData = userProfile.toMap();
-        
-        // Convert Timestamp fields to ISO string format for AI processing
-        if (profileData.containsKey('birthdate') && profileData['birthdate'] is Timestamp) {
-          profileData['birthdate'] = (profileData['birthdate'] as Timestamp).toDate().toIso8601String();
-        }
-        profileData.forEach((key, value) {
+        // Converti i campi Timestamp in stringhe ISO
+        profileData.updateAll((key, value) {
           if (value is Timestamp) {
-            profileData[key] = value.toDate().toIso8601String();
+            return value.toDate().toIso8601String();
           }
+          return value;
         });
-
-        // Include chat history in the context
-        final chatHistory = messages.value.map((m) => {
-          'role': m['role'],
-          'content': m['content'],
-        }).toList();
 
         final response = await aiService.processNaturalLanguageQuery(
           messageText,
           context: {
             'userProfile': profileData,
-            'chatHistory': chatHistory,
-            'exercises': [], // Actual exercises will be fetched from Firestore
-            'trainingProgram': {}, // TODO: Add actual training program
+            'chatHistory': chatMessages
+                .map((msg) => {'role': msg.role, 'content': msg.content})
+                .toList(),
           },
         );
 
-        final aiMaxRMUpdates = await _parseMaxRMUpdates(response);
-        if (aiMaxRMUpdates != null && aiMaxRMUpdates.isNotEmpty) {
-          final userId = profileData['id'] as String?;
-          debugPrint('User ID: $userId');
-          
-          if (userId == null) {
-            throw Exception('User ID is null');
-          }
-          
-          // Update each exercise max RM
-          final List<String> updatesList = [];
-          for (final entry in aiMaxRMUpdates.entries) {
-            final exerciseId = entry.key;
-            final data = entry.value as Map<String, dynamic>;
-            
-            debugPrint('Processing exercise: $exerciseId with data: $data');
-            
-            await exerciseRecordService.addExerciseRecord(
-              userId: userId,
-              exerciseId: exerciseId,
-              exerciseName: data['exerciseName'] as String,
-              maxWeight: data['maxWeight'] as num,
-              repetitions: data['repetitions'] as int,
-              date: data['date'] as String,
-            );
-            
-            updatesList.add('- ${data['exerciseName']}: ${data['maxWeight']}kg x ${data['repetitions']} reps');
-          }
-          
-          final updateMessage = 'Ho aggiornato i seguenti massimali:\n${updatesList.join('\n')}';
-          messages.value = [
-            ...messages.value,
-            {'role': 'assistant', 'content': updateMessage.trim()}
-          ];
-          return;
-        }
-        
-        // Then check for profile updates in the AI response
-        final profileUpdates = _parseProfileUpdates(response);
-        if (profileUpdates != null && profileUpdates.isNotEmpty) {
-          final profileService = ref.read(profileUpdateServiceProvider);
-          await profileService.updateProfile(profileUpdates);
-          
-          // Format the update message based on what was changed
-          final List<String> updatesList = [];
-          if (profileUpdates.containsKey('phoneNumber')) {
-            updatesList.add('- Numero di telefono: ${profileUpdates['phoneNumber']}');
-          }
-          if (profileUpdates.containsKey('height')) {
-            updatesList.add('- Altezza: ${profileUpdates['height']} cm');
-          }
-          if (profileUpdates.containsKey('birthdate')) {
-            updatesList.add('- Data di nascita: ${profileUpdates['birthdate']}');
-          }
-          if (profileUpdates.containsKey('activityLevel')) {
-            updatesList.add('- Livello di attività: ${profileUpdates['activityLevel']}');
-          }
-          
-          final updateMessage = 'Ho aggiornato i seguenti dati:\n${updatesList.join('\n')}';
-          messages.value = [
-            ...messages.value,
-            {'role': 'assistant', 'content': updateMessage.trim()}
-          ];
-          return;
-        } else {
-          messages.value = [
-            ...messages.value,
-            {'role': 'assistant', 'content': response}
-          ];
-        }
-      } catch (e) {
-        messages.value = [
-          ...messages.value,
-          {'role': 'assistant', 'content': 'Errore: $e'}
-        ];
+        chatNotifier
+            .addMessage(ChatMessage(role: 'assistant', content: response));
+      } catch (e, stackTrace) {
+        _logger.e('Errore durante l\'invio del messaggio',
+            error: e, stackTrace: stackTrace);
+        chatNotifier.addMessage(ChatMessage(
+          role: 'assistant',
+          content: '**Errore:** ${e.toString()}',
+        ));
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Errore: $e')),
+          SnackBar(content: Text('Errore: ${e.toString()}')),
         );
+      } finally {
+        isProcessing.value = false; // Resetta lo stato di elaborazione
       }
     }
 
@@ -576,214 +682,306 @@ class AIChatWidget extends HookConsumerWidget {
       ),
       body: Column(
         children: [
-          // AI Provider and Model Selection
+          // Selezione del provider e del modello AI
           if (settings.availableProviders.isNotEmpty) ...[
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                border: Border(
-                  bottom: BorderSide(
-                    color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-                  ),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<AIProvider>(
-                      value: settings.selectedProvider,
-                      decoration: const InputDecoration(
-                        labelText: 'AI Provider',
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12),
-                      ),
-                      items: settings.availableProviders.map((provider) {
-                        return DropdownMenuItem(
-                          value: provider,
-                          child: Text(provider.displayName),
-                        );
-                      }).toList(),
-                      onChanged: (provider) {
-                        if (provider != null) {
-                          ref.read(aiSettingsProvider.notifier).updateSelectedProvider(provider);
-                        }
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: DropdownButtonFormField<AIModel>(
-                      value: settings.selectedModel,
-                      decoration: const InputDecoration(
-                        labelText: 'Model',
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12),
-                      ),
-                      items: settings.availableModels
-                          .where((model) => 
-                              model.provider == settings.selectedProvider)
-                          .map((model) {
-                        return DropdownMenuItem(
-                          value: model,
-                          child: Text(model.modelId),
-                        );
-                      }).toList(),
-                      onChanged: (model) {
-                        if (model != null) {
-                          ref.read(aiSettingsProvider.notifier).updateSelectedModel(model);
-                        }
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            const _AISettingsSelector(),
           ] else ...[
-            Container(
-              padding: const EdgeInsets.all(16),
-              margin: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.errorContainer,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.warning,
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Text(
-                      'No API keys configured. Please add your API keys in the settings.',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
+            const _APIKeyWarning(),
+          ],
+
+          // Messaggi di chat
+          Expanded(
+            child: Stack(
+              children: [
+                const _ChatMessagesList(),
+                if (isProcessing.value)
+                  const Positioned(
+                    bottom: 16,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: CircularProgressIndicator(),
                     ),
                   ),
-                  TextButton(
-                    onPressed: () => context.go('/settings/ai'),
-                    child: const Text('Configure'),
-                  ),
-                ],
-              ),
-            ),
-          ],
-          
-          // Chat Messages
-          Expanded(
-            child: ValueListenableBuilder(
-              valueListenable: messages,
-              builder: (context, List<Map<String, String>> messageList, _) {
-                return ListView.builder(
-                  reverse: true,
-                  padding: const EdgeInsets.all(16),
-                  itemCount: messageList.length,
-                  itemBuilder: (context, index) {
-                    final message = messageList[messageList.length - 1 - index];
-                    final isUser = message['role'] == 'user';
-
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        mainAxisAlignment: isUser
-                            ? MainAxisAlignment.end
-                            : MainAxisAlignment.start,
-                        children: [
-                          Container(
-                            constraints: BoxConstraints(
-                              maxWidth:
-                                  MediaQuery.of(context).size.width * 0.75,
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isUser
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Theme.of(context).colorScheme.surface,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .shadow
-                                      .withOpacity(0.1),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Text(
-                              message['content'] ?? '',
-                              style: TextStyle(
-                                color: isUser
-                                    ? Theme.of(context).colorScheme.onPrimary
-                                    : Theme.of(context).colorScheme.onSurface,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                );
-              },
+              ],
             ),
           ),
 
-          // Message Input
+          // Input per i messaggi
           if (settings.availableProviders.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                border: Border(
-                  top: BorderSide(
-                    color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-                  ),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
-                    blurRadius: 4,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
+            _ChatInputField(onSend: sendMessage),
+        ],
+      ),
+    );
+  }
+}
+
+/// Widget per la selezione del provider e del modello AI
+class _AISettingsSelector extends ConsumerWidget {
+  const _AISettingsSelector();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(aiSettingsProvider);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: DropdownButtonFormField<AIProvider>(
+              value: settings.selectedProvider,
+              decoration: const InputDecoration(
+                labelText: 'AI Provider',
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(horizontal: 12),
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: textController,
-                      decoration: InputDecoration(
-                        hintText: 'Ask about your training...',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                      ),
-                      onSubmitted: (_) => sendMessage(_.trim()),
-                      maxLines: null,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    icon: const Icon(Icons.send),
-                    onPressed: () => sendMessage(textController.text.trim()),
-                    style: IconButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  ),
-                ],
+              items: settings.availableProviders.map((provider) {
+                return DropdownMenuItem(
+                  value: provider,
+                  child: Text(provider.displayName),
+                );
+              }).toList(),
+              onChanged: (provider) {
+                if (provider != null) {
+                  ref
+                      .read(aiSettingsProvider.notifier)
+                      .updateSelectedProvider(provider);
+                }
+              },
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: DropdownButtonFormField<AIModel>(
+              value: settings.selectedModel,
+              decoration: const InputDecoration(
+                labelText: 'Model',
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(horizontal: 12),
+              ),
+              items: settings.availableModels
+                  .where((model) => model.provider == settings.selectedProvider)
+                  .map((model) {
+                return DropdownMenuItem(
+                  value: model,
+                  child: Text(model.modelId),
+                );
+              }).toList(),
+              onChanged: (model) {
+                if (model != null) {
+                  ref
+                      .read(aiSettingsProvider.notifier)
+                      .updateSelectedModel(model);
+                }
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Widget per avviso mancanza chiavi API
+class _APIKeyWarning extends StatelessWidget {
+  const _APIKeyWarning();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.warning,
+            color: Theme.of(context).colorScheme.error,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              'Nessuna chiave API configurata. Per favore, aggiungi le tue chiavi API nelle impostazioni.',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.error,
               ),
             ),
+          ),
+          TextButton(
+            onPressed: () => context.go('/settings/ai'),
+            child: const Text('Configura'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Widget per la lista dei messaggi di chat
+class _ChatMessagesList extends ConsumerWidget {
+  const _ChatMessagesList();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final chatMessages = ref.watch(chatMessagesProvider);
+
+    return ListView.builder(
+      reverse: true,
+      padding: const EdgeInsets.all(16),
+      itemCount: chatMessages.length,
+      itemBuilder: (context, index) {
+        final message = chatMessages[chatMessages.length - 1 - index];
+        final isUser = message.role == 'user';
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Row(
+            mainAxisAlignment:
+                isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+            children: [
+              Container(
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.75,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: isUser
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color:
+                          Theme.of(context).colorScheme.shadow.withOpacity(0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Markdown(
+                  data: message.content,
+                  selectable: true,
+                  styleSheet: MarkdownStyleSheet(
+                    p: TextStyle(
+                      color: isUser
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : Theme.of(context).colorScheme.onSurface,
+                      fontSize: 16,
+                    ),
+                    listBullet: TextStyle(
+                      color: isUser
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : Theme.of(context).colorScheme.onSurface,
+                    ),
+                    code: TextStyle(
+                      backgroundColor: isUser
+                          ? Theme.of(context).colorScheme.primaryContainer
+                          : Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest,
+                      color: isUser
+                          ? Theme.of(context).colorScheme.onPrimaryContainer
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontFamily: 'monospace',
+                    ),
+                    codeblockDecoration: BoxDecoration(
+                      color: isUser
+                          ? Theme.of(context).colorScheme.primaryContainer
+                          : Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Widget per il campo di input dei messaggi
+class _ChatInputField extends HookConsumerWidget {
+  final Function(String) onSend;
+
+  const _ChatInputField({
+    required this.onSend,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final textController = useTextEditingController();
+    final focusNode = useFocusNode();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(
+          top: BorderSide(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+          ),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: textController,
+              focusNode: focusNode,
+              textInputAction: TextInputAction.send,
+              decoration: InputDecoration(
+                hintText: 'Scrivi un messaggio...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              onSubmitted: (value) {
+                onSend(value);
+                textController.clear();
+                focusNode.requestFocus();
+              },
+            ),
+          ),
+          const SizedBox(width: 16),
+          IconButton(
+            icon: const Icon(Icons.send),
+            onPressed: () {
+              onSend(textController.text);
+              textController.clear();
+              focusNode.requestFocus();
+            },
+          ),
         ],
       ),
     );

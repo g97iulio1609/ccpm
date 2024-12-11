@@ -7,7 +7,6 @@ import './trainingBuilder/controller/training_program_controller.dart';
 import './trainingBuilder/services/training_services.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'UI/components/bottom_menu.dart';
-import 'package:alphanessone/Viewer/UI/training_viewer.dart';
 
 class UserProgramsScreen extends HookConsumerWidget {
   final String userId;
@@ -576,7 +575,6 @@ class UserProgramsScreen extends HookConsumerWidget {
     context.go('/user_programs/training_viewer',
         extra: {'userId': userId, 'programId': programId});
   }
-
 }
 
 class AddProgramDialog extends StatefulWidget {

@@ -41,10 +41,6 @@ class TrainingProgramPage extends HookConsumerWidget {
       return null;
     }, [programId]);
 
-    if (program == null) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: Container(

@@ -5,7 +5,7 @@ class ExerciseRecord {
   final String exerciseId;
   final num maxWeight;
   final int repetitions;
-  final String date;
+  final DateTime date;
 
   ExerciseRecord({
     required this.id,
@@ -39,7 +39,16 @@ class ExerciseRecord {
       exerciseId: data['exerciseId'],
       maxWeight: data['maxWeight'],
       repetitions: data['repetitions'],
-      date: data['date'],
+      date: (data['date'] as Timestamp).toDate(),
     );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'exerciseId': exerciseId,
+      'maxWeight': maxWeight,
+      'repetitions': repetitions,
+      'date': Timestamp.fromDate(date),
+    };
   }
 }

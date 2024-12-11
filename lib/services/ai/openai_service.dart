@@ -9,7 +9,7 @@ class OpenAIService implements AIService {
 
   OpenAIService({
     String? apiKey,
-    this.model = 'gpt-4-turbo-preview',
+    required this.model, // Model is now required
     this.baseUrl = 'https://api.openai.com/v1/chat/completions',
   }) : apiKey = apiKey ?? const String.fromEnvironment('OPENAI_API_KEY');
 
@@ -30,25 +30,24 @@ class OpenAIService implements AIService {
               'content': 'You are a helpful assistant for a fitness training application. '
                   'You can help with exercises, training programs, and fitness-related queries.',
             },
-            if (context != null)
-              {
-                'role': 'system',
-                'content': jsonEncode(context),
-              },
-            {
-              'role': 'user',
-              'content': query,
-            },
+            if (context != null) ...[
+              {'role': 'system', 'content': jsonEncode(context)},
+            ],
+            {'role': 'user', 'content': query},
           ],
           'temperature': 0.7,
         }),
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['choices'][0]['message']['content'];
+        try {
+          final data = jsonDecode(response.body);
+          return data['choices'][0]['message']['content'] as String;
+        } catch (e) {
+          throw Exception('Failed to decode JSON response: $e');
+        }
       } else {
-        throw Exception('Failed to process query: ${response.statusCode}');
+        throw Exception('Failed to process query: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
       throw Exception('Error processing query: $e');

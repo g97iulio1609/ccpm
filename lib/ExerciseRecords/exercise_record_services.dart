@@ -18,7 +18,9 @@ class ExerciseRecordService {
         .collection('records')
         .orderBy('date', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => ExerciseRecord.fromFirestore(doc)).toList());
+        .map((snapshot) => snapshot.docs
+            .map((doc) => ExerciseRecord.fromFirestore(doc))
+            .toList());
   }
 
   Future<void> addExerciseRecord({
@@ -29,12 +31,11 @@ class ExerciseRecordService {
     required int repetitions,
     required String date,
   }) async {
-
     await _addOrUpdateRecord(
       userId: userId,
       exerciseId: exerciseId,
       data: {
-        'date': date,
+        'date': Timestamp.fromDate(DateTime.parse(date)),
         'exerciseId': exerciseId,
         'exerciseName': exerciseName,
         'maxWeight': maxWeight,
@@ -70,7 +71,8 @@ class ExerciseRecordService {
     final userDoc = await _firestore.collection('users').doc(userId).get();
     final currentProgramId = userDoc.data()?['currentProgram'];
     if (currentProgramId != null) {
-      await _updateIntensityForProgram(currentProgramId, exerciseId, newMaxWeight);
+      await _updateIntensityForProgram(
+          currentProgramId, exerciseId, newMaxWeight);
     }
   }
 
@@ -82,7 +84,8 @@ class ExerciseRecordService {
     final userDoc = await _firestore.collection('users').doc(userId).get();
     final currentProgramId = userDoc.data()?['currentProgram'];
     if (currentProgramId != null) {
-      await _updateWeightsForProgram(currentProgramId, exerciseId, newMaxWeight);
+      await _updateWeightsForProgram(
+          currentProgramId, exerciseId, newMaxWeight);
     }
   }
 
@@ -152,14 +155,20 @@ class ExerciseRecordService {
     for (var week in weeks) {
       final workouts = await _getDocuments('workouts', 'weekId', week.id);
       for (var workout in workouts) {
-        final exercises = await _getDocuments('exercisesWorkout', 'workoutId', workout.id);
+        final exercises =
+            await _getDocuments('exercisesWorkout', 'workoutId', workout.id);
         for (var exercise in exercises) {
           if (exercise['exerciseId'] == exerciseId) {
-            final series = await _getDocuments('series', 'exerciseId', exercise.id);
+            final series =
+                await _getDocuments('series', 'exerciseId', exercise.id);
             for (var serie in series) {
               final weight = serie['weight'];
-              final newIntensity = ((weight / newMaxWeight) * 100).toStringAsFixed(2);
-              await _firestore.collection('series').doc(serie.id).update({'intensity': newIntensity});
+              final newIntensity =
+                  ((weight / newMaxWeight) * 100).toStringAsFixed(2);
+              await _firestore
+                  .collection('series')
+                  .doc(serie.id)
+                  .update({'intensity': newIntensity});
             }
           }
         }
@@ -176,14 +185,19 @@ class ExerciseRecordService {
     for (var week in weeks) {
       final workouts = await _getDocuments('workouts', 'weekId', week.id);
       for (var workout in workouts) {
-        final exercises = await _getDocuments('exercisesWorkout', 'workoutId', workout.id);
+        final exercises =
+            await _getDocuments('exercisesWorkout', 'workoutId', workout.id);
         for (var exercise in exercises) {
           if (exercise['exerciseId'] == exerciseId) {
-            final series = await _getDocuments('series', 'exerciseId', exercise.id);
+            final series =
+                await _getDocuments('series', 'exerciseId', exercise.id);
             for (var serie in series) {
               final intensity = double.parse(serie['intensity']);
               final calculatedWeight = (newMaxWeight * intensity) / 100;
-              await _firestore.collection('series').doc(serie.id).update({'weight': calculatedWeight});
+              await _firestore
+                  .collection('series')
+                  .doc(serie.id)
+                  .update({'weight': calculatedWeight});
             }
           }
         }
@@ -192,9 +206,14 @@ class ExerciseRecordService {
   }
 
   Future<List<DocumentSnapshot>> _getDocuments(
-    String collection, String field, String value,
+    String collection,
+    String field,
+    String value,
   ) async {
-    final snapshot = await _firestore.collection(collection).where(field, isEqualTo: value).get();
+    final snapshot = await _firestore
+        .collection(collection)
+        .where(field, isEqualTo: value)
+        .get();
     return snapshot.docs;
   }
 }

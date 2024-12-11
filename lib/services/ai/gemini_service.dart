@@ -1,19 +1,35 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
 import 'ai_service.dart';
 
 class GeminiService implements AIService {
   final String apiKey;
   final String baseUrl;
+  final Logger _logger = Logger(
+    printer: PrettyPrinter(
+      methodCount: 0,
+      errorMethodCount: 5,
+      lineLength: 50,
+      colors: true,
+      printEmojis: true,
+      dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
+    ),
+  );
 
   GeminiService({
-    String? apiKey,
+    required this.apiKey, // Require apiKey in constructor
     this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
-  }) : apiKey = apiKey ?? const String.fromEnvironment('GEMINI_API_KEY');
+  });
 
   @override
   Future<String> processNaturalLanguageQuery(String query, {Map<String, dynamic>? context}) async {
     try {
+      _logger.i('Processing query: $query');
+      if (context != null) {
+        _logger.d('Context: $context');
+      }
+
       final url = Uri.parse('$baseUrl?key=$apiKey');
       final response = await http.post(
         url,
@@ -26,9 +42,33 @@ class GeminiService implements AIService {
               'role': 'user',
               'parts': [
                 {
-                  'text': context != null 
-                      ? 'Context: ${jsonEncode(context)}\nQuery: $query'
-                      : query
+                  'text': '''Sei un assistente specializzato nell'interpretazione di messaggi relativi ai massimali (PR) di allenamento.
+
+IMPORTANTE: Devi SEMPRE rispondere SOLO con un oggetto JSON valido, anche in caso di errori o mancanza di dati.
+NON aggiungere MAI testo esplicativo o commenti fuori dal JSON.
+NON usare markdown o backticks nel JSON.
+
+Se l'utente sta:
+1. Aggiornando un massimale → type: "update"
+2. Chiedendo info su un massimale → type: "query"
+3. Altro o errori → type: "error"
+
+Formato JSON richiesto:
+{
+  "type": "update" | "query" | "error",
+  "exercise": "nome esercizio" (opzionale per error),
+  "weight": numero (solo per update),
+  "reps": numero (solo per update),
+  "error_message": "messaggio di errore" (solo per error)
+}
+
+Se non hai accesso ai dati o non puoi determinare l'esercizio, rispondi con:
+{
+  "type": "error",
+  "error_message": "Dati non disponibili"
+}
+
+Query: $query'''
                 }
               ]
             }
@@ -42,15 +82,48 @@ class GeminiService implements AIService {
         }),
       );
 
+      _logger.d('Response status code: ${response.statusCode}');
+      _logger.d('Response body: ${response.body}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return data['candidates'][0]['content']['parts'][0]['text'];
+        final text = data['candidates'][0]['content']['parts'][0]['text'];
+        
+        // Clean up the response text to ensure it's valid JSON
+        final cleanText = text.trim()
+            .replaceAll(RegExp(r'```json\s*'), '')
+            .replaceAll(RegExp(r'\s*```'), '')
+            .replaceAll(RegExp(r'^\s*\{'), '{')
+            .replaceAll(RegExp(r'\}\s*$'), '}');
+          
+        _logger.d('Cleaned response text: $cleanText');
+
+        // Validate that it's actually JSON before returning
+        try {
+          json.decode(cleanText); // Test if it's valid JSON
+          _logger.i('Successfully parsed JSON response');
+          return cleanText;
+        } catch (e) {
+          _logger.e('Invalid JSON response: $cleanText', error: e);
+          // If the response is not valid JSON, create a valid error JSON
+          return jsonEncode({
+            "type": "error",
+            "error_message": "Risposta non valida: formato JSON non corretto"
+          });
+        }
       } else {
-        print('Error response: ${response.body}');  
-        throw Exception('Failed to process query: ${response.statusCode} - ${response.body}');
+        _logger.e('Error response: ${response.body}');
+        return jsonEncode({
+          "type": "error",
+          "error_message": "Errore nella richiesta: ${response.statusCode}"
+        });
       }
-    } catch (e) {
-      throw Exception('Error processing query: $e');
+    } catch (e, stackTrace) {
+      _logger.e('Exception in processNaturalLanguageQuery', error: e, stackTrace: stackTrace);
+      return jsonEncode({
+        "type": "error",
+        "error_message": "Errore interno del servizio"
+      });
     }
   }
 
@@ -61,6 +134,20 @@ class GeminiService implements AIService {
     Map<String, dynamic>? trainingProgram,
   }) async {
     try {
+      _logger.i('Processing training query: $query');
+      if (userProfile != null) {
+        _logger.d('User Profile: $userProfile');
+      }
+      if (chatHistory != null) {
+        _logger.d('Chat History: $chatHistory');
+      }
+      if (exercises != null) {
+        _logger.d('Exercises: $exercises');
+      }
+      if (trainingProgram != null) {
+        _logger.d('Training Program: $trainingProgram');
+      }
+
       final url = Uri.parse('$baseUrl?key=$apiKey');
       
       // Convert chat history to Gemini format
@@ -107,15 +194,48 @@ Query: $query
         }),
       );
 
+      _logger.d('Response status code: ${response.statusCode}');
+      _logger.d('Response body: ${response.body}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return data['candidates'][0]['content']['parts'][0]['text'];
+        final text = data['candidates'][0]['content']['parts'][0]['text'];
+        
+        // Clean up the response text to ensure it's valid JSON
+        final cleanText = text.trim()
+            .replaceAll(RegExp(r'```json\s*'), '')
+            .replaceAll(RegExp(r'\s*```'), '')
+            .replaceAll(RegExp(r'^\s*\{'), '{')
+            .replaceAll(RegExp(r'\}\s*$'), '}');
+          
+        _logger.d('Cleaned response text: $cleanText');
+
+        // Validate that it's actually JSON before returning
+        try {
+          json.decode(cleanText); // Test if it's valid JSON
+          _logger.i('Successfully parsed JSON response');
+          return cleanText;
+        } catch (e) {
+          _logger.e('Invalid JSON response: $cleanText', error: e);
+          // If the response is not valid JSON, create a valid error JSON
+          return jsonEncode({
+            "type": "error",
+            "error_message": "Risposta non valida: formato JSON non corretto"
+          });
+        }
       } else {
-        print('Error response: ${response.body}');  
-        throw Exception('Failed to process query: ${response.statusCode} - ${response.body}');
+        _logger.e('Error response: ${response.body}');
+        return jsonEncode({
+          "type": "error",
+          "error_message": "Errore nella richiesta: ${response.statusCode}"
+        });
       }
-    } catch (e) {
-      throw Exception('Error processing query: $e');
+    } catch (e, stackTrace) {
+      _logger.e('Exception in processTrainingQuery', error: e, stackTrace: stackTrace);
+      return jsonEncode({
+        "type": "error",
+        "error_message": "Errore interno del servizio"
+      });
     }
   }
 }
