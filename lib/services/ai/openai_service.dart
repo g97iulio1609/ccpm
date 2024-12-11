@@ -42,12 +42,8 @@ class OpenAIService implements AIService {
       );
 
       if (response.statusCode == 200) {
-        try {
-          final data = jsonDecode(response.body);
-          return data['choices'][0]['message']['content'] as String;
-        } catch (e) {
-          throw Exception('Failed to decode JSON response: $e');
-        }
+        final data = jsonDecode(response.body);
+        return data['choices'][0]['message']['content'] as String;
       } else {
         throw Exception(
             'Failed to process query: ${response.statusCode} - ${response.body}');

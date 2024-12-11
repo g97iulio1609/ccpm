@@ -1,4 +1,3 @@
-import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/services/users_services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -8,10 +7,11 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logger/logger.dart';
 
-import '../models/user_model.dart';
-import '../models/exercise_record.dart'; // Importa il modello ExerciseRecord
 import '../services/ai/ai_settings_service.dart';
 import '../services/ai/training_ai_service.dart';
+import '../services/ai/extensions/ai_extension.dart';
+import '../services/ai/extensions/maxrm_extension.dart';
+import '../services/ai/extensions/profile_extension.dart';
 
 /// Stato dei messaggi di chat
 final chatMessagesProvider =
@@ -40,175 +40,6 @@ class ChatMessage {
   ChatMessage({required this.role, required this.content});
 }
 
-/// Servizio per la logica di chat AI
-class AIChatService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final Logger _logger = Logger(
-    printer: PrettyPrinter(
-      methodCount: 0,
-      errorMethodCount: 5,
-      lineLength: 50,
-      colors: true,
-      printEmojis: true,
-      dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
-    ),
-  );
-
-  /// Trova l'ID dell'esercizio dato il nome
-  Future<String?> findExerciseId(String exerciseName) async {
-    // Converti il nome dell'esercizio nel formato corretto
-    final formattedName = exerciseName
-        .split(' ')
-        .map((word) => word.isEmpty
-            ? ''
-            : '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}')
-        .join(' ');
-
-    _logger.d('Searching for exercise: $formattedName');
-
-    try {
-      final exerciseQuery = await _firestore
-          .collection('exercises')
-          .where('name', isEqualTo: formattedName)
-          .get();
-
-      _logger.d('Exercise query result size: ${exerciseQuery.docs.length}');
-
-      if (exerciseQuery.docs.isEmpty) {
-        _logger.w('Exercise not found: $exerciseName');
-        return null;
-      }
-
-      final exerciseId = exerciseQuery.docs.first.id;
-      _logger.d('Found exercise ID: $exerciseId');
-      return exerciseId;
-    } catch (e) {
-      _logger.e('Error finding exercise: $e');
-      return null;
-    }
-  }
-
-  /// Ottiene il massimale più recente per un esercizio dal percorso users/userId/exercises/exerciseId/records
-  Future<Map<String, dynamic>?> getExerciseMaxRM(
-      String exerciseName, String userId) async {
-    // Converti il nome dell'esercizio nel formato corretto
-    final formattedName = exerciseName
-        .split(' ')
-        .map((word) => word.isEmpty
-            ? ''
-            : '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}')
-        .join(' ');
-
-    final exerciseId = await findExerciseId(formattedName);
-    if (exerciseId == null) return null;
-
-    _logger
-        .d('Querying records for exercise: $formattedName (ID: $exerciseId)');
-
-    try {
-      final recordsQuery = await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('exercises')
-          .doc(exerciseId)
-          .collection('records')
-          .orderBy('date', descending: true)
-          .limit(1)
-          .get();
-
-      _logger.d('Found ${recordsQuery.docs.length} records');
-
-      if (recordsQuery.docs.isEmpty) {
-        return {
-          'message':
-              'Non ho trovato nessun massimale registrato per $formattedName'
-        };
-      }
-
-      final record = ExerciseRecord.fromFirestore(recordsQuery.docs.first);
-      _logger.d('Record data: ${record.toMap()}');
-
-      return {
-        'message':
-            'Il tuo massimale più recente per $formattedName è: ${record.maxWeight}kg x ${record.repetitions} ripetizioni (${record.date.toIso8601String()})'
-      };
-    } catch (e) {
-      _logger.e('Error querying records: $e');
-      return {'message': 'Errore durante la ricerca dei massimali: $e'};
-    }
-  }
-
-  /// Recupera la lista dei massimali di tutti gli esercizi dell'utente
-  Future<String> listAllMaxRMs(String userId) async {
-    final exercisesRef =
-        _firestore.collection('users').doc(userId).collection('exercises');
-
-    final exercisesSnapshot = await exercisesRef.get();
-    if (exercisesSnapshot.docs.isEmpty) {
-      return 'Non hai ancora registrato nessun massimale.';
-    }
-
-    final buffer = StringBuffer('# I tuoi massimali più recenti\n\n');
-
-    for (var exerciseDoc in exercisesSnapshot.docs) {
-      final exerciseId = exerciseDoc.id;
-      final exerciseData = exerciseDoc.data();
-      final exerciseName = exerciseData['name'] as String;
-
-      // Prendiamo il record più recente
-      final recordsQuery = await exercisesRef
-          .doc(exerciseId)
-          .collection('records')
-          .orderBy('date', descending: true)
-          .limit(1)
-          .get();
-
-      if (recordsQuery.docs.isNotEmpty) {
-        final record = ExerciseRecord.fromFirestore(recordsQuery.docs.first);
-        buffer.writeln(
-            '- **$exerciseName**: ${record.maxWeight}kg x ${record.repetitions} reps _(${record.date.toIso8601String()})_');
-      }
-    }
-
-    return buffer.toString();
-  }
-
-  /// Aggiunge o aggiorna il massimale di un esercizio
-  Future<String> updateExerciseMaxRM(String exerciseName, num maxWeight,
-      int repetitions, String userId) async {
-    final exerciseId = await findExerciseId(exerciseName);
-    if (exerciseId == null) {
-      return 'Non ho trovato l\'esercizio "$exerciseName" nel database. Verifica il nome e riprova.';
-    }
-
-    final recordId = '${userId}_${DateTime.now().millisecondsSinceEpoch}';
-    final recordData = {
-      'id': recordId,
-      'exerciseId': exerciseId,
-      'exerciseName': exerciseName,
-      'maxWeight': maxWeight,
-      'repetitions': repetitions,
-      'date': Timestamp.fromDate(DateTime.now()),
-      'userId': userId,
-    };
-
-    try {
-      await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('exercises')
-          .doc(exerciseId)
-          .collection('records')
-          .doc(recordId)
-          .set(recordData);
-
-      return 'Ho aggiornato il massimale di $exerciseName a ${maxWeight}kg x $repetitions reps.';
-    } catch (e) {
-      return 'C\'è stato un problema nell\'aggiornamento del massimale: $e';
-    }
-  }
-}
-
 class AIChatWidget extends HookConsumerWidget {
   AIChatWidget({
     super.key,
@@ -227,13 +58,18 @@ class AIChatWidget extends HookConsumerWidget {
     ),
   );
 
+  // Estensioni caricate
+  final List<AIExtension> _extensions = [
+    MaxRMExtension(),
+    ProfileExtension(),
+  ];
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(aiSettingsProvider);
     final chatMessages = ref.watch(chatMessagesProvider);
     final chatNotifier = ref.read(chatMessagesProvider.notifier);
     final aiService = ref.watch(trainingAIServiceProvider);
-    final aiChatService = AIChatService();
     final isProcessing =
         useState(false); // Stato per indicare se è in corso una richiesta
 
@@ -242,7 +78,6 @@ class AIChatWidget extends HookConsumerWidget {
       if (messageText.isEmpty || isProcessing.value) return;
 
       isProcessing.value = true; // Imposta lo stato di elaborazione
-
       try {
         // Aggiungi il messaggio dell'utente
         chatNotifier
@@ -254,116 +89,47 @@ class AIChatWidget extends HookConsumerWidget {
         final user = await userService.getUserById(userId);
         if (user == null) throw Exception('Utente non trovato');
 
-        // Interpreta il messaggio usando l'AI per i massimali
-        final interpretation =
-            await aiService.interpretMaxRMMessage(messageText);
+        // Interpreta il messaggio usando l'AI
+        final interpretation = await aiService.interpretMessage(messageText);
+
+        // Prova a delegare alle estensioni
+        bool handledByExtension = false;
         if (interpretation != null) {
-          switch (interpretation['type']) {
-            case 'update':
-              final exerciseName = interpretation['exercise'] as String?;
-              final maxWeight = interpretation['weight'] as num?;
-              final repetitions = interpretation['reps'] as int?;
-
-              if (exerciseName == null ||
-                  maxWeight == null ||
-                  repetitions == null) {
-                chatNotifier.addMessage(ChatMessage(
-                  role: 'assistant',
-                  content:
-                      'Non sono riuscito a determinare i dettagli per l\'aggiornamento del massimale.',
-                ));
-                isProcessing.value = false;
-                return;
-              }
-
-              final result = await aiChatService.updateExerciseMaxRM(
-                  exerciseName, maxWeight, repetitions, userId);
-
-              chatNotifier.addMessage(ChatMessage(
-                role: 'assistant',
-                content: result,
-              ));
-              isProcessing.value = false;
-              return;
-
-            case 'query':
-              final exerciseName = interpretation['exercise'] as String?;
-              if (exerciseName == null) {
-                chatNotifier.addMessage(ChatMessage(
-                  role: 'assistant',
-                  content:
-                      'Non sono riuscito a capire di quale esercizio vuoi conoscere il massimale.',
-                ));
-                isProcessing.value = false;
-                return;
-              }
-
-              final result =
-                  await aiChatService.getExerciseMaxRM(exerciseName, userId);
-
-              if (result == null) {
-                chatNotifier.addMessage(ChatMessage(
-                  role: 'assistant',
-                  content:
-                      'Non ho trovato l\'esercizio "$exerciseName" nel database.',
-                ));
-              } else {
-                chatNotifier.addMessage(ChatMessage(
-                  role: 'assistant',
-                  content: result['message'],
-                ));
-              }
-              isProcessing.value = false;
-              return;
-
-            case 'list':
-              // Mostra la lista di tutti i massimali dell'utente
-              final listResponse = await aiChatService.listAllMaxRMs(userId);
-              chatNotifier.addMessage(ChatMessage(
-                role: 'assistant',
-                content: listResponse,
-              ));
-              isProcessing.value = false;
-              return;
-
-            case 'error':
-              final errorMessage = interpretation['error_message'] as String?;
-              chatNotifier.addMessage(ChatMessage(
-                role: 'assistant',
-                content:
-                    errorMessage ?? 'Si è verificato un errore sconosciuto.',
-              ));
-              isProcessing.value = false;
-              return;
-
-            default:
+          for (final ext in _extensions) {
+            if (await ext.canHandle(interpretation)) {
+              final response = await ext.handle(interpretation, userId, user);
+              chatNotifier.addMessage(
+                  ChatMessage(role: 'assistant', content: response));
+              handledByExtension = true;
               break;
+            }
           }
         }
 
-        // Se non è un messaggio sui massimali, procedi con la normale elaborazione
-        Map<String, dynamic> profileData = user.toMap();
+        // Se nessuna estensione ha gestito il messaggio, fallback
+        if (!handledByExtension) {
+          Map<String, dynamic> profileData = user.toMap();
+          // Converti i campi Timestamp in stringhe ISO
+          profileData.updateAll((key, value) {
+            if (value is Timestamp) {
+              return value.toDate().toIso8601String();
+            }
+            return value;
+          });
 
-        // Converti i campi Timestamp in stringhe ISO
-        profileData.updateAll((key, value) {
-          if (value is Timestamp) {
-            return value.toDate().toIso8601String();
-          }
-          return value;
-        });
+          final response = await aiService.processNaturalLanguageQuery(
+            messageText,
+            context: {
+              'userProfile': profileData,
+              'chatHistory': chatMessages
+                  .map((msg) => {'role': msg.role, 'content': msg.content})
+                  .toList(),
+            },
+          );
 
-        final response = await aiService.processNaturalLanguageQuery(
-          messageText,
-          context: {
-            'userProfile': profileData,
-            'chatHistory': chatMessages
-                .map((msg) => {'role': msg.role, 'content': msg.content})
-                .toList(),
-          },
-        );
-
-        chatNotifier
-            .addMessage(ChatMessage(role: 'assistant', content: response));
+          chatNotifier
+              .addMessage(ChatMessage(role: 'assistant', content: response));
+        }
       } catch (e, stackTrace) {
         _logger.e('Errore durante l\'invio del messaggio',
             error: e, stackTrace: stackTrace);
@@ -391,14 +157,11 @@ class AIChatWidget extends HookConsumerWidget {
       ),
       body: Column(
         children: [
-          // Selezione del provider e del modello AI
           if (settings.availableProviders.isNotEmpty) ...[
             const _AISettingsSelector(),
           ] else ...[
             const _APIKeyWarning(),
           ],
-
-          // Messaggi di chat
           Expanded(
             child: Stack(
               children: [
@@ -415,8 +178,6 @@ class AIChatWidget extends HookConsumerWidget {
               ],
             ),
           ),
-
-          // Input per i messaggi
           if (settings.availableProviders.isNotEmpty)
             _ChatInputField(onSend: sendMessage),
         ],
@@ -600,9 +361,7 @@ class _ChatMessagesList extends ConsumerWidget {
                     code: TextStyle(
                       backgroundColor: isUser
                           ? Theme.of(context).colorScheme.primaryContainer
-                          : Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest,
+                          : Theme.of(context).colorScheme.surfaceVariant,
                       color: isUser
                           ? Theme.of(context).colorScheme.onPrimaryContainer
                           : Theme.of(context).colorScheme.onSurfaceVariant,
@@ -611,9 +370,7 @@ class _ChatMessagesList extends ConsumerWidget {
                     codeblockDecoration: BoxDecoration(
                       color: isUser
                           ? Theme.of(context).colorScheme.primaryContainer
-                          : Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest,
+                          : Theme.of(context).colorScheme.surfaceVariant,
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),

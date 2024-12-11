@@ -21,115 +21,94 @@ class TrainingAIService {
 
   TrainingAIService(this.aiService);
 
-  Future<String> processTrainingQuery(
-    String query, {
-    required Map<String, dynamic> userProfile,
-    required List<Map<String, dynamic>> exercises,
-    required Map<String, dynamic> trainingProgram,
-  }) async {
-    final context = {
-      'userProfile': userProfile,
-      'exercises': exercises,
-      'trainingProgram': trainingProgram,
-    };
-
-    return aiService.processNaturalLanguageQuery(query, context: context);
-  }
-
   Future<String> processNaturalLanguageQuery(String query,
       {Map<String, dynamic>? context}) async {
     return aiService.processNaturalLanguageQuery(query, context: context);
   }
 
-  Future<Map<String, dynamic>> analyzeExercise(
-      String exerciseName, Map<String, dynamic> exerciseData) async {
-    final query = '''
-      Analyze this exercise: $exerciseName
-      Exercise data: ${exerciseData.toString()}
-      Provide insights about proper form, common mistakes, and progression recommendations.
-    ''';
-
-    final response = await processNaturalLanguageQuery(query);
-    return {
-      'exercise': exerciseName,
-      'analysis': response,
-    };
-  }
-
-  Future<String> suggestWorkoutModifications(
-      String currentProgram, Map<String, dynamic> userGoals) async {
-    final query = '''
-      Current program: $currentProgram
-      User goals: ${userGoals.toString()}
-      Suggest modifications to optimize this workout program for the user's goals.
-    ''';
-
-    return processNaturalLanguageQuery(query);
-  }
-
-  Future<Map<String, dynamic>?> interpretMaxRMMessage(String message) async {
-    _logger.i('Interpreting max RM message: $message');
+  /// Interpreta il messaggio e determina il tipo di funzionalità richiesta.
+  ///
+  /// Per maxrm ora aggiungiamo anche "calculate":
+  /// {
+  ///   "featureType": "maxrm",
+  ///   "action": "calculate",
+  ///   "weight": numero,
+  ///   "reps": numero
+  /// }
+  ///
+  Future<Map<String, dynamic>?> interpretMessage(String message) async {
+    _logger.i('Interpreting message: $message');
 
     final systemPrompt = '''
-    Sei un assistente specializzato nell'interpretazione di messaggi relativi ai massimali (PR) di allenamento.
+Sei un assistente fitness. Devi classificare il messaggio dell'utente per capire di quale funzionalità si tratta.
+Devi SEMPRE restituire un oggetto JSON valido senza testo aggiuntivo.
 
-    IMPORTANTE: Devi SEMPRE rispondere SOLO con un oggetto JSON valido, anche in caso di errori o mancanza di dati.
-    NON aggiungere MAI testo esplicativo o commenti fuori dal JSON.
-    NON usare markdown o backticks nel JSON.
+Funzionalità:
+- "maxrm": richieste sui massimali (aggiornamento, query singola, lista, calcolo 1RM da un dato peso e reps)
+- "profile": richieste sul profilo utente (aggiornamento dati personali, query dati)
+- "other": altro (nessuna funzionalità speciale)
+- "error": se non capisci la richiesta
 
-    Se l'utente sta:
-    1. Aggiornando un massimale → type: "update"
-    2. Chiedendo info su un massimale → type: "query"
-    3. Chiedendo la lista dei massimali → type: "list"
-    4. Altro o errori → type: "error"
+Per "maxrm":
+Possibili azioni:
+- "update" se l'utente vuole aggiornare un massimale
+- "query" se chiede il massimale di un esercizio specifico
+- "list" se chiede la lista di tutti i massimali
+- "calculate" se chiede di calcolare il 1RM partendo da peso e reps
 
-    Formato JSON richiesto:
-    {
-      "type": "update" | "query" | "list" | "error",
-      "exercise": "nome esercizio" (opzionale per error e list),
-      "weight": numero (solo per update),
-      "reps": numero (solo per update),
-      "error_message": "messaggio di errore" (solo per error)
-    }
+Per "profile":
+Possibili azioni:
+- "update_profile"
+- "query_profile"
 
-    Se non hai accesso ai dati o non puoi determinare l'esercizio, rispondi con:
-    {
-      "type": "error",
-      "error_message": "Dati non disponibili"
-    }
+Se non rientra in maxrm o profile, "featureType" = "other".
 
-    Query: $message
-    ''';
+Se non capisci, "featureType" = "error" e fornisci "error_message".
+
+Esempi:
+{
+  "featureType": "maxrm",
+  "action": "calculate",
+  "weight": 190,
+  "reps": 3
+}
+
+{
+  "featureType": "maxrm",
+  "action": "update",
+  "exercise": "panca piana",
+  "weight": 100,
+  "reps": 5
+}
+
+{
+  "featureType": "profile",
+  "action": "update_profile",
+  "phoneNumber": "+391234567890"
+}
+
+{
+  "featureType": "other"
+}
+
+{
+  "featureType": "error",
+  "error_message": "Non ho capito la richiesta"
+}
+
+Query: $message
+''';
 
     try {
-      _logger.d('Sending query to AI service');
-      final response = await aiService.processNaturalLanguageQuery(systemPrompt,
-          context: {'systemPrompt': systemPrompt});
+      final response =
+          await aiService.processNaturalLanguageQuery(systemPrompt);
+      _logger.d('interpretMessage response: $response');
 
-      _logger.d('Received response from AI service: $response');
-
-      try {
-        final Map<String, dynamic> result = json.decode(response);
-        _logger.d('Parsed JSON result: $result');
-
-        if (!['update', 'query', 'error', 'list'].contains(result['type'])) {
-          _logger.w('Invalid response type: ${result['type']}');
-          return null;
-        }
-
-        return result;
-      } catch (e, stackTrace) {
-        _logger.e('Error parsing AI response',
-            error: e, stackTrace: stackTrace);
-        return {
-          'type': 'error',
-          'error_message': 'Errore nell\'interpretazione della risposta'
-        };
-      }
+      final result = json.decode(response) as Map<String, dynamic>;
+      return result;
     } catch (e, stackTrace) {
-      _logger.e('Error in interpretMaxRMMessage',
-          error: e, stackTrace: stackTrace);
-      return {'type': 'error', 'error_message': 'Errore interno del servizio'};
+      _logger.e('Error in interpretMessage', error: e, stackTrace: stackTrace);
+      return {'featureType': 'error', 'error_message': 'Errore interno'};
     }
   }
 }
