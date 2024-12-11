@@ -549,33 +549,46 @@ class AIChatWidget extends HookConsumerWidget {
               }
 
               // Se l'esercizio esiste, aggiorna il massimale aggiungendo un nuovo record
+              final recordId =
+                  '${userId}_${DateTime.now().millisecondsSinceEpoch}';
               final newRecord = ExerciseRecord(
-                id: '', // L'ID verrà assegnato automaticamente da Firestore
+                id: recordId,
                 exerciseId: exerciseId,
                 maxWeight: maxWeight,
                 repetitions: repetitions,
                 date: DateTime.now(),
               );
 
-              final newRecordRef = await aiChatService._firestore
-                  .collection('users')
-                  .doc(userId)
-                  .collection('exercises')
-                  .doc(exerciseId)
-                  .collection('records')
-                  .add(newRecord.toMap());
+              final recordData = {
+                'id': recordId,
+                'exerciseId': exerciseId,
+                'exerciseName': exerciseName,
+                'maxWeight': maxWeight,
+                'repetitions': repetitions,
+                'date': Timestamp.fromDate(DateTime.now()),
+                'userId': userId,
+              };
 
-              if (newRecordRef.id.isNotEmpty) {
+              try {
+                await aiChatService._firestore
+                    .collection('users')
+                    .doc(userId)
+                    .collection('exercises')
+                    .doc(exerciseId)
+                    .collection('records')
+                    .doc(recordId)
+                    .set(recordData);
+
                 chatNotifier.addMessage(ChatMessage(
                   role: 'assistant',
                   content:
                       'Ho aggiornato il massimale di $exerciseName a ${maxWeight}kg x $repetitions reps.',
                 ));
-              } else {
+              } catch (e) {
                 chatNotifier.addMessage(ChatMessage(
                   role: 'assistant',
                   content:
-                      'C\'è stato un problema nell\'aggiornamento del massimale.',
+                      'C\'è stato un problema nell\'aggiornamento del massimale: $e',
                 ));
               }
               isProcessing.value = false;
