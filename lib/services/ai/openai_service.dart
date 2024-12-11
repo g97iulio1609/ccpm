@@ -17,6 +17,22 @@ class OpenAIService implements AIService {
   Future<String> processNaturalLanguageQuery(String query,
       {Map<String, dynamic>? context}) async {
     try {
+      final messages = [
+        {
+          'role': 'system',
+          'content':
+              'You are a helpful assistant for a fitness training application. '
+                  'You can help with exercises, training programs, and fitness-related queries.'
+        },
+        if (context != null) ...[
+          {
+            'role': 'system',
+            'content': jsonEncode(context),
+          },
+        ],
+        {'role': 'user', 'content': query},
+      ];
+
       final response = await http.post(
         Uri.parse(baseUrl),
         headers: {
@@ -25,18 +41,7 @@ class OpenAIService implements AIService {
         },
         body: jsonEncode({
           'model': model,
-          'messages': [
-            {
-              'role': 'system',
-              'content':
-                  'You are a helpful assistant for a fitness training application. '
-                      'You can help with exercises, training programs, and fitness-related queries.',
-            },
-            if (context != null) ...[
-              {'role': 'system', 'content': jsonEncode(context)},
-            ],
-            {'role': 'user', 'content': query},
-          ],
+          'messages': messages,
           'temperature': 0.7,
         }),
       );
@@ -49,7 +54,7 @@ class OpenAIService implements AIService {
             'Failed to process query: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      throw Exception('Error processing query: $e');
+      throw Exception('Error processing query with OpenAI: $e');
     }
   }
 }

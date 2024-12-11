@@ -22,17 +22,19 @@ class GeminiService implements AIService {
     this.baseUrl =
         'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
   });
-
   @override
   Future<String> processNaturalLanguageQuery(String query,
       {Map<String, dynamic>? context}) async {
     try {
-      _logger.i('Processing query: $query');
+      _logger.i('Processing query with Gemini: $query');
       if (context != null) {
         _logger.d('Context: $context');
       }
 
       final url = Uri.parse('$baseUrl?key=$apiKey');
+      final prompt =
+          _buildJsonPrompt(query); // Costruisce il prompt per il formato JSON
+
       final response = await http.post(
         url,
         headers: {
@@ -43,7 +45,7 @@ class GeminiService implements AIService {
             {
               'role': 'user',
               'parts': [
-                {'text': query}
+                {'text': prompt}
               ]
             }
           ],
@@ -58,42 +60,46 @@ class GeminiService implements AIService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final text = data['candidates'][0]['content']['parts'][0]['text'];
-
-        final cleanText = text
-            .trim()
-            .replaceAll(RegExp(r'```json\s*'), '')
-            .replaceAll(RegExp(r'\s*```'), '')
-            .replaceAll(RegExp(r'^\s*\{'), '{')
-            .replaceAll(RegExp(r'\}\s*$'), '}');
-
-        _logger.d('Cleaned response text: $cleanText');
+        final text =
+            data['candidates'][0]['content']['parts'][0]['text'].trim();
 
         try {
-          json.decode(cleanText);
-          _logger.i('Successfully parsed JSON response');
-          return cleanText;
+          // Prova a interpretare il testo come JSON
+          final jsonResponse = json.decode(text);
+          if (jsonResponse is Map<String, dynamic>) {
+            return jsonResponse[
+                'responseText']; // Restituisci solo la risposta formattata
+          }
         } catch (e) {
-          _logger.e('Invalid JSON response: $cleanText', error: e);
-          return jsonEncode({
-            "featureType": "error",
-            "error_message": "Risposta non valida: formato JSON non corretto"
-          });
+          // Non è un JSON valido
+          _logger.e('Gemini: Invalid JSON response, returning raw text: $text');
+          return text;
         }
+        return text; // Aggiungi questo return per il caso in cui il JSON non abbia il formato atteso
       } else {
-        _logger.e('Error response: ${response.body}');
-        return jsonEncode({
-          "featureType": "error",
-          "error_message": "Errore nella richiesta: ${response.statusCode}"
-        });
+        _logger.e('Gemini Error response: ${response.body}');
+        return "Errore durante la richiesta. Riprovare.";
       }
     } catch (e, stackTrace) {
-      _logger.e('Exception in processNaturalLanguageQuery',
+      _logger.e('Gemini Exception in processNaturalLanguageQuery',
           error: e, stackTrace: stackTrace);
-      return jsonEncode({
-        "featureType": "error",
-        "error_message": "Errore interno del servizio"
-      });
+      return "Errore interno del servizio AI. Contattare il supporto.";
     }
+  }
+
+  // Costruisce un prompt per ottenere una risposta JSON ben formattata
+  String _buildJsonPrompt(String query) {
+    return '''
+Rispondi alla seguente domanda e restituisci il risultato solo come un oggetto JSON. Non aggiungere testo fuori dal JSON.
+
+Esempio di formato richiesto:
+{
+  "featureType": "other",
+  "responseText": "La tua risposta dettagliata in un formato leggibile dall'utente finale."
+}
+
+Domanda:
+$query
+''';
   }
 }

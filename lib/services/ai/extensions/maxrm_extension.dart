@@ -13,7 +13,7 @@ class MaxRMExtension implements AIExtension {
       lineLength: 50,
       colors: true,
       printEmojis: true,
-      printTime: true,
+      dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
     ),
   );
 
@@ -23,7 +23,7 @@ class MaxRMExtension implements AIExtension {
   }
 
   @override
-  Future<String> handle(Map<String, dynamic> interpretation, String userId,
+  Future<String?> handle(Map<String, dynamic> interpretation, String userId,
       UserModel user) async {
     final action = interpretation['action'];
     if (action == 'update') {
@@ -35,42 +35,46 @@ class MaxRMExtension implements AIExtension {
     } else if (action == 'calculate') {
       return await _handleCalculate(interpretation);
     } else {
-      return 'Non ho capito l\'azione richiesta per i massimali.';
+      return null;
     }
   }
 
-  Future<String> _handleCalculate(Map<String, dynamic> interpretation) async {
+  Future<String?> _handleCalculate(Map<String, dynamic> interpretation) async {
     final weight = interpretation['weight'];
     final reps = interpretation['reps'];
 
-    if (weight == null || reps == null) {
-      return 'Non riesco a calcolare il 1RM: dati insufficienti.';
+    // Caso standard: weight e reps numerici
+    if (weight != null && reps != null && reps is num && weight is num) {
+      final w = double.tryParse(weight.toString()) ?? 0;
+      final r = double.tryParse(reps.toString()) ?? 0;
+
+      if (w <= 0 || r <= 0) {
+        // Dati non validi, fallback
+        return null;
+      }
+
+      // Calcolo 1RM standard
+      final oneRM = w * (1 + r / 30.0);
+      return 'Il tuo 1RM stimato è di circa ${oneRM.toStringAsFixed(1)} kg.';
     }
 
-    // Formula di Epley: 1RM = weight * (1 + reps/30)
-    final w = double.tryParse(weight.toString()) ?? 0;
-    final r = double.tryParse(reps.toString()) ?? 0;
-    if (w <= 0 || r <= 0) {
-      return 'I dati forniti non sono validi per il calcolo del 1RM.';
-    }
-
-    final oneRM = w * (1 + r / 30.0);
-    return 'Il tuo 1RM stimato è di circa ${oneRM.toStringAsFixed(1)} kg.';
+    // Caso non standard, fallback
+    return null;
   }
 
-  Future<String> _handleUpdate(
+  Future<String?> _handleUpdate(
       Map<String, dynamic> interpretation, String userId) async {
     final exerciseName = interpretation['exercise'];
     final weight = interpretation['weight'];
     final reps = interpretation['reps'];
 
     if (exerciseName == null || weight == null || reps == null) {
-      return 'Non riesco ad aggiornare il massimale: dati insufficienti.';
+      return null;
     }
 
     final exerciseId = await _findExerciseId(exerciseName);
     if (exerciseId == null) {
-      return 'Non ho trovato l\'esercizio "$exerciseName" nel database.';
+      return null;
     }
 
     final recordId = '${userId}_${DateTime.now().millisecondsSinceEpoch}';
@@ -96,21 +100,21 @@ class MaxRMExtension implements AIExtension {
 
       return 'Ho aggiornato il massimale di $exerciseName a ${weight}kg x $reps reps.';
     } catch (e) {
-      return 'C\'è stato un problema nell\'aggiornamento del massimale: $e';
+      return null;
     }
   }
 
-  Future<String> _handleQuery(
+  Future<String?> _handleQuery(
       Map<String, dynamic> interpretation, String userId) async {
     final exerciseName = interpretation['exercise'];
     if (exerciseName == null) {
-      return 'Non ho capito di quale esercizio vuoi il massimale.';
+      return null;
     }
 
     final formattedName = _formatExerciseName(exerciseName);
     final exerciseId = await _findExerciseId(formattedName);
     if (exerciseId == null) {
-      return 'Non ho trovato l\'esercizio "$formattedName" nel database.';
+      return null;
     }
 
     final recordsQuery = await _firestore
@@ -124,28 +128,33 @@ class MaxRMExtension implements AIExtension {
         .get();
 
     if (recordsQuery.docs.isEmpty) {
-      return 'Non ho trovato nessun massimale registrato per $formattedName';
+      return null;
     }
 
     final record = ExerciseRecord.fromFirestore(recordsQuery.docs.first);
     return 'Il tuo massimale più recente per $formattedName è: ${record.maxWeight}kg x ${record.repetitions} ripetizioni (${record.date.toIso8601String()})';
   }
 
-  Future<String> _handleList(String userId) async {
+  Future<String?> _handleList(String userId) async {
     final exercisesRef =
         _firestore.collection('users').doc(userId).collection('exercises');
 
     final exercisesSnapshot = await exercisesRef.get();
     if (exercisesSnapshot.docs.isEmpty) {
-      return 'Non hai ancora registrato nessun massimale.';
+      return null;
     }
 
     final buffer = StringBuffer('# I tuoi massimali più recenti\n\n');
 
+    bool foundSomething = false;
     for (var exerciseDoc in exercisesSnapshot.docs) {
       final exerciseId = exerciseDoc.id;
       final exerciseData = exerciseDoc.data();
-      final exerciseName = exerciseData['name'] as String;
+      final exerciseName = exerciseData['name'] as String?;
+
+      if (exerciseName == null) {
+        continue;
+      }
 
       final recordsQuery = await exercisesRef
           .doc(exerciseId)
@@ -158,7 +167,12 @@ class MaxRMExtension implements AIExtension {
         final record = ExerciseRecord.fromFirestore(recordsQuery.docs.first);
         buffer.writeln(
             '- **$exerciseName**: ${record.maxWeight}kg x ${record.repetitions} reps _(${record.date.toIso8601String()})_');
+        foundSomething = true;
       }
+    }
+
+    if (!foundSomething) {
+      return null;
     }
 
     return buffer.toString();

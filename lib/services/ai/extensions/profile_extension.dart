@@ -22,7 +22,7 @@ class ProfileExtension implements AIExtension {
   }
 
   @override
-  Future<String> handle(Map<String, dynamic> interpretation, String userId,
+  Future<String?> handle(Map<String, dynamic> interpretation, String userId,
       UserModel user) async {
     final action = interpretation['action'];
     if (action == 'update_profile') {
@@ -30,15 +30,14 @@ class ProfileExtension implements AIExtension {
     } else if (action == 'query_profile') {
       return await _handleQueryProfile(interpretation, user);
     } else {
-      return 'Non ho capito l\'azione richiesta sul profilo.';
+      return null;
     }
   }
 
-  Future<String> _handleUpdateProfile(Map<String, dynamic> interpretation,
+  Future<String?> _handleUpdateProfile(Map<String, dynamic> interpretation,
       String userId, UserModel user) async {
     final updates = <String, dynamic>{};
 
-    // L'AI restituirà i campi che devono essere aggiornati, es: "phoneNumber", "height", "birthdate", "activityLevel"
     if (interpretation.containsKey('phoneNumber')) {
       updates['phoneNumber'] = interpretation['phoneNumber'];
     }
@@ -46,18 +45,17 @@ class ProfileExtension implements AIExtension {
     if (interpretation.containsKey('height')) {
       final heightVal = double.tryParse(interpretation['height'].toString());
       if (heightVal == null || heightVal < 50 || heightVal > 250) {
-        return 'Altezza non valida. Inserisci un valore tra 50 e 250 cm';
+        return null;
       }
       updates['height'] = heightVal;
     }
 
     if (interpretation.containsKey('birthdate')) {
-      // birthdate in formato YYYY-MM-DD
       try {
         final date = DateTime.parse(interpretation['birthdate']);
         updates['birthdate'] = Timestamp.fromDate(date);
       } catch (e) {
-        return 'Formato data non valido. Usa YYYY-MM-DD';
+        return null;
       }
     }
 
@@ -68,22 +66,21 @@ class ProfileExtension implements AIExtension {
     }
 
     if (updates.isEmpty) {
-      return 'Non ho trovato nessun campo aggiornabile nel profilo.';
+      return null;
     }
 
     try {
       await _firestore.collection('users').doc(userId).update(updates);
       return 'Ho aggiornato il tuo profilo con i dati forniti.';
     } catch (e) {
-      return 'Errore durante l\'aggiornamento del profilo: $e';
+      return null;
     }
   }
 
-  Future<String> _handleQueryProfile(
+  Future<String?> _handleQueryProfile(
       Map<String, dynamic> interpretation, UserModel user) async {
-    // L'AI dovrebbe specificare quale campo vuole conoscere. Ad esempio "query_profile" con "field": "height"
     if (!interpretation.containsKey('field')) {
-      return 'Non ho capito quale informazione del profilo vuoi conoscere.';
+      return null;
     }
 
     final field = interpretation['field'].toString().toLowerCase();
@@ -107,7 +104,7 @@ class ProfileExtension implements AIExtension {
             ? _activityLevelToString(user.activityLevel!)
             : 'Livello di attività non impostato';
       default:
-        return 'Informazione non disponibile o non riconosciuta.';
+        return null;
     }
   }
 

@@ -1,3 +1,4 @@
+import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/services/users_services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logger/logger.dart';
 
+import '../models/user_model.dart';
 import '../services/ai/ai_settings_service.dart';
 import '../services/ai/training_ai_service.dart';
 import '../services/ai/extensions/ai_extension.dart';
@@ -70,44 +72,98 @@ class AIChatWidget extends HookConsumerWidget {
     final chatMessages = ref.watch(chatMessagesProvider);
     final chatNotifier = ref.read(chatMessagesProvider.notifier);
     final aiService = ref.watch(trainingAIServiceProvider);
-    final isProcessing =
-        useState(false); // Stato per indicare se è in corso una richiesta
+    final isProcessing = useState(false);
+
+    /// Funzione ausiliaria per gestire un'interpretazione
+    Future<bool> tryHandleInterpretation(Map<String, dynamic>? interpretation,
+        String userId, UserModel user) async {
+      if (interpretation == null) {
+        return false;
+      }
+
+      final featureType = interpretation['featureType'];
+      if (featureType == null) return false;
+
+      for (final ext in _extensions) {
+        if (await ext.canHandle(interpretation)) {
+          final response = await ext.handle(interpretation, userId, user);
+          if (response == null) {
+            // Non gestito dall'estensione, fallback all'AI
+            return false;
+          }
+          chatNotifier
+              .addMessage(ChatMessage(role: 'assistant', content: response));
+          return true;
+        }
+      }
+
+      return false;
+    }
 
     /// Invia un messaggio nella chat
     Future<void> sendMessage(String messageText) async {
       if (messageText.isEmpty || isProcessing.value) return;
 
-      isProcessing.value = true; // Imposta lo stato di elaborazione
+      isProcessing.value = true;
       try {
-        // Aggiungi il messaggio dell'utente
         chatNotifier
             .addMessage(ChatMessage(role: 'user', content: messageText));
 
-        // Ottieni i dati dell'utente corrente
         final userId = await userService.getCurrentUserId();
         if (userId == null) throw Exception('Utente non autenticato');
         final user = await userService.getUserById(userId);
         if (user == null) throw Exception('Utente non trovato');
 
-        // Interpreta il messaggio usando l'AI
-        final interpretation = await aiService.interpretMessage(messageText);
+        // 1. Interpretazione della domanda
+        Map<String, dynamic>? interpretation =
+            await aiService.interpretMessage(messageText);
 
-        // Prova a delegare alle estensioni
-        bool handledByExtension = false;
-        if (interpretation != null) {
-          for (final ext in _extensions) {
-            if (await ext.canHandle(interpretation)) {
-              final response = await ext.handle(interpretation, userId, user);
-              chatNotifier.addMessage(
-                  ChatMessage(role: 'assistant', content: response));
-              handledByExtension = true;
-              break;
+        // Se non riesce, prova con l'altro provider (fallback)
+        if (interpretation == null ||
+            interpretation['featureType'] == 'error') {
+          interpretation =
+              await aiService.interpretMessageWithFallback(messageText);
+        }
+
+        bool handled = false;
+        final featureType = interpretation?['featureType'];
+
+        // 2. Verifica caso noto
+        if (interpretation != null &&
+            featureType != null &&
+            featureType != 'other' &&
+            featureType != 'error') {
+          handled = await tryHandleInterpretation(interpretation, userId, user);
+        } else {
+          // Non caso noto
+          Map<String, dynamic>? fallbackInterpretation = await aiService
+              .handleNonStandardQuery(messageText, user, chatMessages);
+
+          // Se non riesce prova con l'altro provider
+          if (fallbackInterpretation == null ||
+              fallbackInterpretation['featureType'] == 'error') {
+            fallbackInterpretation =
+                await aiService.handleNonStandardQueryWithFallback(
+                    messageText, user, chatMessages);
+          }
+
+          if (fallbackInterpretation != null) {
+            handled = await tryHandleInterpretation(
+                fallbackInterpretation, userId, user);
+
+            if (!handled) {
+              final response = fallbackInterpretation['responseText'];
+              if (response != null && response is String) {
+                chatNotifier.addMessage(
+                    ChatMessage(role: 'assistant', content: response));
+                handled = true;
+              }
             }
           }
         }
 
-        // Se nessuna estensione ha gestito il messaggio, fallback
-        if (!handledByExtension) {
+        // 3. Se ancora non gestito, fallback su risposta generica
+        if (!handled) {
           Map<String, dynamic> profileData = user.toMap();
           // Converti i campi Timestamp in stringhe ISO
           profileData.updateAll((key, value) {
@@ -117,15 +173,26 @@ class AIChatWidget extends HookConsumerWidget {
             return value;
           });
 
-          final response = await aiService.processNaturalLanguageQuery(
-            messageText,
-            context: {
-              'userProfile': profileData,
-              'chatHistory': chatMessages
-                  .map((msg) => {'role': msg.role, 'content': msg.content})
-                  .toList(),
-            },
-          );
+          String response = await aiService
+              .processNaturalLanguageQuery(messageText, context: {
+            'userProfile': profileData,
+            'chatHistory': chatMessages
+                .map((msg) => {'role': msg.role, 'content': msg.content})
+                .toList(),
+          });
+
+          // Se la risposta è nulla o in errore, prova con il fallback
+          if (response.isEmpty || response.contains('"featureType":"error"')) {
+            response = await aiService.processNaturalLanguageQueryWithFallback(
+              messageText,
+              context: {
+                'userProfile': profileData,
+                'chatHistory': chatMessages
+                    .map((msg) => {'role': msg.role, 'content': msg.content})
+                    .toList(),
+              },
+            );
+          }
 
           chatNotifier
               .addMessage(ChatMessage(role: 'assistant', content: response));
@@ -141,7 +208,7 @@ class AIChatWidget extends HookConsumerWidget {
           SnackBar(content: Text('Errore: ${e.toString()}')),
         );
       } finally {
-        isProcessing.value = false; // Resetta lo stato di elaborazione
+        isProcessing.value = false;
       }
     }
 
