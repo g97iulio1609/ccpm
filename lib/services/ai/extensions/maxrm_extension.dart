@@ -1,3 +1,4 @@
+// maxrm_extension.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:logger/logger.dart';
 import 'package:alphanessone/models/user_model.dart';
@@ -7,14 +8,7 @@ import 'ai_extension.dart';
 class MaxRMExtension implements AIExtension {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final Logger _logger = Logger(
-    printer: PrettyPrinter(
-      methodCount: 0,
-      errorMethodCount: 5,
-      lineLength: 50,
-      colors: true,
-      printEmojis: true,
-      dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
-    ),
+    printer: PrettyPrinter(),
   );
 
   @override
@@ -43,22 +37,15 @@ class MaxRMExtension implements AIExtension {
     final weight = interpretation['weight'];
     final reps = interpretation['reps'];
 
-    // Caso standard: weight e reps numerici
     if (weight != null && reps != null && reps is num && weight is num) {
       final w = double.tryParse(weight.toString()) ?? 0;
       final r = double.tryParse(reps.toString()) ?? 0;
-
       if (w <= 0 || r <= 0) {
-        // Dati non validi, fallback
         return null;
       }
-
-      // Calcolo 1RM standard
       final oneRM = w * (1 + r / 30.0);
       return 'Il tuo 1RM stimato è di circa ${oneRM.toStringAsFixed(1)} kg.';
     }
-
-    // Caso non standard, fallback
     return null;
   }
 

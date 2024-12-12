@@ -11,7 +11,6 @@ import 'Main/app_theme.dart';
 import 'Main/app_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'services/ai/ai_settings_service.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

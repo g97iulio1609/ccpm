@@ -110,20 +110,29 @@ class AIChatWidget extends HookConsumerWidget {
         chatNotifier
             .addMessage(ChatMessage(role: 'user', content: messageText));
 
-        final userId = await userService.getCurrentUserId();
-        if (userId == null) throw Exception('Utente non autenticato');
+        final userId = userService.getCurrentUserId();
         final user = await userService.getUserById(userId);
         if (user == null) throw Exception('Utente non trovato');
 
         // 1. Interpretazione della domanda
         Map<String, dynamic>? interpretation =
-            await aiService.interpretMessage(messageText);
+            await aiService.interpretMessage(messageText, context: {
+          'userProfile': user.toMap(),
+          'chatHistory': chatMessages
+              .map((msg) => {'role': msg.role, 'content': msg.content})
+              .toList(),
+        });
 
         // Se non riesce, prova con l'altro provider (fallback)
         if (interpretation == null ||
             interpretation['featureType'] == 'error') {
-          interpretation =
-              await aiService.interpretMessageWithFallback(messageText);
+          interpretation = await aiService
+              .interpretMessageWithFallback(messageText, context: {
+            'userProfile': user.toMap(),
+            'chatHistory': chatMessages
+                .map((msg) => {'role': msg.role, 'content': msg.content})
+                .toList(),
+          });
         }
 
         bool handled = false;
@@ -429,7 +438,9 @@ class _ChatMessagesList extends ConsumerWidget {
                     code: TextStyle(
                       backgroundColor: isUser
                           ? Theme.of(context).colorScheme.primaryContainer
-                          : Theme.of(context).colorScheme.surfaceVariant,
+                          : Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest,
                       color: isUser
                           ? Theme.of(context).colorScheme.onPrimaryContainer
                           : Theme.of(context).colorScheme.onSurfaceVariant,
@@ -438,7 +449,9 @@ class _ChatMessagesList extends ConsumerWidget {
                     codeblockDecoration: BoxDecoration(
                       color: isUser
                           ? Theme.of(context).colorScheme.primaryContainer
-                          : Theme.of(context).colorScheme.surfaceVariant,
+                          : Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
@@ -460,8 +473,7 @@ class _ChatInputField extends HookConsumerWidget {
 
   const _ChatInputField({
     required this.onSend,
-    Key? key,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

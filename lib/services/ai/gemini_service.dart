@@ -13,7 +13,6 @@ class GeminiService implements AIService {
       lineLength: 50,
       colors: true,
       printEmojis: true,
-      dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
     ),
   );
 
@@ -28,97 +27,93 @@ class GeminiService implements AIService {
   @override
   Future<String> processNaturalLanguageQuery(String query,
       {Map<String, dynamic>? context}) async {
-    try {
-      _logger.i('Processing query with Gemini: $query');
-      if (context != null) {
-        _logger.d('Context: $context');
+    _logger.i('Processing query with Gemini: $query');
+    if (context != null) {
+      _logger.d('Full Context: $context');
+      if (context['userProfile'] != null) {
+        _logger.d('UserProfile from context: ${context['userProfile']}');
+        _logger.d('User ID from context: ${context['userProfile']['id']}');
+      } else {
+        _logger.w('UserProfile is null in context');
       }
+    } else {
+      _logger.w('Context is null');
+    }
 
-      final url = Uri.parse('$baseUrl?key=$apiKey');
-      final prompt = _buildJsonPrompt(query, context);
+    final url = Uri.parse('$baseUrl?key=$apiKey');
+    final prompt = _buildJsonPrompt(query, context);
 
-      final response = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'contents': [
-            {
-              'role': 'user',
-              'parts': [
-                {'text': prompt}
-              ]
-            }
-          ],
-          'safetySettings': [
-            {'category': 'HARM_CATEGORY_HARASSMENT', 'threshold': 'BLOCK_NONE'}
-          ]
-        }),
-      );
-
-      _logger.d('Response status code: ${response.statusCode}');
-      _logger.d('Response body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final text =
-            data['candidates'][0]['content']['parts'][0]['text'].trim();
-
-        try {
-          final jsonResponse = json.decode(text);
-          if (jsonResponse is Map<String, dynamic>) {
-            // Se è una query di training, assicuriamoci che l'userId sia corretto
-            if (jsonResponse['featureType'] == 'training' &&
-                jsonResponse['action'] == 'query_program') {
-              if (context != null &&
-                  context['userProfile'] != null &&
-                  context['userProfile']['uniqueNumber'] != null) {
-                jsonResponse['userId'] =
-                    context['userProfile']['uniqueNumber'].toString();
-              } else {
-                _logger.w(
-                    'Context or userProfile.uniqueNumber is missing for training query');
-                return 'Mi dispiace, non riesco a identificare il tuo profilo. Prova ad effettuare nuovamente il login.';
-              }
-              return json.encode(jsonResponse);
-            }
-
-            // Per altre risposte JSON
-            if (jsonResponse.containsKey('responseText')) {
-              return jsonResponse['responseText'];
-            }
-            return json.encode(jsonResponse);
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'contents': [
+          {
+            'role': 'user',
+            'parts': [
+              {'text': prompt}
+            ]
           }
-        } catch (e) {
-          _logger.e('Gemini: Invalid JSON response: $e\nResponse text: $text');
+        ],
+        'safetySettings': [
+          {'category': 'HARM_CATEGORY_HARASSMENT', 'threshold': 'BLOCK_NONE'}
+        ]
+      }),
+    );
+
+    _logger.d('Response status code: ${response.statusCode}');
+    _logger.d('Response body: ${response.body}');
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      var text = data['candidates'][0]['content']['parts'][0]['text'].trim();
+
+      // Rimozione dei blocchi di codice e backtick
+      text = text
+          .replaceAll(RegExp(r'```json\s*'), '')
+          .replaceAll('```', '')
+          .trim();
+
+      try {
+        final jsonResponse = json.decode(text);
+        if (jsonResponse is Map<String, dynamic>) {
+          // Se c'è responseText, restituiamo direttamente il testo finale
+          if (jsonResponse.containsKey('responseText')) {
+            return jsonResponse['responseText'] ?? 'Risposta non disponibile.';
+          }
+
+          // Altrimenti restituiamo il JSON re-encodato, permettendo al trainingAIService di gestire l'azione
+          return json.encode(jsonResponse);
+        } else {
+          _logger.e('Gemini: la risposta non è un oggetto JSON valido.');
           return 'Mi dispiace, si è verificato un errore nell\'elaborazione della risposta.';
         }
-        return text;
-      } else {
-        _logger.e('Gemini Error response: ${response.body}');
-        return "Si è verificato un errore durante la richiesta. Riprova più tardi.";
+      } catch (e) {
+        _logger.e('Gemini: Invalid JSON response: $e\nResponse text: $text');
+        return 'Mi dispiace, si è verificato un errore nell\'elaborazione della risposta.';
       }
-    } catch (e, stackTrace) {
-      _logger.e('Gemini Exception in processNaturalLanguageQuery',
-          error: e, stackTrace: stackTrace);
-      return "Si è verificato un errore interno. Per favore, contatta il supporto tecnico.";
+    } else {
+      _logger.e('Gemini Error response: ${response.body}');
+      return "Si è verificato un errore durante la richiesta. Riprova più tardi.";
     }
   }
 
   String _buildJsonPrompt(String query, Map<String, dynamic>? context) {
     final userProfile = context?['userProfile'];
+    final userId = userProfile?['id']?.toString();
     final contextInfo = userProfile != null
         ? '\nContesto utente: ${json.encode({
-                'uniqueNumber': userProfile['uniqueNumber'],
+                'id': userId,
                 'name': userProfile['name'],
                 'role': userProfile['role'],
               })}'
         : '';
 
     return '''
-Rispondi alla seguente domanda e restituisci il risultato solo come un oggetto JSON. Non aggiungere testo fuori dal JSON.
-Per le richieste di tipo "training" con action "query_program", devi SEMPRE includere il campo "userId" preso dal contesto utente uniqueNumber.
+Rispondi alla seguente domanda e restituisci il risultato SOLO come un oggetto JSON puro, senza markdown o altri delimitatori.
+Per le richieste di tipo "training" con action "query_program", devi SEMPRE includere il campo "userId" preso dal contesto utente id.
 
 $contextInfo
 
@@ -126,7 +121,7 @@ Esempio di formato richiesto:
 {
   "featureType": "training",
   "action": "query_program",
-  "userId": "12345"
+  "userId": "$userId"
 }
 
 oppure:

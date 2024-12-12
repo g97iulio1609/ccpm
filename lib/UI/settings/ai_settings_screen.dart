@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:path/path.dart';
 import '../../services/ai/ai_settings_service.dart';
 
 class AISettingsScreen extends HookConsumerWidget {
@@ -34,6 +33,31 @@ class AISettingsScreen extends HookConsumerWidget {
     AISettings settings,
     AISettingsNotifier notifier,
   ) {
+    if (settings.availableModels.isEmpty) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'AI Model',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                  'Inserisci prima una chiave API valida per visualizzare i modelli disponibili'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final currentModel =
+        settings.availableModels.contains(settings.selectedModel)
+            ? settings.selectedModel
+            : settings.availableModels.first;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -46,7 +70,7 @@ class AISettingsScreen extends HookConsumerWidget {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<AIModel>(
-              value: settings.selectedModel,
+              value: currentModel,
               decoration: const InputDecoration(
                 labelText: 'Select Model',
                 border: OutlineInputBorder(),

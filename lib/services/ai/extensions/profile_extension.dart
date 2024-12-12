@@ -1,3 +1,4 @@
+// profile_extension.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:logger/logger.dart';
 import 'package:alphanessone/models/user_model.dart';
@@ -6,14 +7,7 @@ import 'ai_extension.dart';
 class ProfileExtension implements AIExtension {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final Logger _logger = Logger(
-    printer: PrettyPrinter(
-      methodCount: 0,
-      errorMethodCount: 5,
-      lineLength: 50,
-      colors: true,
-      printEmojis: true,
-      printTime: true,
-    ),
+    printer: PrettyPrinter(),
   );
 
   @override

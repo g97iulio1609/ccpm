@@ -12,17 +12,10 @@ enum AIProvider {
 }
 
 enum AIModel {
-  // OpenAI Models
   gpt4o('gpt-4o', AIProvider.openAI),
-
-  // Gemini Models
   geminiPro('gemini-pro', AIProvider.gemini),
   geminiFlash('gemini-2.0-flash-exp', AIProvider.gemini),
-
-  // Claude Models
   claude3Sonnet('claude-3-sonnet-20240229', AIProvider.claude),
-
-  // Azure OpenAI Models
   azureGPT4('gpt-4', AIProvider.azureOpenAI),
   azureGPT35('gpt-35-turbo', AIProvider.azureOpenAI);
 
@@ -121,12 +114,10 @@ class AISettingsService {
       claudeKey: _prefs.getString('${_keyPrefix}claude_key'),
       azureKey: _prefs.getString('${_keyPrefix}azure_key'),
       azureEndpoint: _prefs.getString('${_keyPrefix}azure_endpoint'),
-      selectedModel: AIModel.gpt4o, // Default value, will be updated below
-      selectedProvider:
-          AIProvider.openAI, // Default value, will be updated below
+      selectedModel: AIModel.gpt4o, 
+      selectedProvider: AIProvider.openAI, 
     );
 
-    // Find the first available provider
     final availableProviders = settings.availableProviders;
     if (availableProviders.isNotEmpty) {
       final savedProvider = _prefs.getString('${_keyPrefix}selected_provider');
@@ -137,7 +128,6 @@ class AISettingsService {
             )
           : availableProviders.first;
 
-      // Find available models for the selected provider
       final availableModels =
           AIModel.values.where((model) => model.provider == provider).toList();
 

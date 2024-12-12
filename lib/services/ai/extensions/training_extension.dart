@@ -1,3 +1,4 @@
+// training_extension.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:logger/logger.dart';
 import 'package:alphanessone/models/user_model.dart';
@@ -5,20 +6,12 @@ import 'package:alphanessone/trainingBuilder/models/training_model.dart';
 import 'package:alphanessone/trainingBuilder/models/week_model.dart';
 import 'package:alphanessone/trainingBuilder/models/workout_model.dart';
 import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
-import 'package:alphanessone/trainingBuilder/models/series_model.dart';
 import 'ai_extension.dart';
 
 class TrainingExtension implements AIExtension {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final Logger _logger = Logger(
-    printer: PrettyPrinter(
-      methodCount: 0,
-      errorMethodCount: 5,
-      lineLength: 50,
-      colors: true,
-      printEmojis: true,
-      dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
-    ),
+    printer: PrettyPrinter(),
   );
 
   @override
@@ -51,12 +44,10 @@ class TrainingExtension implements AIExtension {
         status: 'private',
       );
 
-      // Crea il programma
       final programRef =
           await _firestore.collection('programs').add(program.toMap());
       program.id = programRef.id;
 
-      // Crea le settimane
       if (interpretation['weeks'] != null) {
         for (var weekData in interpretation['weeks']) {
           final week = Week(
@@ -67,7 +58,6 @@ class TrainingExtension implements AIExtension {
               await programRef.collection('weeks').add(week.toMap());
           week.id = weekRef.id;
 
-          // Crea i workout per ogni settimana
           if (weekData['workouts'] != null) {
             for (var workoutData in weekData['workouts']) {
               final workout = Workout(
@@ -80,7 +70,6 @@ class TrainingExtension implements AIExtension {
                   await weekRef.collection('workouts').add(workout.toMap());
               workout.id = workoutRef.id;
 
-              // Crea gli esercizi per ogni workout
               if (workoutData['exercises'] != null) {
                 for (var exerciseData in workoutData['exercises']) {
                   final exercise = Exercise(
@@ -95,7 +84,6 @@ class TrainingExtension implements AIExtension {
                       .add(exercise.toMap());
                   exercise.id = exerciseRef.id;
 
-                  // Crea le serie per ogni esercizio
                   if (exerciseData['series'] != null) {
                     for (var seriesData in exerciseData['series']) {
                       final series = Series(
@@ -131,7 +119,7 @@ class TrainingExtension implements AIExtension {
 
       final programsQuery = await _firestore
           .collection('programs')
-          .where('userId', isEqualTo: targetUserId)
+          .where('athleteId', isEqualTo: targetUserId)
           .get();
 
       if (programsQuery.docs.isEmpty) {

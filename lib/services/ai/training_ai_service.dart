@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:alphanessone/models/user_model.dart';
@@ -6,25 +7,56 @@ import 'ai_service.dart';
 import 'openai_service.dart';
 import 'gemini_service.dart';
 import 'package:alphanessone/services/ai/ai_settings_service.dart';
+import 'package:alphanessone/services/users_services.dart';
+import 'package:alphanessone/services/ai/extensions_manager.dart'; // Manager delle estensioni
+import '../../providers/providers.dart';
 
 class TrainingAIService {
   final AIService primaryAIService;
   final AIService fallbackAIService;
+  final UsersService usersService;
   final Logger _logger = Logger(
-    printer: PrettyPrinter(
-      methodCount: 0,
-      errorMethodCount: 5,
-      lineLength: 50,
-      colors: true,
-      printEmojis: true,
-      printTime: true,
-    ),
+    printer: PrettyPrinter(methodCount: 0, errorMethodCount: 5),
   );
 
-  TrainingAIService(this.primaryAIService, this.fallbackAIService);
+  final ExtensionsManager _extensionsManager = ExtensionsManager();
+
+  TrainingAIService(this.primaryAIService, this.fallbackAIService, this.usersService);
+
+  /// Metodo principale per elaborare una query dell'utente:
+  /// - Interpreta il messaggio
+  /// - Se identificata un'azione (ad es. query_program), esegue l'estensione corrispondente
+  /// - Ritorna il risultato finale testuale all'utente
+  Future<String> processQuery(String message, {Map<String, dynamic>? context}) async {
+    final interpretation = await interpretMessage(message, context: context);
+    if (interpretation == null) {
+      return "Non ho capito la tua richiesta.";
+    }
+
+    final featureType = interpretation['featureType'];
+    if (featureType == null || featureType == 'error') {
+      return interpretation['error_message'] ?? "Non ho capito la tua richiesta.";
+    }
+
+    final userId = usersService.getCurrentUserId();
+    final user = await usersService.getUserById(userId);
+    if (user == null) {
+      return "Non riesco a recuperare il tuo profilo utente.";
+    }
+
+    // Esegui l'azione tramite l'estensione appropriata
+    final result = await _extensionsManager.executeAction(interpretation, user);
+
+    if (result != null && result.isNotEmpty) {
+      return result; 
+    } else {
+      return "Non ci sono informazioni disponibili.";
+    }
+  }
 
   Future<String> processNaturalLanguageQuery(String query,
       {Map<String, dynamic>? context}) async {
+    context = _prepareContext(context);
     final result = await _tryWithFallback(
       (service) => service.processNaturalLanguageQuery(query, context: context),
     );
@@ -33,49 +65,148 @@ class TrainingAIService {
 
   Future<String> processNaturalLanguageQueryWithFallback(String query,
       {Map<String, dynamic>? context}) async {
+    context = _prepareContext(context);
     return await fallbackAIService.processNaturalLanguageQuery(query,
         context: context);
   }
 
-  Future<Map<String, dynamic>?> interpretMessage(String message) async {
+  Future<Map<String, dynamic>?> interpretMessage(String message,
+      {Map<String, dynamic>? context}) async {
     _logger.i('Interpreting message: $message');
+    context = _prepareContext(context);
+
     return await _tryInterpretWithFallback((service) async {
-      final response = await service
-          .processNaturalLanguageQuery(_interpretationPrompt(message));
+      final response = await service.processNaturalLanguageQuery(
+          _interpretationPrompt(message),
+          context: context);
       final result = _parseJson(response);
       return result;
     });
   }
 
-  Future<Map<String, dynamic>?> interpretMessageWithFallback(
-      String message) async {
+  Future<Map<String, dynamic>?> interpretMessageWithFallback(String message,
+      {Map<String, dynamic>? context}) async {
     _logger.i('Interpreting message with fallback: $message');
-    final response = await fallbackAIService
-        .processNaturalLanguageQuery(_interpretationPrompt(message));
+    context = _prepareContext(context);
+
+    final response = await fallbackAIService.processNaturalLanguageQuery(
+        _interpretationPrompt(message),
+        context: context);
     return _parseJson(response);
   }
 
+  /// Gestisce una query non standard
   Future<Map<String, dynamic>?> handleNonStandardQuery(
     String message,
     UserModel user,
     List<dynamic> chatHistory,
   ) async {
     _logger.i('Handling non-standard query: $message');
-
     final prompt = _nonStandardQueryPrompt(message, user, chatHistory);
+    final preparedContext = _prepareNonStandardContext(user, chatHistory);
+
     return await _tryInterpretWithFallback((service) async {
-      final response = await service.processNaturalLanguageQuery(prompt);
-      return _parseJson(response);
+      final response = await service.processNaturalLanguageQuery(prompt, context: preparedContext);
+      final result = _parseJson(response);
+
+      if (result != null && result['featureType'] != null && result['featureType'] != 'error') {
+        final extResult = await _extensionsManager.executeAction(result, user);
+        if (extResult != null && extResult.isNotEmpty) {
+          return {
+            "featureType": result['featureType'],
+            "action": result['action'],
+            "responseText": extResult
+          };
+        }
+      }
+
+      return result;
     });
   }
 
+  /// Versione fallback per query non standard
   Future<Map<String, dynamic>?> handleNonStandardQueryWithFallback(
       String message, UserModel user, List<dynamic> chatHistory) async {
     _logger.i('Handling non-standard query with fallback: $message');
     final prompt = _nonStandardQueryPrompt(message, user, chatHistory);
-    final response =
-        await fallbackAIService.processNaturalLanguageQuery(prompt);
-    return _parseJson(response);
+    final preparedContext = _prepareNonStandardContext(user, chatHistory);
+
+    final response = await fallbackAIService.processNaturalLanguageQuery(prompt, context: preparedContext);
+    final result = _parseJson(response);
+
+    if (result != null && result['featureType'] != null && result['featureType'] != 'error') {
+      final extResult = await _extensionsManager.executeAction(result, user);
+      if (extResult != null && extResult.isNotEmpty) {
+        return {
+          "featureType": result['featureType'],
+          "action": result['action'],
+          "responseText": extResult
+        };
+      }
+    }
+
+    return result;
+  }
+
+  Map<String, dynamic>? _prepareContext(Map<String, dynamic>? context) {
+    context ??= {};
+    final userId = usersService.getCurrentUserId();
+
+    var userProfile = context['userProfile'];
+    if (userProfile is! Map) {
+      userProfile = {};
+    } else {
+      userProfile = Map<String, dynamic>.from(userProfile);
+    }
+
+    userProfile['id'] = userId;
+
+    userProfile.forEach((key, value) {
+      if (value is DateTime) {
+        userProfile[key] = value.toIso8601String();
+      } else if (value.toString().contains('Timestamp')) {
+        try {
+          if (value is Timestamp) {
+            userProfile[key] = value.toDate().toIso8601String();
+          }
+        } catch (_) {}
+      }
+    });
+
+    context['userProfile'] = userProfile;
+    _logger.d('Serialized context: $context');
+    return _makeSerializable(context) as Map<String, dynamic>?;
+  }
+
+  Map<String, dynamic>? _prepareNonStandardContext(UserModel user, List<dynamic> chatHistory) {
+    final userId = usersService.getCurrentUserId();
+    final userProfile = user.toMap();
+
+    userProfile['id'] = userId;
+    userProfile.forEach((key, value) {
+      if (value is DateTime) {
+        userProfile[key] = value.toIso8601String();
+      } else if (value.toString().contains('Timestamp')) {
+        try {
+          userProfile[key] = (value as Timestamp).toDate().toIso8601String();
+        } catch (_) {}
+      }
+    });
+
+    final serializedHistory = chatHistory.map((msg) {
+      var content = msg.content;
+      if (content is Map) {
+        content = _makeSerializable(content);
+      }
+      return {'role': msg.role, 'content': content};
+    }).toList();
+
+    final context = {
+      'userProfile': userProfile,
+      'chatHistory': serializedHistory,
+    };
+
+    return _makeSerializable(context) as Map<String, dynamic>?;
   }
 
   Future<T> _tryWithFallback<T>(Future<T> Function(AIService) action) async {
@@ -111,16 +242,18 @@ class TrainingAIService {
   }
 
   String _interpretationPrompt(String message) {
+    final userId = usersService.getCurrentUserId();
+
     return '''
 Sei un assistente fitness. Devi classificare il messaggio dell'utente per capire di quale funzionalità si tratta.
 Devi SEMPRE restituire un oggetto JSON valido senza testo aggiuntivo.
 
 Funzionalità:
-- "maxrm": richieste sui massimali (update, query, list, calculate)
-- "profile": richieste sul profilo (update_profile, query_profile)
-- "training": richieste sui programmi di allenamento (create_program, query_program)
-- "other": altro (nessuna funzionalità speciale)
-- "error": se non capisci
+- "maxrm"
+- "profile"
+- "training"
+- "other"
+- "error"
 
 Esempi:
 {
@@ -129,51 +262,21 @@ Esempi:
   "weight": 190,
   "reps": 3
 }
-
 {
   "featureType": "training",
   "action": "create_program",
   "name": "Programma Squat",
-  "description": "Programma di allenamento focalizzato sullo squat",
-  "weeks": [
-    {
-      "number": 1,
-      "workouts": [
-        {
-          "order": 1,
-          "name": "Allenamento 1",
-          "exercises": [
-            {
-              "name": "Squat",
-              "type": "compound",
-              "variant": "back",
-              "order": 1,
-              "series": [
-                {
-                  "reps": 5,
-                  "weight": 100,
-                  "intensity": "75",
-                  "order": 1
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    }
-  ]
+  "description": "Programma focalizzato sullo squat",
+  "weeks": [...]
 }
-
 {
   "featureType": "training",
   "action": "query_program",
-  "userId": userProfile['id']
+  "userId": "$userId"
 }
-
 {
   "featureType": "other"
 }
-
 {
   "featureType": "error",
   "error_message": "Non ho capito"
@@ -185,15 +288,16 @@ Query: $message
 
   String _nonStandardQueryPrompt(
       String message, UserModel user, List<dynamic> chatHistory) {
+    final userId = usersService.getCurrentUserId();
     final userProfile = user.toMap();
-    userProfile.updateAll((key, value) {
-      if (value is DateTime) {
-        return value.toIso8601String();
-      } else if (value.toString().contains('Timestamp')) {
-        // Gestisce i Timestamp di Firestore
-        return value.toDate().toIso8601String();
+    userProfile['id'] = userId;
+
+    userProfile.forEach((key, value) {
+      if (value is Timestamp) {
+        userProfile[key] = value.toDate().toIso8601String();
+      } else if (value is DateTime) {
+        userProfile[key] = value.toIso8601String();
       }
-      return value;
     });
 
     final serializedHistory = chatHistory.map((msg) {
@@ -211,14 +315,13 @@ Query: $message
 
     return '''
 You are a fitness assistant. The user asked a non-standard or complex question.
-You can think step-by-step. Use chain-of-thought reasoning inside special comments that will not be shown to the user.
-At the end, output only the final JSON.
+Think step-by-step. At the end, output only the final JSON.
 
-If you can interpret the question as a known featureType and action, output that JSON.
-If not, but you can still provide a helpful answer, return:
+If you can interpret as a known featureType/action, output that JSON.
+If not, return:
 {
   "featureType": "other",
-  "responseText": "La tua risposta utile all'utente."
+  "responseText": "La tua risposta utile."
 }
 
 Context: ${jsonEncode(context)}
@@ -226,17 +329,22 @@ User question: $message
 ''';
   }
 
-  // Metodo per rendere serializzabile il contesto
   dynamic _makeSerializable(dynamic value) {
+    if (value == null) return null;
+
     if (value is Map) {
-      return value.map((key, value) => MapEntry(key, _makeSerializable(value)));
+      return Map<String, dynamic>.fromEntries(
+        value.entries.map((entry) {
+          var serializedValue = _makeSerializable(entry.value);
+          return MapEntry(entry.key.toString(), serializedValue);
+        }),
+      );
     } else if (value is List) {
       return value.map((e) => _makeSerializable(e)).toList();
+    } else if (value is Timestamp) {
+      return value.toDate().toIso8601String();
     } else if (value is DateTime) {
       return value.toIso8601String();
-    } else if (value.toString().contains('Timestamp')) {
-      // Gestisce i Timestamp di Firestore
-      return value.toDate().toIso8601String();
     }
     return value;
   }
@@ -245,7 +353,7 @@ User question: $message
     try {
       final result = json.decode(response) as Map<String, dynamic>;
       return result;
-    } catch (e) {
+    } catch (_) {
       return {
         "featureType": "error",
         "error_message": "Risposta non valida: formato JSON non corretto"
@@ -257,45 +365,27 @@ User question: $message
 final trainingAIServiceProvider = Provider<TrainingAIService>((ref) {
   final aiSettings = ref.watch(aiSettingsProvider);
   final selectedModel = aiSettings.selectedModel;
+  final usersService = ref.watch(usersServiceProvider);
 
   AIService primaryAIService;
   AIService fallbackAIService;
 
   switch (aiSettings.selectedProvider) {
     case AIProvider.openAI:
-      primaryAIService =
-          ref.watch(openaiServiceProvider(selectedModel.modelId));
+      primaryAIService = ref.watch(openaiServiceProvider(selectedModel.modelId));
       if (aiSettings.geminiKey != null && aiSettings.geminiKey!.isNotEmpty) {
-        fallbackAIService =
-            ref.watch(geminiServiceProvider(aiSettings.geminiKey!));
+        fallbackAIService = ref.watch(geminiServiceProvider(aiSettings.geminiKey!));
       } else {
-        fallbackAIService =
-            ref.watch(openaiServiceProvider(selectedModel.modelId));
+        fallbackAIService = ref.watch(openaiServiceProvider(selectedModel.modelId));
       }
       break;
     case AIProvider.gemini:
-      primaryAIService =
-          ref.watch(geminiServiceProvider(aiSettings.geminiKey!));
+      primaryAIService = ref.watch(geminiServiceProvider(aiSettings.geminiKey!));
       fallbackAIService = ref.watch(openaiServiceProvider("gpt4o"));
       break;
     default:
       throw Exception('No AI provider selected');
   }
 
-  return TrainingAIService(primaryAIService, fallbackAIService);
+  return TrainingAIService(primaryAIService, fallbackAIService, usersService);
 });
-
-final openaiServiceProvider = Provider.family<OpenAIService, String>(
-    (ref, model) => OpenAIService(model: model));
-final geminiServiceProvider =
-    Provider.family<GeminiService, String>((ref, apiKey) {
-  final settings = ref.watch(aiSettingsProvider);
-  final selectedModel = settings.selectedModel.modelId;
-  return GeminiService(
-    apiKey: apiKey,
-    model: selectedModel,
-  );
-});
-
-final selectedAIModelProvider = StateProvider<String>((ref) => 'gemini-pro');
-final openAIModelProvider = StateProvider<String>((ref) => 'gpt4o');

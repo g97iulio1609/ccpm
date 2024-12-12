@@ -1,4 +1,4 @@
-import 'package:alphanessone/trainingBuilder/providers/providers.dart';
+import 'package:alphanessone/trainingBuilder/providers/training_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -9,7 +9,6 @@ import 'package:alphanessone/trainingBuilder/List/workout_list.dart';
 import 'package:alphanessone/trainingBuilder/List/exercises_list.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/Main/app_theme.dart';
-import 'package:go_router/go_router.dart';
 
 class TrainingProgramPage extends HookConsumerWidget {
   final String programId;

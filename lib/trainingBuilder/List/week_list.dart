@@ -1,4 +1,4 @@
-import 'package:alphanessone/trainingBuilder/providers/providers.dart';
+import 'package:alphanessone/trainingBuilder/providers/training_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';

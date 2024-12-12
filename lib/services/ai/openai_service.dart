@@ -16,45 +16,41 @@ class OpenAIService implements AIService {
   @override
   Future<String> processNaturalLanguageQuery(String query,
       {Map<String, dynamic>? context}) async {
-    try {
-      final messages = [
+    final messages = [
+      {
+        'role': 'system',
+        'content':
+            'You are a helpful assistant for a fitness training application. '
+            'You can help with exercises, training programs, and fitness-related queries.'
+      },
+      if (context != null) ...[
         {
           'role': 'system',
-          'content':
-              'You are a helpful assistant for a fitness training application. '
-                  'You can help with exercises, training programs, and fitness-related queries.'
+          'content': jsonEncode(context),
         },
-        if (context != null) ...[
-          {
-            'role': 'system',
-            'content': jsonEncode(context),
-          },
-        ],
-        {'role': 'user', 'content': query},
-      ];
+      ],
+      {'role': 'user', 'content': query},
+    ];
 
-      final response = await http.post(
-        Uri.parse(baseUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiKey',
-        },
-        body: jsonEncode({
-          'model': model,
-          'messages': messages,
-          'temperature': 0.7,
-        }),
-      );
+    final response = await http.post(
+      Uri.parse(baseUrl),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $apiKey',
+      },
+      body: jsonEncode({
+        'model': model,
+        'messages': messages,
+        'temperature': 0.7,
+      }),
+    );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['choices'][0]['message']['content'] as String;
-      } else {
-        throw Exception(
-            'Failed to process query: ${response.statusCode} - ${response.body}');
-      }
-    } catch (e) {
-      throw Exception('Error processing query with OpenAI: $e');
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['choices'][0]['message']['content'] as String;
+    } else {
+      throw Exception(
+          'Failed to process query: ${response.statusCode} - ${response.body}');
     }
   }
 }

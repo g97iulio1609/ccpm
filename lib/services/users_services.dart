@@ -201,15 +201,12 @@ class UsersService {
 
   Future<void> deleteUser(String userId) async {
     try {
-      // Ottieni il ruolo dell'utente corrente
       String currentUserRole = getCurrentUserRole();
 
-      // Ottieni il documento dell'utente da eliminare
       final userDoc = await _firestore.collection('users').doc(userId).get();
 
       if (userDoc.exists) {
         if (currentUserRole == 'admin') {
-          // Chiama la Cloud Function per eliminare l'utente
           final result = await _functions
               .httpsCallable('deleteUser')
               .call({'userId': userId});
@@ -217,16 +214,10 @@ class UsersService {
             throw Exception('Failed to delete user via Cloud Function');
           }
         } else {
-          // Per utenti non-admin (ad es., utenti che eliminano il proprio account)
           User? currentUser = _auth.currentUser;
           if (currentUser != null && currentUser.uid == userId) {
-            // Elimina l'autenticazione dell'utente
             await currentUser.delete();
-
-            // Elimina il documento Firestore dell'utente
             await _firestore.collection('users').doc(userId).delete();
-
-            // Disconnetti l'utente
             await _auth.signOut();
           } else {
             throw Exception(
@@ -234,7 +225,6 @@ class UsersService {
           }
         }
 
-        // Aggiorna lo stream degli utenti
         final updatedUsers = _usersStreamController.value
             .where((user) => user.id != userId)
             .toList();
@@ -251,51 +241,50 @@ class UsersService {
     await _firestore.collection('users').doc(userId).update(data);
   }
 
- Future<void> createUser({
-  required String name,
-  required String email,
-  required String password,
-  required String role,
-   String? gender,  // Cambiato da `String` a `int`
-}) async {
-  try {
-    UserCredential userCredential = await _authForUserCreation!
-        .createUserWithEmailAndPassword(email: email, password: password);
+  Future<void> createUser({
+    required String name,
+    required String email,
+    required String password,
+    required String role,
+    String? gender,
+  }) async {
+    try {
+      UserCredential userCredential = await _authForUserCreation!
+          .createUserWithEmailAndPassword(email: email, password: password);
 
-    User? newUser = userCredential.user;
-    if (newUser != null) {
-      String? uniqueNumber;
-      if (role == 'coach') {
-        uniqueNumber = await _generateUniqueNumber();
+      User? newUser = userCredential.user;
+      if (newUser != null) {
+        String? uniqueNumber;
+        if (role == 'coach') {
+          uniqueNumber = await _generateUniqueNumber();
+        }
+
+        int genderValue;
+        switch (gender!.toLowerCase()) {
+          case 'male':
+            genderValue = 1;
+            break;
+          case 'female':
+            genderValue = 2;
+            break;
+          default:
+            genderValue = 0;
+        }
+
+        await _firestore.collection('users').doc(newUser.uid).set({
+          'name': name,
+          'email': email,
+          'role': role,
+          'photoURL': '',
+          'gender': genderValue,
+          'uniqueNumber': uniqueNumber,
+        });
+        await _authForUserCreation!.signOut();
       }
-
-      // Convertire il gender da stringa a intero
-      int genderValue;
-      switch (gender!.toLowerCase()) {
-        case 'male':
-          genderValue = 1;
-          break;
-        case 'female':
-          genderValue = 2;
-          break;
-        default:
-          genderValue = 0;
-      }
-
-      await _firestore.collection('users').doc(newUser.uid).set({
-        'name': name,
-        'email': email,
-        'role': role,
-        'photoURL': '',
-        'gender': genderValue,  // Salva il genere come un intero
-        'uniqueNumber': uniqueNumber,
-      });
-      await _authForUserCreation!.signOut();
+    } catch (e) {
+      throw Exception(e.toString());
     }
-  } catch (e) {
-    throw Exception(e.toString());
   }
-}
 
   Future<String> _generateUniqueNumber() async {
     String uniqueNumber;
@@ -334,6 +323,5 @@ class UsersService {
     _ref.read(userRoleProvider.notifier).state = '';
   }
 
-  // Access methods of ExerciseRecordService directly when needed
   ExerciseRecordService get exerciseRecordService => _exerciseRecordService;
 }
