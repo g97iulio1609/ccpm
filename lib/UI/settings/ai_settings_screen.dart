@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:path/path.dart';
 import '../../services/ai/ai_settings_service.dart';
 
 class AISettingsScreen extends HookConsumerWidget {
@@ -50,10 +51,11 @@ class AISettingsScreen extends HookConsumerWidget {
                 labelText: 'Select Model',
                 border: OutlineInputBorder(),
               ),
-              items: AIModel.values.map((model) {
+              items: settings.availableModels.map((model) {
                 return DropdownMenuItem(
                   value: model,
-                  child: Text(model.name),
+                  child:
+                      Text('${model.modelId} (${model.provider.displayName})'),
                 );
               }).toList(),
               onChanged: (model) {
@@ -88,31 +90,45 @@ class AISettingsScreen extends HookConsumerWidget {
               label: 'OpenAI API Key',
               value: settings.openAIKey,
               onChanged: notifier.updateOpenAIKey,
+              context: context,
+              helpText:
+                  'Get your API key from https://platform.openai.com/api-keys',
             ),
             const SizedBox(height: 16),
             _buildAPIKeyField(
               label: 'Google Gemini API Key',
               value: settings.geminiKey,
               onChanged: notifier.updateGeminiKey,
+              context: context,
+              helpText: 'Get your API key from https://ai.google.dev/',
             ),
             const SizedBox(height: 16),
             _buildAPIKeyField(
               label: 'Claude API Key',
               value: settings.claudeKey,
               onChanged: notifier.updateClaudeKey,
+              context: context,
+              helpText:
+                  'Get your API key from https://console.anthropic.com/settings/keys',
             ),
             const SizedBox(height: 16),
             _buildAPIKeyField(
               label: 'Azure OpenAI API Key',
               value: settings.azureKey,
               onChanged: notifier.updateAzureKey,
+              context: context,
+              helpText:
+                  'Get your API key from your Azure OpenAI resource in the Azure Portal.',
             ),
             const SizedBox(height: 16),
             _buildAPIKeyField(
               label: 'Azure OpenAI Endpoint',
               value: settings.azureEndpoint,
               onChanged: notifier.updateAzureEndpoint,
+              context: context,
               isEndpoint: true,
+              helpText:
+                  'Get your Endpoint from your Azure OpenAI resource in the Azure Portal.',
             ),
           ],
         ),
@@ -124,7 +140,9 @@ class AISettingsScreen extends HookConsumerWidget {
     required String label,
     required String? value,
     required Function(String) onChanged,
+    required BuildContext context,
     bool isEndpoint = false,
+    String? helpText,
   }) {
     return TextFormField(
       initialValue: value,
@@ -134,12 +152,32 @@ class AISettingsScreen extends HookConsumerWidget {
         suffixIcon: IconButton(
           icon: const Icon(Icons.help_outline),
           onPressed: () {
-            // TODO: Show help dialog with information about where to get the API key
+            if (helpText != null) {
+              _showHelpDialog(context, label, helpText);
+            }
           },
         ),
       ),
       obscureText: !isEndpoint,
       onChanged: onChanged,
+    );
+  }
+
+  void _showHelpDialog(BuildContext context, String title, String content) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(content),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

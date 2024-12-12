@@ -5,7 +5,7 @@ import 'ai_service.dart';
 
 class GeminiService implements AIService {
   final String apiKey;
-  final String baseUrl;
+  final String model;
   final Logger _logger = Logger(
     printer: PrettyPrinter(
       methodCount: 0,
@@ -19,9 +19,12 @@ class GeminiService implements AIService {
 
   GeminiService({
     required this.apiKey,
-    this.baseUrl =
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
+    required this.model,
   });
+
+  String get baseUrl =>
+      'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent';
+
   @override
   Future<String> processNaturalLanguageQuery(String query,
       {Map<String, dynamic>? context}) async {
@@ -32,8 +35,7 @@ class GeminiService implements AIService {
       }
 
       final url = Uri.parse('$baseUrl?key=$apiKey');
-      final prompt =
-          _buildJsonPrompt(query); // Costruisce il prompt per il formato JSON
+      final prompt = _buildJsonPrompt(query, context);
 
       final response = await http.post(
         url,
@@ -64,35 +66,71 @@ class GeminiService implements AIService {
             data['candidates'][0]['content']['parts'][0]['text'].trim();
 
         try {
-          // Prova a interpretare il testo come JSON
           final jsonResponse = json.decode(text);
           if (jsonResponse is Map<String, dynamic>) {
-            return jsonResponse[
-                'responseText']; // Restituisci solo la risposta formattata
+            // Se è una query di training, assicuriamoci che l'userId sia corretto
+            if (jsonResponse['featureType'] == 'training' &&
+                jsonResponse['action'] == 'query_program') {
+              if (context != null &&
+                  context['userProfile'] != null &&
+                  context['userProfile']['uniqueNumber'] != null) {
+                jsonResponse['userId'] =
+                    context['userProfile']['uniqueNumber'].toString();
+              } else {
+                _logger.w(
+                    'Context or userProfile.uniqueNumber is missing for training query');
+                return 'Mi dispiace, non riesco a identificare il tuo profilo. Prova ad effettuare nuovamente il login.';
+              }
+              return json.encode(jsonResponse);
+            }
+
+            // Per altre risposte JSON
+            if (jsonResponse.containsKey('responseText')) {
+              return jsonResponse['responseText'];
+            }
+            return json.encode(jsonResponse);
           }
         } catch (e) {
-          // Non è un JSON valido
-          _logger.e('Gemini: Invalid JSON response, returning raw text: $text');
-          return text;
+          _logger.e('Gemini: Invalid JSON response: $e\nResponse text: $text');
+          return 'Mi dispiace, si è verificato un errore nell\'elaborazione della risposta.';
         }
-        return text; // Aggiungi questo return per il caso in cui il JSON non abbia il formato atteso
+        return text;
       } else {
         _logger.e('Gemini Error response: ${response.body}');
-        return "Errore durante la richiesta. Riprovare.";
+        return "Si è verificato un errore durante la richiesta. Riprova più tardi.";
       }
     } catch (e, stackTrace) {
       _logger.e('Gemini Exception in processNaturalLanguageQuery',
           error: e, stackTrace: stackTrace);
-      return "Errore interno del servizio AI. Contattare il supporto.";
+      return "Si è verificato un errore interno. Per favore, contatta il supporto tecnico.";
     }
   }
 
-  // Costruisce un prompt per ottenere una risposta JSON ben formattata
-  String _buildJsonPrompt(String query) {
+  String _buildJsonPrompt(String query, Map<String, dynamic>? context) {
+    final userProfile = context?['userProfile'];
+    final contextInfo = userProfile != null
+        ? '\nContesto utente: ${json.encode({
+                'uniqueNumber': userProfile['uniqueNumber'],
+                'name': userProfile['name'],
+                'role': userProfile['role'],
+              })}'
+        : '';
+
     return '''
 Rispondi alla seguente domanda e restituisci il risultato solo come un oggetto JSON. Non aggiungere testo fuori dal JSON.
+Per le richieste di tipo "training" con action "query_program", devi SEMPRE includere il campo "userId" preso dal contesto utente uniqueNumber.
+
+$contextInfo
 
 Esempio di formato richiesto:
+{
+  "featureType": "training",
+  "action": "query_program",
+  "userId": "12345"
+}
+
+oppure:
+
 {
   "featureType": "other",
   "responseText": "La tua risposta dettagliata in un formato leggibile dall'utente finale."

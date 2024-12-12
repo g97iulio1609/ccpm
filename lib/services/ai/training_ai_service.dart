@@ -118,6 +118,7 @@ Devi SEMPRE restituire un oggetto JSON valido senza testo aggiuntivo.
 Funzionalità:
 - "maxrm": richieste sui massimali (update, query, list, calculate)
 - "profile": richieste sul profilo (update_profile, query_profile)
+- "training": richieste sui programmi di allenamento (create_program, query_program)
 - "other": altro (nessuna funzionalità speciale)
 - "error": se non capisci
 
@@ -127,6 +128,46 @@ Esempi:
   "action": "calculate",
   "weight": 190,
   "reps": 3
+}
+
+{
+  "featureType": "training",
+  "action": "create_program",
+  "name": "Programma Squat",
+  "description": "Programma di allenamento focalizzato sullo squat",
+  "weeks": [
+    {
+      "number": 1,
+      "workouts": [
+        {
+          "order": 1,
+          "name": "Allenamento 1",
+          "exercises": [
+            {
+              "name": "Squat",
+              "type": "compound",
+              "variant": "back",
+              "order": 1,
+              "series": [
+                {
+                  "reps": 5,
+                  "weight": 100,
+                  "intensity": "75",
+                  "order": 1
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+
+{
+  "featureType": "training",
+  "action": "query_program",
+  "userId": userProfile['id']
 }
 
 {
@@ -148,15 +189,24 @@ Query: $message
     userProfile.updateAll((key, value) {
       if (value is DateTime) {
         return value.toIso8601String();
+      } else if (value.toString().contains('Timestamp')) {
+        // Gestisce i Timestamp di Firestore
+        return value.toDate().toIso8601String();
       }
       return value;
     });
 
+    final serializedHistory = chatHistory.map((msg) {
+      var content = msg.content;
+      if (content is Map) {
+        content = _makeSerializable(content);
+      }
+      return {'role': msg.role, 'content': content};
+    }).toList();
+
     final context = {
       'userProfile': userProfile,
-      'chatHistory': chatHistory
-          .map((msg) => {'role': msg.role, 'content': msg.content})
-          .toList(),
+      'chatHistory': serializedHistory,
     };
 
     return '''
@@ -174,6 +224,21 @@ If not, but you can still provide a helpful answer, return:
 Context: ${jsonEncode(context)}
 User question: $message
 ''';
+  }
+
+  // Metodo per rendere serializzabile il contesto
+  dynamic _makeSerializable(dynamic value) {
+    if (value is Map) {
+      return value.map((key, value) => MapEntry(key, _makeSerializable(value)));
+    } else if (value is List) {
+      return value.map((e) => _makeSerializable(e)).toList();
+    } else if (value is DateTime) {
+      return value.toIso8601String();
+    } else if (value.toString().contains('Timestamp')) {
+      // Gestisce i Timestamp di Firestore
+      return value.toDate().toIso8601String();
+    }
+    return value;
   }
 
   Map<String, dynamic>? _parseJson(String response) {
@@ -222,7 +287,15 @@ final trainingAIServiceProvider = Provider<TrainingAIService>((ref) {
 
 final openaiServiceProvider = Provider.family<OpenAIService, String>(
     (ref, model) => OpenAIService(model: model));
-final geminiServiceProvider = Provider.family<GeminiService, String>(
-    (ref, apiKey) => GeminiService(apiKey: apiKey));
+final geminiServiceProvider =
+    Provider.family<GeminiService, String>((ref, apiKey) {
+  final settings = ref.watch(aiSettingsProvider);
+  final selectedModel = settings.selectedModel.modelId;
+  return GeminiService(
+    apiKey: apiKey,
+    model: selectedModel,
+  );
+});
 
+final selectedAIModelProvider = StateProvider<String>((ref) => 'gemini-pro');
 final openAIModelProvider = StateProvider<String>((ref) => 'gpt4o');
