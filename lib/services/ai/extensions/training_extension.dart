@@ -115,22 +115,26 @@ class TrainingExtension implements AIExtension {
   Future<String?> _handleQueryProgram(
       Map<String, dynamic> interpretation, String userId) async {
     try {
-      final targetUserId = interpretation['userId'] ?? userId;
+      _logger.i('Querying training programs for user: $userId');
 
       final programsQuery = await _firestore
           .collection('programs')
-          .where('athleteId', isEqualTo: targetUserId)
+          .where('athleteId', isEqualTo: userId)
           .get();
 
       if (programsQuery.docs.isEmpty) {
         return 'Non hai ancora nessun programma di allenamento.';
       }
 
-      final buffer = StringBuffer('I tuoi programmi di allenamento:\n');
+      final buffer = StringBuffer();
       for (var doc in programsQuery.docs) {
         final program = TrainingProgram.fromFirestore(doc);
         buffer.writeln(
-            '- ${program.name} (${program.mesocycleNumber} settimane)');
+            '• ${program.name} (${program.mesocycleNumber} settimane)');
+
+        if (program.description.isNotEmpty) {
+          buffer.writeln('  ${program.description}\n');
+        }
       }
 
       return buffer.toString();

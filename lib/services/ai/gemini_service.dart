@@ -70,69 +70,18 @@ class GeminiService implements AIService {
       final data = jsonDecode(response.body);
       var text = data['candidates'][0]['content']['parts'][0]['text'].trim();
 
-      // Rimozione dei blocchi di codice e backtick
-      text = text
-          .replaceAll(RegExp(r'```json\s*'), '')
-          .replaceAll('```', '')
-          .trim();
+      // Rimuovi markdown e caratteri non necessari
+      text = text.replaceAll(RegExp(r'\n'), ' ').trim();
 
-      try {
-        final jsonResponse = json.decode(text);
-        if (jsonResponse is Map<String, dynamic>) {
-          // Se c'è responseText, restituiamo direttamente il testo finale
-          if (jsonResponse.containsKey('responseText')) {
-            return jsonResponse['responseText'] ?? 'Risposta non disponibile.';
-          }
-
-          // Altrimenti restituiamo il JSON re-encodato, permettendo al trainingAIService di gestire l'azione
-          return json.encode(jsonResponse);
-        } else {
-          _logger.e('Gemini: la risposta non è un oggetto JSON valido.');
-          return 'Mi dispiace, si è verificato un errore nell\'elaborazione della risposta.';
-        }
-      } catch (e) {
-        _logger.e('Gemini: Invalid JSON response: $e\nResponse text: $text');
-        return 'Mi dispiace, si è verificato un errore nell\'elaborazione della risposta.';
-      }
-    } else {
-      _logger.e('Gemini Error response: ${response.body}');
-      return "Si è verificato un errore durante la richiesta. Riprova più tardi.";
+      return text;
     }
+    throw Exception('Failed to get response from Gemini API');
   }
 
   String _buildJsonPrompt(String query, Map<String, dynamic>? context) {
-    final userProfile = context?['userProfile'];
-    final userId = userProfile?['id']?.toString();
-    final contextInfo = userProfile != null
-        ? '\nContesto utente: ${json.encode({
-                'id': userId,
-                'name': userProfile['name'],
-                'role': userProfile['role'],
-              })}'
-        : '';
-
-    return '''
-Rispondi alla seguente domanda e restituisci il risultato SOLO come un oggetto JSON puro, senza markdown o altri delimitatori.
-Per le richieste di tipo "training" con action "query_program", devi SEMPRE includere il campo "userId" preso dal contesto utente id.
-
-$contextInfo
-
-Esempio di formato richiesto:
-{
-  "featureType": "training",
-  "action": "query_program",
-  "userId": "$userId"
-}
-
-oppure:
-
-{
-  "featureType": "other",
-  "responseText": "La tua risposta dettagliata in un formato leggibile dall'utente finale."
-}
-
-Domanda:
-$query
-''';
+    if (context != null) {
+      return 'Context: ${jsonEncode(context)}\nQuery: $query';
+    }
+    return query;
   }
 }
