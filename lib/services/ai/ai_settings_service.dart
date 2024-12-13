@@ -1,3 +1,8 @@
+// lib/services/ai/ai_settings_service.dart
+import 'package:alphanessone/services/ai/ai_providers.dart';
+import 'package:alphanessone/services/ai/ai_service.dart';
+import 'package:alphanessone/services/ai/gemini_service.dart';
+import 'package:alphanessone/services/ai/openai_service.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -114,46 +119,44 @@ class AISettingsService {
       claudeKey: _prefs.getString('${_keyPrefix}claude_key'),
       azureKey: _prefs.getString('${_keyPrefix}azure_key'),
       azureEndpoint: _prefs.getString('${_keyPrefix}azure_endpoint'),
-      selectedModel: AIModel.gpt4o, 
-      selectedProvider: AIProvider.openAI, 
+      selectedModel: AIModel.values.firstWhere(
+        (model) =>
+            model.name == _prefs.getString('${_keyPrefix}selected_model'),
+        orElse: () => AIModel.gpt4o,
+      ),
+      selectedProvider: AIProvider.values.firstWhere(
+        (provider) =>
+            provider.name == _prefs.getString('${_keyPrefix}selected_provider'),
+        orElse: () => AIProvider.openAI,
+      ),
     );
 
+    // Validate and adjust selected provider and model
     final availableProviders = settings.availableProviders;
-    if (availableProviders.isNotEmpty) {
-      final savedProvider = _prefs.getString('${_keyPrefix}selected_provider');
-      final provider = savedProvider != null
-          ? AIProvider.values.firstWhere(
-              (p) => p.name == savedProvider,
-              orElse: () => availableProviders.first,
-            )
-          : availableProviders.first;
-
-      final availableModels =
-          AIModel.values.where((model) => model.provider == provider).toList();
-
-      if (availableModels.isNotEmpty) {
-        final savedModel = _prefs.getString('${_keyPrefix}selected_model');
-        final model = savedModel != null
-            ? AIModel.values.firstWhere(
-                (m) => m.name == savedModel && m.provider == provider,
-                orElse: () => availableModels.first,
-              )
-            : availableModels.first;
-
-        return settings.copyWith(
-          selectedProvider: provider,
-          selectedModel: model,
-        );
-      }
+    AIProvider provider = settings.selectedProvider;
+    if (!availableProviders.contains(provider)) {
+      provider = availableProviders.isNotEmpty
+          ? availableProviders.first
+          : AIProvider.openAI;
     }
 
-    return settings;
+    final availableModels =
+        AIModel.values.where((model) => model.provider == provider).toList();
+    AIModel model;
+    final savedModelName = _prefs.getString('${_keyPrefix}selected_model');
+    if (availableModels.any((m) => m.name == savedModelName)) {
+      model = availableModels.firstWhere((m) => m.name == savedModelName);
+    } else {
+      model =
+          availableModels.isNotEmpty ? availableModels.first : AIModel.gpt4o;
+    }
+
+    return settings.copyWith(
+      selectedProvider: provider,
+      selectedModel: model,
+    );
   }
 }
-
-final aiSettingsServiceProvider = Provider<AISettingsService>((ref) {
-  throw UnimplementedError();
-});
 
 final aiSettingsProvider =
     StateNotifierProvider<AISettingsNotifier, AISettings>((ref) {

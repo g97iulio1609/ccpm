@@ -1,4 +1,5 @@
 import 'package:alphanessone/Main/app_services.dart';
+import 'package:alphanessone/services/ai/ai_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -11,6 +12,8 @@ import 'Main/app_theme.dart';
 import 'Main/app_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'services/ai/ai_settings_service.dart';
+
+final sharedPreferencesProvider = Provider<SharedPreferences>((ref) => throw UnimplementedError('sharedPreferencesProvider needs to be overridden'));
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,6 +47,7 @@ void main() async {
     runApp(
       ProviderScope(
         overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
           aiSettingsServiceProvider.overrideWithValue(AISettingsService(prefs)),
         ],
         child: const MyApp(),

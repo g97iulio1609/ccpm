@@ -19,17 +19,18 @@ class MaxRMExtension implements AIExtension {
   @override
   Future<String?> handle(Map<String, dynamic> interpretation, String userId,
       UserModel user) async {
-    final action = interpretation['action'];
-    if (action == 'update') {
-      return await _handleUpdate(interpretation, userId);
-    } else if (action == 'query') {
-      return await _handleQuery(interpretation, userId);
-    } else if (action == 'list') {
-      return await _handleList(userId);
-    } else if (action == 'calculate') {
-      return await _handleCalculate(interpretation);
-    } else {
-      return null;
+    final action = interpretation['action'] as String?;
+    switch (action) {
+      case 'query':
+        return await _handleQuery(interpretation, userId);
+      case 'update':
+        return await _handleUpdate(interpretation, userId);
+      case 'list':
+        return await _handleList(userId);
+      case 'calculate':
+        return await _handleCalculate(interpretation);
+      default:
+        return 'Azione non riconosciuta per maxrm.';
     }
   }
 
@@ -93,9 +94,9 @@ class MaxRMExtension implements AIExtension {
 
   Future<String?> _handleQuery(
       Map<String, dynamic> interpretation, String userId) async {
-    final exerciseName = interpretation['exercise'];
+    final exerciseName = interpretation['exercise'] as String?;
     if (exerciseName == null) {
-      return null;
+      return 'Per quale esercizio desideri conoscere il massimale?';
     }
 
     final formattedName = _formatExerciseName(exerciseName);
@@ -119,7 +120,7 @@ class MaxRMExtension implements AIExtension {
     }
 
     final record = ExerciseRecord.fromFirestore(recordsQuery.docs.first);
-    return 'Il tuo massimale più recente per $formattedName è: ${record.maxWeight}kg x ${record.repetitions} ripetizioni (${record.date.toIso8601String()})';
+    return 'Il tuo massimale per $exerciseName è ${record.maxWeight} kg per ${record.repetitions} ripetizioni (aggiornato il ${record.date.toLocal().toString().split(' ')[0]}).';
   }
 
   Future<String?> _handleList(String userId) async {

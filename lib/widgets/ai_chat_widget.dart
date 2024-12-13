@@ -11,7 +11,7 @@ import 'package:logger/logger.dart';
 
 import '../models/user_model.dart';
 import '../services/ai/ai_settings_service.dart';
-import '../services/ai/training_ai_service.dart';
+import '../services/ai/AIServices.dart';
 import '../services/ai/extensions/ai_extension.dart';
 import '../services/ai/extensions/maxrm_extension.dart';
 import '../services/ai/extensions/profile_extension.dart';
@@ -44,36 +44,36 @@ class ChatMessage {
 }
 
 class AIChatWidget extends HookConsumerWidget {
-  AIChatWidget({
+  const AIChatWidget({
     super.key,
     required this.userService,
   });
 
   final UsersService userService;
-  final Logger _logger = Logger(
-    printer: PrettyPrinter(
-      methodCount: 0,
-      errorMethodCount: 5,
-      lineLength: 50,
-      colors: true,
-      printEmojis: true,
-      dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
-    ),
-  );
-
-  // Estensioni caricate
-  final List<AIExtension> _extensions = [
-    MaxRMExtension(),
-    ProfileExtension(),
-  ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(aiSettingsProvider);
     final chatMessages = ref.watch(chatMessagesProvider);
-    final chatNotifier = ref.read(chatMessagesProvider.notifier);
-    final aiService = ref.watch(trainingAIServiceProvider);
+    final chatNotifier = ref.watch(chatMessagesProvider.notifier);
+    final aiService = ref.watch(aiServiceManagerProvider);
     final isProcessing = useState(false);
+    final logger = useMemoized(() => Logger(
+          printer: PrettyPrinter(
+            methodCount: 0,
+            errorMethodCount: 5,
+            lineLength: 50,
+            colors: true,
+            printEmojis: true,
+            dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
+          ),
+        ));
+
+    // Estensioni caricate
+    final extensions = useMemoized(() => [
+          MaxRMExtension(),
+          ProfileExtension(),
+        ]);
 
     /// Funzione ausiliaria per gestire un'interpretazione
     Future<bool> tryHandleInterpretation(Map<String, dynamic>? interpretation,
@@ -85,11 +85,10 @@ class AIChatWidget extends HookConsumerWidget {
       final featureType = interpretation['featureType'];
       if (featureType == null) return false;
 
-      for (final ext in _extensions) {
+      for (final ext in extensions) {
         if (await ext.canHandle(interpretation)) {
           final response = await ext.handle(interpretation, userId, user);
           if (response == null) {
-            // Non gestito dall'estensione, fallback all'AI
             return false;
           }
           chatNotifier
@@ -208,7 +207,7 @@ class AIChatWidget extends HookConsumerWidget {
               .addMessage(ChatMessage(role: 'assistant', content: response));
         }
       } catch (e, stackTrace) {
-        _logger.e('Errore durante l\'invio del messaggio',
+        logger.e('Errore durante l\'invio del messaggio',
             error: e, stackTrace: stackTrace);
         chatNotifier.addMessage(ChatMessage(
           role: 'assistant',

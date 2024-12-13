@@ -69,6 +69,7 @@ dependencies:
   build_runner: ^2.4.13
   flutter_markdown: ^0.6.20
   logger: ^2.0.2+1
+  flutter_gemini: ^3.0.0
 
 dev_dependencies:
   flutter_test:

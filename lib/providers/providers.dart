@@ -10,6 +10,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/users_services.dart';
 import '../services/tdee_services.dart';
@@ -23,10 +24,6 @@ import '../models/user_model.dart';
 import '../exerciseManager/exercise_model.dart';
 
 // Importa i servizi AI
-import '../services/ai/ai_service.dart';
-import '../services/ai/openai_service.dart';
-import '../services/ai/gemini_service.dart';
-import '../services/ai/ai_settings_service.dart';
 
 final firebaseAuthProvider =
     Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
@@ -176,16 +173,7 @@ final previousMeasurementsProvider =
           .toList());
 });
 
-// Provider per OpenAIService e GeminiService
-final openaiServiceProvider = Provider.family<OpenAIService, String>(
-    (ref, model) => OpenAIService(model: model));
-
-final geminiServiceProvider =
-    Provider.family<GeminiService, String>((ref, apiKey) {
-  final settings = ref.watch(aiSettingsProvider);
-  final selectedModel = settings.selectedModel.modelId;
-  return GeminiService(
-    apiKey: apiKey,
-    model: selectedModel,
-  );
+// Definizione del provider per SharedPreferences
+final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
+  throw UnimplementedError('sharedPreferencesProvider needs to be overridden');
 });

@@ -1,17 +1,16 @@
 import 'dart:convert';
+import 'package:alphanessone/services/ai/ai_providers.dart' as ai_providers;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:alphanessone/models/user_model.dart';
 import 'ai_service.dart';
-import 'openai_service.dart';
-import 'gemini_service.dart';
 import 'package:alphanessone/services/ai/ai_settings_service.dart';
 import 'package:alphanessone/services/users_services.dart';
 import 'package:alphanessone/services/ai/extensions_manager.dart'; // Manager delle estensioni
 import '../../providers/providers.dart';
 
-class TrainingAIService {
+class AIServiceManager {
   final AIService primaryAIService;
   final AIService fallbackAIService;
   final UsersService usersService;
@@ -21,21 +20,23 @@ class TrainingAIService {
 
   final ExtensionsManager _extensionsManager = ExtensionsManager();
 
-  TrainingAIService(this.primaryAIService, this.fallbackAIService, this.usersService);
+  AIServiceManager(
+      this.primaryAIService, this.fallbackAIService, this.usersService);
 
   /// Metodo principale per elaborare una query dell'utente:
   /// - Interpreta il messaggio
   /// - Se identificata un'azione (ad es. query_program), esegue l'estensione corrispondente
   /// - Ritorna il risultato finale testuale all'utente
-  Future<String> processQuery(String message, {Map<String, dynamic>? context}) async {
+  Future<String> processQuery(String message,
+      {Map<String, dynamic>? context}) async {
     final interpretation = await interpretMessage(message, context: context);
     if (interpretation == null) {
       return "Non ho capito la tua richiesta.";
     }
 
-    final featureType = interpretation['featureType'];
-    if (featureType == null || featureType == 'error') {
-      return interpretation['error_message'] ?? "Non ho capito la tua richiesta.";
+    final featureType = interpretation['featureType'] as String?;
+    if (featureType == null) {
+      return "Non ho capito la tua richiesta.";
     }
 
     final userId = usersService.getCurrentUserId();
@@ -44,13 +45,29 @@ class TrainingAIService {
       return "Non riesco a recuperare il tuo profilo utente.";
     }
 
-    // Esegui l'azione tramite l'estensione appropriata
-    final result = await _extensionsManager.executeAction(interpretation, user);
-
-    if (result != null && result.isNotEmpty) {
-      return result; 
+    if (featureType == 'error') {
+      return interpretation['error_message'] ??
+          "Non ho capito la tua richiesta.";
+    } else if (featureType == 'other') {
+      // Use AI to generate a response without using extensions
+      final responseText = interpretation['responseText'] as String?;
+      if (responseText != null && responseText.isNotEmpty) {
+        return responseText;
+      } else {
+        // Generate a response using AI
+        final aiResponse =
+            await processNaturalLanguageQuery(message, context: context);
+        return aiResponse;
+      }
     } else {
-      return "Non ci sono informazioni disponibili.";
+      // Use the appropriate extension
+      final result =
+          await _extensionsManager.executeAction(interpretation, user);
+      if (result != null && result.isNotEmpty) {
+        return result;
+      } else {
+        return "Non ci sono informazioni disponibili.";
+      }
     }
   }
 
@@ -106,10 +123,13 @@ class TrainingAIService {
     final preparedContext = _prepareNonStandardContext(user, chatHistory);
 
     return await _tryInterpretWithFallback((service) async {
-      final response = await service.processNaturalLanguageQuery(prompt, context: preparedContext);
+      final response = await service.processNaturalLanguageQuery(prompt,
+          context: preparedContext);
       final result = _parseJson(response);
 
-      if (result != null && result['featureType'] != null && result['featureType'] != 'error') {
+      if (result != null &&
+          result['featureType'] != null &&
+          result['featureType'] != 'error') {
         final extResult = await _extensionsManager.executeAction(result, user);
         if (extResult != null && extResult.isNotEmpty) {
           return {
@@ -131,10 +151,13 @@ class TrainingAIService {
     final prompt = _nonStandardQueryPrompt(message, user, chatHistory);
     final preparedContext = _prepareNonStandardContext(user, chatHistory);
 
-    final response = await fallbackAIService.processNaturalLanguageQuery(prompt, context: preparedContext);
+    final response = await fallbackAIService.processNaturalLanguageQuery(prompt,
+        context: preparedContext);
     final result = _parseJson(response);
 
-    if (result != null && result['featureType'] != null && result['featureType'] != 'error') {
+    if (result != null &&
+        result['featureType'] != null &&
+        result['featureType'] != 'error') {
       final extResult = await _extensionsManager.executeAction(result, user);
       if (extResult != null && extResult.isNotEmpty) {
         return {
@@ -178,7 +201,8 @@ class TrainingAIService {
     return _makeSerializable(context) as Map<String, dynamic>?;
   }
 
-  Map<String, dynamic>? _prepareNonStandardContext(UserModel user, List<dynamic> chatHistory) {
+  Map<String, dynamic>? _prepareNonStandardContext(
+      UserModel user, List<dynamic> chatHistory) {
     final userId = usersService.getCurrentUserId();
     final userProfile = user.toMap();
 
@@ -268,21 +292,11 @@ Esempi:
   "name": "Programma Squat",
   "description": "Programma focalizzato sullo squat",
   "weeks": [...]
-}
-{
-  "featureType": "training",
-  "action": "query_program",
-  "userId": "$userId"
-}
-{
-  "featureType": "other"
-}
-{
   "featureType": "error",
-  "error_message": "Non ho capito"
+  "error_message": "Non ho capito."
 }
 
-Query: $message
+Messaggio dell'utente: $message
 ''';
   }
 
@@ -362,30 +376,50 @@ User question: $message
   }
 }
 
-final trainingAIServiceProvider = Provider<TrainingAIService>((ref) {
-  final aiSettings = ref.watch(aiSettingsProvider);
+final aiServiceManagerProvider = Provider<AIServiceManager>((ref) {
+  final aiSettings = ref.watch(ai_providers.aiSettingsProvider);
   final selectedModel = aiSettings.selectedModel;
   final usersService = ref.watch(usersServiceProvider);
 
-  AIService primaryAIService;
-  AIService fallbackAIService;
+  late AIService primaryAIService;
+  late AIService fallbackAIService;
 
   switch (aiSettings.selectedProvider) {
     case AIProvider.openAI:
-      primaryAIService = ref.watch(openaiServiceProvider(selectedModel.modelId));
+      if (aiSettings.openAIKey == null || aiSettings.openAIKey!.isEmpty) {
+        throw Exception('OpenAI API key is not set');
+      }
+      primaryAIService =
+          ref.watch(ai_providers.openaiServiceProvider(selectedModel.modelId));
       if (aiSettings.geminiKey != null && aiSettings.geminiKey!.isNotEmpty) {
-        fallbackAIService = ref.watch(geminiServiceProvider(aiSettings.geminiKey!));
+        fallbackAIService = ref
+            .watch(ai_providers.geminiServiceProvider(aiSettings.geminiKey!));
       } else {
-        fallbackAIService = ref.watch(openaiServiceProvider(selectedModel.modelId));
+        if (aiSettings.openAIKey == null || aiSettings.openAIKey!.isEmpty) {
+          throw Exception('OpenAI API key is not set');
+        }
+        fallbackAIService = ref
+            .watch(ai_providers.openaiServiceProvider(selectedModel.modelId));
       }
       break;
     case AIProvider.gemini:
-      primaryAIService = ref.watch(geminiServiceProvider(aiSettings.geminiKey!));
-      fallbackAIService = ref.watch(openaiServiceProvider("gpt4o"));
+      if (aiSettings.geminiKey == null || aiSettings.geminiKey!.isEmpty) {
+        throw Exception('Gemini API key is not set');
+      }
+      primaryAIService =
+          ref.watch(ai_providers.geminiServiceProvider(aiSettings.geminiKey!));
+      // Use same Gemini service as fallback if OpenAI key is not available
+      if (aiSettings.openAIKey != null && aiSettings.openAIKey!.isNotEmpty) {
+        fallbackAIService = ref
+            .watch(ai_providers.openaiServiceProvider(selectedModel.modelId));
+      } else {
+        fallbackAIService =
+            primaryAIService; // Use Gemini as fallback if no OpenAI key
+      }
       break;
     default:
       throw Exception('No AI provider selected');
   }
 
-  return TrainingAIService(primaryAIService, fallbackAIService, usersService);
+  return AIServiceManager(primaryAIService, fallbackAIService, usersService);
 });
