@@ -1,8 +1,4 @@
 // lib/services/ai/ai_settings_service.dart
-import 'package:alphanessone/services/ai/ai_providers.dart';
-import 'package:alphanessone/services/ai/ai_service.dart';
-import 'package:alphanessone/services/ai/gemini_service.dart';
-import 'package:alphanessone/services/ai/openai_service.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -95,11 +91,12 @@ class AISettings {
 
 class AISettingsService {
   static const _keyPrefix = 'ai_settings_';
-  final SharedPreferences _prefs;
+  final SharedPreferences? _prefs;
 
   AISettingsService(this._prefs);
 
   Future<void> saveSettings(AISettings settings) async {
+    if (_prefs == null) return;
     await _prefs.setString('${_keyPrefix}openai_key', settings.openAIKey ?? '');
     await _prefs.setString('${_keyPrefix}gemini_key', settings.geminiKey ?? '');
     await _prefs.setString('${_keyPrefix}claude_key', settings.claudeKey ?? '');
@@ -113,6 +110,12 @@ class AISettingsService {
   }
 
   AISettings loadSettings() {
+    if (_prefs == null) {
+      return AISettings(
+        selectedModel: AIModel.gpt4o,
+        selectedProvider: AIProvider.openAI,
+      );
+    }
     final settings = AISettings(
       openAIKey: _prefs.getString('${_keyPrefix}openai_key'),
       geminiKey: _prefs.getString('${_keyPrefix}gemini_key'),
@@ -157,6 +160,9 @@ class AISettingsService {
     );
   }
 }
+
+final aiSettingsServiceProvider =
+    Provider<AISettingsService>((ref) => throw UnimplementedError());
 
 final aiSettingsProvider =
     StateNotifierProvider<AISettingsNotifier, AISettings>((ref) {

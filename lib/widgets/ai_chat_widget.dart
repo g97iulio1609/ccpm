@@ -1,5 +1,4 @@
 // ai_chat_widget.dart
-import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/services/users_services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -8,11 +7,11 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logger/logger.dart';
+import 'dart:convert';
 
 import '../models/user_model.dart';
 import '../services/ai/ai_settings_service.dart';
 import '../services/ai/AIServices.dart';
-import '../services/ai/extensions/ai_extension.dart';
 import '../services/ai/extensions/maxrm_extension.dart';
 import '../services/ai/extensions/profile_extension.dart';
 
@@ -39,8 +38,16 @@ class ChatMessagesNotifier extends StateNotifier<List<ChatMessage>> {
 class ChatMessage {
   final String role; // 'user' o 'assistant'
   final String content;
+  final Map<String, dynamic>? interpretation; // Per messaggi dell'assistente
 
-  ChatMessage({required this.role, required this.content});
+  ChatMessage({
+    required this.role,
+    required this.content,
+    this.interpretation,
+  });
+
+  bool get isUser => role == 'user';
+  bool get isAssistant => role == 'assistant';
 }
 
 class AIChatWidget extends HookConsumerWidget {
@@ -69,35 +76,58 @@ class AIChatWidget extends HookConsumerWidget {
           ),
         ));
 
-    // Estensioni caricate
-    final extensions = useMemoized(() => [
-          MaxRMExtension(),
-          ProfileExtension(),
-        ]);
+    /// Processa la risposta dell'AI e gestisce l'interpretazione
+    Future<void> processAIResponse(String messageText) async {
+      try {
+        final userId = userService.getCurrentUserId();
+        final user = await userService.getUserById(userId);
+        if (user == null) throw Exception('Utente non trovato');
 
-    /// Funzione ausiliaria per gestire un'interpretazione
-    Future<bool> tryHandleInterpretation(Map<String, dynamic>? interpretation,
-        String userId, UserModel user) async {
-      if (interpretation == null) {
-        return false;
-      }
-
-      final featureType = interpretation['featureType'];
-      if (featureType == null) return false;
-
-      for (final ext in extensions) {
-        if (await ext.canHandle(interpretation)) {
-          final response = await ext.handle(interpretation, userId, user);
-          if (response == null) {
-            return false;
-          }
-          chatNotifier
-              .addMessage(ChatMessage(role: 'assistant', content: response));
-          return true;
+        // 1. Ottieni l'interpretazione dalla risposta AI
+        Map<String, dynamic>? interpretation;
+        try {
+          interpretation = jsonDecode(messageText);
+        } catch (e) {
+          logger.w('Failed to parse AI response as JSON: $e');
         }
-      }
 
-      return false;
+        String finalResponse;
+
+        if (interpretation != null) {
+          // 2. Se è un'interpretazione valida, esegui l'azione appropriata
+          final featureType = interpretation['featureType'];
+          if (featureType != null && featureType != 'other') {
+            final result =
+                await aiService.handleUserQuery(messageText, context: {
+              'userProfile': user.toMap(),
+              'chatHistory': chatMessages
+                  .map((msg) => {'role': msg.role, 'content': msg.content})
+                  .toList(),
+            });
+            finalResponse = result;
+          } else {
+            // Usa responseText se disponibile
+            finalResponse = interpretation['responseText'] ?? messageText;
+          }
+        } else {
+          // 3. Se non è un'interpretazione valida, usa il testo come risposta
+          finalResponse = messageText;
+        }
+
+        // 4. Aggiungi il messaggio alla chat
+        chatNotifier.addMessage(ChatMessage(
+          role: 'assistant',
+          content: finalResponse,
+          interpretation: interpretation,
+        ));
+      } catch (e, stackTrace) {
+        logger.e('Errore durante il processing della risposta AI',
+            error: e, stackTrace: stackTrace);
+        chatNotifier.addMessage(ChatMessage(
+          role: 'assistant',
+          content: 'Si è verificato un errore: ${e.toString()}',
+        ));
+      }
     }
 
     /// Invia un messaggio nella chat
@@ -106,116 +136,37 @@ class AIChatWidget extends HookConsumerWidget {
 
       isProcessing.value = true;
       try {
-        chatNotifier
-            .addMessage(ChatMessage(role: 'user', content: messageText));
+        // 1. Aggiungi il messaggio dell'utente
+        chatNotifier.addMessage(ChatMessage(
+          role: 'user',
+          content: messageText,
+        ));
 
+        // 2. Ottieni il contesto
         final userId = userService.getCurrentUserId();
         final user = await userService.getUserById(userId);
         if (user == null) throw Exception('Utente non trovato');
 
-        // 1. Interpretazione della domanda
-        Map<String, dynamic>? interpretation =
-            await aiService.interpretMessage(messageText, context: {
-          'userProfile': user.toMap(),
-          'chatHistory': chatMessages
-              .map((msg) => {'role': msg.role, 'content': msg.content})
-              .toList(),
-        });
-
-        // Se non riesce, prova con l'altro provider (fallback)
-        if (interpretation == null ||
-            interpretation['featureType'] == 'error') {
-          interpretation = await aiService
-              .interpretMessageWithFallback(messageText, context: {
+        // 3. Ottieni la risposta dall'AI
+        final response = await aiService.handleUserQuery(
+          messageText,
+          context: {
             'userProfile': user.toMap(),
             'chatHistory': chatMessages
                 .map((msg) => {'role': msg.role, 'content': msg.content})
                 .toList(),
-          });
-        }
+          },
+        );
 
-        bool handled = false;
-        final featureType = interpretation?['featureType'];
-
-        // 2. Verifica caso noto
-        if (interpretation != null &&
-            featureType != null &&
-            featureType != 'other' &&
-            featureType != 'error') {
-          handled = await tryHandleInterpretation(interpretation, userId, user);
-        } else {
-          // Non caso noto
-          Map<String, dynamic>? fallbackInterpretation = await aiService
-              .handleNonStandardQuery(messageText, user, chatMessages);
-
-          // Se non riesce prova con l'altro provider
-          if (fallbackInterpretation == null ||
-              fallbackInterpretation['featureType'] == 'error') {
-            fallbackInterpretation =
-                await aiService.handleNonStandardQueryWithFallback(
-                    messageText, user, chatMessages);
-          }
-
-          if (fallbackInterpretation != null) {
-            handled = await tryHandleInterpretation(
-                fallbackInterpretation, userId, user);
-
-            if (!handled) {
-              final response = fallbackInterpretation['responseText'];
-              if (response != null && response is String) {
-                chatNotifier.addMessage(
-                    ChatMessage(role: 'assistant', content: response));
-                handled = true;
-              }
-            }
-          }
-        }
-
-        // 3. Se ancora non gestito, fallback su risposta generica
-        if (!handled) {
-          Map<String, dynamic> profileData = user.toMap();
-          // Converti i campi Timestamp in stringhe ISO
-          profileData.updateAll((key, value) {
-            if (value is Timestamp) {
-              return value.toDate().toIso8601String();
-            }
-            return value;
-          });
-
-          String response = await aiService
-              .processNaturalLanguageQuery(messageText, context: {
-            'userProfile': profileData,
-            'chatHistory': chatMessages
-                .map((msg) => {'role': msg.role, 'content': msg.content})
-                .toList(),
-          });
-
-          // Se la risposta è nulla o in errore, prova con il fallback
-          if (response.isEmpty || response.contains('"featureType":"error"')) {
-            response = await aiService.processNaturalLanguageQueryWithFallback(
-              messageText,
-              context: {
-                'userProfile': profileData,
-                'chatHistory': chatMessages
-                    .map((msg) => {'role': msg.role, 'content': msg.content})
-                    .toList(),
-              },
-            );
-          }
-
-          chatNotifier
-              .addMessage(ChatMessage(role: 'assistant', content: response));
-        }
+        // 4. Processa la risposta
+        await processAIResponse(response);
       } catch (e, stackTrace) {
         logger.e('Errore durante l\'invio del messaggio',
             error: e, stackTrace: stackTrace);
         chatNotifier.addMessage(ChatMessage(
           role: 'assistant',
-          content: '**Errore:** ${e.toString()}',
+          content: 'Si è verificato un errore: ${e.toString()}',
         ));
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Errore: ${e.toString()}')),
-        );
       } finally {
         isProcessing.value = false;
       }
@@ -241,7 +192,14 @@ class AIChatWidget extends HookConsumerWidget {
           Expanded(
             child: Stack(
               children: [
-                const _ChatMessagesList(),
+                ListView.builder(
+                  padding: const EdgeInsets.all(8.0),
+                  itemCount: chatMessages.length,
+                  itemBuilder: (context, index) {
+                    final message = chatMessages[index];
+                    return _ChatMessageBubble(message: message);
+                  },
+                ),
                 if (isProcessing.value)
                   const Positioned(
                     bottom: 16,
@@ -257,6 +215,49 @@ class AIChatWidget extends HookConsumerWidget {
           if (settings.availableProviders.isNotEmpty)
             _ChatInputField(onSend: sendMessage),
         ],
+      ),
+    );
+  }
+}
+
+class _ChatMessageBubble extends StatelessWidget {
+  final ChatMessage message;
+
+  const _ChatMessageBubble({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    // Estrai il testo naturale dal JSON se presente
+    String displayText = message.content;
+    if (message.isAssistant) {
+      try {
+        final Map<String, dynamic> jsonResponse = jsonDecode(message.content);
+        displayText = jsonResponse['responseText'] ?? message.content;
+      } catch (e) {
+        // Se non è JSON valido, usa il testo originale
+        displayText = message.content;
+      }
+    }
+
+    return Align(
+      alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+        decoration: BoxDecoration(
+          color: message.isUser
+              ? Theme.of(context).colorScheme.primaryContainer
+              : Theme.of(context).colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(12.0),
+        ),
+        child: Text(
+          displayText,
+          style: TextStyle(
+            color: message.isUser
+                ? Theme.of(context).colorScheme.onPrimaryContainer
+                : Theme.of(context).colorScheme.onSecondaryContainer,
+          ),
+        ),
       ),
     );
   }
@@ -371,97 +372,6 @@ class _APIKeyWarning extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-/// Widget per la lista dei messaggi di chat
-class _ChatMessagesList extends ConsumerWidget {
-  const _ChatMessagesList();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final chatMessages = ref.watch(chatMessagesProvider);
-
-    return ListView.builder(
-      reverse: true,
-      padding: const EdgeInsets.all(16),
-      itemCount: chatMessages.length,
-      itemBuilder: (context, index) {
-        final message = chatMessages[chatMessages.length - 1 - index];
-        final isUser = message.role == 'user';
-
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Row(
-            mainAxisAlignment:
-                isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-            children: [
-              Container(
-                constraints: BoxConstraints(
-                  maxWidth: MediaQuery.of(context).size.width * 0.75,
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: isUser
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color:
-                          Theme.of(context).colorScheme.shadow.withOpacity(0.1),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Markdown(
-                  data: message.content,
-                  selectable: true,
-                  styleSheet: MarkdownStyleSheet(
-                    p: TextStyle(
-                      color: isUser
-                          ? Theme.of(context).colorScheme.onPrimary
-                          : Theme.of(context).colorScheme.onSurface,
-                      fontSize: 16,
-                    ),
-                    listBullet: TextStyle(
-                      color: isUser
-                          ? Theme.of(context).colorScheme.onPrimary
-                          : Theme.of(context).colorScheme.onSurface,
-                    ),
-                    code: TextStyle(
-                      backgroundColor: isUser
-                          ? Theme.of(context).colorScheme.primaryContainer
-                          : Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest,
-                      color: isUser
-                          ? Theme.of(context).colorScheme.onPrimaryContainer
-                          : Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontFamily: 'monospace',
-                    ),
-                    codeblockDecoration: BoxDecoration(
-                      color: isUser
-                          ? Theme.of(context).colorScheme.primaryContainer
-                          : Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }

@@ -1,119 +1,99 @@
-// /lib/providers/ai_providers.dart
+// lib/services/ai/ai_providers.dart
 import 'package:alphanessone/providers/providers.dart';
-import 'package:alphanessone/services/ai/ai_service.dart';
-import 'package:alphanessone/services/ai/ai_settings_service.dart';
-import 'package:alphanessone/services/ai/gemini_service.dart';
-import 'package:alphanessone/services/ai/openai_service.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:alphanessone/services/ai/openai_service.dart';
+import 'package:alphanessone/services/ai/gemini_service.dart';
 import 'package:logger/logger.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:alphanessone/services/ai/AIServices.dart';
+import 'ai_service.dart';
+import 'ai_settings_service.dart';
+import 'AIServices.dart';
 
-// Provider per SharedPreferences (se non già definito in providers.dart)
-final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
-  throw UnimplementedError(
-      'sharedPreferencesProvider needs to be overridden in main.dart');
-});
-
-// Provider per AISettingsService
 final aiSettingsServiceProvider = Provider<AISettingsService>((ref) {
-  final prefs = ref.watch(sharedPreferencesProvider);
-  return AISettingsService(prefs);
+  final sharedPreferencesAsync = ref.watch(sharedPreferencesProvider);
+  return sharedPreferencesAsync.when(
+    data: (sharedPreferences) => AISettingsService(sharedPreferences),
+    loading: () =>
+        AISettingsService(null), // Provide a default or handle loading state
+    error: (error, stackTrace) {
+      print('Error loading shared preferences: $error');
+      return AISettingsService(null); // Handle error state
+    },
+  );
 });
 
-// Provider per AISettingsNotifier e AISettings
 final aiSettingsProvider =
     StateNotifierProvider<AISettingsNotifier, AISettings>((ref) {
   final service = ref.watch(aiSettingsServiceProvider);
   return AISettingsNotifier(service);
 });
 
-// Provider famiglia per OpenAIService
+// Provider per OpenAIService
 final openaiServiceProvider =
-    Provider.family<OpenAIService, String>((ref, modelId) {
+    Provider.family<AIService, String>((ref, modelId) {
   final aiSettings = ref.watch(aiSettingsProvider);
-  final openAIKey = aiSettings.openAIKey;
-  if (openAIKey == null || openAIKey.isEmpty) {
+  final apiKey = aiSettings.openAIKey;
+  if (apiKey == null || apiKey.isEmpty) {
     throw Exception('OpenAI API key is not set');
   }
-  return OpenAIService(
-    apiKey: openAIKey,
-    model: modelId,
-  );
+  return OpenAIService(apiKey: apiKey, model: modelId);
 });
 
-// Provider famiglia per GeminiService
-final geminiServiceProvider =
-    Provider.family<GeminiService, String>((ref, apiKey) {
+// Provider per GeminiService
+final geminiServiceProvider = Provider.family<AIService, String>((ref, apiKey) {
   final aiSettings = ref.watch(aiSettingsProvider);
-  final selectedModel = aiSettings.selectedModel.modelId;
-  if (apiKey.isEmpty) {
-    throw Exception('Gemini API key is not set');
-  }
-  return GeminiService(
-    model: selectedModel,
-    apiKey: apiKey,
-  );
+  final modelId = aiSettings.selectedModel.modelId;
+  return GeminiService(apiKey: apiKey, model: modelId);
 });
 
 // Provider per AIServiceManager
 final aiServiceManagerProvider = Provider<AIServiceManager>((ref) {
   final aiSettings = ref.watch(aiSettingsProvider);
+  final selectedModel = aiSettings.selectedModel;
   final usersService = ref.watch(usersServiceProvider);
 
-  final logger = Logger();
+  late AIService primaryAIService;
+  late AIService fallbackAIService;
 
-  AIService primaryAIService;
-  AIService fallbackAIService;
-
-  logger.i('Selected Provider: ${aiSettings.selectedProvider}');
-  logger.i('Available Providers: ${aiSettings.availableProviders}');
-  logger.i('Selected Model: ${aiSettings.selectedModel}');
   switch (aiSettings.selectedProvider) {
     case AIProvider.openAI:
-      // Check for OpenAI API key
       if (aiSettings.openAIKey == null || aiSettings.openAIKey!.isEmpty) {
         throw Exception('OpenAI API key is not set');
       }
       primaryAIService =
-          ref.watch(openaiServiceProvider(aiSettings.selectedModel.modelId));
-
-      // Use Gemini as fallback if available
+          ref.watch(openaiServiceProvider(selectedModel.modelId));
       if (aiSettings.geminiKey != null && aiSettings.geminiKey!.isNotEmpty) {
         fallbackAIService =
             ref.watch(geminiServiceProvider(aiSettings.geminiKey!));
       } else {
-        fallbackAIService = primaryAIService;
+        if (aiSettings.openAIKey == null || aiSettings.openAIKey!.isEmpty) {
+          throw Exception('OpenAI API key is not set');
+        }
+        fallbackAIService =
+            ref.watch(openaiServiceProvider(selectedModel.modelId));
       }
       break;
-
     case AIProvider.gemini:
-      // Check for Gemini API key
       if (aiSettings.geminiKey == null || aiSettings.geminiKey!.isEmpty) {
         throw Exception('Gemini API key is not set');
       }
       primaryAIService =
           ref.watch(geminiServiceProvider(aiSettings.geminiKey!));
-
       // Use OpenAI as fallback if available
       if (aiSettings.openAIKey != null && aiSettings.openAIKey!.isNotEmpty) {
         fallbackAIService =
-            ref.watch(openaiServiceProvider('gpt4o')); // Use a valid model ID
+            ref.watch(openaiServiceProvider(selectedModel.modelId));
       } else {
-        fallbackAIService = primaryAIService;
+        fallbackAIService =
+            primaryAIService; // Use Gemini as fallback if no OpenAI key
       }
       break;
-
-    // Implement other providers similarly
-    case AIProvider.claude:
-      throw UnimplementedError('ClaudeService is not implemented yet');
-
-    case AIProvider.azureOpenAI:
-      throw UnimplementedError('AzureOpenAIService is not implemented yet');
-
     default:
-      throw Exception('AI provider not implemented');
+      throw Exception('No AI provider selected');
   }
+
+  final logger = Logger();
+  logger.d(
+      'AIServiceManager initialized with primary: ${primaryAIService.runtimeType}, fallback: ${fallbackAIService.runtimeType}');
 
   return AIServiceManager(primaryAIService, fallbackAIService, usersService);
 });

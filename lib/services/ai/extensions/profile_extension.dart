@@ -1,4 +1,4 @@
-// profile_extension.dart
+// lib/services/ai/extensions/profile_extension.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:logger/logger.dart';
 import 'package:alphanessone/models/user_model.dart';
@@ -18,18 +18,27 @@ class ProfileExtension implements AIExtension {
   @override
   Future<String?> handle(Map<String, dynamic> interpretation, String userId,
       UserModel user) async {
-    final action = interpretation['action'];
+    final action = interpretation['action'] as String?;
+    _logger.d('Handling profile action: $action');
+
+    if (action == null) {
+      _logger.w('Action is null for profile.');
+      return 'Azione non specificata per il profilo.';
+    }
+
     if (action == 'update_profile') {
       return await _handleUpdateProfile(interpretation, userId, user);
     } else if (action == 'query_profile') {
       return await _handleQueryProfile(interpretation, user);
     } else {
-      return null;
+      _logger.w('Unrecognized action for profile: $action');
+      return 'Azione non riconosciuta per profile.';
     }
   }
 
   Future<String?> _handleUpdateProfile(Map<String, dynamic> interpretation,
       String userId, UserModel user) async {
+    _logger.i('Updating profile with interpretation: $interpretation');
     final updates = <String, dynamic>{};
 
     if (interpretation.containsKey('phoneNumber')) {
@@ -39,7 +48,8 @@ class ProfileExtension implements AIExtension {
     if (interpretation.containsKey('height')) {
       final heightVal = double.tryParse(interpretation['height'].toString());
       if (heightVal == null || heightVal < 50 || heightVal > 250) {
-        return null;
+        _logger.w('Invalid height value: ${interpretation['height']}');
+        return 'Altezza non valida.';
       }
       updates['height'] = heightVal;
     }
@@ -48,8 +58,10 @@ class ProfileExtension implements AIExtension {
       try {
         final date = DateTime.parse(interpretation['birthdate']);
         updates['birthdate'] = Timestamp.fromDate(date);
-      } catch (e) {
-        return null;
+      } catch (e, stackTrace) {
+        _logger.e('Invalid birthdate format: ${interpretation['birthdate']}',
+            error: e, stackTrace: stackTrace);
+        return 'Formato data di nascita non valido.';
       }
     }
 
@@ -60,45 +72,51 @@ class ProfileExtension implements AIExtension {
     }
 
     if (updates.isEmpty) {
-      return null;
+      _logger.w('No valid fields provided for profile update.');
+      return 'Nessun campo valido fornito per l\'aggiornamento del profilo.';
     }
 
     try {
       await _firestore.collection('users').doc(userId).update(updates);
+      _logger.i('Profile updated successfully for userId: $userId');
       return 'Ho aggiornato il tuo profilo con i dati forniti.';
-    } catch (e) {
-      return null;
+    } catch (e, stackTrace) {
+      _logger.e('Error updating profile', error: e, stackTrace: stackTrace);
+      return 'Si è verificato un errore durante l\'aggiornamento del profilo.';
     }
   }
 
   Future<String?> _handleQueryProfile(
       Map<String, dynamic> interpretation, UserModel user) async {
+    _logger.i('Querying profile with interpretation: $interpretation');
     if (!interpretation.containsKey('field')) {
-      return null;
+      _logger.w('Field not specified for profile query.');
+      return 'Per quale campo del profilo desideri informazioni?';
     }
 
     final field = interpretation['field'].toString().toLowerCase();
     switch (field) {
       case 'phone':
       case 'telefono':
-        return user.phoneNumber ?? 'Numero di telefono non impostato';
+        return user.phoneNumber ?? 'Numero di telefono non impostato.';
       case 'height':
       case 'altezza':
         return user.height != null
             ? '${user.height} cm'
-            : 'Altezza non impostata';
+            : 'Altezza non impostata.';
       case 'birthdate':
       case 'data di nascita':
       case 'compleanno':
         return user.birthdate?.toString().split(' ')[0] ??
-            'Data di nascita non impostata';
+            'Data di nascita non impostata.';
       case 'activity':
       case 'livello di attività':
         return user.activityLevel != null
             ? _activityLevelToString(user.activityLevel!)
-            : 'Livello di attività non impostato';
+            : 'Livello di attività non impostato.';
       default:
-        return null;
+        _logger.w('Unrecognized field for profile query: $field');
+        return 'Campo del profilo non riconosciuto.';
     }
   }
 
