@@ -8,6 +8,7 @@ import 'package:alphanessone/trainingBuilder/models/workout_model.dart';
 import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
 import 'ai_extension.dart';
 import 'package:alphanessone/trainingBuilder/services/training_services.dart';
+import 'package:alphanessone/trainingBuilder/models/series_model.dart';
 
 class TrainingExtension implements AIExtension {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -36,6 +37,48 @@ class TrainingExtension implements AIExtension {
         return await _handleQueryProgram(userId, current: current);
       case 'current_program_info':
         return await _handleCurrentProgramInfo(userId);
+      case 'add_week':
+        return await _handleAddWeek(userId);
+      case 'remove_week':
+        final weekNumber = interpretation['weekNumber'] as int?;
+        return await _handleRemoveWeek(userId, weekNumber);
+      case 'add_workout':
+        final weekNumber = interpretation['weekNumber'] as int?;
+        return await _handleAddWorkout(userId, weekNumber);
+      case 'remove_workout':
+        final weekNumber = interpretation['weekNumber'] as int?;
+        final workoutOrder = interpretation['workoutOrder'] as int?;
+        return await _handleRemoveWorkout(userId, weekNumber, workoutOrder);
+      case 'add_exercise':
+        final weekNumber = interpretation['weekNumber'] as int?;
+        final workoutOrder = interpretation['workoutOrder'] as int?;
+        final exerciseName = interpretation['exerciseName'] as String?;
+        final exerciseType = interpretation['exerciseType'] as String?;
+        return await _handleAddExercise(
+            userId, weekNumber, workoutOrder, exerciseName, exerciseType);
+      case 'remove_exercise':
+        final weekNumber = interpretation['weekNumber'] as int?;
+        final workoutOrder = interpretation['workoutOrder'] as int?;
+        final exerciseName = interpretation['exerciseName'] as String?;
+        return await _handleRemoveExercise(
+            userId, weekNumber, workoutOrder, exerciseName);
+      case 'add_series':
+        final weekNumber = interpretation['weekNumber'] as int?;
+        final workoutOrder = interpretation['workoutOrder'] as int?;
+        final exerciseName = interpretation['exerciseName'] as String?;
+        final sets = interpretation['sets'] as int?;
+        final reps = interpretation['reps'] as int?;
+        final weight = interpretation['weight'] as num?;
+        final intensity = interpretation['intensity'] as String?;
+        return await _handleAddSeries(userId, weekNumber, workoutOrder,
+            exerciseName, sets, reps, weight, intensity);
+      case 'remove_series':
+        final weekNumber = interpretation['weekNumber'] as int?;
+        final workoutOrder = interpretation['workoutOrder'] as int?;
+        final exerciseName = interpretation['exerciseName'] as String?;
+        final seriesOrder = interpretation['seriesOrder'] as int?;
+        return await _handleRemoveSeries(
+            userId, weekNumber, workoutOrder, exerciseName, seriesOrder);
       default:
         _logger.w('Unrecognized action for training: $action');
         return 'Azione non riconosciuta per training.';
@@ -97,10 +140,21 @@ class TrainingExtension implements AIExtension {
                   if (exerciseData['series'] != null) {
                     for (var seriesData in exerciseData['series']) {
                       final series = Series(
+                        serieId: '',
+                        sets: seriesData['sets'] ?? 0,
                         reps: seriesData['reps'] ?? 0,
-                        weight: seriesData['weight'] ?? 0,
-                        intensity: seriesData['intensity'] ?? '0',
+                        weight: (seriesData['weight'] ?? 0).toDouble(),
+                        intensity: seriesData['intensity'] ?? '',
                         order: seriesData['order'] ?? 0,
+                        done: false,
+                        reps_done: 0,
+                        weight_done: 0,
+                        maxReps: seriesData['reps'] ?? 0,
+                        maxSets: seriesData['sets'] ?? 0,
+                        maxWeight: (seriesData['weight'] ?? 0).toDouble(),
+                        maxIntensity: seriesData['intensity'] ?? '',
+                        maxRpe: '',
+                        rpe: '',
                       );
 
                       await exerciseRef
@@ -245,27 +299,406 @@ class TrainingExtension implements AIExtension {
       return 'Si è verificato un errore durante la ricerca del programma attuale.';
     }
   }
-}
 
-class Series {
-  final int reps;
-  final num weight;
-  final String intensity;
-  final int order;
+  Future<String?> _handleAddWeek(String userId) async {
+    try {
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      final currentProgramId = userDoc.data()?['currentProgram'] as String?;
 
-  Series({
-    required this.reps,
-    required this.weight,
-    required this.intensity,
-    required this.order,
-  });
+      if (currentProgramId == null) {
+        return 'Non hai un programma di allenamento attivo.';
+      }
 
-  Map<String, dynamic> toMap() {
-    return {
-      'reps': reps,
-      'weight': weight,
-      'intensity': intensity,
-      'order': order,
-    };
+      final program =
+          await _trainingService.fetchTrainingProgram(currentProgramId);
+      if (program == null) {
+        return 'Programma non trovato.';
+      }
+
+      final newWeekNumber = program.weeks.length + 1;
+      final week = Week(number: newWeekNumber);
+      program.weeks.add(week);
+
+      await _trainingService.addOrUpdateTrainingProgram(program);
+      return 'Ho aggiunto la settimana $newWeekNumber al tuo programma.';
+    } catch (e) {
+      _logger.e('Error adding week', error: e);
+      return 'Si è verificato un errore durante l\'aggiunta della settimana.';
+    }
+  }
+
+  Future<String?> _handleRemoveWeek(String userId, int? weekNumber) async {
+    if (weekNumber == null) {
+      return 'Specifica il numero della settimana da rimuovere.';
+    }
+
+    try {
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      final currentProgramId = userDoc.data()?['currentProgram'] as String?;
+
+      if (currentProgramId == null) {
+        return 'Non hai un programma di allenamento attivo.';
+      }
+
+      final program =
+          await _trainingService.fetchTrainingProgram(currentProgramId);
+      if (program == null) {
+        return 'Programma non trovato.';
+      }
+
+      final weekIndex = program.weeks.indexWhere((w) => w.number == weekNumber);
+      if (weekIndex == -1) {
+        return 'Settimana $weekNumber non trovata.';
+      }
+
+      program.trackToDeleteWeeks.add(program.weeks[weekIndex].id!);
+      program.weeks.removeAt(weekIndex);
+
+      await _trainingService.addOrUpdateTrainingProgram(program);
+      return 'Ho rimosso la settimana $weekNumber dal tuo programma.';
+    } catch (e) {
+      _logger.e('Error removing week', error: e);
+      return 'Si è verificato un errore durante la rimozione della settimana.';
+    }
+  }
+
+  Future<String?> _handleAddWorkout(String userId, int? weekNumber) async {
+    if (weekNumber == null) {
+      return 'Specifica il numero della settimana per aggiungere l\'allenamento.';
+    }
+
+    try {
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      final currentProgramId = userDoc.data()?['currentProgram'] as String?;
+
+      if (currentProgramId == null) {
+        return 'Non hai un programma di allenamento attivo.';
+      }
+
+      final program =
+          await _trainingService.fetchTrainingProgram(currentProgramId);
+      if (program == null) {
+        return 'Programma non trovato.';
+      }
+
+      final weekIndex = program.weeks.indexWhere((w) => w.number == weekNumber);
+      if (weekIndex == -1) {
+        return 'Settimana $weekNumber non trovata.';
+      }
+
+      final week = program.weeks[weekIndex];
+      final newWorkoutOrder = week.workouts.length;
+      final workout = Workout(
+        order: newWorkoutOrder,
+        name: 'Allenamento ${newWorkoutOrder + 1}',
+      );
+      week.workouts.add(workout);
+
+      await _trainingService.addOrUpdateTrainingProgram(program);
+      return 'Ho aggiunto l\'allenamento ${newWorkoutOrder + 1} alla settimana $weekNumber.';
+    } catch (e) {
+      _logger.e('Error adding workout', error: e);
+      return 'Si è verificato un errore durante l\'aggiunta dell\'allenamento.';
+    }
+  }
+
+  Future<String?> _handleRemoveWorkout(
+      String userId, int? weekNumber, int? workoutOrder) async {
+    if (weekNumber == null || workoutOrder == null) {
+      return 'Specifica il numero della settimana e l\'ordine dell\'allenamento da rimuovere.';
+    }
+
+    try {
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      final currentProgramId = userDoc.data()?['currentProgram'] as String?;
+
+      if (currentProgramId == null) {
+        return 'Non hai un programma di allenamento attivo.';
+      }
+
+      final program =
+          await _trainingService.fetchTrainingProgram(currentProgramId);
+      if (program == null) {
+        return 'Programma non trovato.';
+      }
+
+      final weekIndex = program.weeks.indexWhere((w) => w.number == weekNumber);
+      if (weekIndex == -1) {
+        return 'Settimana $weekNumber non trovata.';
+      }
+
+      final week = program.weeks[weekIndex];
+      final workoutIndex =
+          week.workouts.indexWhere((w) => w.order == workoutOrder - 1);
+      if (workoutIndex == -1) {
+        return 'Allenamento $workoutOrder non trovato nella settimana $weekNumber.';
+      }
+
+      program.trackToDeleteWorkouts.add(week.workouts[workoutIndex].id!);
+      week.workouts.removeAt(workoutIndex);
+
+      // Aggiorna gli ordini degli allenamenti rimanenti
+      for (var i = 0; i < week.workouts.length; i++) {
+        week.workouts[i].order = i;
+      }
+
+      await _trainingService.addOrUpdateTrainingProgram(program);
+      return 'Ho rimosso l\'allenamento $workoutOrder dalla settimana $weekNumber.';
+    } catch (e) {
+      _logger.e('Error removing workout', error: e);
+      return 'Si è verificato un errore durante la rimozione dell\'allenamento.';
+    }
+  }
+
+  Future<String?> _handleAddExercise(String userId, int? weekNumber,
+      int? workoutOrder, String? exerciseName, String? exerciseType) async {
+    if (weekNumber == null || workoutOrder == null || exerciseName == null) {
+      return 'Specifica il numero della settimana, l\'ordine dell\'allenamento e il nome dell\'esercizio.';
+    }
+
+    try {
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      final currentProgramId = userDoc.data()?['currentProgram'] as String?;
+
+      if (currentProgramId == null) {
+        return 'Non hai un programma di allenamento attivo.';
+      }
+
+      final program =
+          await _trainingService.fetchTrainingProgram(currentProgramId);
+      if (program == null) {
+        return 'Programma non trovato.';
+      }
+
+      final weekIndex = program.weeks.indexWhere((w) => w.number == weekNumber);
+      if (weekIndex == -1) {
+        return 'Settimana $weekNumber non trovata.';
+      }
+
+      final week = program.weeks[weekIndex];
+      final workoutIndex =
+          week.workouts.indexWhere((w) => w.order == workoutOrder - 1);
+      if (workoutIndex == -1) {
+        return 'Allenamento $workoutOrder non trovato nella settimana $weekNumber.';
+      }
+
+      final workout = week.workouts[workoutIndex];
+      final exercise = Exercise(
+        name: exerciseName,
+        type: exerciseType ?? '',
+        variant: '',
+        order: workout.exercises.length,
+      );
+      workout.exercises.add(exercise);
+
+      await _trainingService.addOrUpdateTrainingProgram(program);
+      return 'Ho aggiunto l\'esercizio "$exerciseName" all\'allenamento $workoutOrder della settimana $weekNumber.';
+    } catch (e) {
+      _logger.e('Error adding exercise', error: e);
+      return 'Si è verificato un errore durante l\'aggiunta dell\'esercizio.';
+    }
+  }
+
+  Future<String?> _handleRemoveExercise(String userId, int? weekNumber,
+      int? workoutOrder, String? exerciseName) async {
+    if (weekNumber == null || workoutOrder == null || exerciseName == null) {
+      return 'Specifica il numero della settimana, l\'ordine dell\'allenamento e il nome dell\'esercizio da rimuovere.';
+    }
+
+    try {
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      final currentProgramId = userDoc.data()?['currentProgram'] as String?;
+
+      if (currentProgramId == null) {
+        return 'Non hai un programma di allenamento attivo.';
+      }
+
+      final program =
+          await _trainingService.fetchTrainingProgram(currentProgramId);
+      if (program == null) {
+        return 'Programma non trovato.';
+      }
+
+      final weekIndex = program.weeks.indexWhere((w) => w.number == weekNumber);
+      if (weekIndex == -1) {
+        return 'Settimana $weekNumber non trovata.';
+      }
+
+      final week = program.weeks[weekIndex];
+      final workoutIndex =
+          week.workouts.indexWhere((w) => w.order == workoutOrder - 1);
+      if (workoutIndex == -1) {
+        return 'Allenamento $workoutOrder non trovato nella settimana $weekNumber.';
+      }
+
+      final workout = week.workouts[workoutIndex];
+      final exerciseIndex = workout.exercises.indexWhere(
+          (e) => e.name.toLowerCase() == exerciseName.toLowerCase());
+      if (exerciseIndex == -1) {
+        return 'Esercizio "$exerciseName" non trovato nell\'allenamento $workoutOrder della settimana $weekNumber.';
+      }
+
+      program.trackToDeleteExercises.add(workout.exercises[exerciseIndex].id!);
+      workout.exercises.removeAt(exerciseIndex);
+
+      // Aggiorna gli ordini degli esercizi rimanenti
+      for (var i = 0; i < workout.exercises.length; i++) {
+        workout.exercises[i].order = i;
+      }
+
+      await _trainingService.addOrUpdateTrainingProgram(program);
+      return 'Ho rimosso l\'esercizio "$exerciseName" dall\'allenamento $workoutOrder della settimana $weekNumber.';
+    } catch (e) {
+      _logger.e('Error removing exercise', error: e);
+      return 'Si è verificato un errore durante la rimozione dell\'esercizio.';
+    }
+  }
+
+  Future<String?> _handleAddSeries(
+      String userId,
+      int? weekNumber,
+      int? workoutOrder,
+      String? exerciseName,
+      int? sets,
+      int? reps,
+      num? weight,
+      String? intensity) async {
+    if (weekNumber == null ||
+        workoutOrder == null ||
+        exerciseName == null ||
+        sets == null ||
+        reps == null) {
+      return 'Specifica il numero della settimana, l\'ordine dell\'allenamento, il nome dell\'esercizio, il numero di serie e ripetizioni.';
+    }
+
+    try {
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      final currentProgramId = userDoc.data()?['currentProgram'] as String?;
+
+      if (currentProgramId == null) {
+        return 'Non hai un programma di allenamento attivo.';
+      }
+
+      final program =
+          await _trainingService.fetchTrainingProgram(currentProgramId);
+      if (program == null) {
+        return 'Programma non trovato.';
+      }
+
+      final weekIndex = program.weeks.indexWhere((w) => w.number == weekNumber);
+      if (weekIndex == -1) {
+        return 'Settimana $weekNumber non trovata.';
+      }
+
+      final week = program.weeks[weekIndex];
+      final workoutIndex =
+          week.workouts.indexWhere((w) => w.order == workoutOrder - 1);
+      if (workoutIndex == -1) {
+        return 'Allenamento $workoutOrder non trovato nella settimana $weekNumber.';
+      }
+
+      final workout = week.workouts[workoutIndex];
+      final exerciseIndex = workout.exercises.indexWhere(
+          (e) => e.name.toLowerCase() == exerciseName.toLowerCase());
+      if (exerciseIndex == -1) {
+        return 'Esercizio "$exerciseName" non trovato nell\'allenamento $workoutOrder della settimana $weekNumber.';
+      }
+
+      final exercise = workout.exercises[exerciseIndex];
+      final series = Series(
+        serieId: '',
+        sets: sets,
+        reps: reps,
+        weight: (weight ?? 0).toDouble(),
+        intensity: intensity ?? '',
+        order: exercise.series.length,
+        done: false,
+        reps_done: 0,
+        weight_done: 0,
+        maxReps: reps,
+        maxSets: sets,
+        maxWeight: (weight ?? 0).toDouble(),
+        maxIntensity: intensity ?? '',
+        maxRpe: '',
+        rpe: '',
+      );
+      exercise.series.add(series);
+
+      await _trainingService.addOrUpdateTrainingProgram(program);
+      String response = 'Ho aggiunto ${sets}x$reps';
+      if (weight != null) response += ' @${weight}kg';
+      if (intensity != null && intensity.isNotEmpty) {
+        response += ' $intensity';
+      }
+      response +=
+          ' all\'esercizio "$exerciseName" nell\'allenamento $workoutOrder della settimana $weekNumber.';
+      return response;
+    } catch (e) {
+      _logger.e('Error adding series', error: e);
+      return 'Si è verificato un errore durante l\'aggiunta della serie.';
+    }
+  }
+
+  Future<String?> _handleRemoveSeries(String userId, int? weekNumber,
+      int? workoutOrder, String? exerciseName, int? seriesOrder) async {
+    if (weekNumber == null ||
+        workoutOrder == null ||
+        exerciseName == null ||
+        seriesOrder == null) {
+      return 'Specifica il numero della settimana, l\'ordine dell\'allenamento, il nome dell\'esercizio e l\'ordine della serie da rimuovere.';
+    }
+
+    try {
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      final currentProgramId = userDoc.data()?['currentProgram'] as String?;
+
+      if (currentProgramId == null) {
+        return 'Non hai un programma di allenamento attivo.';
+      }
+
+      final program =
+          await _trainingService.fetchTrainingProgram(currentProgramId);
+      if (program == null) {
+        return 'Programma non trovato.';
+      }
+
+      final weekIndex = program.weeks.indexWhere((w) => w.number == weekNumber);
+      if (weekIndex == -1) {
+        return 'Settimana $weekNumber non trovata.';
+      }
+
+      final week = program.weeks[weekIndex];
+      final workoutIndex =
+          week.workouts.indexWhere((w) => w.order == workoutOrder - 1);
+      if (workoutIndex == -1) {
+        return 'Allenamento $workoutOrder non trovato nella settimana $weekNumber.';
+      }
+
+      final workout = week.workouts[workoutIndex];
+      final exerciseIndex = workout.exercises.indexWhere(
+          (e) => e.name.toLowerCase() == exerciseName.toLowerCase());
+      if (exerciseIndex == -1) {
+        return 'Esercizio "$exerciseName" non trovato nell\'allenamento $workoutOrder della settimana $weekNumber.';
+      }
+
+      final exercise = workout.exercises[exerciseIndex];
+      if (seriesOrder < 1 || seriesOrder > exercise.series.length) {
+        return 'Serie $seriesOrder non trovata per l\'esercizio "$exerciseName".';
+      }
+
+      program.trackToDeleteSeries.add(exercise.series[seriesOrder - 1].serieId);
+      exercise.series.removeAt(seriesOrder - 1);
+
+      // Aggiorna gli ordini delle serie rimanenti
+      for (var i = 0; i < exercise.series.length; i++) {
+        exercise.series[i].order = i;
+      }
+
+      await _trainingService.addOrUpdateTrainingProgram(program);
+      return 'Ho rimosso la serie $seriesOrder dall\'esercizio "$exerciseName" nell\'allenamento $workoutOrder della settimana $weekNumber.';
+    } catch (e) {
+      _logger.e('Error removing series', error: e);
+      return 'Si è verificato un errore durante la rimozione della serie.';
+    }
   }
 }

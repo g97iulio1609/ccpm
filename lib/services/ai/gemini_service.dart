@@ -71,8 +71,16 @@ ${features['training'] == true ? '''
 1. TRAINING - Gestione programmi di allenamento:
    {
      "featureType": "training",
-     "action": "query_program" | "create_program" | "update_program" | "delete_program",
+     "action": "query_program" | "create_program" | "add_week" | "remove_week" | "add_workout" | "remove_workout" | "add_exercise" | "remove_exercise" | "add_series" | "remove_series",
      "current": true/false, // solo per query_program
+     "weekNumber": numero, // per azioni su settimane/allenamenti/esercizi
+     "workoutOrder": numero, // per azioni su allenamenti/esercizi
+     "exerciseName": "nome", // per azioni su esercizi
+     "exerciseType": "tipo", // per add_exercise
+     "sets": numero, // per add_series
+     "reps": numero, // per add_series
+     "weight": numero, // per add_series
+     "intensity": "intensità", // per add_series
      "responseText": "Messaggio per l'utente"
    }
 ''' : ''}
