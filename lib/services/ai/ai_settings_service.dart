@@ -1,6 +1,9 @@
 // lib/services/ai/ai_settings_service.dart
+import 'package:alphanessone/providers/providers.dart';
+import 'package:alphanessone/services/ai/ai_keys_service.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:alphanessone/models/ai_keys_model.dart';
 
 enum AIProvider {
   openAI('OpenAI'),
@@ -26,37 +29,29 @@ enum AIModel {
 }
 
 class AISettings {
-  final String? openAIKey;
-  final String? geminiKey;
-  final String? claudeKey;
-  final String? azureKey;
-  final String? azureEndpoint;
+  final AIKeysModel? keys;
   final AIModel selectedModel;
   final AIProvider selectedProvider;
 
   AISettings({
-    this.openAIKey,
-    this.geminiKey,
-    this.claudeKey,
-    this.azureKey,
-    this.azureEndpoint,
+    this.keys,
     required this.selectedModel,
     required this.selectedProvider,
   });
 
   bool hasKeyForProvider(AIProvider provider) {
+    if (keys == null) return false;
+
     switch (provider) {
       case AIProvider.openAI:
-        return openAIKey != null && openAIKey!.isNotEmpty;
+        return keys!.getEffectiveKey('openai') != null;
       case AIProvider.gemini:
-        return geminiKey != null && geminiKey!.isNotEmpty;
+        return keys!.getEffectiveKey('gemini') != null;
       case AIProvider.claude:
-        return claudeKey != null && claudeKey!.isNotEmpty;
+        return keys!.getEffectiveKey('claude') != null;
       case AIProvider.azureOpenAI:
-        return azureKey != null &&
-            azureKey!.isNotEmpty &&
-            azureEndpoint != null &&
-            azureEndpoint!.isNotEmpty;
+        return keys!.getEffectiveKey('azure') != null &&
+            keys!.getEffectiveKey('azure_endpoint') != null;
     }
   }
 
@@ -68,21 +63,30 @@ class AISettings {
       .where((model) => hasKeyForProvider(model.provider))
       .toList();
 
+  String? getKeyForProvider(AIProvider provider) {
+    if (keys == null) return null;
+
+    switch (provider) {
+      case AIProvider.openAI:
+        return keys!.getEffectiveKey('openai');
+      case AIProvider.gemini:
+        return keys!.getEffectiveKey('gemini');
+      case AIProvider.claude:
+        return keys!.getEffectiveKey('claude');
+      case AIProvider.azureOpenAI:
+        return keys!.getEffectiveKey('azure');
+    }
+  }
+
+  String? get azureEndpoint => keys?.getEffectiveKey('azure_endpoint');
+
   AISettings copyWith({
-    String? openAIKey,
-    String? geminiKey,
-    String? claudeKey,
-    String? azureKey,
-    String? azureEndpoint,
+    AIKeysModel? keys,
     AIModel? selectedModel,
     AIProvider? selectedProvider,
   }) {
     return AISettings(
-      openAIKey: openAIKey ?? this.openAIKey,
-      geminiKey: geminiKey ?? this.geminiKey,
-      claudeKey: claudeKey ?? this.claudeKey,
-      azureKey: azureKey ?? this.azureKey,
-      azureEndpoint: azureEndpoint ?? this.azureEndpoint,
+      keys: keys ?? this.keys,
       selectedModel: selectedModel ?? this.selectedModel,
       selectedProvider: selectedProvider ?? this.selectedProvider,
     );
@@ -97,31 +101,23 @@ class AISettingsService {
 
   Future<void> saveSettings(AISettings settings) async {
     if (_prefs == null) return;
-    await _prefs.setString('${_keyPrefix}openai_key', settings.openAIKey ?? '');
-    await _prefs.setString('${_keyPrefix}gemini_key', settings.geminiKey ?? '');
-    await _prefs.setString('${_keyPrefix}claude_key', settings.claudeKey ?? '');
-    await _prefs.setString('${_keyPrefix}azure_key', settings.azureKey ?? '');
-    await _prefs.setString(
-        '${_keyPrefix}azure_endpoint', settings.azureEndpoint ?? '');
     await _prefs.setString(
         '${_keyPrefix}selected_model', settings.selectedModel.name);
     await _prefs.setString(
         '${_keyPrefix}selected_provider', settings.selectedProvider.name);
   }
 
-  AISettings loadSettings() {
+  AISettings loadSettings({AIKeysModel? keys}) {
     if (_prefs == null) {
       return AISettings(
+        keys: keys,
         selectedModel: AIModel.gpt4o,
         selectedProvider: AIProvider.openAI,
       );
     }
+
     final settings = AISettings(
-      openAIKey: _prefs.getString('${_keyPrefix}openai_key'),
-      geminiKey: _prefs.getString('${_keyPrefix}gemini_key'),
-      claudeKey: _prefs.getString('${_keyPrefix}claude_key'),
-      azureKey: _prefs.getString('${_keyPrefix}azure_key'),
-      azureEndpoint: _prefs.getString('${_keyPrefix}azure_endpoint'),
+      keys: keys,
       selectedModel: AIModel.values.firstWhere(
         (model) =>
             model.name == _prefs.getString('${_keyPrefix}selected_model'),
@@ -161,44 +157,31 @@ class AISettingsService {
   }
 }
 
-final aiSettingsServiceProvider =
-    Provider<AISettingsService>((ref) => throw UnimplementedError());
+final aiSettingsServiceProvider = Provider<AISettingsService>((ref) {
+  final sharedPreferencesAsync = ref.watch(sharedPreferencesProvider);
+  return sharedPreferencesAsync.when(
+    data: (sharedPreferences) => AISettingsService(sharedPreferences),
+    loading: () =>
+        AISettingsService(null), // Provide a default or handle loading state
+    error: (error, stackTrace) {
+      print('Error loading shared preferences: $error');
+      return AISettingsService(null); // Handle error state
+    },
+  );
+});
 
 final aiSettingsProvider =
     StateNotifierProvider<AISettingsNotifier, AISettings>((ref) {
   final service = ref.watch(aiSettingsServiceProvider);
-  return AISettingsNotifier(service);
+  final keys = ref.watch(aiKeysStreamProvider).value;
+  return AISettingsNotifier(service, keys);
 });
 
 class AISettingsNotifier extends StateNotifier<AISettings> {
   final AISettingsService _service;
 
-  AISettingsNotifier(this._service) : super(_service.loadSettings());
-
-  Future<void> updateOpenAIKey(String key) async {
-    state = state.copyWith(openAIKey: key);
-    await _service.saveSettings(state);
-  }
-
-  Future<void> updateGeminiKey(String key) async {
-    state = state.copyWith(geminiKey: key);
-    await _service.saveSettings(state);
-  }
-
-  Future<void> updateClaudeKey(String key) async {
-    state = state.copyWith(claudeKey: key);
-    await _service.saveSettings(state);
-  }
-
-  Future<void> updateAzureKey(String key) async {
-    state = state.copyWith(azureKey: key);
-    await _service.saveSettings(state);
-  }
-
-  Future<void> updateAzureEndpoint(String endpoint) async {
-    state = state.copyWith(azureEndpoint: endpoint);
-    await _service.saveSettings(state);
-  }
+  AISettingsNotifier(this._service, AIKeysModel? keys)
+      : super(_service.loadSettings(keys: keys));
 
   Future<void> updateSelectedModel(AIModel model) async {
     state = state.copyWith(
@@ -209,6 +192,7 @@ class AISettingsNotifier extends StateNotifier<AISettings> {
   }
 
   Future<void> updateSelectedProvider(AIProvider provider) async {
+    // Trova il primo modello disponibile per il nuovo provider
     final availableModels =
         AIModel.values.where((model) => model.provider == provider).toList();
 
@@ -218,6 +202,54 @@ class AISettingsNotifier extends StateNotifier<AISettings> {
         selectedModel: availableModels.first,
       );
       await _service.saveSettings(state);
+    }
+  }
+
+  void updateKeys(AIKeysModel? keys) {
+    final availableProviders = AIProvider.values
+        .where(
+            (provider) => keys?.getEffectiveKey(_getKeyType(provider)) != null)
+        .toList();
+
+    if (availableProviders.isNotEmpty) {
+      // Se il provider corrente non è disponibile, seleziona il primo disponibile
+      if (!availableProviders.contains(state.selectedProvider)) {
+        final newProvider = availableProviders.first;
+        final availableModels = AIModel.values
+            .where((model) => model.provider == newProvider)
+            .toList();
+
+        state = state.copyWith(
+          keys: keys,
+          selectedProvider: newProvider,
+          selectedModel: availableModels.isNotEmpty
+              ? availableModels.first
+              : state.selectedModel,
+        );
+      } else {
+        state = state.copyWith(keys: keys);
+      }
+    } else {
+      state = state.copyWith(
+        keys: keys,
+        selectedProvider: AIProvider.openAI,
+        selectedModel: AIModel.gpt4o,
+      );
+    }
+  }
+
+  String _getKeyType(AIProvider provider) {
+    switch (provider) {
+      case AIProvider.openAI:
+        return 'openai';
+      case AIProvider.gemini:
+        return 'gemini';
+      case AIProvider.claude:
+        return 'claude';
+      case AIProvider.azureOpenAI:
+        return 'azure';
+      default:
+        return '';
     }
   }
 }

@@ -457,6 +457,27 @@ class TrainingExtension implements AIExtension {
     }
 
     try {
+      // 1. Prima cerchiamo l'exerciseId nella collection Exercises
+      final exercisesQuery = await _firestore
+          .collection('exercises')
+          .where('name', isEqualTo: exerciseName)
+          .get();
+
+      String? matchedExerciseId;
+      String matchedType = exerciseType ?? '';
+
+      if (exercisesQuery.docs.isNotEmpty) {
+        final exerciseDoc = exercisesQuery.docs.first;
+        matchedExerciseId = exerciseDoc.id;
+        // Se non è stato specificato un tipo, usiamo quello trovato nel database
+        if (exerciseType == null || exerciseType.isEmpty) {
+          matchedType = exerciseDoc.data()['type'] ?? '';
+        }
+      } else {
+        _logger.w('Nessun esercizio trovato con il nome: $exerciseName');
+        return 'Non ho trovato l\'esercizio "$exerciseName" nel database. Assicurati che il nome sia corretto.';
+      }
+
       final userDoc = await _firestore.collection('users').doc(userId).get();
       final currentProgramId = userDoc.data()?['currentProgram'] as String?;
 
@@ -485,9 +506,10 @@ class TrainingExtension implements AIExtension {
       final workout = week.workouts[workoutIndex];
       final exercise = Exercise(
         name: exerciseName,
-        type: exerciseType ?? '',
+        type: matchedType,
         variant: '',
         order: workout.exercises.length,
+        exerciseId: matchedExerciseId, // Aggiungiamo l'exerciseId trovato
       );
       workout.exercises.add(exercise);
 

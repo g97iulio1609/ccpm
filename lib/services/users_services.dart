@@ -324,4 +324,10 @@ class UsersService {
   }
 
   ExerciseRecordService get exerciseRecordService => _exerciseRecordService;
+
+  Future<UserModel?> getCurrentUser() async {
+    final userId = getCurrentUserId();
+    if (userId.isEmpty) return null;
+    return await getUserById(userId);
+  }
 }

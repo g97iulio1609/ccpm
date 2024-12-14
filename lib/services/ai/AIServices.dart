@@ -202,16 +202,14 @@ final aiServiceManagerProvider = Provider<AIServiceManager>((ref) {
     case AIProvider.openAI:
       primaryAIService =
           ref.watch(ai_providers.openaiServiceProvider(selectedModel.modelId));
-      fallbackAIService = aiSettings.geminiKey != null &&
-              aiSettings.geminiKey!.isNotEmpty
-          ? ref.watch(ai_providers.geminiServiceProvider(aiSettings.geminiKey!))
+      fallbackAIService = aiSettings.hasKeyForProvider(AIProvider.gemini)
+          ? ref.watch(ai_providers.geminiServiceProvider(selectedModel.modelId))
           : primaryAIService;
       break;
     case AIProvider.gemini:
       primaryAIService =
-          ref.watch(ai_providers.geminiServiceProvider(aiSettings.geminiKey!));
-      fallbackAIService = aiSettings.openAIKey != null &&
-              aiSettings.openAIKey!.isNotEmpty
+          ref.watch(ai_providers.geminiServiceProvider(selectedModel.modelId));
+      fallbackAIService = aiSettings.hasKeyForProvider(AIProvider.openAI)
           ? ref.watch(ai_providers.openaiServiceProvider(selectedModel.modelId))
           : primaryAIService;
       break;

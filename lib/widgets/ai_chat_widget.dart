@@ -1,19 +1,14 @@
 // ai_chat_widget.dart
 import 'package:alphanessone/services/users_services.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'dart:convert';
 
-import '../models/user_model.dart';
 import '../services/ai/ai_settings_service.dart';
 import '../services/ai/AIServices.dart';
-import '../services/ai/extensions/maxrm_extension.dart';
-import '../services/ai/extensions/profile_extension.dart';
 
 /// Stato dei messaggi di chat
 final chatMessagesProvider =
@@ -76,6 +71,21 @@ class AIChatWidget extends HookConsumerWidget {
           ),
         ));
 
+    if (settings.availableProviders.isEmpty || aiService == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('AI Assistant'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.settings),
+              onPressed: () => context.go('/settings/ai'),
+            ),
+          ],
+        ),
+        body: const _APIKeyWarning(),
+      );
+    }
+
     /// Processa la risposta dell'AI e gestisce l'interpretazione
     Future<void> processAIResponse(String messageText) async {
       try {
@@ -133,6 +143,32 @@ class AIChatWidget extends HookConsumerWidget {
     /// Invia un messaggio nella chat
     Future<void> sendMessage(String messageText) async {
       if (messageText.isEmpty || isProcessing.value) return;
+
+      final settings = ref.read(aiSettingsProvider);
+      if (settings.availableProviders.isEmpty) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Configurazione Richiesta'),
+            content: const Text(
+                'Per utilizzare l\'assistente AI, è necessario configurare almeno una chiave API nelle impostazioni.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Annulla'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  context.go('/settings/ai');
+                },
+                child: const Text('Configura'),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
 
       isProcessing.value = true;
       try {
@@ -270,6 +306,10 @@ class _AISettingsSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(aiSettingsProvider);
+    final availableProviders = settings.availableProviders;
+    final availableModels = settings.availableModels
+        .where((model) => model.provider == settings.selectedProvider)
+        .toList();
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -285,13 +325,17 @@ class _AISettingsSelector extends ConsumerWidget {
         children: [
           Expanded(
             child: DropdownButtonFormField<AIProvider>(
-              value: settings.selectedProvider,
+              value: availableProviders.contains(settings.selectedProvider)
+                  ? settings.selectedProvider
+                  : availableProviders.isNotEmpty
+                      ? availableProviders.first
+                      : null,
               decoration: const InputDecoration(
                 labelText: 'AI Provider',
                 border: OutlineInputBorder(),
                 contentPadding: EdgeInsets.symmetric(horizontal: 12),
               ),
-              items: settings.availableProviders.map((provider) {
+              items: availableProviders.map((provider) {
                 return DropdownMenuItem(
                   value: provider,
                   child: Text(provider.displayName),
@@ -309,15 +353,17 @@ class _AISettingsSelector extends ConsumerWidget {
           const SizedBox(width: 16),
           Expanded(
             child: DropdownButtonFormField<AIModel>(
-              value: settings.selectedModel,
+              value: availableModels.contains(settings.selectedModel)
+                  ? settings.selectedModel
+                  : availableModels.isNotEmpty
+                      ? availableModels.first
+                      : null,
               decoration: const InputDecoration(
                 labelText: 'Model',
                 border: OutlineInputBorder(),
                 contentPadding: EdgeInsets.symmetric(horizontal: 12),
               ),
-              items: settings.availableModels
-                  .where((model) => model.provider == settings.selectedProvider)
-                  .map((model) {
+              items: availableModels.map((model) {
                 return DropdownMenuItem(
                   value: model,
                   child: Text(model.modelId),
