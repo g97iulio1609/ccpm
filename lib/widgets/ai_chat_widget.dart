@@ -59,7 +59,7 @@ class AIChatWidget extends HookConsumerWidget {
     final settings = ref.watch(aiSettingsProvider);
     final chatMessages = ref.watch(chatMessagesProvider);
     final chatNotifier = ref.watch(chatMessagesProvider.notifier);
-    final aiService = ref.watch(aiServiceManagerProvider);
+    final aiServiceAsync = ref.watch(aiServiceManagerProvider);
     final isProcessing = useState(false);
     final logger = useMemoized(() => Logger(
           printer: PrettyPrinter(
@@ -108,8 +108,11 @@ class AIChatWidget extends HookConsumerWidget {
           // 2. Se è un'interpretazione valida, esegui l'azione appropriata
           final featureType = interpretation['featureType'];
           if (featureType != null && featureType != 'other') {
+            if (aiServiceAsync == null) {
+              throw Exception('AI Service non disponibile');
+            }
             final result =
-                await aiService.handleUserQuery(messageText, context: {
+                await aiServiceAsync.handleUserQuery(messageText, context: {
               'userProfile': user.toMap(),
               'chatHistory': chatMessages
                   .map((msg) => {'role': msg.role, 'content': msg.content})
@@ -145,7 +148,6 @@ class AIChatWidget extends HookConsumerWidget {
     Future<void> sendMessage(String messageText) async {
       if (messageText.isEmpty || isProcessing.value) return;
 
-      final settings = ref.read(aiSettingsProvider);
       if (settings.availableProviders.isEmpty) {
         showDialog(
           context: context,
@@ -185,7 +187,10 @@ class AIChatWidget extends HookConsumerWidget {
         if (user == null) throw Exception('Utente non trovato');
 
         // 3. Ottieni la risposta dall'AI
-        final response = await aiService.handleUserQuery(
+        if (aiServiceAsync == null) {
+          throw Exception('AI Service non disponibile');
+        }
+        final response = await aiServiceAsync.handleUserQuery(
           messageText,
           context: {
             'userProfile': user.toMap(),
@@ -378,7 +383,7 @@ class _ChatMessageBubble extends StatelessWidget {
             ),
           ],
         ),
-        child: Text(
+        child: SelectableText(
           displayText,
           style: theme.textTheme.bodyLarge?.copyWith(
             color:

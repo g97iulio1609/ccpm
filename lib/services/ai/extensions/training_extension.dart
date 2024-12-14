@@ -27,16 +27,23 @@ class TrainingExtension implements AIExtension {
   Future<String?> handle(Map<String, dynamic> interpretation, String userId,
       UserModel user) async {
     try {
-      final actions = interpretation['actions'] as List<Map<String, dynamic>>?;
+      final rawActions = interpretation['actions'];
 
-      // Se c'è una singola azione, gestiscila normalmente
-      if (actions == null || actions.isEmpty) {
+      // Se non ci sono azioni, prova a gestire una singola azione
+      if (rawActions == null) {
         final action = interpretation['action'] as String?;
         if (action == null) {
           return 'Azione non specificata per il training.';
         }
         return await _handleSingleAction(action, interpretation, userId);
       }
+
+      // Converti la lista di azioni nel tipo corretto
+      final actions = (rawActions as List)
+          .map((action) => action is Map<String, dynamic>
+              ? action
+              : Map<String, dynamic>.from(action))
+          .toList();
 
       // Gestione delle azioni multiple
       final results = <String>[];
@@ -50,107 +57,125 @@ class TrainingExtension implements AIExtension {
         // Aggiungi il contesto all'actionData
         actionData.addAll(context);
 
-        switch (actionType) {
-          case 'add_week':
-            result = await _handleAddWeek(userId);
-            // Estrai il numero della settimana dal risultato per il contesto
-            final weekMatch =
-                RegExp(r'settimana (\d+)').firstMatch(result ?? '');
-            if (weekMatch != null) {
-              context['weekNumber'] = int.parse(weekMatch.group(1)!);
-            }
-            break;
+        _logger.i('Esecuzione azione: $actionType con parametri: $actionData');
 
-          case 'add_workout':
-            final weekNumber =
-                actionData['weekNumber'] ?? context['weekNumber'];
-            result = await _handleAddWorkout(userId, weekNumber);
-            // Estrai l'ordine dell'allenamento dal risultato per il contesto
-            final workoutMatch =
-                RegExp(r'allenamento (\d+)').firstMatch(result ?? '');
-            if (workoutMatch != null) {
-              context['workoutOrder'] = int.parse(workoutMatch.group(1)!);
-            }
-            break;
+        try {
+          switch (actionType) {
+            case 'add_week':
+              final weekNumber = actionData['params']?['weekNumber'] as int?;
+              result = await _handleAddWeek(userId);
+              if (result?.contains('Ho aggiunto la settimana') ?? false) {
+                final weekMatch =
+                    RegExp(r'settimana (\d+)').firstMatch(result!);
+                if (weekMatch != null) {
+                  context['weekNumber'] = int.parse(weekMatch.group(1)!);
+                }
+              }
+              break;
 
-          case 'add_exercise':
-            final weekNumber =
-                actionData['weekNumber'] ?? context['weekNumber'];
-            final workoutOrder =
-                actionData['workoutOrder'] ?? context['workoutOrder'];
-            result = await _handleAddExercise(
-              userId,
-              weekNumber,
-              workoutOrder,
-              actionData['exerciseName'] as String?,
-              actionData['exerciseType'] as String?,
-            );
-            // Salva il nome dell'esercizio nel contesto
-            if (actionData['exerciseName'] != null) {
-              context['exerciseName'] = actionData['exerciseName'];
-            }
-            break;
+            case 'add_workout':
+              final weekNumber =
+                  actionData['params']?['weekNumber'] ?? context['weekNumber'];
+              result = await _handleAddWorkout(userId, weekNumber as int?);
+              if (result?.contains('Ho aggiunto l\'allenamento') ?? false) {
+                final workoutMatch =
+                    RegExp(r'allenamento (\d+)').firstMatch(result!);
+                if (workoutMatch != null) {
+                  context['workoutOrder'] = int.parse(workoutMatch.group(1)!);
+                }
+              }
+              break;
 
-          case 'add_series':
-            final weekNumber =
-                actionData['weekNumber'] ?? context['weekNumber'];
-            final workoutOrder =
-                actionData['workoutOrder'] ?? context['workoutOrder'];
-            final exerciseName =
-                actionData['exerciseName'] ?? context['exerciseName'];
-            result = await _handleAddSeries(
-              userId,
-              weekNumber,
-              workoutOrder,
-              exerciseName,
-              actionData['sets'] as int?,
-              actionData['reps'] as int?,
-              actionData['weight'] as num?,
-              actionData['intensity'] as String?,
-            );
-            break;
+            case 'add_exercise':
+              final weekNumber =
+                  actionData['params']?['weekNumber'] ?? context['weekNumber'];
+              final workoutOrder = actionData['params']?['workoutOrder'] ??
+                  context['workoutOrder'];
+              final exerciseName = actionData['params']?['exercise'] as String?;
+              final exerciseType =
+                  actionData['params']?['exerciseType'] as String?;
+              result = await _handleAddExercise(
+                userId,
+                weekNumber as int?,
+                workoutOrder as int?,
+                exerciseName,
+                exerciseType,
+              );
+              break;
 
-          case 'remove_week':
-            result = await _handleRemoveWeek(
-              userId,
-              actionData['weekNumber'] as int?,
-            );
-            break;
+            case 'add_series':
+              final weekNumber =
+                  actionData['params']?['weekNumber'] ?? context['weekNumber'];
+              final workoutOrder = actionData['params']?['workoutOrder'] ??
+                  context['workoutOrder'];
+              final exerciseName = actionData['params']?['exerciseName'] ??
+                  context['exerciseName'];
+              final sets = actionData['params']?['sets'] as int?;
+              final reps = actionData['params']?['reps'] as int?;
+              final weight = actionData['params']?['weight'];
+              final intensity = actionData['params']?['intensity'] as String?;
 
-          case 'remove_workout':
-            result = await _handleRemoveWorkout(
-              userId,
-              actionData['weekNumber'] as int?,
-              actionData['workoutOrder'] as int?,
-            );
-            break;
+              result = await _handleAddSeries(
+                userId,
+                weekNumber as int?,
+                workoutOrder as int?,
+                exerciseName as String?,
+                sets,
+                reps,
+                weight is String
+                    ? double.tryParse(weight.toString().split('-')[0])
+                    : weight as num?,
+                intensity,
+              );
+              break;
 
-          case 'remove_exercise':
-            result = await _handleRemoveExercise(
-              userId,
-              actionData['weekNumber'] as int?,
-              actionData['workoutOrder'] as int?,
-              actionData['exerciseName'] as String?,
-            );
-            break;
+            case 'remove_week':
+              final weekNumber = actionData['params']?['weekNumber'] as int?;
+              result = await _handleRemoveWeek(userId, weekNumber);
+              break;
 
-          case 'remove_series':
-            result = await _handleRemoveSeries(
-              userId,
-              actionData['weekNumber'] as int?,
-              actionData['workoutOrder'] as int?,
-              actionData['exerciseName'] as String?,
-              actionData['seriesOrder'] as int?,
-            );
-            break;
+            case 'remove_workout':
+              result = await _handleRemoveWorkout(
+                userId,
+                actionData['weekNumber'] as int?,
+                actionData['workoutOrder'] as int?,
+              );
+              break;
 
-          default:
-            // Gestisci altre azioni singole
-            result = await _handleSingleAction(actionType, actionData, userId);
-        }
+            case 'remove_exercise':
+              result = await _handleRemoveExercise(
+                userId,
+                actionData['weekNumber'] as int?,
+                actionData['workoutOrder'] as int?,
+                actionData['exerciseName'] as String?,
+              );
+              break;
 
-        if (result != null) {
-          results.add(result);
+            case 'remove_series':
+              result = await _handleRemoveSeries(
+                userId,
+                actionData['weekNumber'] as int?,
+                actionData['workoutOrder'] as int?,
+                actionData['exerciseName'] as String?,
+                actionData['seriesOrder'] as int?,
+              );
+              break;
+
+            default:
+              // Gestisci altre azioni singole
+              result =
+                  await _handleSingleAction(actionType, actionData, userId);
+          }
+
+          if (result != null) {
+            results.add(result);
+            _logger.i('Azione $actionType completata con successo: $result');
+          }
+        } catch (e) {
+          _logger.e('Errore durante l\'esecuzione dell\'azione $actionType',
+              error: e);
+          results
+              .add('Errore durante l\'esecuzione dell\'azione $actionType: $e');
         }
       }
 
