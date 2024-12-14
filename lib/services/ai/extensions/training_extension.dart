@@ -315,7 +315,15 @@ class TrainingExtension implements AIExtension {
         return 'Programma non trovato.';
       }
 
-      final newWeekNumber = program.weeks.length + 1;
+      // Troviamo il numero più alto tra le settimane esistenti
+      int maxWeekNumber = 0;
+      for (var week in program.weeks) {
+        if (week.number > maxWeekNumber) {
+          maxWeekNumber = week.number;
+        }
+      }
+
+      final newWeekNumber = maxWeekNumber + 1;
       final week = Week(number: newWeekNumber);
       program.weeks.add(week);
 
@@ -387,9 +395,18 @@ class TrainingExtension implements AIExtension {
       }
 
       final week = program.weeks[weekIndex];
-      final newWorkoutOrder = week.workouts.length + 1;
+
+      // Troviamo l'ordine più alto tra gli allenamenti esistenti
+      int maxOrder = 0;
+      for (var workout in week.workouts) {
+        if (workout.order > maxOrder) {
+          maxOrder = workout.order;
+        }
+      }
+
+      final newWorkoutOrder = maxOrder + 1;
       final workout = Workout(
-        order: week.workouts.length,
+        order: newWorkoutOrder,
         name: 'Allenamento $newWorkoutOrder',
       );
       week.workouts.add(workout);
@@ -429,17 +446,24 @@ class TrainingExtension implements AIExtension {
 
       final week = program.weeks[weekIndex];
       final workoutIndex =
-          week.workouts.indexWhere((w) => w.order == workoutOrder - 1);
+          week.workouts.indexWhere((w) => w.order == workoutOrder);
       if (workoutIndex == -1) {
         return 'Allenamento $workoutOrder non trovato nella settimana $weekNumber.';
       }
 
-      program.trackToDeleteWorkouts.add(week.workouts[workoutIndex].id!);
+      // Salva l'ID dell'allenamento da rimuovere
+      if (week.workouts[workoutIndex].id != null) {
+        program.trackToDeleteWorkouts.add(week.workouts[workoutIndex].id!);
+      }
+
+      // Rimuovi l'allenamento
       week.workouts.removeAt(workoutIndex);
 
-      // Aggiorna gli ordini degli allenamenti rimanenti
+      // Riordina gli allenamenti rimanenti mantenendo l'ordine sequenziale
       for (var i = 0; i < week.workouts.length; i++) {
-        week.workouts[i].order = i;
+        if (week.workouts[i].order > workoutOrder) {
+          week.workouts[i].order = week.workouts[i].order - 1;
+        }
       }
 
       await _trainingService.addOrUpdateTrainingProgram(program);
@@ -504,12 +528,21 @@ class TrainingExtension implements AIExtension {
       }
 
       final workout = week.workouts[workoutIndex];
+
+      // Troviamo l'ordine più alto tra gli esercizi esistenti
+      int maxOrder = 0;
+      for (var exercise in workout.exercises) {
+        if (exercise.order > maxOrder) {
+          maxOrder = exercise.order;
+        }
+      }
+
       final exercise = Exercise(
         name: exerciseName,
         type: matchedType,
         variant: '',
-        order: workout.exercises.length,
-        exerciseId: matchedExerciseId, // Aggiungiamo l'exerciseId trovato
+        order: maxOrder + 1,
+        exerciseId: matchedExerciseId,
       );
       workout.exercises.add(exercise);
 
@@ -548,7 +581,7 @@ class TrainingExtension implements AIExtension {
 
       final week = program.weeks[weekIndex];
       final workoutIndex =
-          week.workouts.indexWhere((w) => w.order == workoutOrder - 1);
+          week.workouts.indexWhere((w) => w.order == workoutOrder);
       if (workoutIndex == -1) {
         return 'Allenamento $workoutOrder non trovato nella settimana $weekNumber.';
       }
@@ -560,12 +593,22 @@ class TrainingExtension implements AIExtension {
         return 'Esercizio "$exerciseName" non trovato nell\'allenamento $workoutOrder della settimana $weekNumber.';
       }
 
-      program.trackToDeleteExercises.add(workout.exercises[exerciseIndex].id!);
+      final exerciseOrder = workout.exercises[exerciseIndex].order;
+
+      // Salva l'ID dell'esercizio da rimuovere
+      if (workout.exercises[exerciseIndex].id != null) {
+        program.trackToDeleteExercises
+            .add(workout.exercises[exerciseIndex].id!);
+      }
+
+      // Rimuovi l'esercizio
       workout.exercises.removeAt(exerciseIndex);
 
-      // Aggiorna gli ordini degli esercizi rimanenti
-      for (var i = 0; i < workout.exercises.length; i++) {
-        workout.exercises[i].order = i;
+      // Riordina gli esercizi rimanenti mantenendo l'ordine sequenziale
+      for (var exercise in workout.exercises) {
+        if (exercise.order > exerciseOrder) {
+          exercise.order = exercise.order - 1;
+        }
       }
 
       await _trainingService.addOrUpdateTrainingProgram(program);
@@ -614,7 +657,7 @@ class TrainingExtension implements AIExtension {
 
       final week = program.weeks[weekIndex];
       final workoutIndex =
-          week.workouts.indexWhere((w) => w.order == workoutOrder - 1);
+          week.workouts.indexWhere((w) => w.order == workoutOrder);
       if (workoutIndex == -1) {
         return 'Allenamento $workoutOrder non trovato nella settimana $weekNumber.';
       }
@@ -627,13 +670,22 @@ class TrainingExtension implements AIExtension {
       }
 
       final exercise = workout.exercises[exerciseIndex];
+
+      // Troviamo l'ordine più alto tra le serie esistenti
+      int maxOrder = 0;
+      for (var series in exercise.series) {
+        if (series.order > maxOrder) {
+          maxOrder = series.order;
+        }
+      }
+
       final series = Series(
         serieId: '',
         sets: sets,
         reps: reps,
         weight: (weight ?? 0).toDouble(),
         intensity: intensity ?? '',
-        order: exercise.series.length,
+        order: maxOrder + 1,
         done: false,
         reps_done: 0,
         weight_done: 0,
@@ -691,7 +743,7 @@ class TrainingExtension implements AIExtension {
 
       final week = program.weeks[weekIndex];
       final workoutIndex =
-          week.workouts.indexWhere((w) => w.order == workoutOrder - 1);
+          week.workouts.indexWhere((w) => w.order == workoutOrder);
       if (workoutIndex == -1) {
         return 'Allenamento $workoutOrder non trovato nella settimana $weekNumber.';
       }
@@ -704,16 +756,25 @@ class TrainingExtension implements AIExtension {
       }
 
       final exercise = workout.exercises[exerciseIndex];
-      if (seriesOrder < 1 || seriesOrder > exercise.series.length) {
+      final seriesIndex =
+          exercise.series.indexWhere((s) => s.order == seriesOrder);
+      if (seriesIndex == -1) {
         return 'Serie $seriesOrder non trovata per l\'esercizio "$exerciseName".';
       }
 
-      program.trackToDeleteSeries.add(exercise.series[seriesOrder - 1].serieId);
-      exercise.series.removeAt(seriesOrder - 1);
+      // Salva l'ID della serie da rimuovere
+      if (exercise.series[seriesIndex].serieId.isNotEmpty) {
+        program.trackToDeleteSeries.add(exercise.series[seriesIndex].serieId);
+      }
 
-      // Aggiorna gli ordini delle serie rimanenti
-      for (var i = 0; i < exercise.series.length; i++) {
-        exercise.series[i].order = i;
+      // Rimuovi la serie
+      exercise.series.removeAt(seriesIndex);
+
+      // Riordina le serie rimanenti mantenendo l'ordine sequenziale
+      for (var series in exercise.series) {
+        if (series.order > seriesOrder) {
+          series.order = series.order - 1;
+        }
       }
 
       await _trainingService.addOrUpdateTrainingProgram(program);
