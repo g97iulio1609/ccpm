@@ -481,23 +481,34 @@ class TrainingExtension implements AIExtension {
     }
 
     try {
+      // Normalizza il nome dell'esercizio (rimuovi spazi extra e converti in lowercase)
+      final normalizedExerciseName =
+          exerciseName.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+
       // 1. Prima cerchiamo l'exerciseId nella collection Exercises
-      final exercisesQuery = await _firestore
-          .collection('exercises')
-          .where('name', isEqualTo: exerciseName)
-          .get();
+      final exercisesQuery = await _firestore.collection('exercises').get();
 
       String? matchedExerciseId;
       String matchedType = exerciseType ?? '';
+      String matchedName = exerciseName;
 
-      if (exercisesQuery.docs.isNotEmpty) {
-        final exerciseDoc = exercisesQuery.docs.first;
-        matchedExerciseId = exerciseDoc.id;
-        // Se non è stato specificato un tipo, usiamo quello trovato nel database
-        if (exerciseType == null || exerciseType.isEmpty) {
-          matchedType = exerciseDoc.data()['type'] ?? '';
+      // Cerca il miglior match tra gli esercizi
+      for (var doc in exercisesQuery.docs) {
+        final dbExerciseName = doc.data()['name'] as String? ?? '';
+        final normalizedDbName =
+            dbExerciseName.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+
+        if (normalizedDbName == normalizedExerciseName) {
+          matchedExerciseId = doc.id;
+          matchedName = dbExerciseName; // Usa il nome esatto dal database
+          if (exerciseType == null || exerciseType.isEmpty) {
+            matchedType = doc.data()['type'] ?? '';
+          }
+          break;
         }
-      } else {
+      }
+
+      if (matchedExerciseId == null) {
         _logger.w('Nessun esercizio trovato con il nome: $exerciseName');
         return 'Non ho trovato l\'esercizio "$exerciseName" nel database. Assicurati che il nome sia corretto.';
       }
@@ -522,12 +533,21 @@ class TrainingExtension implements AIExtension {
 
       final week = program.weeks[weekIndex];
       final workoutIndex =
-          week.workouts.indexWhere((w) => w.order == workoutOrder - 1);
+          week.workouts.indexWhere((w) => w.order == workoutOrder);
       if (workoutIndex == -1) {
         return 'Allenamento $workoutOrder non trovato nella settimana $weekNumber.';
       }
 
       final workout = week.workouts[workoutIndex];
+
+      // Verifica se l'esercizio esiste già nell'allenamento (case insensitive)
+      final existingExerciseIndex = workout.exercises.indexWhere((e) =>
+          e.name.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ') ==
+          normalizedExerciseName);
+
+      if (existingExerciseIndex != -1) {
+        return 'L\'esercizio "$matchedName" è già presente nell\'allenamento $workoutOrder della settimana $weekNumber.';
+      }
 
       // Troviamo l'ordine più alto tra gli esercizi esistenti
       int maxOrder = 0;
@@ -538,7 +558,7 @@ class TrainingExtension implements AIExtension {
       }
 
       final exercise = Exercise(
-        name: exerciseName,
+        name: matchedName,
         type: matchedType,
         variant: '',
         order: maxOrder + 1,
@@ -547,7 +567,7 @@ class TrainingExtension implements AIExtension {
       workout.exercises.add(exercise);
 
       await _trainingService.addOrUpdateTrainingProgram(program);
-      return 'Ho aggiunto l\'esercizio "$exerciseName" all\'allenamento $workoutOrder della settimana $weekNumber.';
+      return 'Ho aggiunto l\'esercizio "$matchedName" all\'allenamento $workoutOrder della settimana $weekNumber.';
     } catch (e) {
       _logger.e('Error adding exercise', error: e);
       return 'Si è verificato un errore durante l\'aggiunta dell\'esercizio.';
@@ -561,6 +581,10 @@ class TrainingExtension implements AIExtension {
     }
 
     try {
+      // Normalizza il nome dell'esercizio
+      final normalizedExerciseName =
+          exerciseName.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+
       final userDoc = await _firestore.collection('users').doc(userId).get();
       final currentProgramId = userDoc.data()?['currentProgram'] as String?;
 
@@ -587,13 +611,15 @@ class TrainingExtension implements AIExtension {
       }
 
       final workout = week.workouts[workoutIndex];
-      final exerciseIndex = workout.exercises.indexWhere(
-          (e) => e.name.toLowerCase() == exerciseName.toLowerCase());
+      final exerciseIndex = workout.exercises.indexWhere((e) =>
+          e.name.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ') ==
+          normalizedExerciseName);
       if (exerciseIndex == -1) {
         return 'Esercizio "$exerciseName" non trovato nell\'allenamento $workoutOrder della settimana $weekNumber.';
       }
 
       final exerciseOrder = workout.exercises[exerciseIndex].order;
+      final originalName = workout.exercises[exerciseIndex].name;
 
       // Salva l'ID dell'esercizio da rimuovere
       if (workout.exercises[exerciseIndex].id != null) {
@@ -612,7 +638,7 @@ class TrainingExtension implements AIExtension {
       }
 
       await _trainingService.addOrUpdateTrainingProgram(program);
-      return 'Ho rimosso l\'esercizio "$exerciseName" dall\'allenamento $workoutOrder della settimana $weekNumber.';
+      return 'Ho rimosso l\'esercizio "$originalName" dall\'allenamento $workoutOrder della settimana $weekNumber.';
     } catch (e) {
       _logger.e('Error removing exercise', error: e);
       return 'Si è verificato un errore durante la rimozione dell\'esercizio.';
@@ -637,6 +663,10 @@ class TrainingExtension implements AIExtension {
     }
 
     try {
+      // Normalizza il nome dell'esercizio
+      final normalizedExerciseName =
+          exerciseName.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+
       final userDoc = await _firestore.collection('users').doc(userId).get();
       final currentProgramId = userDoc.data()?['currentProgram'] as String?;
 
@@ -663,8 +693,9 @@ class TrainingExtension implements AIExtension {
       }
 
       final workout = week.workouts[workoutIndex];
-      final exerciseIndex = workout.exercises.indexWhere(
-          (e) => e.name.toLowerCase() == exerciseName.toLowerCase());
+      final exerciseIndex = workout.exercises.indexWhere((e) =>
+          e.name.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ') ==
+          normalizedExerciseName);
       if (exerciseIndex == -1) {
         return 'Esercizio "$exerciseName" non trovato nell\'allenamento $workoutOrder della settimana $weekNumber.';
       }
@@ -679,31 +710,91 @@ class TrainingExtension implements AIExtension {
         }
       }
 
-      final series = Series(
-        serieId: '',
-        sets: sets,
-        reps: reps,
-        weight: (weight ?? 0).toDouble(),
-        intensity: intensity ?? '',
-        order: maxOrder + 1,
-        done: false,
-        reps_done: 0,
-        weight_done: 0,
-        maxReps: reps,
-        maxSets: sets,
-        maxWeight: (weight ?? 0).toDouble(),
-        maxIntensity: intensity ?? '',
-        maxRpe: '',
-        rpe: '',
-      );
-      exercise.series.add(series);
+      // Parsing dei valori con range
+      int minReps = reps;
+      int? maxReps;
+      double minWeight = (weight ?? 0).toDouble();
+      double? maxWeight;
+      String minIntensity = intensity ?? '';
+      String? maxIntensity;
+
+      // Controlla se reps contiene un range (es: "4-6" o "4/6")
+      if (reps.toString().contains(RegExp(r'[-/]'))) {
+        final parts = reps.toString().split(RegExp(r'[-/]'));
+        if (parts.length == 2) {
+          minReps = int.parse(parts[0].trim());
+          maxReps = int.parse(parts[1].trim());
+        }
+      }
+
+      // Controlla se weight contiene un range
+      if (weight != null && weight.toString().contains(RegExp(r'[-/]'))) {
+        final parts = weight.toString().split(RegExp(r'[-/]'));
+        if (parts.length == 2) {
+          minWeight = double.parse(parts[0].trim());
+          maxWeight = double.parse(parts[1].trim());
+        }
+      }
+
+      // Controlla se intensity contiene un range
+      if (intensity != null && intensity.contains(RegExp(r'[-/]'))) {
+        final parts = intensity.split(RegExp(r'[-/]'));
+        if (parts.length == 2) {
+          minIntensity = parts[0].trim();
+          maxIntensity = parts[1].trim();
+        }
+      }
+
+      // Crea il numero specificato di serie
+      for (var i = 0; i < sets; i++) {
+        final series = Series(
+          serieId: '',
+          sets:
+              1, // Ogni serie ha set=1 perché stiamo creando 'sets' numero di serie
+          reps: minReps,
+          weight: minWeight,
+          intensity: minIntensity,
+          order: maxOrder + i + 1,
+          done: false,
+          reps_done: 0,
+          weight_done: 0,
+          maxReps: maxReps, // Se non specificato, rimane null
+          maxSets: 1,
+          maxWeight: maxWeight, // Se non specificato, rimane null
+          maxIntensity: maxIntensity, // Se non specificato, rimane null
+          maxRpe: '',
+          rpe: '',
+        );
+        exercise.series.add(series);
+      }
 
       await _trainingService.addOrUpdateTrainingProgram(program);
-      String response = 'Ho aggiunto ${sets}x$reps';
-      if (weight != null) response += ' @${weight}kg';
-      if (intensity != null && intensity.isNotEmpty) {
-        response += ' $intensity';
+      String response = 'Ho aggiunto $sets serie di ';
+
+      // Formatta la risposta in base ai range
+      if (maxReps != null) {
+        response += '$minReps-$maxReps';
+      } else {
+        response += '$minReps';
       }
+      response += ' ripetizioni';
+
+      if (weight != null) {
+        if (maxWeight != null) {
+          response += ' @${minWeight}-${maxWeight}kg';
+        } else {
+          response += ' @${minWeight}kg';
+        }
+      }
+
+      if (intensity != null && intensity.isNotEmpty) {
+        if (maxIntensity != null && maxIntensity.isNotEmpty) {
+          response += ' $minIntensity-$maxIntensity';
+        } else {
+          response += ' $minIntensity';
+        }
+      }
+
       response +=
           ' all\'esercizio "$exerciseName" nell\'allenamento $workoutOrder della settimana $weekNumber.';
       return response;
