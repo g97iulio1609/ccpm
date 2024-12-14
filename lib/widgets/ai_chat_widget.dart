@@ -1,4 +1,5 @@
 // ai_chat_widget.dart
+import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/services/users_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -210,12 +211,31 @@ class AIChatWidget extends HookConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AI Assistant'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('AI Assistant'),
+            Text(
+              'Powered by ${settings.selectedProvider.displayName}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings),
+            icon: Icon(
+              Icons.settings_rounded,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            style: IconButton.styleFrom(
+              backgroundColor:
+                  Theme.of(context).colorScheme.primaryContainer.withAlpha(26),
+            ),
             onPressed: () => context.go('/settings/ai'),
           ),
+          SizedBox(width: AppTheme.spacing.sm),
         ],
       ),
       body: Column(
@@ -229,7 +249,10 @@ class AIChatWidget extends HookConsumerWidget {
             child: Stack(
               children: [
                 ListView.builder(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: EdgeInsets.symmetric(
+                    vertical: AppTheme.spacing.lg,
+                    horizontal: AppTheme.spacing.sm,
+                  ),
                   itemCount: chatMessages.length,
                   itemBuilder: (context, index) {
                     final message = chatMessages[index];
@@ -237,12 +260,60 @@ class AIChatWidget extends HookConsumerWidget {
                   },
                 ),
                 if (isProcessing.value)
-                  const Positioned(
-                    bottom: 16,
+                  Positioned(
+                    bottom: AppTheme.spacing.xl,
                     left: 0,
                     right: 0,
                     child: Center(
-                      child: CircularProgressIndicator(),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppTheme.spacing.lg,
+                          vertical: AppTheme.spacing.md,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest,
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radii.full),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .shadow
+                                  .withAlpha(20),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: AppTheme.spacing.md),
+                            Text(
+                              'Elaborazione...',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
               ],
@@ -263,35 +334,56 @@ class _ChatMessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Estrai il testo naturale dal JSON se presente
     String displayText = message.content;
     if (message.isAssistant) {
       try {
         final Map<String, dynamic> jsonResponse = jsonDecode(message.content);
         displayText = jsonResponse['responseText'] ?? message.content;
       } catch (e) {
-        // Se non è JSON valido, usa il testo originale
         displayText = message.content;
       }
     }
 
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Align(
       alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.75,
+        ),
+        margin: EdgeInsets.symmetric(
+          vertical: AppTheme.spacing.sm,
+          horizontal: AppTheme.spacing.md,
+        ),
+        padding: EdgeInsets.all(AppTheme.spacing.md),
         decoration: BoxDecoration(
           color: message.isUser
-              ? Theme.of(context).colorScheme.primaryContainer
-              : Theme.of(context).colorScheme.secondaryContainer,
-          borderRadius: BorderRadius.circular(12.0),
+              ? colorScheme.primary
+              : colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(
+                message.isUser ? AppTheme.radii.lg : AppTheme.radii.sm),
+            topRight: Radius.circular(
+                message.isUser ? AppTheme.radii.sm : AppTheme.radii.lg),
+            bottomLeft: Radius.circular(AppTheme.radii.lg),
+            bottomRight: Radius.circular(AppTheme.radii.lg),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.shadow.withAlpha(26),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Text(
           displayText,
-          style: TextStyle(
-            color: message.isUser
-                ? Theme.of(context).colorScheme.onPrimaryContainer
-                : Theme.of(context).colorScheme.onSecondaryContainer,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color:
+                message.isUser ? colorScheme.onPrimary : colorScheme.onSurface,
+            height: 1.4,
           ),
         ),
       ),
@@ -311,74 +403,136 @@ class _AISettingsSelector extends ConsumerWidget {
         .where((model) => model.provider == settings.selectedProvider)
         .toList();
 
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(AppTheme.spacing.lg),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withAlpha(26),
-          ),
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(AppTheme.radii.xl),
+          bottomRight: Radius.circular(AppTheme.radii.xl),
         ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: DropdownButtonFormField<AIProvider>(
-              value: availableProviders.contains(settings.selectedProvider)
-                  ? settings.selectedProvider
-                  : availableProviders.isNotEmpty
-                      ? availableProviders.first
-                      : null,
-              decoration: const InputDecoration(
-                labelText: 'AI Provider',
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(horizontal: 12),
-              ),
-              items: availableProviders.map((provider) {
-                return DropdownMenuItem(
-                  value: provider,
-                  child: Text(provider.displayName),
-                );
-              }).toList(),
-              onChanged: (provider) {
-                if (provider != null) {
-                  ref
-                      .read(aiSettingsProvider.notifier)
-                      .updateSelectedProvider(provider);
-                }
-              },
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: DropdownButtonFormField<AIModel>(
-              value: availableModels.contains(settings.selectedModel)
-                  ? settings.selectedModel
-                  : availableModels.isNotEmpty
-                      ? availableModels.first
-                      : null,
-              decoration: const InputDecoration(
-                labelText: 'Model',
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(horizontal: 12),
-              ),
-              items: availableModels.map((model) {
-                return DropdownMenuItem(
-                  value: model,
-                  child: Text(model.modelId),
-                );
-              }).toList(),
-              onChanged: (model) {
-                if (model != null) {
-                  ref
-                      .read(aiSettingsProvider.notifier)
-                      .updateSelectedModel(model);
-                }
-              },
-            ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withAlpha(20),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'AI Settings',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: colorScheme.primary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: AppTheme.spacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: _buildDropdown(
+                  context: context,
+                  label: 'Provider',
+                  value: availableProviders.contains(settings.selectedProvider)
+                      ? settings.selectedProvider
+                      : availableProviders.isNotEmpty
+                          ? availableProviders.first
+                          : null,
+                  items: availableProviders.map((provider) {
+                    return DropdownMenuItem(
+                      value: provider,
+                      child: Text(provider.displayName),
+                    );
+                  }).toList(),
+                  onChanged: (provider) {
+                    if (provider != null) {
+                      ref
+                          .read(aiSettingsProvider.notifier)
+                          .updateSelectedProvider(provider);
+                    }
+                  },
+                ),
+              ),
+              SizedBox(width: AppTheme.spacing.md),
+              Expanded(
+                child: _buildDropdown(
+                  context: context,
+                  label: 'Model',
+                  value: availableModels.contains(settings.selectedModel)
+                      ? settings.selectedModel
+                      : availableModels.isNotEmpty
+                          ? availableModels.first
+                          : null,
+                  items: availableModels.map((model) {
+                    return DropdownMenuItem(
+                      value: model,
+                      child: Text(model.modelId),
+                    );
+                  }).toList(),
+                  onChanged: (model) {
+                    if (model != null) {
+                      ref
+                          .read(aiSettingsProvider.notifier)
+                          .updateSelectedModel(model);
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDropdown<T>({
+    required BuildContext context,
+    required String label,
+    required T? value,
+    required List<DropdownMenuItem<T>> items,
+    required ValueChanged<T?> onChanged,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(AppTheme.radii.md),
+        border: Border.all(
+          color: colorScheme.outline.withAlpha(51),
+        ),
+      ),
+      child: DropdownButtonFormField<T>(
+        value: value,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: theme.textTheme.bodyMedium?.copyWith(
+            color: colorScheme.primary,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radii.md),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: AppTheme.spacing.md,
+            vertical: AppTheme.spacing.sm,
+          ),
+          filled: true,
+          fillColor: Colors.transparent,
+        ),
+        items: items,
+        onChanged: onChanged,
+        dropdownColor: colorScheme.surfaceContainerHighest,
+        style: theme.textTheme.bodyLarge?.copyWith(
+          color: colorScheme.onSurface,
+        ),
       ),
     );
   }
@@ -390,30 +544,54 @@ class _APIKeyWarning extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
-      padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(AppTheme.spacing.lg),
+      margin: EdgeInsets.all(AppTheme.spacing.lg),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.errorContainer,
-        borderRadius: BorderRadius.circular(8),
+        color: colorScheme.errorContainer.withAlpha(38),
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: colorScheme.error.withAlpha(51),
+        ),
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.warning,
-            color: Theme.of(context).colorScheme.error,
+          Container(
+            padding: EdgeInsets.all(AppTheme.spacing.sm),
+            decoration: BoxDecoration(
+              color: colorScheme.error.withAlpha(26),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.warning_rounded,
+              color: colorScheme.error,
+              size: 24,
+            ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: AppTheme.spacing.lg),
           Expanded(
             child: Text(
               'Nessuna chiave API configurata. Per favore, aggiungi le tue chiavi API nelle impostazioni.',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.error,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: colorScheme.error,
+                height: 1.4,
               ),
             ),
           ),
-          TextButton(
+          SizedBox(width: AppTheme.spacing.md),
+          FilledButton.tonal(
             onPressed: () => context.go('/settings/ai'),
+            style: FilledButton.styleFrom(
+              backgroundColor: colorScheme.error.withAlpha(26),
+              foregroundColor: colorScheme.error,
+              padding: EdgeInsets.symmetric(
+                horizontal: AppTheme.spacing.lg,
+                vertical: AppTheme.spacing.md,
+              ),
+            ),
             child: const Text('Configura'),
           ),
         ],
@@ -434,54 +612,96 @@ class _ChatInputField extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final textController = useTextEditingController();
     final focusNode = useFocusNode();
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(AppTheme.spacing.lg),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border(
-          top: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withAlpha(26),
-          ),
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(AppTheme.radii.xl),
+          topRight: Radius.circular(AppTheme.radii.xl),
         ),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withAlpha(26),
-            blurRadius: 4,
-            offset: const Offset(0, -2),
+            color: colorScheme.shadow.withAlpha(20),
+            blurRadius: 12,
+            offset: const Offset(0, -4),
           ),
         ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Expanded(
-            child: TextField(
-              controller: textController,
-              focusNode: focusNode,
-              textInputAction: TextInputAction.send,
-              decoration: InputDecoration(
-                hintText: 'Scrivi un messaggio...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+            child: Container(
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerLowest,
+                borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                border: Border.all(
+                  color: colorScheme.outline.withAlpha(51),
                 ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
-              onSubmitted: (value) {
-                onSend(value);
-                textController.clear();
-                focusNode.requestFocus();
-              },
+              child: TextField(
+                controller: textController,
+                focusNode: focusNode,
+                textInputAction: TextInputAction.send,
+                maxLines: 4,
+                minLines: 1,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.onSurface,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Scrivi un messaggio...',
+                  hintStyle: theme.textTheme.bodyLarge?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: AppTheme.spacing.lg,
+                    vertical: AppTheme.spacing.md,
+                  ),
+                  filled: true,
+                  fillColor: Colors.transparent,
+                ),
+                onSubmitted: (value) {
+                  if (value.isNotEmpty) {
+                    onSend(value);
+                    textController.clear();
+                    focusNode.requestFocus();
+                  }
+                },
+              ),
             ),
           ),
-          const SizedBox(width: 16),
-          IconButton(
-            icon: const Icon(Icons.send),
-            onPressed: () {
-              onSend(textController.text);
-              textController.clear();
-              focusNode.requestFocus();
-            },
+          SizedBox(width: AppTheme.spacing.md),
+          Container(
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withAlpha(51),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: colorScheme.primary.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.send_rounded),
+              color: colorScheme.onPrimary,
+              onPressed: () {
+                if (textController.text.isNotEmpty) {
+                  onSend(textController.text);
+                  textController.clear();
+                  focusNode.requestFocus();
+                }
+              },
+            ),
           ),
         ],
       ),
