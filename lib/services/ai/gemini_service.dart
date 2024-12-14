@@ -160,8 +160,9 @@ Esempi di azioni per ogni feature type:
         "exerciseName": "Panca Piana",
         "sets": 5,
         "reps": 4,
-        "intensity": "80-85%",
-        "weight": "100-120"
+        "intensity": "80",
+        "weight": "100",
+        "weightMax": "120"
       },
       "priority": 4,
       "dependencies": ["add_exercise"]
