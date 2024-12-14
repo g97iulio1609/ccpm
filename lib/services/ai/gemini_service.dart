@@ -161,8 +161,11 @@ Esempi di azioni per ogni feature type:
         "sets": 5,
         "reps": 4,
         "intensity": "80",
-        "weight": "100",
-        "weightMax": "120"
+        "maxIntensity": "85",
+        "rpe": "0",
+        "maxRpe": "0",
+        "weight": 100.0,
+        "maxWeight": 120.0
       },
       "priority": 4,
       "dependencies": ["add_exercise"]
@@ -217,9 +220,11 @@ IMPORTANTE:
 6. L'utente ha già un programma corrente: ${currentProgram != null ? 'Sì' : 'No'}
 7. I campi weekNumber e workoutNumber devono SEMPRE essere numeri interi, MAI stringhe
 8. Per aggiungere serie a un esercizio usa SEMPRE l'azione add_series separata
-9. Per i range di peso (es. "100-120"), usa il valore minimo per weight e il massimo per weightMax
-10. Per i range di intensità (es. "80-85%"), usa il valore minimo e rimuovi il simbolo %
-11. I campi intensity, weight e weightMax devono SEMPRE essere stringhe (es. "100" invece di 100)
+9. Per i range di peso (es. "100-120"), usa il valore minimo per weight e il massimo per maxWeight
+10. Per i range di intensità (es. "80-85%"), usa il valore minimo per intensity e il massimo per maxIntensity, rimuovendo il simbolo %
+11. I campi weight e maxWeight devono SEMPRE essere numeri decimali (double)
+12. I campi intensity, maxIntensity, rpe e maxRpe devono SEMPRE essere stringhe
+13. Se non specificati, usa "0" per rpe e maxRpe
 
 Funzionalità disponibili:
 ${features['training'] == true ? '- Training' : ''}

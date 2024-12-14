@@ -113,7 +113,10 @@ class TrainingExtension implements AIExtension {
               final sets = actionData['params']?['sets'] as int?;
               final reps = actionData['params']?['reps'] as int?;
               final weight = actionData['params']?['weight'];
+              final maxWeight = actionData['params']?['maxWeight'];
               final intensity = actionData['params']?['intensity'] as String?;
+              final maxIntensity =
+                  actionData['params']?['maxIntensity'] as String?;
 
               result = await _handleAddSeries(
                 userId,
@@ -122,10 +125,12 @@ class TrainingExtension implements AIExtension {
                 exerciseName as String?,
                 sets,
                 reps,
-                weight is String
-                    ? double.tryParse(weight.toString().split('-')[0])
-                    : weight as num?,
+                weight is String ? double.tryParse(weight) : weight as num?,
                 intensity,
+                maxWeight is String
+                    ? double.tryParse(maxWeight)
+                    : maxWeight as num?,
+                maxIntensity,
               );
               break;
 
@@ -228,9 +233,20 @@ class TrainingExtension implements AIExtension {
         final sets = interpretation['sets'] as int?;
         final reps = interpretation['reps'] as int?;
         final weight = interpretation['weight'] as num?;
+        final maxWeight = interpretation['maxWeight'] as num?;
         final intensity = interpretation['intensity'] as String?;
-        return await _handleAddSeries(userId, weekNumber, workoutOrder,
-            exerciseName, sets, reps, weight, intensity);
+        final maxIntensity = interpretation['maxIntensity'] as String?;
+        return await _handleAddSeries(
+            userId,
+            weekNumber,
+            workoutOrder,
+            exerciseName,
+            sets,
+            reps,
+            weight,
+            intensity,
+            maxWeight,
+            maxIntensity);
       case 'remove_series':
         final weekNumber = interpretation['weekNumber'] as int?;
         final workoutOrder = interpretation['workoutOrder'] as int?;
@@ -876,7 +892,9 @@ class TrainingExtension implements AIExtension {
       int? sets,
       int? reps,
       num? weight,
-      String? intensity) async {
+      String? intensity,
+      num? maxWeight,
+      String? maxIntensity) async {
     if (weekNumber == null ||
         workoutOrder == null ||
         exerciseName == null ||
@@ -936,12 +954,12 @@ class TrainingExtension implements AIExtension {
       // Parsing dei valori con range
       int minReps = reps;
       int? maxReps;
-      double minWeight = (weight ?? 0).toDouble();
-      double? maxWeight;
-      String minIntensity = intensity ?? '';
-      String? maxIntensity;
+      double minWeight = 0.0;
+      double? maxWeightValue;
+      String minIntensity = '';
+      String? maxIntensityValue;
 
-      // Controlla se reps contiene un range (es: "4-6" o "4/6")
+      // Gestione range ripetizioni (es: "4-6" o "4/6")
       if (reps.toString().contains(RegExp(r'[-/]'))) {
         final parts = reps.toString().split(RegExp(r'[-/]'));
         if (parts.length == 2) {
@@ -950,30 +968,23 @@ class TrainingExtension implements AIExtension {
         }
       }
 
-      // Controlla se weight contiene un range
-      if (weight != null && weight.toString().contains(RegExp(r'[-/]'))) {
-        final parts = weight.toString().split(RegExp(r'[-/]'));
-        if (parts.length == 2) {
-          minWeight = double.parse(parts[0].trim());
-          maxWeight = double.parse(parts[1].trim());
-        }
+      // Gestione range peso
+      if (weight != null) {
+        minWeight = weight.toDouble();
+        maxWeightValue = maxWeight?.toDouble();
       }
 
-      // Controlla se intensity contiene un range
-      if (intensity != null && intensity.contains(RegExp(r'[-/]'))) {
-        final parts = intensity.split(RegExp(r'[-/]'));
-        if (parts.length == 2) {
-          minIntensity = parts[0].trim();
-          maxIntensity = parts[1].trim();
-        }
+      // Gestione range intensità
+      if (intensity != null && intensity.isNotEmpty) {
+        minIntensity = intensity;
+        maxIntensityValue = maxIntensity;
       }
 
       // Crea il numero specificato di serie
       for (var i = 0; i < sets; i++) {
         final series = Series(
           serieId: '',
-          sets:
-              1, // Ogni serie ha set=1 perché stiamo creando 'sets' numero di serie
+          sets: 1,
           reps: minReps,
           weight: minWeight,
           intensity: minIntensity,
@@ -981,10 +992,10 @@ class TrainingExtension implements AIExtension {
           done: false,
           reps_done: 0,
           weight_done: 0,
-          maxReps: maxReps, // Se non specificato, rimane null
+          maxReps: maxReps,
           maxSets: 1,
-          maxWeight: maxWeight, // Se non specificato, rimane null
-          maxIntensity: maxIntensity, // Se non specificato, rimane null
+          maxWeight: maxWeightValue,
+          maxIntensity: maxIntensityValue,
           maxRpe: '',
           rpe: '',
         );
@@ -1002,19 +1013,21 @@ class TrainingExtension implements AIExtension {
       }
       response += ' ripetizioni';
 
-      if (weight != null) {
-        if (maxWeight != null) {
-          response += ' @$minWeight-${maxWeight}kg';
+      if (minWeight > 0) {
+        if (maxWeightValue != null) {
+          response += ' @$minWeight-${maxWeightValue}kg';
         } else {
           response += ' @${minWeight}kg';
         }
       }
 
-      if (intensity != null && intensity.isNotEmpty) {
-        if (maxIntensity != null && maxIntensity.isNotEmpty) {
-          response += ' $minIntensity-$maxIntensity';
+      if (minIntensity.isNotEmpty && minIntensity != '0') {
+        if (maxIntensityValue != null &&
+            maxIntensityValue.isNotEmpty &&
+            maxIntensityValue != '0') {
+          response += ' ${minIntensity}-${maxIntensityValue}%';
         } else {
-          response += ' $minIntensity';
+          response += ' ${minIntensity}%';
         }
       }
 
