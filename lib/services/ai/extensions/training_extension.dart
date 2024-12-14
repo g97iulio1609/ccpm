@@ -387,15 +387,15 @@ class TrainingExtension implements AIExtension {
       }
 
       final week = program.weeks[weekIndex];
-      final newWorkoutOrder = week.workouts.length;
+      final newWorkoutOrder = week.workouts.length + 1;
       final workout = Workout(
-        order: newWorkoutOrder,
-        name: 'Allenamento ${newWorkoutOrder + 1}',
+        order: week.workouts.length,
+        name: 'Allenamento $newWorkoutOrder',
       );
       week.workouts.add(workout);
 
       await _trainingService.addOrUpdateTrainingProgram(program);
-      return 'Ho aggiunto l\'allenamento ${newWorkoutOrder + 1} alla settimana $weekNumber.';
+      return 'Ho aggiunto l\'allenamento $newWorkoutOrder alla settimana $weekNumber.';
     } catch (e) {
       _logger.e('Error adding workout', error: e);
       return 'Si è verificato un errore durante l\'aggiunta dell\'allenamento.';
