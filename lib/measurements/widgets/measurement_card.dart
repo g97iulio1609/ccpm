@@ -35,7 +35,7 @@ class MeasurementCard extends StatelessWidget {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withAlpha(26),
         ),
         boxShadow: AppTheme.elevations.small,
       ),
@@ -64,7 +64,7 @@ class MeasurementCard extends StatelessWidget {
                     if (comparisonValues.isNotEmpty) ...[
                       SizedBox(height: AppTheme.spacing.md),
                       Divider(
-                        color: colorScheme.outline.withOpacity(0.1),
+                        color: colorScheme.outline.withAlpha(26),
                       ),
                       SizedBox(height: AppTheme.spacing.sm),
                       ..._buildComparisons(theme, colorScheme, isSmallScreen),
@@ -89,7 +89,7 @@ class MeasurementCard extends StatelessWidget {
           padding: EdgeInsets.all(
               isSmallScreen ? AppTheme.spacing.xs : AppTheme.spacing.sm),
           decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withOpacity(0.3),
+            color: colorScheme.primaryContainer.withAlpha(76),
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
           child: Icon(
@@ -155,7 +155,7 @@ class MeasurementCard extends StatelessWidget {
         vertical: AppTheme.spacing.xs,
       ),
       decoration: BoxDecoration(
-        color: statusColor.withOpacity(0.1),
+        color: statusColor.withAlpha(26),
         borderRadius: BorderRadius.circular(AppTheme.radii.full),
       ),
       child: Text(

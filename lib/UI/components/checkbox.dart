@@ -39,19 +39,25 @@ class AppCheckbox extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppTheme.radii.sm),
                 border: Border.all(
                   color: value
-                      ? (isEnabled ? colorScheme.primary : colorScheme.onSurfaceVariant.withOpacity(0.5))
+                      ? (isEnabled
+                          ? colorScheme.primary
+                          : colorScheme.onSurfaceVariant.withAlpha(128))
                       : colorScheme.outline,
                   width: 2,
                 ),
                 color: value
-                    ? (isEnabled ? colorScheme.primary : colorScheme.onSurfaceVariant.withOpacity(0.5))
+                    ? (isEnabled
+                        ? colorScheme.primary
+                        : colorScheme.onSurfaceVariant.withAlpha(128))
                     : Colors.transparent,
               ),
               child: value
                   ? Icon(
                       Icons.check,
                       size: 18,
-                      color: isEnabled ? colorScheme.onPrimary : colorScheme.surface,
+                      color: isEnabled
+                          ? colorScheme.onPrimary
+                          : colorScheme.surface,
                     )
                   : null,
             ),
@@ -66,7 +72,9 @@ class AppCheckbox extends StatelessWidget {
                         Icon(
                           icon,
                           size: 20,
-                          color: isEnabled ? colorScheme.onSurface : colorScheme.onSurfaceVariant.withOpacity(0.5),
+                          color: isEnabled
+                              ? colorScheme.onSurface
+                              : colorScheme.onSurfaceVariant.withAlpha(128),
                         ),
                         SizedBox(width: AppTheme.spacing.sm),
                       ],
@@ -74,7 +82,9 @@ class AppCheckbox extends StatelessWidget {
                         child: Text(
                           label,
                           style: theme.textTheme.bodyLarge?.copyWith(
-                            color: isEnabled ? colorScheme.onSurface : colorScheme.onSurfaceVariant.withOpacity(0.5),
+                            color: isEnabled
+                                ? colorScheme.onSurface
+                                : colorScheme.onSurfaceVariant.withAlpha(128),
                           ),
                         ),
                       ),
@@ -87,7 +97,7 @@ class AppCheckbox extends StatelessWidget {
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: isEnabled
                             ? colorScheme.onSurfaceVariant
-                            : colorScheme.onSurfaceVariant.withOpacity(0.5),
+                            : colorScheme.onSurfaceVariant.withAlpha(128),
                       ),
                     ),
                   ],
@@ -146,4 +156,4 @@ class AppCheckboxGroup<T> extends StatelessWidget {
       }).toList(),
     );
   }
-} 
+}

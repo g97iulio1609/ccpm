@@ -65,7 +65,7 @@ class BottomMenu extends StatelessWidget {
             width: 32,
             height: 4,
             decoration: BoxDecoration(
-              color: colorScheme.outline.withOpacity(0.2),
+              color: colorScheme.outline.withAlpha(51),
               borderRadius: BorderRadius.circular(AppTheme.radii.full),
             ),
           ),
@@ -95,7 +95,7 @@ class BottomMenu extends StatelessWidget {
                         Text(
                           subtitle!,
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
+                            color: colorScheme.onSurfaceVariant.withAlpha(179),
                           ),
                         ),
                       ],
@@ -109,7 +109,7 @@ class BottomMenu extends StatelessWidget {
           // Divider
           Container(
             height: 1,
-            color: colorScheme.outline.withOpacity(0.1),
+            color: colorScheme.outline.withAlpha(26),
           ),
 
           // Content
@@ -130,7 +130,8 @@ class BottomMenu extends StatelessWidget {
                                 item.icon,
                                 color: item.isDestructive
                                     ? colorScheme.error
-                                    : colorScheme.onSurfaceVariant,
+                                    : colorScheme.onSurfaceVariant
+                                        .withAlpha(128),
                               )
                             : null),
                     title: Text(
@@ -145,7 +146,8 @@ class BottomMenu extends StatelessWidget {
                         ? Text(
                             item.subtitle!,
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
+                              color:
+                                  colorScheme.onSurfaceVariant.withAlpha(179),
                             ),
                           )
                         : null,
@@ -160,7 +162,7 @@ class BottomMenu extends StatelessWidget {
           if (actions != null && actions!.isNotEmpty) ...[
             Container(
               height: 1,
-              color: colorScheme.outline.withOpacity(0.1),
+              color: colorScheme.outline.withAlpha(26),
             ),
             Padding(
               padding: EdgeInsets.all(AppTheme.spacing.lg),

@@ -71,7 +71,7 @@ class AIChatWidget extends HookConsumerWidget {
           ),
         ));
 
-    if (settings.availableProviders.isEmpty || aiService == null) {
+    if (settings.availableProviders.isEmpty) {
       return Scaffold(
         appBar: AppBar(
           title: const Text('AI Assistant'),
@@ -317,7 +317,7 @@ class _AISettingsSelector extends ConsumerWidget {
         color: Theme.of(context).colorScheme.surface,
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.outline.withAlpha(26),
           ),
         ),
       ),
@@ -441,12 +441,12 @@ class _ChatInputField extends HookConsumerWidget {
         color: Theme.of(context).colorScheme.surface,
         border: Border(
           top: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.outline.withAlpha(26),
           ),
         ),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.shadow.withAlpha(26),
             blurRadius: 4,
             offset: const Offset(0, -2),
           ),

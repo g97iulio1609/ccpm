@@ -169,7 +169,7 @@ class TrainingGalleryScreen extends HookConsumerWidget {
                                   borderRadius:
                                       BorderRadius.circular(AppTheme.radii.lg),
                                   border: Border.all(
-                                    color: colorScheme.outline.withOpacity(0.1),
+                                    color: colorScheme.outline.withAlpha(26),
                                   ),
                                   boxShadow: AppTheme.elevations.small,
                                 ),

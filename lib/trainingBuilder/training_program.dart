@@ -49,7 +49,7 @@ class TrainingProgramPage extends HookConsumerWidget {
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withOpacity(0.5),
+              colorScheme.surfaceContainerHighest.withAlpha(128),
             ],
             stops: const [0.0, 1.0],
           ),
@@ -113,7 +113,7 @@ class TrainingProgramPage extends HookConsumerWidget {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withAlpha(26),
         ),
         boxShadow: AppTheme.elevations.small,
       ),
@@ -174,7 +174,7 @@ class TrainingProgramPage extends HookConsumerWidget {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppTheme.radii.md),
           borderSide: BorderSide(
-            color: colorScheme.outline.withOpacity(0.3),
+            color: colorScheme.outline.withAlpha(76),
           ),
         ),
         focusedBorder: OutlineInputBorder(
@@ -185,7 +185,7 @@ class TrainingProgramPage extends HookConsumerWidget {
           ),
         ),
         filled: true,
-        fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        fillColor: colorScheme.surfaceContainerHighest.withAlpha(76),
       ),
       style: theme.textTheme.bodyLarge?.copyWith(
         color: colorScheme.onSurface,
@@ -205,7 +205,7 @@ class TrainingProgramPage extends HookConsumerWidget {
         gradient: LinearGradient(
           colors: [
             colorScheme.primary,
-            colorScheme.primary.withOpacity(0.8),
+            colorScheme.primary.withAlpha(204),
           ],
         ),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
@@ -267,7 +267,7 @@ class TrainingProgramPage extends HookConsumerWidget {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppTheme.radii.md),
           borderSide: BorderSide(
-            color: colorScheme.outline.withOpacity(0.3),
+            color: colorScheme.outline.withAlpha(76),
           ),
         ),
         focusedBorder: OutlineInputBorder(
@@ -278,7 +278,7 @@ class TrainingProgramPage extends HookConsumerWidget {
           ),
         ),
         filled: true,
-        fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        fillColor: colorScheme.surfaceContainerHighest.withAlpha(76),
       ),
       style: theme.textTheme.bodyLarge?.copyWith(
         color: colorScheme.onSurface,
@@ -326,7 +326,7 @@ class TrainingProgramPage extends HookConsumerWidget {
         vertical: AppTheme.spacing.sm,
       ),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withAlpha(76),
         borderRadius: BorderRadius.circular(AppTheme.radii.md),
       ),
       child: Row(
@@ -342,7 +342,7 @@ class TrainingProgramPage extends HookConsumerWidget {
             value: value,
             onChanged: onChanged,
             activeColor: colorScheme.primary,
-            activeTrackColor: colorScheme.primaryContainer,
+            activeTrackColor: colorScheme.primaryContainer.withAlpha(76),
           ),
         ],
       ),
@@ -394,10 +394,10 @@ class TrainingProgramPage extends HookConsumerWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isPrimary
-              ? [colorScheme.primary, colorScheme.primary.withOpacity(0.8)]
+              ? [colorScheme.primary, colorScheme.primary.withAlpha(204)]
               : [
                   colorScheme.surfaceContainerHighest,
-                  colorScheme.surfaceContainerHighest.withOpacity(0.8)
+                  colorScheme.surfaceContainerHighest.withAlpha(204)
                 ],
         ),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
@@ -454,7 +454,7 @@ class TrainingProgramPage extends HookConsumerWidget {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withAlpha(26),
         ),
         boxShadow: AppTheme.elevations.small,
       ),

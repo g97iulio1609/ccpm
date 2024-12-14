@@ -108,19 +108,19 @@ class AppInput extends StatelessWidget {
           style: theme.textTheme.bodyLarge?.copyWith(
             color: enabled
                 ? colorScheme.onSurface
-                : colorScheme.onSurface.withOpacity(0.5),
+                : colorScheme.onSurface.withAlpha(128),
           ),
           decoration: InputDecoration(
             hintText: hintText,
             hintStyle: theme.textTheme.bodyLarge?.copyWith(
-              color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+              color: colorScheme.onSurfaceVariant.withAlpha(128),
             ),
             prefixIcon: prefixIcon != null
                 ? Icon(
                     prefixIcon,
                     color: enabled
                         ? colorScheme.primary
-                        : colorScheme.onSurfaceVariant.withOpacity(0.5),
+                        : colorScheme.onSurfaceVariant.withAlpha(128),
                     size: 20,
                   )
                 : null,
@@ -131,7 +131,7 @@ class AppInput extends StatelessWidget {
             ),
             filled: true,
             fillColor: enabled
-                ? colorScheme.surfaceContainerHighest.withOpacity(0.3)
+                ? colorScheme.surfaceContainerHighest.withAlpha(76)
                 : colorScheme.surfaceContainerHighest.withOpacity(0.1),
             contentPadding: EdgeInsets.symmetric(
               horizontal: AppTheme.spacing.md,

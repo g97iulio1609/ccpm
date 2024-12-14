@@ -43,10 +43,12 @@ class AppRow extends StatelessWidget {
       children: [
         Container(
           decoration: BoxDecoration(
-            color: backgroundColor ?? (isSelected 
-                ? colorScheme.primaryContainer.withOpacity(0.3)
-                : colorScheme.surfaceContainerHighest.withOpacity(0.3)),
-            borderRadius: borderRadius ?? BorderRadius.circular(AppTheme.radii.lg),
+            color: backgroundColor ??
+                (isSelected
+                    ? colorScheme.primaryContainer.withAlpha(76)
+                    : colorScheme.surfaceContainerHighest.withAlpha(76)),
+            borderRadius:
+                borderRadius ?? BorderRadius.circular(AppTheme.radii.lg),
             border: Border.all(
               color: isSelected
                   ? colorScheme.primary
@@ -59,7 +61,8 @@ class AppRow extends StatelessWidget {
             child: InkWell(
               onTap: enabled ? onTap : null,
               onLongPress: enabled ? onLongPress : null,
-              borderRadius: borderRadius ?? BorderRadius.circular(AppTheme.radii.lg),
+              borderRadius:
+                  borderRadius ?? BorderRadius.circular(AppTheme.radii.lg),
               child: Padding(
                 padding: contentPadding ?? EdgeInsets.all(AppTheme.spacing.lg),
                 child: Row(
@@ -76,9 +79,12 @@ class AppRow extends StatelessWidget {
                             Text(
                               title!,
                               style: theme.textTheme.titleMedium?.copyWith(
-                                color: enabled 
-                                    ? (isSelected ? colorScheme.primary : colorScheme.onSurface)
-                                    : colorScheme.onSurfaceVariant.withOpacity(0.5),
+                                color: enabled
+                                    ? (isSelected
+                                        ? colorScheme.primary
+                                        : colorScheme.onSurface)
+                                    : colorScheme.onSurfaceVariant
+                                        .withAlpha(128),
                                 fontWeight: isSelected ? FontWeight.w600 : null,
                               ),
                             ),
@@ -90,7 +96,8 @@ class AppRow extends StatelessWidget {
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: enabled
                                     ? colorScheme.onSurfaceVariant
-                                    : colorScheme.onSurfaceVariant.withOpacity(0.5),
+                                    : colorScheme.onSurfaceVariant
+                                        .withAlpha(128),
                               ),
                             ),
                         ],
@@ -103,9 +110,9 @@ class AppRow extends StatelessWidget {
                     if (actions != null) ...[
                       SizedBox(width: AppTheme.spacing.md),
                       ...actions!.map((action) => Padding(
-                        padding: EdgeInsets.only(left: AppTheme.spacing.sm),
-                        child: action,
-                      )),
+                            padding: EdgeInsets.only(left: AppTheme.spacing.sm),
+                            child: action,
+                          )),
                     ],
                   ],
                 ),
@@ -213,4 +220,4 @@ class _Badge extends StatelessWidget {
       ),
     );
   }
-} 
+}

@@ -57,9 +57,9 @@ class AppSlider extends StatelessWidget {
                   Text(
                     label,
                     style: theme.textTheme.labelMedium?.copyWith(
-                      color: enabled 
+                      color: enabled
                           ? colorScheme.onSurfaceVariant
-                          : colorScheme.onSurfaceVariant.withOpacity(0.5),
+                          : colorScheme.onSurfaceVariant.withAlpha(128),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -69,8 +69,8 @@ class AppSlider extends StatelessWidget {
                       helperText!,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: enabled
-                            ? colorScheme.onSurfaceVariant.withOpacity(0.7)
-                            : colorScheme.onSurfaceVariant.withOpacity(0.5),
+                            ? colorScheme.onSurfaceVariant.withAlpha(179)
+                            : colorScheme.onSurfaceVariant.withAlpha(128),
                       ),
                     ),
                   ],
@@ -84,16 +84,17 @@ class AppSlider extends StatelessWidget {
               ),
               decoration: BoxDecoration(
                 color: enabled
-                    ? colorScheme.primaryContainer.withOpacity(0.3)
-                    : colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                    ? colorScheme.primaryContainer.withAlpha(76)
+                    : colorScheme.surfaceContainerHighest.withAlpha(76),
                 borderRadius: BorderRadius.circular(AppTheme.radii.full),
               ),
               child: Text(
-                valueLabel?.call(value) ?? value.toStringAsFixed(divisions != null ? 0 : 1),
+                valueLabel?.call(value) ??
+                    value.toStringAsFixed(divisions != null ? 0 : 1),
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: enabled
                       ? colorScheme.primary
-                      : colorScheme.onSurfaceVariant.withOpacity(0.5),
+                      : colorScheme.onSurfaceVariant.withAlpha(128),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -112,25 +113,28 @@ class AppSlider extends StatelessWidget {
           data: SliderThemeData(
             trackHeight: 4,
             activeTrackColor: enabled
-                ? (activeColor ?? colorScheme.primary).withOpacity(0.3)
-                : colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                ? (activeColor ?? colorScheme.primary).withAlpha(76)
+                : colorScheme.surfaceContainerHighest.withAlpha(76),
             inactiveTrackColor: enabled
-                ? (inactiveColor ?? colorScheme.surfaceContainerHighest).withOpacity(0.3)
+                ? (inactiveColor ?? colorScheme.surfaceContainerHighest)
+                    .withAlpha(76)
                 : colorScheme.surfaceContainerHighest.withOpacity(0.1),
             thumbColor: enabled
                 ? activeColor ?? colorScheme.primary
                 : colorScheme.surfaceContainerHighest,
-            overlayColor: (activeColor ?? colorScheme.primary).withOpacity(0.12),
+            overlayColor:
+                (activeColor ?? colorScheme.primary).withOpacity(0.12),
             valueIndicatorColor: colorScheme.primaryContainer,
             valueIndicatorTextStyle: theme.textTheme.labelMedium?.copyWith(
               color: colorScheme.onPrimaryContainer,
             ),
             tickMarkShape: const RoundSliderTickMarkShape(),
             activeTickMarkColor: enabled
-                ? (activeColor ?? colorScheme.primary).withOpacity(0.5)
-                : colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                ? (activeColor ?? colorScheme.primary).withAlpha(128)
+                : colorScheme.surfaceContainerHighest.withAlpha(76),
             inactiveTickMarkColor: enabled
-                ? (inactiveColor ?? colorScheme.surfaceContainerHighest).withOpacity(0.3)
+                ? (inactiveColor ?? colorScheme.surfaceContainerHighest)
+                    .withAlpha(76)
                 : colorScheme.surfaceContainerHighest.withOpacity(0.1),
           ),
           child: Slider(
@@ -289,9 +293,9 @@ class AppRangeSlider extends StatelessWidget {
                   Text(
                     label,
                     style: theme.textTheme.labelMedium?.copyWith(
-                      color: enabled 
+                      color: enabled
                           ? colorScheme.onSurfaceVariant
-                          : colorScheme.onSurfaceVariant.withOpacity(0.5),
+                          : colorScheme.onSurfaceVariant.withAlpha(128),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -302,7 +306,7 @@ class AppRangeSlider extends StatelessWidget {
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: enabled
                             ? colorScheme.onSurfaceVariant.withOpacity(0.7)
-                            : colorScheme.onSurfaceVariant.withOpacity(0.5),
+                            : colorScheme.onSurfaceVariant.withAlpha(128),
                       ),
                     ),
                   ],
@@ -316,17 +320,17 @@ class AppRangeSlider extends StatelessWidget {
               ),
               decoration: BoxDecoration(
                 color: enabled
-                    ? colorScheme.primaryContainer.withOpacity(0.3)
-                    : colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                    ? colorScheme.primaryContainer.withAlpha(76)
+                    : colorScheme.surfaceContainerHighest.withAlpha(76),
                 borderRadius: BorderRadius.circular(AppTheme.radii.full),
               ),
               child: Text(
-                valueLabel?.call(values.start, values.end) ?? 
+                valueLabel?.call(values.start, values.end) ??
                     '${values.start.toStringAsFixed(divisions != null ? 0 : 1)} - ${values.end.toStringAsFixed(divisions != null ? 0 : 1)}',
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: enabled
                       ? colorScheme.primary
-                      : colorScheme.onSurfaceVariant.withOpacity(0.5),
+                      : colorScheme.onSurfaceVariant.withAlpha(128),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -345,25 +349,28 @@ class AppRangeSlider extends StatelessWidget {
           data: SliderThemeData(
             trackHeight: 4,
             activeTrackColor: enabled
-                ? (activeColor ?? colorScheme.primary).withOpacity(0.3)
-                : colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                ? (activeColor ?? colorScheme.primary).withAlpha(76)
+                : colorScheme.surfaceContainerHighest.withAlpha(76),
             inactiveTrackColor: enabled
-                ? (inactiveColor ?? colorScheme.surfaceContainerHighest).withOpacity(0.3)
+                ? (inactiveColor ?? colorScheme.surfaceContainerHighest)
+                    .withAlpha(76)
                 : colorScheme.surfaceContainerHighest.withOpacity(0.1),
             thumbColor: enabled
                 ? activeColor ?? colorScheme.primary
                 : colorScheme.surfaceContainerHighest,
-            overlayColor: (activeColor ?? colorScheme.primary).withOpacity(0.12),
+            overlayColor:
+                (activeColor ?? colorScheme.primary).withOpacity(0.12),
             valueIndicatorColor: colorScheme.primaryContainer,
             valueIndicatorTextStyle: theme.textTheme.labelMedium?.copyWith(
               color: colorScheme.onPrimaryContainer,
             ),
             tickMarkShape: const RoundSliderTickMarkShape(),
             activeTickMarkColor: enabled
-                ? (activeColor ?? colorScheme.primary).withOpacity(0.5)
-                : colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                ? (activeColor ?? colorScheme.primary).withAlpha(128)
+                : colorScheme.surfaceContainerHighest.withAlpha(76),
             inactiveTickMarkColor: enabled
-                ? (inactiveColor ?? colorScheme.surfaceContainerHighest).withOpacity(0.3)
+                ? (inactiveColor ?? colorScheme.surfaceContainerHighest)
+                    .withAlpha(76)
                 : colorScheme.surfaceContainerHighest.withOpacity(0.1),
           ),
           child: RangeSlider(
@@ -378,4 +385,4 @@ class AppRangeSlider extends StatelessWidget {
       ],
     );
   }
-} 
+}

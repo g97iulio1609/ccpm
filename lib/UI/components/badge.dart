@@ -85,13 +85,13 @@ class AppBadge extends StatelessWidget {
           );
         case AppBadgeVariant.outline:
           return BoxDecoration(
-            color: badgeColor.withOpacity(0.1),
+            color: badgeColor.withAlpha(26),
             border: Border.all(color: badgeColor),
             borderRadius: BorderRadius.circular(AppTheme.radii.full),
           );
         case AppBadgeVariant.subtle:
           return BoxDecoration(
-            color: badgeColor.withOpacity(0.1),
+            color: badgeColor.withAlpha(51),
             borderRadius: BorderRadius.circular(AppTheme.radii.full),
           );
         case AppBadgeVariant.gradient:

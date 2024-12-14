@@ -37,10 +37,10 @@ class AddExerciseDialog extends HookConsumerWidget {
     }) {
       return Container(
         decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest.withOpacity(0.1),
+          color: colorScheme.surfaceContainerHighest.withAlpha(26),
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           border: Border.all(
-            color: colorScheme.outline.withOpacity(0.1),
+            color: colorScheme.outline.withAlpha(26),
           ),
         ),
         child: TextFormField(
@@ -168,7 +168,7 @@ class AddExerciseDialog extends HookConsumerWidget {
         error: (error, stack) => Container(
           padding: const EdgeInsets.all(16.0),
           decoration: BoxDecoration(
-            color: colorScheme.errorContainer.withOpacity(0.1),
+            color: colorScheme.errorContainer.withAlpha(26),
             borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           ),
           child: Row(
@@ -222,7 +222,7 @@ class AddExerciseDialog extends HookConsumerWidget {
         error: (error, stack) => Container(
           padding: const EdgeInsets.all(16.0),
           decoration: BoxDecoration(
-            color: colorScheme.errorContainer.withOpacity(0.1),
+            color: colorScheme.errorContainer.withAlpha(26),
             borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           ),
           child: Row(
@@ -252,7 +252,7 @@ class AddExerciseDialog extends HookConsumerWidget {
       leading: Container(
         padding: EdgeInsets.all(AppTheme.spacing.sm),
         decoration: BoxDecoration(
-          color: colorScheme.primaryContainer.withOpacity(0.3),
+          color: colorScheme.primaryContainer.withAlpha(76),
           borderRadius: BorderRadius.circular(AppTheme.radii.md),
         ),
         child: Icon(

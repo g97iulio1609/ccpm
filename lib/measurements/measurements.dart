@@ -79,7 +79,7 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withOpacity(0.5),
+              colorScheme.surfaceContainerHighest.withAlpha(128),
             ],
           ),
         ),
@@ -109,7 +109,7 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withAlpha(26),
         ),
         boxShadow: AppTheme.elevations.small,
       ),
@@ -142,7 +142,7 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
             Icon(
               Icons.person_search,
               size: 64,
-              color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+              color: colorScheme.onSurfaceVariant.withAlpha(128),
             ),
             SizedBox(height: AppTheme.spacing.md),
             Text(
@@ -194,13 +194,13 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
           gradient: LinearGradient(
             colors: [
               colorScheme.primary,
-              colorScheme.primary.withOpacity(0.8),
+              colorScheme.primary.withAlpha(204),
             ],
           ),
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           boxShadow: [
             BoxShadow(
-              color: colorScheme.primary.withOpacity(0.2),
+              color: colorScheme.primary.withAlpha(51),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -307,7 +307,7 @@ class _MeasurementsContent extends ConsumerWidget {
   Widget _buildMeasurementCards(
       ThemeData theme, ColorScheme colorScheme, WidgetRef ref) {
     final measurementsAsync = ref.watch(measurementsProvider(userId));
-    
+
     return measurementsAsync.when(
       data: (measurements) {
         if (measurements.isEmpty) {
@@ -315,7 +315,8 @@ class _MeasurementsContent extends ConsumerWidget {
         }
 
         final referenceMeasurement = measurements.first;
-        final previousMeasurementsAsync = ref.watch(previousMeasurementsProvider);
+        final previousMeasurementsAsync =
+            ref.watch(previousMeasurementsProvider);
 
         return previousMeasurementsAsync.when(
           data: (previousMeasurements) {
@@ -335,9 +336,11 @@ class _MeasurementsContent extends ConsumerWidget {
               itemCount: MeasurementConstants.measurementLabels.length,
               itemBuilder: (context, index) {
                 final width = MediaQuery.of(context).size.width / 2.5;
-                final entry = MeasurementConstants.measurementLabels.entries.toList()[index];
+                final entry = MeasurementConstants.measurementLabels.entries
+                    .toList()[index];
 
-                final value = _getMeasurementValue(referenceMeasurement, entry.key);
+                final value =
+                    _getMeasurementValue(referenceMeasurement, entry.key);
 
                 return SizedBox(
                   width: width,
@@ -348,18 +351,22 @@ class _MeasurementsContent extends ConsumerWidget {
                     icon: MeasurementConstants.measurementIcons[entry.key]!,
                     status: _getMeasurementStatus(ref, entry.key, value ?? 0),
                     comparisonValues: _calculateComparisonValues(
-                        referenceMeasurement, filteredPreviousMeasurements, entry.key),
+                        referenceMeasurement,
+                        filteredPreviousMeasurements,
+                        entry.key),
                   ),
                 );
               },
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stack) => Center(child: Text('Error loading previous measurements: $error')),
+          error: (error, stack) => Center(
+              child: Text('Error loading previous measurements: $error')),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(child: Text('Error loading measurements: $error')),
+      error: (error, stack) =>
+          Center(child: Text('Error loading measurements: $error')),
     );
   }
 

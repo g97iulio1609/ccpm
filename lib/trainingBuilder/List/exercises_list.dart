@@ -171,7 +171,7 @@ class BulkSeriesSelectionDialog extends HookConsumerWidget {
       leading: Container(
         padding: EdgeInsets.all(AppTheme.spacing.sm),
         decoration: BoxDecoration(
-          color: colorScheme.primaryContainer.withOpacity(0.3),
+          color: colorScheme.primaryContainer.withAlpha(76),
           borderRadius: BorderRadius.circular(AppTheme.radii.md),
         ),
         child: Icon(
@@ -233,7 +233,7 @@ class BulkSeriesSelectionDialog extends HookConsumerWidget {
                   secondary: Container(
                     padding: EdgeInsets.all(AppTheme.spacing.xs),
                     decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer.withOpacity(0.3),
+                      color: colorScheme.primaryContainer.withAlpha(76),
                       borderRadius: BorderRadius.circular(AppTheme.radii.md),
                     ),
                     child: Text(
@@ -293,7 +293,6 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
               exerciseId: exercise.exerciseId!,
             );
             weights[exercise.exerciseId!] = record?.maxWeight ?? 0;
-
           }
         }
         maxWeights.value = weights;
@@ -476,7 +475,7 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
       leading: Container(
         padding: EdgeInsets.all(AppTheme.spacing.sm),
         decoration: BoxDecoration(
-          color: colorScheme.primaryContainer.withOpacity(0.3),
+          color: colorScheme.primaryContainer.withAlpha(76),
           borderRadius: BorderRadius.circular(AppTheme.radii.md),
         ),
         child: Icon(
@@ -540,7 +539,9 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
 
               exercise.series = newSeries;
             }
-            ref.read(bulkSeriesControllersProvider.notifier).updateControllersForExercises(exercises);
+            ref
+                .read(bulkSeriesControllersProvider.notifier)
+                .updateControllersForExercises(exercises);
 
             Navigator.pop(context);
             ScaffoldMessenger.of(context).showSnackBar(
@@ -859,8 +860,7 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
                               vertical: AppTheme.spacing.xs,
                             ),
                             decoration: BoxDecoration(
-                              color:
-                                  colorScheme.primaryContainer.withOpacity(0.3),
+                              color: colorScheme.primaryContainer.withAlpha(76),
                               borderRadius:
                                   BorderRadius.circular(AppTheme.radii.xxl),
                             ),
@@ -1053,7 +1053,7 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
         leading: Container(
           padding: EdgeInsets.all(AppTheme.spacing.sm),
           decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withOpacity(0.3),
+            color: colorScheme.primaryContainer.withAlpha(76),
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
           child: Icon(
@@ -1537,7 +1537,9 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
         programId == null ||
         weekId == null ||
         workoutId == null ||
-        exerciseId == null) return;
+        exerciseId == null) {
+      return;
+    }
 
     context.go(
         '/user_programs/training_viewer/week_details/workout_details/exercise_details',

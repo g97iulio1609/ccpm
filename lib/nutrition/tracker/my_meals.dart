@@ -165,7 +165,7 @@ class FavouritesMeals extends ConsumerWidget {
               Container(
                 padding: EdgeInsets.all(AppTheme.spacing.md),
                 decoration: BoxDecoration(
-                  color: colorScheme.primary.withOpacity(0.1),
+                  color: colorScheme.primary.withAlpha(26),
                   borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                 ),
                 child: Icon(
@@ -395,7 +395,7 @@ class FavouriteDays extends ConsumerWidget {
               Container(
                 padding: EdgeInsets.all(AppTheme.spacing.md),
                 decoration: BoxDecoration(
-                  color: colorScheme.secondary.withOpacity(0.1),
+                  color: colorScheme.secondary.withAlpha(26),
                   borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                 ),
                 child: Icon(

@@ -167,7 +167,7 @@ class FoodListState extends ConsumerState<FoodList> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(
-            color: theme.colorScheme.outline.withOpacity(0.1),
+            color: theme.colorScheme.outline.withAlpha(26),
             width: 1,
           ),
         ),

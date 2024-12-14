@@ -45,10 +45,10 @@ class TrainingProgramWeekList extends ConsumerWidget {
       itemBuilder: (context, index) => Container(
         margin: EdgeInsets.only(bottom: AppTheme.spacing.md),
         decoration: BoxDecoration(
-          color: colorScheme.surface,
+          color: colorScheme.surfaceContainerHighest.withAlpha(76),
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           border: Border.all(
-            color: colorScheme.outline.withOpacity(0.1),
+            color: colorScheme.outline.withAlpha(26),
           ),
           boxShadow: AppTheme.elevations.small,
         ),
@@ -70,7 +70,7 @@ class TrainingProgramWeekList extends ConsumerWidget {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer.withOpacity(0.3),
+                      color: colorScheme.primaryContainer.withAlpha(76),
                       shape: BoxShape.circle,
                     ),
                     child: Center(
@@ -127,7 +127,7 @@ class TrainingProgramWeekList extends ConsumerWidget {
         leading: Container(
           padding: EdgeInsets.all(AppTheme.spacing.sm),
           decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withOpacity(0.3),
+            color: colorScheme.primaryContainer.withAlpha(76),
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
           child: Icon(

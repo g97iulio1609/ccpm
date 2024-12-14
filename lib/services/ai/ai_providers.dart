@@ -4,7 +4,6 @@ import 'package:alphanessone/services/ai/ai_keys_service.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:alphanessone/services/ai/openai_service.dart';
 import 'package:alphanessone/services/ai/gemini_service.dart';
-import 'package:logger/logger.dart';
 import 'ai_service.dart';
 import 'ai_settings_service.dart';
 import 'AIServices.dart';

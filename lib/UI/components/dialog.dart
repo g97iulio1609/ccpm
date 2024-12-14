@@ -57,7 +57,7 @@ class AppDialog extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withAlpha(76),
                 borderRadius: BorderRadius.vertical(
                   top: Radius.circular(AppTheme.radii.xl),
                 ),
@@ -133,7 +133,7 @@ class AppDialog extends StatelessWidget {
               Container(
                 padding: EdgeInsets.all(AppTheme.spacing.lg),
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                  color: colorScheme.surfaceContainerHighest.withAlpha(76),
                   borderRadius: BorderRadius.vertical(
                     bottom: Radius.circular(AppTheme.radii.xl),
                   ),
@@ -195,21 +195,30 @@ class AppDialog extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        gradient: isPrimary && !isDestructive ? LinearGradient(
-          colors: [
-            isDestructive ? colorScheme.error : colorScheme.primary,
-            (isDestructive ? colorScheme.error : colorScheme.primary).withOpacity(0.8),
-          ],
-        ) : null,
-        color: !isPrimary ? colorScheme.surfaceContainerHighest.withOpacity(0.3) : null,
+        gradient: isPrimary && !isDestructive
+            ? LinearGradient(
+                colors: [
+                  isDestructive ? colorScheme.error : colorScheme.primary,
+                  (isDestructive ? colorScheme.error : colorScheme.primary)
+                      .withAlpha(204),
+                ],
+              )
+            : null,
+        color: !isPrimary
+            ? colorScheme.surfaceContainerHighest.withAlpha(76)
+            : null,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        boxShadow: isPrimary ? [
-          BoxShadow(
-            color: (isDestructive ? colorScheme.error : colorScheme.primary).withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ] : null,
+        boxShadow: isPrimary
+            ? [
+                BoxShadow(
+                  color:
+                      (isDestructive ? colorScheme.error : colorScheme.primary)
+                          .withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : null,
       ),
       child: Material(
         color: Colors.transparent,
@@ -227,10 +236,10 @@ class AppDialog extends StatelessWidget {
                 if (icon != null) ...[
                   Icon(
                     icon,
-                    color: isPrimary 
-                        ? colorScheme.onPrimary 
-                        : isDestructive 
-                            ? colorScheme.error 
+                    color: isPrimary
+                        ? colorScheme.onPrimary
+                        : isDestructive
+                            ? colorScheme.error
                             : colorScheme.onSurfaceVariant,
                     size: 20,
                   ),
@@ -239,10 +248,10 @@ class AppDialog extends StatelessWidget {
                 Text(
                   label,
                   style: theme.textTheme.labelLarge?.copyWith(
-                    color: isPrimary 
-                        ? colorScheme.onPrimary 
-                        : isDestructive 
-                            ? colorScheme.error 
+                    color: isPrimary
+                        ? colorScheme.onPrimary
+                        : isDestructive
+                            ? colorScheme.error
                             : colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
                   ),
@@ -275,11 +284,15 @@ class AppDialog extends StatelessWidget {
         leading: Container(
           padding: EdgeInsets.all(AppTheme.spacing.sm),
           decoration: BoxDecoration(
-            color: (isDestructive ? colorScheme.error : colorScheme.primary).withOpacity(0.2),
+            color: (isDestructive ? colorScheme.error : colorScheme.primary)
+                .withOpacity(0.2),
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
           child: Icon(
-            icon ?? (isDestructive ? Icons.warning_amber_rounded : Icons.help_outline),
+            icon ??
+                (isDestructive
+                    ? Icons.warning_amber_rounded
+                    : Icons.help_outline),
             color: isDestructive ? colorScheme.error : colorScheme.primary,
             size: 24,
           ),
@@ -307,4 +320,4 @@ class AppDialog extends StatelessWidget {
       ),
     );
   }
-} 
+}

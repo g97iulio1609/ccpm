@@ -122,8 +122,8 @@ class AppRadioSelect<T> extends StatelessWidget {
       return Container(
         decoration: BoxDecoration(
           color: isSelected
-              ? colorScheme.primaryContainer.withOpacity(0.3)
-              : colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              ? colorScheme.primaryContainer.withAlpha(76)
+              : colorScheme.surfaceContainerHighest.withAlpha(76),
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           border: Border.all(
             color: isSelected
@@ -149,8 +149,10 @@ class AppRadioSelect<T> extends StatelessWidget {
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: isEnabled
-                            ? (isSelected ? colorScheme.primary : colorScheme.outline)
-                            : colorScheme.onSurfaceVariant.withOpacity(0.5),
+                            ? (isSelected
+                                ? colorScheme.primary
+                                : colorScheme.outline)
+                            : colorScheme.onSurfaceVariant.withAlpha(128),
                         width: 2,
                       ),
                     ),
@@ -163,7 +165,8 @@ class AppRadioSelect<T> extends StatelessWidget {
                                 shape: BoxShape.circle,
                                 color: isEnabled
                                     ? colorScheme.primary
-                                    : colorScheme.onSurfaceVariant.withOpacity(0.5),
+                                    : colorScheme.onSurfaceVariant
+                                        .withAlpha(128),
                               ),
                             )
                           : null,
@@ -175,8 +178,10 @@ class AppRadioSelect<T> extends StatelessWidget {
                       icon,
                       size: 20,
                       color: isEnabled
-                          ? (isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant)
-                          : colorScheme.onSurfaceVariant.withOpacity(0.5),
+                          ? (isSelected
+                              ? colorScheme.primary
+                              : colorScheme.onSurfaceVariant)
+                          : colorScheme.onSurfaceVariant.withAlpha(128),
                     ),
                     SizedBox(width: AppTheme.spacing.sm),
                   ],
@@ -184,8 +189,10 @@ class AppRadioSelect<T> extends StatelessWidget {
                     getLabel(option),
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: isEnabled
-                          ? (isSelected ? colorScheme.primary : colorScheme.onSurface)
-                          : colorScheme.onSurfaceVariant.withOpacity(0.5),
+                          ? (isSelected
+                              ? colorScheme.primary
+                              : colorScheme.onSurface)
+                          : colorScheme.onSurfaceVariant.withAlpha(128),
                       fontWeight: isSelected ? FontWeight.w600 : null,
                     ),
                   ),
@@ -228,4 +235,4 @@ class AppRadioSelect<T> extends StatelessWidget {
       spacing: spacing,
     );
   }
-} 
+}

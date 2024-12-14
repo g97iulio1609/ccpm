@@ -27,7 +27,7 @@ class AthleteSelectionDialog extends ConsumerWidget {
           color: colorScheme.surface,
           borderRadius: BorderRadius.circular(AppTheme.radii.xl),
           border: Border.all(
-            color: colorScheme.outline.withOpacity(0.1),
+            color: colorScheme.outline.withAlpha(26),
           ),
           boxShadow: AppTheme.elevations.large,
         ),
@@ -39,7 +39,7 @@ class AthleteSelectionDialog extends ConsumerWidget {
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withAlpha(76),
                 borderRadius: BorderRadius.vertical(
                   top: Radius.circular(AppTheme.radii.xl),
                 ),
@@ -52,7 +52,7 @@ class AthleteSelectionDialog extends ConsumerWidget {
                       vertical: AppTheme.spacing.xs,
                     ),
                     decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer.withOpacity(0.3),
+                      color: colorScheme.primaryContainer.withAlpha(76),
                       borderRadius: BorderRadius.circular(AppTheme.radii.full),
                     ),
                     child: Icon(
@@ -95,15 +95,18 @@ class AthleteSelectionDialog extends ConsumerWidget {
                       }
                       return StreamBuilder<List<UserModel>>(
                         stream: usersService.getUsers(),
-                        builder: (context, AsyncSnapshot<List<UserModel>> snapshot) {
+                        builder:
+                            (context, AsyncSnapshot<List<UserModel>> snapshot) {
                           if (snapshot.hasData) {
                             final users = snapshot.data!;
                             return Container(
                               decoration: BoxDecoration(
-                                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
-                                borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                                color: colorScheme.surfaceContainerHighest
+                                    .withAlpha(76),
+                                borderRadius:
+                                    BorderRadius.circular(AppTheme.radii.lg),
                                 border: Border.all(
-                                  color: colorScheme.outline.withOpacity(0.1),
+                                  color: colorScheme.outline.withAlpha(26),
                                 ),
                               ),
                               child: TypeAheadField<UserModel>(
@@ -120,15 +123,18 @@ class AthleteSelectionDialog extends ConsumerWidget {
                                     decoration: BoxDecoration(
                                       border: Border(
                                         bottom: BorderSide(
-                                          color: colorScheme.outline.withOpacity(0.1),
+                                          color:
+                                              colorScheme.outline.withAlpha(26),
                                         ),
                                       ),
                                     ),
                                     child: ListTile(
                                       leading: Container(
-                                        padding: EdgeInsets.all(AppTheme.spacing.xs),
+                                        padding:
+                                            EdgeInsets.all(AppTheme.spacing.xs),
                                         decoration: BoxDecoration(
-                                          color: colorScheme.primaryContainer.withOpacity(0.3),
+                                          color: colorScheme.primaryContainer
+                                              .withAlpha(76),
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(
@@ -139,7 +145,8 @@ class AthleteSelectionDialog extends ConsumerWidget {
                                       ),
                                       title: Text(
                                         suggestion.name,
-                                        style: theme.textTheme.bodyLarge?.copyWith(
+                                        style:
+                                            theme.textTheme.bodyLarge?.copyWith(
                                           color: colorScheme.onSurface,
                                         ),
                                       ),
@@ -155,7 +162,8 @@ class AthleteSelectionDialog extends ConsumerWidget {
                                   child: Text(
                                     'Nessun atleta trovato',
                                     style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: colorScheme.surfaceContainerHighest,
+                                      color:
+                                          colorScheme.surfaceContainerHighest,
                                     ),
                                   ),
                                 ),
@@ -170,7 +178,8 @@ class AthleteSelectionDialog extends ConsumerWidget {
                                 },
                                 controller: athleteNameController,
                                 focusNode: focusNode,
-                                builder: (context, suggestionsController, focusNode) {
+                                builder: (context, suggestionsController,
+                                    focusNode) {
                                   return TextFormField(
                                     controller: athleteNameController,
                                     focusNode: focusNode,
@@ -179,8 +188,11 @@ class AthleteSelectionDialog extends ConsumerWidget {
                                     ),
                                     decoration: InputDecoration(
                                       hintText: 'Cerca atleta...',
-                                      hintStyle: theme.textTheme.bodyLarge?.copyWith(
-                                        color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                                      hintStyle:
+                                          theme.textTheme.bodyLarge?.copyWith(
+                                        color: colorScheme
+                                            .surfaceContainerHighest
+                                            .withOpacity(0.5),
                                       ),
                                       prefixIcon: Icon(
                                         Icons.search,
@@ -188,7 +200,8 @@ class AthleteSelectionDialog extends ConsumerWidget {
                                         size: 20,
                                       ),
                                       border: InputBorder.none,
-                                      contentPadding: EdgeInsets.all(AppTheme.spacing.md),
+                                      contentPadding:
+                                          EdgeInsets.all(AppTheme.spacing.md),
                                     ),
                                   );
                                 },
@@ -220,7 +233,7 @@ class AthleteSelectionDialog extends ConsumerWidget {
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withAlpha(76),
                 borderRadius: BorderRadius.vertical(
                   bottom: Radius.circular(AppTheme.radii.xl),
                 ),
@@ -249,7 +262,7 @@ class AthleteSelectionDialog extends ConsumerWidget {
                       gradient: LinearGradient(
                         colors: [
                           colorScheme.primary,
-                          colorScheme.primary.withOpacity(0.8),
+                          colorScheme.primary.withAlpha(204),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(AppTheme.radii.lg),

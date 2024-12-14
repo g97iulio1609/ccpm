@@ -845,7 +845,7 @@ class TrainingExtension implements AIExtension {
 
       if (weight != null) {
         if (maxWeight != null) {
-          response += ' @${minWeight}-${maxWeight}kg';
+          response += ' @$minWeight-${maxWeight}kg';
         } else {
           response += ' @${minWeight}kg';
         }

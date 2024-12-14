@@ -197,7 +197,7 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen>
                 icon: const Icon(Icons.refresh),
                 label: const Text('Riprova'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.error.withOpacity(0.1),
+                  backgroundColor: AppTheme.error.withAlpha(26),
                   foregroundColor: AppTheme.error,
                 ),
               ),
@@ -227,8 +227,8 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen>
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      AppTheme.primaryGold.withOpacity(0.15),
-                      AppTheme.primaryGoldLight.withOpacity(0.05),
+                      AppTheme.primaryGold.withAlpha(38),
+                      AppTheme.primaryGoldLight.withAlpha(13),
                     ],
                   ),
                 ),
@@ -305,7 +305,7 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen>
           Container(
             padding: EdgeInsets.all(AppTheme.spacing.sm),
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.1),
+              color: theme.colorScheme.primary.withAlpha(26),
               borderRadius: BorderRadius.circular(AppTheme.radii.md),
             ),
             child: Icon(
@@ -377,7 +377,7 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen>
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  colorScheme.surface,
+                  colorScheme.surface.withAlpha(242),
                   colorScheme.surface.withOpacity(0.95),
                 ],
               )

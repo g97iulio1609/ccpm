@@ -36,7 +36,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withOpacity(0.5),
+              colorScheme.surfaceContainerHighest.withAlpha(128),
             ],
             stops: const [0.0, 1.0],
           ),
@@ -70,7 +70,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withAlpha(26),
         ),
         boxShadow: AppTheme.elevations.small,
       ),
@@ -109,7 +109,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
                   Icon(
                     Icons.error_outline,
                     size: 64,
-                    color: colorScheme.error.withOpacity(0.5),
+                    color: colorScheme.error.withAlpha(128),
                   ),
                   SizedBox(height: AppTheme.spacing.md),
                   Text(
@@ -149,7 +149,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
                   Icon(
                     Icons.group_outlined,
                     size: 64,
-                    color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                    color: colorScheme.onSurfaceVariant.withAlpha(128),
                   ),
                   SizedBox(height: AppTheme.spacing.md),
                   Text(
@@ -202,7 +202,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withAlpha(26),
         ),
         boxShadow: AppTheme.elevations.small,
       ),
@@ -222,7 +222,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer.withOpacity(0.3),
+                    color: colorScheme.primaryContainer.withAlpha(76),
                     shape: BoxShape.circle,
                     image: user.photoURL.isNotEmpty
                         ? DecorationImage(
@@ -280,7 +280,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
                     vertical: AppTheme.spacing.xs,
                   ),
                   decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer.withOpacity(0.3),
+                    color: colorScheme.primaryContainer.withAlpha(76),
                     borderRadius: BorderRadius.circular(AppTheme.radii.sm),
                   ),
                   child: Text(
@@ -345,7 +345,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
           decoration: BoxDecoration(
             color: isDestructive
                 ? colorScheme.errorContainer.withOpacity(0.2)
-                : colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                : colorScheme.surfaceContainerHighest.withAlpha(76),
             borderRadius: BorderRadius.circular(AppTheme.radii.full),
           ),
           child: Row(

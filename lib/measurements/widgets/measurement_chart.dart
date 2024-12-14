@@ -60,7 +60,7 @@ class MeasurementChart extends StatelessWidget {
           Icon(
             Icons.show_chart,
             size: 64,
-            color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+            color: colorScheme.onSurfaceVariant.withAlpha(128),
           ),
           SizedBox(height: AppTheme.spacing.md),
           Text(
@@ -74,7 +74,7 @@ class MeasurementChart extends StatelessWidget {
           Text(
             'Aggiungi nuove misurazioni per visualizzare il grafico',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+              color: colorScheme.onSurfaceVariant.withAlpha(179),
             ),
             textAlign: TextAlign.center,
           ),
@@ -88,11 +88,11 @@ class MeasurementChart extends StatelessWidget {
       show: true,
       drawVerticalLine: true,
       getDrawingHorizontalLine: (value) => FlLine(
-        color: colorScheme.outlineVariant.withOpacity(0.2),
+        color: colorScheme.outlineVariant.withAlpha(51),
         strokeWidth: 1,
       ),
       getDrawingVerticalLine: (value) => FlLine(
-        color: colorScheme.outlineVariant.withOpacity(0.2),
+        color: colorScheme.outlineVariant.withAlpha(51),
         strokeWidth: 1,
       ),
     );
@@ -147,7 +147,7 @@ class MeasurementChart extends StatelessWidget {
     return FlBorderData(
       show: true,
       border: Border.all(
-        color: colorScheme.outlineVariant.withOpacity(0.2),
+        color: colorScheme.outlineVariant.withAlpha(51),
         width: 1,
       ),
     );
@@ -197,7 +197,7 @@ class MeasurementChart extends StatelessWidget {
         show: true,
         getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
           radius: ChartConfig.dotRadius,
-          color: color,
+          color: color.withAlpha(26),
           strokeWidth: 2,
           strokeColor: Colors.white,
         ),
@@ -211,7 +211,7 @@ class MeasurementChart extends StatelessWidget {
       touchTooltipData: LineTouchTooltipData(
         tooltipRoundedRadius: AppTheme.radii.md,
         tooltipBorder: BorderSide(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withAlpha(26),
         ),
         tooltipPadding: EdgeInsets.all(AppTheme.spacing.sm),
         tooltipMargin: AppTheme.spacing.sm,
@@ -272,10 +272,10 @@ class MeasurementChart extends StatelessWidget {
         vertical: AppTheme.spacing.xs,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withAlpha(51),
         borderRadius: BorderRadius.circular(AppTheme.radii.full),
         border: Border.all(
-          color: color.withOpacity(0.2),
+          color: color.withAlpha(51),
         ),
       ),
       child: Row(

@@ -63,7 +63,7 @@ class _MeasurementFormState extends ConsumerState<MeasurementForm> {
 
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surface,
+        color: colorScheme.surfaceContainerHighest.withAlpha(76),
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(AppTheme.radii.xl),
         ),
@@ -86,7 +86,7 @@ class _MeasurementFormState extends ConsumerState<MeasurementForm> {
     return Container(
       padding: EdgeInsets.all(AppTheme.spacing.lg),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withAlpha(76),
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(AppTheme.radii.xl),
         ),
@@ -99,7 +99,7 @@ class _MeasurementFormState extends ConsumerState<MeasurementForm> {
               vertical: AppTheme.spacing.xs,
             ),
             decoration: BoxDecoration(
-              color: colorScheme.primaryContainer.withOpacity(0.3),
+              color: colorScheme.primaryContainer.withAlpha(76),
               borderRadius: BorderRadius.circular(AppTheme.radii.full),
             ),
             child: Icon(
@@ -164,7 +164,7 @@ class _MeasurementFormState extends ConsumerState<MeasurementForm> {
         Text(
           'Data',
           style: theme.textTheme.labelMedium?.copyWith(
-            color: colorScheme.onSurfaceVariant,
+            color: colorScheme.onSurfaceVariant.withAlpha(128),
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -174,10 +174,10 @@ class _MeasurementFormState extends ConsumerState<MeasurementForm> {
           child: Container(
             padding: EdgeInsets.all(AppTheme.spacing.md),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              color: colorScheme.surfaceContainerHighest.withAlpha(76),
               borderRadius: BorderRadius.circular(AppTheme.radii.lg),
               border: Border.all(
-                color: colorScheme.outline.withOpacity(0.1),
+                color: colorScheme.outline.withAlpha(26),
               ),
             ),
             child: Row(
@@ -217,17 +217,17 @@ class _MeasurementFormState extends ConsumerState<MeasurementForm> {
         Text(
           label,
           style: theme.textTheme.labelMedium?.copyWith(
-            color: colorScheme.onSurfaceVariant,
+            color: colorScheme.onSurfaceVariant.withAlpha(128),
             fontWeight: FontWeight.w500,
           ),
         ),
         SizedBox(height: AppTheme.spacing.xs),
         Container(
           decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+            color: colorScheme.surfaceContainerHighest.withAlpha(76),
             borderRadius: BorderRadius.circular(AppTheme.radii.lg),
             border: Border.all(
-              color: colorScheme.outline.withOpacity(0.1),
+              color: colorScheme.outline.withAlpha(26),
             ),
           ),
           child: TextFormField(
@@ -276,7 +276,7 @@ class _MeasurementFormState extends ConsumerState<MeasurementForm> {
     return Container(
       padding: EdgeInsets.all(AppTheme.spacing.lg),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withAlpha(76),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
@@ -301,7 +301,7 @@ class _MeasurementFormState extends ConsumerState<MeasurementForm> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  colorScheme.primary,
+                  colorScheme.primary.withAlpha(204),
                   colorScheme.primary.withOpacity(0.8),
                 ],
               ),

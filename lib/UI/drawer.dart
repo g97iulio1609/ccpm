@@ -55,7 +55,7 @@ class CustomDrawer extends ConsumerWidget {
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withOpacity(0.5),
+              colorScheme.surfaceContainerHighest.withAlpha(128),
             ],
             stops: const [0.0, 1.0],
           ),
@@ -98,8 +98,8 @@ class CustomDrawer extends ConsumerWidget {
                                 vertical: AppTheme.spacing.xs,
                               ),
                               decoration: BoxDecoration(
-                                color: colorScheme.primaryContainer
-                                    .withOpacity(0.3),
+                                color:
+                                    colorScheme.primaryContainer.withAlpha(76),
                                 borderRadius:
                                     BorderRadius.circular(AppTheme.radii.full),
                               ),
@@ -168,7 +168,7 @@ class CustomDrawer extends ConsumerWidget {
       margin: EdgeInsets.only(bottom: AppTheme.spacing.sm),
       decoration: BoxDecoration(
         color: isSelected
-            ? colorScheme.primaryContainer.withOpacity(0.3)
+            ? colorScheme.primaryContainer.withAlpha(76)
             : Colors.transparent,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
       ),
@@ -189,7 +189,7 @@ class CustomDrawer extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: isSelected
                         ? colorScheme.primary.withOpacity(0.2)
-                        : colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                        : colorScheme.surfaceContainerHighest.withAlpha(76),
                     borderRadius: BorderRadius.circular(AppTheme.radii.md),
                   ),
                   child: Icon(
@@ -298,7 +298,7 @@ class CustomDrawer extends ConsumerWidget {
         leading: Container(
           padding: EdgeInsets.all(AppTheme.spacing.sm),
           decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withOpacity(0.3),
+            color: colorScheme.primaryContainer.withAlpha(76),
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
           child: Icon(
@@ -374,7 +374,7 @@ class CustomDrawer extends ConsumerWidget {
                           padding: EdgeInsets.all(AppTheme.spacing.xs),
                           decoration: BoxDecoration(
                             color: colorScheme.surfaceContainerHighest
-                                .withOpacity(0.3),
+                                .withAlpha(76),
                             borderRadius:
                                 BorderRadius.circular(AppTheme.radii.md),
                           ),
@@ -427,7 +427,7 @@ class CustomDrawer extends ConsumerWidget {
               Container(
                 padding: EdgeInsets.all(AppTheme.spacing.md),
                 decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withOpacity(0.3),
+                  color: colorScheme.primaryContainer.withAlpha(76),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -483,7 +483,7 @@ class CustomDrawer extends ConsumerWidget {
               Container(
                 padding: EdgeInsets.all(AppTheme.spacing.sm),
                 decoration: BoxDecoration(
-                  color: colorScheme.errorContainer.withOpacity(0.3),
+                  color: colorScheme.errorContainer.withAlpha(76),
                   borderRadius: BorderRadius.circular(AppTheme.radii.md),
                 ),
                 child: Icon(

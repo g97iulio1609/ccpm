@@ -121,7 +121,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
               end: Alignment.bottomRight,
               colors: [
                 colorScheme.surface,
-                colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                colorScheme.surfaceContainerHighest.withAlpha(128),
               ],
               stops: const [0.0, 1.0],
             ),

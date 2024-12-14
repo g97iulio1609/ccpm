@@ -62,11 +62,11 @@ class TimerPageState extends ConsumerState<TimerPage>
     final timerModel = ref.read(timerModelProvider);
     if (timerModel != null) {
       final nextSeriesIndex = timerModel.currentSeriesIndex + 1;
-      
+
       if (nextSeriesIndex < timerModel.totalSeries) {
         final result = {
           'startIndex': nextSeriesIndex,
-          'superSetExerciseIndex': 0,  // Reset to first exercise in superset
+          'superSetExerciseIndex': 0, // Reset to first exercise in superset
         };
         context.pop(result);
       } else {
@@ -85,11 +85,11 @@ class TimerPageState extends ConsumerState<TimerPage>
     final timerModel = ref.read(timerModelProvider);
     if (timerModel != null) {
       final nextSeriesIndex = timerModel.currentSeriesIndex + 1;
-      
+
       if (nextSeriesIndex < timerModel.totalSeries) {
         final result = {
           'startIndex': nextSeriesIndex,
-          'superSetExerciseIndex': 0,  // Reset to first exercise in superset
+          'superSetExerciseIndex': 0, // Reset to first exercise in superset
         };
         context.pop(result);
       } else {
@@ -103,8 +103,9 @@ class TimerPageState extends ConsumerState<TimerPage>
   }
 
   void _onTimerComplete() {
-    final path = '${Routes.userPrograms}/${widget.timerModel.userId}/${Routes.trainingViewer}/${widget.timerModel.programId}/${Routes.weekDetails}/${widget.timerModel.weekId}/${Routes.workoutDetails}/${widget.timerModel.workoutId}/${Routes.exerciseDetails}';
-    
+    final path =
+        '${Routes.userPrograms}/${widget.timerModel.userId}/${Routes.trainingViewer}/${widget.timerModel.programId}/${Routes.weekDetails}/${widget.timerModel.weekId}/${Routes.workoutDetails}/${widget.timerModel.workoutId}/${Routes.exerciseDetails}';
+
     context.go(path, extra: {
       'programId': widget.timerModel.programId,
       'weekId': widget.timerModel.weekId,
@@ -190,7 +191,7 @@ class TimerPageState extends ConsumerState<TimerPage>
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withAlpha(26),
         ),
         boxShadow: AppTheme.elevations.small,
       ),
@@ -240,7 +241,7 @@ class TimerPageState extends ConsumerState<TimerPage>
         ),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.primary.withOpacity(0.1),
+            color: colorScheme.primary.withAlpha(26),
             blurRadius: 20,
             spreadRadius: 5,
           ),
@@ -261,7 +262,7 @@ class TimerPageState extends ConsumerState<TimerPage>
               color: colorScheme.surface.withOpacity(0.9),
               boxShadow: [
                 BoxShadow(
-                  color: colorScheme.primary.withOpacity(0.1),
+                  color: colorScheme.primary.withAlpha(26),
                   blurRadius: 15,
                   spreadRadius: -5,
                 ),
@@ -285,7 +286,7 @@ class TimerPageState extends ConsumerState<TimerPage>
           strokeWidth: 6,
           backgroundColor: colorScheme.surfaceContainerHighest.withOpacity(0.2),
           valueColor: AlwaysStoppedAnimation<Color>(
-            colorScheme.primary.withOpacity(0.8),
+            colorScheme.primary.withAlpha(204),
           ),
         );
       },
@@ -322,7 +323,7 @@ class TimerPageState extends ConsumerState<TimerPage>
             color: colorScheme.primaryContainer.withOpacity(0.2),
             borderRadius: BorderRadius.circular(AppTheme.radii.sm),
             border: Border.all(
-              color: colorScheme.primary.withOpacity(0.1),
+              color: colorScheme.primary.withAlpha(26),
             ),
           ),
           child: Text(
