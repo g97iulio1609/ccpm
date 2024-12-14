@@ -354,15 +354,47 @@ class TrainingExtension implements AIExtension {
         return 'Programma non trovato.';
       }
 
+      // Trova la settimana da rimuovere
       final weekIndex = program.weeks.indexWhere((w) => w.number == weekNumber);
       if (weekIndex == -1) {
         return 'Settimana $weekNumber non trovata.';
       }
 
-      program.trackToDeleteWeeks.add(program.weeks[weekIndex].id!);
+      final week = program.weeks[weekIndex];
+
+      // Aggiungi l'ID della settimana alla lista di tracking
+      if (week.id != null) {
+        program.trackToDeleteWeeks.add(week.id!);
+      }
+
+      // Per ogni allenamento nella settimana
+      for (var workout in week.workouts) {
+        if (workout.id != null) {
+          program.trackToDeleteWorkouts.add(workout.id!);
+        }
+        // Per ogni esercizio nell'allenamento
+        for (var exercise in workout.exercises) {
+          if (exercise.id != null) {
+            program.trackToDeleteExercises.add(exercise.id!);
+          }
+          // Per ogni serie nell'esercizio
+          for (var series in exercise.series) {
+            if (series.serieId.isNotEmpty) {
+              program.trackToDeleteSeries.add(series.serieId);
+            }
+          }
+        }
+      }
+
+      // Rimuovi la settimana dall'array
       program.weeks.removeAt(weekIndex);
 
+      // Prima aggiorna il programma
       await _trainingService.addOrUpdateTrainingProgram(program);
+
+      // Poi rimuovi effettivamente gli elementi dal database
+      await _trainingService.removeToDeleteItems(program);
+
       return 'Ho rimosso la settimana $weekNumber dal tuo programma.';
     } catch (e) {
       _logger.e('Error removing week', error: e);
@@ -451,22 +483,42 @@ class TrainingExtension implements AIExtension {
         return 'Allenamento $workoutOrder non trovato nella settimana $weekNumber.';
       }
 
-      // Salva l'ID dell'allenamento da rimuovere
-      if (week.workouts[workoutIndex].id != null) {
-        program.trackToDeleteWorkouts.add(week.workouts[workoutIndex].id!);
+      final workout = week.workouts[workoutIndex];
+
+      // Aggiungi l'ID dell'allenamento alla lista di tracking
+      if (workout.id != null) {
+        program.trackToDeleteWorkouts.add(workout.id!);
       }
 
-      // Rimuovi l'allenamento
+      // Per ogni esercizio nell'allenamento
+      for (var exercise in workout.exercises) {
+        if (exercise.id != null) {
+          program.trackToDeleteExercises.add(exercise.id!);
+        }
+        // Per ogni serie nell'esercizio
+        for (var series in exercise.series) {
+          if (series.serieId.isNotEmpty) {
+            program.trackToDeleteSeries.add(series.serieId);
+          }
+        }
+      }
+
+      // Rimuovi l'allenamento dall'array
       week.workouts.removeAt(workoutIndex);
 
-      // Riordina gli allenamenti rimanenti mantenendo l'ordine sequenziale
+      // Riordina gli allenamenti rimanenti
       for (var i = 0; i < week.workouts.length; i++) {
         if (week.workouts[i].order > workoutOrder) {
           week.workouts[i].order = week.workouts[i].order - 1;
         }
       }
 
+      // Prima aggiorna il programma
       await _trainingService.addOrUpdateTrainingProgram(program);
+
+      // Poi rimuovi effettivamente gli elementi dal database
+      await _trainingService.removeToDeleteItems(program);
+
       return 'Ho rimosso l\'allenamento $workoutOrder dalla settimana $weekNumber.';
     } catch (e) {
       _logger.e('Error removing workout', error: e);
@@ -618,26 +670,38 @@ class TrainingExtension implements AIExtension {
         return 'Esercizio "$exerciseName" non trovato nell\'allenamento $workoutOrder della settimana $weekNumber.';
       }
 
-      final exerciseOrder = workout.exercises[exerciseIndex].order;
-      final originalName = workout.exercises[exerciseIndex].name;
+      final exercise = workout.exercises[exerciseIndex];
+      final exerciseOrder = exercise.order;
+      final originalName = exercise.name;
 
-      // Salva l'ID dell'esercizio da rimuovere
-      if (workout.exercises[exerciseIndex].id != null) {
-        program.trackToDeleteExercises
-            .add(workout.exercises[exerciseIndex].id!);
+      // Aggiungi l'ID dell'esercizio alla lista di tracking
+      if (exercise.id != null) {
+        program.trackToDeleteExercises.add(exercise.id!);
       }
 
-      // Rimuovi l'esercizio
+      // Per ogni serie nell'esercizio
+      for (var series in exercise.series) {
+        if (series.serieId.isNotEmpty) {
+          program.trackToDeleteSeries.add(series.serieId);
+        }
+      }
+
+      // Rimuovi l'esercizio dall'array
       workout.exercises.removeAt(exerciseIndex);
 
-      // Riordina gli esercizi rimanenti mantenendo l'ordine sequenziale
+      // Riordina gli esercizi rimanenti
       for (var exercise in workout.exercises) {
         if (exercise.order > exerciseOrder) {
           exercise.order = exercise.order - 1;
         }
       }
 
+      // Prima aggiorna il programma
       await _trainingService.addOrUpdateTrainingProgram(program);
+
+      // Poi rimuovi effettivamente gli elementi dal database
+      await _trainingService.removeToDeleteItems(program);
+
       return 'Ho rimosso l\'esercizio "$originalName" dall\'allenamento $workoutOrder della settimana $weekNumber.';
     } catch (e) {
       _logger.e('Error removing exercise', error: e);
@@ -814,6 +878,10 @@ class TrainingExtension implements AIExtension {
     }
 
     try {
+      // Normalizza il nome dell'esercizio
+      final normalizedExerciseName =
+          exerciseName.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+
       final userDoc = await _firestore.collection('users').doc(userId).get();
       final currentProgramId = userDoc.data()?['currentProgram'] as String?;
 
@@ -840,8 +908,9 @@ class TrainingExtension implements AIExtension {
       }
 
       final workout = week.workouts[workoutIndex];
-      final exerciseIndex = workout.exercises.indexWhere(
-          (e) => e.name.toLowerCase() == exerciseName.toLowerCase());
+      final exerciseIndex = workout.exercises.indexWhere((e) =>
+          e.name.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ') ==
+          normalizedExerciseName);
       if (exerciseIndex == -1) {
         return 'Esercizio "$exerciseName" non trovato nell\'allenamento $workoutOrder della settimana $weekNumber.';
       }
@@ -853,22 +922,29 @@ class TrainingExtension implements AIExtension {
         return 'Serie $seriesOrder non trovata per l\'esercizio "$exerciseName".';
       }
 
-      // Salva l'ID della serie da rimuovere
-      if (exercise.series[seriesIndex].serieId.isNotEmpty) {
-        program.trackToDeleteSeries.add(exercise.series[seriesIndex].serieId);
+      final series = exercise.series[seriesIndex];
+
+      // Aggiungi l'ID della serie alla lista di tracking
+      if (series.serieId.isNotEmpty) {
+        program.trackToDeleteSeries.add(series.serieId);
       }
 
-      // Rimuovi la serie
+      // Rimuovi la serie dall'array
       exercise.series.removeAt(seriesIndex);
 
-      // Riordina le serie rimanenti mantenendo l'ordine sequenziale
+      // Riordina le serie rimanenti
       for (var series in exercise.series) {
         if (series.order > seriesOrder) {
           series.order = series.order - 1;
         }
       }
 
+      // Prima aggiorna il programma
       await _trainingService.addOrUpdateTrainingProgram(program);
+
+      // Poi rimuovi effettivamente gli elementi dal database
+      await _trainingService.removeToDeleteItems(program);
+
       return 'Ho rimosso la serie $seriesOrder dall\'esercizio "$exerciseName" nell\'allenamento $workoutOrder della settimana $weekNumber.';
     } catch (e) {
       _logger.e('Error removing series', error: e);
