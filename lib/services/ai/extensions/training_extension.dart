@@ -101,13 +101,24 @@ class TrainingExtension implements AIExtension {
                 exerciseName,
                 exerciseType,
               );
+              // Salva il nome dell'esercizio nel contesto per le serie successive
+              if (result?.contains('Ho aggiunto l\'esercizio') ?? false) {
+                // Estrai il nome esatto dell'esercizio dal risultato usando RegExp
+                final exerciseMatch =
+                    RegExp(r'\"([^\"]+)\"').firstMatch(result ?? '');
+                if (exerciseMatch != null && exerciseMatch.groupCount >= 1) {
+                  context['exerciseName'] = exerciseMatch.group(1);
+                } else {
+                  // Se non riesci a estrarre il nome dal risultato, usa quello originale
+                  context['exerciseName'] = exerciseName;
+                }
+              }
               break;
 
             case 'add_series':
               final weekNumber =
                   actionData['params']?['weekNumber'] ?? context['weekNumber'];
-              final workoutOrder = actionData['params']?['workoutOrder'] ??
-                  context['workoutOrder'];
+              final workoutOrder = context['workoutOrder'];
               final exerciseName = actionData['params']?['exerciseName'] ??
                   context['exerciseName'];
               final sets = actionData['params']?['sets'] as int?;
