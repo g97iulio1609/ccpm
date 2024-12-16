@@ -147,6 +147,11 @@
   <script>
     window.flutterWebRenderer = "canvaskit";
     window.enableWasmGC = true;
+    window.wasmMemory = new WebAssembly.Memory({
+      initial: 100,
+      maximum: 1000,
+      shared: true
+    });
   </script>
   <script src="flutter_bootstrap.js" async=""></script>
 
