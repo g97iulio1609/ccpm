@@ -4,6 +4,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:alphanessone/Store/inAppPurchase_model.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class InAppPurchaseService {
   final FirebaseFunctions _functions =
@@ -88,16 +89,35 @@ class InAppPurchaseService {
   // Funzione per verificare lo stato dell'abbonamento
   Future<SubscriptionDetails?> getSubscriptionDetails({String? userId}) async {
     try {
-      final result =
-          await _functions.httpsCallable('getSubscriptionDetails').call({
-        if (userId != null) 'userId': userId,
-      });
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        throw Exception('Utente non autenticato');
+      }
 
-      if (!result.data['hasSubscription']) {
+      final token = await currentUser.getIdToken();
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/getSubscriptionDetails'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode({
+          'userId': userId ?? currentUser.uid,
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception(
+            'Errore nella risposta del server: ${response.statusCode}');
+      }
+
+      final data = json.decode(response.body);
+      if (!data['hasSubscription']) {
         return null;
       }
 
-      final subscription = result.data['subscription'];
+      final subscription = data['subscription'];
       return SubscriptionDetails(
         id: subscription['id'],
         status: subscription['status'],

@@ -87,46 +87,75 @@ export const handleWebhookEventsFunction = onRequest({
 }, app);
 
 // Funzione per eliminare un utente (admin only)
-export const deleteUser = onCall({ 
-  maxInstances: 1,
+export const deleteUser = onRequest({ 
+  cors: true,
   region: 'europe-west1'
-}, async (request) => {
-  const callerUid = request.auth?.uid;
+}, async (request, response) => {
+  // Imposta gli header CORS
+  response.set('Access-Control-Allow-Origin', '*');
+  response.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  response.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  response.set('Access-Control-Max-Age', '3600');
 
-  if (!callerUid) {
-    throw new functions.https.HttpsError('unauthenticated', 'Must be authenticated to delete users.');
+  // Gestisci le richieste OPTIONS
+  if (request.method === 'OPTIONS') {
+    response.status(204).send('');
+    return;
   }
-
-  const callerDoc = await firestore.collection('users').doc(callerUid).get();
-
-  if (!callerDoc.exists || callerDoc.data().role !== 'admin') {
-    throw new functions.https.HttpsError('permission-denied', 'Must be an admin to delete users.');
-  }
-
-  const uid = request.data.userId;
 
   try {
-    await auth.deleteUser(uid);
-    await firestore.collection('users').doc(uid).delete();
-    return { success: true };
+    const { userId } = request.body;
+    const callerUid = request.body.callerUid;
+
+    if (!callerUid) {
+      response.status(401).json({ error: 'Must be authenticated to delete users.' });
+      return;
+    }
+
+    const callerDoc = await firestore.collection('users').doc(callerUid).get();
+
+    if (!callerDoc.exists || callerDoc.data().role !== 'admin') {
+      response.status(403).json({ error: 'Must be an admin to delete users.' });
+      return;
+    }
+
+    await auth.deleteUser(userId);
+    await firestore.collection('users').doc(userId).delete();
+    response.json({ success: true });
   } catch (error) {
-    throw new functions.https.HttpsError('internal', 'An error occurred while deleting the user.');
+    response.status(500).json({ error: 'An error occurred while deleting the user.' });
   }
 });
 
-// Funzione per creare una sessione di checkout con Stripe utilizzando stripePriceId esistente
-export const createCheckoutSession = onCall(async (request) => {
-  if (!request.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'Must be authenticated to create a checkout session.');
+// Funzione per creare una sessione di checkout con Stripe
+export const createCheckoutSession = onRequest({
+  cors: true,
+  region: 'europe-west1'
+}, async (request, response) => {
+  // Imposta gli header CORS
+  response.set('Access-Control-Allow-Origin', '*');
+  response.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  response.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  response.set('Access-Control-Max-Age', '3600');
+
+  // Gestisci le richieste OPTIONS
+  if (request.method === 'OPTIONS') {
+    response.status(204).send('');
+    return;
   }
 
-  const { productId } = request.data;
-  const userId = request.auth.uid;
-
   try {
+    const { productId, userId } = request.body;
+
+    if (!userId) {
+      response.status(401).json({ error: 'Must be authenticated to create a checkout session.' });
+      return;
+    }
+
     const userDoc = await firestore.collection('users').doc(userId).get();
     if (!userDoc.exists) {
-      throw new functions.https.HttpsError('not-found', 'User not found.');
+      response.status(404).json({ error: 'User not found.' });
+      return;
     }
 
     const userData = userDoc.data();
@@ -134,16 +163,17 @@ export const createCheckoutSession = onCall(async (request) => {
 
     const productDoc = await firestore.collection('products').doc(productId).get();
     if (!productDoc.exists) {
-      throw new functions.https.HttpsError('not-found', 'Product not found.');
+      response.status(404).json({ error: 'Product not found.' });
+      return;
     }
 
     const product = productDoc.data();
 
     if (!product.stripePriceId) {
-      throw new functions.https.HttpsError('invalid-argument', 'Product does not have a Stripe Price ID.');
+      response.status(400).json({ error: 'Product does not have a Stripe Price ID.' });
+      return;
     }
 
-    // Crea un cliente Stripe con l'email dell'utente, se non esiste già
     let customer;
     const existingCustomers = await stripe.customers.list({ email: userEmail, limit: 1 });
     if (existingCustomers.data.length > 0) {
@@ -154,7 +184,6 @@ export const createCheckoutSession = onCall(async (request) => {
         metadata: { firebaseUid: userId },
       });
 
-      // Salva il customerId in Firestore
       await firestore.collection('users').doc(userId).update({
         stripeCustomerId: customer.id,
       });
@@ -163,7 +192,7 @@ export const createCheckoutSession = onCall(async (request) => {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [{
-        price: product.stripePriceId, // Utilizza l'ID del prezzo esistente
+        price: product.stripePriceId,
         quantity: 1,
       }],
       mode: 'subscription',
@@ -173,10 +202,9 @@ export const createCheckoutSession = onCall(async (request) => {
       client_reference_id: userId,
     });
 
-    // Restituisci sia l'ID della sessione che l'URL
-    return { sessionId: session.id, url: session.url };
+    response.json({ sessionId: session.id, url: session.url });
   } catch (error) {
-    throw new functions.https.HttpsError('internal', 'Unable to create checkout session');
+    response.status(500).json({ error: 'Unable to create checkout session' });
   }
 });
 
@@ -641,32 +669,65 @@ export const testStripeConnection = onCall({
   }
 });
 
-// Funzione per recuperare i dettagli della sottoscrizione dell'utente
-export const getSubscriptionDetails = onCall({
+// Funzione per ottenere i dettagli della sottoscrizione
+export const getSubscriptionDetails = onRequest({
+  cors: true,
   region: 'europe-west1'
-}, async (request) => {
-  if (!request.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'Devi essere autenticato.');
+}, async (request, response) => {
+  // Imposta gli header CORS
+  response.set('Access-Control-Allow-Origin', '*');
+  response.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  response.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  response.set('Access-Control-Max-Age', '3600');
+
+  // Gestisci le richieste OPTIONS
+  if (request.method === 'OPTIONS') {
+    response.status(204).send('');
+    return;
   }
 
-  const userId = request.auth.uid;
-
   try {
-    const userDoc = await firestore.collection('users').doc(userId).get();
+    // Verifica il token di autenticazione
+    const authHeader = request.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      response.status(401).json({ error: 'Token di autenticazione mancante o non valido.' });
+      return;
+    }
+
+    const idToken = authHeader.split('Bearer ')[1];
+    const decodedToken = await auth.verifyIdToken(idToken);
+    const authenticatedUserId = decodedToken.uid;
+
+    // Ottieni l'userId dalla richiesta o usa quello autenticato
+    const { userId } = request.body;
+    const targetUserId = userId || authenticatedUserId;
+
+    // Se l'utente richiede i dettagli di un altro utente, verifica che sia admin
+    if (userId && userId !== authenticatedUserId) {
+      const adminDoc = await firestore.collection('users').doc(authenticatedUserId).get();
+      if (!adminDoc.exists || adminDoc.data().role !== 'admin') {
+        response.status(403).json({ error: 'Non hai i permessi per visualizzare i dettagli di questo utente.' });
+        return;
+      }
+    }
+
+    const userDoc = await firestore.collection('users').doc(targetUserId).get();
     if (!userDoc.exists) {
-      throw new functions.https.HttpsError('not-found', 'Utente non trovato.');
+      response.status(404).json({ error: 'Utente non trovato.' });
+      return;
     }
 
     const userData = userDoc.data();
     const subscriptionId = userData.subscriptionId;
 
     if (!subscriptionId) {
-      return { hasSubscription: false };
+      response.json({ hasSubscription: false });
+      return;
     }
 
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 
-    return {
+    response.json({
       hasSubscription: true,
       subscription: {
         id: subscription.id,
@@ -678,43 +739,64 @@ export const getSubscriptionDetails = onCall({
           quantity: item.quantity,
         })),
       },
-    };
+    });
   } catch (error) {
-    throw new functions.https.HttpsError('internal', 'Errore nel recuperare i dettagli della sottoscrizione.');
+    console.error('Errore in getSubscriptionDetails:', error);
+    if (error.code === 'auth/id-token-expired' || error.code === 'auth/argument-error') {
+      response.status(401).json({ error: 'Token di autenticazione non valido o scaduto.' });
+    } else {
+      response.status(500).json({ error: 'Errore nel recuperare i dettagli della sottoscrizione.' });
+    }
   }
 });
 
-// Funzione per aggiornare la sottoscrizione dell'utente
-export const updateSubscription = onCall(async (request) => {
-  if (!request.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'Devi essere autenticato.');
-  }
+// Funzione per aggiornare la sottoscrizione
+export const updateSubscription = onRequest({
+  cors: true,
+  region: 'europe-west1'
+}, async (request, response) => {
+  // Imposta gli header CORS
+  response.set('Access-Control-Allow-Origin', '*');
+  response.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  response.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  response.set('Access-Control-Max-Age', '3600');
 
-  const userId = request.auth.uid;
-  const { newPriceId } = request.data;
-
-  if (!newPriceId) {
-    throw new functions.https.HttpsError('invalid-argument', 'Nuovo priceId richiesto.');
+  // Gestisci le richieste OPTIONS
+  if (request.method === 'OPTIONS') {
+    response.status(204).send('');
+    return;
   }
 
   try {
+    const { userId, newPriceId } = request.body;
+
+    if (!userId) {
+      response.status(401).json({ error: 'Devi essere autenticato.' });
+      return;
+    }
+
+    if (!newPriceId) {
+      response.status(400).json({ error: 'Nuovo priceId richiesto.' });
+      return;
+    }
+
     const userDoc = await firestore.collection('users').doc(userId).get();
     if (!userDoc.exists) {
-      throw new functions.https.HttpsError('not-found', 'Utente non trovato.');
+      response.status(404).json({ error: 'Utente non trovato.' });
+      return;
     }
 
     const userData = userDoc.data();
     const subscriptionId = userData.subscriptionId;
 
     if (!subscriptionId) {
-      throw new functions.https.HttpsError('not-found', 'Nessuna sottoscrizione trovata.');
+      response.status(404).json({ error: 'Nessuna sottoscrizione trovata.' });
+      return;
     }
 
-    // Recupera la sottoscrizione corrente
     const currentSubscription = await stripe.subscriptions.retrieve(subscriptionId);
     const currentItemId = currentSubscription.items.data[0].id;
 
-    // Aggiorna la sottoscrizione con il nuovo priceId
     const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
       cancel_at_period_end: false,
       proration_behavior: 'create_prorations',
@@ -724,16 +806,15 @@ export const updateSubscription = onCall(async (request) => {
       }],
     });
 
-    // Aggiorna i dettagli nella Firestore
     await firestore.collection('users').doc(userId).update({
       subscriptionProductId: updatedSubscription.items.data[0].price.product,
       subscriptionExpiryDate: new Date(updatedSubscription.current_period_end * 1000),
       subscriptionStatus: updatedSubscription.status,
     });
 
-    return { success: true, subscription: updatedSubscription };
+    response.json({ success: true, subscription: updatedSubscription });
   } catch (error) {
-    throw new functions.https.HttpsError('internal', 'Errore nell\'aggiornare la sottoscrizione.');
+    response.status(500).json({ error: 'Errore nell\'aggiornare la sottoscrizione.' });
   }
 });
 
@@ -793,39 +874,55 @@ export const getUserSubscriptionDetails = onCall(async (request) => {
   }
 });
 
-// Funzione per cancellare la sottoscrizione dell'utente
-export const cancelSubscription = onCall(async (request) => {
-  if (!request.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'Devi essere autenticato.');
+// Funzione per cancellare la sottoscrizione
+export const cancelSubscription = onRequest({
+  cors: true,
+  region: 'europe-west1'
+}, async (request, response) => {
+  // Imposta gli header CORS
+  response.set('Access-Control-Allow-Origin', '*');
+  response.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  response.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  response.set('Access-Control-Max-Age', '3600');
+
+  // Gestisci le richieste OPTIONS
+  if (request.method === 'OPTIONS') {
+    response.status(204).send('');
+    return;
   }
 
-  const userId = request.auth.uid;
-
   try {
+    const { userId } = request.body;
+
+    if (!userId) {
+      response.status(401).json({ error: 'Devi essere autenticato.' });
+      return;
+    }
+
     const userDoc = await firestore.collection('users').doc(userId).get();
     if (!userDoc.exists) {
-      throw new functions.https.HttpsError('not-found', 'Utente non trovato.');
+      response.status(404).json({ error: 'Utente non trovato.' });
+      return;
     }
 
     const userData = userDoc.data();
     const subscriptionId = userData.subscriptionId;
 
     if (!subscriptionId) {
-      throw new functions.https.HttpsError('not-found', 'Nessuna sottoscrizione trovata.');
+      response.status(404).json({ error: 'Nessuna sottoscrizione trovata.' });
+      return;
     }
 
-    // Cancella la sottoscrizione su Stripe
     const canceledSubscription = await stripe.subscriptions.del(subscriptionId);
 
-    // Aggiorna Firestore
     await firestore.collection('users').doc(userId).update({
       subscriptionStatus: 'cancelled',
       subscriptionExpiryDate: new Date(canceledSubscription.current_period_end * 1000),
     });
 
-    return { success: true };
+    response.json({ success: true });
   } catch (error) {
-    throw new functions.https.HttpsError('internal', 'Errore nel cancellare la sottoscrizione.');
+    response.status(500).json({ error: 'Errore nel cancellare la sottoscrizione.' });
   }
 });
 
@@ -880,26 +977,38 @@ export const listSubscriptions = onCall(async (request) => {
   }
 });
 
-// Function to create a gift subscription
-export const createGiftSubscription = onCall(async (request) => {
-  if (!request.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'Must be authenticated.');
+// Funzione per creare un abbonamento regalo
+export const createGiftSubscription = onRequest({
+  cors: true,
+  region: 'europe-west1'
+}, async (request, response) => {
+  // Imposta gli header CORS
+  response.set('Access-Control-Allow-Origin', '*');
+  response.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  response.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  response.set('Access-Control-Max-Age', '3600');
+
+  // Gestisci le richieste OPTIONS
+  if (request.method === 'OPTIONS') {
+    response.status(204).send('');
+    return;
   }
 
-  const adminUid = request.auth.uid;
-  const { userId, durationInDays } = request.data;
-
   try {
+    const { adminUid, userId, durationInDays } = request.body;
+
     // Verify admin status
     const adminDoc = await firestore.collection('users').doc(adminUid).get();
     if (!adminDoc.exists || adminDoc.data().role !== 'admin') {
-      throw new functions.https.HttpsError('permission-denied', 'Only admins can create gift subscriptions.');
+      response.status(403).json({ error: 'Only admins can create gift subscriptions.' });
+      return;
     }
 
     // Get user document
     const userDoc = await firestore.collection('users').doc(userId).get();
     if (!userDoc.exists) {
-      throw new functions.https.HttpsError('not-found', 'User not found.');
+      response.status(404).json({ error: 'User not found.' });
+      return;
     }
 
     // Calculate subscription dates
@@ -917,17 +1026,17 @@ export const createGiftSubscription = onCall(async (request) => {
       giftedAt: startDate,
     });
 
-    return {
+    response.json({
       success: true,
       message: 'Gift subscription created successfully',
-    };
+    });
   } catch (error) {
-    throw new functions.https.HttpsError('internal', 'Error creating gift subscription: ' + error.message);
+    response.status(500).json({ error: 'Error creating gift subscription: ' + error.message });
   }
 });
 
-// Nuova funzione per creare un PaymentIntent
-export const createPaymentIntent = onRequest({
+// Funzione per gestire il pagamento riuscito
+export const handleSuccessfulPayment = onRequest({
   cors: true,
   region: 'europe-west1'
 }, async (request, response) => {
@@ -944,85 +1053,23 @@ export const createPaymentIntent = onRequest({
   }
 
   try {
-    const { productId, userId } = request.body;
+    const { paymentId, productId, userId } = request.body;
 
     if (!userId) {
       response.status(401).json({ error: 'Devi essere autenticato.' });
       return;
     }
 
-    const userDoc = await firestore.collection('users').doc(userId).get();
-    if (!userDoc.exists) {
-      response.status(404).json({ error: 'Utente non trovato.' });
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentId);
+    if (paymentIntent.status !== 'succeeded') {
+      response.status(400).json({ error: 'Il pagamento non è stato completato con successo.' });
       return;
     }
-
-    const userData = userDoc.data();
-    const userEmail = userData.email;
 
     const productDoc = await firestore.collection('products').doc(productId).get();
     if (!productDoc.exists) {
       response.status(404).json({ error: 'Prodotto non trovato.' });
       return;
-    }
-
-    const product = productDoc.data();
-
-    // Crea o recupera il cliente Stripe
-    let customer;
-    const existingCustomers = await stripe.customers.list({ email: userEmail, limit: 1 });
-    if (existingCustomers.data.length > 0) {
-      customer = existingCustomers.data[0];
-    } else {
-      customer = await stripe.customers.create({
-        email: userEmail,
-        metadata: { firebaseUid: userId },
-      });
-    }
-
-    // Crea il PaymentIntent
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(product.price * 100), // Converti in centesimi
-      currency: product.currency || 'eur',
-      customer: customer.id,
-      metadata: {
-        productId,
-        userId,
-      },
-      payment_method_types: ['card'],
-      setup_future_usage: 'off_session',
-    });
-
-    response.json({
-      clientSecret: paymentIntent.client_secret,
-      amount: paymentIntent.amount,
-      currency: paymentIntent.currency,
-    });
-  } catch (error) {
-    response.status(500).json({ error: 'Errore nella creazione del PaymentIntent: ' + error.message });
-  }
-});
-
-// Funzione per gestire il pagamento riuscito
-export const handleSuccessfulPayment = onCall({
-  region: 'europe-west1'
-}, async (request) => {
-  if (!request.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'Devi essere autenticato.');
-  }
-
-  const { paymentId, productId } = request.data;
-  const userId = request.auth.uid;
-
-  try {
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentId);
-    if (paymentIntent.status !== 'succeeded') {
-      throw new functions.https.HttpsError('failed-precondition', 'Il pagamento non è stato completato con successo.');
-    }
-
-    const productDoc = await firestore.collection('products').doc(productId).get();
-    if (!productDoc.exists) {
-      throw new functions.https.HttpsError('not-found', 'Prodotto non trovato.');
     }
 
     const product = productDoc.data();
@@ -1048,8 +1095,8 @@ export const handleSuccessfulPayment = onCall({
       lastPaymentDate: now,
     });
 
-    return { success: true };
+    response.json({ success: true });
   } catch (error) {
-    throw new functions.https.HttpsError('internal', 'Errore nella gestione del pagamento: ' + error.message);
+    response.status(500).json({ error: 'Errore nella gestione del pagamento: ' + error.message });
   }
 });
