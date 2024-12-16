@@ -26,7 +26,8 @@
         "firebase-debug.log",
         "firebase-debug.*.log",
         "*.local"
-      ]
+      ],
+      "region": "europe-west1"
     }
   ]
 }

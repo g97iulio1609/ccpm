@@ -2,15 +2,32 @@
 
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:alphanessone/Store/inAppPurchase_model.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class InAppPurchaseService {
-  final FirebaseFunctions _functions = FirebaseFunctions.instance;
+  final FirebaseFunctions _functions =
+      FirebaseFunctions.instanceFor(region: 'europe-west1');
+  static const String _baseUrl =
+      'https://europe-west1-alphaness-322423.cloudfunctions.net';
 
   // Funzione per ottenere i prodotti disponibili
   Future<List<Product>> getProducts() async {
     try {
-      final result = await _functions.httpsCallable('getStripeProducts').call();
-      final products = (result.data['products'] as List)
+      final response = await http.get(
+        Uri.parse('$_baseUrl/getStripeProducts'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception(
+            'Errore nella risposta del server: ${response.statusCode}');
+      }
+
+      final data = json.decode(response.body);
+      final products = (data['products'] as List)
           .map((product) => Product(
                 id: product['id'],
                 title: product['name'],
@@ -24,6 +41,32 @@ class InAppPurchaseService {
       return products;
     } catch (e) {
       throw Exception('Errore nel recupero dei prodotti: $e');
+    }
+  }
+
+  // Funzione per creare un PaymentIntent
+  Future<Map<String, dynamic>> createPaymentIntent(
+      String productId, String userId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/createPaymentIntent'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'productId': productId,
+          'userId': userId,
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception(
+            'Errore nella creazione del PaymentIntent: ${response.statusCode}');
+      }
+
+      return json.decode(response.body);
+    } catch (e) {
+      throw Exception('Errore nella creazione del PaymentIntent: $e');
     }
   }
 
@@ -143,5 +186,31 @@ class InAppPurchaseService {
   // Funzione per inizializzare il servizio
   Future<void> initialize() async {
     await syncProducts();
+  }
+
+  // Funzione per sincronizzare le sottoscrizioni con Stripe
+  Future<Map<String, dynamic>> syncStripeSubscription(String userId,
+      {bool syncAll = false}) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/syncStripeSubscription'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'userId': userId,
+          'syncAll': syncAll,
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception(
+            'Errore nella sincronizzazione: ${response.statusCode}');
+      }
+
+      return json.decode(response.body);
+    } catch (e) {
+      throw Exception('Errore nella sincronizzazione: $e');
+    }
   }
 }

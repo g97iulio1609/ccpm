@@ -334,33 +334,35 @@ class SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
     //debugPrint('Subscription details refreshed after creating new subscription');
   }
 
-  // Synchronizes the subscription with Stripe
+  // Sincronizza la sottoscrizione con Stripe
   Future<void> _syncStripeSubscription() async {
     ref.read(syncingProvider.notifier).state = true;
     //debugPrint('Synchronizing subscription with Stripe');
 
     try {
-      final firebaseFunctions = ref.read(firebaseFunctionsProvider);
-      final HttpsCallable callable =
-          firebaseFunctions.httpsCallable('syncStripeSubscription');
-      final result = await callable.call(<String, dynamic>{
-        'syncAll': ref.read(
-            isAdminProvider), // Passa true se admin per sincronizzare tutte le sottoscrizioni
-      });
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) {
+        throw Exception('Utente non autenticato');
+      }
 
-      if (result.data['success']) {
-        _showSnackBar(result.data['message']);
-        //debugPrint('Stripe synchronization successful: ${result.data['message']}');
-        if (ref.read(isAdminProvider) &&
-            ref.read(selectedUserIdProvider) != null) {
+      final isAdmin = ref.read(isAdminProvider);
+      final result = await _inAppPurchaseService.syncStripeSubscription(
+        userId,
+        syncAll: isAdmin,
+      );
+
+      if (result['success']) {
+        _showSnackBar(result['message']);
+        //debugPrint('Stripe synchronization successful: ${result['message']}');
+        if (isAdmin && ref.read(selectedUserIdProvider) != null) {
           await _fetchSubscriptionDetails(
               userId: ref.read(selectedUserIdProvider));
         } else {
           await _fetchSubscriptionDetails();
         }
       } else {
-        _showSnackBar(result.data['message']);
-        //debugPrint('Stripe synchronization failed: ${result.data['message']}');
+        _showSnackBar(result['message']);
+        //debugPrint('Stripe synchronization failed: ${result['message']}');
       }
     } catch (e) {
       _showSnackBar('Errore nella sincronizzazione dell\'abbonamento.');

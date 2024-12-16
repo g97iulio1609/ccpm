@@ -7,6 +7,7 @@ import 'inAppPurchase_model.dart';
 import 'inAppPurchase_services.dart';
 import 'stripe_checkout_widget.dart';
 import '../providers/providers.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // Classe per lo stato degli acquisti in-app
 class InAppPurchaseState {
@@ -460,10 +461,12 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen>
 
   Future<void> _handlePurchase(BuildContext context, Product product) async {
     try {
-      final functions = ref.read(firebaseFunctionsProvider);
+      final auth = FirebaseAuth.instance;
+      final userId = auth.currentUser?.uid;
 
-      // Verifica se il widget è ancora montato prima di mostrare il dialogo
-      if (!mounted) return;
+      if (userId == null) {
+        throw Exception('Utente non autenticato');
+      }
 
       // Mostra loading indicator usando un Builder per avere il contesto corretto
       BuildContext? dialogContext;
@@ -484,9 +487,7 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen>
       try {
         // Chiamata asincrona per creare l'intent di pagamento
         final result =
-            await functions.httpsCallable('createPaymentIntent').call({
-          'productId': product.id,
-        });
+            await _inAppPurchaseService.createPaymentIntent(product.id, userId);
 
         // Verifica se il widget è ancora montato dopo la chiamata asincrona
         if (!mounted) return;
@@ -496,9 +497,9 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen>
           Navigator.of(dialogContext!).pop();
         }
 
-        final clientSecret = result.data['clientSecret'];
-        final amount = result.data['amount'] / 100;
-        final currency = result.data['currency'];
+        final clientSecret = result['clientSecret'];
+        final amount = result['amount'] / 100;
+        final currency = result['currency'];
 
         // Verifica se il widget è ancora montato prima di mostrare il bottom sheet
         if (!mounted) return;
