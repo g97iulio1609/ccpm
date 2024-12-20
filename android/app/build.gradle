@@ -25,13 +25,13 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    compileSdkVersion flutter.compileSdkVersion
+    compileSdkVersion 34
     ndkVersion flutter.ndkVersion
 
     defaultConfig {
         applicationId 'com.alphaness.alphanessone'
         minSdkVersion 23
-        targetSdkVersion flutter.targetSdkVersion
+        targetSdkVersion 34
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         multiDexEnabled true
@@ -93,5 +93,5 @@ flutter {
 
 dependencies {
     implementation 'androidx.multidex:multidex:2.0.1'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:2.1.0-RC"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 }

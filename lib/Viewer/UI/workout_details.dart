@@ -7,7 +7,8 @@ import 'package:alphanessone/trainingBuilder/dialog/series_dialog.dart';
 import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
 import 'package:alphanessone/trainingBuilder/models/series_model.dart';
 import 'package:alphanessone/providers/providers.dart' as app_providers;
-import 'package:alphanessone/Viewer/UI/workout_provider.dart' as workout_provider;
+import 'package:alphanessone/Viewer/UI/workout_provider.dart'
+    as workout_provider;
 import 'package:alphanessone/Viewer/providers/training_program_provider.dart';
 import 'workout_services.dart';
 
@@ -39,7 +40,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      ref.read(workout_provider.targetUserIdProvider.notifier).state = widget.userId;
+      ref.read(workout_provider.targetUserIdProvider.notifier).state =
+          widget.userId;
       await ref
           .read(workout_provider.workoutServiceProvider)
           .initializeWorkout(widget.workoutId);
@@ -60,7 +62,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       ref.read(workout_provider.exercisesProvider.notifier).state = [];
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
-        ref.read(workout_provider.targetUserIdProvider.notifier).state = widget.userId;
+        ref.read(workout_provider.targetUserIdProvider.notifier).state =
+            widget.userId;
         await ref
             .read(workout_provider.workoutServiceProvider)
             .initializeWorkout(widget.workoutId);
@@ -148,7 +151,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
               if (note.isNotEmpty) {
                 await ref
                     .read(workout_provider.workoutServiceProvider)
-                    .showNoteDialog(exerciseId, exerciseName, widget.workoutId, note);
+                    .showNoteDialog(
+                        exerciseId, exerciseName, widget.workoutId, note);
               }
               if (mounted) Navigator.of(context).pop();
             },
@@ -165,7 +169,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     );
   }
 
-  void _showEditSeriesDialog(Map<String, dynamic> exercise, List<Map<String, dynamic>> series) {
+  void _showEditSeriesDialog(
+      Map<String, dynamic> exercise, List<Map<String, dynamic>> series) {
     _showSeriesEditDialog(exercise, series);
   }
 
@@ -213,7 +218,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
                   : ListView.builder(
                       padding: EdgeInsets.all(AppTheme.spacing.md),
                       itemCount: exercises.length,
-                      key: PageStorageKey('workout_exercises_${widget.workoutId}'),
+                      key: PageStorageKey(
+                          'workout_exercises_${widget.workoutId}'),
                       itemBuilder: (context, index) =>
                           _buildExerciseCard(exercises[index], context),
                     ),
@@ -224,7 +230,9 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       Map<String, dynamic> exercise, BuildContext context) {
     final superSetId = exercise['superSetId'];
     final exercises = ref.read(workout_provider.exercisesProvider);
-    final grouped = ref.read(workout_provider.workoutServiceProvider).groupExercisesBySuperSet(exercises);
+    final grouped = ref
+        .read(workout_provider.workoutServiceProvider)
+        .groupExercisesBySuperSet(exercises);
     if (superSetId != null) {
       final superSetExercises = grouped[superSetId];
       if (superSetExercises != null && superSetExercises.first == exercise) {
@@ -242,7 +250,9 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     final colorScheme = Theme.of(context).colorScheme;
     final allSeriesCompleted = superSetExercises.every((exercise) {
       final series = List<Map<String, dynamic>>.from(exercise['series']);
-      return series.every((serie) => ref.read(workout_provider.workoutServiceProvider).isSeriesDone(serie));
+      return series.every((serie) => ref
+          .read(workout_provider.workoutServiceProvider)
+          .isSeriesDone(serie));
     });
 
     return Container(
@@ -278,10 +288,12 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   Widget _buildSingleExerciseCard(
       Map<String, dynamic> exercise, BuildContext context) {
     final series = List<Map<String, dynamic>>.from(exercise['series']);
-    final firstNotDoneSeriesIndex =
-        ref.read(workout_provider.workoutServiceProvider).findFirstNotDoneSeriesIndex(series);
+    final firstNotDoneSeriesIndex = ref
+        .read(workout_provider.workoutServiceProvider)
+        .findFirstNotDoneSeriesIndex(series);
     final isContinueMode = firstNotDoneSeriesIndex > 0;
-    final allSeriesCompleted = series.every((serie) => ref.read(workout_provider.workoutServiceProvider).isSeriesDone(serie));
+    final allSeriesCompleted = series.every((serie) =>
+        ref.read(workout_provider.workoutServiceProvider).isSeriesDone(serie));
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
@@ -378,16 +390,20 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       List<Map<String, dynamic>> superSetExercises, BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final allSeriesCompleted = superSetExercises.every((exercise) =>
-        exercise['series'].every((series) => ref.read(workout_provider.workoutServiceProvider).isSeriesDone(series)));
+        exercise['series'].every((series) => ref
+            .read(workout_provider.workoutServiceProvider)
+            .isSeriesDone(series)));
 
     if (allSeriesCompleted) return const SizedBox.shrink();
 
     final firstNotDoneExerciseIndex = superSetExercises.indexWhere((exercise) =>
-        exercise['series'].any((series) => !ref.read(workout_provider.workoutServiceProvider).isSeriesDone(series)));
+        exercise['series'].any((series) => !ref
+            .read(workout_provider.workoutServiceProvider)
+            .isSeriesDone(series)));
 
     return GestureDetector(
-      onTap: () =>
-          _navigateToExerciseDetails(superSetExercises[firstNotDoneExerciseIndex], superSetExercises),
+      onTap: () => _navigateToExerciseDetails(
+          superSetExercises[firstNotDoneExerciseIndex], superSetExercises),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
@@ -546,10 +562,18 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: series != null
                 ? GestureDetector(
-                    onTap: () => ref.read(workout_provider.workoutServiceProvider).toggleSeriesDone(series),
+                    onTap: () => ref
+                        .read(workout_provider.workoutServiceProvider)
+                        .toggleSeriesDone(series),
                     child: Icon(
-                      ref.read(workout_provider.workoutServiceProvider).isSeriesDone(series) ? Icons.check_circle : Icons.cancel,
-                      color: ref.read(workout_provider.workoutServiceProvider).isSeriesDone(series)
+                      ref
+                              .read(workout_provider.workoutServiceProvider)
+                              .isSeriesDone(series)
+                          ? Icons.check_circle
+                          : Icons.cancel,
+                      color: ref
+                              .read(workout_provider.workoutServiceProvider)
+                              .isSeriesDone(series)
                           ? colorScheme.primary
                           : colorScheme.onSurfaceVariant,
                     ),
@@ -565,7 +589,9 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     final value = seriesData[field];
     final maxValue = seriesData['max${field.capitalize()}'];
     final valueDone = seriesData['${field}_done'];
-    final isDone = ref.read(workout_provider.workoutServiceProvider).isSeriesDone(seriesData);
+    final isDone = ref
+        .read(workout_provider.workoutServiceProvider)
+        .isSeriesDone(seriesData);
     final unit = field == 'reps' ? 'R' : 'Kg';
 
     // Show done values if they are available and not zero
@@ -693,7 +719,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     );
   }
 
-  Future<void> _showUpdateMaxWeightDialog(BuildContext context, Map<String, dynamic> exercise) {
+  Future<void> _showUpdateMaxWeightDialog(
+      BuildContext context, Map<String, dynamic> exercise) {
     final weightController = TextEditingController();
     final repsController = TextEditingController(text: "1");
     final calculatedMaxWeight = ValueNotifier<double?>(null);
@@ -702,9 +729,10 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     void calculateMaxWeight() {
       final weight = double.tryParse(weightController.text);
       final reps = int.tryParse(repsController.text);
-      
+
       if (weight != null && reps != null && reps > 0) {
-        calculatedMaxWeight.value = (weight / (1.0278 - 0.0278 * reps)).roundToDouble();
+        calculatedMaxWeight.value =
+            (weight / (1.0278 - 0.0278 * reps)).roundToDouble();
       } else {
         calculatedMaxWeight.value = null;
       }
@@ -779,16 +807,17 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
               final maxWeight = calculatedMaxWeight.value;
               final weight = double.tryParse(weightController.text);
               final reps = int.tryParse(repsController.text) ?? 1;
-              
+
               if (maxWeight != null && weight != null) {
-                await ref.read(workout_provider.workoutServiceProvider).updateMaxWeight(
-                  exercise,
-                  maxWeight,  // Salviamo il massimale calcolato
-                  widget.userId,
-                  repetitions: 1,  // Sempre 1 per il massimale
-                  keepCurrentWeights: keepWeightSwitch.value
-                );
-                
+                await ref
+                    .read(workout_provider.workoutServiceProvider)
+                    .updateMaxWeight(
+                        exercise,
+                        maxWeight, // Salviamo il massimale calcolato
+                        widget.userId,
+                        repetitions: 1, // Sempre 1 per il massimale
+                        keepCurrentWeights: keepWeightSwitch.value);
+
                 Navigator.pop(context);
               }
             },
@@ -838,13 +867,15 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
         onTap: () {
           _showUserSeriesInputDialog(seriesData, 'reps');
         },
-        onLongPress: isAdminOrCoach ? () {
-          final exercise = {
-            'id': seriesData['exerciseId'],
-            'type': seriesData['type'] ?? 'weight',
-          };
-          _showEditSeriesDialog(exercise, [seriesData]);
-        } : null,
+        onLongPress: isAdminOrCoach
+            ? () {
+                final exercise = {
+                  'id': seriesData['exerciseId'],
+                  'type': seriesData['type'] ?? 'weight',
+                };
+                _showEditSeriesDialog(exercise, [seriesData]);
+              }
+            : null,
         child: Column(
           children: [
             Row(
@@ -875,11 +906,16 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
         onTap: () {
           _showUserSeriesInputDialog(seriesData, field);
         },
-        onLongPress: isAdminOrCoach ? () {
-          _showEditSeriesDialog(
-              {'id': seriesData['exerciseId'], 'series': [seriesData]},
-              [seriesData]);
-        } : null,
+        onLongPress: isAdminOrCoach
+            ? () {
+                _showEditSeriesDialog({
+                  'id': seriesData['exerciseId'],
+                  'series': [seriesData]
+                }, [
+                  seriesData
+                ]);
+              }
+            : null,
         child: Text(
           _formatSeriesValue(seriesData, field),
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -894,17 +930,58 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   Widget _buildSeriesDoneIcon(
       Map<String, dynamic> seriesData, BuildContext context, int flex) {
     final colorScheme = Theme.of(context).colorScheme;
+
+    // Determina lo stato della serie
+    bool isDone = ref
+        .read(workout_provider.workoutServiceProvider)
+        .isSeriesDone(seriesData);
+    bool hasAttempted = false;
+    bool isFailed = false;
+
+    final repsDone = seriesData['reps_done'];
+    final weightDone = seriesData['weight_done'];
+    final targetReps = seriesData['reps'];
+    final targetWeight = seriesData['weight'];
+
+    // Verifica se l'utente ha tentato la serie
+    if ((repsDone != null && repsDone != 0) ||
+        (weightDone != null && weightDone != 0)) {
+      hasAttempted = true;
+      // Verifica se ha fallito (valori inferiori al target)
+      if ((repsDone != null && repsDone < targetReps) ||
+          (weightDone != null && weightDone < targetWeight)) {
+        isFailed = true;
+      }
+    }
+
+    IconData iconData;
+    Color iconColor;
+
+    if (isDone) {
+      // Serie completata
+      iconData = Icons.check_circle;
+      iconColor = colorScheme.primary;
+    } else if (isFailed) {
+      // Serie fallita (tentata ma non completata)
+      iconData = Icons.warning_rounded;
+      iconColor = colorScheme.error;
+    } else {
+      // Serie non svolta
+      iconData = Icons.cancel;
+      iconColor = colorScheme.onSurfaceVariant;
+    }
+
     return Expanded(
       flex: flex,
       child: Container(
         alignment: Alignment.center,
         child: GestureDetector(
-          onTap: () => ref.read(workout_provider.workoutServiceProvider).toggleSeriesDone(seriesData),
+          onTap: () => ref
+              .read(workout_provider.workoutServiceProvider)
+              .toggleSeriesDone(seriesData),
           child: Icon(
-            ref.read(workout_provider.workoutServiceProvider).isSeriesDone(seriesData) ? Icons.check_circle : Icons.cancel,
-            color: ref.read(workout_provider.workoutServiceProvider).isSeriesDone(seriesData)
-                ? colorScheme.primary
-                : colorScheme.onSurface,
+            iconData,
+            color: iconColor,
           ),
         ),
       ),
@@ -934,7 +1011,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
 
   void _showChangeExerciseDialog(
       BuildContext context, Map<String, dynamic> currentExercise) {
-    final exerciseRecordService = ref.read(app_providers.exerciseRecordServiceProvider);
+    final exerciseRecordService =
+        ref.read(app_providers.exerciseRecordServiceProvider);
 
     showDialog(
       context: context,
@@ -954,7 +1032,9 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       ),
     ).then((newExercise) async {
       if (newExercise != null) {
-        await ref.read(workout_provider.workoutServiceProvider).updateExercise(currentExercise, newExercise as Exercise);
+        await ref
+            .read(workout_provider.workoutServiceProvider)
+            .updateExercise(currentExercise, newExercise as Exercise);
       }
     });
   }
@@ -963,9 +1043,11 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       Map<String, dynamic> exercise, List<Map<String, dynamic>> series) async {
     final List<Series> seriesList =
         series.map((s) => Series.fromMap(s)).toList();
-    final originalExerciseId = seriesList.first.originalExerciseId ?? exercise['id'];
+    final originalExerciseId =
+        seriesList.first.originalExerciseId ?? exercise['id'];
 
-    final recordsStream = ref.read(app_providers.exerciseRecordServiceProvider)
+    final recordsStream = ref
+        .read(app_providers.exerciseRecordServiceProvider)
         .getExerciseRecords(
           userId: widget.userId,
           exerciseId: originalExerciseId,
@@ -979,13 +1061,16 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
 
     final colorScheme = Theme.of(context).colorScheme;
 
-    final weightNotifier = ref.read(workout_provider.workoutServiceProvider).getWeightNotifier(exercise['id']) ??
+    final weightNotifier = ref
+            .read(workout_provider.workoutServiceProvider)
+            .getWeightNotifier(exercise['id']) ??
         ValueNotifier<double>(0.0);
 
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => SeriesDialog(
-        exerciseRecordService: ref.read(app_providers.exerciseRecordServiceProvider),
+        exerciseRecordService:
+            ref.read(app_providers.exerciseRecordServiceProvider),
         athleteId: widget.userId,
         exerciseId: exercise['id'],
         exerciseType: exercise['type'] ?? 'weight',
@@ -1000,7 +1085,9 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     if (result != null && mounted) {
       try {
         final List<Series> updatedSeries = result['series'] as List<Series>;
-        await ref.read(workout_provider.workoutServiceProvider).applySeriesChanges(exercise, updatedSeries);
+        await ref
+            .read(workout_provider.workoutServiceProvider)
+            .applySeriesChanges(exercise, updatedSeries);
       } catch (e) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1013,11 +1100,12 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     }
   }
 
-  void _showUserSeriesInputDialog(Map<String, dynamic> seriesData, String field) {
+  void _showUserSeriesInputDialog(
+      Map<String, dynamic> seriesData, String field) {
     final TextEditingController repsController = TextEditingController();
     final TextEditingController weightController = TextEditingController();
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     // Initialize controllers with current values if they exist
     final currentReps = seriesData['reps_done'];
     final currentWeight = seriesData['weight_done'];
@@ -1027,7 +1115,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     if (currentWeight != null) {
       weightController.text = currentWeight.toString();
     }
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -1095,19 +1183,21 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
             onPressed: () {
               final reps = int.tryParse(repsController.text);
               final weight = int.tryParse(weightController.text);
-              
+
               if (reps != null) {
                 seriesData['reps_done'] = reps;
               }
               if (weight != null) {
                 seriesData['weight_done'] = weight;
               }
-              
+
               if (reps != null || weight != null) {
-                ref.read(workout_provider.workoutServiceProvider).updateSeriesData(
-                  seriesData['exerciseId'],
-                  seriesData,
-                );
+                ref
+                    .read(workout_provider.workoutServiceProvider)
+                    .updateSeriesData(
+                      seriesData['exerciseId'],
+                      seriesData,
+                    );
               }
               Navigator.pop(context);
             },

@@ -1,10 +1,10 @@
-// lib/Store/inAppPurchase.dart
+// lib/Store/in_app_purchase.dart
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../Main/app_theme.dart';
-import 'inAppPurchase_model.dart';
-import 'inAppPurchase_services.dart';
+import 'in_app_purchase_model.dart';
+import 'in_app_purchase_services.dart';
 import 'stripe_checkout_widget.dart';
 import '../providers/providers.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -379,7 +379,7 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen>
                 end: Alignment.bottomRight,
                 colors: [
                   colorScheme.surface.withAlpha(242),
-                  colorScheme.surface.withOpacity(0.95),
+                  colorScheme.surface.withAlpha(242).withOpacity(0.95),
                 ],
               )
             : null,
@@ -468,10 +468,14 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen>
         throw Exception('Utente non autenticato');
       }
 
-      // Mostra loading indicator usando un Builder per avere il contesto corretto
+      // Salva il BuildContext originale
+      final originalContext = context;
+
+      // Mostra loading indicator
       BuildContext? dialogContext;
+      if (!mounted) return;
       showDialog(
-        context: context,
+        context: originalContext,
         barrierDismissible: false,
         builder: (BuildContext context) {
           dialogContext = context;
@@ -485,14 +489,13 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen>
       );
 
       try {
-        // Chiamata asincrona per creare l'intent di pagamento
         final result =
             await _inAppPurchaseService.createPaymentIntent(product.id, userId);
 
-        // Verifica se il widget è ancora montato dopo la chiamata asincrona
+        // Verifica se il widget è ancora montato
         if (!mounted) return;
 
-        // Chiudi il loading indicator in modo sicuro
+        // Chiudi il loading indicator
         if (dialogContext != null) {
           Navigator.of(dialogContext!).pop();
         }
@@ -501,33 +504,29 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen>
         final amount = result['amount'] / 100;
         final currency = result['currency'];
 
-        // Verifica se il widget è ancora montato prima di mostrare il bottom sheet
+        // Verifica se il widget è ancora montato
         if (!mounted) return;
 
         await showModalBottomSheet(
-          context: context,
+          context: originalContext,
           isScrollControlled: true,
           backgroundColor: Colors.transparent,
           isDismissible: false,
           enableDrag: false,
-          builder: (context) => StripeCheckoutWidget(
+          builder: (BuildContext context) => StripeCheckoutWidget(
             clientSecret: clientSecret,
             amount: amount,
             currency: currency,
             onPaymentSuccess: (String paymentId) async {
-              // Verifica se il widget è ancora montato prima di procedere
               if (!mounted) return;
 
-              // Chiudi il bottom sheet
               Navigator.of(context).pop();
 
-              // Verifica se il widget è ancora montato prima di mostrare il nuovo dialogo
               if (!mounted) return;
 
-              // Mostra nuovo loading indicator
               BuildContext? confirmContext;
               showDialog(
-                context: context,
+                context: originalContext,
                 barrierDismissible: false,
                 builder: (BuildContext context) {
                   confirmContext = context;
@@ -547,12 +546,11 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen>
                   'productId': product.id,
                 });
 
-                // Verifica se il widget è ancora montato dopo la chiamata asincrona
                 if (!mounted) return;
 
                 if (confirmContext != null) {
                   Navigator.of(confirmContext!).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  ScaffoldMessenger.of(originalContext).showSnackBar(
                     SnackBar(
                       content: const Text('Abbonamento attivato con successo!'),
                       backgroundColor: AppTheme.success,
@@ -560,12 +558,11 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen>
                   );
                 }
               } catch (e) {
-                // Verifica se il widget è ancora montato dopo l'errore
                 if (!mounted) return;
 
                 if (confirmContext != null) {
                   Navigator.of(confirmContext!).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  ScaffoldMessenger.of(originalContext).showSnackBar(
                     SnackBar(
                       content: Text('Errore durante l\'attivazione: $e'),
                       backgroundColor: AppTheme.error,
@@ -575,11 +572,10 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen>
               }
             },
             onPaymentError: (String error) {
-              // Verifica se il widget è ancora montato prima di chiudere
               if (!mounted) return;
 
               Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
+              ScaffoldMessenger.of(originalContext).showSnackBar(
                 SnackBar(
                   content: Text(error),
                   backgroundColor: AppTheme.error,
@@ -589,10 +585,8 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen>
           ),
         );
       } catch (e) {
-        // Verifica se il widget è ancora montato dopo l'errore
         if (!mounted) return;
 
-        // Chiudi il loading indicator in caso di errore
         if (dialogContext != null) {
           Navigator.of(dialogContext!).pop();
         }

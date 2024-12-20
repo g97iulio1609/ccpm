@@ -31,7 +31,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../Store/inAppPurchase.dart';
+import '../Store/in_app_purchase.dart';
 import '../Store/subscriptions_screen.dart';
 import '../trainingBuilder/training_program.dart';
 import '../exerciseManager/exercises_manager.dart';
@@ -155,15 +155,11 @@ class AppRouter {
                             name: 'exercise_details',
                             path: Routes.exerciseDetails,
                             builder: (context, state) {
-                              final extra =
-                                  state.extra as Map<String, dynamic>;
-                              final programId =
-                                  extra['programId'] as String;
+                              final extra = state.extra as Map<String, dynamic>;
+                              final programId = extra['programId'] as String;
                               final weekId = extra['weekId'] as String;
-                              final workoutId =
-                                  extra['workoutId'] as String;
-                              final exerciseId =
-                                  extra['exerciseId'] as String;
+                              final workoutId = extra['workoutId'] as String;
+                              final exerciseId = extra['exerciseId'] as String;
                               final userId = extra['userId'] as String;
                               return ExerciseDetails(
                                 programId: programId,
@@ -188,8 +184,7 @@ class AppRouter {
                                 name: 'timer',
                                 path: Routes.timer,
                                 builder: (context, state) {
-                                  final timerModel =
-                                      state.extra as TimerModel;
+                                  final timerModel = state.extra as TimerModel;
                                   return TimerPage(timerModel: timerModel);
                                 },
                               ),

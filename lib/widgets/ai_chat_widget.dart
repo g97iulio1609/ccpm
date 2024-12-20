@@ -108,9 +108,6 @@ class AIChatWidget extends HookConsumerWidget {
           // 2. Se è un'interpretazione valida, esegui l'azione appropriata
           final featureType = interpretation['featureType'];
           if (featureType != null && featureType != 'other') {
-            if (aiServiceAsync == null) {
-              throw Exception('AI Service non disponibile');
-            }
             final result =
                 await aiServiceAsync.handleUserQuery(messageText, context: {
               'userProfile': user.toMap(),
@@ -185,11 +182,6 @@ class AIChatWidget extends HookConsumerWidget {
         final userId = userService.getCurrentUserId();
         final user = await userService.getUserById(userId);
         if (user == null) throw Exception('Utente non trovato');
-
-        // 3. Ottieni la risposta dall'AI
-        if (aiServiceAsync == null) {
-          throw Exception('AI Service non disponibile');
-        }
         final response = await aiServiceAsync.handleUserQuery(
           messageText,
           context: {

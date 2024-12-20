@@ -9,7 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../Main/app_theme.dart';
-import '../../Store/inAppPurchase_services.dart';
+import '../../Store/in_app_purchase_services.dart';
 import '../../utils/subscription_checker.dart';
 
 // Provider per gestire l'espansione delle settimane

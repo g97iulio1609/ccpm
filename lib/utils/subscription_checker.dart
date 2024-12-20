@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../Store/inAppPurchase_services.dart';
+import '../Store/in_app_purchase_services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -14,10 +14,11 @@ class SubscriptionChecker {
       if (user == null) return false;
 
       // Check subscription through Cloud Function first
-      final subscriptionDetails = await _inAppPurchaseService.getSubscriptionDetails();
-      
+      final subscriptionDetails =
+          await _inAppPurchaseService.getSubscriptionDetails();
+
       if (subscriptionDetails != null) {
-        if (subscriptionDetails.status.toLowerCase() == 'active' && 
+        if (subscriptionDetails.status.toLowerCase() == 'active' &&
             subscriptionDetails.currentPeriodEnd.isAfter(DateTime.now())) {
           return true;
         }
@@ -29,17 +30,19 @@ class SubscriptionChecker {
 
       final data = userDoc.data()!;
       final isGifted = data['giftedAt'] != null;
-      
+
       if (!isGifted) return false;
 
       final subscriptionStatus = data['subscriptionStatus'] as String?;
-      final subscriptionExpiryDate = data['subscriptionExpiryDate'] as Timestamp?;
+      final subscriptionExpiryDate =
+          data['subscriptionExpiryDate'] as Timestamp?;
 
-      if (subscriptionStatus == null || subscriptionExpiryDate == null) return false;
+      if (subscriptionStatus == null || subscriptionExpiryDate == null) {
+        return false;
+      }
 
-      return subscriptionStatus.toLowerCase() == 'active' && 
-             subscriptionExpiryDate.toDate().isAfter(DateTime.now());
-
+      return subscriptionStatus.toLowerCase() == 'active' &&
+          subscriptionExpiryDate.toDate().isAfter(DateTime.now());
     } catch (e) {
       return false;
     }

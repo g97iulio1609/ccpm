@@ -19,7 +19,7 @@ import 'package:alphanessone/Viewer/UI/exercise_details.dart';
 import 'package:alphanessone/nutrition/models/diet_plan_model.dart';
 import 'package:alphanessone/nutrition/services/diet_plan_services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:alphanessone/Store/inAppPurchase_services.dart'; // Import aggiunto
+import 'package:alphanessone/Store/in_app_purchase_services.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/snackbar.dart';
 

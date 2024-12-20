@@ -19,6 +19,7 @@ enum AIModel {
   gpt4o('gpt-4o', AIProvider.openAI),
   geminiPro('gemini-pro', AIProvider.gemini),
   geminiFlash('gemini-2.0-flash-exp', AIProvider.gemini),
+  geminiThinking('gemini-2.0-flash-thinking-exp-1219', AIProvider.gemini),
   claude3Sonnet('claude-3-sonnet-20240229', AIProvider.claude),
   azureGPT4('gpt-4', AIProvider.azureOpenAI),
   azureGPT35('gpt-35-turbo', AIProvider.azureOpenAI);

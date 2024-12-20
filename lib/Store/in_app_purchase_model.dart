@@ -1,23 +1,42 @@
 enum SubscriptionStatus { active, canceled, gracePeriod, expired }
 
+// lib/Store/in_app_purchase_model.dart
 
-// lib/Store/inAppPurchase_model.dart
+class Product {
+  final String id;
+  final String title;
+  final String description;
+  final String price;
+  final double rawPrice;
+  final String currencyCode;
+  final String stripePriceId;
+  final String role;
+
+  Product({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.price,
+    required this.rawPrice,
+    required this.currencyCode,
+    required this.stripePriceId,
+    required this.role,
+  });
+}
 
 class SubscriptionDetails {
   final String id;
   final String status;
   final DateTime currentPeriodEnd;
   final List<SubscriptionItem> items;
-  final String platform; // Add platform field
-  final Map<String, dynamic>? giftInfo; // Aggiungi informazioni sul regalo
+  final String platform;
 
   SubscriptionDetails({
     required this.id,
     required this.status,
     required this.currentPeriodEnd,
     required this.items,
-    required this.platform, // Platform can be 'stripe' or 'google_play'
-    this.giftInfo,
+    required this.platform,
   });
 }
 
@@ -66,26 +85,6 @@ class Subscription {
     required this.startDate,
     this.endDate,
     this.status = SubscriptionStatus.active,
-  });
-}
-
-class Product {
-  final String id;
-  final String title;
-  final String description;
-  final String price;
-  final double rawPrice;
-  final String currencyCode;
-  final String? couponCode;
-
-  Product({
-    required this.id,
-    required this.title,
-    required this.description,
-    required this.price,
-    required this.rawPrice,
-    required this.currencyCode,
-    this.couponCode,
   });
 }
 

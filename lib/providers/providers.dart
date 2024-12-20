@@ -1,5 +1,5 @@
 // lib/providers/providers.dart
-import 'package:alphanessone/Store/inAppPurchase_model.dart';
+import 'package:alphanessone/Store/in_app_purchase_model.dart';
 import 'package:alphanessone/measurements/measurements_provider.dart';
 import 'package:alphanessone/models/exercise_record.dart';
 import 'package:alphanessone/models/nutrition_stats.dart';

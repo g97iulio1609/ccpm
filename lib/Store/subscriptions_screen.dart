@@ -5,12 +5,11 @@ import 'package:alphanessone/UI/components/user_autocomplete.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:alphanessone/Store/inAppPurchase_services.dart';
-import 'package:alphanessone/Store/inAppPurchase_model.dart';
+import 'package:alphanessone/Store/in_app_purchase_services.dart';
+import 'package:alphanessone/Store/in_app_purchase_model.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'dart:async';
 import 'package:alphanessone/Main/app_theme.dart';
 
@@ -608,7 +607,7 @@ class SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
                 borderRadius: BorderRadius.circular(AppTheme.radii.full),
                 boxShadow: [
                   BoxShadow(
-                    color: colorScheme.primary.withOpacity(0.2),
+                    color: colorScheme.primary.withValues(alpha: 51),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -1045,8 +1044,4 @@ extension StringCasingExtension on String {
     if (length <= 1) return toUpperCase();
     return '${this[0].toUpperCase()}${substring(1)}';
   }
-}
-
-void _navigateToSubscriptions(BuildContext context) async {
-  await context.push('/subscriptions');
 }

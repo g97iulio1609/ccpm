@@ -1036,9 +1036,9 @@ class TrainingExtension implements AIExtension {
         if (maxIntensityValue != null &&
             maxIntensityValue.isNotEmpty &&
             maxIntensityValue != '0') {
-          response += ' ${minIntensity}-${maxIntensityValue}%';
+          response += ' $minIntensity-$maxIntensityValue%';
         } else {
-          response += ' ${minIntensity}%';
+          response += ' $minIntensity%';
         }
       }
 
