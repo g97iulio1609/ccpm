@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/UI/components/button.dart';
 import 'package:alphanessone/trainingBuilder/dialog/exercise_dialog.dart';
 import 'package:alphanessone/trainingBuilder/dialog/series_dialog.dart';
 import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
@@ -388,7 +389,6 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
 
   Widget _buildSuperSetStartButton(
       List<Map<String, dynamic>> superSetExercises, BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final allSeriesCompleted = superSetExercises.every((exercise) =>
         exercise['series'].every((series) => ref
             .read(workout_provider.workoutServiceProvider)
@@ -401,26 +401,13 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
             .read(workout_provider.workoutServiceProvider)
             .isSeriesDone(series)));
 
-    return GestureDetector(
-      onTap: () => _navigateToExerciseDetails(
+    return AppButton(
+      label: 'START',
+      onPressed: () => _navigateToExerciseDetails(
           superSetExercises[firstNotDoneExerciseIndex], superSetExercises),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-        decoration: BoxDecoration(
-          color: colorScheme.primary,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          'START',
-          style: TextStyle(
-            color: colorScheme.onPrimary,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ),
+      variant: AppButtonVariant.primary,
+      size: AppButtonSize.md,
+      block: true,
     );
   }
 
@@ -830,28 +817,13 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
 
   Widget _buildStartButton(Map<String, dynamic> exercise,
       int firstNotDoneSeriesIndex, bool isContinueMode, BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return ElevatedButton(
+    return AppButton(
+      label: isContinueMode ? 'CONTINUA' : 'INIZIA',
       onPressed: () => _navigateToExerciseDetails(
           exercise, [exercise], firstNotDoneSeriesIndex),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
-        padding: EdgeInsets.symmetric(
-          vertical: AppTheme.spacing.md,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radii.md),
-        ),
-      ),
-      child: Text(
-        isContinueMode ? 'CONTINUA' : 'INIZIA',
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: colorScheme.onPrimary,
-              fontWeight: FontWeight.w600,
-            ),
-      ),
+      variant: AppButtonVariant.primary,
+      size: AppButtonSize.md,
+      block: true,
     );
   }
 
