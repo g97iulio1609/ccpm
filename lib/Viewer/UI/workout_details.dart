@@ -572,7 +572,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     );
   }
 
-  String _formatSeriesValue(Map<String, dynamic> seriesData, String field) {
+  dynamic _formatSeriesValue(Map<String, dynamic> seriesData, String field) {
     final value = seriesData[field];
     final maxValue = seriesData['max${field.capitalize()}'];
     final valueDone = seriesData['${field}_done'];
@@ -581,17 +581,26 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
         .isSeriesDone(seriesData);
     final unit = field == 'reps' ? 'R' : 'Kg';
 
-    // Show done values if they are available and not zero
-    if (valueDone != null && valueDone != 0) {
+    // Se non ci sono valori done o sono zero, mostra solo i target
+    if (valueDone == null || valueDone == 0) {
+      return maxValue != null && maxValue != value
+          ? '$value-$maxValue$unit'
+          : '$value$unit';
+    }
+
+    // Se la serie è completata, mostra solo il valore done
+    if (isDone) {
       return '$valueDone$unit';
     }
 
-    // Otherwise show target values
-    String text = maxValue != null && maxValue != value
-        ? '$value-$maxValue$unit'
-        : '$value$unit';
+    // Se la serie è fallita, prepara sia il formato esteso che quello compatto
+    final targetText =
+        maxValue != null && maxValue != value ? '$value-$maxValue' : '$value';
 
-    return text;
+    return {
+      'compact': '$valueDone$unit',
+      'extended': '$valueDone/$targetText$unit',
+    };
   }
 
   Widget _buildExerciseName(
@@ -872,29 +881,85 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     final userRole = ref.watch(app_providers.userRoleProvider);
     final isAdminOrCoach = userRole == 'admin' || userRole == 'coach';
 
+    // Ottieni il valore formattato
+    final formattedValue = _formatSeriesValue(seriesData, field);
+
+    // Se è una stringa semplice, mostrala direttamente
+    if (formattedValue is String) {
+      return Expanded(
+        flex: flex,
+        child: GestureDetector(
+          onTap: () {
+            _showUserSeriesInputDialog(seriesData, field);
+          },
+          onLongPress: isAdminOrCoach
+              ? () {
+                  _showEditSeriesDialog({
+                    'id': seriesData['exerciseId'],
+                    'series': [seriesData]
+                  }, [
+                    seriesData
+                  ]);
+                }
+              : null,
+          child: Text(
+            formattedValue,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.onSurface,
+                ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+
+    // Altrimenti è un Map con formato compatto ed esteso
     return Expanded(
       flex: flex,
-      child: GestureDetector(
-        onTap: () {
-          _showUserSeriesInputDialog(seriesData, field);
-        },
-        onLongPress: isAdminOrCoach
-            ? () {
-                _showEditSeriesDialog({
-                  'id': seriesData['exerciseId'],
-                  'series': [seriesData]
-                }, [
-                  seriesData
-                ]);
-              }
-            : null,
-        child: Text(
-          _formatSeriesValue(seriesData, field),
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Calcola la larghezza disponibile e decide quale formato usare
+          final textStyle = Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: colorScheme.onSurface,
-              ),
-          textAlign: TextAlign.center,
-        ),
+              );
+          final textSpan = TextSpan(
+            text: (formattedValue as Map<String, String>)['extended'],
+            style: textStyle,
+          );
+          final textPainter = TextPainter(
+            text: textSpan,
+            textDirection: TextDirection.ltr,
+            maxLines: 1,
+          );
+          textPainter.layout(maxWidth: double.infinity);
+
+          // Se c'è spazio sufficiente per il formato esteso, usalo
+          final hasEnoughSpace = textPainter.width <= constraints.maxWidth;
+
+          return GestureDetector(
+            onTap: () {
+              _showUserSeriesInputDialog(seriesData, field);
+            },
+            onLongPress: isAdminOrCoach
+                ? () {
+                    _showEditSeriesDialog({
+                      'id': seriesData['exerciseId'],
+                      'series': [seriesData]
+                    }, [
+                      seriesData
+                    ]);
+                  }
+                : null,
+            child: Text(
+              hasEnoughSpace
+                  ? formattedValue['extended']!
+                  : formattedValue['compact']!,
+              style: textStyle,
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+            ),
+          );
+        },
       ),
     );
   }
