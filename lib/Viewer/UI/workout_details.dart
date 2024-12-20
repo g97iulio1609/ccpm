@@ -570,7 +570,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
                               .read(workout_provider.workoutServiceProvider)
                               .isSeriesDone(series)
                           ? Icons.check_circle
-                          : Icons.cancel,
+                          : Icons.error_outline,
                       color: ref
                               .read(workout_provider.workoutServiceProvider)
                               .isSeriesDone(series)
@@ -963,7 +963,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       iconColor = colorScheme.primary;
     } else if (isFailed) {
       // Serie fallita (tentata ma non completata)
-      iconData = Icons.warning_rounded;
+      iconData = Icons.error_outline;
       iconColor = colorScheme.error;
     } else {
       // Serie non svolta
