@@ -180,6 +180,13 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     final loading = ref.watch(loadingProvider);
     final exercises = ref.watch(workout_provider.exercisesProvider);
     final colorScheme = Theme.of(context).colorScheme;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isListMode = screenWidth < 600;
+
+    // Determina il numero di colonne in base alla larghezza dello schermo
+    final crossAxisCount = isListMode ? 1 : 2;
+    final padding = AppTheme.spacing.md;
+    final spacing = AppTheme.spacing.md;
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -216,14 +223,31 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
                             ),
                       ),
                     )
-                  : ListView.builder(
-                      padding: EdgeInsets.all(AppTheme.spacing.md),
-                      itemCount: exercises.length,
-                      key: PageStorageKey(
-                          'workout_exercises_${widget.workoutId}'),
-                      itemBuilder: (context, index) =>
-                          _buildExerciseCard(exercises[index], context),
-                    ),
+                  : isListMode
+                      ? ListView.builder(
+                          padding: EdgeInsets.all(padding),
+                          itemCount: exercises.length,
+                          itemBuilder: (context, index) => Padding(
+                            padding: EdgeInsets.only(bottom: spacing),
+                            child:
+                                _buildExerciseCard(exercises[index], context),
+                          ),
+                        )
+                      : GridView.builder(
+                          padding: EdgeInsets.all(padding),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: crossAxisCount,
+                            crossAxisSpacing: spacing,
+                            mainAxisSpacing: spacing,
+                            childAspectRatio: 1.2,
+                          ),
+                          itemCount: exercises.length,
+                          key: PageStorageKey(
+                              'workout_exercises_${widget.workoutId}'),
+                          itemBuilder: (context, index) =>
+                              _buildExerciseCard(exercises[index], context),
+                        ),
     );
   }
 
@@ -257,30 +281,54 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     });
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(16),
       decoration: _buildCardDecoration(context),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(
-            'Super Set',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onSurface,
+          Container(
+            padding: EdgeInsets.all(AppTheme.spacing.md),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              border: Border(
+                bottom: BorderSide(
+                  color: colorScheme.outline.withOpacity(0.1),
                 ),
-            textAlign: TextAlign.center,
+              ),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  'Super Set',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                ...superSetExercises.asMap().entries.map((entry) =>
+                    _buildSuperSetExerciseName(
+                        entry.key, entry.value, context)),
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
-          ...superSetExercises.asMap().entries.map((entry) =>
-              _buildSuperSetExerciseName(entry.key, entry.value, context)),
-          const SizedBox(height: 24),
-          if (!allSeriesCompleted) ...[
-            _buildSuperSetStartButton(superSetExercises, context),
-            const SizedBox(height: 24),
-          ],
-          _buildSeriesHeaderRow(context),
-          ..._buildSeriesRows(superSetExercises, context),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.all(AppTheme.spacing.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (!allSeriesCompleted) ...[
+                      _buildSuperSetStartButton(superSetExercises, context),
+                      const SizedBox(height: 24),
+                    ],
+                    _buildSeriesHeaderRow(context),
+                    ..._buildSeriesRows(superSetExercises, context),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -296,9 +344,10 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     final allSeriesCompleted = series.every((serie) =>
         ref.read(workout_provider.workoutServiceProvider).isSeriesDone(serie));
     final colorScheme = Theme.of(context).colorScheme;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isListMode = screenWidth < 600;
 
     return Container(
-      margin: EdgeInsets.only(bottom: AppTheme.spacing.md),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
@@ -311,7 +360,6 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.md),
@@ -325,33 +373,67 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
               ),
               child: _buildExerciseName(exercise, context),
             ),
-            Padding(
-              padding: EdgeInsets.all(AppTheme.spacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (!allSeriesCompleted) ...[
-                    _buildStartButton(exercise, firstNotDoneSeriesIndex,
-                        isContinueMode, context),
-                    SizedBox(height: AppTheme.spacing.md),
+            if (isListMode)
+              Padding(
+                padding: EdgeInsets.all(AppTheme.spacing.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (!allSeriesCompleted) ...[
+                      _buildStartButton(exercise, firstNotDoneSeriesIndex,
+                          isContinueMode, context),
+                      SizedBox(height: AppTheme.spacing.md),
+                    ],
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        vertical: AppTheme.spacing.xs,
+                        horizontal: AppTheme.spacing.sm,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest
+                            .withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(AppTheme.radii.sm),
+                      ),
+                      child: _buildSeriesHeaderRow(context),
+                    ),
+                    SizedBox(height: AppTheme.spacing.sm),
+                    ..._buildSeriesContainers(series, context),
                   ],
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      vertical: AppTheme.spacing.xs,
-                      horizontal: AppTheme.spacing.sm,
+                ),
+              )
+            else
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: EdgeInsets.all(AppTheme.spacing.md),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (!allSeriesCompleted) ...[
+                          _buildStartButton(exercise, firstNotDoneSeriesIndex,
+                              isContinueMode, context),
+                          SizedBox(height: AppTheme.spacing.md),
+                        ],
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            vertical: AppTheme.spacing.xs,
+                            horizontal: AppTheme.spacing.sm,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerHighest
+                                .withOpacity(0.3),
+                            borderRadius:
+                                BorderRadius.circular(AppTheme.radii.sm),
+                          ),
+                          child: _buildSeriesHeaderRow(context),
+                        ),
+                        SizedBox(height: AppTheme.spacing.sm),
+                        ..._buildSeriesContainers(series, context),
+                      ],
                     ),
-                    decoration: BoxDecoration(
-                      color:
-                          colorScheme.surfaceContainerHighest.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(AppTheme.radii.sm),
-                    ),
-                    child: _buildSeriesHeaderRow(context),
                   ),
-                  SizedBox(height: AppTheme.spacing.sm),
-                  ..._buildSeriesContainers(series, context),
-                ],
+                ),
               ),
-            ),
           ],
         ),
       ),
