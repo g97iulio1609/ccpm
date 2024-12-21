@@ -1235,6 +1235,16 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       weightController.text = currentWeight.toString();
     }
 
+    // Prepare target values text
+    final reps = seriesData['reps'];
+    final maxReps = seriesData['maxReps'];
+    final weight = seriesData['weight'];
+    final maxWeight = seriesData['maxWeight'];
+
+    final String repsTarget = maxReps != null ? "$reps-$maxReps" : "$reps";
+    final String weightTarget =
+        maxWeight != null ? "$weight-$maxWeight" : "$weight";
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -1250,7 +1260,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Obiettivo ripetizioni: ${_formatSeriesValue(seriesData, "reps")}',
+              'Obiettivo ripetizioni: ${repsTarget}R',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
@@ -1270,7 +1280,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Obiettivo peso: ${_formatSeriesValue(seriesData, "weight")}',
+              'Obiettivo peso: ${weightTarget}Kg',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
