@@ -75,7 +75,7 @@ class UserProgramsScreen extends HookConsumerWidget {
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.primary.withOpacity(0.2),
+            color: colorScheme.primary.withAlpha(51),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -133,7 +133,7 @@ class UserProgramsScreen extends HookConsumerWidget {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withAlpha(26),
         ),
         boxShadow: AppTheme.elevations.small,
       ),

@@ -379,7 +379,7 @@ class _InAppPurchaseScreenState extends ConsumerState<InAppPurchaseScreen>
                 end: Alignment.bottomRight,
                 colors: [
                   colorScheme.surface.withAlpha(242),
-                  colorScheme.surface.withAlpha(242).withOpacity(0.95),
+                  colorScheme.surface.withAlpha(242).withAlpha(242),
                 ],
               )
             : null,

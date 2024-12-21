@@ -163,7 +163,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
                   Text(
                     'Try adjusting your search',
                     style: theme.textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+                      color: colorScheme.onSurfaceVariant.withAlpha(179),
                     ),
                   ),
                 ],
@@ -344,7 +344,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
           ),
           decoration: BoxDecoration(
             color: isDestructive
-                ? colorScheme.errorContainer.withOpacity(0.2)
+                ? colorScheme.errorContainer.withAlpha(51)
                 : colorScheme.surfaceContainerHighest.withAlpha(76),
             borderRadius: BorderRadius.circular(AppTheme.radii.full),
           ),

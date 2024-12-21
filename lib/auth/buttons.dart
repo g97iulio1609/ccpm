@@ -183,7 +183,7 @@ class GoogleSignInButtonWrapper extends ConsumerWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(
-            color: theme.colorScheme.outline.withOpacity(0.2),
+            color: theme.colorScheme.outline.withAlpha(26),
           ),
         ),
         color: theme.colorScheme.surface,
@@ -288,7 +288,7 @@ class SignInWithGoogleButton extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(
-            color: theme.colorScheme.outline.withOpacity(0.2),
+            color: theme.colorScheme.outline.withAlpha(51),
           ),
         ),
         color: theme.colorScheme.surface,

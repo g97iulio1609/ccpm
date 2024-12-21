@@ -105,7 +105,7 @@ class AppCard extends StatelessWidget {
             ? LinearGradient(
                 colors: [
                   cardColor,
-                  cardColor.withOpacity(0.8),
+                  cardColor.withAlpha(204),
                 ],
               )
             : null,

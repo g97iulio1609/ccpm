@@ -35,7 +35,7 @@ class FavouritesMeals extends ConsumerWidget {
                     Icon(
                       Icons.restaurant_menu,
                       size: 64,
-                      color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                      color: colorScheme.onSurfaceVariant.withAlpha(128),
                     ),
                     SizedBox(height: AppTheme.spacing.lg),
                     Text(
@@ -265,7 +265,7 @@ class FavouriteDays extends ConsumerWidget {
                     Icon(
                       Icons.calendar_month,
                       size: 64,
-                      color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                      color: colorScheme.onSurfaceVariant.withAlpha(128),
                     ),
                     SizedBox(height: AppTheme.spacing.lg),
                     Text(

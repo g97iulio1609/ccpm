@@ -68,7 +68,7 @@ class AppSelect<T> extends StatelessWidget {
           Text(
             helperText!,
             style: theme.textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+              color: colorScheme.onSurfaceVariant.withAlpha(179),
             ),
           ),
         ],
@@ -80,10 +80,10 @@ class AppSelect<T> extends StatelessWidget {
           decoration: BoxDecoration(
             color: enabled
                 ? colorScheme.surfaceContainerHighest.withAlpha(76)
-                : colorScheme.surfaceContainerHighest.withOpacity(0.1),
+                : colorScheme.surfaceContainerHighest.withAlpha(26),
             borderRadius: BorderRadius.circular(AppTheme.radii.lg),
             border: Border.all(
-              color: colorScheme.outline.withOpacity(0.1),
+              color: colorScheme.outline.withAlpha(26),
             ),
           ),
           child: DropdownButtonFormField<T>(

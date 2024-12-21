@@ -97,7 +97,7 @@ class AppButton extends StatelessWidget {
         case AppButtonVariant.ghost:
           return Colors.transparent;
         case AppButtonVariant.subtle:
-          return colorScheme.primaryContainer.withOpacity(0.3);
+          return colorScheme.primaryContainer.withAlpha(77);
         case AppButtonVariant.secondary:
           return colorScheme.secondary;
       }

@@ -93,7 +93,7 @@ class AppInput extends StatelessWidget {
           Text(
             helperText!,
             style: theme.textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+              color: colorScheme.onSurfaceVariant.withAlpha(179),
             ),
           ),
         ],
@@ -132,7 +132,7 @@ class AppInput extends StatelessWidget {
             filled: true,
             fillColor: enabled
                 ? colorScheme.surfaceContainerHighest.withAlpha(76)
-                : colorScheme.surfaceContainerHighest.withOpacity(0.1),
+                : colorScheme.surfaceContainerHighest.withAlpha(26),
             contentPadding: EdgeInsets.symmetric(
               horizontal: AppTheme.spacing.md,
               vertical: AppTheme.spacing.sm,
@@ -140,13 +140,13 @@ class AppInput extends StatelessWidget {
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppTheme.radii.lg),
               borderSide: BorderSide(
-                color: colorScheme.outline.withOpacity(0.1),
+                color: colorScheme.outline.withAlpha(26),
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppTheme.radii.lg),
               borderSide: BorderSide(
-                color: colorScheme.outline.withOpacity(0.1),
+                color: colorScheme.outline.withAlpha(26),
               ),
             ),
             focusedBorder: OutlineInputBorder(

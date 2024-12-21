@@ -392,7 +392,7 @@ class UserProfileState extends ConsumerState<UserProfile>
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(
-          color: theme.colorScheme.outline.withOpacity(0.2),
+          color: theme.colorScheme.outline.withAlpha(51),
         ),
       ),
       focusedBorder: OutlineInputBorder(
@@ -403,7 +403,7 @@ class UserProfileState extends ConsumerState<UserProfile>
         ),
       ),
       filled: true,
-      fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+      fillColor: theme.colorScheme.surfaceContainerHighest.withAlpha(77),
     );
   }
 
@@ -493,7 +493,7 @@ class UserProfileState extends ConsumerState<UserProfile>
           );
         }).toList(),
         hint: Text('Seleziona genere',
-            style: TextStyle(color: Colors.white.withOpacity(0.7))),
+            style: TextStyle(color: Colors.white.withAlpha(179))),
       ),
     );
   }

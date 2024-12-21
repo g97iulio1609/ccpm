@@ -172,7 +172,7 @@ class _AppAccordionState extends State<AppAccordion>
                   if (widget.showDivider)
                     Divider(
                       height: 1,
-                      color: colorScheme.outline.withOpacity(0.1),
+                      color: colorScheme.outline.withAlpha(26),
                     ),
                   Padding(
                     padding: widget.contentPadding ??

@@ -353,7 +353,7 @@ class MaxRMDashboard extends HookConsumerWidget {
                       gradient: LinearGradient(
                         colors: [
                           colorScheme.primary.withAlpha(51),
-                          colorScheme.primary.withAlpha(51).withOpacity(0.8),
+                          colorScheme.primary.withAlpha(51).withAlpha(204),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(AppTheme.radii.xxl),

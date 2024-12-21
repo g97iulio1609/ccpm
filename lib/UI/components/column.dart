@@ -52,7 +52,7 @@ class AppColumn extends StatelessWidget {
         border: Border.all(
           color: isSelected
               ? colorScheme.primary
-              : colorScheme.outline.withOpacity(0.1),
+              : colorScheme.outline.withAlpha(26),
           width: isSelected ? 2 : 1,
         ),
         boxShadow: enabled ? AppTheme.elevations.small : null,
@@ -111,7 +111,7 @@ class AppColumn extends StatelessWidget {
             ),
             if (showDividers && children.isNotEmpty)
               Divider(
-                color: colorScheme.outline.withOpacity(0.1),
+                color: colorScheme.outline.withAlpha(26),
                 height: 1,
               ),
           ],
@@ -126,7 +126,7 @@ class AppColumn extends StatelessWidget {
                   if (showDividers && i < children.length - 1) ...[
                     SizedBox(height: AppTheme.spacing.md),
                     Divider(
-                      color: colorScheme.outline.withOpacity(0.1),
+                      color: colorScheme.outline.withAlpha(26),
                       height: 1,
                     ),
                     SizedBox(height: AppTheme.spacing.md),

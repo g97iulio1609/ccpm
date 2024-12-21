@@ -719,7 +719,7 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withOpacity(0.5),
+              colorScheme.surfaceContainerHighest.withAlpha(128),
             ],
             stops: const [0.0, 1.0],
           ),
@@ -787,7 +787,7 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(AppTheme.radii.lg),
             border: Border.all(
-              color: colorScheme.outline.withOpacity(0.1),
+              color: colorScheme.outline.withAlpha(26),
             ),
             boxShadow: AppTheme.elevations.small,
           ),
@@ -935,8 +935,7 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
                             vertical: AppTheme.spacing.xs,
                           ),
                           decoration: BoxDecoration(
-                            color:
-                                colorScheme.secondaryContainer.withOpacity(0.3),
+                            color: colorScheme.secondaryContainer.withAlpha(77),
                             borderRadius:
                                 BorderRadius.circular(AppTheme.radii.lg),
                           ),
@@ -981,13 +980,13 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
         gradient: LinearGradient(
           colors: [
             colorScheme.primary,
-            colorScheme.primary.withOpacity(0.8),
+            colorScheme.primary.withAlpha(204),
           ],
         ),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.primary.withOpacity(0.2),
+            color: colorScheme.primary.withAlpha(52),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

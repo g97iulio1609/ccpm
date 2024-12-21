@@ -118,12 +118,11 @@ class AppSlider extends StatelessWidget {
             inactiveTrackColor: enabled
                 ? (inactiveColor ?? colorScheme.surfaceContainerHighest)
                     .withAlpha(76)
-                : colorScheme.surfaceContainerHighest.withOpacity(0.1),
+                : colorScheme.surfaceContainerHighest.withAlpha(26),
             thumbColor: enabled
                 ? activeColor ?? colorScheme.primary
                 : colorScheme.surfaceContainerHighest,
-            overlayColor:
-                (activeColor ?? colorScheme.primary).withOpacity(0.12),
+            overlayColor: (activeColor ?? colorScheme.primary).withAlpha(31),
             valueIndicatorColor: colorScheme.primaryContainer,
             valueIndicatorTextStyle: theme.textTheme.labelMedium?.copyWith(
               color: colorScheme.onPrimaryContainer,
@@ -135,7 +134,7 @@ class AppSlider extends StatelessWidget {
             inactiveTickMarkColor: enabled
                 ? (inactiveColor ?? colorScheme.surfaceContainerHighest)
                     .withAlpha(76)
-                : colorScheme.surfaceContainerHighest.withOpacity(0.1),
+                : colorScheme.surfaceContainerHighest.withAlpha(26),
           ),
           child: Slider(
             value: value,
@@ -305,7 +304,7 @@ class AppRangeSlider extends StatelessWidget {
                       helperText!,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: enabled
-                            ? colorScheme.onSurfaceVariant.withOpacity(0.7)
+                            ? colorScheme.onSurfaceVariant.withAlpha(179)
                             : colorScheme.onSurfaceVariant.withAlpha(128),
                       ),
                     ),
@@ -354,12 +353,11 @@ class AppRangeSlider extends StatelessWidget {
             inactiveTrackColor: enabled
                 ? (inactiveColor ?? colorScheme.surfaceContainerHighest)
                     .withAlpha(76)
-                : colorScheme.surfaceContainerHighest.withOpacity(0.1),
+                : colorScheme.surfaceContainerHighest.withAlpha(26),
             thumbColor: enabled
                 ? activeColor ?? colorScheme.primary
                 : colorScheme.surfaceContainerHighest,
-            overlayColor:
-                (activeColor ?? colorScheme.primary).withOpacity(0.12),
+            overlayColor: (activeColor ?? colorScheme.primary).withAlpha(31),
             valueIndicatorColor: colorScheme.primaryContainer,
             valueIndicatorTextStyle: theme.textTheme.labelMedium?.copyWith(
               color: colorScheme.onPrimaryContainer,
@@ -371,7 +369,7 @@ class AppRangeSlider extends StatelessWidget {
             inactiveTickMarkColor: enabled
                 ? (inactiveColor ?? colorScheme.surfaceContainerHighest)
                     .withAlpha(76)
-                : colorScheme.surfaceContainerHighest.withOpacity(0.1),
+                : colorScheme.surfaceContainerHighest.withAlpha(26),
           ),
           child: RangeSlider(
             values: values,

@@ -54,7 +54,7 @@ class TrainingGalleryScreen extends HookConsumerWidget {
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withOpacity(0.5),
+              colorScheme.surfaceContainerHighest.withAlpha(128),
             ],
             stops: const [0.0, 1.0],
           ),
@@ -109,8 +109,8 @@ class TrainingGalleryScreen extends HookConsumerWidget {
                               Icon(
                                 Icons.fitness_center_outlined,
                                 size: 64,
-                                color: colorScheme.onSurfaceVariant
-                                    .withOpacity(0.5),
+                                color:
+                                    colorScheme.onSurfaceVariant.withAlpha(128),
                               ),
                               SizedBox(height: AppTheme.spacing.md),
                               Text(
@@ -202,7 +202,7 @@ class TrainingGalleryScreen extends HookConsumerWidget {
                                             decoration: BoxDecoration(
                                               color: colorScheme
                                                   .primaryContainer
-                                                  .withOpacity(0.3),
+                                                  .withAlpha(77),
                                               borderRadius:
                                                   BorderRadius.circular(
                                                       AppTheme.radii.xxl),
@@ -330,7 +330,7 @@ class TrainingGalleryScreen extends HookConsumerWidget {
             vertical: AppTheme.spacing.sm,
           ),
           decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+            color: colorScheme.surfaceContainerHighest.withAlpha(77),
             borderRadius: BorderRadius.circular(AppTheme.radii.full),
           ),
           child: Row(

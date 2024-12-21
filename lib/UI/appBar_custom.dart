@@ -371,7 +371,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
         color: colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.05),
+            color: colorScheme.shadow.withAlpha(51),
             blurRadius: 8,
             offset: const Offset(0, 1),
           ),
@@ -477,10 +477,10 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
         vertical: AppTheme.spacing.xs,
       ),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withAlpha(77),
         borderRadius: BorderRadius.circular(AppTheme.radii.full),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withAlpha(26),
         ),
       ),
       child: Row(

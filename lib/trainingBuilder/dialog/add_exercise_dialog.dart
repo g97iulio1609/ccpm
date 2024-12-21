@@ -53,12 +53,12 @@ class AddExerciseDialog extends HookConsumerWidget {
             contentPadding: EdgeInsets.all(AppTheme.spacing.md),
             labelText: label,
             labelStyle: theme.textTheme.bodyLarge?.copyWith(
-              color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+              color: colorScheme.onSurfaceVariant.withAlpha(179),
             ),
             prefixIcon: icon != null
                 ? Icon(
                     icon,
-                    color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                    color: colorScheme.onSurfaceVariant.withAlpha(128),
                     size: 20,
                   )
                 : null,
@@ -108,7 +108,7 @@ class AddExerciseDialog extends HookConsumerWidget {
                 children: selectedMuscleGroups.value.map((muscleGroup) {
                   return Container(
                     decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer.withOpacity(0.2),
+                      color: colorScheme.primaryContainer.withAlpha(51),
                       borderRadius: BorderRadius.circular(AppTheme.radii.full),
                     ),
                     child: Material(

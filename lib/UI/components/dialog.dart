@@ -45,7 +45,7 @@ class AppDialog extends StatelessWidget {
           color: backgroundColor ?? colorScheme.surface,
           borderRadius: BorderRadius.circular(AppTheme.radii.xl),
           border: Border.all(
-            color: colorScheme.outline.withOpacity(0.1),
+            color: colorScheme.outline.withAlpha(26),
           ),
           boxShadow: AppTheme.elevations.large,
         ),
@@ -117,7 +117,7 @@ class AppDialog extends StatelessWidget {
                         SizedBox(height: AppTheme.spacing.lg),
                         if (i < children.length - 1)
                           Divider(
-                            color: colorScheme.outline.withOpacity(0.1),
+                            color: colorScheme.outline.withAlpha(26),
                           ),
                         SizedBox(height: AppTheme.spacing.lg),
                       ] else if (i < children.length - 1)
@@ -213,7 +213,7 @@ class AppDialog extends StatelessWidget {
                 BoxShadow(
                   color:
                       (isDestructive ? colorScheme.error : colorScheme.primary)
-                          .withOpacity(0.2),
+                          .withAlpha(51),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -285,7 +285,7 @@ class AppDialog extends StatelessWidget {
           padding: EdgeInsets.all(AppTheme.spacing.sm),
           decoration: BoxDecoration(
             color: (isDestructive ? colorScheme.error : colorScheme.primary)
-                .withOpacity(0.2),
+                .withAlpha(51),
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
           child: Icon(

@@ -416,10 +416,10 @@ class TrainingProgramSeriesListState
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isPrimary
-              ? [colorScheme.primary, colorScheme.primary.withOpacity(0.8)]
+              ? [colorScheme.primary, colorScheme.primary.withAlpha(204)]
               : [
                   colorScheme.surfaceContainerHighest,
-                  colorScheme.surfaceContainerHighest.withOpacity(0.8)
+                  colorScheme.surfaceContainerHighest.withAlpha(204)
                 ],
         ),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),

@@ -58,11 +58,11 @@ class AppToast extends StatelessWidget {
           color: colorScheme.surface,
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           border: Border.all(
-            color: colorScheme.outline.withOpacity(0.1),
+            color: colorScheme.outline.withAlpha(26),
           ),
           boxShadow: [
             BoxShadow(
-              color: toastColor.withOpacity(0.1),
+              color: toastColor.withAlpha(26),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -80,7 +80,7 @@ class AppToast extends StatelessWidget {
                     Container(
                       padding: EdgeInsets.all(AppTheme.spacing.sm),
                       decoration: BoxDecoration(
-                        color: toastColor.withOpacity(0.1),
+                        color: toastColor.withAlpha(26),
                         borderRadius: BorderRadius.circular(AppTheme.radii.md),
                       ),
                       child: Icon(
@@ -117,7 +117,7 @@ class AppToast extends StatelessWidget {
                   decoration: BoxDecoration(
                     border: Border(
                       top: BorderSide(
-                        color: colorScheme.outline.withOpacity(0.1),
+                        color: colorScheme.outline.withAlpha(26),
                       ),
                     ),
                   ),
@@ -292,4 +292,4 @@ class AppToast extends StatelessWidget {
       duration: duration ?? const Duration(seconds: 4),
     );
   }
-} 
+}

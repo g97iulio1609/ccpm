@@ -38,7 +38,7 @@ class AppForm extends StatelessWidget {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.xl),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withAlpha(26),
         ),
         boxShadow: AppTheme.elevations.large,
       ),
@@ -52,7 +52,7 @@ class AppForm extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withAlpha(77),
                 borderRadius: BorderRadius.vertical(
                   top: Radius.circular(AppTheme.radii.xl),
                 ),
@@ -102,7 +102,7 @@ class AppForm extends StatelessWidget {
                       SizedBox(height: AppTheme.spacing.lg),
                       if (i < children.length - 1)
                         Divider(
-                          color: colorScheme.outline.withOpacity(0.1),
+                          color: colorScheme.outline.withAlpha(26),
                         ),
                       SizedBox(height: AppTheme.spacing.lg),
                     ] else if (i < children.length - 1)
@@ -117,7 +117,7 @@ class AppForm extends StatelessWidget {
               Container(
                 padding: EdgeInsets.all(AppTheme.spacing.lg),
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                  color: colorScheme.surfaceContainerHighest.withAlpha(77),
                   borderRadius: BorderRadius.vertical(
                     bottom: Radius.circular(AppTheme.radii.xl),
                   ),
@@ -127,9 +127,10 @@ class AppForm extends StatelessWidget {
                   children: [
                     if (actions != null) ...[
                       ...actions!.map((action) => Padding(
-                        padding: EdgeInsets.only(right: AppTheme.spacing.md),
-                        child: action,
-                      )),
+                            padding:
+                                EdgeInsets.only(right: AppTheme.spacing.md),
+                            child: action,
+                          )),
                     ],
                     if (onSubmit != null)
                       AppButton(
@@ -206,8 +207,7 @@ class AppForm extends StatelessWidget {
       children: [
         for (int i = 0; i < children.length; i++) ...[
           Expanded(child: children[i]),
-          if (i < children.length - 1)
-            SizedBox(width: spacing),
+          if (i < children.length - 1) SizedBox(width: spacing),
         ],
       ],
     );
@@ -260,4 +260,4 @@ class AppForm extends StatelessWidget {
       children: children,
     );
   }
-} 
+}
