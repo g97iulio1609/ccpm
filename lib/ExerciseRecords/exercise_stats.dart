@@ -183,7 +183,7 @@ class ExerciseStats extends HookConsumerWidget {
             drawVerticalLine: false,
             getDrawingHorizontalLine: (value) {
               return FlLine(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                color: Theme.of(context).colorScheme.onSurface.withAlpha(26),
                 strokeWidth: 1,
               );
             },
@@ -258,7 +258,7 @@ class ExerciseStats extends HookConsumerWidget {
               ),
               belowBarData: BarAreaData(
                 show: true,
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                color: Theme.of(context).colorScheme.primary.withAlpha(26),
               ),
             ),
           ],
@@ -266,13 +266,13 @@ class ExerciseStats extends HookConsumerWidget {
             horizontalLines: [
               HorizontalLine(
                 y: maxWeight,
-                color: Colors.green.withOpacity(0.8),
+                color: Colors.green.withAlpha(204),
                 strokeWidth: 2,
                 dashArray: [5, 10],
               ),
               HorizontalLine(
                 y: minWeight,
-                color: Colors.red.withOpacity(0.8),
+                color: Colors.red.withAlpha(204),
                 strokeWidth: 2,
                 dashArray: [5, 10],
               ),

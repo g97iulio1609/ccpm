@@ -163,7 +163,7 @@ class TrainingProgramSeriesListState
                   vertical: AppTheme.spacing.xs,
                 ),
                 decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withOpacity(0.3),
+                  color: colorScheme.primaryContainer.withAlpha(77),
                   borderRadius: BorderRadius.circular(AppTheme.radii.full),
                 ),
                 child: Text(
@@ -189,7 +189,7 @@ class TrainingProgramSeriesListState
           trailing: IconButton(
             icon: Icon(
               Icons.more_vert,
-              color: colorScheme.onSurfaceVariant,
+              color: colorScheme.onSurfaceVariant.withAlpha(128),
             ),
             onPressed: () => _showSeriesGroupOptions(
               context,
@@ -265,7 +265,7 @@ class TrainingProgramSeriesListState
                     Text(
                       _formatSeriesInfo(series),
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                        color: colorScheme.onSurfaceVariant.withAlpha(128),
                       ),
                     ),
                   ],
@@ -680,7 +680,7 @@ class TrainingProgramSeriesListState
         leading: Container(
           padding: EdgeInsets.all(AppTheme.spacing.sm),
           decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withOpacity(0.3),
+            color: colorScheme.primaryContainer.withAlpha(77),
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
           child: Icon(
@@ -752,7 +752,7 @@ class TrainingProgramSeriesListState
         leading: Container(
           padding: EdgeInsets.all(AppTheme.spacing.sm),
           decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withOpacity(0.3),
+            color: colorScheme.primaryContainer.withAlpha(77),
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
           child: Icon(

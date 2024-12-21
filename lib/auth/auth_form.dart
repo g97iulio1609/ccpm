@@ -40,7 +40,7 @@ class AuthForm extends HookConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            isLogin.value 
+            isLogin.value
                 ? 'Sign in to continue your fitness journey'
                 : 'Join us and start your transformation',
             style: theme.textTheme.bodyMedium?.copyWith(
@@ -56,12 +56,12 @@ class AuthForm extends HookConsumerWidget {
               gradient: LinearGradient(
                 colors: [
                   theme.colorScheme.surface,
-                  theme.colorScheme.surface.withOpacity(0.8),
+                  theme.colorScheme.surface.withAlpha(26),
                 ],
               ),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: theme.colorScheme.outline.withOpacity(0.2),
+                color: theme.colorScheme.outline.withAlpha(26),
               ),
             ),
             child: const GoogleSignInButtonWrapper(),
@@ -73,7 +73,7 @@ class AuthForm extends HookConsumerWidget {
             children: [
               Expanded(
                 child: Divider(
-                  color: theme.colorScheme.outline.withOpacity(0.2),
+                  color: theme.colorScheme.outline.withAlpha(26),
                 ),
               ),
               Padding(
@@ -87,7 +87,7 @@ class AuthForm extends HookConsumerWidget {
               ),
               Expanded(
                 child: Divider(
-                  color: theme.colorScheme.outline.withOpacity(0.2),
+                  color: theme.colorScheme.outline.withAlpha(26),
                 ),
               ),
             ],
@@ -98,7 +98,7 @@ class AuthForm extends HookConsumerWidget {
           EmailField(userEmail: userEmail),
           const SizedBox(height: 16),
           PasswordField(userPassword: userPassword),
-          
+
           // Registration Fields
           if (!isLogin.value) ...[
             const SizedBox(height: 16),
@@ -106,7 +106,7 @@ class AuthForm extends HookConsumerWidget {
             const SizedBox(height: 16),
             GenderField(userGender: userGender),
           ],
-          
+
           const SizedBox(height: 24),
 
           // Submit Button
@@ -119,7 +119,7 @@ class AuthForm extends HookConsumerWidget {
             userName: userName,
             userGender: userGender,
           ),
-          
+
           const SizedBox(height: 16),
 
           // Toggle Auth Mode

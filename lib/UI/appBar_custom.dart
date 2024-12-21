@@ -406,7 +406,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
             vertical: AppTheme.spacing.xs,
           ),
           decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withOpacity(0.3),
+            color: colorScheme.primaryContainer.withAlpha(77),
             borderRadius: BorderRadius.circular(AppTheme.radii.full),
           ),
           child: Icon(
@@ -489,7 +489,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
           IconButton(
             icon: Icon(
               Icons.chevron_left,
-              color: colorScheme.onSurfaceVariant,
+              color: colorScheme.onSurfaceVariant.withAlpha(128),
               size: 20,
             ),
             onPressed: () {
@@ -508,7 +508,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
           IconButton(
             icon: Icon(
               Icons.chevron_right,
-              color: colorScheme.onSurfaceVariant,
+              color: colorScheme.onSurfaceVariant.withAlpha(128),
               size: 20,
             ),
             onPressed: () {
@@ -520,7 +520,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
           PopupMenuButton<String>(
             icon: Icon(
               Icons.more_vert,
-              color: colorScheme.onSurfaceVariant,
+              color: colorScheme.onSurfaceVariant.withAlpha(128),
               size: 20,
             ),
             onSelected: _onDayMenuSelected,

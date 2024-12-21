@@ -434,7 +434,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector>
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
             border: Border.all(
-              color: colorScheme.outline.withOpacity(0.2),
+              color: colorScheme.outline.withAlpha(51),
             ),
           ),
           child: DropdownButton<String>(
@@ -478,7 +478,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector>
               width: 12,
               height: 12,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
+                color: color.withAlpha(51),
                 borderRadius: BorderRadius.circular(AppTheme.radii.full),
                 border: Border.all(
                   color: color,
@@ -499,7 +499,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector>
           '${value.toStringAsFixed(1)}g',
           style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w600,
-            color: color,
+            color: theme.colorScheme.primary.withAlpha(179),
           ),
         ),
       ],

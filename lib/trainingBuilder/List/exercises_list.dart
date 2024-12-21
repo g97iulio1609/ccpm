@@ -395,10 +395,10 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest.withOpacity(0.1),
+                    color: colorScheme.surfaceContainerHighest.withAlpha(77),
                     borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                     border: Border.all(
-                      color: colorScheme.outline.withOpacity(0.1),
+                      color: colorScheme.outline.withAlpha(128),
                     ),
                   ),
                   child: TextField(
@@ -413,7 +413,7 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
                       hintText: hint ?? 'Min',
                       prefixIcon: Icon(
                         icon,
-                        color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                        color: colorScheme.onSurfaceVariant.withAlpha(128),
                         size: 20,
                       ),
                     ),
@@ -431,10 +431,10 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest.withOpacity(0.1),
+                    color: colorScheme.surfaceContainerHighest.withAlpha(77),
                     borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                     border: Border.all(
-                      color: colorScheme.outline.withOpacity(0.1),
+                      color: colorScheme.outline.withAlpha(128),
                     ),
                   ),
                   child: TextField(
@@ -449,7 +449,7 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
                       hintText: maxHint ?? 'Max',
                       prefixIcon: Icon(
                         Icons.arrow_upward,
-                        color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                        color: colorScheme.onSurfaceVariant.withAlpha(128),
                         size: 20,
                       ),
                     ),
@@ -571,10 +571,10 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
             // Sets per serie
             Container(
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withOpacity(0.1),
+                color: colorScheme.surfaceContainerHighest.withAlpha(77),
                 borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                 border: Border.all(
-                  color: colorScheme.outline.withOpacity(0.1),
+                  color: colorScheme.outline.withAlpha(128),
                 ),
               ),
               child: TextField(
@@ -589,7 +589,7 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
                   labelText: 'Sets per Serie',
                   prefixIcon: Icon(
                     Icons.repeat_one,
-                    color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                    color: colorScheme.onSurfaceVariant.withAlpha(128),
                     size: 20,
                   ),
                 ),

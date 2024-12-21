@@ -442,7 +442,7 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
           leading: Container(
             padding: EdgeInsets.all(AppTheme.spacing.sm),
             decoration: BoxDecoration(
-              color: _getMacroColor(macro).withOpacity(0.2),
+              color: _getMacroColor(macro).withAlpha(77),
               borderRadius: BorderRadius.circular(AppTheme.radii.md),
             ),
             child: Icon(

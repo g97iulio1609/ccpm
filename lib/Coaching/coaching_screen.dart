@@ -201,7 +201,7 @@ class CoachingScreen extends HookConsumerWidget {
                       ? 'Start adding athletes to your roster'
                       : 'Try adjusting your search',
                   style: theme.textTheme.bodyLarge?.copyWith(
-                    color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+                    color: colorScheme.onSurfaceVariant.withAlpha(26),
                   ),
                 ),
               ],
@@ -304,13 +304,13 @@ class CoachingScreen extends HookConsumerWidget {
                     gradient: LinearGradient(
                       colors: [
                         colorScheme.primary.withAlpha(51),
-                        colorScheme.primary.withOpacity(0.8),
+                        colorScheme.primary.withAlpha(26),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
                     boxShadow: [
                       BoxShadow(
-                        color: colorScheme.primary.withOpacity(0.2),
+                        color: colorScheme.primary.withAlpha(26),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),

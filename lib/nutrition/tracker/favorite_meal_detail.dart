@@ -72,7 +72,7 @@ class FavoriteMealDetailState extends ConsumerState<FavoriteMealDetail> {
       onLongPress: () => _onFoodLongPress(food.id!),
       onTap: () => _onFoodTap(context, food.id!),
       child: Container(
-        color: isSelected ? Colors.grey.withOpacity(0.3) : Colors.transparent,
+        color: isSelected ? Colors.grey.withAlpha(77) : Colors.transparent,
         child: Slidable(
           key: Key(food.id!),
           startActionPane: ActionPane(

@@ -40,16 +40,17 @@ class EmailField extends StatelessWidget {
       label: 'Email',
       child: TextFormField(
         key: const ValueKey('email'),
-        validator: (value) => (value == null || value.isEmpty || !value.contains('@'))
-            ? 'Please enter a valid email address'
-            : null,
+        validator: (value) =>
+            (value == null || value.isEmpty || !value.contains('@'))
+                ? 'Please enter a valid email address'
+                : null,
         keyboardType: TextInputType.emailAddress,
         style: theme.textTheme.bodyLarge?.copyWith(
           color: theme.colorScheme.onSurface,
         ),
         decoration: InputDecoration(
           filled: true,
-          fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+          fillColor: theme.colorScheme.surfaceContainerHighest.withAlpha(77),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
@@ -57,7 +58,7 @@ class EmailField extends StatelessWidget {
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(
-              color: theme.colorScheme.outline.withOpacity(0.2),
+              color: theme.colorScheme.outline.withAlpha(51),
             ),
           ),
           focusedBorder: OutlineInputBorder(
@@ -86,7 +87,7 @@ class EmailField extends StatelessWidget {
           ),
           hintText: 'Enter your email',
           hintStyle: theme.textTheme.bodyLarge?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
+            color: theme.colorScheme.onSurfaceVariant.withAlpha(128),
           ),
         ),
         onSaved: (value) => userEmail.value = value ?? '',
@@ -112,15 +113,17 @@ class PasswordField extends StatelessWidget {
           return TextFormField(
             key: const ValueKey('password'),
             obscureText: !isVisible,
-            validator: (value) => (value == null || value.isEmpty || value.length < 7)
-                ? 'Password must be at least 7 characters long'
-                : null,
+            validator: (value) =>
+                (value == null || value.isEmpty || value.length < 7)
+                    ? 'Password must be at least 7 characters long'
+                    : null,
             style: theme.textTheme.bodyLarge?.copyWith(
               color: theme.colorScheme.onSurface,
             ),
             decoration: InputDecoration(
               filled: true,
-              fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              fillColor:
+                  theme.colorScheme.surfaceContainerHighest.withAlpha(77),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
@@ -128,7 +131,7 @@ class PasswordField extends StatelessWidget {
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: theme.colorScheme.outline.withOpacity(0.2),
+                  color: theme.colorScheme.outline.withAlpha(51),
                 ),
               ),
               focusedBorder: OutlineInputBorder(
@@ -157,7 +160,7 @@ class PasswordField extends StatelessWidget {
               ),
               hintText: 'Enter your password',
               hintStyle: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
+                color: theme.colorScheme.onSurfaceVariant.withAlpha(128),
               ),
               suffixIcon: IconButton(
                 icon: Icon(
@@ -186,15 +189,16 @@ class UsernameField extends StatelessWidget {
       label: 'Username',
       child: TextFormField(
         key: const ValueKey('username'),
-        validator: (value) => (value == null || value.isEmpty || value.length < 4)
-            ? 'Please enter at least 4 characters'
-            : null,
+        validator: (value) =>
+            (value == null || value.isEmpty || value.length < 4)
+                ? 'Please enter at least 4 characters'
+                : null,
         style: theme.textTheme.bodyLarge?.copyWith(
           color: theme.colorScheme.onSurface,
         ),
         decoration: InputDecoration(
           filled: true,
-          fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+          fillColor: theme.colorScheme.surfaceContainerHighest.withAlpha(77),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
@@ -202,7 +206,7 @@ class UsernameField extends StatelessWidget {
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(
-              color: theme.colorScheme.outline.withOpacity(0.2),
+              color: theme.colorScheme.outline.withAlpha(51),
             ),
           ),
           focusedBorder: OutlineInputBorder(
@@ -231,7 +235,7 @@ class UsernameField extends StatelessWidget {
           ),
           hintText: 'Choose a username',
           hintStyle: theme.textTheme.bodyLarge?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
+            color: theme.colorScheme.onSurfaceVariant.withAlpha(128),
           ),
         ),
         onSaved: (value) => userName.value = value ?? '',
@@ -263,7 +267,7 @@ class GenderField extends StatelessWidget {
         ),
         decoration: InputDecoration(
           filled: true,
-          fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+          fillColor: theme.colorScheme.surfaceContainerHighest.withAlpha(77),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
@@ -271,7 +275,7 @@ class GenderField extends StatelessWidget {
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(
-              color: theme.colorScheme.outline.withOpacity(0.2),
+              color: theme.colorScheme.outline.withAlpha(51),
             ),
           ),
           focusedBorder: OutlineInputBorder(
@@ -300,7 +304,7 @@ class GenderField extends StatelessWidget {
           ),
           hintText: 'Select your gender',
           hintStyle: theme.textTheme.bodyLarge?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
+            color: theme.colorScheme.onSurfaceVariant.withAlpha(128),
           ),
         ),
         icon: Icon(

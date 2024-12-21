@@ -158,7 +158,7 @@ class TimerPageState extends ConsumerState<TimerPage>
               end: Alignment.bottomRight,
               colors: [
                 colorScheme.surface,
-                colorScheme.surface.withOpacity(0.92),
+                colorScheme.surface.withAlpha(234),
               ],
             ),
           ),
@@ -236,7 +236,7 @@ class TimerPageState extends ConsumerState<TimerPage>
         ),
         shape: BoxShape.circle,
         border: Border.all(
-          color: colorScheme.primary.withOpacity(0.15),
+          color: colorScheme.primary.withAlpha(38),
           width: 2,
         ),
         boxShadow: [
@@ -259,7 +259,7 @@ class TimerPageState extends ConsumerState<TimerPage>
             margin: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: colorScheme.surface.withOpacity(0.9),
+              color: colorScheme.surface.withAlpha(230),
               boxShadow: [
                 BoxShadow(
                   color: colorScheme.primary.withAlpha(26),
@@ -284,7 +284,7 @@ class TimerPageState extends ConsumerState<TimerPage>
         return CircularProgressIndicator(
           value: _animation.value,
           strokeWidth: 6,
-          backgroundColor: colorScheme.surfaceContainerHighest.withOpacity(0.2),
+          backgroundColor: colorScheme.surfaceContainerHighest.withAlpha(51),
           valueColor: AlwaysStoppedAnimation<Color>(
             colorScheme.primary.withAlpha(204),
           ),
@@ -320,7 +320,7 @@ class TimerPageState extends ConsumerState<TimerPage>
             vertical: AppTheme.spacing.xs,
           ),
           decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withOpacity(0.2),
+            color: colorScheme.primaryContainer.withAlpha(51),
             borderRadius: BorderRadius.circular(AppTheme.radii.sm),
             border: Border.all(
               color: colorScheme.primary.withAlpha(26),
@@ -349,12 +349,12 @@ class TimerPageState extends ConsumerState<TimerPage>
           end: Alignment.bottomRight,
           colors: [
             colorScheme.primary,
-            colorScheme.primary.withOpacity(0.9),
+            colorScheme.primary.withAlpha(230),
           ],
         ),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.primary.withOpacity(0.2),
+            color: colorScheme.primary.withAlpha(51),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

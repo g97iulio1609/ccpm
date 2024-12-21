@@ -61,7 +61,7 @@ class AuthScreen extends HookConsumerWidget {
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: theme.colorScheme.primary.withOpacity(0.1),
+            color: theme.colorScheme.primary.withAlpha(51),
             boxShadow: [
               BoxShadow(
                 color: theme.colorScheme.primary.withOpacity(0.2),
@@ -98,7 +98,7 @@ class AuthScreen extends HookConsumerWidget {
         Text(
           'Begin your journey',
           style: theme.textTheme.titleMedium?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.7),
+            color: theme.colorScheme.onSurface.withAlpha(179),
             letterSpacing: 0.5,
           ),
         ),
@@ -110,7 +110,7 @@ class AuthScreen extends HookConsumerWidget {
     return Container(
       constraints: const BoxConstraints(maxWidth: 400),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withOpacity(0.7),
+        color: theme.colorScheme.surface.withAlpha(179),
         borderRadius: BorderRadius.circular(32),
         border: Border.all(
           color: theme.colorScheme.primary.withOpacity(0.1),
@@ -145,7 +145,8 @@ class AnimatedGridPattern extends StatefulWidget {
   State<AnimatedGridPattern> createState() => _AnimatedGridPatternState();
 }
 
-class _AnimatedGridPatternState extends State<AnimatedGridPattern> with SingleTickerProviderStateMixin {
+class _AnimatedGridPatternState extends State<AnimatedGridPattern>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
 
@@ -173,7 +174,7 @@ class _AnimatedGridPatternState extends State<AnimatedGridPattern> with SingleTi
         return CustomPaint(
           painter: AnimatedGridPatternPainter(
             offset: _animation.value,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.03),
+            color: Theme.of(context).colorScheme.onSurface.withAlpha(8),
           ),
           size: Size.infinite,
         );
@@ -214,4 +215,4 @@ class AnimatedGridPatternPainter extends CustomPainter {
   bool shouldRepaint(covariant AnimatedGridPatternPainter oldDelegate) {
     return offset != oldDelegate.offset;
   }
-} 
+}

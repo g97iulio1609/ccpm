@@ -563,7 +563,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
                 Text(
                   'kcal',
                   style: theme.textTheme.titleLarge?.copyWith(
-                    color: colorScheme.primary.withOpacity(0.7),
+                    color: colorScheme.primary.withAlpha(179),
                     fontWeight: FontWeight.w500,
                   ),
                 ),

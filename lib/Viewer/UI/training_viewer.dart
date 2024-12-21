@@ -195,7 +195,8 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withOpacity(0.5),
+              colorScheme.surfaceContainerHighest
+                  .withAlpha((0.5 * 255).round()),
             ],
             stops: const [0.0, 1.0],
           ),
@@ -245,7 +246,7 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.xl),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withAlpha(26),
         ),
         boxShadow: AppTheme.elevations.small,
       ),
@@ -276,7 +277,8 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
               vertical: AppTheme.spacing.xs,
             ),
             decoration: BoxDecoration(
-              color: colorScheme.primaryContainer.withOpacity(0.3),
+              color:
+                  colorScheme.primaryContainer.withAlpha((0.3 * 255).round()),
               borderRadius: BorderRadius.circular(AppTheme.radii.sm),
             ),
             child: Text(
@@ -341,7 +343,7 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withAlpha(26),
         ),
         boxShadow: AppTheme.elevations.small,
       ),
@@ -408,7 +410,7 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
         vertical: AppTheme.spacing.xs,
       ),
       decoration: BoxDecoration(
-        color: colorScheme.primaryContainer.withOpacity(0.3),
+        color: colorScheme.primaryContainer.withAlpha((0.3 * 255).round()),
         borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
       ),
       child: Text(
@@ -491,7 +493,7 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
         return Column(
           children: [
             Divider(
-              color: colorScheme.outline.withOpacity(0.1),
+              color: colorScheme.outline.withAlpha(26),
               height: 1,
             ),
             Padding(
@@ -531,22 +533,23 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surfaceContainerHighest,
-              colorScheme.surfaceContainerHighest.withOpacity(0.8),
+              colorScheme.surfaceContainerHighest
+                  .withAlpha((0.8 * 255).round()),
             ],
           ),
           borderRadius: BorderRadius.circular(AppTheme.radii.xl),
           border: Border.all(
-            color: colorScheme.primary.withOpacity(0.1),
+            color: colorScheme.primary.withAlpha(26),
             width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: colorScheme.primary.withOpacity(0.05),
+              color: colorScheme.primary.withAlpha(13),
               offset: const Offset(0, 4),
               blurRadius: 20,
             ),
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withAlpha(26),
               offset: const Offset(0, 2),
               blurRadius: 8,
             ),
@@ -593,7 +596,7 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
                         vertical: AppTheme.spacing.xs,
                       ),
                       decoration: BoxDecoration(
-                        color: colorScheme.primaryContainer.withOpacity(0.15),
+                        color: colorScheme.primaryContainer.withAlpha(38),
                         borderRadius:
                             BorderRadius.circular(AppTheme.radii.full),
                       ),
@@ -636,13 +639,13 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
           end: Alignment.bottomRight,
           colors: [
             colorScheme.primary,
-            colorScheme.primary.withOpacity(0.8),
+            colorScheme.primary.withAlpha((0.8 * 255).round()),
           ],
         ),
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: colorScheme.primary.withOpacity(0.3),
+            color: colorScheme.primary.withAlpha((0.3 * 255).round()),
             offset: const Offset(0, 2),
             blurRadius: 8,
           ),
@@ -675,13 +678,13 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
           end: Alignment.centerRight,
           colors: [
             colorScheme.primary,
-            colorScheme.primary.withOpacity(0.8),
+            colorScheme.primary.withAlpha((0.8 * 255).round()),
           ],
         ),
         borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.primary.withOpacity(0.3),
+            color: colorScheme.primary.withAlpha((0.3 * 255).round()),
             offset: const Offset(0, 2),
             blurRadius: 8,
           ),

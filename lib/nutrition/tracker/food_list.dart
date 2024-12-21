@@ -279,7 +279,7 @@ class FoodListState extends ConsumerState<FoodList> {
         child: Container(
           decoration: BoxDecoration(
             color: isSelected
-                ? theme.colorScheme.primaryContainer.withOpacity(0.2)
+                ? theme.colorScheme.primaryContainer.withAlpha(51)
                 : theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
           ),
@@ -299,7 +299,7 @@ class FoodListState extends ConsumerState<FoodList> {
               leading: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer.withOpacity(0.2),
+                  color: theme.colorScheme.primaryContainer.withAlpha(51),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -762,7 +762,7 @@ class FoodListState extends ConsumerState<FoodList> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
+                  color: theme.colorScheme.onSurfaceVariant.withAlpha(102),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),

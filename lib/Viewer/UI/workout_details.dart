@@ -287,10 +287,10 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
           Container(
             padding: EdgeInsets.all(AppTheme.spacing.md),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              color: colorScheme.surfaceContainerHighest.withAlpha(77),
               border: Border(
                 bottom: BorderSide(
-                  color: colorScheme.outline.withOpacity(0.1),
+                  color: colorScheme.outline.withAlpha(26),
                 ),
               ),
             ),
@@ -352,7 +352,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withAlpha(26),
           width: 1,
         ),
         boxShadow: AppTheme.elevations.small,
@@ -364,10 +364,10 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.md),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withAlpha(77),
                 border: Border(
                   bottom: BorderSide(
-                    color: colorScheme.outline.withOpacity(0.1),
+                    color: colorScheme.outline.withAlpha(26),
                   ),
                 ),
               ),
@@ -390,8 +390,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
                         horizontal: AppTheme.spacing.sm,
                       ),
                       decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest
-                            .withOpacity(0.3),
+                        color:
+                            colorScheme.surfaceContainerHighest.withAlpha(77),
                         borderRadius: BorderRadius.circular(AppTheme.radii.sm),
                       ),
                       child: _buildSeriesHeaderRow(context),
@@ -421,7 +421,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
                           ),
                           decoration: BoxDecoration(
                             color: colorScheme.surfaceContainerHighest
-                                .withOpacity(0.3),
+                                .withAlpha(77),
                             borderRadius:
                                 BorderRadius.circular(AppTheme.radii.sm),
                           ),
@@ -447,7 +447,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       border: Border.all(color: Colors.white, width: 0.5),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.1),
+          color: Colors.black.withAlpha(26),
           blurRadius: 10,
           offset: const Offset(0, 5),
         ),

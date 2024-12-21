@@ -166,13 +166,13 @@ class _TrainingProgramWorkoutListPageState
         gradient: LinearGradient(
           colors: [
             colorScheme.primary,
-            colorScheme.primary.withOpacity(0.8),
+            colorScheme.primary.withAlpha(191),
           ],
         ),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.primary.withOpacity(0.2),
+            color: colorScheme.primary.withAlpha(63),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

@@ -99,7 +99,7 @@ class _MeasurementFormState extends ConsumerState<MeasurementForm> {
               vertical: AppTheme.spacing.xs,
             ),
             decoration: BoxDecoration(
-              color: colorScheme.primaryContainer.withAlpha(76),
+              color: colorScheme.primaryContainer.withAlpha(77),
               borderRadius: BorderRadius.circular(AppTheme.radii.full),
             ),
             child: Icon(
@@ -239,7 +239,7 @@ class _MeasurementFormState extends ConsumerState<MeasurementForm> {
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: theme.textTheme.bodyLarge?.copyWith(
-                color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                color: colorScheme.onSurfaceVariant.withAlpha(128),
               ),
               prefixIcon: Icon(
                 icon,
@@ -302,13 +302,13 @@ class _MeasurementFormState extends ConsumerState<MeasurementForm> {
               gradient: LinearGradient(
                 colors: [
                   colorScheme.primary.withAlpha(204),
-                  colorScheme.primary.withOpacity(0.8),
+                  colorScheme.primary.withAlpha(204),
                 ],
               ),
               borderRadius: BorderRadius.circular(AppTheme.radii.lg),
               boxShadow: [
                 BoxShadow(
-                  color: colorScheme.primary.withOpacity(0.2),
+                  color: colorScheme.primary.withAlpha(204),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
