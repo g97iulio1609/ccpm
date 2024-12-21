@@ -25,30 +25,30 @@ class Radii {
 
 class Elevations {
   const Elevations();
-  
+
   List<BoxShadow> get small => [
-    BoxShadow(
-      color: Colors.black.withOpacity(0.05),
-      offset: const Offset(0, 1),
-      blurRadius: 2,
-    ),
-  ];
+        BoxShadow(
+          color: Colors.black.withAlpha(13),
+          offset: const Offset(0, 1),
+          blurRadius: 2,
+        ),
+      ];
 
   List<BoxShadow> get medium => [
-    BoxShadow(
-      color: Colors.black.withOpacity(0.08),
-      offset: const Offset(0, 4),
-      blurRadius: 8,
-    ),
-  ];
+        BoxShadow(
+          color: Colors.black.withAlpha(20),
+          offset: const Offset(0, 4),
+          blurRadius: 8,
+        ),
+      ];
 
   List<BoxShadow> get large => [
-    BoxShadow(
-      color: Colors.black.withOpacity(0.12),
-      offset: const Offset(0, 8),
-      blurRadius: 16,
-    ),
-  ];
+        BoxShadow(
+          color: Colors.black.withAlpha(31),
+          offset: const Offset(0, 8),
+          blurRadius: 16,
+        ),
+      ];
 }
 
 class AppTheme {
@@ -80,7 +80,7 @@ class AppTheme {
   static const accentGreenDark = Color(0xFF047857);
   static const accentPurple = Color(0xFFA78BFA);
   static const accentPurpleDark = Color(0xFF6D28D9);
-  
+
   // Semantic Colors
   static const success = Color(0xFF22C55E);
   static const error = Color(0xFFEF4444);
@@ -113,31 +113,26 @@ class AppTheme {
     brightness: Brightness.dark,
     primary: primaryGold,
     onPrimary: surfaceDarkest,
-    primaryContainer: primaryGoldDark.withOpacity(0.15),
+    primaryContainer: primaryGoldDark.withAlpha(38),
     onPrimaryContainer: primaryGold,
-    
     secondary: accentBlue,
     onSecondary: Colors.white,
-    secondaryContainer: accentBlue.withOpacity(0.15),
+    secondaryContainer: accentBlue.withAlpha(38),
     onSecondaryContainer: accentBlueDark,
-    
     tertiary: accentPurple,
     onTertiary: Colors.white,
-    tertiaryContainer: accentPurple.withOpacity(0.15),
+    tertiaryContainer: accentPurple.withAlpha(38),
     onTertiaryContainer: accentPurpleDark,
-    
     error: error,
     onError: Colors.white,
-    errorContainer: error.withOpacity(0.15),
+    errorContainer: error.withAlpha(38),
     onErrorContainer: errorDark,
-    
     surface: surfaceDarkest,
     onSurface: Colors.white,
-    onSurfaceVariant: Colors.white.withOpacity(0.7),
-    
+    onSurfaceVariant: Colors.white.withAlpha(179),
     surfaceContainerHighest: surfaceMedium,
-    outline: Colors.white.withOpacity(0.2),
-    outlineVariant: Colors.white.withOpacity(0.1),
+    outline: Colors.white.withAlpha(51),
+    outlineVariant: Colors.white.withAlpha(26),
   );
 
   static final ColorScheme lightColorScheme = ColorScheme.fromSeed(
@@ -145,33 +140,26 @@ class AppTheme {
     brightness: Brightness.light,
     primary: primaryGold,
     onPrimary: Colors.white,
-    primaryContainer: primaryGold.withOpacity(0.15),
+    primaryContainer: primaryGold.withAlpha(38),
     onPrimaryContainer: primaryGoldDark,
-    
     secondary: accentBlue,
     onSecondary: Colors.white,
-    secondaryContainer: accentBlue.withOpacity(0.15),
+    secondaryContainer: accentBlue.withAlpha(38),
     onSecondaryContainer: accentBlueDark,
-    
     tertiary: accentPurple,
     onTertiary: Colors.white,
-    tertiaryContainer: accentPurple.withOpacity(0.15),
+    tertiaryContainer: accentPurple.withAlpha(38),
     onTertiaryContainer: accentPurpleDark,
-    
     error: error,
     onError: Colors.white,
-    errorContainer: error.withOpacity(0.15),
+    errorContainer: error.withAlpha(38),
     onErrorContainer: errorDark,
-    
-
-    
     surface: surfaceLightest,
     onSurface: surfaceDarkest,
-    onSurfaceVariant: surfaceDark.withOpacity(0.7),
-    
+    onSurfaceVariant: surfaceDark.withAlpha(179),
     surfaceContainerHighest: surfaceLightMedium,
-    outline: surfaceDark.withOpacity(0.2),
-    outlineVariant: surfaceDark.withOpacity(0.1),
+    outline: surfaceDark.withAlpha(51),
+    outlineVariant: surfaceDark.withAlpha(26),
   );
 
   // Themes
@@ -180,148 +168,149 @@ class AppTheme {
 
   static ThemeData _buildTheme(ColorScheme colorScheme) {
     final isDark = colorScheme.brightness == Brightness.dark;
-    
-    final textTheme = GoogleFonts.interTextTheme().copyWith(
-      displayLarge: GoogleFonts.plusJakartaSans(
-        fontSize: 57,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -1.5,
-        height: 1.12,
-        color: isDark ? Colors.white : colorScheme.onSurface,
-      ),
-      displayMedium: GoogleFonts.plusJakartaSans(
-        fontSize: 45,
-        fontWeight: FontWeight.w600,
-        letterSpacing: -0.5,
-        height: 1.16,
-        color: isDark ? Colors.white : colorScheme.onSurface,
-      ),
-      displaySmall: GoogleFonts.plusJakartaSans(
-        fontSize: 36,
-        fontWeight: FontWeight.w600,
-        letterSpacing: -0.25,
-        height: 1.22,
-        color: isDark ? Colors.white : colorScheme.onSurface,
-      ),
-      headlineLarge: GoogleFonts.plusJakartaSans(
-        fontSize: 32,
-        fontWeight: FontWeight.w600,
-        letterSpacing: -0.25,
-        height: 1.25,
-        color: isDark ? Colors.white : colorScheme.onSurface,
-      ),
-      headlineMedium: GoogleFonts.plusJakartaSans(
-        fontSize: 28,
-        fontWeight: FontWeight.w600,
-        letterSpacing: -0.25,
-        height: 1.29,
-        color: isDark ? Colors.white : colorScheme.onSurface,
-      ),
-      headlineSmall: GoogleFonts.plusJakartaSans(
-        fontSize: 24,
-        fontWeight: FontWeight.w600,
-        letterSpacing: -0.25,
-        height: 1.33,
-        color: isDark ? Colors.white : colorScheme.onSurface,
-      ),
-      titleLarge: GoogleFonts.inter(
-        fontSize: 22,
-        fontWeight: FontWeight.w500,
-        letterSpacing: -0.25,
-        height: 1.27,
-        color: isDark ? Colors.white : colorScheme.onSurface,
-      ),
-      titleMedium: GoogleFonts.inter(
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
-        letterSpacing: -0.25,
-        height: 1.5,
-        color: isDark ? Colors.white : colorScheme.onSurface,
-      ),
-      titleSmall: GoogleFonts.inter(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        letterSpacing: -0.25,
-        height: 1.43,
-        color: isDark ? Colors.white : colorScheme.onSurface,
-      ),
-      bodyLarge: GoogleFonts.inter(
-        fontSize: 16,
-        fontWeight: FontWeight.w400,
-        letterSpacing: -0.25,
-        height: 1.5,
-        color: isDark ? Colors.white : colorScheme.onSurface,
-      ),
-      bodyMedium: GoogleFonts.inter(
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        letterSpacing: -0.25,
-        height: 1.43,
-        color: isDark ? Colors.white : colorScheme.onSurface,
-      ),
-      bodySmall: GoogleFonts.inter(
-        fontSize: 12,
-        fontWeight: FontWeight.w400,
-        letterSpacing: -0.25,
-        height: 1.33,
-        color: isDark ? Colors.white : colorScheme.onSurface,
-      ),
-      labelLarge: GoogleFonts.inter(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        letterSpacing: -0.25,
-        height: 1.43,
-        color: isDark ? Colors.white : colorScheme.onSurface,
-      ),
-      labelMedium: GoogleFonts.inter(
-        fontSize: 12,
-        fontWeight: FontWeight.w500,
-        letterSpacing: -0.25,
-        height: 1.33,
-        color: isDark ? Colors.white : colorScheme.onSurface,
-      ),
-      labelSmall: GoogleFonts.inter(
-        fontSize: 11,
-        fontWeight: FontWeight.w500,
-        letterSpacing: -0.25,
-        height: 1.27,
-        color: isDark ? Colors.white : colorScheme.onSurface,
-      ),
-    ).apply(
-      // Rimuoviamo questi apply che sovrascrivevano i colori specifici
-      // bodyColor: colorScheme.onSurface,
-      // displayColor: colorScheme.onSurface,
-    );
+
+    final textTheme = GoogleFonts.interTextTheme()
+        .copyWith(
+          displayLarge: GoogleFonts.plusJakartaSans(
+            fontSize: 57,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -1.5,
+            height: 1.12,
+            color: isDark ? Colors.white : colorScheme.onSurface,
+          ),
+          displayMedium: GoogleFonts.plusJakartaSans(
+            fontSize: 45,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.5,
+            height: 1.16,
+            color: isDark ? Colors.white : colorScheme.onSurface,
+          ),
+          displaySmall: GoogleFonts.plusJakartaSans(
+            fontSize: 36,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.25,
+            height: 1.22,
+            color: isDark ? Colors.white : colorScheme.onSurface,
+          ),
+          headlineLarge: GoogleFonts.plusJakartaSans(
+            fontSize: 32,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.25,
+            height: 1.25,
+            color: isDark ? Colors.white : colorScheme.onSurface,
+          ),
+          headlineMedium: GoogleFonts.plusJakartaSans(
+            fontSize: 28,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.25,
+            height: 1.29,
+            color: isDark ? Colors.white : colorScheme.onSurface,
+          ),
+          headlineSmall: GoogleFonts.plusJakartaSans(
+            fontSize: 24,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.25,
+            height: 1.33,
+            color: isDark ? Colors.white : colorScheme.onSurface,
+          ),
+          titleLarge: GoogleFonts.inter(
+            fontSize: 22,
+            fontWeight: FontWeight.w500,
+            letterSpacing: -0.25,
+            height: 1.27,
+            color: isDark ? Colors.white : colorScheme.onSurface,
+          ),
+          titleMedium: GoogleFonts.inter(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            letterSpacing: -0.25,
+            height: 1.5,
+            color: isDark ? Colors.white : colorScheme.onSurface,
+          ),
+          titleSmall: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            letterSpacing: -0.25,
+            height: 1.43,
+            color: isDark ? Colors.white : colorScheme.onSurface,
+          ),
+          bodyLarge: GoogleFonts.inter(
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
+            letterSpacing: -0.25,
+            height: 1.5,
+            color: isDark ? Colors.white : colorScheme.onSurface,
+          ),
+          bodyMedium: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            letterSpacing: -0.25,
+            height: 1.43,
+            color: isDark ? Colors.white : colorScheme.onSurface,
+          ),
+          bodySmall: GoogleFonts.inter(
+            fontSize: 12,
+            fontWeight: FontWeight.w400,
+            letterSpacing: -0.25,
+            height: 1.33,
+            color: isDark ? Colors.white : colorScheme.onSurface,
+          ),
+          labelLarge: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            letterSpacing: -0.25,
+            height: 1.43,
+            color: isDark ? Colors.white : colorScheme.onSurface,
+          ),
+          labelMedium: GoogleFonts.inter(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            letterSpacing: -0.25,
+            height: 1.33,
+            color: isDark ? Colors.white : colorScheme.onSurface,
+          ),
+          labelSmall: GoogleFonts.inter(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            letterSpacing: -0.25,
+            height: 1.27,
+            color: isDark ? Colors.white : colorScheme.onSurface,
+          ),
+        )
+        .apply(
+            // Rimuoviamo questi apply che sovrascrivevano i colori specifici
+            // bodyColor: colorScheme.onSurface,
+            // displayColor: colorScheme.onSurface,
+            );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
       textTheme: textTheme,
-      
+
       brightness: isDark ? Brightness.dark : Brightness.light,
-      
+
       // AppBar Theme
       appBarTheme: AppBarTheme(
-        backgroundColor: isDark 
-            ? colorScheme.surface
-            : colorScheme.surface.withOpacity(0.95),
+        backgroundColor:
+            isDark ? colorScheme.surface : colorScheme.surface.withAlpha(242),
         foregroundColor: colorScheme.onSurface,
         elevation: 0,
         centerTitle: true,
         scrolledUnderElevation: isDark ? 2 : 0.5,
-        shadowColor: colorScheme.shadow.withOpacity(0.1),
+        shadowColor: colorScheme.shadow.withAlpha(26),
       ),
 
       // Card Theme
       cardTheme: CardTheme(
-        color: isDark 
-            ? colorScheme.surfaceContainerHighest
+        color: isDark
+            ? colorScheme.surfaceContainerHighest.withAlpha(76)
             : colorScheme.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radii.lg),
           side: BorderSide(
-            color: colorScheme.outline.withOpacity(isDark ? 0.1 : 0.05),
+            color: colorScheme.outline.withAlpha(isDark ? 51 : 26),
             width: 1,
           ),
         ),
@@ -331,8 +320,8 @@ class AppTheme {
       // Input Decoration
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: isDark 
-            ? colorScheme.surfaceContainerHighest.withOpacity(0.3)
+        fillColor: isDark
+            ? colorScheme.surfaceContainerHighest.withAlpha(76)
             : colorScheme.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radii.md),
@@ -369,13 +358,13 @@ class AppTheme {
         style: ButtonStyle(
           backgroundColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.disabled)) {
-              return colorScheme.primary.withOpacity(0.3);
+              return colorScheme.primary.withAlpha(76);
             }
             return colorScheme.primary;
           }),
           foregroundColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.disabled)) {
-              return colorScheme.onPrimary.withOpacity(0.3);
+              return colorScheme.onPrimary.withAlpha(76);
             }
             return colorScheme.onPrimary;
           }),
@@ -393,7 +382,7 @@ class AppTheme {
           ),
           overlayColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.pressed)) {
-              return colorScheme.onPrimary.withOpacity(0.1);
+              return colorScheme.onPrimary.withAlpha(26);
             }
             if (states.contains(WidgetState.hovered)) {
               return colorScheme.onPrimary.withOpacity(0.05);
@@ -405,7 +394,7 @@ class AppTheme {
 
       // Dialog Theme
       dialogTheme: DialogTheme(
-        backgroundColor: isDark 
+        backgroundColor: isDark
             ? colorScheme.surface
             : colorScheme.surface.withOpacity(0.95),
         elevation: 0,
@@ -416,10 +405,10 @@ class AppTheme {
 
       // Bottom Sheet Theme
       bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: isDark 
+        backgroundColor: isDark
             ? colorScheme.surface
             : colorScheme.surface.withOpacity(0.95),
-        modalBackgroundColor: isDark 
+        modalBackgroundColor: isDark
             ? colorScheme.surface
             : colorScheme.surface.withOpacity(0.95),
         shape: RoundedRectangleBorder(
@@ -430,11 +419,11 @@ class AppTheme {
 
       // Snackbar Theme
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: isDark 
+        backgroundColor: isDark
             ? colorScheme.inverseSurface
             : colorScheme.surfaceContainerHighest,
         contentTextStyle: textTheme.bodyMedium?.copyWith(
-          color: isDark 
+          color: isDark
               ? colorScheme.onInverseSurface
               : colorScheme.onSurfaceVariant,
         ),
@@ -453,9 +442,8 @@ class AppTheme {
 
       // Chip Theme
       chipTheme: ChipThemeData(
-        backgroundColor: isDark 
-            ? colorScheme.surfaceContainerHighest
-            : colorScheme.surface,
+        backgroundColor:
+            isDark ? colorScheme.surfaceContainerHighest : colorScheme.surface,
         labelStyle: textTheme.labelLarge?.copyWith(
           color: colorScheme.onSurfaceVariant,
         ),

@@ -228,7 +228,7 @@ class ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withAlpha(26),
         ),
         boxShadow: AppTheme.elevations.small,
       ),
@@ -262,7 +262,7 @@ class ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
     return Container(
       padding: EdgeInsets.all(AppTheme.spacing.md),
       decoration: BoxDecoration(
-        color: colorScheme.primaryContainer.withOpacity(0.3),
+        color: colorScheme.primaryContainer.withAlpha(76),
         borderRadius: BorderRadius.circular(AppTheme.radii.md),
       ),
       child: Row(
@@ -336,7 +336,7 @@ class ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withAlpha(26),
         ),
         boxShadow: AppTheme.elevations.small,
       ),
@@ -375,7 +375,7 @@ class ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withAlpha(26),
         ),
         boxShadow: AppTheme.elevations.small,
       ),
@@ -425,7 +425,7 @@ class ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withAlpha(26),
         ),
         boxShadow: AppTheme.elevations.small,
       ),
@@ -574,7 +574,7 @@ class ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.md),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withAlpha(26),
         ),
         boxShadow: AppTheme.elevations.small,
       ),
@@ -594,10 +594,10 @@ class ExerciseDetailsState extends ConsumerState<ExerciseDetails> {
         decoration: BoxDecoration(
           border: Border(
             top: BorderSide(
-              color: colorScheme.outline.withOpacity(0.1),
+              color: colorScheme.outline.withAlpha(26),
             ),
             bottom: BorderSide(
-              color: colorScheme.outline.withOpacity(0.1),
+              color: colorScheme.outline.withAlpha(26),
             ),
           ),
         ),

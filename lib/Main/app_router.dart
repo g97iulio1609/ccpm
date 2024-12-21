@@ -5,6 +5,7 @@ import 'package:alphanessone/ExerciseRecords/exercise_stats.dart';
 import 'package:alphanessone/ExerciseRecords/maxrmdashboard.dart';
 import 'package:alphanessone/Main/routes.dart';
 import 'package:alphanessone/UI/home_screen.dart';
+import 'package:alphanessone/UI/settings/ai_settings_screen.dart';
 import 'package:alphanessone/Viewer/UI/exercise_details.dart';
 import 'package:alphanessone/Viewer/UI/timer.dart';
 import 'package:alphanessone/Viewer/UI/training_viewer.dart';
@@ -30,7 +31,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../Store/inAppPurchase.dart';
+import '../Store/in_app_purchase.dart';
 import '../Store/subscriptions_screen.dart';
 import '../trainingBuilder/training_program.dart';
 import '../exerciseManager/exercises_manager.dart';
@@ -39,6 +40,7 @@ import '../Coaching/coaching_screen.dart';
 import '../user_programs.dart';
 import '../providers/providers.dart';
 import 'package:alphanessone/Features/Dashboard/dashboard_screen.dart';
+import '../widgets/ai_chat_widget.dart';
 
 class AppRouter {
   static GoRouter router(WidgetRef ref) => GoRouter(
@@ -153,15 +155,11 @@ class AppRouter {
                             name: 'exercise_details',
                             path: Routes.exerciseDetails,
                             builder: (context, state) {
-                              final extra =
-                                  state.extra as Map<String, dynamic>;
-                              final programId =
-                                  extra['programId'] as String;
+                              final extra = state.extra as Map<String, dynamic>;
+                              final programId = extra['programId'] as String;
                               final weekId = extra['weekId'] as String;
-                              final workoutId =
-                                  extra['workoutId'] as String;
-                              final exerciseId =
-                                  extra['exerciseId'] as String;
+                              final workoutId = extra['workoutId'] as String;
+                              final exerciseId = extra['exerciseId'] as String;
                               final userId = extra['userId'] as String;
                               return ExerciseDetails(
                                 programId: programId,
@@ -186,8 +184,7 @@ class AppRouter {
                                 name: 'timer',
                                 path: Routes.timer,
                                 builder: (context, state) {
-                                  final timerModel =
-                                      state.extra as TimerModel;
+                                  final timerModel = state.extra as TimerModel;
                                   return TimerPage(timerModel: timerModel);
                                 },
                               ),
@@ -379,6 +376,16 @@ class AppRouter {
               GoRoute(
                 path: Routes.dashboard,
                 builder: (context, state) => const DashboardScreen(),
+              ),
+              GoRoute(
+                path: '/settings/ai',
+                builder: (context, state) => const AISettingsScreen(),
+              ),
+              GoRoute(
+                path: '/ai/chat',
+                builder: (context, state) => AIChatWidget(
+                  userService: ref.read(usersServiceProvider),
+                ),
               ),
             ],
           ),

@@ -302,8 +302,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: AppTheme.primaryGold
-                                            .withOpacity(0.2),
+                                        color:
+                                            AppTheme.primaryGold.withAlpha(77),
                                         blurRadius: 10,
                                         spreadRadius: 2,
                                       ),
@@ -452,7 +452,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 gradient: LinearGradient(
                                   colors: [
                                     AppTheme.surfaceMedium,
-                                    AppTheme.surfaceMedium.withOpacity(0.8),
+                                    AppTheme.surfaceMedium.withAlpha(204),
                                   ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
@@ -460,13 +460,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 borderRadius:
                                     BorderRadius.circular(AppTheme.radii.lg),
                                 border: Border.all(
-                                  color: AppTheme.primaryGold.withOpacity(0.3),
+                                  color: AppTheme.primaryGold.withAlpha(77),
                                   width: 1,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color:
-                                        AppTheme.primaryGold.withOpacity(0.1),
+                                    color: AppTheme.primaryGold.withAlpha(26),
                                     blurRadius: 10,
                                     spreadRadius: 0,
                                   ),
@@ -488,7 +487,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                               AppTheme.spacing.sm),
                                           decoration: BoxDecoration(
                                             color: AppTheme.primaryGold
-                                                .withOpacity(0.1),
+                                                .withAlpha(77),
                                             borderRadius: BorderRadius.circular(
                                                 AppTheme.radii.sm),
                                           ),
@@ -560,7 +559,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 gradient: LinearGradient(
                                   colors: [
                                     AppTheme.surfaceMedium,
-                                    AppTheme.surfaceMedium.withOpacity(0.8),
+                                    AppTheme.surfaceMedium.withAlpha(204),
                                   ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
@@ -568,13 +567,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 borderRadius:
                                     BorderRadius.circular(AppTheme.radii.lg),
                                 border: Border.all(
-                                  color: AppTheme.primaryGold.withOpacity(0.3),
+                                  color: AppTheme.primaryGold.withAlpha(77),
                                   width: 1,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color:
-                                        AppTheme.primaryGold.withOpacity(0.1),
+                                    color: AppTheme.primaryGold.withAlpha(26),
                                     blurRadius: 10,
                                     spreadRadius: 0,
                                   ),
@@ -597,7 +595,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                               AppTheme.spacing.sm),
                                           decoration: BoxDecoration(
                                             color: AppTheme.primaryGold
-                                                .withOpacity(0.1),
+                                                .withAlpha(77),
                                             borderRadius: BorderRadius.circular(
                                                 AppTheme.radii.sm),
                                           ),
@@ -699,19 +697,19 @@ class _LiveTile extends StatelessWidget {
             gradient: LinearGradient(
               colors: [
                 AppTheme.surfaceMedium,
-                AppTheme.surfaceMedium.withOpacity(0.8),
+                AppTheme.surfaceMedium.withAlpha(204),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(AppTheme.radii.lg),
             border: Border.all(
-              color: color.withOpacity(0.3),
+              color: color.withAlpha(77),
               width: 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: color.withOpacity(0.1),
+                color: color.withAlpha(10),
                 blurRadius: 10,
                 spreadRadius: 0,
               ),
@@ -731,7 +729,7 @@ class _LiveTile extends StatelessWidget {
                     Container(
                       padding: EdgeInsets.all(AppTheme.spacing.sm),
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.1),
+                        color: color.withAlpha(77),
                         borderRadius: BorderRadius.circular(AppTheme.radii.sm),
                       ),
                       child: Icon(icon, color: color, size: 32),
@@ -822,19 +820,19 @@ class _AnimatedActionButton extends StatelessWidget {
                         gradient: LinearGradient(
                           colors: [
                             AppTheme.surfaceMedium,
-                            AppTheme.surfaceMedium.withOpacity(0.8),
+                            AppTheme.surfaceMedium.withAlpha(204),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(AppTheme.radii.md),
                         border: Border.all(
-                          color: AppTheme.primaryGold.withOpacity(0.3),
+                          color: AppTheme.primaryGold.withAlpha(26),
                           width: 1,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.primaryGold.withOpacity(0.1),
+                            color: AppTheme.primaryGold.withAlpha(26),
                             blurRadius: 10,
                             spreadRadius: 0,
                           ),

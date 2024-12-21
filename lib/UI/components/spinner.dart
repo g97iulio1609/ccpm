@@ -32,7 +32,7 @@ class AppSpinner extends StatelessWidget {
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(AppTheme.radii.lg),
             border: Border.all(
-              color: colorScheme.outline.withOpacity(0.1),
+              color: colorScheme.outline.withAlpha(26),
             ),
           ),
           child: Column(
@@ -66,7 +66,7 @@ class AppSpinner extends StatelessWidget {
       return Stack(
         children: [
           ModalBarrier(
-            color: colorScheme.scrim.withOpacity(0.32),
+            color: colorScheme.scrim.withAlpha(82),
           ),
           Center(child: spinner),
         ],

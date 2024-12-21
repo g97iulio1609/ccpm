@@ -30,25 +30,31 @@ class IconButtonWithBackground extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        gradient: isGradient ? LinearGradient(
-          colors: [
-            color,
-            color.withOpacity(0.8),
-          ],
-        ) : null,
+        gradient: isGradient
+            ? LinearGradient(
+                colors: [
+                  color,
+                  color.withOpacity(0.8),
+                ],
+              )
+            : null,
         color: isGradient ? null : color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: isOutlined ? Border.all(
-          color: color.withOpacity(0.3),
-          width: 1.5,
-        ) : null,
-        boxShadow: isGradient ? [
-          BoxShadow(
-            color: color.withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ] : null,
+        border: isOutlined
+            ? Border.all(
+                color: color.withAlpha(76),
+                width: 1.5,
+              )
+            : null,
+        boxShadow: isGradient
+            ? [
+                BoxShadow(
+                  color: color.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : null,
       ),
       child: Material(
         color: Colors.transparent,
@@ -179,4 +185,4 @@ class IconButtonWithBackground extends StatelessWidget {
       isOutlined: true,
     );
   }
-} 
+}

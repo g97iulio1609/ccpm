@@ -57,7 +57,7 @@ class DatePickerField extends StatelessWidget {
           child: Container(
             padding: EdgeInsets.all(AppTheme.spacing.md),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              color: colorScheme.surfaceContainerHighest.withAlpha(76),
               borderRadius: BorderRadius.circular(AppTheme.radii.lg),
               border: Border.all(
                 color: colorScheme.outline.withOpacity(0.1),
@@ -75,13 +75,13 @@ class DatePickerField extends StatelessWidget {
                 ],
                 Expanded(
                   child: Text(
-                    value != null 
+                    value != null
                         ? DateFormat(dateFormat).format(value!)
                         : 'Seleziona data',
                     style: theme.textTheme.bodyLarge?.copyWith(
-                      color: value != null 
+                      color: value != null
                           ? colorScheme.onSurface
-                          : colorScheme.onSurfaceVariant.withOpacity(0.5),
+                          : colorScheme.onSurfaceVariant.withAlpha(128),
                     ),
                   ),
                 ),
@@ -144,7 +144,7 @@ class DatePickerField extends StatelessWidget {
                 Container(
                   padding: EdgeInsets.all(AppTheme.spacing.lg),
                   decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                    color: colorScheme.surfaceContainerHighest.withAlpha(76),
                     borderRadius: BorderRadius.vertical(
                       top: Radius.circular(AppTheme.radii.xl),
                     ),
@@ -157,8 +157,9 @@ class DatePickerField extends StatelessWidget {
                           vertical: AppTheme.spacing.xs,
                         ),
                         decoration: BoxDecoration(
-                          color: colorScheme.primaryContainer.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(AppTheme.radii.full),
+                          color: colorScheme.primaryContainer.withAlpha(76),
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radii.full),
                         ),
                         child: Icon(
                           Icons.calendar_today,
@@ -202,7 +203,7 @@ class DatePickerField extends StatelessWidget {
                 Container(
                   padding: EdgeInsets.all(AppTheme.spacing.lg),
                   decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                    color: colorScheme.surfaceContainerHighest.withAlpha(76),
                     borderRadius: BorderRadius.vertical(
                       bottom: Radius.circular(AppTheme.radii.xl),
                     ),
@@ -239,4 +240,4 @@ class DatePickerField extends StatelessWidget {
       onDateSelected(picked);
     }
   }
-} 
+}

@@ -7,9 +7,11 @@ import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
 import 'package:alphanessone/trainingBuilder/models/series_model.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 import 'package:alphanessone/Viewer/UI/workout_provider.dart';
+import 'package:logging/logging.dart';
 
 class WorkoutService {
   final Ref ref;
+  static final Logger _logger = Logger('WorkoutService');
   final TrainingProgramServices trainingProgramServices;
   final ExerciseRecordService exerciseRecordService;
 
@@ -49,8 +51,8 @@ class WorkoutService {
     }
   }
 
-  Future<void> showNoteDialog(
-      String exerciseId, String exerciseName, String workoutId, String note) async {
+  Future<void> showNoteDialog(String exerciseId, String exerciseName,
+      String workoutId, String note) async {
     final docRef = FirebaseFirestore.instance
         .collection('exercise_notes')
         .doc('${workoutId}_$exerciseId');
@@ -62,7 +64,8 @@ class WorkoutService {
       'updatedAt': FieldValue.serverTimestamp(),
     });
 
-    final currentNotes = Map<String, String>.from(ref.read(exerciseNotesProvider));
+    final currentNotes =
+        Map<String, String>.from(ref.read(exerciseNotesProvider));
     currentNotes[exerciseId] = note;
     ref.read(exerciseNotesProvider.notifier).state = currentNotes;
   }
@@ -74,7 +77,8 @@ class WorkoutService {
           .doc('${workoutId}_$exerciseId')
           .delete();
 
-      final currentNotes = Map<String, String>.from(ref.read(exerciseNotesProvider));
+      final currentNotes =
+          Map<String, String>.from(ref.read(exerciseNotesProvider));
       currentNotes.remove(exerciseId);
       ref.read(exerciseNotesProvider.notifier).state = currentNotes;
     } catch (e) {
@@ -98,12 +102,13 @@ class WorkoutService {
 
       // Salva nella cache
       _workoutCache[workoutId] = exercises;
-      
+
       // Cache exercise data
       _cacheExerciseData(exercises);
-      
+
       // Aggiorna la cache del nome del workout
-      final workoutNames = Map<String, String>.from(ref.read(workoutNameCacheProvider));
+      final workoutNames =
+          Map<String, String>.from(ref.read(workoutNameCacheProvider));
       workoutNames[workoutId] = workoutName;
       ref.read(workoutNameCacheProvider.notifier).state = workoutNames;
     } catch (e) {
@@ -120,14 +125,15 @@ class WorkoutService {
   Future<void> initializeWorkout(String workoutId) async {
     ref.read(loadingProvider.notifier).state = true;
     ref.read(workoutIdProvider.notifier).state = workoutId;
-    ref.read(exercisesProvider.notifier).state = []; // Reset exercises immediately
+    ref.read(exercisesProvider.notifier).state =
+        []; // Reset exercises immediately
 
     try {
       // Check if workout is in cache
       if (_workoutCache.containsKey(workoutId)) {
         final exercises = _workoutCache[workoutId]!;
         final workoutName = ref.read(workoutNameCacheProvider)[workoutId] ?? '';
-        
+
         ref.read(currentWorkoutNameProvider.notifier).state = workoutName;
         ref.read(exercisesProvider.notifier).state = exercises;
         return;
@@ -150,7 +156,7 @@ class WorkoutService {
       _workoutCache[workoutId] = exercises;
       _cacheExerciseData(exercises);
     } catch (e) {
-      print('Error initializing workout: $e');
+      _logger.severe('Error initializing workout', e);
     } finally {
       ref.read(loadingProvider.notifier).state = false;
     }
@@ -158,7 +164,7 @@ class WorkoutService {
 
   void _cacheExerciseData(List<Map<String, dynamic>> exercises) {
     final exerciseCache = <String, List<Map<String, dynamic>>>{};
-    
+
     for (final exercise in exercises) {
       final superSetId = exercise['superSetId'];
       if (superSetId != null) {
@@ -205,8 +211,8 @@ class WorkoutService {
       final exercises = await trainingProgramServices.fetchExercises(workoutId);
       ref.read(exercisesProvider.notifier).state = exercises;
 
-      final cache =
-          Map<String, List<Map<String, dynamic>>>.from(ref.read(exerciseCacheProvider));
+      final cache = Map<String, List<Map<String, dynamic>>>.from(
+          ref.read(exerciseCacheProvider));
       cache[workoutId] = exercises;
       ref.read(exerciseCacheProvider.notifier).state = cache;
 
@@ -220,7 +226,8 @@ class WorkoutService {
     }
   }
 
-  void subscribeToSeriesUpdates(Map<String, dynamic> exercise, String workoutId) {
+  void subscribeToSeriesUpdates(
+      Map<String, dynamic> exercise, String workoutId) {
     _subscriptions.removeWhere((sub) {
       if (sub.hashCode.toString().contains(exercise['id'])) {
         sub.cancel();
@@ -236,7 +243,8 @@ class WorkoutService {
 
     final subscription = seriesQuery.snapshots().listen((querySnapshot) {
       final updatedExercises = ref.read(exercisesProvider);
-      final index = updatedExercises.indexWhere((e) => e['id'] == exercise['id']);
+      final index =
+          updatedExercises.indexWhere((e) => e['id'] == exercise['id']);
       if (index != -1) {
         final newExercises = List<Map<String, dynamic>>.from(updatedExercises);
         newExercises[index] = Map<String, dynamic>.from(newExercises[index]);
@@ -259,7 +267,8 @@ class WorkoutService {
   Future<void> updateExercise(
       Map<String, dynamic> currentExercise, Exercise newExercise) async {
     final exercises = ref.read(exercisesProvider.notifier).state;
-    final exerciseIndex = exercises.indexWhere((e) => e['id'] == currentExercise['id']);
+    final exerciseIndex =
+        exercises.indexWhere((e) => e['id'] == currentExercise['id']);
 
     if (exerciseIndex != -1) {
       final updatedExercises = List<Map<String, dynamic>>.from(exercises);
@@ -273,9 +282,11 @@ class WorkoutService {
 
       ref.read(exercisesProvider.notifier).state = updatedExercises;
 
-      await recalculateWeights(updatedExercises[exerciseIndex], newExercise.exerciseId ?? '');
+      await recalculateWeights(
+          updatedExercises[exerciseIndex], newExercise.exerciseId ?? '');
 
-      await trainingProgramServices.updateExercise(currentExercise['id'], updatedExercises[exerciseIndex]);
+      await trainingProgramServices.updateExercise(
+          currentExercise['id'], updatedExercises[exerciseIndex]);
     }
   }
 
@@ -285,20 +296,20 @@ class WorkoutService {
     final originalExerciseId = newExerciseId;
 
     final targetUserId = ref.read(targetUserIdProvider);
-    
+
     final recordsStream = exerciseRecordService
         .getExerciseRecords(
-          userId: targetUserId,
-          exerciseId: originalExerciseId,
-        )
+      userId: targetUserId,
+      exerciseId: originalExerciseId,
+    )
         .map((records) {
-          if (records.isEmpty) return null;
-          final record = records.firstWhere(
-            (record) => record.exerciseId == originalExerciseId,
-            orElse: () => records.first,
-          );
-          return record;
-        });
+      if (records.isEmpty) return null;
+      final record = records.firstWhere(
+        (record) => record.exerciseId == originalExerciseId,
+        orElse: () => records.first,
+      );
+      return record;
+    });
 
     final latestRecord = await recordsStream.first;
     num latestMaxWeight = latestRecord?.maxWeight ?? 0.0;
@@ -307,27 +318,32 @@ class WorkoutService {
     _weightNotifiers[exercise['id']]!.value = latestMaxWeight.toDouble();
 
     final batch = FirebaseFirestore.instance.batch();
-    
+
     for (var serie in series) {
       final Map<String, dynamic> seriesMap = serie as Map<String, dynamic>;
-      
+
       seriesMap['originalExerciseId'] = originalExerciseId;
-      
+
       if (seriesMap['intensity'] != null) {
-        final double intensity = double.parse(seriesMap['intensity'].toString());
-        final double newWeight = (latestMaxWeight * intensity / 100).roundToDouble();
+        final double intensity =
+            double.parse(seriesMap['intensity'].toString());
+        final double newWeight =
+            (latestMaxWeight * intensity / 100).roundToDouble();
         seriesMap['weight'] = newWeight;
       }
-      
+
       if (seriesMap['maxIntensity'] != null) {
-        final double maxIntensity = double.parse(seriesMap['maxIntensity'].toString());
-        final double newMaxWeight = (latestMaxWeight * maxIntensity / 100).roundToDouble();
+        final double maxIntensity =
+            double.parse(seriesMap['maxIntensity'].toString());
+        final double newMaxWeight =
+            (latestMaxWeight * maxIntensity / 100).roundToDouble();
         seriesMap['maxWeight'] = newMaxWeight;
       }
 
       final seriesId = seriesMap['id'];
       if (seriesId != null) {
-        final seriesRef = FirebaseFirestore.instance.collection('series').doc(seriesId);
+        final seriesRef =
+            FirebaseFirestore.instance.collection('series').doc(seriesId);
         final updateData = {
           'weight': seriesMap['weight'],
           'maxWeight': seriesMap['maxWeight'],
@@ -377,22 +393,19 @@ class WorkoutService {
     final updatedResult = <Series>[];
     for (var series in newSeriesList) {
       if (series.id != null) {
-        final seriesRef = FirebaseFirestore.instance
-            .collection('series')
-            .doc(series.id);
+        final seriesRef =
+            FirebaseFirestore.instance.collection('series').doc(series.id);
         batch.update(seriesRef, series.toMap());
         updatedResult.add(series);
       } else {
-        final seriesRef = FirebaseFirestore.instance
-            .collection('series')
-            .doc();
+        final seriesRef = FirebaseFirestore.instance.collection('series').doc();
         final newSeries = series.copyWith(
           id: seriesRef.id,
           serieId: seriesRef.id,
           exerciseId: exercise['id'],
         );
         final Map<String, dynamic> seriesData = newSeries.toMap();
-        seriesData['exerciseId'] = exercise['id']; 
+        seriesData['exerciseId'] = exercise['id'];
         batch.set(seriesRef, seriesData);
         updatedResult.add(newSeries);
       }
@@ -401,17 +414,17 @@ class WorkoutService {
     try {
       await batch.commit();
 
-      final updatedExercises = List<Map<String, dynamic>>.from(ref.read(exercisesProvider));
+      final updatedExercises =
+          List<Map<String, dynamic>>.from(ref.read(exercisesProvider));
       updatedExercises[index] = {
         ...updatedExercises[index],
         'series': updatedResult.map((s) {
           final map = s.toMap();
-          map['exerciseId'] = exercise['id']; 
+          map['exerciseId'] = exercise['id'];
           return map;
         }).toList(),
       };
       ref.read(exercisesProvider.notifier).state = updatedExercises;
-
     } catch (e) {
       rethrow;
     }
@@ -445,7 +458,9 @@ class WorkoutService {
     final weight = (series['weight'] ?? 0.0).toDouble();
     final maxWeight = series['maxWeight']?.toDouble();
 
-    if (!currentlyDone) {
+    if (!currentlyDone &&
+        (series['reps_done'] == null || series['reps_done'] == 0) &&
+        (series['weight_done'] == null || series['weight_done'] == 0.0)) {
       await trainingProgramServices.updateSeriesWithMaxValues(
         seriesId,
         reps,
@@ -455,7 +470,29 @@ class WorkoutService {
         maxReps ?? reps,
         maxWeight ?? weight,
       );
-    } else {
+
+      final exercises =
+          List<Map<String, dynamic>>.from(ref.read(exercisesProvider));
+      for (int i = 0; i < exercises.length; i++) {
+        final seriesList =
+            List<Map<String, dynamic>>.from(exercises[i]['series'] ?? []);
+        for (int j = 0; j < seriesList.length; j++) {
+          if (seriesList[j]['id'] == seriesId) {
+            seriesList[j] = {
+              ...seriesList[j],
+              'reps_done': maxReps ?? reps,
+              'weight_done': maxWeight ?? weight,
+            };
+            exercises[i] = {
+              ...exercises[i],
+              'series': seriesList,
+            };
+            break;
+          }
+        }
+      }
+      ref.read(exercisesProvider.notifier).state = exercises;
+    } else if (currentlyDone) {
       await trainingProgramServices.updateSeriesWithMaxValues(
         seriesId,
         reps,
@@ -465,28 +502,29 @@ class WorkoutService {
         0,
         0.0,
       );
-    }
 
-    // Update the local state to reflect the changes immediately
-    final exercises = List<Map<String, dynamic>>.from(ref.read(exercisesProvider));
-    for (int i = 0; i < exercises.length; i++) {
-      final seriesList = List<Map<String, dynamic>>.from(exercises[i]['series'] ?? []);
-      for (int j = 0; j < seriesList.length; j++) {
-        if (seriesList[j]['id'] == seriesId) {
-          seriesList[j] = {
-            ...seriesList[j],
-            'reps_done': !currentlyDone ? (maxReps ?? reps) : 0,
-            'weight_done': !currentlyDone ? (maxWeight ?? weight) : 0.0,
-          };
-          exercises[i] = {
-            ...exercises[i],
-            'series': seriesList,
-          };
-          break;
+      final exercises =
+          List<Map<String, dynamic>>.from(ref.read(exercisesProvider));
+      for (int i = 0; i < exercises.length; i++) {
+        final seriesList =
+            List<Map<String, dynamic>>.from(exercises[i]['series'] ?? []);
+        for (int j = 0; j < seriesList.length; j++) {
+          if (seriesList[j]['id'] == seriesId) {
+            seriesList[j] = {
+              ...seriesList[j],
+              'reps_done': 0,
+              'weight_done': 0.0,
+            };
+            exercises[i] = {
+              ...exercises[i],
+              'series': seriesList,
+            };
+            break;
+          }
         }
       }
+      ref.read(exercisesProvider.notifier).state = exercises;
     }
-    ref.read(exercisesProvider.notifier).state = exercises;
   }
 
   int findFirstNotDoneSeriesIndex(List<Map<String, dynamic>> seriesList) {
@@ -515,14 +553,11 @@ class WorkoutService {
   }
 
   Future<void> updateMaxWeight(
-      Map<String, dynamic> exercise,
-      num newMaxWeight,
-      String targetUserId, {
-      int repetitions = 1,
-      bool keepCurrentWeights = false
-  }) async {
+      Map<String, dynamic> exercise, num newMaxWeight, String targetUserId,
+      {int repetitions = 1, bool keepCurrentWeights = false}) async {
     final series = exercise['series'] as List<dynamic>;
-    final originalExerciseId = exercise['series'].first['originalExerciseId'] as String?;
+    final originalExerciseId =
+        exercise['series'].first['originalExerciseId'] as String?;
     final exerciseId = originalExerciseId;
     final exerciseName = exercise['name'] as String?;
 
@@ -550,40 +585,49 @@ class WorkoutService {
     if (!keepCurrentWeights) {
       for (var serie in series) {
         final Map<String, dynamic> seriesMap = serie as Map<String, dynamic>;
-        
+
         if (seriesMap['intensity'] != null) {
-          final double intensity = double.parse(seriesMap['intensity'].toString());
-          seriesMap['weight'] = (newMaxWeight * intensity / 100).roundToDouble();
+          final double intensity =
+              double.parse(seriesMap['intensity'].toString());
+          seriesMap['weight'] =
+              (newMaxWeight * intensity / 100).roundToDouble();
         }
-        
+
         if (seriesMap['maxIntensity'] != null) {
-          final double maxIntensity = double.parse(seriesMap['maxIntensity'].toString());
-          seriesMap['maxWeight'] = (newMaxWeight * maxIntensity / 100).roundToDouble();
+          final double maxIntensity =
+              double.parse(seriesMap['maxIntensity'].toString());
+          seriesMap['maxWeight'] =
+              (newMaxWeight * maxIntensity / 100).roundToDouble();
         }
       }
     } else {
       for (var serie in series) {
         final Map<String, dynamic> seriesMap = serie as Map<String, dynamic>;
-        
+
         if (seriesMap['weight'] != null) {
-          final double currentWeight = double.parse(seriesMap['weight'].toString());
-          seriesMap['intensity'] = ((currentWeight / newMaxWeight) * 100).roundToDouble();
+          final double currentWeight =
+              double.parse(seriesMap['weight'].toString());
+          seriesMap['intensity'] =
+              ((currentWeight / newMaxWeight) * 100).roundToDouble();
         }
-        
+
         if (seriesMap['maxWeight'] != null) {
-          final double currentMaxWeight = double.parse(seriesMap['maxWeight'].toString());
-          seriesMap['maxIntensity'] = ((currentMaxWeight / newMaxWeight) * 100).roundToDouble();
+          final double currentMaxWeight =
+              double.parse(seriesMap['maxWeight'].toString());
+          seriesMap['maxIntensity'] =
+              ((currentMaxWeight / newMaxWeight) * 100).roundToDouble();
         }
       }
     }
 
     final batch = FirebaseFirestore.instance.batch();
-    
+
     for (var serie in series) {
       final Map<String, dynamic> seriesMap = serie as Map<String, dynamic>;
       final seriesId = seriesMap['id'];
       if (seriesId != null) {
-        final seriesRef = FirebaseFirestore.instance.collection('series').doc(seriesId);
+        final seriesRef =
+            FirebaseFirestore.instance.collection('series').doc(seriesId);
         batch.update(seriesRef, {
           'weight': seriesMap['weight'],
           'maxWeight': seriesMap['maxWeight'],
@@ -592,29 +636,33 @@ class WorkoutService {
         });
       }
     }
-    
+
     await batch.commit();
 
     await trainingProgramServices.updateExercise(exercise['id'], exercise);
   }
 
-  Future<void> updateSeriesData(String exerciseId, Map<String, dynamic> seriesData) async {
+  Future<void> updateSeriesData(
+      String exerciseId, Map<String, dynamic> seriesData) async {
     final seriesId = seriesData['id'];
     if (seriesId == null) return;
 
     // Update Firestore
-    final seriesRef = FirebaseFirestore.instance.collection('series').doc(seriesId);
+    final seriesRef =
+        FirebaseFirestore.instance.collection('series').doc(seriesId);
     await seriesRef.update({
       'reps_done': seriesData['reps_done'],
       'weight_done': seriesData['weight_done'],
     });
 
     // Update local state
-    final exercises = List<Map<String, dynamic>>.from(ref.read(exercisesProvider));
+    final exercises =
+        List<Map<String, dynamic>>.from(ref.read(exercisesProvider));
     bool updated = false;
 
     for (int i = 0; i < exercises.length && !updated; i++) {
-      final seriesList = List<Map<String, dynamic>>.from(exercises[i]['series'] ?? []);
+      final seriesList =
+          List<Map<String, dynamic>>.from(exercises[i]['series'] ?? []);
       for (int j = 0; j < seriesList.length && !updated; j++) {
         if (seriesList[j]['id'] == seriesId) {
           seriesList[j] = {

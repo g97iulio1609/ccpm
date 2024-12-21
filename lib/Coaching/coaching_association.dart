@@ -7,7 +7,8 @@ import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
 
 /// Provider per ottenere lo stream delle associazioni in base al ruolo dell'utente
-final associationsStreamProvider = StreamProvider.autoDispose<List<Association>>((ref) {
+final associationsStreamProvider =
+    StreamProvider.autoDispose<List<Association>>((ref) {
   final coachingService = ref.watch(coachingServiceProvider);
   final usersService = ref.watch(usersServiceProvider);
   final userId = usersService.getCurrentUserId();
@@ -30,10 +31,13 @@ class CoachAthleteAssociationScreen extends ConsumerStatefulWidget {
   const CoachAthleteAssociationScreen({super.key});
 
   @override
-  CoachAthleteAssociationScreenState createState() => CoachAthleteAssociationScreenState();
+  CoachAthleteAssociationScreenState createState() =>
+      CoachAthleteAssociationScreenState();
 }
 
-class CoachAthleteAssociationScreenState extends ConsumerState<CoachAthleteAssociationScreen> with SingleTickerProviderStateMixin {
+class CoachAthleteAssociationScreenState
+    extends ConsumerState<CoachAthleteAssociationScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -66,7 +70,7 @@ class CoachAthleteAssociationScreenState extends ConsumerState<CoachAthleteAssoc
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withOpacity(0.5),
+              colorScheme.surfaceContainerHighest.withAlpha(128),
             ],
             stops: const [0.0, 1.0],
           ),
@@ -103,8 +107,10 @@ class CoachAthleteAssociationScreenState extends ConsumerState<CoachAthleteAssoc
                 child: TabBarView(
                   controller: _tabController,
                   children: [
-                    _buildAssociationList(associationsAsyncValue, 'accepted', userRole),
-                    _buildAssociationList(associationsAsyncValue, 'pending', userRole),
+                    _buildAssociationList(
+                        associationsAsyncValue, 'accepted', userRole),
+                    _buildAssociationList(
+                        associationsAsyncValue, 'pending', userRole),
                   ],
                 ),
               ),
@@ -118,13 +124,13 @@ class CoachAthleteAssociationScreenState extends ConsumerState<CoachAthleteAssoc
                 gradient: LinearGradient(
                   colors: [
                     colorScheme.primary,
-                    colorScheme.primary.withOpacity(0.8),
+                    colorScheme.primary.withAlpha(204),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                 boxShadow: [
                   BoxShadow(
-                    color: colorScheme.primary.withOpacity(0.2),
+                    color: colorScheme.primary.withAlpha(51),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -150,10 +156,13 @@ class CoachAthleteAssociationScreenState extends ConsumerState<CoachAthleteAssoc
     );
   }
 
-  Widget _buildAssociationList(AsyncValue<List<Association>> associationsAsyncValue, String status, String userRole) {
+  Widget _buildAssociationList(
+      AsyncValue<List<Association>> associationsAsyncValue,
+      String status,
+      String userRole) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     return associationsAsyncValue.when(
       loading: () => Center(
         child: CircularProgressIndicator(
@@ -181,16 +190,19 @@ class CoachAthleteAssociationScreenState extends ConsumerState<CoachAthleteAssoc
         ),
       ),
       data: (associations) {
-        final filteredAssociations = associations.where((a) => a.status == status).toList();
+        final filteredAssociations =
+            associations.where((a) => a.status == status).toList();
         if (filteredAssociations.isEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  status == 'accepted' ? Icons.group_outlined : Icons.pending_outlined,
+                  status == 'accepted'
+                      ? Icons.group_outlined
+                      : Icons.pending_outlined,
                   size: 48,
-                  color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                  color: colorScheme.onSurfaceVariant.withAlpha(128),
                 ),
                 SizedBox(height: AppTheme.spacing.md),
                 Text(
@@ -214,10 +226,12 @@ class CoachAthleteAssociationScreenState extends ConsumerState<CoachAthleteAssoc
               child: AssociationTile(
                 association: association,
                 userRole: userRole,
-                onAccept: status == 'pending' && (userRole == 'admin' || userRole == 'coach')
+                onAccept: status == 'pending' &&
+                        (userRole == 'admin' || userRole == 'coach')
                     ? () => _respondToAssociation(association.id, true)
                     : null,
-                onReject: status == 'pending' && (userRole == 'admin' || userRole == 'coach')
+                onReject: status == 'pending' &&
+                        (userRole == 'admin' || userRole == 'coach')
                     ? () => _respondToAssociation(association.id, false)
                     : null,
                 onRemove: status == 'accepted'
@@ -235,22 +249,29 @@ class CoachAthleteAssociationScreenState extends ConsumerState<CoachAthleteAssoc
   void _showCoachSearchDialog() {
     showDialog(
       context: context,
-      builder: (context) => CoachSearchDialog(userId: ref.read(usersServiceProvider).getCurrentUserId()),
+      builder: (context) => CoachSearchDialog(
+          userId: ref.read(usersServiceProvider).getCurrentUserId()),
     );
   }
 
   /// Risponde a una richiesta di associazione (accetta o rifiuta)
   Future<void> _respondToAssociation(String associationId, bool accept) async {
     final coachingService = ref.read(coachingServiceProvider);
-    final result = await coachingService.respondToAssociation(associationId, accept);
+    final result =
+        await coachingService.respondToAssociation(associationId, accept);
     if (mounted) {
       if (result) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(accept ? 'Associazione accettata' : 'Associazione rifiutata')),
+          SnackBar(
+              content: Text(accept
+                  ? 'Associazione accettata'
+                  : 'Associazione rifiutata')),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Errore nella risposta alla richiesta di associazione.')),
+          const SnackBar(
+              content: Text(
+                  'Errore nella risposta alla richiesta di associazione.')),
         );
       }
     }
@@ -267,7 +288,8 @@ class CoachAthleteAssociationScreenState extends ConsumerState<CoachAthleteAssoc
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Errore nella rimozione dell\'associazione.')),
+          const SnackBar(
+              content: Text('Errore nella rimozione dell\'associazione.')),
         );
       }
     }
@@ -357,7 +379,8 @@ class CoachSearchDialogState extends ConsumerState<CoachSearchDialog> {
 
     // Filtra i coach disponibili per nuove associazioni
     final availableCoaches = await Future.wait(results.map((coach) async {
-      final isAvailable = await coachingService.isCoachAvailableForAssociation(coach.id);
+      final isAvailable =
+          await coachingService.isCoachAvailableForAssociation(coach.id);
       return isAvailable ? coach : null;
     }));
 
@@ -371,11 +394,14 @@ class CoachSearchDialogState extends ConsumerState<CoachSearchDialog> {
   Future<void> _requestAssociation(String coachId) async {
     final coachingService = ref.read(coachingServiceProvider);
 
-    final isAvailable = await coachingService.isCoachAvailableForAssociation(coachId);
+    final isAvailable =
+        await coachingService.isCoachAvailableForAssociation(coachId);
     if (!isAvailable) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Questo coach non è al momento disponibile per nuove associazioni.')),
+          const SnackBar(
+              content: Text(
+                  'Questo coach non è al momento disponibile per nuove associazioni.')),
         );
       }
       return;
@@ -383,18 +409,22 @@ class CoachSearchDialogState extends ConsumerState<CoachSearchDialog> {
 
     setState(() => _isLoading = true);
 
-    final result = await coachingService.requestAssociation(coachId, widget.userId);
+    final result =
+        await coachingService.requestAssociation(coachId, widget.userId);
     setState(() => _isLoading = false);
 
     if (mounted) {
       if (result) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Richiesta di associazione inviata con successo.')),
+          const SnackBar(
+              content: Text('Richiesta di associazione inviata con successo.')),
         );
         Navigator.pop(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Errore nell\'invio della richiesta di associazione.')),
+          const SnackBar(
+              content:
+                  Text('Errore nell\'invio della richiesta di associazione.')),
         );
       }
     }
@@ -422,13 +452,13 @@ class AssociationTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withAlpha(26),
         ),
         boxShadow: AppTheme.elevations.small,
       ),
@@ -452,12 +482,15 @@ class AssociationTile extends ConsumerWidget {
                       ),
                       decoration: BoxDecoration(
                         color: association.status == 'accepted'
-                            ? colorScheme.primaryContainer.withOpacity(0.3)
-                            : colorScheme.secondaryContainer.withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(AppTheme.radii.full),
+                            ? colorScheme.primaryContainer.withAlpha(76)
+                            : colorScheme.secondaryContainer.withAlpha(76),
+                        borderRadius:
+                            BorderRadius.circular(AppTheme.radii.full),
                       ),
                       child: Text(
-                        association.status == 'accepted' ? 'Associazione Attiva' : 'Richiesta in Attesa',
+                        association.status == 'accepted'
+                            ? 'Associazione Attiva'
+                            : 'Richiesta in Attesa',
                         style: theme.textTheme.labelMedium?.copyWith(
                           color: association.status == 'accepted'
                               ? colorScheme.primary
@@ -507,12 +540,14 @@ class AssociationTile extends ConsumerWidget {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) => BottomMenu(
-        title: association.status == 'accepted' ? 'Associazione Attiva' : 'Richiesta in Attesa',
+        title: association.status == 'accepted'
+            ? 'Associazione Attiva'
+            : 'Richiesta in Attesa',
         subtitle: _getTitle(association.athleteId),
         leading: Container(
           padding: EdgeInsets.all(AppTheme.spacing.sm),
           decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withOpacity(0.3),
+            color: colorScheme.primaryContainer.withAlpha(76),
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
           child: Icon(

@@ -91,7 +91,7 @@ class ExercisesList extends HookConsumerWidget {
           end: Alignment.bottomRight,
           colors: [
             theme.colorScheme.surface,
-            theme.colorScheme.surface.withOpacity(0.92),
+            theme.colorScheme.surface.withAlpha(235),
           ],
         ),
       ),
@@ -272,14 +272,14 @@ class ExercisesList extends HookConsumerWidget {
                                       theme.colorScheme.secondaryContainer,
                                   backgroundColor: theme
                                       .colorScheme.surfaceContainerHighest
-                                      .withOpacity(0.5),
+                                      .withAlpha(128),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
                                     side: BorderSide(
                                       color: isSelected
                                           ? theme.colorScheme.secondary
                                           : theme.colorScheme.outline
-                                              .withOpacity(0.5),
+                                              .withAlpha(26),
                                       width: 1,
                                     ),
                                   ),
@@ -396,7 +396,7 @@ class ExercisesList extends HookConsumerWidget {
         leading: Container(
           padding: EdgeInsets.all(AppTheme.spacing.sm),
           decoration: BoxDecoration(
-            color: colorScheme.errorContainer.withOpacity(0.3),
+            color: colorScheme.errorContainer.withAlpha(76),
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
           child: Icon(
@@ -494,7 +494,7 @@ class _ExercisesGridState extends ConsumerState<ExercisesGrid> {
         leading: Container(
           padding: EdgeInsets.all(AppTheme.spacing.sm),
           decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withOpacity(0.3),
+            color: colorScheme.primaryContainer.withAlpha(76),
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
           child: Icon(
@@ -684,16 +684,12 @@ class _ExerciseForm extends HookConsumerWidget {
             leading: Container(
               padding: EdgeInsets.all(AppTheme.spacing.sm),
               decoration: BoxDecoration(
-                color: exercise == null
-                    ? colorScheme.primaryContainer.withOpacity(0.3)
-                    : colorScheme.primaryContainer.withOpacity(0.3),
+                color: colorScheme.primaryContainer.withAlpha(76),
                 borderRadius: BorderRadius.circular(AppTheme.radii.md),
               ),
               child: Icon(
                 exercise == null ? Icons.add : Icons.edit_outlined,
-                color: exercise == null
-                    ? colorScheme.primary
-                    : colorScheme.primary,
+                color: colorScheme.primary,
                 size: 24,
               ),
             ),
@@ -712,13 +708,13 @@ class _ExerciseForm extends HookConsumerWidget {
                   gradient: LinearGradient(
                     colors: [
                       colorScheme.primary,
-                      colorScheme.primary.withOpacity(0.8),
+                      colorScheme.primary.withAlpha(204),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                   boxShadow: [
                     BoxShadow(
-                      color: colorScheme.primary.withOpacity(0.2),
+                      color: colorScheme.primary.withAlpha(51),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -854,11 +850,11 @@ class _ExerciseForm extends HookConsumerWidget {
                             child: Container(
                               decoration: BoxDecoration(
                                 color: colorScheme.surfaceContainerHighest
-                                    .withOpacity(0.3),
+                                    .withAlpha(128),
                                 borderRadius:
                                     BorderRadius.circular(AppTheme.radii.lg),
                                 border: Border.all(
-                                  color: colorScheme.outline.withOpacity(0.1),
+                                  color: colorScheme.outline.withAlpha(26),
                                 ),
                               ),
                               child: DropdownButtonFormField<String>(

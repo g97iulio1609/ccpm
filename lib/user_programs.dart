@@ -7,7 +7,6 @@ import './trainingBuilder/controller/training_program_controller.dart';
 import './trainingBuilder/services/training_services.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'UI/components/bottom_menu.dart';
-import 'package:alphanessone/Viewer/UI/training_viewer.dart';
 
 class UserProgramsScreen extends HookConsumerWidget {
   final String userId;
@@ -30,7 +29,7 @@ class UserProgramsScreen extends HookConsumerWidget {
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withOpacity(0.5),
+              colorScheme.surfaceContainerHighest.withAlpha(128),
             ],
             stops: const [0.0, 1.0],
           ),
@@ -70,7 +69,7 @@ class UserProgramsScreen extends HookConsumerWidget {
         gradient: LinearGradient(
           colors: [
             colorScheme.primary,
-            colorScheme.primary.withOpacity(0.8),
+            colorScheme.primary.withAlpha(204),
           ],
         ),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
@@ -156,7 +155,7 @@ class UserProgramsScreen extends HookConsumerWidget {
                     vertical: AppTheme.spacing.xs,
                   ),
                   decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer.withOpacity(0.3),
+                    color: colorScheme.primaryContainer.withAlpha(76),
                     borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
                   ),
                   child: Text(
@@ -288,7 +287,7 @@ class UserProgramsScreen extends HookConsumerWidget {
             vertical: AppTheme.spacing.sm,
           ),
           decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+            color: colorScheme.surfaceContainerHighest.withAlpha(76),
             borderRadius: BorderRadius.circular(AppTheme.radii.full),
           ),
           child: Row(
@@ -400,7 +399,7 @@ class UserProgramsScreen extends HookConsumerWidget {
         leading: Container(
           padding: EdgeInsets.all(AppTheme.spacing.sm),
           decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withOpacity(0.3),
+            color: colorScheme.primaryContainer.withAlpha(76),
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
           child: Icon(
@@ -576,7 +575,6 @@ class UserProgramsScreen extends HookConsumerWidget {
     context.go('/user_programs/training_viewer',
         extra: {'userId': userId, 'programId': programId});
   }
-
 }
 
 class AddProgramDialog extends StatefulWidget {
@@ -658,7 +656,7 @@ class AddProgramDialogState extends State<AddProgramDialog> {
             gradient: LinearGradient(
               colors: [
                 colorScheme.primary,
-                colorScheme.primary.withOpacity(0.8),
+                colorScheme.primary.withAlpha(204),
               ],
             ),
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
@@ -713,7 +711,7 @@ class AddProgramDialogState extends State<AddProgramDialog> {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppTheme.radii.md),
           borderSide: BorderSide(
-            color: colorScheme.outline.withOpacity(0.3),
+            color: colorScheme.outline.withAlpha(76),
           ),
         ),
         focusedBorder: OutlineInputBorder(
@@ -741,7 +739,7 @@ class AddProgramDialogState extends State<AddProgramDialog> {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppTheme.radii.md),
           borderSide: BorderSide(
-            color: colorScheme.outline.withOpacity(0.3),
+            color: colorScheme.outline.withAlpha(76),
           ),
         ),
         focusedBorder: OutlineInputBorder(

@@ -397,7 +397,7 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
         Container(
           height: 8,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.2),
+            color: color.withAlpha(51),
             borderRadius: BorderRadius.circular(AppTheme.radii.full),
           ),
           child: FractionallySizedBox(

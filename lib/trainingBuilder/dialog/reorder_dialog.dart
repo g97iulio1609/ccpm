@@ -5,7 +5,8 @@ class ReorderDialog extends StatefulWidget {
   final List<String> items;
   final Function(int, int) onReorder;
 
-  const ReorderDialog({required this.items, required this.onReorder, super.key});
+  const ReorderDialog(
+      {required this.items, required this.onReorder, super.key});
 
   @override
   ReorderDialogState createState() => ReorderDialogState();
@@ -32,7 +33,7 @@ class ReorderDialogState extends State<ReorderDialog> {
           color: colorScheme.surface,
           borderRadius: BorderRadius.circular(AppTheme.radii.xl),
           border: Border.all(
-            color: colorScheme.outline.withOpacity(0.1),
+            color: colorScheme.outline.withAlpha(26),
           ),
           boxShadow: AppTheme.elevations.large,
         ),
@@ -57,7 +58,7 @@ class ReorderDialogState extends State<ReorderDialog> {
                       vertical: AppTheme.spacing.xs,
                     ),
                     decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer.withOpacity(0.3),
+                      color: colorScheme.primaryContainer.withAlpha(76),
                       borderRadius: BorderRadius.circular(AppTheme.radii.full),
                     ),
                     child: Icon(
@@ -93,8 +94,9 @@ class ReorderDialogState extends State<ReorderDialog> {
                       color: Colors.transparent,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: colorScheme.primaryContainer.withOpacity(0.8),
-                          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                          color: colorScheme.primaryContainer.withAlpha(204),
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radii.lg),
                           boxShadow: AppTheme.elevations.medium,
                         ),
                         child: child,
@@ -108,17 +110,19 @@ class ReorderDialogState extends State<ReorderDialog> {
                       key: ValueKey(item),
                       margin: EdgeInsets.only(bottom: AppTheme.spacing.sm),
                       decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                        color:
+                            colorScheme.surfaceContainerHighest.withAlpha(76),
                         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                         border: Border.all(
-                          color: colorScheme.outline.withOpacity(0.1),
+                          color: colorScheme.outline.withAlpha(26),
                         ),
                       ),
                       child: Material(
                         color: Colors.transparent,
                         child: ListTile(
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                            borderRadius:
+                                BorderRadius.circular(AppTheme.radii.lg),
                           ),
                           contentPadding: EdgeInsets.symmetric(
                             horizontal: AppTheme.spacing.lg,
@@ -133,8 +137,9 @@ class ReorderDialogState extends State<ReorderDialog> {
                           leading: Container(
                             padding: EdgeInsets.all(AppTheme.spacing.xs),
                             decoration: BoxDecoration(
-                              color: colorScheme.primaryContainer.withOpacity(0.3),
-                              borderRadius: BorderRadius.circular(AppTheme.radii.md),
+                              color: colorScheme.primaryContainer.withAlpha(76),
+                              borderRadius:
+                                  BorderRadius.circular(AppTheme.radii.md),
                             ),
                             child: Text(
                               '${index + 1}',
@@ -149,8 +154,10 @@ class ReorderDialogState extends State<ReorderDialog> {
                             child: Container(
                               padding: EdgeInsets.all(AppTheme.spacing.sm),
                               decoration: BoxDecoration(
-                                color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
-                                borderRadius: BorderRadius.circular(AppTheme.radii.md),
+                                color: colorScheme.surfaceContainerHighest
+                                    .withAlpha(128),
+                                borderRadius:
+                                    BorderRadius.circular(AppTheme.radii.md),
                               ),
                               child: Icon(
                                 Icons.drag_handle,
@@ -194,7 +201,7 @@ class ReorderDialogState extends State<ReorderDialog> {
                       gradient: LinearGradient(
                         colors: [
                           colorScheme.primary,
-                          colorScheme.primary.withOpacity(0.8),
+                          colorScheme.primary.withAlpha(204),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(AppTheme.radii.lg),

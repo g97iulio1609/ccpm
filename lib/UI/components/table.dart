@@ -59,7 +59,7 @@ class AppTable<T> extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withAlpha(76),
                 borderRadius: BorderRadius.vertical(
                   top: Radius.circular(AppTheme.radii.lg),
                 ),
@@ -118,7 +118,7 @@ class AppTable<T> extends StatelessWidget {
                     Icon(
                       Icons.table_rows_outlined,
                       size: 64,
-                      color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                      color: colorScheme.onSurfaceVariant.withAlpha(128),
                     ),
                     SizedBox(height: AppTheme.spacing.md),
                     Text(
@@ -134,7 +134,9 @@ class AppTable<T> extends StatelessWidget {
             )
           else
             Container(
-              constraints: maxHeight != null ? BoxConstraints(maxHeight: maxHeight!) : null,
+              constraints: maxHeight != null
+                  ? BoxConstraints(maxHeight: maxHeight!)
+                  : null,
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: SingleChildScrollView(
@@ -169,12 +171,14 @@ class AppTable<T> extends StatelessWidget {
   Widget _buildHeader(ColorScheme colorScheme, ThemeData theme) {
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
-        border: showDividers ? Border(
-          bottom: BorderSide(
-            color: colorScheme.outline.withOpacity(0.1),
-          ),
-        ) : null,
+        color: colorScheme.surfaceContainerHighest.withAlpha(76),
+        border: showDividers
+            ? Border(
+                bottom: BorderSide(
+                  color: colorScheme.outline.withOpacity(0.1),
+                ),
+              )
+            : null,
       ),
       child: Row(
         children: columns.map((column) {
@@ -196,7 +200,8 @@ class AppTable<T> extends StatelessWidget {
     );
   }
 
-  Widget _buildRow(T row, int index, ColorScheme colorScheme, ThemeData theme, {bool isLastRow = false}) {
+  Widget _buildRow(T row, int index, ColorScheme colorScheme, ThemeData theme,
+      {bool isLastRow = false}) {
     final cells = buildCells(row);
     final expansion = buildExpansion?.call(row);
     final backgroundColor = zebra && index % 2 == 1
@@ -209,14 +214,17 @@ class AppTable<T> extends StatelessWidget {
           color: backgroundColor,
           child: InkWell(
             onTap: onRowTap != null ? () => onRowTap!(row) : null,
-            onLongPress: onRowLongPress != null ? () => onRowLongPress!(row) : null,
+            onLongPress:
+                onRowLongPress != null ? () => onRowLongPress!(row) : null,
             child: Container(
               decoration: BoxDecoration(
-                border: showDividers && !isLastRow ? Border(
-                  bottom: BorderSide(
-                    color: colorScheme.outline.withOpacity(0.1),
-                  ),
-                ) : null,
+                border: showDividers && !isLastRow
+                    ? Border(
+                        bottom: BorderSide(
+                          color: colorScheme.outline.withOpacity(0.1),
+                        ),
+                      )
+                    : null,
               ),
               child: Row(
                 children: cells.map((cell) {
@@ -309,7 +317,7 @@ class BadgeCell extends StatelessWidget {
         vertical: AppTheme.spacing.xs,
       ),
       decoration: BoxDecoration(
-        color: backgroundColor ?? colorScheme.primaryContainer.withOpacity(0.3),
+        color: backgroundColor ?? colorScheme.primaryContainer.withAlpha(76),
         borderRadius: BorderRadius.circular(AppTheme.radii.full),
       ),
       child: Row(
@@ -334,4 +342,4 @@ class BadgeCell extends StatelessWidget {
       ),
     );
   }
-} 
+}

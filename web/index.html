@@ -1,8 +1,7 @@
 <!DOCTYPE html><html><head>
   <meta name="google-signin-client_id" content="179277367624-haict835tr0dgldmhn4d4nv6ec3s41fp.apps.googleusercontent.com">
 
-  <meta http-equiv="Content-Security-Policy" 
-        content="default-src * 'unsafe-inline' 'unsafe-eval'; 
+  <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval'; 
                  script-src * 'unsafe-inline' 'unsafe-eval' https://js.stripe.com; 
                  connect-src * 'unsafe-inline' https://api.stripe.com; 
                  img-src * data: blob: 'unsafe-inline'; 
@@ -31,6 +30,33 @@
 
   
   
+  
+  
+  
+  
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   <style id="splash-screen-style">
     html {
       height: 100%
@@ -39,9 +65,8 @@
     body {
       margin: 0;
       min-height: 100%;
-      background-color: #000000;
-      background-image: url("splash/img/light-background.png");
-      background-size: 100% 100%;
+      background-color: #FFFFFF;
+          background-size: 100% 100%;
     }
 
     .center {
@@ -106,9 +131,27 @@
   </picture>
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   <script>
     window.flutterWebRenderer = "canvaskit";
     window.enableWasmGC = true;
+    window.wasmMemory = new WebAssembly.Memory({
+      initial: 100,
+      maximum: 1000,
+      shared: true
+    });
   </script>
   <script src="flutter_bootstrap.js" async=""></script>
 

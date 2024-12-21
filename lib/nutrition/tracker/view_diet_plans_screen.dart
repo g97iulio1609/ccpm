@@ -95,8 +95,7 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
                                 vertical: AppTheme.spacing.xxs,
                               ),
                               decoration: BoxDecoration(
-                                color:
-                                    theme.colorScheme.primary.withOpacity(0.1),
+                                color: theme.colorScheme.primary.withAlpha(77),
                                 borderRadius:
                                     BorderRadius.circular(AppTheme.radii.full),
                               ),
@@ -132,7 +131,8 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
                               final confirm = await showDialog<bool>(
                                     context: context,
                                     builder: (context) => AlertDialog(
-                                      title: const Text('Elimina Piano Dietetico'),
+                                      title:
+                                          const Text('Elimina Piano Dietetico'),
                                       content: const Text(
                                           'Sei sicuro di voler eliminare questo piano dietetico?'),
                                       actions: [
@@ -161,7 +161,8 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
                                     .deleteDietPlan(userId, dietPlan.id!);
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: const Text('Piano Dietetico Eliminato'),
+                                    content:
+                                        const Text('Piano Dietetico Eliminato'),
                                     backgroundColor: theme.colorScheme.error,
                                   ),
                                 );
@@ -172,7 +173,8 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
                                   .applyDietPlan(dietPlan);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: const Text('Piano Dietetico Applicato'),
+                                  content:
+                                      const Text('Piano Dietetico Applicato'),
                                   backgroundColor: theme.colorScheme.primary,
                                 ),
                               );

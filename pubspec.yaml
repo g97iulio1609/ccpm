@@ -2,7 +2,7 @@ name: alphanessone
 description: "Official AlphanessOne App"
 publish_to: 'none'
 
-version: 1.40.10+73
+version: 1.40.11+76
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -19,6 +19,7 @@ dependencies:
   cloud_firestore: ^5.0.0
   dynamic_color: ^1.7.0
   google_fonts: ^6.2.0
+  logging: ^1.2.0
   hooks_riverpod: ^2.4.10
   flutter_hooks: ^0.20.5
   intl: ^0.20.1
@@ -63,38 +64,46 @@ dependencies:
   flutter_stripe: ^11.1.0
   flutter_stripe_web: ^6.3.0
   shared_preferences: ^2.3.3
+  http: ^1.2.2
+  envied: ^1.0.0
+  build_runner: ^2.4.13
+  flutter_markdown: ^0.6.20
+  logger: ^2.0.2+1
+  flutter_gemini: ^3.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  envied_generator: ^1.0.0
 
 flutter:
   uses-material-design: true
   assets:
-    - assets/training_background.svg
+    - assets/icon.png
 
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/icon/icon.png"
-  min_sdk_android: 21
+  image_path: "assets/icon.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icon.png"
+  remove_alpha_ios: true
   web:
     generate: true
-    background_color: null
-    theme_color: "#hexcode"
-  windows:
-    generate: true
-    icon_size: 48
-  macos:
-    generate: true
+    image_path: "assets/icon.png"
+    background_color: "#FFFFFF"
+    theme_color: "#FFFFFF"
+  min_sdk_android: 21
+  android_play_store_icon: true
 
 flutter_native_splash:
-  color: "#000000" # Colore di sfondo, simile al design del background
-  background_image: assets/splash/background.png # Percorso dell'immagine del background
-  image: assets/splash/icon.png # Percorso dell'icona trasparente
+  color: "#FFFFFF"
+  image: assets/icon.png
+  branding_mode: bottom
   android: true
   ios: true
   web: true
-  android_gravity: center # Posiziona l'icona al centro su Android
-  ios_content_mode: center # Posiziona l'icona al centro su iOS
+  android_gravity: center
+  ios_content_mode: center
+  web_image_mode: center

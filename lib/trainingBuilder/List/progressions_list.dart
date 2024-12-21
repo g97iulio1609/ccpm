@@ -348,7 +348,7 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
                               borderRadius:
                                   BorderRadius.circular(AppTheme.radii.lg),
                               border: Border.all(
-                                color: colorScheme.outline.withOpacity(0.1),
+                                color: colorScheme.outline.withAlpha(26),
                               ),
                             ),
                             child: Column(
@@ -395,7 +395,7 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
     return Container(
       padding: EdgeInsets.all(AppTheme.spacing.md),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
+        color: colorScheme.surfaceContainerHighest.withAlpha(76),
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(AppTheme.radii.lg),
         ),
@@ -408,7 +408,7 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
               child: Text(
                 'Week',
                 style: theme.textTheme.titleSmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+                  color: colorScheme.onSurfaceVariant.withAlpha(128),
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -419,7 +419,7 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
               child: Text(
                 header,
                 style: theme.textTheme.titleSmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+                  color: colorScheme.onSurfaceVariant.withAlpha(128),
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -501,7 +501,7 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: colorScheme.outline.withOpacity(0.1),
+            color: colorScheme.outline.withAlpha(26),
           ),
         ),
       ),
@@ -520,7 +520,7 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
                     vertical: AppTheme.spacing.xs,
                   ),
                   decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer.withOpacity(0.3),
+                    color: colorScheme.primaryContainer.withAlpha(76),
                     borderRadius: BorderRadius.circular(AppTheme.radii.full),
                   ),
                   child: Text(
@@ -746,7 +746,7 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(AppTheme.radii.sm),
             border: Border.all(
-              color: colorScheme.outline.withOpacity(0.1),
+              color: colorScheme.outline.withAlpha(26),
             ),
           ),
           child: Column(
@@ -792,7 +792,7 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.sm),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withAlpha(26),
         ),
       ),
       child: Column(
@@ -1276,8 +1276,8 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
                             labelText: 'Minimo',
                             border: OutlineInputBorder(),
                           ),
-                          keyboardType:
-                              const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
                           onChanged: (value) {
                             setModalState(() {
                               _updateSeriesWithRealTimeCalculations(
@@ -1299,8 +1299,8 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
                             labelText: 'Massimo',
                             border: OutlineInputBorder(),
                           ),
-                          keyboardType:
-                              const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
                           onChanged: (value) {
                             setModalState(() {
                               _updateSeriesWithRealTimeCalculations(
@@ -1334,8 +1334,8 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
                             labelText: 'Minimo',
                             border: OutlineInputBorder(),
                           ),
-                          keyboardType:
-                              const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
                           onChanged: (value) {
                             setModalState(() {
                               _updateSeriesWithRealTimeCalculations(
@@ -1357,8 +1357,8 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
                             labelText: 'Massimo',
                             border: OutlineInputBorder(),
                           ),
-                          keyboardType:
-                              const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
                           onChanged: (value) {
                             setModalState(() {
                               _updateSeriesWithRealTimeCalculations(
@@ -1392,8 +1392,8 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
                             labelText: 'Minimo',
                             border: OutlineInputBorder(),
                           ),
-                          keyboardType:
-                              const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
                           onChanged: (value) {
                             setModalState(() {
                               _updateSeriesWithRealTimeCalculations(
@@ -1415,8 +1415,8 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
                             labelText: 'Massimo',
                             border: OutlineInputBorder(),
                           ),
-                          keyboardType:
-                              const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
                           onChanged: (value) {
                             setModalState(() {
                               _updateSeriesWithRealTimeCalculations(

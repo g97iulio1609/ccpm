@@ -61,7 +61,7 @@ class MaxRMDashboard extends HookConsumerWidget {
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withOpacity(0.5),
+              colorScheme.surfaceContainerHighest.withAlpha(128),
             ],
             stops: const [0.0, 1.0],
           ),
@@ -117,7 +117,7 @@ class MaxRMDashboard extends HookConsumerWidget {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withAlpha(128),
         ),
         boxShadow: AppTheme.elevations.small,
       ),
@@ -204,7 +204,7 @@ class MaxRMDashboard extends HookConsumerWidget {
                         Icon(
                           Icons.fitness_center_outlined,
                           size: 64,
-                          color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                          color: colorScheme.onSurfaceVariant.withAlpha(128),
                         ),
                         SizedBox(height: AppTheme.spacing.md),
                         Text(
@@ -218,8 +218,7 @@ class MaxRMDashboard extends HookConsumerWidget {
                         Text(
                           'Start adding your max records',
                           style: theme.textTheme.bodyLarge?.copyWith(
-                            color:
-                                colorScheme.onSurfaceVariant.withOpacity(0.7),
+                            color: colorScheme.onSurfaceVariant.withAlpha(128),
                           ),
                         ),
                       ],
@@ -293,7 +292,7 @@ class MaxRMDashboard extends HookConsumerWidget {
           color: colorScheme.surface,
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           border: Border.all(
-            color: colorScheme.outline.withOpacity(0.1),
+            color: colorScheme.outline.withAlpha(128),
           ),
           boxShadow: AppTheme.elevations.small,
         ),
@@ -316,7 +315,7 @@ class MaxRMDashboard extends HookConsumerWidget {
                       vertical: AppTheme.spacing.xs,
                     ),
                     decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer.withOpacity(0.3),
+                      color: colorScheme.primaryContainer.withAlpha(77),
                       borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
                     ),
                     child: Text(
@@ -353,14 +352,14 @@ class MaxRMDashboard extends HookConsumerWidget {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          colorScheme.primary,
-                          colorScheme.primary.withOpacity(0.8),
+                          colorScheme.primary.withAlpha(51),
+                          colorScheme.primary.withAlpha(51).withOpacity(0.8),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
                       boxShadow: [
                         BoxShadow(
-                          color: colorScheme.primary.withOpacity(0.2),
+                          color: colorScheme.primary.withAlpha(51),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -379,8 +378,7 @@ class MaxRMDashboard extends HookConsumerWidget {
 
                   // Date
                   Text(
-                    DateFormat('d MMM yyyy')
-                        .format(DateTime.parse(record.date)),
+                    DateFormat('d MMM yyyy').format(record.date),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
@@ -442,8 +440,8 @@ class MaxRMDashboard extends HookConsumerWidget {
           ),
           decoration: BoxDecoration(
             color: isDestructive
-                ? colorScheme.errorContainer.withOpacity(0.2)
-                : colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                ? colorScheme.errorContainer.withAlpha(77)
+                : colorScheme.surfaceContainerHighest.withAlpha(77),
             borderRadius: BorderRadius.circular(AppTheme.radii.full),
           ),
           child: Row(
@@ -665,7 +663,7 @@ class EditRecordDialog extends HookConsumerWidget {
     final repetitionsController =
         useTextEditingController(text: record.repetitions.toString());
     final keepWeight = useState(false);
-    final selectedDate = useState(DateTime.parse(record.date));
+    final selectedDate = useState(record.date);
 
     return AlertDialog(
       title: Text(

@@ -35,7 +35,8 @@ class AppAccordion extends StatefulWidget {
   State<AppAccordion> createState() => _AppAccordionState();
 }
 
-class _AppAccordionState extends State<AppAccordion> with SingleTickerProviderStateMixin {
+class _AppAccordionState extends State<AppAccordion>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _iconTurns;
   late Animation<double> _heightFactor;
@@ -51,7 +52,8 @@ class _AppAccordionState extends State<AppAccordion> with SingleTickerProviderSt
     _iconTurns = _controller.drive(Tween<double>(begin: 0.0, end: 0.5)
         .chain(CurveTween(curve: Curves.easeIn)));
     _heightFactor = _controller.drive(CurveTween(curve: Curves.easeIn));
-    _isExpanded = PageStorage.of(context).readState(context) as bool? ?? widget.initiallyExpanded;
+    _isExpanded = PageStorage.of(context).readState(context) as bool? ??
+        widget.initiallyExpanded;
     if (_isExpanded) {
       _controller.value = 1.0;
     }
@@ -83,10 +85,12 @@ class _AppAccordionState extends State<AppAccordion> with SingleTickerProviderSt
 
     return Container(
       decoration: BoxDecoration(
-        color: widget.backgroundColor ?? colorScheme.surfaceContainerHighest.withOpacity(0.3),
-        borderRadius: widget.borderRadius ?? BorderRadius.circular(AppTheme.radii.lg),
+        color: widget.backgroundColor ??
+            colorScheme.surfaceContainerHighest.withAlpha(76),
+        borderRadius:
+            widget.borderRadius ?? BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withAlpha(26),
         ),
         boxShadow: AppTheme.elevations.small,
       ),
@@ -98,9 +102,11 @@ class _AppAccordionState extends State<AppAccordion> with SingleTickerProviderSt
             color: Colors.transparent,
             child: InkWell(
               onTap: widget.enabled ? _handleTap : null,
-              borderRadius: widget.borderRadius ?? BorderRadius.circular(AppTheme.radii.lg),
+              borderRadius: widget.borderRadius ??
+                  BorderRadius.circular(AppTheme.radii.lg),
               child: Padding(
-                padding: widget.contentPadding ?? EdgeInsets.all(AppTheme.spacing.lg),
+                padding: widget.contentPadding ??
+                    EdgeInsets.all(AppTheme.spacing.lg),
                 child: Row(
                   children: [
                     if (widget.leading != null) ...[
@@ -114,9 +120,9 @@ class _AppAccordionState extends State<AppAccordion> with SingleTickerProviderSt
                           Text(
                             widget.title,
                             style: theme.textTheme.titleMedium?.copyWith(
-                              color: widget.enabled 
+                              color: widget.enabled
                                   ? colorScheme.onSurface
-                                  : colorScheme.onSurfaceVariant.withOpacity(0.5),
+                                  : colorScheme.onSurfaceVariant.withAlpha(128),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -127,22 +133,24 @@ class _AppAccordionState extends State<AppAccordion> with SingleTickerProviderSt
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: widget.enabled
                                     ? colorScheme.onSurfaceVariant
-                                    : colorScheme.onSurfaceVariant.withOpacity(0.5),
+                                    : colorScheme.onSurfaceVariant
+                                        .withAlpha(179),
                               ),
                             ),
                           ],
                         ],
                       ),
                     ),
-                    widget.trailing ?? RotationTransition(
-                      turns: _iconTurns,
-                      child: Icon(
-                        Icons.expand_more,
-                        color: widget.enabled
-                            ? colorScheme.onSurfaceVariant
-                            : colorScheme.onSurfaceVariant.withOpacity(0.5),
-                      ),
-                    ),
+                    widget.trailing ??
+                        RotationTransition(
+                          turns: _iconTurns,
+                          child: Icon(
+                            Icons.expand_more,
+                            color: widget.enabled
+                                ? colorScheme.onSurfaceVariant
+                                : colorScheme.onSurfaceVariant.withAlpha(179),
+                          ),
+                        ),
                   ],
                 ),
               ),
@@ -167,7 +175,8 @@ class _AppAccordionState extends State<AppAccordion> with SingleTickerProviderSt
                       color: colorScheme.outline.withOpacity(0.1),
                     ),
                   Padding(
-                    padding: widget.contentPadding ?? EdgeInsets.all(AppTheme.spacing.lg),
+                    padding: widget.contentPadding ??
+                        EdgeInsets.all(AppTheme.spacing.lg),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: widget.children,
@@ -246,4 +255,4 @@ class _AppAccordionGroupState extends State<AppAccordionGroup> {
       ),
     );
   }
-} 
+}

@@ -37,7 +37,7 @@ class _TrainingProgramWorkoutListPageState
           color: colorScheme.surface,
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           border: Border.all(
-            color: colorScheme.outline.withOpacity(0.1),
+            color: colorScheme.outline.withAlpha(26),
           ),
           boxShadow: AppTheme.elevations.small,
         ),
@@ -60,7 +60,7 @@ class _TrainingProgramWorkoutListPageState
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer.withOpacity(0.3),
+                      color: colorScheme.primaryContainer.withAlpha(76),
                       borderRadius: BorderRadius.circular(AppTheme.radii.md),
                     ),
                     child: Center(
@@ -117,7 +117,7 @@ class _TrainingProgramWorkoutListPageState
         leading: Container(
           padding: EdgeInsets.all(AppTheme.spacing.sm),
           decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withOpacity(0.3),
+            color: colorScheme.primaryContainer.withAlpha(76),
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
           child: Icon(
@@ -166,13 +166,13 @@ class _TrainingProgramWorkoutListPageState
         gradient: LinearGradient(
           colors: [
             colorScheme.primary,
-            colorScheme.primary.withOpacity(0.8),
+            colorScheme.primary.withAlpha(191),
           ],
         ),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.primary.withOpacity(0.2),
+            color: colorScheme.primary.withAlpha(63),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

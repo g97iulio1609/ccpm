@@ -40,7 +40,7 @@ class ExerciseDialog extends HookConsumerWidget {
       leading: Container(
         padding: EdgeInsets.all(AppTheme.spacing.sm),
         decoration: BoxDecoration(
-          color: colorScheme.primaryContainer.withOpacity(0.3),
+          color: colorScheme.primaryContainer.withAlpha(76),
           borderRadius: BorderRadius.circular(AppTheme.radii.md),
         ),
         child: Icon(
@@ -85,10 +85,10 @@ class ExerciseDialog extends HookConsumerWidget {
             SizedBox(height: AppTheme.spacing.xs),
             Container(
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withOpacity(0.1),
+                color: colorScheme.surfaceContainerHighest.withAlpha(26),
                 borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                 border: Border.all(
-                  color: colorScheme.outline.withOpacity(0.1),
+                  color: colorScheme.outline.withAlpha(26),
                 ),
               ),
               child: ExerciseAutocompleteBox(
@@ -119,10 +119,10 @@ class ExerciseDialog extends HookConsumerWidget {
             SizedBox(height: AppTheme.spacing.xs),
             Container(
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withOpacity(0.1),
+                color: colorScheme.surfaceContainerHighest.withAlpha(26),
                 borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                 border: Border.all(
-                  color: colorScheme.outline.withOpacity(0.1),
+                  color: colorScheme.outline.withAlpha(26),
                 ),
               ),
               child: TextFormField(
@@ -135,11 +135,11 @@ class ExerciseDialog extends HookConsumerWidget {
                   contentPadding: EdgeInsets.all(AppTheme.spacing.md),
                   hintText: 'Inserisci la variante',
                   hintStyle: theme.textTheme.bodyLarge?.copyWith(
-                    color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                    color: colorScheme.onSurfaceVariant.withAlpha(128),
                   ),
                   prefixIcon: Icon(
                     Icons.tune,
-                    color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                    color: colorScheme.onSurfaceVariant.withAlpha(179),
                     size: 20,
                   ),
                 ),

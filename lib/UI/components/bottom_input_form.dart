@@ -49,7 +49,7 @@ class BottomInputForm extends StatelessWidget {
                 width: 32,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: colorScheme.onSurfaceVariant.withOpacity(0.4),
+                  color: colorScheme.onSurfaceVariant.withAlpha(102),
                   borderRadius: BorderRadius.circular(AppTheme.radii.full),
                 ),
               ),
@@ -60,10 +60,11 @@ class BottomInputForm extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(AppTheme.spacing.lg),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
-              borderRadius: showDragHandle 
-                  ? null 
-                  : BorderRadius.vertical(top: Radius.circular(AppTheme.radii.xl)),
+              color: colorScheme.surfaceContainerHighest.withAlpha(76),
+              borderRadius: showDragHandle
+                  ? null
+                  : BorderRadius.vertical(
+                      top: Radius.circular(AppTheme.radii.xl)),
             ),
             child: Row(
               children: [
@@ -87,7 +88,7 @@ class BottomInputForm extends StatelessWidget {
                         Text(
                           subtitle!,
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
+                            color: colorScheme.onSurfaceVariant.withAlpha(179),
                           ),
                         ),
                       ],
@@ -112,7 +113,7 @@ class BottomInputForm extends StatelessWidget {
                       SizedBox(height: AppTheme.spacing.lg),
                       if (i < children.length - 1)
                         Divider(
-                          color: colorScheme.outline.withOpacity(0.1),
+                          color: colorScheme.outline.withAlpha(26),
                         ),
                       SizedBox(height: AppTheme.spacing.lg),
                     ] else if (i < children.length - 1)
@@ -128,10 +129,10 @@ class BottomInputForm extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withAlpha(76),
                 border: Border(
                   top: BorderSide(
-                    color: colorScheme.outline.withOpacity(0.1),
+                    color: colorScheme.outline.withAlpha(26),
                   ),
                 ),
               ),
@@ -174,7 +175,7 @@ class BottomInputForm extends StatelessWidget {
           Text(
             helperText,
             style: theme.textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+              color: colorScheme.onSurfaceVariant.withAlpha(179),
             ),
           ),
         ],
@@ -199,10 +200,10 @@ class BottomInputForm extends StatelessWidget {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withAlpha(76),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withAlpha(26),
         ),
       ),
       child: TextFormField(
@@ -246,21 +247,27 @@ class BottomInputForm extends StatelessWidget {
   }) {
     return Container(
       decoration: BoxDecoration(
-        gradient: isPrimary ? LinearGradient(
-          colors: [
-            colorScheme.primary,
-            colorScheme.primary.withOpacity(0.8),
-          ],
-        ) : null,
-        color: isPrimary ? null : colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        gradient: isPrimary
+            ? LinearGradient(
+                colors: [
+                  colorScheme.primary,
+                  colorScheme.primary.withOpacity(0.8),
+                ],
+              )
+            : null,
+        color: isPrimary
+            ? null
+            : colorScheme.surfaceContainerHighest.withAlpha(76),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        boxShadow: isPrimary ? [
-          BoxShadow(
-            color: colorScheme.primary.withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ] : null,
+        boxShadow: isPrimary
+            ? [
+                BoxShadow(
+                  color: colorScheme.primary.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : null,
       ),
       child: Material(
         color: Colors.transparent,
@@ -278,7 +285,9 @@ class BottomInputForm extends StatelessWidget {
                 if (icon != null) ...[
                   Icon(
                     icon,
-                    color: isPrimary ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
+                    color: isPrimary
+                        ? colorScheme.onPrimary
+                        : colorScheme.onSurfaceVariant,
                     size: 20,
                   ),
                   SizedBox(width: AppTheme.spacing.sm),
@@ -286,7 +295,9 @@ class BottomInputForm extends StatelessWidget {
                 Text(
                   label,
                   style: theme.textTheme.labelLarge?.copyWith(
-                    color: isPrimary ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
+                    color: isPrimary
+                        ? colorScheme.onPrimary
+                        : colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -297,4 +308,4 @@ class BottomInputForm extends StatelessWidget {
       ),
     );
   }
-} 
+}

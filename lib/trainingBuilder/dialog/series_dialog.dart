@@ -69,7 +69,7 @@ class _SeriesDialogState extends State<SeriesDialog> {
           color: colorScheme.surface,
           borderRadius: BorderRadius.circular(AppTheme.radii.xl),
           border: Border.all(
-            color: colorScheme.outline.withOpacity(0.1),
+            color: colorScheme.outline.withAlpha(26),
           ),
         ),
         child: Column(
@@ -79,7 +79,7 @@ class _SeriesDialogState extends State<SeriesDialog> {
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withAlpha(76),
                 borderRadius: BorderRadius.vertical(
                   top: Radius.circular(AppTheme.radii.xl),
                 ),
@@ -95,8 +95,8 @@ class _SeriesDialogState extends State<SeriesDialog> {
                     ),
                   ),
                   IconButton(
-                    icon:
-                        Icon(Icons.close, color: colorScheme.onSurfaceVariant),
+                    icon: Icon(Icons.close,
+                        color: colorScheme.onSurfaceVariant.withAlpha(128)),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -184,7 +184,7 @@ class _SeriesDialogState extends State<SeriesDialog> {
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withAlpha(76),
                 borderRadius: BorderRadius.vertical(
                   bottom: Radius.circular(AppTheme.radii.xl),
                 ),
@@ -276,17 +276,17 @@ class _SeriesDialogState extends State<SeriesDialog> {
         Text(
           label,
           style: theme.textTheme.titleSmall?.copyWith(
-            color: colorScheme.onSurfaceVariant,
+            color: colorScheme.onSurfaceVariant.withAlpha(179),
             fontWeight: FontWeight.w500,
           ),
         ),
         SizedBox(height: AppTheme.spacing.sm),
         Container(
           decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest.withOpacity(0.1),
+            color: colorScheme.surfaceContainerHighest.withAlpha(26),
             borderRadius: BorderRadius.circular(AppTheme.radii.lg),
             border: Border.all(
-              color: colorScheme.outline.withOpacity(0.1),
+              color: colorScheme.outline.withAlpha(26),
             ),
           ),
           child: TextField(
@@ -311,10 +311,10 @@ class _SeriesDialogState extends State<SeriesDialog> {
           SizedBox(height: AppTheme.spacing.sm),
           Container(
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withOpacity(0.1),
+              color: colorScheme.surfaceContainerHighest.withAlpha(26),
               borderRadius: BorderRadius.circular(AppTheme.radii.lg),
               border: Border.all(
-                color: colorScheme.outline.withOpacity(0.1),
+                color: colorScheme.outline.withAlpha(26),
               ),
             ),
             child: TextField(
@@ -349,16 +349,22 @@ class _SeriesDialogState extends State<SeriesDialog> {
   }
 
   void _handleSubmit() {
-    final updatedSeries =
-        _formController.createSeries(widget.currentSeriesGroup?.length ?? widget.exercise.series.length);
-    
+    final updatedSeries = _formController.createSeries(
+        widget.currentSeriesGroup?.length ?? widget.exercise.series.length);
+
     // Se stiamo modificando serie esistenti, manteniamo gli ID originali
     if (widget.currentSeriesGroup != null) {
       for (var i = 0; i < updatedSeries.length; i++) {
         updatedSeries[i] = updatedSeries[i].copyWith(
-          id: i < widget.currentSeriesGroup!.length ? widget.currentSeriesGroup![i].id : null,
-          originalExerciseId: i < widget.currentSeriesGroup!.length ? widget.currentSeriesGroup![i].originalExerciseId : widget.exercise.id,
-          order: i < widget.currentSeriesGroup!.length ? widget.currentSeriesGroup![i].order : i,
+          id: i < widget.currentSeriesGroup!.length
+              ? widget.currentSeriesGroup![i].id
+              : null,
+          originalExerciseId: i < widget.currentSeriesGroup!.length
+              ? widget.currentSeriesGroup![i].originalExerciseId
+              : widget.exercise.id,
+          order: i < widget.currentSeriesGroup!.length
+              ? widget.currentSeriesGroup![i].order
+              : i,
         );
       }
       Navigator.pop(context, {

@@ -5,12 +5,11 @@ import 'package:alphanessone/UI/components/user_autocomplete.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:alphanessone/Store/inAppPurchase_services.dart';
-import 'package:alphanessone/Store/inAppPurchase_model.dart';
+import 'package:alphanessone/Store/in_app_purchase_services.dart';
+import 'package:alphanessone/Store/in_app_purchase_model.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'dart:async';
 import 'package:alphanessone/Main/app_theme.dart';
 
@@ -164,7 +163,7 @@ class SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
                     color: Theme.of(context)
                         .colorScheme
                         .onSurfaceVariant
-                        .withOpacity(0.5),
+                        .withAlpha(128),
                     borderRadius: BorderRadius.circular(2.5),
                   ),
                 ),
@@ -334,33 +333,35 @@ class SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
     //debugPrint('Subscription details refreshed after creating new subscription');
   }
 
-  // Synchronizes the subscription with Stripe
+  // Sincronizza la sottoscrizione con Stripe
   Future<void> _syncStripeSubscription() async {
     ref.read(syncingProvider.notifier).state = true;
     //debugPrint('Synchronizing subscription with Stripe');
 
     try {
-      final firebaseFunctions = ref.read(firebaseFunctionsProvider);
-      final HttpsCallable callable =
-          firebaseFunctions.httpsCallable('syncStripeSubscription');
-      final result = await callable.call(<String, dynamic>{
-        'syncAll': ref.read(
-            isAdminProvider), // Passa true se admin per sincronizzare tutte le sottoscrizioni
-      });
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) {
+        throw Exception('Utente non autenticato');
+      }
 
-      if (result.data['success']) {
-        _showSnackBar(result.data['message']);
-        //debugPrint('Stripe synchronization successful: ${result.data['message']}');
-        if (ref.read(isAdminProvider) &&
-            ref.read(selectedUserIdProvider) != null) {
+      final isAdmin = ref.read(isAdminProvider);
+      final result = await _inAppPurchaseService.syncStripeSubscription(
+        userId,
+        syncAll: isAdmin,
+      );
+
+      if (result['success']) {
+        _showSnackBar(result['message']);
+        //debugPrint('Stripe synchronization successful: ${result['message']}');
+        if (isAdmin && ref.read(selectedUserIdProvider) != null) {
           await _fetchSubscriptionDetails(
               userId: ref.read(selectedUserIdProvider));
         } else {
           await _fetchSubscriptionDetails();
         }
       } else {
-        _showSnackBar(result.data['message']);
-        //debugPrint('Stripe synchronization failed: ${result.data['message']}');
+        _showSnackBar(result['message']);
+        //debugPrint('Stripe synchronization failed: ${result['message']}');
       }
     } catch (e) {
       _showSnackBar('Errore nella sincronizzazione dell\'abbonamento.');
@@ -521,7 +522,7 @@ class SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withOpacity(0.5),
+              colorScheme.surfaceContainerHighest.withAlpha(128),
             ],
             stops: const [0.0, 1.0],
           ),
@@ -538,7 +539,7 @@ class SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
                       color: colorScheme.surface,
                       borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                       border: Border.all(
-                        color: colorScheme.outline.withOpacity(0.1),
+                        color: colorScheme.outline.withAlpha(26),
                       ),
                       boxShadow: AppTheme.elevations.small,
                     ),
@@ -600,13 +601,13 @@ class SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
                 gradient: LinearGradient(
                   colors: [
                     colorScheme.primary,
-                    colorScheme.primary.withOpacity(0.8),
+                    colorScheme.primary.withAlpha(204),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(AppTheme.radii.full),
                 boxShadow: [
                   BoxShadow(
-                    color: colorScheme.primary.withOpacity(0.2),
+                    color: colorScheme.primary.withValues(alpha: 51),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -748,11 +749,8 @@ class SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: isPrimary
-                ? [colorScheme.primary, colorScheme.primary.withOpacity(0.8)]
-                : [
-                    colorScheme.secondary,
-                    colorScheme.secondary.withOpacity(0.8)
-                  ],
+                ? [colorScheme.primary, colorScheme.primary.withAlpha(204)]
+                : [colorScheme.secondary, colorScheme.secondary.withAlpha(204)],
           ),
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           boxShadow: AppTheme.elevations.small,
@@ -909,7 +907,7 @@ class SubscriptionCard extends StatelessWidget {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withAlpha(26),
         ),
         boxShadow: AppTheme.elevations.small,
       ),
@@ -924,7 +922,7 @@ class SubscriptionCard extends StatelessWidget {
                   Container(
                     padding: EdgeInsets.all(AppTheme.spacing.sm),
                     decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer.withOpacity(0.3),
+                      color: colorScheme.primaryContainer.withAlpha(76),
                       borderRadius: BorderRadius.circular(AppTheme.radii.full),
                     ),
                     child: Icon(
@@ -967,7 +965,7 @@ class SubscriptionCard extends StatelessWidget {
                   vertical: AppTheme.spacing.sm,
                 ),
                 decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withOpacity(0.3),
+                  color: colorScheme.primaryContainer.withAlpha(76),
                   borderRadius: BorderRadius.circular(AppTheme.radii.sm),
                 ),
                 child: Text(
@@ -1046,8 +1044,4 @@ extension StringCasingExtension on String {
     if (length <= 1) return toUpperCase();
     return '${this[0].toUpperCase()}${substring(1)}';
   }
-}
-
-void _navigateToSubscriptions(BuildContext context) async {
-  await context.push('/subscriptions');
 }

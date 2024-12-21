@@ -48,7 +48,8 @@ class UserProfileState extends ConsumerState<UserProfile>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this); // Updated length to 4
+    _tabController =
+        TabController(length: 4, vsync: this); // Updated length to 4
     debugPrint('UserProfile initState with userId: ${widget.userId}');
     _fetchUserProfile();
   }
@@ -106,7 +107,8 @@ class UserProfileState extends ConsumerState<UserProfile>
   void _updateControllers(Map<String, dynamic> data) {
     data.forEach((key, value) {
       if (!_excludedFields.contains(key)) {
-        _controllers[key] = TextEditingController(text: value?.toString() ?? '');
+        _controllers[key] =
+            TextEditingController(text: value?.toString() ?? '');
         debugPrint('Controller updated for $key');
       }
     });
@@ -247,8 +249,8 @@ class UserProfileState extends ConsumerState<UserProfile>
         if (isSelfDelete) {
           await FirebaseAuth.instance.signOut();
           if (mounted) {
-            _showSnackBar('Il tuo account è stato eliminato con successo.',
-                Colors.green);
+            _showSnackBar(
+                'Il tuo account è stato eliminato con successo.', Colors.green);
             debugPrint('Self-deletion successful, navigating to root');
             context.go('/');
           }
@@ -263,8 +265,7 @@ class UserProfileState extends ConsumerState<UserProfile>
         throw Exception("Utente non autenticato.");
       }
     } catch (e) {
-      _showSnackBar(
-          'Errore nell\'eliminazione dell\'utente: $e', Colors.red);
+      _showSnackBar('Errore nell\'eliminazione dell\'utente: $e', Colors.red);
       debugPrint('Error deleting user: $e');
     }
   }
@@ -561,8 +562,7 @@ class UserProfileState extends ConsumerState<UserProfile>
 
   // Costruisce la scheda degli abbonamenti
   Widget _buildSubscriptionsTab() {
-    debugPrint(
-        'Building SubscriptionsScreen with userId: ${widget.userId}');
+    debugPrint('Building SubscriptionsScreen with userId: ${widget.userId}');
     return SubscriptionsScreen(
         userId: widget.userId ?? FirebaseAuth.instance.currentUser!.uid);
   }
@@ -578,7 +578,7 @@ class UserProfileState extends ConsumerState<UserProfile>
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
-            color: theme.colorScheme.primary,
+            color: theme.colorScheme.primary.withAlpha(26),
             width: 3,
           ),
           color: theme.colorScheme.surfaceContainerHighest,
@@ -590,7 +590,7 @@ class UserProfileState extends ConsumerState<UserProfile>
               : null,
           boxShadow: [
             BoxShadow(
-              color: theme.colorScheme.shadow.withOpacity(0.2),
+              color: theme.colorScheme.shadow.withAlpha(51),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -688,7 +688,7 @@ class UserProfileState extends ConsumerState<UserProfile>
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withOpacity(0.5),
+              colorScheme.surfaceContainerHighest.withAlpha(128),
             ],
             stops: const [0.0, 1.0],
           ),
@@ -718,12 +718,13 @@ class UserProfileState extends ConsumerState<UserProfile>
                           fontWeight: FontWeight.w600,
                           letterSpacing: -0.5,
                         ),
-                        unselectedLabelStyle: theme.textTheme.titleSmall?.copyWith(
+                        unselectedLabelStyle:
+                            theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w500,
                           letterSpacing: -0.5,
                         ),
                         tabs: const [
-                          Tab(text: 'Info Personali'),
+                          Tab(text: 'Info'),
                           Tab(text: 'Account'),
                           Tab(text: 'Dati Fitness'),
                           Tab(text: 'Abbonamenti'),

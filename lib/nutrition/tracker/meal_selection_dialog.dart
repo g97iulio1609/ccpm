@@ -70,7 +70,7 @@ class _MealSelectionDialogState extends ConsumerState<MealSelectionDialog> {
             vertical: AppTheme.spacing.md,
           ),
           decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+            color: colorScheme.surfaceContainerHighest.withAlpha(76),
             borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           ),
           child: Row(
@@ -187,15 +187,15 @@ class _MealSelectionDialogState extends ConsumerState<MealSelectionDialog> {
                         padding: EdgeInsets.all(AppTheme.spacing.md),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? colorScheme.primary.withOpacity(0.1)
+                              ? colorScheme.primary.withAlpha(26)
                               : colorScheme.surfaceContainerHighest
-                                  .withOpacity(0.3),
+                                  .withAlpha(76),
                           borderRadius:
                               BorderRadius.circular(AppTheme.radii.lg),
                           border: Border.all(
                             color: isSelected
                                 ? colorScheme.primary
-                                : colorScheme.outline.withOpacity(0.1),
+                                : colorScheme.outline.withAlpha(26),
                             width: 1.5,
                           ),
                         ),

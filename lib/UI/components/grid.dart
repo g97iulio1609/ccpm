@@ -43,7 +43,8 @@ class AppGrid extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Container(
-      constraints: maxWidth != null ? BoxConstraints(maxWidth: maxWidth!) : null,
+      constraints:
+          maxWidth != null ? BoxConstraints(maxWidth: maxWidth!) : null,
       decoration: BoxDecoration(
         color: backgroundColor ?? colorScheme.surface,
         borderRadius: borderRadius ?? BorderRadius.circular(AppTheme.radii.lg),
@@ -61,9 +62,10 @@ class AppGrid extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withAlpha(76),
                 borderRadius: borderRadius != null
-                    ? BorderRadius.vertical(top: Radius.circular(AppTheme.radii.lg))
+                    ? BorderRadius.vertical(
+                        top: Radius.circular(AppTheme.radii.lg))
                     : null,
               ),
               child: Row(
@@ -97,9 +99,9 @@ class AppGrid extends StatelessWidget {
                   ),
                   if (actions != null) ...[
                     ...actions!.map((action) => Padding(
-                      padding: EdgeInsets.only(left: AppTheme.spacing.sm),
-                      child: action,
-                    )),
+                          padding: EdgeInsets.only(left: AppTheme.spacing.sm),
+                          child: action,
+                        )),
                   ],
                 ],
               ),
@@ -194,7 +196,7 @@ class AppGrid extends StatelessWidget {
   }) {
     final width = MediaQuery.of(context).size.width;
     final crossAxisCount = (width / desiredMinWidth).floor();
-    
+
     return AppGrid(
       title: title,
       subtitle: subtitle,
@@ -239,8 +241,8 @@ class GridCell extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: isSelected
-            ? colorScheme.primaryContainer.withOpacity(0.3)
-            : colorScheme.surfaceContainerHighest.withOpacity(0.3),
+            ? colorScheme.primaryContainer.withAlpha(76)
+            : colorScheme.surfaceContainerHighest.withAlpha(76),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
           color: isSelected
@@ -267,8 +269,10 @@ class GridCell extends StatelessWidget {
                   title,
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: enabled
-                        ? (isSelected ? colorScheme.primary : colorScheme.onSurface)
-                        : colorScheme.onSurfaceVariant.withOpacity(0.5),
+                        ? (isSelected
+                            ? colorScheme.primary
+                            : colorScheme.onSurface)
+                        : colorScheme.onSurfaceVariant.withAlpha(128),
                     fontWeight: isSelected ? FontWeight.w600 : null,
                   ),
                   textAlign: TextAlign.center,
@@ -280,7 +284,7 @@ class GridCell extends StatelessWidget {
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: enabled
                           ? colorScheme.onSurfaceVariant
-                          : colorScheme.onSurfaceVariant.withOpacity(0.5),
+                          : colorScheme.onSurfaceVariant.withAlpha(128),
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -296,4 +300,4 @@ class GridCell extends StatelessWidget {
       ),
     );
   }
-} 
+}

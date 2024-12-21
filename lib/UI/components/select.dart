@@ -78,8 +78,8 @@ class AppSelect<T> extends StatelessWidget {
         // Dropdown
         Container(
           decoration: BoxDecoration(
-            color: enabled 
-                ? colorScheme.surfaceContainerHighest.withOpacity(0.3)
+            color: enabled
+                ? colorScheme.surfaceContainerHighest.withAlpha(76)
                 : colorScheme.surfaceContainerHighest.withOpacity(0.1),
             borderRadius: BorderRadius.circular(AppTheme.radii.lg),
             border: Border.all(
@@ -91,21 +91,23 @@ class AppSelect<T> extends StatelessWidget {
             isExpanded: isExpanded,
             icon: Icon(
               Icons.arrow_drop_down,
-              color: enabled 
+              color: enabled
                   ? colorScheme.onSurfaceVariant
-                  : colorScheme.onSurfaceVariant.withOpacity(0.5),
+                  : colorScheme.onSurfaceVariant.withAlpha(128),
             ),
             style: theme.textTheme.bodyLarge?.copyWith(
-              color: enabled ? colorScheme.onSurface : colorScheme.onSurface.withOpacity(0.5),
+              color: enabled
+                  ? colorScheme.onSurface
+                  : colorScheme.onSurface.withAlpha(128),
             ),
             decoration: InputDecoration(
               enabled: enabled,
               prefixIcon: icon != null
                   ? Icon(
                       icon,
-                      color: enabled 
-                          ? colorScheme.primary 
-                          : colorScheme.onSurfaceVariant.withOpacity(0.5),
+                      color: enabled
+                          ? colorScheme.primary
+                          : colorScheme.onSurfaceVariant.withAlpha(128),
                       size: 20,
                     )
                   : null,
@@ -272,4 +274,4 @@ class AppSelect<T> extends StatelessWidget {
       ),
     );
   }
-} 
+}

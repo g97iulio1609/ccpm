@@ -71,7 +71,7 @@ class AppCard extends StatelessWidget {
                 vertical: AppTheme.spacing.xs,
               ),
               decoration: BoxDecoration(
-                color: colorScheme.primaryContainer.withOpacity(0.3),
+                color: colorScheme.primaryContainer.withAlpha(76),
                 borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
               ),
               child: Text(
@@ -113,7 +113,7 @@ class AppCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(borderRadius),
         border: variant == AppCardVariant.outlined
             ? Border.all(
-                color: colorScheme.outline.withOpacity(0.1),
+                color: colorScheme.outline.withAlpha(26),
               )
             : border,
         boxShadow: variant == AppCardVariant.elevated
@@ -144,7 +144,7 @@ class AppCard extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(AppTheme.spacing.lg),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withAlpha(76),
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(borderRadius),
         ),
@@ -158,7 +158,7 @@ class AppCard extends StatelessWidget {
                 vertical: AppTheme.spacing.xs,
               ),
               decoration: BoxDecoration(
-                color: colorScheme.primaryContainer.withOpacity(0.3),
+                color: colorScheme.primaryContainer.withAlpha(76),
                 borderRadius: BorderRadius.circular(AppTheme.radii.full),
               ),
               child: Icon(
@@ -188,7 +188,7 @@ class AppCard extends StatelessWidget {
                   Text(
                     subtitle!,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
+                      color: colorScheme.onSurfaceVariant.withAlpha(128),
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -217,7 +217,7 @@ class AppCard extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(AppTheme.spacing.lg),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withAlpha(76),
         borderRadius: BorderRadius.vertical(
           bottom: Radius.circular(borderRadius),
         ),
