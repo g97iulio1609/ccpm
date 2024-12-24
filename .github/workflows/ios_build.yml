@@ -17,32 +17,36 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Installa Flutter (ultima versione stabile o specifica)
+      # 2. Installa l'ultima versione stabile di Flutter
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.1' # Sostituisci con la versione desiderata
+          flutter-version: 'stable'
 
-      # 3. Installa le dipendenze di Flutter
+      # 3. Disabilita le analitiche di Flutter (opzionale)
+      - name: Disable Flutter Analytics
+        run: flutter config --no-analytics
+
+      # 4. Installa le dipendenze di Flutter
       - name: Install dependencies
         run: flutter pub get
 
-      # 4. Build Android App Bundle (file .aab)
+      # 5. Build Android App Bundle (file .aab)
       - name: Build Android App Bundle
         run: flutter build appbundle --release
 
-      # 5. Carica l'App Bundle (.aab) come artifact
+      # 6. Carica l'App Bundle (.aab) come artifact
       - name: Upload Android AAB
         uses: actions/upload-artifact@v3
         with:
           name: myapp-aab
           path: build/app/outputs/bundle/release/*.aab
 
-      # 6. Build iOS IPA senza code signing
+      # 7. Build iOS IPA senza code signing
       - name: Build iOS IPA
         run: flutter build ipa --release --no-codesign
 
-      # 7. Carica l'IPA come artifact
+      # 8. Carica l'IPA come artifact
       - name: Upload IPA
         uses: actions/upload-artifact@v3
         with:
