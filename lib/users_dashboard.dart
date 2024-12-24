@@ -5,6 +5,7 @@ import 'package:alphanessone/models/user_model.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/services/users_services.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/UI/components/bottom_menu.dart';
 
 class UsersDashboard extends ConsumerStatefulWidget {
   const UsersDashboard({super.key});
@@ -172,24 +173,68 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
           );
         }
 
-        return SliverGrid(
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 400,
-            mainAxisSpacing: 20,
-            crossAxisSpacing: 20,
-            childAspectRatio: 1.2,
-          ),
-          delegate: SliverChildBuilderDelegate(
-            (context, index) => _buildUserCard(
-              users[index],
-              theme,
-              colorScheme,
+        // Calcola il numero di colonne
+        final crossAxisCount = _getGridCrossAxisCount(context);
+
+        // Organizza gli utenti in righe
+        final rows = <List<UserModel>>[];
+        for (var i = 0; i < users.length; i += crossAxisCount) {
+          rows.add(
+            users.sublist(
+              i,
+              i + crossAxisCount > users.length
+                  ? users.length
+                  : i + crossAxisCount,
             ),
-            childCount: users.length,
+          );
+        }
+
+        return SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, rowIndex) {
+              if (rowIndex >= rows.length) return null;
+
+              final rowUsers = rows[rowIndex];
+
+              return Padding(
+                padding: EdgeInsets.only(bottom: AppTheme.spacing.xl),
+                child: IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (var i = 0; i < crossAxisCount; i++) ...[
+                        if (i < rowUsers.length)
+                          Expanded(
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                right: i < crossAxisCount - 1
+                                    ? AppTheme.spacing.xl
+                                    : 0,
+                              ),
+                              child: _buildUserCard(
+                                  rowUsers[i], theme, colorScheme),
+                            ),
+                          )
+                        else
+                          Expanded(child: Container()),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         );
       },
     );
+  }
+
+  int _getGridCrossAxisCount(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    if (width > 1200) return 4;
+    if (width > 900) return 3;
+    if (width > 600) return 2;
+    return 1;
   }
 
   Widget _buildUserCard(
@@ -212,109 +257,101 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
           onTap: () => _navigateToUserProfile(context, user.id),
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           child: Padding(
-            padding: EdgeInsets.all(AppTheme.spacing.sm),
+            padding: EdgeInsets.all(AppTheme.spacing.lg),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // User Avatar
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer.withAlpha(76),
-                    shape: BoxShape.circle,
-                    image: user.photoURL.isNotEmpty
-                        ? DecorationImage(
-                            image: NetworkImage(user.photoURL),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
+                // Avatar e menu
+                SizedBox(
+                  height: 40,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer.withAlpha(76),
+                          shape: BoxShape.circle,
+                          image: user.photoURL.isNotEmpty
+                              ? DecorationImage(
+                                  image: NetworkImage(user.photoURL),
+                                  fit: BoxFit.cover,
+                                )
+                              : null,
+                        ),
+                        child: user.photoURL.isEmpty
+                            ? Center(
+                                child: Text(
+                                  initials,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    color: colorScheme.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              )
+                            : null,
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        icon: Icon(
+                          Icons.more_vert,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        onPressed: () => _showUserOptions(context, user),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ],
                   ),
-                  child: user.photoURL.isEmpty
-                      ? Center(
-                          child: Text(
-                            initials,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              color: colorScheme.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        )
-                      : null,
                 ),
+                SizedBox(height: AppTheme.spacing.lg),
 
-                SizedBox(height: AppTheme.spacing.xs),
-
-                // User Info
+                // Nome utente
                 Text(
                   user.name,
-                  style: theme.textTheme.titleSmall?.copyWith(
+                  style: theme.textTheme.titleLarge?.copyWith(
                     color: colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                     letterSpacing: -0.5,
                   ),
-                  textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+                SizedBox(height: AppTheme.spacing.sm),
 
-                SizedBox(height: AppTheme.spacing.xs),
-
+                // Email
                 Text(
                   user.email,
-                  style: theme.textTheme.labelSmall?.copyWith(
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
-                  textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
 
-                SizedBox(height: AppTheme.spacing.xs),
+                SizedBox(height: AppTheme.spacing.xl),
 
                 // Role Badge
                 Container(
                   padding: EdgeInsets.symmetric(
-                    horizontal: AppTheme.spacing.sm,
+                    horizontal: AppTheme.spacing.md,
                     vertical: AppTheme.spacing.xs,
                   ),
                   decoration: BoxDecoration(
                     color: colorScheme.primaryContainer.withAlpha(76),
-                    borderRadius: BorderRadius.circular(AppTheme.radii.sm),
+                    borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
                   ),
                   child: Text(
                     user.role.toUpperCase(),
-                    style: theme.textTheme.labelSmall?.copyWith(
+                    style: theme.textTheme.labelMedium?.copyWith(
                       color: colorScheme.primary,
                       fontWeight: FontWeight.w600,
                     ),
+                    textAlign: TextAlign.center,
                   ),
-                ),
-
-                const Spacer(),
-
-                // Action Buttons
-                Wrap(
-                  spacing: AppTheme.spacing.xs,
-                  alignment: WrapAlignment.center,
-                  children: [
-                    _buildActionButton(
-                      icon: Icons.visibility_outlined,
-                      label: 'View',
-                      onTap: () => _navigateToUserProfile(context, user.id),
-                      colorScheme: colorScheme,
-                      theme: theme,
-                    ),
-                    _buildActionButton(
-                      icon: Icons.delete_outline,
-                      label: 'Delete',
-                      onTap: () => _showDeleteConfirmation(user),
-                      colorScheme: colorScheme,
-                      theme: theme,
-                      isDestructive: true,
-                    ),
-                  ],
                 ),
               ],
             ),
@@ -324,50 +361,48 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
     );
   }
 
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    required ColorScheme colorScheme,
-    required ThemeData theme,
-    bool isDestructive = false,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppTheme.radii.full),
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: AppTheme.spacing.sm,
-            vertical: AppTheme.spacing.xs,
-          ),
+  void _showUserOptions(BuildContext context, UserModel user) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => BottomMenu(
+        title: user.name,
+        subtitle: user.email,
+        leading: Container(
+          padding: EdgeInsets.all(AppTheme.spacing.sm),
           decoration: BoxDecoration(
-            color: isDestructive
-                ? colorScheme.errorContainer.withAlpha(51)
-                : colorScheme.surfaceContainerHighest.withAlpha(76),
-            borderRadius: BorderRadius.circular(AppTheme.radii.full),
+            color: colorScheme.primaryContainer.withAlpha(76),
+            borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 16,
-                color: isDestructive ? colorScheme.error : colorScheme.primary,
-              ),
-              SizedBox(width: AppTheme.spacing.xs),
-              Text(
-                label,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color:
-                      isDestructive ? colorScheme.error : colorScheme.primary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
+          child: Icon(
+            Icons.person_outline,
+            color: colorScheme.primary,
+            size: 24,
           ),
         ),
+        items: [
+          BottomMenuItem(
+            title: 'Visualizza Profilo',
+            icon: Icons.visibility_outlined,
+            onTap: () {
+              Navigator.pop(context);
+              _navigateToUserProfile(context, user.id);
+            },
+          ),
+          BottomMenuItem(
+            title: 'Elimina Utente',
+            icon: Icons.delete_outline,
+            onTap: () {
+              Navigator.pop(context);
+              _showDeleteConfirmation(user);
+            },
+            isDestructive: true,
+          ),
+        ],
       ),
     );
   }
