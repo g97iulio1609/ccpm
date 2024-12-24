@@ -16,35 +16,50 @@ final sharedPreferencesProvider = Provider<SharedPreferences>((ref) =>
     throw UnimplementedError(
         'sharedPreferencesProvider needs to be overridden'));
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+Future<SharedPreferences> initializeServices() async {
+  final List<Future> futures = [
+    Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform),
+    SharedPreferences.getInstance(),
+  ];
 
-  // Rimuove il # dall'URL
-  usePathUrlStrategy();
-
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  // Inizializza Stripe con la chiave pubblica solo su web
-  if (kIsWeb) {
-    Stripe.publishableKey =
-        'pk_live_51Lk8noGIoD20nGKnKB5igqB4Kpry8VQpYgWwm0t5dJWTCOX4pQXdg9N24dM1fSgZP3oVoYPTZj4SGYIp9aT05Mrr00a4XOvZg6';
-    // Configura Stripe solo con le impostazioni di base
-    await Stripe.instance.applySettings();
+  if (!kIsWeb) {
+    futures.add(Future(() async {
+      await initializeNotifications();
+      return;
+    }));
   }
 
-  // Inizializza le notifiche solo se non è una piattaforma Web
+  final results = await Future.wait(futures);
+
   if (!kIsWeb) {
-    await initializeNotifications();
     await requestNotificationPermission();
   }
 
-  await appServices.initialize();
+  if (kIsWeb) {
+    Stripe.publishableKey =
+        'pk_live_51Lk8noGIoD20nGKnKB5igqB4Kpry8VQpYgWwm0t5dJWTCOX4pQXdg9N24dM1fSgZP3oVoYPTZj4SGYIp9aT05Mrr00a4XOvZg6';
+    await Stripe.instance.applySettings();
+  }
+
+  return results[1] as SharedPreferences;
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  usePathUrlStrategy();
+
+  final prefs = await initializeServices();
+
+  // Inizializza i servizi essenziali in modo asincrono
+  appServices.initialize().then((_) {
+    // Inizializzazione completata
+  }).catchError((error) {
+    debugPrint('Errore nell\'inizializzazione dei servizi: $error');
+  });
 
   final bool isVersionSupported = await appServices.isAppVersionSupported();
   if (isVersionSupported) {
-    final bool hasActiveSubscription =
-        await appServices.checkSubscriptionStatus();
-    final prefs = await SharedPreferences.getInstance();
+    // Sposta il controllo dell'abbonamento dopo il rendering iniziale
     runApp(
       ProviderScope(
         overrides: [
@@ -54,6 +69,13 @@ void main() async {
         child: const MyApp(),
       ),
     );
+
+    // Controlla lo stato dell'abbonamento dopo che l'app è stata renderizzata
+    appServices.checkSubscriptionStatus().then((_) {
+      // Gestione dello stato dell'abbonamento completata
+    }).catchError((error) {
+      debugPrint('Errore nel controllo dell\'abbonamento: $error');
+    });
   } else {
     runApp(const UnsupportedVersionApp());
   }
