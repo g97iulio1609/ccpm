@@ -146,7 +146,7 @@ class UserProgramsScreen extends HookConsumerWidget {
           child: Padding(
             padding: EdgeInsets.all(AppTheme.spacing.lg),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 // Program Badge
                 Container(
@@ -169,32 +169,36 @@ class UserProgramsScreen extends HookConsumerWidget {
 
                 SizedBox(height: AppTheme.spacing.md),
 
-                Text(
-                  doc['name'],
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: -0.5,
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        doc['name'],
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color: colorScheme.onSurface,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: -0.5,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (doc['description']?.isNotEmpty ?? false) ...[
+                        SizedBox(height: AppTheme.spacing.sm),
+                        Text(
+                          doc['description'],
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
                   ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
-
-                if (doc['description']?.isNotEmpty ?? false) ...[
-                  SizedBox(height: AppTheme.spacing.sm),
-                  Text(
-                    doc['description'],
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-
-                SizedBox(height: AppTheme.spacing.lg),
 
                 // Action Buttons Row
                 Row(
@@ -357,11 +361,11 @@ class UserProgramsScreen extends HookConsumerWidget {
         };
 
         return SliverGrid(
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
+          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: 400,
             mainAxisSpacing: 20,
             crossAxisSpacing: 20,
-            childAspectRatio: crossAxisCount == 1 ? 1.2 : 1,
+            mainAxisExtent: 300, // Altezza fissa per ogni card
           ),
           delegate: SliverChildBuilderDelegate(
             (context, index) => _buildProgramCard(
