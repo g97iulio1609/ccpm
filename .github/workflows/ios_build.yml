@@ -1,4 +1,4 @@
-name: Build iOS IPA
+name: Build Android AppBundle & iOS IPA
 
 on:
   push:
@@ -13,40 +13,38 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      # 1. Effettua il checkout del repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Set up Flutter
-      uses: subosito/flutter-action@v2
-      with:
-        flutter-version: '2.10.5'
+      # 2. Installa Flutter (ultima versione stabile o specifica)
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.10.5' # Sostituisci con la versione desiderata
 
-    - name: Install dependencies
-      run: flutter pub get
+      # 3. Installa le dipendenze di Flutter
+      - name: Install dependencies
+        run: flutter pub get
 
-    - name: Build iOS
-      run: flutter build ios --release --no-codesign
+      # 4. Build Android App Bundle (file .aab)
+      - name: Build Android App Bundle
+        run: flutter build appbundle --release
 
-    - name: Create IPA
-      run: |
-        mkdir -p build/ios/ipa
-        xcodebuild -workspace ios/Runner.xcworkspace \
-          -scheme Runner \
-          -sdk iphoneos \
-          -configuration Release \
-          -archivePath build/ios/archive/MyApp.xcarchive \
-          archive
+      # 5. Carica l'App Bundle (.aab) come artifact
+      - name: Upload Android AAB
+        uses: actions/upload-artifact@v3
+        with:
+          name: myapp-aab
+          path: build/app/outputs/bundle/release/*.aab
 
-        xcodebuild -exportArchive \
-          -archivePath build/ios/archive/MyApp.xcarchive \
-          -exportPath build/ios/ipa \
-          -exportOptionsPlist <(echo '{ "method": "development", "signingStyle": "manual", "teamID": "", "compileBitcode": false, "destination": "export" }') \
-          CODE_SIGN_IDENTITY="" \
-          CODE_SIGNING_REQUIRED=NO \
-          CODE_SIGNING_ALLOWED=NO
+      # 6. Build iOS IPA senza code signing
+      - name: Build iOS IPA
+        run: flutter build ipa --release --no-codesign
 
-    - name: Upload IPA
-      uses: actions/upload-artifact@v2
-      with:
-        name: myapp-ipa
-        path: build/ios/ipa/*.ipa
+      # 7. Carica l'IPA come artifact
+      - name: Upload IPA
+        uses: actions/upload-artifact@v3
+        with:
+          name: myapp-ipa
+          path: build/ios/ipa/*.ipa
