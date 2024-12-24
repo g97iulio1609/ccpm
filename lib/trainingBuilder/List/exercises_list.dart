@@ -710,6 +710,10 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
     final dateFormat = DateFormat('yyyy-MM-dd');
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isListMode = screenWidth < 600;
+    final padding = AppTheme.spacing.md;
+    final spacing = AppTheme.spacing.md;
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -728,34 +732,62 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
         child: SafeArea(
           child: CustomScrollView(
             slivers: [
-              // Exercises List
               SliverPadding(
-                padding: MediaQuery.of(context).size.width < 600
-                    ? EdgeInsets.symmetric(
-                        horizontal: AppTheme.spacing.md,
-                        vertical: AppTheme.spacing.lg,
+                padding: EdgeInsets.all(padding),
+                sliver: isListMode
+                    ? SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            if (index == exercises.length) {
+                              return Padding(
+                                padding: EdgeInsets.only(top: spacing),
+                                child: _buildAddExerciseButton(
+                                    context, colorScheme, theme),
+                              );
+                            }
+                            return Padding(
+                              padding: EdgeInsets.only(bottom: spacing),
+                              child: _buildExerciseCard(
+                                context,
+                                exercises[index],
+                                exerciseRecordService,
+                                athleteId,
+                                dateFormat,
+                                theme,
+                                colorScheme,
+                              ),
+                            );
+                          },
+                          childCount: exercises.length + 1,
+                        ),
                       )
-                    : EdgeInsets.all(AppTheme.spacing.xl),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      if (index == exercises.length) {
-                        return _buildAddExerciseButton(
-                            context, colorScheme, theme);
-                      }
-                      return _buildExerciseCard(
-                        context,
-                        exercises[index],
-                        exerciseRecordService,
-                        athleteId,
-                        dateFormat,
-                        theme,
-                        colorScheme,
-                      );
-                    },
-                    childCount: exercises.length + 1,
-                  ),
-                ),
+                    : SliverGrid(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            if (index == exercises.length) {
+                              return _buildAddExerciseButton(
+                                  context, colorScheme, theme);
+                            }
+                            return _buildExerciseCard(
+                              context,
+                              exercises[index],
+                              exerciseRecordService,
+                              athleteId,
+                              dateFormat,
+                              theme,
+                              colorScheme,
+                            );
+                          },
+                          childCount: exercises.length + 1,
+                        ),
+                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 600,
+                          mainAxisSpacing: spacing,
+                          crossAxisSpacing: spacing,
+                          mainAxisExtent: 400,
+                          childAspectRatio: 0.8,
+                        ),
+                      ),
               ),
             ],
           ),
@@ -788,7 +820,6 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
         final latestMaxWeight = snapshot.data ?? 0;
 
         return Container(
-          margin: EdgeInsets.only(bottom: AppTheme.spacing.md),
           decoration: BoxDecoration(
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(AppTheme.radii.lg),
@@ -896,9 +927,7 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
                           ),
                         ],
                       ),
-
                       SizedBox(height: AppTheme.spacing.md),
-
                       // Exercise Name and Variant
                       Text(
                         exercise.name,
@@ -907,8 +936,9 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
                           fontWeight: FontWeight.w600,
                           letterSpacing: -0.5,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-
                       if (exercise.variant.isNotEmpty &&
                           exercise.variant != '') ...[
                         SizedBox(height: AppTheme.spacing.xs),
@@ -917,21 +947,31 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
                           style: theme.textTheme.bodyLarge?.copyWith(
                             color: colorScheme.onSurfaceVariant,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
-
-                      SizedBox(height: AppTheme.spacing.lg),
-
+                      SizedBox(height: AppTheme.spacing.md),
                       // Series List
-                      TrainingProgramSeriesList(
-                        controller: controller,
-                        exerciseRecordService: exerciseRecordService,
-                        weekIndex: weekIndex,
-                        workoutIndex: workoutIndex,
-                        exerciseIndex: exercise.order - 1,
-                        exerciseType: exercise.type,
+                      // Rimosso Expanded per evitare conflitti con Sliver
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          return Container(
+                            constraints: BoxConstraints(
+                              maxHeight:
+                                  200, // Imposta un'altezza massima se necessario
+                            ),
+                            child: TrainingProgramSeriesList(
+                              controller: controller,
+                              exerciseRecordService: exerciseRecordService,
+                              weekIndex: weekIndex,
+                              workoutIndex: workoutIndex,
+                              exerciseIndex: exercise.order - 1,
+                              exerciseType: exercise.type,
+                            ),
+                          );
+                        },
                       ),
-
                       // Superset Badge
                       if (superSets.isNotEmpty) ...[
                         SizedBox(height: AppTheme.spacing.md),
@@ -981,15 +1021,22 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
     ColorScheme colorScheme,
     ThemeData theme,
   ) {
-    return AppButton(
-      label: 'Add Exercise',
-      icon: Icons.add_circle_outline,
-      variant: AppButtonVariant.primary,
-      size: MediaQuery.of(context).size.width < 600
-          ? AppButtonSize.sm
-          : AppButtonSize.md,
-      block: true,
-      onPressed: () => controller.addExercise(weekIndex, workoutIndex, context),
+    final isSmallScreen = MediaQuery.of(context).size.width < 600;
+    return Center(
+      child: Container(
+        constraints: BoxConstraints(
+          maxWidth: isSmallScreen ? double.infinity : 300,
+        ),
+        child: AppButton(
+          label: 'Add Exercise',
+          icon: Icons.add_circle_outline,
+          variant: AppButtonVariant.primary,
+          size: isSmallScreen ? AppButtonSize.sm : AppButtonSize.md,
+          block: true,
+          onPressed: () =>
+              controller.addExercise(weekIndex, workoutIndex, context),
+        ),
+      ),
     );
   }
 
