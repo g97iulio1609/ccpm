@@ -6,10 +6,36 @@ import 'package:go_router/go_router.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/button.dart';
+import 'package:alphanessone/UI/components/bottom_menu.dart';
 import './trainingBuilder/controller/training_program_controller.dart';
 
 class TrainingGalleryScreen extends HookConsumerWidget {
   const TrainingGalleryScreen({super.key});
+
+  int getGridCrossAxisCount(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    if (width > 1200) return 4;
+    if (width > 900) return 3;
+    if (width > 600) return 2;
+    return 1;
+  }
+
+  Future<void> setCurrentProgram(BuildContext context, WidgetRef ref,
+      String programId, String programName) async {
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    final controller = ref.read(trainingProgramControllerProvider);
+    final usersService = ref.read(usersServiceProvider);
+
+    await controller
+        .duplicateProgram(programId, programName, context,
+            currentUserId: currentUserId)
+        .then((newProgramId) async {
+      if (newProgramId != null && currentUserId != null) {
+        await usersService
+            .updateUser(currentUserId, {'currentProgram': newProgramId});
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -18,19 +44,6 @@ class TrainingGalleryScreen extends HookConsumerWidget {
     final userRole = ref.watch(userRoleProvider);
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
     final usersService = ref.read(usersServiceProvider);
-
-    Future<void> setCurrentProgram(String programId, String programName) async {
-      final controller = ref.read(trainingProgramControllerProvider);
-      await controller
-          .duplicateProgram(programId, programName, context,
-              currentUserId: currentUserId)
-          .then((newProgramId) async {
-        if (newProgramId != null && currentUserId != null) {
-          await usersService
-              .updateUser(currentUserId, {'currentProgram': newProgramId});
-        }
-      });
-    }
 
     Future<String> getAuthorName(String authorId) async {
       final user = await usersService.getUserById(authorId);
@@ -133,173 +146,76 @@ class TrainingGalleryScreen extends HookConsumerWidget {
                       );
                     }
 
-                    final crossAxisCount =
-                        switch (MediaQuery.of(context).size.width) {
-                      > 1200 => 3, // Desktop large
-                      > 900 => 2, // Desktop
-                      > 600 => 2, // Tablet
-                      _ => 1, // Mobile
-                    };
+                    // Calcola il numero di colonne
+                    final crossAxisCount = getGridCrossAxisCount(context);
 
-                    return SliverGrid(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: crossAxisCount,
-                        mainAxisSpacing: 20,
-                        crossAxisSpacing: 20,
-                        childAspectRatio: crossAxisCount == 1 ? 1.2 : 1,
-                      ),
+                    // Organizza i programmi in righe
+                    final rows = <List<DocumentSnapshot>>[];
+                    for (var i = 0; i < documents.length; i += crossAxisCount) {
+                      rows.add(
+                        documents.sublist(
+                          i,
+                          i + crossAxisCount > documents.length
+                              ? documents.length
+                              : i + crossAxisCount,
+                        ),
+                      );
+                    }
+
+                    return SliverList(
                       delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final doc = documents[index];
-                          final programName =
-                              doc['name'] ?? 'Nome programma non disponibile';
-                          final authorId = doc['athleteId'] ?? '';
-                          final mesocycleNumber = doc['mesocycleNumber'] ?? 1;
+                        (context, rowIndex) {
+                          if (rowIndex >= rows.length) return null;
 
-                          return FutureBuilder<String>(
-                            future: getAuthorName(authorId),
-                            builder: (context, snapshot) {
-                              final athleteName = snapshot.hasData
-                                  ? snapshot.data!
-                                  : 'Autore sconosciuto';
+                          final rowPrograms = rows[rowIndex];
 
-                              return Container(
-                                decoration: BoxDecoration(
-                                  color: colorScheme.surface,
-                                  borderRadius:
-                                      BorderRadius.circular(AppTheme.radii.lg),
-                                  border: Border.all(
-                                    color: colorScheme.outline.withAlpha(26),
-                                  ),
-                                  boxShadow: AppTheme.elevations.small,
-                                ),
-                                child: Material(
-                                  color: Colors.transparent,
-                                  borderRadius:
-                                      BorderRadius.circular(AppTheme.radii.lg),
-                                  child: InkWell(
-                                    onTap: () => context.go(
-                                        '/user_programs/training_viewer',
-                                        extra: {
-                                          'userId': currentUserId,
-                                          'programId': doc.id
-                                        }),
-                                    borderRadius: BorderRadius.circular(
-                                        AppTheme.radii.lg),
-                                    child: Padding(
-                                      padding:
-                                          EdgeInsets.all(AppTheme.spacing.lg),
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          // Program Badge
-                                          Container(
-                                            padding: EdgeInsets.symmetric(
-                                              horizontal: AppTheme.spacing.md,
-                                              vertical: AppTheme.spacing.xs,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: colorScheme
-                                                  .primaryContainer
-                                                  .withAlpha(77),
-                                              borderRadius:
-                                                  BorderRadius.circular(
-                                                      AppTheme.radii.xxl),
-                                            ),
-                                            child: Text(
-                                              'Mesocycle $mesocycleNumber',
-                                              style: theme.textTheme.titleMedium
-                                                  ?.copyWith(
-                                                color: colorScheme.primary,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
+                          return Padding(
+                            padding:
+                                EdgeInsets.only(bottom: AppTheme.spacing.xl),
+                            child: IntrinsicHeight(
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  for (var i = 0; i < crossAxisCount; i++) ...[
+                                    if (i < rowPrograms.length)
+                                      Expanded(
+                                        child: Padding(
+                                          padding: EdgeInsets.only(
+                                            right: i < crossAxisCount - 1
+                                                ? AppTheme.spacing.xl
+                                                : 0,
                                           ),
-
-                                          SizedBox(height: AppTheme.spacing.md),
-
-                                          Text(
-                                            programName,
-                                            style: theme.textTheme.titleLarge
-                                                ?.copyWith(
-                                              color: colorScheme.onSurface,
-                                              fontWeight: FontWeight.w600,
-                                              letterSpacing: -0.5,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
+                                          child: FutureBuilder<String>(
+                                            future: getAuthorName(rowPrograms[i]
+                                                    ['athleteId'] ??
+                                                ''),
+                                            builder: (context, snapshot) {
+                                              final athleteName =
+                                                  snapshot.hasData
+                                                      ? snapshot.data!
+                                                      : 'Autore sconosciuto';
+                                              return _buildProgramCard(
+                                                context,
+                                                rowPrograms[i],
+                                                athleteName,
+                                                userRole,
+                                                currentUserId,
+                                                colorScheme,
+                                                theme,
+                                                ref,
+                                              );
+                                            },
                                           ),
-
-                                          SizedBox(height: AppTheme.spacing.sm),
-                                          Text(
-                                            'Creato da $athleteName',
-                                            style: theme.textTheme.bodyMedium
-                                                ?.copyWith(
-                                              color:
-                                                  colorScheme.onSurfaceVariant,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-
-                                          SizedBox(height: AppTheme.spacing.lg),
-
-                                          // Action Buttons Row
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              if (userRole ==
-                                                      'client_premium' ||
-                                                  userRole == 'admin')
-                                                _buildActionButton(
-                                                  icon: Icons
-                                                      .check_circle_outline,
-                                                  label: 'Imposta',
-                                                  onTap: () async {
-                                                    final bool? result =
-                                                        await showDialog<bool>(
-                                                      context: context,
-                                                      builder: (BuildContext
-                                                          context) {
-                                                        return SetCurrentProgramDialog(
-                                                            programId: doc.id);
-                                                      },
-                                                    );
-                                                    if (result == true &&
-                                                        currentUserId != null) {
-                                                      await setCurrentProgram(
-                                                          doc.id, programName);
-                                                    }
-                                                  },
-                                                  colorScheme: colorScheme,
-                                                  theme: theme,
-                                                ),
-                                              SizedBox(
-                                                  width: AppTheme.spacing.sm),
-                                              _buildActionButton(
-                                                icon: Icons.visibility_outlined,
-                                                label: 'Visualizza',
-                                                onTap: () => context.go(
-                                                    '/programs_screen/training_viewer/${doc.id}'),
-                                                colorScheme: colorScheme,
-                                                theme: theme,
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
+                                        ),
+                                      )
+                                    else
+                                      Expanded(child: Container()),
+                                  ],
+                                ],
+                              ),
+                            ),
                           );
                         },
-                        childCount: documents.length,
                       ),
                     );
                   },
@@ -312,46 +228,203 @@ class TrainingGalleryScreen extends HookConsumerWidget {
     );
   }
 
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    required ColorScheme colorScheme,
-    required ThemeData theme,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppTheme.radii.full),
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: AppTheme.spacing.md,
-            vertical: AppTheme.spacing.sm,
-          ),
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest.withAlpha(77),
-            borderRadius: BorderRadius.circular(AppTheme.radii.full),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 18,
-                color: colorScheme.primary,
-              ),
-              SizedBox(width: AppTheme.spacing.xs),
-              Text(
-                label,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: colorScheme.primary,
-                  fontWeight: FontWeight.w500,
+  Widget _buildProgramCard(
+    BuildContext context,
+    DocumentSnapshot doc,
+    String athleteName,
+    String userRole,
+    String? currentUserId,
+    ColorScheme colorScheme,
+    ThemeData theme,
+    WidgetRef ref,
+  ) {
+    final programName = doc['name'] ?? 'Nome programma non disponibile';
+    final mesocycleNumber = doc['mesocycleNumber'] ?? 1;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: colorScheme.outline.withAlpha(26),
+        ),
+        boxShadow: AppTheme.elevations.small,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => context.go('/user_programs/training_viewer',
+              extra: {'userId': currentUserId, 'programId': doc.id}),
+          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          child: Padding(
+            padding: EdgeInsets.all(AppTheme.spacing.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header con badge e menu
+                Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppTheme.spacing.md,
+                        vertical: AppTheme.spacing.xs,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primaryContainer.withAlpha(76),
+                        borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
+                      ),
+                      child: Text(
+                        'Mesocycle $mesocycleNumber',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    if (userRole == 'client_premium' || userRole == 'admin')
+                      IconButton(
+                        icon: Icon(
+                          Icons.more_vert,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        onPressed: () => _showProgramOptions(
+                          context,
+                          doc,
+                          programName,
+                          currentUserId,
+                          colorScheme,
+                          theme,
+                          ref,
+                        ),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                  ],
                 ),
-              ),
-            ],
+
+                SizedBox(height: AppTheme.spacing.lg),
+
+                // Nome programma
+                Text(
+                  programName,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.5,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+
+                SizedBox(height: AppTheme.spacing.sm),
+
+                // Autore
+                Text(
+                  'Creato da $athleteName',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+
+                const Spacer(),
+
+                // Badge pubblico
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppTheme.spacing.md,
+                    vertical: AppTheme.spacing.xs,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer.withAlpha(76),
+                    borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.public,
+                        size: 16,
+                        color: colorScheme.primary,
+                      ),
+                      SizedBox(width: AppTheme.spacing.xs),
+                      Text(
+                        'Pubblico',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _showProgramOptions(
+    BuildContext context,
+    DocumentSnapshot doc,
+    String programName,
+    String? currentUserId,
+    ColorScheme colorScheme,
+    ThemeData theme,
+    WidgetRef ref,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => BottomMenu(
+        title: programName,
+        subtitle: 'Programma Pubblico',
+        leading: Container(
+          padding: EdgeInsets.all(AppTheme.spacing.sm),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withAlpha(76),
+            borderRadius: BorderRadius.circular(AppTheme.radii.md),
+          ),
+          child: Icon(
+            Icons.fitness_center,
+            color: colorScheme.primary,
+            size: 24,
+          ),
+        ),
+        items: [
+          BottomMenuItem(
+            title: 'Visualizza Programma',
+            icon: Icons.visibility_outlined,
+            onTap: () {
+              Navigator.pop(context);
+              context.go('/programs_screen/training_viewer/${doc.id}');
+            },
+          ),
+          if (currentUserId != null)
+            BottomMenuItem(
+              title: 'Imposta come Programma Corrente',
+              icon: Icons.check_circle_outline,
+              onTap: () async {
+                Navigator.pop(context);
+                final bool? result = await showDialog<bool>(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return SetCurrentProgramDialog(programId: doc.id);
+                  },
+                );
+                if (result == true) {
+                  await setCurrentProgram(context, ref, doc.id, programName);
+                }
+              },
+            ),
+        ],
       ),
     );
   }

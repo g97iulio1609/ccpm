@@ -13,6 +13,14 @@ class UserProgramsScreen extends HookConsumerWidget {
 
   const UserProgramsScreen({super.key, required this.userId});
 
+  int getGridCrossAxisCount(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    if (width > 1200) return 4;
+    if (width > 900) return 3;
+    if (width > 600) return 2;
+    return 1;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userRole = ref.watch(userRoleProvider);
@@ -116,12 +124,13 @@ class UserProgramsScreen extends HookConsumerWidget {
   }
 
   Widget _buildProgramCard(
-      BuildContext context,
-      WidgetRef ref,
-      DocumentSnapshot doc,
-      String userId,
-      String userRole,
-      FirestoreService firestoreService) {
+    BuildContext context,
+    WidgetRef ref,
+    DocumentSnapshot doc,
+    String userId,
+    String userRole,
+    FirestoreService firestoreService,
+  ) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isHidden = doc['hide'] ?? false;
@@ -139,7 +148,6 @@ class UserProgramsScreen extends HookConsumerWidget {
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         child: InkWell(
           onTap: () => _navigateToTrainingViewer(context, userId, doc.id),
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
@@ -147,80 +155,38 @@ class UserProgramsScreen extends HookConsumerWidget {
             padding: EdgeInsets.all(AppTheme.spacing.lg),
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Program Badge
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: AppTheme.spacing.md,
-                    vertical: AppTheme.spacing.xs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer.withAlpha(76),
-                    borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
-                  ),
-                  child: Text(
-                    'Mesocycle $mesocycleNumber',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-
-                SizedBox(height: AppTheme.spacing.md),
-
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        doc['name'],
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          color: colorScheme.onSurface,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: -0.5,
-                        ),
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (doc['description']?.isNotEmpty ?? false) ...[
-                        SizedBox(height: AppTheme.spacing.sm),
-                        Text(
-                          doc['description'],
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-
-                // Action Buttons Row
+                // Header con badge e menu
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    if (userRole == 'admin' || userRole == 'coach')
-                      _buildActionButton(
-                        icon:
-                            isHidden ? Icons.visibility_off : Icons.visibility,
-                        label: isHidden ? 'Hidden' : 'Visible',
-                        onTap: () => _toggleProgramVisibility(doc.id, isHidden),
-                        colorScheme: colorScheme,
-                        theme: theme,
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppTheme.spacing.md,
+                        vertical: AppTheme.spacing.xs,
                       ),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primaryContainer.withAlpha(76),
+                        borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
+                      ),
+                      child: Text(
+                        'Mesocycle $mesocycleNumber',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
                     if (userRole == 'admin' ||
-                        userRole == 'client_premium' ||
-                        userRole == 'coach') ...[
-                      SizedBox(width: AppTheme.spacing.sm),
-                      _buildActionButton(
-                        icon: Icons.more_horiz,
-                        label: 'Options',
-                        onTap: () => _showProgramOptions(
+                        userRole == 'coach' ||
+                        userRole == 'client_premium')
+                      IconButton(
+                        icon: Icon(
+                          Icons.more_vert,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        onPressed: () => _showProgramOptions(
                           context,
                           doc,
                           userId,
@@ -228,23 +194,51 @@ class UserProgramsScreen extends HookConsumerWidget {
                           firestoreService,
                           theme,
                         ),
-                        colorScheme: colorScheme,
-                        theme: theme,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        visualDensity: VisualDensity.compact,
                       ),
-                    ],
                   ],
                 ),
 
+                SizedBox(height: AppTheme.spacing.lg),
+
+                // Nome programma
+                Text(
+                  doc['name'],
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.5,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+
+                if (doc['description']?.isNotEmpty ?? false) ...[
+                  SizedBox(height: AppTheme.spacing.sm),
+                  Text(
+                    doc['description'],
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+
+                const Spacer(),
+
+                // Hidden badge (se applicabile)
                 if (isHidden && (userRole == 'admin' || userRole == 'coach'))
                   Container(
-                    margin: EdgeInsets.only(top: AppTheme.spacing.md),
                     padding: EdgeInsets.symmetric(
                       horizontal: AppTheme.spacing.md,
                       vertical: AppTheme.spacing.xs,
                     ),
                     decoration: BoxDecoration(
                       color: colorScheme.errorContainer,
-                      borderRadius: BorderRadius.circular(AppTheme.radii.sm),
+                      borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -259,7 +253,7 @@ class UserProgramsScreen extends HookConsumerWidget {
                           'Hidden',
                           style: theme.textTheme.labelMedium?.copyWith(
                             color: colorScheme.onErrorContainer,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
@@ -267,50 +261,6 @@ class UserProgramsScreen extends HookConsumerWidget {
                   ),
               ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    required ColorScheme colorScheme,
-    required ThemeData theme,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppTheme.radii.full),
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: AppTheme.spacing.md,
-            vertical: AppTheme.spacing.sm,
-          ),
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest.withAlpha(76),
-            borderRadius: BorderRadius.circular(AppTheme.radii.full),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 18,
-                color: colorScheme.primary,
-              ),
-              SizedBox(width: AppTheme.spacing.xs),
-              Text(
-                label,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: colorScheme.primary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
           ),
         ),
       ),
@@ -341,42 +291,101 @@ class UserProgramsScreen extends HookConsumerWidget {
           );
         }
 
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return SliverToBoxAdapter(
+        final documents = snapshot.data?.docs ?? [];
+        if (documents.isEmpty) {
+          return SliverFillRemaining(
             child: Center(
-              child: Text(
-                'Nessun programma trovato',
-                style: Theme.of(context).textTheme.titleMedium,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.fitness_center_outlined,
+                    size: 64,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurfaceVariant
+                        .withAlpha(128),
+                  ),
+                  SizedBox(height: AppTheme.spacing.md),
+                  Text(
+                    'Nessun programma trovato',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  SizedBox(height: AppTheme.spacing.sm),
+                  Text(
+                    'Inizia creando un nuovo programma',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurfaceVariant
+                              .withAlpha(179),
+                        ),
+                  ),
+                ],
               ),
             ),
           );
         }
 
-        final documents = snapshot.data!.docs;
-        final crossAxisCount = switch (MediaQuery.of(context).size.width) {
-          > 1200 => 4, // Desktop large
-          > 900 => 3, // Desktop
-          > 600 => 2, // Tablet
-          _ => 1, // Mobile
-        };
+        // Calcola il numero di colonne
+        final crossAxisCount = getGridCrossAxisCount(context);
 
-        return SliverGrid(
-          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 400,
-            mainAxisSpacing: 20,
-            crossAxisSpacing: 20,
-            mainAxisExtent: 300, // Altezza fissa per ogni card
-          ),
-          delegate: SliverChildBuilderDelegate(
-            (context, index) => _buildProgramCard(
-              context,
-              ref,
-              documents[index],
-              userId,
-              userRole,
-              firestoreService,
+        // Organizza i programmi in righe
+        final rows = <List<DocumentSnapshot>>[];
+        for (var i = 0; i < documents.length; i += crossAxisCount) {
+          rows.add(
+            documents.sublist(
+              i,
+              i + crossAxisCount > documents.length
+                  ? documents.length
+                  : i + crossAxisCount,
             ),
-            childCount: documents.length,
+          );
+        }
+
+        return SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, rowIndex) {
+              if (rowIndex >= rows.length) return null;
+
+              final rowPrograms = rows[rowIndex];
+
+              return Padding(
+                padding: EdgeInsets.only(bottom: AppTheme.spacing.xl),
+                child: IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (var i = 0; i < crossAxisCount; i++) ...[
+                        if (i < rowPrograms.length)
+                          Expanded(
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                right: i < crossAxisCount - 1
+                                    ? AppTheme.spacing.xl
+                                    : 0,
+                              ),
+                              child: _buildProgramCard(
+                                context,
+                                ref,
+                                rowPrograms[i],
+                                userId,
+                                userRole,
+                                firestoreService,
+                              ),
+                            ),
+                          )
+                        else
+                          Expanded(child: Container()),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         );
       },
