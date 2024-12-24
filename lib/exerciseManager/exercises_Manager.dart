@@ -536,20 +536,53 @@ class _ExercisesGridState extends ConsumerState<ExercisesGrid> {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: _getGridCrossAxisCount(context),
-        crossAxisSpacing: 24.0,
-        mainAxisSpacing: 24.0,
-        childAspectRatio: 1.2,
-      ),
-      itemCount: widget.exercises.length,
-      itemBuilder: (context, index) {
-        final exercise = widget.exercises[index];
-        return ExerciseCardContent(
-          exercise: exercise,
-          onTap: () => _showExerciseDetails(context, exercise),
-          actions: _buildExerciseActions(context, exercise),
+    // Calcola il numero di colonne
+    final crossAxisCount = _getGridCrossAxisCount(context);
+
+    // Organizza gli esercizi in righe
+    final rows = <List<ExerciseModel>>[];
+    for (var i = 0; i < widget.exercises.length; i += crossAxisCount) {
+      rows.add(
+        widget.exercises.sublist(
+          i,
+          i + crossAxisCount > widget.exercises.length
+              ? widget.exercises.length
+              : i + crossAxisCount,
+        ),
+      );
+    }
+
+    return ListView.separated(
+      itemCount: rows.length,
+      separatorBuilder: (context, index) => SizedBox(height: 24.0),
+      itemBuilder: (context, rowIndex) {
+        final rowExercises = rows[rowIndex];
+
+        return IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var i = 0; i < crossAxisCount; i++) ...[
+                if (i < rowExercises.length)
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        right: i < crossAxisCount - 1 ? 24.0 : 0,
+                      ),
+                      child: ExerciseCardContent(
+                        exercise: rowExercises[i],
+                        onTap: () =>
+                            _showExerciseDetails(context, rowExercises[i]),
+                        actions:
+                            _buildExerciseActions(context, rowExercises[i]),
+                      ),
+                    ),
+                  )
+                else
+                  Expanded(child: Container()), // Placeholder per celle vuote
+              ],
+            ],
+          ),
         );
       },
     );
@@ -727,13 +760,32 @@ class _ExerciseForm extends HookConsumerWidget {
                       if (formKey.currentState!.validate()) {
                         final exercisesService =
                             ref.read(exercisesServiceProvider);
-                        exercisesService.updateExercise(
-                          exercise?.id ?? '',
-                          nameController.text,
-                          selectedMuscleGroups.value,
-                          selectedExerciseType.value!,
-                        );
-                        Navigator.pop(context);
+
+                        if (exercise == null) {
+                          // Aggiunta nuovo esercizio
+                          exercisesService
+                              .addExercise(
+                            nameController.text,
+                            selectedMuscleGroups.value,
+                            selectedExerciseType.value!,
+                            userId,
+                          )
+                              .then((_) {
+                            Navigator.pop(context);
+                          });
+                        } else {
+                          // Modifica esercizio esistente
+                          exercisesService
+                              .updateExercise(
+                            exercise!.id,
+                            nameController.text,
+                            selectedMuscleGroups.value,
+                            selectedExerciseType.value!,
+                          )
+                              .then((_) {
+                            Navigator.pop(context);
+                          });
+                        }
                       }
                     },
                     borderRadius: BorderRadius.circular(AppTheme.radii.lg),

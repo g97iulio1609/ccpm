@@ -15,7 +15,6 @@ final aiSettingsServiceProvider = Provider<AISettingsService>((ref) {
     loading: () =>
         AISettingsService(null), // Provide a default or handle loading state
     error: (error, stackTrace) {
-      print('Error loading shared preferences: $error');
       return AISettingsService(null); // Handle error state
     },
   );
