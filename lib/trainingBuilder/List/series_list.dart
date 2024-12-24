@@ -1,6 +1,7 @@
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 import 'package:alphanessone/trainingBuilder/models/series_model.dart';
 import 'package:alphanessone/trainingBuilder/models/superseries_model.dart';
+import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../controller/training_program_controller.dart';
@@ -9,7 +10,7 @@ import '../series_utils.dart';
 import '../dialog/series_dialog.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
-import 'package:alphanessone/trainingBuilder/utility_functions.dart';
+import 'package:alphanessone/UI/components/button.dart';
 import 'package:go_router/go_router.dart';
 import 'package:alphanessone/UI/components/series_input_fields.dart';
 
@@ -181,7 +182,8 @@ class TrainingProgramSeriesListState
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: colorScheme.onSurface,
                   ),
-                  overflow: TextOverflow.ellipsis,
+                  softWrap: true,
+                  maxLines: 2,
                 ),
               ),
             ],
@@ -377,88 +379,33 @@ class TrainingProgramSeriesListState
 
   Widget _buildActionButtons(
       List<Series> series, ThemeData theme, ColorScheme colorScheme) {
+    final isSmallScreen = MediaQuery.of(context).size.width < 600;
     return Row(
       children: [
         Expanded(
-          child: _buildActionButton(
+          child: AppButton(
+            label: isSmallScreen ? 'Reorder' : 'Reorder Series',
             icon: Icons.reorder,
-            label: 'Reorder Series',
-            onTap: () => _showReorderSeriesDialog(series),
-            isPrimary: false,
-            theme: theme,
-            colorScheme: colorScheme,
+            onPressed: () => _showReorderSeriesDialog(series),
+            variant: AppButtonVariant.ghost,
+            backgroundColor: colorScheme.surfaceContainerHighest,
+            iconColor: colorScheme.onSurfaceVariant,
+            size: isSmallScreen ? AppButtonSize.sm : AppButtonSize.md,
+            block: true,
           ),
         ),
         SizedBox(width: AppTheme.spacing.md),
         Expanded(
-          child: _buildActionButton(
+          child: AppButton(
+            label: isSmallScreen ? 'Add' : 'Add Series',
             icon: Icons.add,
-            label: 'Add Series',
-            onTap: () => _showEditSeriesDialog(null),
-            isPrimary: true,
-            theme: theme,
-            colorScheme: colorScheme,
+            onPressed: () => _showEditSeriesDialog(null),
+            variant: AppButtonVariant.primary,
+            size: isSmallScreen ? AppButtonSize.sm : AppButtonSize.md,
+            block: true,
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    required bool isPrimary,
-    required ThemeData theme,
-    required ColorScheme colorScheme,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isPrimary
-              ? [colorScheme.primary, colorScheme.primary.withAlpha(204)]
-              : [
-                  colorScheme.surfaceContainerHighest,
-                  colorScheme.surfaceContainerHighest.withAlpha(204)
-                ],
-        ),
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        boxShadow: isPrimary ? AppTheme.elevations.small : null,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              vertical: AppTheme.spacing.md,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  icon,
-                  color: isPrimary
-                      ? colorScheme.onPrimary
-                      : colorScheme.onSurfaceVariant,
-                  size: 20,
-                ),
-                SizedBox(width: AppTheme.spacing.sm),
-                Text(
-                  label,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: isPrimary
-                        ? colorScheme.onPrimary
-                        : colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 
@@ -595,11 +542,9 @@ class TrainingProgramSeriesListState
   String _formatSeriesInfo(Series series) {
     final reps =
         _formatRange(series.reps.toString(), series.maxReps?.toString());
-    final sets =
-        _formatRange(series.sets.toString(), series.maxSets?.toString());
     final weight =
         _formatRange(series.weight.toString(), series.maxWeight?.toString());
-    return '$sets set(s), $reps reps x $weight kg';
+    return '$reps reps x $weight kg';
   }
 
   String _formatRange(String minValue, String? maxValue) {

@@ -21,6 +21,7 @@ import 'package:alphanessone/UI/components/bottom_menu.dart';
 import 'package:go_router/go_router.dart';
 import 'package:alphanessone/trainingBuilder/series_utils.dart';
 import 'package:alphanessone/UI/components/weight_input_fields.dart';
+import 'package:alphanessone/UI/components/button.dart';
 
 // Controller per i range di valori
 class RangeControllers {
@@ -729,7 +730,12 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
             slivers: [
               // Exercises List
               SliverPadding(
-                padding: EdgeInsets.all(AppTheme.spacing.xl),
+                padding: MediaQuery.of(context).size.width < 600
+                    ? EdgeInsets.symmetric(
+                        horizontal: AppTheme.spacing.md,
+                        vertical: AppTheme.spacing.lg,
+                      )
+                    : EdgeInsets.all(AppTheme.spacing.xl),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
@@ -975,54 +981,15 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
     ColorScheme colorScheme,
     ThemeData theme,
   ) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            colorScheme.primary,
-            colorScheme.primary.withAlpha(204),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.primary.withAlpha(52),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => controller.addExercise(weekIndex, workoutIndex, context),
-          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              vertical: AppTheme.spacing.lg,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.add_circle_outline,
-                  color: colorScheme.onPrimary,
-                  size: 24,
-                ),
-                SizedBox(width: AppTheme.spacing.sm),
-                Text(
-                  'Add Exercise',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: colorScheme.onPrimary,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+    return AppButton(
+      label: 'Add Exercise',
+      icon: Icons.add_circle_outline,
+      variant: AppButtonVariant.primary,
+      size: MediaQuery.of(context).size.width < 600
+          ? AppButtonSize.sm
+          : AppButtonSize.md,
+      block: true,
+      onPressed: () => controller.addExercise(weekIndex, workoutIndex, context),
     );
   }
 

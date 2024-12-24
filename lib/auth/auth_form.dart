@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'auth_service.dart';
-import 'buttons.dart';
+import 'auth_buttons.dart';
 import 'form_fields.dart';
 
 class AuthForm extends HookConsumerWidget {
