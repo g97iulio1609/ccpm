@@ -214,7 +214,7 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppTheme.error.withOpacity(0.1),
+                color: AppTheme.error.withAlpha(26),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(Icons.error_outline, size: 48, color: AppTheme.error),
@@ -233,7 +233,7 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
               icon: const Icon(Icons.refresh),
               label: const Text('Riprova'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.error.withOpacity(0.1),
+                backgroundColor: AppTheme.error.withAlpha(26),
                 foregroundColor: AppTheme.error,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -252,7 +252,7 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: colorScheme.primary.withOpacity(0.1),
+                color: colorScheme.primary.withAlpha(26),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(
@@ -298,8 +298,8 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        AppTheme.primaryGold.withOpacity(0.15),
-                        AppTheme.primaryGoldLight.withOpacity(0.05),
+                        AppTheme.primaryGold.withAlpha(39),
+                        AppTheme.primaryGoldLight.withAlpha(13),
                       ],
                     ),
                   ),
@@ -473,7 +473,7 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: colorScheme.primary.withOpacity(0.1),
+              color: colorScheme.primary.withAlpha(26),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -559,7 +559,7 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
         boxShadow: isYearly
             ? [
                 BoxShadow(
-                  color: colorScheme.primary.withOpacity(0.1),
+                  color: colorScheme.primary.withAlpha(26),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -632,8 +632,8 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: isYearly
-                          ? colorScheme.primary.withOpacity(0.1)
-                          : colorScheme.surfaceVariant,
+                          ? colorScheme.primary.withAlpha(26)
+                          : colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Text(

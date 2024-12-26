@@ -19,7 +19,7 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
       lineLength: 120,
       colors: true,
       printEmojis: true,
-      printTime: true,
+      dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
     ),
   );
 
@@ -29,24 +29,18 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
   static const String _baseUrl =
       'https://europe-west1-alphaness-322423.cloudfunctions.net';
 
-  // ID dei prodotti per iOS e Android
   static const Map<String, String> _kProductIds = {
     'prod_PbVZOzg6Nol294': 'alphanessone.monthly',
     'prod_Pagb2CFGJUcuxl': 'alphanessone.yearly',
   };
 
-  // Lista interna dei prodotti
   final List<Product> _products = [];
   final InAppPurchase _inAppPurchase = InAppPurchase.instance;
   StreamSubscription<List<PurchaseDetails>>? _subscription;
 
-  // Getter per i dettagli dei prodotti
   Map<String, List<Product>> get productDetailsByProductId {
-    _logger.d(
-        'Recupero dettagli prodotti. Prodotti disponibili: ${_products.length}');
     final Map<String, List<Product>> result = {};
     for (var product in _products) {
-      _logger.v('Processando prodotto: ${product.id}');
       if (!result.containsKey(product.id)) {
         result[product.id] = [];
       }
@@ -55,27 +49,17 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
     return result;
   }
 
-  // Funzione per ottenere i prodotti da Firestore
   Future<List<Product>> _getWebProducts() async {
-    _logger.i('🌐 Recupero prodotti da Firestore');
     try {
       final QuerySnapshot productsSnapshot =
           await _firestore.collection('products').get();
-      _logger
-          .d('Trovati ${productsSnapshot.docs.length} prodotti in Firestore');
 
       if (productsSnapshot.docs.isEmpty) {
-        _logger.w('⚠️ Nessun prodotto trovato in Firestore');
         throw Exception('Nessun prodotto disponibile');
       }
 
       final products = productsSnapshot.docs.map((doc) {
         final data = doc.data() as Map<String, dynamic>;
-        _logger.v('📦 Dettagli prodotto da Firestore:');
-        _logger.v('- ID: ${doc.id}');
-        _logger.v('- Nome: ${data['name']}');
-        _logger.v('- Prezzo: ${data['price']}');
-
         return Product(
           id: doc.id,
           title: data['name'] ?? '',
@@ -88,73 +72,47 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
         );
       }).toList();
 
-      _logger.i('✅ Recuperati ${products.length} prodotti da Firestore');
       return products;
     } catch (e, stackTrace) {
-      _logger.e(
-        '❌ Errore nel recupero dei prodotti da Firestore',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      _logger.e('Errore nel recupero dei prodotti da Firestore',
+          error: e, stackTrace: stackTrace);
       throw Exception('Errore nel recupero dei prodotti: $e');
     }
   }
 
-  // Funzione per ottenere i prodotti disponibili
+  @override
   Future<List<Product>> getProducts() async {
-    _logger.i('🚀 Inizio getProducts()');
-    _logger.d('Piattaforma: ${kIsWeb ? "Web" : "Mobile"}');
-
     try {
       if (kIsWeb) {
-        _logger.w('Piattaforma Web rilevata - recupero prodotti da Firestore');
         final products = await _getWebProducts();
         _products.clear();
         _products.addAll(products);
         return products;
       }
 
-      _logger.d('👉 Verifico disponibilità store...');
       final bool available = await _inAppPurchase.isAvailable();
-      _logger.d('Store disponibile: $available');
-
       if (!available) {
-        _logger.e('❌ Store non disponibile');
         throw Exception('Store non disponibile');
       }
 
-      _logger.d('🔍 Ricerca prodotti con IDs: ${_kProductIds.values}');
       final ProductDetailsResponse response =
           await _inAppPurchase.queryProductDetails(_kProductIds.values.toSet());
 
-      _logger.d('📦 Risposta store:');
-      _logger.d('- Prodotti trovati: ${response.productDetails.length}');
-      _logger.d('- Prodotti non trovati: ${response.notFoundIDs}');
-      _logger.d('- Errore: ${response.error}');
-
       if (response.error != null) {
-        _logger.e('❌ Errore store: ${response.error}');
         throw Exception('Errore nel recupero dei prodotti: ${response.error}');
       }
 
       if (response.productDetails.isEmpty) {
-        _logger.w('⚠️ Nessun prodotto trovato');
         throw Exception('Nessun prodotto trovato nello store');
       }
 
       if (response.notFoundIDs.isNotEmpty) {
-        _logger.w('⚠️ Prodotti mancanti: ${response.notFoundIDs.join(", ")}');
         throw Exception(
             'Prodotti non trovati: ${response.notFoundIDs.join(", ")}');
       }
 
       _products.clear();
       final products = response.productDetails.map((details) {
-        _logger.i('📱 Dettagli prodotto:');
-        _logger.i('- ID: ${details.id}');
-        _logger.i('- Titolo: ${details.title}');
-        _logger.i('- Prezzo: ${details.price}');
-        _logger.v('- Descrizione: ${details.description}');
         return Product(
           id: details.id,
           title: details.title,
@@ -168,19 +126,14 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
       }).toList();
 
       _products.addAll(products);
-      _logger.i('✅ Recuperati ${products.length} prodotti con successo');
       return products;
     } catch (e, stackTrace) {
-      _logger.e(
-        '❌ Errore nel recupero dei prodotti',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      _logger.e('Errore nel recupero dei prodotti',
+          error: e, stackTrace: stackTrace);
       throw Exception('Errore nel recupero dei prodotti: $e');
     }
   }
 
-  // Funzione per verificare lo stato dell'abbonamento
   Future<SubscriptionDetails?> getSubscriptionDetails({String? userId}) async {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
@@ -231,7 +184,7 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
     }
   }
 
-  // Funzione per gestire il pagamento riuscito
+  @override
   Future<void> handleSuccessfulPayment(
       String purchaseId, String productId) async {
     try {
@@ -264,7 +217,6 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
     }
   }
 
-  // Funzione per cancellare l'abbonamento
   Future<void> cancelSubscription() async {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
@@ -294,7 +246,6 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
     }
   }
 
-  // Funzione per creare un abbonamento regalo (solo per admin)
   Future<void> createGiftSubscription(String userId, int durationInDays) async {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
@@ -325,95 +276,58 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
     }
   }
 
-  // Funzione per convertire ID Firestore in ID Store
   String _getStoreProductId(String firestoreId) {
-    _logger.d('🔄 Conversione ID Firestore ($firestoreId) in ID Store');
     final storeId = _kProductIds[firestoreId];
     if (storeId == null) {
-      _logger.e('❌ ID prodotto Firestore non mappato: $firestoreId');
       throw Exception('ID prodotto non valido per lo store: $firestoreId');
     }
-    _logger.d('✅ ID Store trovato: $storeId');
     return storeId;
   }
 
-  // Funzione per gestire l'acquisto
   Future<void> handlePurchase(String firestoreProductId) async {
     try {
-      _logger.i('🛒 Avvio acquisto prodotto Firestore: $firestoreProductId');
-      _logger.d('📦 Prodotti disponibili nello store: ${_kProductIds}');
-
       if (kIsWeb) {
         throw Exception('Acquisti in-app non supportati sul web');
       }
 
       final bool available = await _inAppPurchase.isAvailable();
       if (!available) {
-        _logger.e('❌ Store non disponibile');
         throw Exception('Store non disponibile');
       }
 
-      // Converti l'ID Firestore in ID Store
       final storeProductId = _getStoreProductId(firestoreProductId);
-      _logger.d('🔍 Ricerca prodotto nello store con ID: $storeProductId');
-
-      // Verifica se il prodotto è disponibile nello store
       final ProductDetailsResponse response =
           await _inAppPurchase.queryProductDetails({storeProductId});
 
-      _logger.d('📦 Risposta store:');
-      _logger.d('- Prodotti trovati: ${response.productDetails.length}');
-      _logger.d('- Prodotti non trovati: ${response.notFoundIDs}');
-      _logger.d('- Errore: ${response.error}');
-
       if (response.notFoundIDs.isNotEmpty) {
-        _logger
-            .e('❌ Prodotto non trovato nello store: ${response.notFoundIDs}');
-        _logger.e('ID Firestore: $firestoreProductId');
-        _logger.e('ID Store mappato: $storeProductId');
         throw Exception(
             'Prodotto non trovato nello store. Verifica che il prodotto sia stato configurato correttamente nell\'App Store/Play Store.');
       }
 
       if (response.productDetails.isEmpty) {
-        _logger.e('❌ Nessun dettaglio prodotto trovato');
         throw Exception(
             'Nessun dettaglio prodotto trovato. Verifica la configurazione del prodotto nell\'App Store/Play Store.');
       }
-
-      _logger.d('📦 Prodotto trovato, preparazione acquisto...');
-      _logger.d('Dettagli prodotto:');
-      _logger.d('- ID: ${response.productDetails.first.id}');
-      _logger.d('- Titolo: ${response.productDetails.first.title}');
-      _logger.d('- Descrizione: ${response.productDetails.first.description}');
-      _logger.d('- Prezzo: ${response.productDetails.first.price}');
 
       final purchaseParam = PurchaseParam(
         productDetails: response.productDetails.first,
       );
 
-      _logger.d('🚀 Avvio transazione acquisto...');
       await _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
-      _logger.i('✅ Richiesta di acquisto inviata con successo');
     } catch (e) {
-      _logger.e('❌ Errore durante l\'acquisto', error: e);
+      _logger.e('Errore durante l\'acquisto', error: e);
       rethrow;
     }
   }
 
-  // Funzione per aggiornare l'abbonamento
   Future<void> updateSubscription(String firestoreProductId) async {
     try {
-      _logger
-          .i('🔄 Aggiornamento abbonamento con prodotto: $firestoreProductId');
       await handlePurchase(firestoreProductId);
     } catch (e) {
-      _logger.e('❌ Errore nell\'aggiornamento dell\'abbonamento', error: e);
       throw Exception('Errore nell\'aggiornamento dell\'abbonamento: $e');
     }
   }
 
-  // Funzione per sincronizzare gli abbonamenti
   Future<Map<String, dynamic>> syncStripeSubscription(String userId,
       {bool syncAll = false}) async {
     try {
@@ -452,7 +366,6 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
     }
   }
 
-  // Funzione per sincronizzare i prodotti
   Future<void> syncProducts() async {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
@@ -474,25 +387,19 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
             'Errore nella sincronizzazione dei prodotti: ${response.statusCode}');
       }
 
-      await getProducts(); // Aggiorna la lista dei prodotti dopo la sincronizzazione
+      await getProducts();
     } catch (e) {
       throw Exception('Errore nella sincronizzazione dei prodotti: $e');
     }
   }
 
-  // Funzione per inizializzare il servizio
+  @override
   Future<void> initialize() async {
-    _logger.i('🔄 Inizializzazione InAppPurchaseService');
     try {
-      _logger.d('Ambiente: ${kIsWeb ? "Web" : "Mobile"}');
-
       if (!kIsWeb) {
-        // Inizializza lo stream degli acquisti solo su mobile
         final purchaseUpdated = _inAppPurchase.purchaseStream;
         _subscription = purchaseUpdated.listen(
-          (purchaseDetailsList) {
-            _listenToPurchaseUpdated(purchaseDetailsList);
-          },
+          _listenToPurchaseUpdated,
           onDone: () {
             _subscription?.cancel();
           },
@@ -503,12 +410,8 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
       }
 
       await getProducts();
-      _logger.i('✅ Inizializzazione completata');
     } catch (e) {
-      _logger.e(
-        '❌ Errore inizializzazione',
-        error: e,
-      );
+      _logger.e('Errore inizializzazione', error: e);
       rethrow;
     }
   }
@@ -520,22 +423,13 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
   }
 
   void _listenToPurchaseUpdated(List<PurchaseDetails> purchaseDetailsList) {
-    _logger.d('🔄 Aggiornamento acquisti ricevuto');
     for (final purchaseDetails in purchaseDetailsList) {
-      if (purchaseDetails.status == PurchaseStatus.pending) {
-        _logger.i('⏳ Acquisto in corso...');
-      } else {
-        if (purchaseDetails.status == PurchaseStatus.error) {
-          _logger.e('❌ Errore nell\'acquisto', error: purchaseDetails.error);
-        } else if (purchaseDetails.status == PurchaseStatus.purchased ||
-            purchaseDetails.status == PurchaseStatus.restored) {
-          _logger.i('✅ Acquisto completato con successo');
-        }
+      if (purchaseDetails.status == PurchaseStatus.error) {
+        _logger.e('Errore nell\'acquisto', error: purchaseDetails.error);
+      }
 
-        if (purchaseDetails.pendingCompletePurchase) {
-          _logger.d('📦 Completamento acquisto in corso...');
-          _inAppPurchase.completePurchase(purchaseDetails);
-        }
+      if (purchaseDetails.pendingCompletePurchase) {
+        _inAppPurchase.completePurchase(purchaseDetails);
       }
     }
   }

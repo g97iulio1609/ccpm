@@ -1,7 +1,5 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
-import 'package:alphanessone/utils/debug_logger.dart';
 import 'package:alphanessone/Store/payment_success_screen.dart';
 import 'package:alphanessone/Store/payment_failure_screen.dart';
 
@@ -41,7 +39,6 @@ class _StripeCheckoutWidgetState extends State<StripeCheckoutWidget> {
     try {
       setState(() => _isLoading = true);
 
-      // Conferma il pagamento
       final paymentIntent = await Stripe.instance.confirmPayment(
         paymentIntentClientSecret: widget.clientSecret,
         data: PaymentMethodParams.card(
@@ -62,7 +59,6 @@ class _StripeCheckoutWidgetState extends State<StripeCheckoutWidget> {
         throw Exception('Pagamento fallito: ${paymentIntent.status}');
       }
     } catch (e) {
-      debugLog('Errore nel pagamento: $e');
       setState(() => _error = e.toString());
       widget.onPaymentError(e.toString());
       if (mounted) {

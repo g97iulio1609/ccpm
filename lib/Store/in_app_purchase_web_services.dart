@@ -5,7 +5,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:logger/logger.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart';
 
 class InAppPurchaseServiceWeb implements BaseInAppPurchaseService {
   final Logger _logger = Logger(
@@ -15,7 +14,7 @@ class InAppPurchaseServiceWeb implements BaseInAppPurchaseService {
       lineLength: 120,
       colors: true,
       printEmojis: true,
-      printTime: true,
+      dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
     ),
   );
 
@@ -34,7 +33,6 @@ class InAppPurchaseServiceWeb implements BaseInAppPurchaseService {
         'Recupero dettagli prodotti. Prodotti disponibili: ${_products.length}');
     final Map<String, List<Product>> result = {};
     for (var product in _products) {
-      _logger.v('Processando prodotto: ${product.id}');
       if (!result.containsKey(product.id)) {
         result[product.id] = [];
       }
@@ -59,10 +57,6 @@ class InAppPurchaseServiceWeb implements BaseInAppPurchaseService {
 
       final products = productsSnapshot.docs.map((doc) {
         final data = doc.data() as Map<String, dynamic>;
-        _logger.v('📦 Dettagli prodotto da Firestore:');
-        _logger.v('- ID: ${doc.id}');
-        _logger.v('- Nome: ${data['name']}');
-        _logger.v('- Prezzo: ${data['price']}');
 
         return Product(
           id: doc.id,

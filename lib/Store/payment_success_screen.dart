@@ -54,8 +54,8 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              AppTheme.success.withOpacity(0.8),
-              AppTheme.success.withOpacity(0.6),
+              AppTheme.success.withAlpha(204),
+              AppTheme.success.withAlpha(153),
             ],
           ),
         ),
@@ -98,7 +98,7 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
                           textAlign: TextAlign.center,
                           style:
                               Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: Colors.white.withOpacity(0.9),
+                                    color: Colors.white.withAlpha(230),
                                   ),
                         ),
                       ),

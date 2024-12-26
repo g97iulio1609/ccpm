@@ -274,11 +274,10 @@ class MaxRMDashboard extends HookConsumerWidget {
                                             : 0,
                                       ),
                                       child: _buildRecordCard(
-                                        rowRecords[i]!,
+                                        rowRecords[i],
                                         exercises.firstWhere(
                                           (ex) =>
-                                              ex.id ==
-                                              rowRecords[i]!.exerciseId,
+                                              ex.id == rowRecords[i].exerciseId,
                                           orElse: () => ExerciseModel(
                                             id: '',
                                             name: 'Exercise not found',

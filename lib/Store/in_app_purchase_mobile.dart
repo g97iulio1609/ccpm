@@ -70,12 +70,12 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
       );
 
       // Recupera i prodotti
-      const Set<String> _kIds = {
+      const Set<String> kIds = {
         'alphanessoneplussubscription',
         'coachingalphaness'
       };
       final ProductDetailsResponse response =
-          await _inAppPurchase.queryProductDetails(_kIds);
+          await _inAppPurchase.queryProductDetails(kIds);
 
       if (response.notFoundIDs.isNotEmpty) {
         debugPrint('Prodotti non trovati: ${response.notFoundIDs}');
@@ -217,7 +217,7 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppTheme.error.withOpacity(0.1),
+                color: AppTheme.error.withAlpha(26),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(Icons.error_outline, size: 48, color: AppTheme.error),
@@ -236,7 +236,7 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
               icon: const Icon(Icons.refresh),
               label: const Text('Riprova'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.error.withOpacity(0.1),
+                backgroundColor: AppTheme.error.withAlpha(26),
                 foregroundColor: AppTheme.error,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -255,7 +255,7 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: colorScheme.primary.withOpacity(0.1),
+                color: colorScheme.primary.withAlpha(26),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(
@@ -301,8 +301,8 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        AppTheme.primaryGold.withOpacity(0.15),
-                        AppTheme.primaryGoldLight.withOpacity(0.05),
+                        AppTheme.primaryGold.withAlpha(39),
+                        AppTheme.primaryGoldLight.withAlpha(13),
                       ],
                     ),
                   ),
@@ -476,7 +476,7 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: colorScheme.primary.withOpacity(0.1),
+              color: colorScheme.primary.withAlpha(26),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -562,7 +562,7 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
         boxShadow: isYearly
             ? [
                 BoxShadow(
-                  color: colorScheme.primary.withOpacity(0.1),
+                  color: colorScheme.primary.withAlpha(26),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -635,8 +635,8 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: isYearly
-                          ? colorScheme.primary.withOpacity(0.1)
-                          : colorScheme.surfaceVariant,
+                          ? colorScheme.primary.withAlpha(26)
+                          : colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Text(

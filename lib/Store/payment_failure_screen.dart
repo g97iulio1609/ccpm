@@ -58,8 +58,8 @@ class _PaymentFailureScreenState extends State<PaymentFailureScreen>
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              AppTheme.error.withOpacity(0.8),
-              AppTheme.error.withOpacity(0.6),
+              AppTheme.error.withAlpha(204),
+              AppTheme.error.withAlpha(153),
             ],
           ),
         ),
@@ -77,13 +77,13 @@ class _PaymentFailureScreenState extends State<PaymentFailureScreen>
                         width: 120,
                         height: 120,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withAlpha(51),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           Icons.error_outline,
                           size: 80,
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withAlpha(230),
                         ),
                       ),
                       const SizedBox(height: 32),
@@ -105,7 +105,7 @@ class _PaymentFailureScreenState extends State<PaymentFailureScreen>
                           textAlign: TextAlign.center,
                           style:
                               Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: Colors.white.withOpacity(0.9),
+                                    color: Colors.white.withAlpha(230),
                                   ),
                         ),
                       ),
