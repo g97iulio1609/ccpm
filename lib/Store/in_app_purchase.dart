@@ -11,9 +11,6 @@ class InAppPurchaseScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Abbonamenti'),
-      ),
       body: kIsWeb
           ? const InAppPurchaseScreenWeb()
           : const InAppPurchaseScreenMobile(),
