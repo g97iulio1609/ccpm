@@ -1,6 +1,12 @@
 enum SubscriptionStatus { active, canceled, gracePeriod, expired }
 
-// lib/Store/in_app_purchase_model.dart
+abstract class BaseInAppPurchaseService {
+  Future<List<Product>> getProducts();
+  Future<void> handleSuccessfulPayment(String purchaseId, String productId);
+  Future<Map<String, dynamic>> createCheckoutSession(
+      String userId, String productId);
+  Future<void> initialize();
+}
 
 class Product {
   final String id;

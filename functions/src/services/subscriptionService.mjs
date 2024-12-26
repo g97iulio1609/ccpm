@@ -27,20 +27,39 @@ export class SubscriptionService {
 
     let customer = await this.getOrCreateCustomer(userEmail, userId);
 
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [{
-        price: product.stripePriceId,
-        quantity: 1,
-      }],
-      mode: 'subscription',
-      success_url: 'https://yourapp.com/success',
-      cancel_url: 'https://yourapp.com/cancel',
+    // Crea il PaymentIntent
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: product.price * 100, // Converti in centesimi
+      currency: product.currency || 'eur',
       customer: customer.id,
-      client_reference_id: userId,
+      payment_method_types: ['card'],
+      metadata: {
+        userId,
+        productId,
+      },
+      automatic_payment_methods: {
+        enabled: true,
+      },
     });
 
-    return { sessionId: session.id, url: session.url };
+    return { 
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id
+    };
+  }
+
+  static async retrieveCheckoutSession(sessionId) {
+    try {
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      return {
+        status: session.status,
+        customer: session.customer,
+        paymentStatus: session.payment_status,
+        subscriptionId: session.subscription
+      };
+    } catch (error) {
+      throw new Error(`Errore nel recuperare la sessione di checkout: ${error.message}`);
+    }
   }
 
   static async getOrCreateCustomer(email, userId) {
@@ -416,5 +435,35 @@ export class SubscriptionService {
         })),
       },
     };
+  }
+
+  static async createPaymentIntent(userId, productId) {
+    try {
+      // Recupera il prodotto da Firestore
+      const productDoc = await firestore.collection('products').doc(productId).get();
+      if (!productDoc.exists) {
+        throw new Error('Prodotto non trovato');
+      }
+      const product = productDoc.data();
+
+      // Crea il Payment Intent
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(product.price * 100), // Converti in centesimi
+        currency: product.currency || 'eur',
+        metadata: {
+          userId,
+          productId,
+          stripePriceId: product.stripePriceId,
+        },
+        automatic_payment_methods: {
+          enabled: true,
+        },
+      });
+
+      return paymentIntent;
+    } catch (error) {
+      console.error('Error creating payment intent:', error);
+      throw error;
+    }
   }
 } 

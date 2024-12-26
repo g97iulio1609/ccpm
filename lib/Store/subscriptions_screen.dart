@@ -432,7 +432,7 @@ class SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
                       onPressed: () async {
                         Navigator.of(context).pop();
                         try {
-                          await _inAppPurchaseService.giftSubscription(
+                          await _inAppPurchaseService.createGiftSubscription(
                             userId,
                             option['days'] as int,
                           );
