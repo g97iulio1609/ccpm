@@ -70,7 +70,10 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
       );
 
       // Recupera i prodotti
-      const Set<String> _kIds = {'premium_monthly', 'premium_yearly'};
+      const Set<String> _kIds = {
+        'alphanessoneplussubscription',
+        'coachingalphaness'
+      };
       final ProductDetailsResponse response =
           await _inAppPurchase.queryProductDetails(_kIds);
 

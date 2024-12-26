@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:alphanessone/utils/debug_logger.dart';
+import 'package:alphanessone/Store/payment_success_screen.dart';
+import 'package:alphanessone/Store/payment_failure_screen.dart';
 
 class StripeCheckoutWidget extends StatefulWidget {
   final String clientSecret;
@@ -49,6 +51,13 @@ class _StripeCheckoutWidgetState extends State<StripeCheckoutWidget> {
 
       if (paymentIntent.status == PaymentIntentsStatus.Succeeded) {
         widget.onPaymentSuccess(widget.sessionId);
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (_) => const PaymentSuccessScreen(),
+            ),
+          );
+        }
       } else {
         throw Exception('Pagamento fallito: ${paymentIntent.status}');
       }
@@ -56,6 +65,15 @@ class _StripeCheckoutWidgetState extends State<StripeCheckoutWidget> {
       debugLog('Errore nel pagamento: $e');
       setState(() => _error = e.toString());
       widget.onPaymentError(e.toString());
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => PaymentFailureScreen(
+              error: e.toString(),
+            ),
+          ),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
