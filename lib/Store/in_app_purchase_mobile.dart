@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:alphanessone/Store/in_app_purchase_model.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
