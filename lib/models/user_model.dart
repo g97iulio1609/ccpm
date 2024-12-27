@@ -56,7 +56,8 @@ class UserModel {
       purchaseToken: data['purchaseToken'],
       currentProgram: data['currentProgram'], // Aggiunto al fromFirestore
       phoneNumber: data['phoneNumber'], // Add phoneNumber to fromFirestore
-      activityLevel: (data['activityLevel'] as num?)?.toDouble(), // Convert to double when reading from Firestore
+      activityLevel: (data['activityLevel'] as num?)
+          ?.toDouble(), // Convert to double when reading from Firestore
       birthdate: (data['birthdate'] as Timestamp?)?.toDate(),
       height: (data['height'] as num?)?.toDouble(),
     );

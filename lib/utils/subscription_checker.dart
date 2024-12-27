@@ -11,38 +11,53 @@ class SubscriptionChecker {
   Future<bool> checkSubscription(BuildContext context) async {
     try {
       final user = _auth.currentUser;
-      if (user == null) return false;
-
-      // Check subscription through Cloud Function first
-      final subscriptionDetails =
-          await _inAppPurchaseService.getSubscriptionDetails();
-
-      if (subscriptionDetails != null) {
-        if (subscriptionDetails.status.toLowerCase() == 'active' &&
-            subscriptionDetails.currentPeriodEnd.isAfter(DateTime.now())) {
-          return true;
-        }
+      if (user == null) {
+        return false;
       }
 
-      // If no valid subscription from Cloud Function, check Firestore for gift subscription
       final userDoc = await _firestore.collection('users').doc(user.uid).get();
-      if (!userDoc.exists) return false;
+      if (!userDoc.exists) {
+        return false;
+      }
 
       final data = userDoc.data()!;
-      final isGifted = data['giftedAt'] != null;
+      final role = data['role'] as String?;
 
-      if (!isGifted) return false;
+      if (role == 'admin' || role == 'coach') {
+        return true;
+      }
 
       final subscriptionStatus = data['subscriptionStatus'] as String?;
       final subscriptionExpiryDate =
           data['subscriptionExpiryDate'] as Timestamp?;
+      final isGifted = data['giftedAt'] != null;
 
-      if (subscriptionStatus == null || subscriptionExpiryDate == null) {
-        return false;
+      if (isGifted &&
+          subscriptionStatus?.toLowerCase() == 'active' &&
+          subscriptionExpiryDate != null &&
+          subscriptionExpiryDate.toDate().isAfter(DateTime.now())) {
+        return true;
       }
 
-      return subscriptionStatus.toLowerCase() == 'active' &&
-          subscriptionExpiryDate.toDate().isAfter(DateTime.now());
+      try {
+        final subscriptionDetails =
+            await _inAppPurchaseService.getSubscriptionDetails();
+
+        if (subscriptionDetails != null) {
+          return subscriptionDetails.status.toLowerCase() == 'active' &&
+              subscriptionDetails.currentPeriodEnd.isAfter(DateTime.now());
+        }
+      } catch (e) {
+        // Continua con il controllo su Firestore
+      }
+
+      if (subscriptionStatus?.toLowerCase() == 'active' &&
+          subscriptionExpiryDate != null &&
+          subscriptionExpiryDate.toDate().isAfter(DateTime.now())) {
+        return true;
+      }
+
+      return false;
     } catch (e) {
       return false;
     }

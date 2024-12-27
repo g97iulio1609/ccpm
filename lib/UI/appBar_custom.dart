@@ -64,6 +64,8 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
       return ref.watch(currentWorkoutNameProvider);
     } else if (currentPath.contains('/week_details/')) {
       return ref.watch(currentWeekNameProvider);
+    } else if (currentPath.contains('/maxrmdashboard/exercise_stats')) {
+      return ref.watch(currentMaxRMExerciseNameProvider);
     }
 
     switch (currentPath) {
@@ -788,3 +790,4 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
 
 final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());
 final previousRouteProvider = StateProvider<String?>((ref) => null);
+final currentMaxRMExerciseNameProvider = StateProvider<String>((ref) => '');

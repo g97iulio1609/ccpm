@@ -45,15 +45,12 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
         child: SafeArea(
           child: CustomScrollView(
             slivers: [
-              // Search Bar
               SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.all(AppTheme.spacing.xl),
                   child: _buildSearchBar(theme, colorScheme),
                 ),
               ),
-
-              // Users Grid
               SliverPadding(
                 padding: EdgeInsets.all(AppTheme.spacing.xl),
                 sliver: _buildUsersList(theme, colorScheme),
@@ -173,10 +170,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
           );
         }
 
-        // Calcola il numero di colonne
         final crossAxisCount = _getGridCrossAxisCount(context);
-
-        // Organizza gli utenti in righe
         final rows = <List<UserModel>>[];
         for (var i = 0; i < users.length; i += crossAxisCount) {
           rows.add(
@@ -262,7 +256,6 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Avatar e menu
                 SizedBox(
                   height: 40,
                   child: Row(
@@ -308,8 +301,6 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
                   ),
                 ),
                 SizedBox(height: AppTheme.spacing.lg),
-
-                // Nome utente
                 Text(
                   user.name,
                   style: theme.textTheme.titleLarge?.copyWith(
@@ -321,8 +312,6 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 SizedBox(height: AppTheme.spacing.sm),
-
-                // Email
                 Text(
                   user.email,
                   style: theme.textTheme.bodyMedium?.copyWith(
@@ -331,10 +320,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-
                 SizedBox(height: AppTheme.spacing.xl),
-
-                // Role Badge
                 Container(
                   padding: EdgeInsets.symmetric(
                     horizontal: AppTheme.spacing.md,

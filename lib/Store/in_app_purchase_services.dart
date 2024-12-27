@@ -138,49 +138,88 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
+        _logger.w('Utente non autenticato');
         throw Exception('Utente non autenticato');
       }
 
-      final token = await currentUser.getIdToken();
-      final response = await http.post(
-        Uri.parse('$_baseUrl/getSubscriptionDetails'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: json.encode({
+      // Prima prova con Cloud Functions
+      try {
+        final callable = _functions.httpsCallable('getSubscriptionDetails');
+        final result = await callable.call({
           'userId': userId ?? currentUser.uid,
-        }),
-      );
+        });
 
-      if (response.statusCode != 200) {
-        throw Exception(
-            'Errore nella risposta del server: ${response.statusCode}');
+        final data = result.data;
+        if (data == null || !data['hasSubscription']) {
+          _logger.i('Nessuna sottoscrizione trovata tramite Cloud Functions');
+          return null;
+        }
+
+        final subscription = data['subscription'];
+        return SubscriptionDetails(
+          id: subscription['id'],
+          status: subscription['status'],
+          currentPeriodEnd: DateTime.fromMillisecondsSinceEpoch(
+            subscription['current_period_end'] * 1000,
+          ),
+          items: (subscription['items'] as List)
+              .map((item) => SubscriptionItem(
+                    priceId: item['priceId'],
+                    productId: item['productId'],
+                    quantity: item['quantity'],
+                  ))
+              .toList(),
+          platform: 'store',
+        );
+      } catch (e) {
+        _logger.w('Errore nella chiamata Cloud Functions: $e');
+
+        // Se fallisce, prova con HTTP diretto
+        final token = await currentUser.getIdToken();
+        final response = await http.post(
+          Uri.parse('$_baseUrl/getSubscriptionDetails'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: json.encode({
+            'userId': userId ?? currentUser.uid,
+          }),
+        );
+
+        if (response.statusCode != 200) {
+          _logger.w('Errore nella risposta HTTP: ${response.statusCode}');
+          _logger.w('Risposta: ${response.body}');
+          return null;
+        }
+
+        final data = json.decode(response.body);
+        if (!data['hasSubscription']) {
+          _logger.i('Nessuna sottoscrizione trovata tramite HTTP');
+          return null;
+        }
+
+        final subscription = data['subscription'];
+        return SubscriptionDetails(
+          id: subscription['id'],
+          status: subscription['status'],
+          currentPeriodEnd: DateTime.fromMillisecondsSinceEpoch(
+            subscription['current_period_end'] * 1000,
+          ),
+          items: (subscription['items'] as List)
+              .map((item) => SubscriptionItem(
+                    priceId: item['priceId'],
+                    productId: item['productId'],
+                    quantity: item['quantity'],
+                  ))
+              .toList(),
+          platform: 'store',
+        );
       }
-
-      final data = json.decode(response.body);
-      if (!data['hasSubscription']) {
-        return null;
-      }
-
-      final subscription = data['subscription'];
-      return SubscriptionDetails(
-        id: subscription['id'],
-        status: subscription['status'],
-        currentPeriodEnd: DateTime.fromMillisecondsSinceEpoch(
-          subscription['current_period_end'] * 1000,
-        ),
-        items: (subscription['items'] as List)
-            .map((item) => SubscriptionItem(
-                  priceId: item['priceId'],
-                  productId: item['productId'],
-                  quantity: item['quantity'],
-                ))
-            .toList(),
-        platform: 'store',
-      );
-    } catch (e) {
-      throw Exception('Errore nel recupero dei dettagli dell\'abbonamento: $e');
+    } catch (e, stackTrace) {
+      _logger.e('Errore nel recupero dei dettagli dell\'abbonamento',
+          error: e, stackTrace: stackTrace);
+      return null;
     }
   }
 
@@ -333,36 +372,36 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
+        _logger.w('Utente non autenticato');
         return {'success': false, 'message': 'Utente non autenticato'};
       }
 
-      final token = await currentUser.getIdToken();
-      final response = await http.post(
-        Uri.parse('$_baseUrl/syncSubscription'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: json.encode({
-          'userId': userId,
-          'syncAll': syncAll,
-        }),
-      );
+      _logger.i(
+          'Chiamata a syncSubscription con userId: $userId, syncAll: $syncAll');
+      final callable = _functions.httpsCallable('syncSubscription');
+      final result = await callable.call({
+        'userId': userId,
+        'syncAll': syncAll,
+      });
 
-      if (response.statusCode != 200) {
+      _logger.i('Risposta ricevuta: ${result.data}');
+
+      if (result.data == null) {
+        _logger.w('Risposta nulla dalla Cloud Function');
         return {
           'success': false,
-          'message': 'Errore nella sincronizzazione: ${response.statusCode}'
+          'message': 'Errore nella sincronizzazione: risposta nulla'
         };
       }
 
-      final data = json.decode(response.body);
+      return result.data;
+    } catch (e, stackTrace) {
+      _logger.e('Errore nella sincronizzazione',
+          error: e, stackTrace: stackTrace);
       return {
-        'success': true,
-        'message': data['message'] ?? 'Sincronizzazione completata con successo'
+        'success': false,
+        'message': 'Errore nella sincronizzazione: ${e.toString()}'
       };
-    } catch (e) {
-      return {'success': false, 'message': 'Errore nella sincronizzazione: $e'};
     }
   }
 

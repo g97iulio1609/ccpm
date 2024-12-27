@@ -366,4 +366,128 @@ export const testStripeConnection = onCall({
   } catch (error) {
     throw new Error('Impossibile connettersi a Stripe: ' + error.message);
   }
+});
+
+export const syncSubscription = onCall({
+  region: 'europe-west1'
+}, async (request) => {
+  if (!request.auth) {
+    throw new Error('Devi essere autenticato.');
+  }
+
+  const callerUid = request.auth.uid;
+  const targetUserId = request.data?.userId || callerUid;
+
+  try {
+    // Se l'utente sta cercando di sincronizzare un altro account, verifica che sia admin
+    if (targetUserId !== callerUid) {
+      const adminDoc = await firestore.collection('users').doc(callerUid).get();
+      if (!adminDoc.exists || adminDoc.data().role !== 'admin') {
+        throw new Error('Non hai i permessi per sincronizzare le sottoscrizioni di altri utenti.');
+      }
+    }
+
+    // Recupera il documento dell'utente target
+    const userDoc = await firestore.collection('users').doc(targetUserId).get();
+    if (!userDoc.exists) {
+      throw new Error('Utente non trovato.');
+    }
+
+    const userData = userDoc.data();
+    const userEmail = userData.email;
+
+    // Prima verifica se l'utente ha già una sottoscrizione in Firestore
+    const currentSubscriptionId = userData.subscriptionId;
+    if (currentSubscriptionId) {
+      try {
+        // Verifica lo stato della sottoscrizione esistente in Stripe
+        const subscription = await stripe.subscriptions.retrieve(currentSubscriptionId);
+        
+        if (subscription.status === 'active') {
+          // Aggiorna i dati in Firestore
+          await firestore.collection('users').doc(targetUserId).update({
+            subscriptionStatus: subscription.status,
+            subscriptionExpiryDate: new Date(subscription.current_period_end * 1000),
+          });
+
+          return {
+            success: true,
+            message: 'Sottoscrizione esistente sincronizzata con successo.',
+            subscription: {
+              id: subscription.id,
+              status: subscription.status,
+              current_period_end: subscription.current_period_end,
+            }
+          };
+        }
+      } catch (stripeError) {
+        console.error('Errore nel recupero della sottoscrizione da Stripe:', stripeError);
+      }
+    }
+
+    // Se non ha una sottoscrizione attiva o c'è stato un errore, cerca nuove sottoscrizioni
+    const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
+    
+    if (customers.data.length === 0) {
+      return { 
+        success: false, 
+        message: `Nessun cliente Stripe trovato per l'utente ${targetUserId}.` 
+      };
+    }
+
+    const customer = customers.data[0];
+    const subscriptions = await stripe.subscriptions.list({
+      customer: customer.id,
+      status: 'active',
+      limit: 1,
+    });
+
+    if (subscriptions.data.length === 0) {
+      // Se non ci sono sottoscrizioni attive, resetta lo stato dell'utente
+      await firestore.collection('users').doc(targetUserId).update({
+        role: 'client',
+        subscriptionStatus: 'inactive',
+        subscriptionId: null,
+        subscriptionExpiryDate: null,
+        subscriptionPlatform: null,
+        subscriptionProductId: null,
+      });
+
+      return { 
+        success: false, 
+        message: `Nessuna sottoscrizione attiva trovata per l'utente ${targetUserId}.` 
+      };
+    }
+
+    // Aggiorna con la nuova sottoscrizione trovata
+    const subscription = subscriptions.data[0];
+    const productId = subscription.items.data[0].price.product;
+    
+    // Recupera il prodotto per ottenere il ruolo corretto
+    const productDoc = await firestore.collection('products').doc(productId).get();
+    const role = productDoc.exists ? productDoc.data().role || 'client_premium' : 'client_premium';
+
+    await firestore.collection('users').doc(targetUserId).update({
+      role: role,
+      subscriptionId: subscription.id,
+      subscriptionStatus: subscription.status,
+      subscriptionProductId: productId,
+      subscriptionPlatform: 'stripe',
+      subscriptionStartDate: new Date(subscription.start_date * 1000),
+      subscriptionExpiryDate: new Date(subscription.current_period_end * 1000),
+    });
+
+    return {
+      success: true,
+      message: `Sottoscrizione sincronizzata con successo per l'utente ${targetUserId}.`,
+      subscription: {
+        id: subscription.id,
+        status: subscription.status,
+        current_period_end: subscription.current_period_end,
+      }
+    };
+  } catch (error) {
+    console.error('Errore nella sincronizzazione:', error);
+    throw new Error(`Errore nella sincronizzazione: ${error.message}`);
+  }
 }); 

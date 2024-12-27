@@ -12,13 +12,8 @@ import '../../Main/app_theme.dart';
 import '../../Store/in_app_purchase_services.dart';
 import '../../utils/subscription_checker.dart';
 
-// Provider per gestire l'espansione delle settimane
 final expandedWeekProvider = StateProvider<String?>((ref) => null);
-
-// Provider per gestire lo stato di caricamento delle settimane di allenamento
 final trainingLoadingProvider = StateProvider<bool>((ref) => false);
-
-// Provider per memorizzare le settimane di allenamento
 final trainingWeeksProvider =
     StateProvider<List<Map<String, dynamic>>>((ref) => []);
 
@@ -59,6 +54,7 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
           await subscriptionChecker.checkSubscription(context);
 
       if (!hasValidSubscription) {
+        if (!mounted) return;
         await showSubscriptionExpiredDialog();
         context.go('/subscriptions');
         return;

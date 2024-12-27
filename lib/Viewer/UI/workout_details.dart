@@ -995,7 +995,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       );
     }
 
-    // Altrimenti è un Map con formato compatto ed esteso
+    // Mostra sempre il formato esteso quando possibile
     return Expanded(
       flex: flex,
       child: LayoutBuilder(

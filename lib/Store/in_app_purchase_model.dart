@@ -34,28 +34,48 @@ class SubscriptionDetails {
   final String id;
   final String status;
   final DateTime currentPeriodEnd;
-  final List<SubscriptionItem> items;
   final String platform;
+  final List<SubscriptionItem> items;
 
   SubscriptionDetails({
     required this.id,
     required this.status,
     required this.currentPeriodEnd,
-    required this.items,
     required this.platform,
+    required this.items,
   });
+
+  factory SubscriptionDetails.fromJson(Map<String, dynamic> json) {
+    return SubscriptionDetails(
+      id: json['id'] as String? ?? '',
+      status: json['status'] as String,
+      currentPeriodEnd: json['currentPeriodEnd'] as DateTime,
+      platform: json['platform'] as String,
+      items: (json['items'] as List)
+          .map((item) => SubscriptionItem.fromJson(item))
+          .toList(),
+    );
+  }
 }
 
 class SubscriptionItem {
-  final String priceId;
   final String productId;
+  final String priceId;
   final int quantity;
 
   SubscriptionItem({
-    required this.priceId,
     required this.productId,
+    required this.priceId,
     required this.quantity,
   });
+
+  factory SubscriptionItem.fromJson(Map<String, dynamic> json) {
+    return SubscriptionItem(
+      productId: json['productId'] as String,
+      priceId: json['priceId'] as String,
+      quantity: json['quantity'] as int,
+    );
+  }
 }
 
 class SubscriptionPlan {

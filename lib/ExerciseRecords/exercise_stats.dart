@@ -8,6 +8,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../models/exercise_record.dart';
 import '../../exerciseManager/exercise_model.dart';
 import '../providers/providers.dart';
+import 'package:alphanessone/UI/appBar_custom.dart';
 
 class ExerciseStats extends HookConsumerWidget {
   final ExerciseModel exercise;
@@ -26,6 +27,18 @@ class ExerciseStats extends HookConsumerWidget {
       userId: userId,
       exerciseId: exercise.id,
     );
+
+    useEffect(() {
+      Future.microtask(() {
+        ref.read(currentMaxRMExerciseNameProvider.notifier).state =
+            exercise.name;
+      });
+      return () {
+        Future.microtask(() {
+          ref.read(currentMaxRMExerciseNameProvider.notifier).state = '';
+        });
+      };
+    }, [exercise.name]);
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
