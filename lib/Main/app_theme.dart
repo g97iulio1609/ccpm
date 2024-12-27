@@ -330,7 +330,7 @@ class AppTheme {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radii.md),
           borderSide: BorderSide(
-            color: colorScheme.outline.withOpacity(isDark ? 0.2 : 0.1),
+            color: colorScheme.outline.withAlpha(isDark ? 51 : 26),
           ),
         ),
         focusedBorder: OutlineInputBorder(
@@ -349,7 +349,7 @@ class AppTheme {
           vertical: spacing.md,
         ),
         hintStyle: textTheme.bodyLarge?.copyWith(
-          color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+          color: colorScheme.onSurfaceVariant.withAlpha(128),
         ),
       ),
 
@@ -385,7 +385,7 @@ class AppTheme {
               return colorScheme.onPrimary.withAlpha(26);
             }
             if (states.contains(WidgetState.hovered)) {
-              return colorScheme.onPrimary.withOpacity(0.05);
+              return colorScheme.onPrimary.withAlpha(13);
             }
             return null;
           }),
@@ -394,9 +394,8 @@ class AppTheme {
 
       // Dialog Theme
       dialogTheme: DialogTheme(
-        backgroundColor: isDark
-            ? colorScheme.surface
-            : colorScheme.surface.withOpacity(0.95),
+        backgroundColor:
+            isDark ? colorScheme.surface : colorScheme.surface.withAlpha(242),
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radii.xl),
@@ -405,12 +404,10 @@ class AppTheme {
 
       // Bottom Sheet Theme
       bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: isDark
-            ? colorScheme.surface
-            : colorScheme.surface.withOpacity(0.95),
-        modalBackgroundColor: isDark
-            ? colorScheme.surface
-            : colorScheme.surface.withOpacity(0.95),
+        backgroundColor:
+            isDark ? colorScheme.surface : colorScheme.surface.withAlpha(242),
+        modalBackgroundColor:
+            isDark ? colorScheme.surface : colorScheme.surface.withAlpha(242),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(radii.xl)),
         ),
@@ -451,7 +448,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(radii.sm),
         ),
         side: BorderSide(
-          color: colorScheme.outline.withOpacity(isDark ? 0.2 : 0.1),
+          color: colorScheme.outline.withAlpha(isDark ? 51 : 26),
         ),
       ),
 

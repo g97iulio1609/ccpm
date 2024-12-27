@@ -83,39 +83,49 @@ class ExerciseCardContent extends StatelessWidget {
           child: Padding(
             padding: EdgeInsets.all(AppTheme.spacing.lg),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Tipo di esercizio e menu
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Exercise Type Badge
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppTheme.spacing.md,
-                        vertical: AppTheme.spacing.xs,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primaryContainer.withAlpha(76),
-                        borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
-                      ),
-                      child: Text(
-                        exercise.type,
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: colorScheme.primary,
-                          fontWeight: FontWeight.w600,
+                    Expanded(
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppTheme.spacing.md,
+                          vertical: AppTheme.spacing.xs,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer.withAlpha(76),
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radii.xxl),
+                        ),
+                        child: Text(
+                          exercise.type,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ),
-                    const Spacer(),
                     IconButton(
                       icon: Icon(
                         Icons.more_vert,
                         color: colorScheme.onSurfaceVariant,
                       ),
                       onPressed: () => _showExerciseOptions(context),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      visualDensity: VisualDensity.compact,
                     ),
                   ],
                 ),
                 SizedBox(height: AppTheme.spacing.md),
+
+                // Nome dell'esercizio
                 Text(
                   exercise.name,
                   style: theme.textTheme.titleLarge?.copyWith(
@@ -127,6 +137,8 @@ class ExerciseCardContent extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 SizedBox(height: AppTheme.spacing.sm),
+
+                // Gruppi muscolari
                 Text(
                   exercise.muscleGroups.join(", "),
                   style: theme.textTheme.bodyMedium?.copyWith(
@@ -135,6 +147,8 @@ class ExerciseCardContent extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
+
+                // Badge di approvazione pendente
                 if (exercise.status == 'pending') ...[
                   SizedBox(height: AppTheme.spacing.md),
                   const PendingApprovalBadge(),

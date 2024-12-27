@@ -52,7 +52,7 @@ class AppRow extends StatelessWidget {
             border: Border.all(
               color: isSelected
                   ? colorScheme.primary
-                  : colorScheme.outline.withOpacity(0.1),
+                  : colorScheme.outline.withAlpha(26),
               width: isSelected ? 2 : 1,
             ),
           ),
@@ -122,7 +122,7 @@ class AppRow extends StatelessWidget {
         ),
         if (showDivider)
           Divider(
-            color: colorScheme.outline.withOpacity(0.1),
+            color: colorScheme.outline.withAlpha(26),
             height: 1,
           ),
       ],
@@ -208,7 +208,7 @@ class _Badge extends StatelessWidget {
         vertical: AppTheme.spacing.xs,
       ),
       decoration: BoxDecoration(
-        color: badgeColor.withOpacity(0.2),
+        color: badgeColor.withAlpha(51),
         borderRadius: BorderRadius.circular(AppTheme.radii.full),
       ),
       child: Text(

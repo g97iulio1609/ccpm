@@ -5,11 +5,20 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import '../UI/components/user_autocomplete.dart';
+import '../UI/components/bottom_menu.dart';
 import '../../models/user_model.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 
 class CoachingScreen extends HookConsumerWidget {
   const CoachingScreen({super.key});
+
+  int getGridCrossAxisCount(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    if (width > 1200) return 4;
+    if (width > 900) return 3;
+    if (width > 600) return 2;
+    return 1;
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -102,6 +111,7 @@ class CoachingScreen extends HookConsumerWidget {
                   theme,
                   colorScheme,
                   currentUserRole,
+                  context,
                 ),
               ),
             ],
@@ -153,6 +163,7 @@ class CoachingScreen extends HookConsumerWidget {
     ThemeData theme,
     ColorScheme colorScheme,
     String currentUserRole,
+    BuildContext context,
   ) {
     return Builder(builder: (context) {
       if (snapshot.connectionState == ConnectionState.waiting) {
@@ -174,7 +185,8 @@ class CoachingScreen extends HookConsumerWidget {
         );
       }
 
-      if (snapshot.data == null || snapshot.data!.isEmpty) {
+      final users = snapshot.data ?? [];
+      if (users.isEmpty) {
         return SliverFillRemaining(
           child: Center(
             child: Column(
@@ -191,7 +203,7 @@ class CoachingScreen extends HookConsumerWidget {
                       ? 'No Athletes Associated'
                       : 'No Users Found',
                   style: theme.textTheme.titleLarge?.copyWith(
-                    color: colorScheme.onSurfaceVariant.withAlpha(179),
+                    color: colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -201,7 +213,7 @@ class CoachingScreen extends HookConsumerWidget {
                       ? 'Start adding athletes to your roster'
                       : 'Try adjusting your search',
                   style: theme.textTheme.bodyLarge?.copyWith(
-                    color: colorScheme.onSurfaceVariant.withAlpha(26),
+                    color: colorScheme.onSurfaceVariant.withAlpha(179),
                   ),
                 ),
               ],
@@ -210,21 +222,60 @@ class CoachingScreen extends HookConsumerWidget {
         );
       }
 
-      return SliverGrid(
-        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 400,
-          mainAxisSpacing: 20,
-          crossAxisSpacing: 20,
-          childAspectRatio: 1.2,
-        ),
-        delegate: SliverChildBuilderDelegate(
-          (context, index) => _buildAthleteCard(
-            snapshot.data![index],
-            theme,
-            colorScheme,
-            context,
+      // Calcola il numero di colonne
+      final crossAxisCount = getGridCrossAxisCount(context);
+
+      // Organizza gli utenti in righe
+      final rows = <List<UserModel>>[];
+      for (var i = 0; i < users.length; i += crossAxisCount) {
+        rows.add(
+          users.sublist(
+            i,
+            i + crossAxisCount > users.length
+                ? users.length
+                : i + crossAxisCount,
           ),
-          childCount: snapshot.data!.length,
+        );
+      }
+
+      return SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, rowIndex) {
+            if (rowIndex >= rows.length) return null;
+
+            final rowUsers = rows[rowIndex];
+
+            return Padding(
+              padding: EdgeInsets.only(bottom: AppTheme.spacing.xl),
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (var i = 0; i < crossAxisCount; i++) ...[
+                      if (i < rowUsers.length)
+                        Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                              right: i < crossAxisCount - 1
+                                  ? AppTheme.spacing.xl
+                                  : 0,
+                            ),
+                            child: _buildAthleteCard(
+                              rowUsers[i],
+                              theme,
+                              colorScheme,
+                              context,
+                            ),
+                          ),
+                        )
+                      else
+                        Expanded(child: Container()),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          },
         ),
       );
     });
@@ -254,92 +305,100 @@ class CoachingScreen extends HookConsumerWidget {
           onTap: () => _onAthleteCardTap(context, user.id),
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           child: Padding(
-            padding: EdgeInsets.all(AppTheme.spacing.sm),
+            padding: EdgeInsets.all(AppTheme.spacing.lg),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer.withAlpha(76),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      initials,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: colorScheme.primary.withAlpha(204),
-                        fontWeight: FontWeight.w600,
+                // Avatar e menu
+                SizedBox(
+                  height: 40,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer.withAlpha(76),
+                          shape: BoxShape.circle,
+                          image: user.photoURL.isNotEmpty
+                              ? DecorationImage(
+                                  image: NetworkImage(user.photoURL),
+                                  fit: BoxFit.cover,
+                                )
+                              : null,
+                        ),
+                        child: user.photoURL.isEmpty
+                            ? Center(
+                                child: Text(
+                                  initials,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    color: colorScheme.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              )
+                            : null,
                       ),
-                    ),
+                      const Spacer(),
+                      IconButton(
+                        icon: Icon(
+                          Icons.more_vert,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        onPressed: () => _showAthleteOptions(context, user),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ],
                   ),
                 ),
-                SizedBox(height: AppTheme.spacing.xs),
+                SizedBox(height: AppTheme.spacing.lg),
+
+                // Nome utente
                 Text(
                   user.name,
-                  style: theme.textTheme.titleSmall?.copyWith(
+                  style: theme.textTheme.titleLarge?.copyWith(
                     color: colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                     letterSpacing: -0.5,
                   ),
-                  textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: AppTheme.spacing.xs),
+                SizedBox(height: AppTheme.spacing.sm),
+
+                // Email
                 Text(
                   user.email,
-                  style: theme.textTheme.labelSmall?.copyWith(
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
-                  textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: AppTheme.spacing.xs),
+
+                SizedBox(height: AppTheme.spacing.xl),
+
+                // Role Badge
                 Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        colorScheme.primary.withAlpha(51),
-                        colorScheme.primary.withAlpha(26),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
-                    boxShadow: [
-                      BoxShadow(
-                        color: colorScheme.primary.withAlpha(26),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppTheme.spacing.md,
+                    vertical: AppTheme.spacing.xs,
                   ),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppTheme.spacing.sm,
-                      vertical: AppTheme.spacing.xs,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer.withAlpha(76),
+                    borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
+                  ),
+                  child: Text(
+                    'ATHLETE',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.w600,
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.visibility_outlined,
-                          color: colorScheme.onPrimary,
-                          size: 16,
-                        ),
-                        SizedBox(width: AppTheme.spacing.xs),
-                        Text(
-                          'View',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: colorScheme.onPrimary,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ],
-                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
               ],
@@ -358,5 +417,42 @@ class CoachingScreen extends HookConsumerWidget {
         SnackBar(content: Text('Error navigating to user profile: $e')),
       );
     }
+  }
+
+  void _showAthleteOptions(BuildContext context, UserModel user) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => BottomMenu(
+        title: user.name,
+        subtitle: user.email,
+        leading: Container(
+          padding: EdgeInsets.all(AppTheme.spacing.sm),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withAlpha(76),
+            borderRadius: BorderRadius.circular(AppTheme.radii.md),
+          ),
+          child: Icon(
+            Icons.person_outline,
+            color: colorScheme.primary,
+            size: 24,
+          ),
+        ),
+        items: [
+          BottomMenuItem(
+            title: 'Visualizza Programmi',
+            icon: Icons.visibility_outlined,
+            onTap: () {
+              Navigator.pop(context);
+              _onAthleteCardTap(context, user.id);
+            },
+          ),
+        ],
+      ),
+    );
   }
 }

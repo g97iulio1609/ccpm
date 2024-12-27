@@ -97,7 +97,7 @@ class AppBadge extends StatelessWidget {
         case AppBadgeVariant.gradient:
           return BoxDecoration(
             gradient: LinearGradient(
-              colors: [badgeColor, badgeColor.withOpacity(0.8)],
+              colors: [badgeColor, badgeColor.withAlpha(204)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),

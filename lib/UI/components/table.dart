@@ -47,7 +47,7 @@ class AppTable<T> extends StatelessWidget {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withAlpha(26),
         ),
         boxShadow: AppTheme.elevations.small,
       ),
@@ -175,7 +175,7 @@ class AppTable<T> extends StatelessWidget {
         border: showDividers
             ? Border(
                 bottom: BorderSide(
-                  color: colorScheme.outline.withOpacity(0.1),
+                  color: colorScheme.outline.withAlpha(26),
                 ),
               )
             : null,
@@ -205,7 +205,7 @@ class AppTable<T> extends StatelessWidget {
     final cells = buildCells(row);
     final expansion = buildExpansion?.call(row);
     final backgroundColor = zebra && index % 2 == 1
-        ? colorScheme.surfaceContainerHighest.withOpacity(0.1)
+        ? colorScheme.surfaceContainerHighest.withAlpha(26)
         : Colors.transparent;
 
     return Column(
@@ -221,7 +221,7 @@ class AppTable<T> extends StatelessWidget {
                 border: showDividers && !isLastRow
                     ? Border(
                         bottom: BorderSide(
-                          color: colorScheme.outline.withOpacity(0.1),
+                          color: colorScheme.outline.withAlpha(26),
                         ),
                       )
                     : null,

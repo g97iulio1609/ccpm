@@ -211,7 +211,7 @@ class TrainingProgramPage extends HookConsumerWidget {
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.primary.withOpacity(0.2),
+            color: colorScheme.primary.withAlpha(51),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

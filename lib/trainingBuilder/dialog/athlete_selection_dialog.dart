@@ -192,7 +192,7 @@ class AthleteSelectionDialog extends ConsumerWidget {
                                           theme.textTheme.bodyLarge?.copyWith(
                                         color: colorScheme
                                             .surfaceContainerHighest
-                                            .withOpacity(0.5),
+                                            .withAlpha(128),
                                       ),
                                       prefixIcon: Icon(
                                         Icons.search,
@@ -268,7 +268,7 @@ class AthleteSelectionDialog extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                       boxShadow: [
                         BoxShadow(
-                          color: colorScheme.primary.withOpacity(0.2),
+                          color: colorScheme.primary.withAlpha(51),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),

@@ -68,7 +68,7 @@ class AppRadioSelect<T> extends StatelessWidget {
           Text(
             helperText!,
             style: theme.textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+              color: colorScheme.onSurfaceVariant.withAlpha(179),
             ),
           ),
         ],
@@ -128,7 +128,7 @@ class AppRadioSelect<T> extends StatelessWidget {
           border: Border.all(
             color: isSelected
                 ? colorScheme.primary
-                : colorScheme.outline.withOpacity(0.1),
+                : colorScheme.outline.withAlpha(26),
             width: isSelected ? 2 : 1,
           ),
         ),

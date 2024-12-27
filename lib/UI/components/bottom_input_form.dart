@@ -215,7 +215,7 @@ class BottomInputForm extends StatelessWidget {
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: theme.textTheme.bodyLarge?.copyWith(
-            color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+            color: colorScheme.onSurfaceVariant.withAlpha(179),
           ),
           prefixIcon: Icon(
             icon,
@@ -251,7 +251,7 @@ class BottomInputForm extends StatelessWidget {
             ? LinearGradient(
                 colors: [
                   colorScheme.primary,
-                  colorScheme.primary.withOpacity(0.8),
+                  colorScheme.primary.withAlpha(204),
                 ],
               )
             : null,
@@ -262,7 +262,7 @@ class BottomInputForm extends StatelessWidget {
         boxShadow: isPrimary
             ? [
                 BoxShadow(
-                  color: colorScheme.primary.withOpacity(0.2),
+                  color: colorScheme.primary.withAlpha(51),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),

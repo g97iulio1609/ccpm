@@ -46,7 +46,7 @@ class DatePickerField extends StatelessWidget {
           Text(
             helperText!,
             style: theme.textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+              color: colorScheme.onSurfaceVariant.withAlpha(179),
             ),
           ),
         ],
@@ -60,7 +60,7 @@ class DatePickerField extends StatelessWidget {
               color: colorScheme.surfaceContainerHighest.withAlpha(76),
               borderRadius: BorderRadius.circular(AppTheme.radii.lg),
               border: Border.all(
-                color: colorScheme.outline.withOpacity(0.1),
+                color: colorScheme.outline.withAlpha(26),
               ),
             ),
             child: Row(
@@ -133,7 +133,7 @@ class DatePickerField extends StatelessWidget {
               color: colorScheme.surface,
               borderRadius: BorderRadius.circular(AppTheme.radii.xl),
               border: Border.all(
-                color: colorScheme.outline.withOpacity(0.1),
+                color: colorScheme.outline.withAlpha(26),
               ),
               boxShadow: AppTheme.elevations.large,
             ),

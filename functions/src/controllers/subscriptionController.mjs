@@ -3,7 +3,7 @@ import { SubscriptionService } from '../services/subscriptionService.mjs';
 import { AuthMiddleware } from '../middleware/auth.mjs';
 import { ResponseHandler } from '../utils/responseHandler.mjs';
 import { stripe, stripeWebhookSecret } from '../config/stripe.mjs';
-import { firestore, auth } from '../config/firebase.mjs';
+import { firestore } from '../config/firebase.mjs';
 import express from 'express';
 import cors from 'cors';
 
@@ -24,16 +24,16 @@ app.post('/handleWebhookEvents', async (req, res) => {
   }
 
   try {
-    // Gestisci diversi tipi di eventi
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object;
-        await handleWebhookPayment(session);
+        await handleSuccessfulPayment(session);
         break;
       }
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted': {
-        await handleSubscriptionUpdate(event.data.object);
+        const subscription = event.data.object;
+        await handleSubscriptionUpdate(subscription);
         break;
       }
       default:
@@ -47,6 +47,38 @@ app.post('/handleWebhookEvents', async (req, res) => {
   }
 });
 
+// Funzione per gestire pagamenti riusciti
+async function handleSuccessfulPayment(session) {
+  const userId = session.client_reference_id;
+  const subscriptionId = session.subscription;
+
+  try {
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const productId = subscription.items.data[0].price.product;
+
+    const productDoc = await firestore.collection('products').doc(productId).get();
+    if (!productDoc.exists) {
+      return;
+    }
+    const product = productDoc.data();
+
+    const role = product.role || 'client_premium';
+
+    await firestore.collection('users').doc(userId).update({
+      role: role,
+      subscriptionId: subscriptionId,
+      subscriptionStatus: 'active',
+      subscriptionProductId: productId,
+      subscriptionPlatform: 'stripe',
+      subscriptionStartDate: new Date(),
+      subscriptionExpiryDate: new Date(subscription.current_period_end * 1000),
+    });
+  } catch (error) {
+    console.error('Error in handleSuccessfulPayment:', error);
+  }
+}
+
+// Funzione per gestire aggiornamenti delle sottoscrizioni
 async function handleSubscriptionUpdate(subscription) {
   try {
     const customerId = subscription.customer;
@@ -89,96 +121,80 @@ async function handleSubscriptionUpdate(subscription) {
   }
 }
 
-async function handleWebhookPayment(session) {
-  const userId = session.client_reference_id;
-  const subscriptionId = session.subscription;
-
-  try {
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-    const productId = subscription.items.data[0].price.product;
-
-    const productDoc = await firestore.collection('products').doc(productId).get();
-    if (!productDoc.exists) {
-      return;
-    }
-    const product = productDoc.data();
-    const role = product.role || 'client_premium';
-
-    await firestore.collection('users').doc(userId).update({
-      role: role,
-      subscriptionId: subscriptionId,
-      subscriptionStatus: 'active',
-      subscriptionProductId: productId,
-      subscriptionPlatform: 'stripe',
-      subscriptionStartDate: new Date(),
-      subscriptionExpiryDate: new Date(subscription.current_period_end * 1000),
-    });
-  } catch (error) {
-    console.error('Errore nel gestire il pagamento webhook:', error);
-  }
-}
-
-// Esporta l'app Express come una Cloud Function
 export const handleWebhookEventsFunction = onRequest({ 
   cors: true,
   region: 'europe-west1' 
 }, app);
 
-export const createCheckoutSession = onRequest({
-  cors: true,
-  region: 'europe-west1'
-}, async (request, response) => {
-  if (request.method === 'OPTIONS') return ResponseHandler.handleOptions(response);
+export const createCheckoutSession = onCall(async (request) => {
+  if (!request.auth) {
+    throw new Error('Devi essere autenticato per creare una sessione di checkout.');
+  }
+
+  const { productId } = request.data;
+  const userId = request.auth.uid;
 
   try {
-    const { userId, productId } = request.body;
-    if (!userId) return ResponseHandler.unauthorized(response);
+    const userDoc = await firestore.collection('users').doc(userId).get();
+    if (!userDoc.exists) {
+      throw new Error('Utente non trovato.');
+    }
 
-    await AuthMiddleware.verifyUser(userId);
-    const session = await SubscriptionService.createCheckoutSession(userId, productId);
-    ResponseHandler.success(response, session);
+    const userData = userDoc.data();
+    const userEmail = userData.email;
+
+    const productDoc = await firestore.collection('products').doc(productId).get();
+    if (!productDoc.exists) {
+      throw new Error('Prodotto non trovato.');
+    }
+
+    const product = productDoc.data();
+
+    if (!product.stripePriceId) {
+      throw new Error('Il prodotto non ha un ID prezzo Stripe.');
+    }
+
+    // Crea o recupera il cliente Stripe
+    let customer;
+    const existingCustomers = await stripe.customers.list({ email: userEmail, limit: 1 });
+    if (existingCustomers.data.length > 0) {
+      customer = existingCustomers.data[0];
+    } else {
+      customer = await stripe.customers.create({
+        email: userEmail,
+        metadata: { firebaseUid: userId },
+      });
+
+      await firestore.collection('users').doc(userId).update({
+        stripeCustomerId: customer.id,
+      });
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      ui_mode: 'embedded',
+      payment_method_types: ['card'],
+      line_items: [{
+        price: product.stripePriceId,
+        quantity: 1,
+      }],
+      mode: 'subscription',
+      return_url: `https://alphaness.online/success?session_id={CHECKOUT_SESSION_ID}`,
+      customer: customer.id,
+      client_reference_id: userId,
+      expand: ['payment_intent'],
+    });
+
+    return { 
+      success: true,
+      clientSecret: session.client_secret,
+      sessionId: session.id
+    };
   } catch (error) {
-    ResponseHandler.error(response, error);
+    throw new Error('Impossibile creare la sessione di checkout: ' + error.message);
   }
 });
 
-export const cancelSubscription = onRequest({
-  cors: true,
-  region: 'europe-west1'
-}, async (request, response) => {
-  if (request.method === 'OPTIONS') return ResponseHandler.handleOptions(response);
-
-  try {
-    const { userId } = request.body;
-    if (!userId) return ResponseHandler.unauthorized(response);
-
-    await AuthMiddleware.verifyUser(userId);
-    const result = await SubscriptionService.cancelSubscription(userId);
-    ResponseHandler.success(response, result);
-  } catch (error) {
-    ResponseHandler.error(response, error);
-  }
-});
-
-export const updateSubscription = onRequest({
-  cors: true,
-  region: 'europe-west1'
-}, async (request, response) => {
-  if (request.method === 'OPTIONS') return ResponseHandler.handleOptions(response);
-
-  try {
-    const { userId, newPriceId } = request.body;
-    if (!userId || !newPriceId) return ResponseHandler.unauthorized(response);
-
-    await AuthMiddleware.verifyUser(userId);
-    const result = await SubscriptionService.updateSubscription(userId, newPriceId);
-    ResponseHandler.success(response, result);
-  } catch (error) {
-    ResponseHandler.error(response, error);
-  }
-});
-
-export const getSubscriptionDetails = onRequest({
+export const retrieveCheckoutSession = onRequest({
   cors: true,
   region: 'europe-west1'
 }, async (request, response) => {
@@ -187,44 +203,45 @@ export const getSubscriptionDetails = onRequest({
   }
 
   try {
-    const authHeader = request.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      response.status(401).json({ error: 'Token di autenticazione mancante o non valido.' });
-      return;
+    const { sessionId } = request.body;
+    if (!sessionId) {
+      return ResponseHandler.error(response, new Error('sessionId è richiesto'), 400);
     }
 
-    const idToken = authHeader.split('Bearer ')[1];
-    const decodedToken = await auth.verifyIdToken(idToken);
-    const authenticatedUserId = decodedToken.uid;
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    ResponseHandler.success(response, {
+      success: true,
+      session
+    });
+  } catch (error) {
+    console.error('Error in retrieveCheckoutSession:', error);
+    ResponseHandler.error(response, error);
+  }
+});
 
-    const { userId } = request.body;
-    const targetUserId = userId || authenticatedUserId;
+export const getSubscriptionDetails = onCall(async (request) => {
+  if (!request.auth) {
+    throw new Error('Devi essere autenticato.');
+  }
 
-    if (userId && userId !== authenticatedUserId) {
-      const adminDoc = await firestore.collection('users').doc(authenticatedUserId).get();
-      if (!adminDoc.exists || adminDoc.data().role !== 'admin') {
-        response.status(403).json({ error: 'Non hai i permessi per visualizzare i dettagli di questo utente.' });
-        return;
-      }
-    }
+  const userId = request.auth.uid;
 
-    const userDoc = await firestore.collection('users').doc(targetUserId).get();
+  try {
+    const userDoc = await firestore.collection('users').doc(userId).get();
     if (!userDoc.exists) {
-      response.status(404).json({ error: 'Utente non trovato.' });
-      return;
+      throw new Error('Utente non trovato.');
     }
 
     const userData = userDoc.data();
     const subscriptionId = userData.subscriptionId;
 
     if (!subscriptionId) {
-      response.json({ hasSubscription: false });
-      return;
+      return { hasSubscription: false };
     }
 
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 
-    response.json({
+    return {
       hasSubscription: true,
       subscription: {
         id: subscription.id,
@@ -236,105 +253,9 @@ export const getSubscriptionDetails = onRequest({
           quantity: item.quantity,
         })),
       },
-    });
+    };
   } catch (error) {
-    console.error('Errore in getSubscriptionDetails:', error);
-    if (error.code === 'auth/id-token-expired' || error.code === 'auth/argument-error') {
-      response.status(401).json({ error: 'Token di autenticazione non valido o scaduto.' });
-    } else {
-      response.status(500).json({ error: 'Errore nel recuperare i dettagli della sottoscrizione.' });
-    }
-  }
-});
-
-export const createGiftSubscription = onRequest({
-  cors: true,
-  region: 'europe-west1'
-}, async (request, response) => {
-  if (request.method === 'OPTIONS') return ResponseHandler.handleOptions(response);
-
-  try {
-    const { adminUid, userId, durationInDays } = request.body;
-    await AuthMiddleware.verifyAdmin(adminUid);
-    await AuthMiddleware.verifyUser(userId);
-
-    const result = await SubscriptionService.createGiftSubscription(adminUid, userId, durationInDays);
-    ResponseHandler.success(response, result);
-  } catch (error) {
-    ResponseHandler.error(response, error);
-  }
-});
-
-export const handleSuccessfulPayment = onRequest({
-  cors: true,
-  region: 'europe-west1'
-}, async (request, response) => {
-  if (request.method === 'OPTIONS') return ResponseHandler.handleOptions(response);
-
-  try {
-    const { paymentId, productId, userId } = request.body;
-    if (!userId) return ResponseHandler.unauthorized(response);
-
-    await AuthMiddleware.verifyUser(userId);
-    const result = await SubscriptionService.handleSuccessfulPayment(paymentId, productId, userId);
-    ResponseHandler.success(response, result);
-  } catch (error) {
-    ResponseHandler.error(response, error);
-  }
-});
-
-export const listSubscriptions = onCall({
-  region: 'europe-west1'
-}, async (request) => {
-  if (!request.auth) {
-    throw new Error('Devi essere autenticato.');
-  }
-
-  try {
-    const subscriptions = await SubscriptionService.listUserSubscriptions(request.auth.uid);
-    return { subscriptions };
-  } catch (error) {
-    throw new Error(`Errore nel recuperare le sottoscrizioni: ${error.message}`);
-  }
-});
-
-export const testStripeConnection = onCall({
-  region: 'europe-west1'
-}, async () => {
-  try {
-    const balance = await stripe.balance.retrieve();
-    return { success: true, balance };
-  } catch (error) {
-    throw new Error(`Unable to connect to Stripe: ${error.message}`);
-  }
-});
-
-export const syncStripeSubscription = onRequest({
-  cors: true,
-  region: 'europe-west1'
-}, async (request, response) => {
-  if (request.method === 'OPTIONS') return ResponseHandler.handleOptions(response);
-
-  try {
-    const { userId, syncAll } = request.body;
-
-    if (!userId) {
-      return ResponseHandler.unauthorized(response);
-    }
-
-    if (syncAll) {
-      await AuthMiddleware.verifyAdmin(userId);
-      const result = await SubscriptionService.syncAllSubscriptions();
-      ResponseHandler.success(response, result);
-    } else {
-      const userDoc = await AuthMiddleware.verifyUser(userId);
-      const batch = firestore.batch();
-      const result = await SubscriptionService.syncUserSubscription(userId, userDoc.data().email);
-      await batch.commit();
-      ResponseHandler.success(response, result);
-    }
-  } catch (error) {
-    ResponseHandler.error(response, error);
+    throw new Error('Errore nel recuperare i dettagli della sottoscrizione: ' + error.message);
   }
 });
 
@@ -358,8 +279,215 @@ export const getUserSubscriptionDetails = onCall({
   }
 
   try {
-    return await SubscriptionService.getUserSubscriptionDetails(userId);
+    const userDoc = await firestore.collection('users').doc(userId).get();
+    if (!userDoc.exists) {
+      throw new Error('Utente non trovato.');
+    }
+
+    const userData = userDoc.data();
+    const subscriptionId = userData.subscriptionId;
+
+    if (!subscriptionId) {
+      return { hasSubscription: false };
+    }
+
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+
+    return {
+      hasSubscription: true,
+      subscription: {
+        id: subscription.id,
+        status: subscription.status,
+        current_period_end: subscription.current_period_end,
+        items: subscription.items.data.map(item => ({
+          priceId: item.price.id,
+          productId: item.price.product,
+          quantity: item.quantity,
+        })),
+      },
+    };
   } catch (error) {
-    throw new Error(`Errore nel recuperare i dettagli della sottoscrizione dell'utente: ${error.message}`);
+    throw new Error('Errore nel recuperare i dettagli della sottoscrizione: ' + error.message);
+  }
+});
+
+export const listSubscriptions = onCall({
+  region: 'europe-west1'
+}, async (request) => {
+  if (!request.auth) {
+    throw new Error('Devi essere autenticato.');
+  }
+
+  try {
+    const userDoc = await firestore.collection('users').doc(request.auth.uid).get();
+    const userData = userDoc.data();
+    const userEmail = userData.email;
+
+    if (!userEmail) {
+      throw new Error('Email utente non trovata.');
+    }
+
+    const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
+
+    if (customers.data.length === 0) {
+      throw new Error('Nessun cliente Stripe trovato.');
+    }
+
+    const customer = customers.data[0];
+    const subscriptions = await stripe.subscriptions.list({
+      customer: customer.id,
+      status: 'all',
+      expand: ['data.default_payment_method'],
+    });
+
+    return {
+      subscriptions: subscriptions.data.map(sub => ({
+        id: sub.id,
+        status: sub.status,
+        current_period_end: sub.current_period_end,
+        items: sub.items.data.map(item => ({
+          priceId: item.price.id,
+          productId: item.price.product,
+          quantity: item.quantity,
+        })),
+      })),
+    };
+  } catch (error) {
+    throw new Error('Errore nel recuperare le sottoscrizioni: ' + error.message);
+  }
+});
+
+export const testStripeConnection = onCall({
+  region: 'europe-west1'
+}, async () => {
+  try {
+    const balance = await stripe.balance.retrieve();
+    return { success: true, balance };
+  } catch (error) {
+    throw new Error('Impossibile connettersi a Stripe: ' + error.message);
+  }
+});
+
+export const syncSubscription = onCall({
+  region: 'europe-west1'
+}, async (request) => {
+  if (!request.auth) {
+    throw new Error('Devi essere autenticato.');
+  }
+
+  const callerUid = request.auth.uid;
+  const targetUserId = request.data?.userId || callerUid;
+
+  try {
+    // Se l'utente sta cercando di sincronizzare un altro account, verifica che sia admin
+    if (targetUserId !== callerUid) {
+      const adminDoc = await firestore.collection('users').doc(callerUid).get();
+      if (!adminDoc.exists || adminDoc.data().role !== 'admin') {
+        throw new Error('Non hai i permessi per sincronizzare le sottoscrizioni di altri utenti.');
+      }
+    }
+
+    // Recupera il documento dell'utente target
+    const userDoc = await firestore.collection('users').doc(targetUserId).get();
+    if (!userDoc.exists) {
+      throw new Error('Utente non trovato.');
+    }
+
+    const userData = userDoc.data();
+    const userEmail = userData.email;
+
+    // Prima verifica se l'utente ha già una sottoscrizione in Firestore
+    const currentSubscriptionId = userData.subscriptionId;
+    if (currentSubscriptionId) {
+      try {
+        // Verifica lo stato della sottoscrizione esistente in Stripe
+        const subscription = await stripe.subscriptions.retrieve(currentSubscriptionId);
+        
+        if (subscription.status === 'active') {
+          // Aggiorna i dati in Firestore
+          await firestore.collection('users').doc(targetUserId).update({
+            subscriptionStatus: subscription.status,
+            subscriptionExpiryDate: new Date(subscription.current_period_end * 1000),
+          });
+
+          return {
+            success: true,
+            message: 'Sottoscrizione esistente sincronizzata con successo.',
+            subscription: {
+              id: subscription.id,
+              status: subscription.status,
+              current_period_end: subscription.current_period_end,
+            }
+          };
+        }
+      } catch (stripeError) {
+        console.error('Errore nel recupero della sottoscrizione da Stripe:', stripeError);
+      }
+    }
+
+    // Se non ha una sottoscrizione attiva o c'è stato un errore, cerca nuove sottoscrizioni
+    const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
+    
+    if (customers.data.length === 0) {
+      return { 
+        success: false, 
+        message: `Nessun cliente Stripe trovato per l'utente ${targetUserId}.` 
+      };
+    }
+
+    const customer = customers.data[0];
+    const subscriptions = await stripe.subscriptions.list({
+      customer: customer.id,
+      status: 'active',
+      limit: 1,
+    });
+
+    if (subscriptions.data.length === 0) {
+      // Se non ci sono sottoscrizioni attive, resetta lo stato dell'utente
+      await firestore.collection('users').doc(targetUserId).update({
+        role: 'client',
+        subscriptionStatus: 'inactive',
+        subscriptionId: null,
+        subscriptionExpiryDate: null,
+        subscriptionPlatform: null,
+        subscriptionProductId: null,
+      });
+
+      return { 
+        success: false, 
+        message: `Nessuna sottoscrizione attiva trovata per l'utente ${targetUserId}.` 
+      };
+    }
+
+    // Aggiorna con la nuova sottoscrizione trovata
+    const subscription = subscriptions.data[0];
+    const productId = subscription.items.data[0].price.product;
+    
+    // Recupera il prodotto per ottenere il ruolo corretto
+    const productDoc = await firestore.collection('products').doc(productId).get();
+    const role = productDoc.exists ? productDoc.data().role || 'client_premium' : 'client_premium';
+
+    await firestore.collection('users').doc(targetUserId).update({
+      role: role,
+      subscriptionId: subscription.id,
+      subscriptionStatus: subscription.status,
+      subscriptionProductId: productId,
+      subscriptionPlatform: 'stripe',
+      subscriptionStartDate: new Date(subscription.start_date * 1000),
+      subscriptionExpiryDate: new Date(subscription.current_period_end * 1000),
+    });
+
+    return {
+      success: true,
+      message: `Sottoscrizione sincronizzata con successo per l'utente ${targetUserId}.`,
+      subscription: {
+        id: subscription.id,
+        status: subscription.status,
+        current_period_end: subscription.current_period_end,
+      }
+    };
+  } catch (error) {
+    console.error('Errore nella sincronizzazione:', error);
+    throw new Error(`Errore nella sincronizzazione: ${error.message}`);
   }
 }); 

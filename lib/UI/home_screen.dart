@@ -135,12 +135,12 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                     color: colorScheme.surface,
                     border: Border(
                       right: BorderSide(
-                        color: colorScheme.outline.withOpacity(0.1),
+                        color: colorScheme.outline.withAlpha(26),
                       ),
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: colorScheme.shadow.withOpacity(0.05),
+                        color: colorScheme.shadow.withAlpha(51),
                         blurRadius: 8,
                         offset: const Offset(2, 0),
                       ),

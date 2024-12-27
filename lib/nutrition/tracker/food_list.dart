@@ -54,7 +54,7 @@ class FoodListState extends ConsumerState<FoodList> {
           'Seleziona un utente',
           style: GoogleFonts.roboto(
             fontSize: 16,
-            color: theme.colorScheme.onSurface.withOpacity(0.7),
+            color: theme.colorScheme.onSurface.withAlpha(179),
           ),
         ),
       );

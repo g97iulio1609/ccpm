@@ -64,7 +64,7 @@ class AuthScreen extends HookConsumerWidget {
             color: theme.colorScheme.primary.withAlpha(51),
             boxShadow: [
               BoxShadow(
-                color: theme.colorScheme.primary.withOpacity(0.2),
+                color: theme.colorScheme.primary.withAlpha(51),
                 blurRadius: 30,
                 spreadRadius: 5,
               ),
@@ -113,12 +113,12 @@ class AuthScreen extends HookConsumerWidget {
         color: theme.colorScheme.surface.withAlpha(179),
         borderRadius: BorderRadius.circular(32),
         border: Border.all(
-          color: theme.colorScheme.primary.withOpacity(0.1),
+          color: theme.colorScheme.primary.withAlpha(26),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withAlpha(26),
             blurRadius: 40,
             offset: const Offset(0, 10),
           ),

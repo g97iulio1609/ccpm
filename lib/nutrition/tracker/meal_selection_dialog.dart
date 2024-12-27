@@ -42,7 +42,7 @@ class _MealSelectionDialogState extends ConsumerState<MealSelectionDialog> {
       leading: Container(
         padding: EdgeInsets.all(AppTheme.spacing.sm),
         decoration: BoxDecoration(
-          color: colorScheme.primary.withOpacity(0.2),
+          color: colorScheme.primary.withAlpha(51),
           borderRadius: BorderRadius.circular(AppTheme.radii.md),
         ),
         child: Icon(
@@ -91,7 +91,7 @@ class _MealSelectionDialogState extends ConsumerState<MealSelectionDialog> {
                 value: _showFavorites,
                 onChanged: (value) => setState(() => _showFavorites = value),
                 activeColor: colorScheme.primary,
-                activeTrackColor: colorScheme.primary.withOpacity(0.2),
+                activeTrackColor: colorScheme.primary.withAlpha(51),
               ),
               SizedBox(width: AppTheme.spacing.md),
               Text(
@@ -207,7 +207,7 @@ class _MealSelectionDialogState extends ConsumerState<MealSelectionDialog> {
                                 color: (isSelected
                                         ? colorScheme.primary
                                         : colorScheme.surfaceContainerHighest)
-                                    .withOpacity(0.2),
+                                    .withAlpha(51),
                                 borderRadius:
                                     BorderRadius.circular(AppTheme.radii.md),
                               ),

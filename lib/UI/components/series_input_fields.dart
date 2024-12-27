@@ -99,10 +99,10 @@ class SeriesInputFields extends HookConsumerWidget {
     return Container(
       margin: EdgeInsets.only(bottom: AppTheme.spacing.md),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withOpacity(0.1),
+        color: colorScheme.surfaceContainerHighest.withAlpha(26),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withAlpha(26),
         ),
       ),
       child: Padding(

@@ -36,7 +36,7 @@ class AppSnackbar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     final snackbarColor = _getSnackbarColor(colorScheme);
     final snackbarIcon = icon ?? _getSnackbarIcon();
 
@@ -49,11 +49,11 @@ class AppSnackbar extends StatelessWidget {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withAlpha(26),
         ),
         boxShadow: [
           BoxShadow(
-            color: snackbarColor.withOpacity(0.1),
+            color: snackbarColor.withAlpha(26),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -67,7 +67,7 @@ class AppSnackbar extends StatelessWidget {
           if (showProgressBar) ...[
             LinearProgressIndicator(
               value: progressValue,
-              backgroundColor: snackbarColor.withOpacity(0.1),
+              backgroundColor: snackbarColor.withAlpha(26),
               valueColor: AlwaysStoppedAnimation<Color>(snackbarColor),
               minHeight: 2,
             ),
@@ -86,8 +86,9 @@ class AppSnackbar extends StatelessWidget {
                       Container(
                         padding: EdgeInsets.all(AppTheme.spacing.sm),
                         decoration: BoxDecoration(
-                          color: snackbarColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(AppTheme.radii.md),
+                          color: snackbarColor.withAlpha(26),
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radii.md),
                         ),
                         child: Icon(
                           snackbarIcon,
@@ -125,7 +126,7 @@ class AppSnackbar extends StatelessWidget {
                     decoration: BoxDecoration(
                       border: Border(
                         top: BorderSide(
-                          color: colorScheme.outline.withOpacity(0.1),
+                          color: colorScheme.outline.withAlpha(26),
                         ),
                       ),
                     ),
@@ -308,4 +309,4 @@ class AppSnackbar extends StatelessWidget {
       progressValue: progressValue,
     );
   }
-} 
+}

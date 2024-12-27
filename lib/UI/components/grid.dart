@@ -49,7 +49,7 @@ class AppGrid extends StatelessWidget {
         color: backgroundColor ?? colorScheme.surface,
         borderRadius: borderRadius ?? BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withAlpha(26),
         ),
         boxShadow: AppTheme.elevations.small,
       ),
@@ -109,7 +109,7 @@ class AppGrid extends StatelessWidget {
             if (showDividers)
               Divider(
                 height: 1,
-                color: colorScheme.outline.withOpacity(0.1),
+                color: colorScheme.outline.withAlpha(26),
               ),
           ],
 
@@ -247,7 +247,7 @@ class GridCell extends StatelessWidget {
         border: Border.all(
           color: isSelected
               ? colorScheme.primary
-              : colorScheme.outline.withOpacity(0.1),
+              : colorScheme.outline.withAlpha(26),
           width: isSelected ? 2 : 1,
         ),
       ),

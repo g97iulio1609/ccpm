@@ -207,7 +207,9 @@ class AppRouter {
               ),
               GoRoute(
                 path: Routes.status,
-                builder: (context, state) => SubscriptionsScreen(),
+                builder: (context, state) => SubscriptionsScreen(
+                  userId: FirebaseAuth.instance.currentUser!.uid,
+                ),
               ),
               GoRoute(
                 path: Routes.measurements,
@@ -348,7 +350,7 @@ class AppRouter {
                 builder: (context, state) => const MaxRMDashboard(),
                 routes: [
                   GoRoute(
-                    path: Routes.exerciseStats,
+                    path: 'exercise_stats',
                     builder: (context, state) {
                       final extra = state.extra as Map<String, dynamic>;
                       final exercise = extra['exercise'] as ExerciseModel;

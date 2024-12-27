@@ -208,7 +208,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withOpacity(0.5),
+              colorScheme.surfaceContainerHighest.withAlpha(128),
             ],
             stops: const [0.0, 1.0],
           ),
@@ -297,13 +297,13 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
                       gradient: LinearGradient(
                         colors: [
                           colorScheme.primary,
-                          colorScheme.primary.withOpacity(0.8),
+                          colorScheme.primary.withAlpha(204),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                       boxShadow: [
                         BoxShadow(
-                          color: colorScheme.primary.withOpacity(0.2),
+                          color: colorScheme.primary.withAlpha(51),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -626,7 +626,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
             ? LinearGradient(
                 colors: [
                   colorScheme.primary,
-                  colorScheme.primary.withOpacity(0.8),
+                  colorScheme.primary.withAlpha(204),
                 ],
               )
             : null,
@@ -637,7 +637,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
         boxShadow: isPrimary
             ? [
                 BoxShadow(
-                  color: colorScheme.primary.withOpacity(0.2),
+                  color: colorScheme.primary.withAlpha(51),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),

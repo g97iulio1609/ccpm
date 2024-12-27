@@ -34,11 +34,11 @@ class IconButtonWithBackground extends StatelessWidget {
             ? LinearGradient(
                 colors: [
                   color,
-                  color.withOpacity(0.8),
+                  color.withAlpha(204),
                 ],
               )
             : null,
-        color: isGradient ? null : color.withOpacity(0.1),
+        color: isGradient ? null : color.withAlpha(26),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: isOutlined
             ? Border.all(
@@ -49,7 +49,7 @@ class IconButtonWithBackground extends StatelessWidget {
         boxShadow: isGradient
             ? [
                 BoxShadow(
-                  color: color.withOpacity(0.2),
+                  color: color.withAlpha(51),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),

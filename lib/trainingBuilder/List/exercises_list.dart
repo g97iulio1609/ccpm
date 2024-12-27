@@ -21,6 +21,7 @@ import 'package:alphanessone/UI/components/bottom_menu.dart';
 import 'package:go_router/go_router.dart';
 import 'package:alphanessone/trainingBuilder/series_utils.dart';
 import 'package:alphanessone/UI/components/weight_input_fields.dart';
+import 'package:alphanessone/UI/components/button.dart';
 
 // Controller per i range di valori
 class RangeControllers {
@@ -709,6 +710,10 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
     final dateFormat = DateFormat('yyyy-MM-dd');
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isListMode = screenWidth < 600;
+    final padding = AppTheme.spacing.md;
+    final spacing = AppTheme.spacing.md;
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -719,7 +724,7 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withOpacity(0.5),
+              colorScheme.surfaceContainerHighest.withAlpha(128),
             ],
             stops: const [0.0, 1.0],
           ),
@@ -727,29 +732,62 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
         child: SafeArea(
           child: CustomScrollView(
             slivers: [
-              // Exercises List
               SliverPadding(
-                padding: EdgeInsets.all(AppTheme.spacing.xl),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      if (index == exercises.length) {
-                        return _buildAddExerciseButton(
-                            context, colorScheme, theme);
-                      }
-                      return _buildExerciseCard(
-                        context,
-                        exercises[index],
-                        exerciseRecordService,
-                        athleteId,
-                        dateFormat,
-                        theme,
-                        colorScheme,
-                      );
-                    },
-                    childCount: exercises.length + 1,
-                  ),
-                ),
+                padding: EdgeInsets.all(padding),
+                sliver: isListMode
+                    ? SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            if (index == exercises.length) {
+                              return Padding(
+                                padding: EdgeInsets.only(top: spacing),
+                                child: _buildAddExerciseButton(
+                                    context, colorScheme, theme),
+                              );
+                            }
+                            return Padding(
+                              padding: EdgeInsets.only(bottom: spacing),
+                              child: _buildExerciseCard(
+                                context,
+                                exercises[index],
+                                exerciseRecordService,
+                                athleteId,
+                                dateFormat,
+                                theme,
+                                colorScheme,
+                              ),
+                            );
+                          },
+                          childCount: exercises.length + 1,
+                        ),
+                      )
+                    : SliverGrid(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            if (index == exercises.length) {
+                              return _buildAddExerciseButton(
+                                  context, colorScheme, theme);
+                            }
+                            return _buildExerciseCard(
+                              context,
+                              exercises[index],
+                              exerciseRecordService,
+                              athleteId,
+                              dateFormat,
+                              theme,
+                              colorScheme,
+                            );
+                          },
+                          childCount: exercises.length + 1,
+                        ),
+                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 600,
+                          mainAxisSpacing: spacing,
+                          crossAxisSpacing: spacing,
+                          mainAxisExtent: 400,
+                          childAspectRatio: 0.8,
+                        ),
+                      ),
               ),
             ],
           ),
@@ -782,12 +820,11 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
         final latestMaxWeight = snapshot.data ?? 0;
 
         return Container(
-          margin: EdgeInsets.only(bottom: AppTheme.spacing.md),
           decoration: BoxDecoration(
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(AppTheme.radii.lg),
             border: Border.all(
-              color: colorScheme.outline.withOpacity(0.1),
+              color: colorScheme.outline.withAlpha(26),
             ),
             boxShadow: AppTheme.elevations.small,
           ),
@@ -890,9 +927,7 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
                           ),
                         ],
                       ),
-
                       SizedBox(height: AppTheme.spacing.md),
-
                       // Exercise Name and Variant
                       Text(
                         exercise.name,
@@ -901,8 +936,9 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
                           fontWeight: FontWeight.w600,
                           letterSpacing: -0.5,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-
                       if (exercise.variant.isNotEmpty &&
                           exercise.variant != '') ...[
                         SizedBox(height: AppTheme.spacing.xs),
@@ -911,21 +947,31 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
                           style: theme.textTheme.bodyLarge?.copyWith(
                             color: colorScheme.onSurfaceVariant,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
-
-                      SizedBox(height: AppTheme.spacing.lg),
-
+                      SizedBox(height: AppTheme.spacing.md),
                       // Series List
-                      TrainingProgramSeriesList(
-                        controller: controller,
-                        exerciseRecordService: exerciseRecordService,
-                        weekIndex: weekIndex,
-                        workoutIndex: workoutIndex,
-                        exerciseIndex: exercise.order - 1,
-                        exerciseType: exercise.type,
+                      // Rimosso Expanded per evitare conflitti con Sliver
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          return Container(
+                            constraints: BoxConstraints(
+                              maxHeight:
+                                  200, // Imposta un'altezza massima se necessario
+                            ),
+                            child: TrainingProgramSeriesList(
+                              controller: controller,
+                              exerciseRecordService: exerciseRecordService,
+                              weekIndex: weekIndex,
+                              workoutIndex: workoutIndex,
+                              exerciseIndex: exercise.order - 1,
+                              exerciseType: exercise.type,
+                            ),
+                          );
+                        },
                       ),
-
                       // Superset Badge
                       if (superSets.isNotEmpty) ...[
                         SizedBox(height: AppTheme.spacing.md),
@@ -935,8 +981,7 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
                             vertical: AppTheme.spacing.xs,
                           ),
                           decoration: BoxDecoration(
-                            color:
-                                colorScheme.secondaryContainer.withOpacity(0.3),
+                            color: colorScheme.secondaryContainer.withAlpha(77),
                             borderRadius:
                                 BorderRadius.circular(AppTheme.radii.lg),
                           ),
@@ -976,52 +1021,20 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
     ColorScheme colorScheme,
     ThemeData theme,
   ) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            colorScheme.primary,
-            colorScheme.primary.withOpacity(0.8),
-          ],
+    final isSmallScreen = MediaQuery.of(context).size.width < 600;
+    return Center(
+      child: Container(
+        constraints: BoxConstraints(
+          maxWidth: isSmallScreen ? double.infinity : 300,
         ),
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.primary.withOpacity(0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => controller.addExercise(weekIndex, workoutIndex, context),
-          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              vertical: AppTheme.spacing.lg,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.add_circle_outline,
-                  color: colorScheme.onPrimary,
-                  size: 24,
-                ),
-                SizedBox(width: AppTheme.spacing.sm),
-                Text(
-                  'Add Exercise',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: colorScheme.onPrimary,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
+        child: AppButton(
+          label: 'Add Exercise',
+          icon: Icons.add_circle_outline,
+          variant: AppButtonVariant.primary,
+          size: isSmallScreen ? AppButtonSize.sm : AppButtonSize.md,
+          block: true,
+          onPressed: () =>
+              controller.addExercise(weekIndex, workoutIndex, context),
         ),
       ),
     );

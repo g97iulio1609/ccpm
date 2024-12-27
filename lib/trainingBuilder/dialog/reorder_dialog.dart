@@ -45,7 +45,7 @@ class ReorderDialogState extends State<ReorderDialog> {
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withAlpha(77),
                 borderRadius: BorderRadius.vertical(
                   top: Radius.circular(AppTheme.radii.xl),
                 ),
@@ -188,7 +188,7 @@ class ReorderDialogState extends State<ReorderDialog> {
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withAlpha(77),
                 borderRadius: BorderRadius.vertical(
                   bottom: Radius.circular(AppTheme.radii.xl),
                 ),
@@ -207,7 +207,7 @@ class ReorderDialogState extends State<ReorderDialog> {
                       borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                       boxShadow: [
                         BoxShadow(
-                          color: colorScheme.primary.withOpacity(0.2),
+                          color: colorScheme.primary.withAlpha(51),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),

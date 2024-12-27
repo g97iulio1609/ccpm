@@ -24,7 +24,6 @@ class NutritionService {
       final data = snapshot.docs.first.data();
       return NutritionStats.fromMap(data);
     } catch (e) {
-      print('Error getting daily stats: $e');
       return null;
     }
   }
@@ -50,8 +49,6 @@ class NutritionService {
       } else {
         await snapshot.docs.first.reference.update(stats.toMap());
       }
-    } catch (e) {
-      print('Error updating daily stats: $e');
-    }
+    } catch (e) {}
   }
 }
