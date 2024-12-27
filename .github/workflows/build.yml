@@ -17,44 +17,56 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Configura Java 17 utilizzando l'azione setup-java
+      # 2. (Opzionale) Rimuove eventuale riferimento a org.gradle.java.home 
+      #    dal file android/gradle.properties se presente
+      - name: Remove org.gradle.java.home if present
+        run: |
+          if [ -f android/gradle.properties ]; then
+            sed -i '' '/org.gradle.java.home/d' android/gradle.properties
+            cat android/gradle.properties
+          fi
+
+      # 3. Configura Java 17 utilizzando l'azione setup-java
       - name: Set up Java
         uses: actions/setup-java@v3
         with:
-          distribution: 'temurin'  # Puoi anche usare 'adoptium' se preferisci
+          distribution: 'temurin'
           java-version: '17'
+          # Se vuoi usare la versione più recente della major 17, abilita:
+          # check-latest: true
+          # Se vuoi abilitare la cache di Gradle, puoi aggiungere:
+          # cache: 'gradle'
 
-      # 3. Configura Flutter utilizzando l'azione aggiornata
+      # 4. Configura Flutter utilizzando l'azione aggiornata
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
-
         with:
           flutter-version: '3.27.1'
 
-      # 4. Disabilita le analitiche di Flutter (opzionale)
+      # 5. Disabilita le analitiche di Flutter (opzionale)
       - name: Disable Flutter Analytics
         run: flutter config --no-analytics
 
-      # 5. Installa le dipendenze di Flutter
+      # 6. Installa le dipendenze di Flutter
       - name: Install dependencies
         run: flutter pub get
 
-      # 6. Costruisci l'Android App Bundle (.aab) in modalità release
+      # 7. Costruisci l'Android App Bundle (.aab) in modalità release
       - name: Build Android App Bundle
         run: flutter build appbundle --release
 
-      # 7. Carica l'App Bundle (.aab) come artifact
+      # 8. Carica l'App Bundle (.aab) come artifact
       - name: Upload Android AAB
         uses: actions/upload-artifact@v3
         with:
           name: myapp-aab
           path: build/app/outputs/bundle/release/*.aab
 
-      # 8. Costruisci l'IPA per iOS senza code signing
+      # 9. Costruisci l'IPA per iOS senza code signing
       - name: Build iOS IPA
         run: flutter build ipa --release --no-codesign
 
-      # 9. Carica l'IPA come artifact
+      # 10. Carica l'IPA come artifact
       - name: Upload IPA
         uses: actions/upload-artifact@v3
         with:
