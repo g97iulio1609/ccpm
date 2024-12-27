@@ -9,6 +9,7 @@ import '../../models/exercise_record.dart';
 import '../../exerciseManager/exercise_model.dart';
 import '../providers/providers.dart';
 import 'package:alphanessone/UI/appBar_custom.dart';
+import 'package:alphanessone/Main/app_theme.dart';
 
 class ExerciseStats extends HookConsumerWidget {
   final ExerciseModel exercise;
@@ -27,6 +28,8 @@ class ExerciseStats extends HookConsumerWidget {
       userId: userId,
       exerciseId: exercise.id,
     );
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     useEffect(() {
       Future.microtask(() {
@@ -41,53 +44,137 @@ class ExerciseStats extends HookConsumerWidget {
     }, [exercise.name]);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      body: SafeArea(
-        child: StreamBuilder<List<ExerciseRecord>>(
-          stream: recordsStream,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
+      backgroundColor: colorScheme.surface,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              colorScheme.surface,
+              colorScheme.surfaceContainerHighest.withAlpha(128),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: StreamBuilder<List<ExerciseRecord>>(
+            stream: recordsStream,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(
+                  child: CircularProgressIndicator(
+                    color: colorScheme.primary,
+                  ),
+                );
+              }
 
-            if (snapshot.hasError) {
-              return Center(child: Text('Error: ${snapshot.error}'));
-            }
+              if (snapshot.hasError) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 48,
+                        color: colorScheme.error,
+                      ),
+                      SizedBox(height: AppTheme.spacing.md),
+                      Text(
+                        'Error: ${snapshot.error}',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: colorScheme.error,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
 
-            final records = snapshot.data ?? [];
+              final records = snapshot.data ?? [];
 
-            if (records.isEmpty) {
-              return const Center(
-                  child: Text('No records found for this exercise.'));
-            }
+              if (records.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.fitness_center_outlined,
+                        size: 64,
+                        color: colorScheme.onSurfaceVariant.withAlpha(128),
+                      ),
+                      SizedBox(height: AppTheme.spacing.md),
+                      Text(
+                        'No Records Found',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(height: AppTheme.spacing.sm),
+                      Text(
+                        'Start adding your max records',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: colorScheme.onSurfaceVariant.withAlpha(128),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
 
-            return SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      '${exercise.name} - ${exercise.muscleGroups.join(", ")}',
-                      style:
-                          Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.onSurface,
+              return CustomScrollView(
+                slivers: [
+                  SliverPadding(
+                    padding: EdgeInsets.all(AppTheme.spacing.xl),
+                    sliver: SliverToBoxAdapter(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildPerformanceSummary(records, context),
+                          SizedBox(height: AppTheme.spacing.xl),
+                          if (records.length > 1) ...[
+                            Text(
+                              'Progress Chart',
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                color: colorScheme.onSurface,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: -0.5,
                               ),
-                      textAlign: TextAlign.center,
+                            ),
+                            SizedBox(height: AppTheme.spacing.lg),
+                            Container(
+                              padding: EdgeInsets.all(AppTheme.spacing.lg),
+                              decoration: BoxDecoration(
+                                color: colorScheme.surface,
+                                borderRadius:
+                                    BorderRadius.circular(AppTheme.radii.lg),
+                                border: Border.all(
+                                  color: colorScheme.outline.withAlpha(26),
+                                ),
+                                boxShadow: AppTheme.elevations.small,
+                              ),
+                              child: _buildPerformanceChart(records, context),
+                            ),
+                          ],
+                          SizedBox(height: AppTheme.spacing.xl),
+                          Text(
+                            'History',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              color: colorScheme.onSurface,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          SizedBox(height: AppTheme.spacing.lg),
+                          _buildRecordList(records, context, ref),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    _buildPerformanceSummary(records, context),
-                    const SizedBox(height: 24),
-                    if (records.length > 1)
-                      _buildPerformanceChart(records, context),
-                    const SizedBox(height: 24),
-                    _buildRecordList(records, context, ref),
-                  ],
-                ),
-              ),
-            );
-          },
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
@@ -95,34 +182,41 @@ class ExerciseStats extends HookConsumerWidget {
 
   Widget _buildPerformanceSummary(
       List<ExerciseRecord> records, BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     if (records.length < 2) {
-      return Card(
-        elevation: 4,
-        color: Theme.of(context).colorScheme.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Performance Summary',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                records.isEmpty
-                    ? 'No records available to display.'
-                    : 'Not enough records to show performance summary.',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-              ),
-            ],
+      return Container(
+        padding: EdgeInsets.all(AppTheme.spacing.lg),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          border: Border.all(
+            color: colorScheme.outline.withAlpha(26),
           ),
+          boxShadow: AppTheme.elevations.small,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Performance Summary',
+              style: theme.textTheme.titleLarge?.copyWith(
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.5,
+              ),
+            ),
+            SizedBox(height: AppTheme.spacing.md),
+            Text(
+              records.isEmpty
+                  ? 'No records available to display.'
+                  : 'Not enough records to show performance summary.',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -132,49 +226,215 @@ class ExerciseStats extends HookConsumerWidget {
     final improvement = latestRecord.maxWeight - oldestRecord.maxWeight;
     final improvementPercentage = (improvement / oldestRecord.maxWeight) * 100;
 
-    return Card(
-      elevation: 4,
-      color: Theme.of(context).colorScheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Performance Summary',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-            ),
-            const SizedBox(height: 12),
-            Text('Latest Max Weight: ${latestRecord.maxWeight} kg',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyLarge
-                    ?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
-            Text('Initial Max Weight: ${oldestRecord.maxWeight} kg',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyLarge
-                    ?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
-            const SizedBox(height: 8),
-            Text(
-              'Improvement: ${improvement.toStringAsFixed(2)} kg (${improvementPercentage.toStringAsFixed(2)}%)',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: improvement >= 0 ? Colors.green : Colors.red,
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-          ],
+    return Container(
+      padding: EdgeInsets.all(AppTheme.spacing.lg),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: colorScheme.outline.withAlpha(26),
         ),
+        boxShadow: AppTheme.elevations.small,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Performance Summary',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppTheme.spacing.md,
+                  vertical: AppTheme.spacing.xs,
+                ),
+                decoration: BoxDecoration(
+                  color: improvement >= 0
+                      ? colorScheme.tertiaryContainer.withAlpha(76)
+                      : colorScheme.errorContainer.withAlpha(76),
+                  borderRadius: BorderRadius.circular(AppTheme.radii.full),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      improvement >= 0
+                          ? Icons.trending_up
+                          : Icons.trending_down,
+                      size: 16,
+                      color: improvement >= 0
+                          ? colorScheme.tertiary
+                          : colorScheme.error,
+                    ),
+                    SizedBox(width: AppTheme.spacing.xs),
+                    Text(
+                      '${improvementPercentage.abs().toStringAsFixed(1)}%',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: improvement >= 0
+                            ? colorScheme.tertiary
+                            : colorScheme.error,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppTheme.spacing.lg),
+          Row(
+            children: [
+              Expanded(
+                child: _buildSummaryCard(
+                  context,
+                  'Latest Max',
+                  '${latestRecord.maxWeight} kg',
+                  DateFormat('MMM d, y').format(latestRecord.date),
+                  colorScheme.primaryContainer.withAlpha(76),
+                  colorScheme.primary,
+                ),
+              ),
+              SizedBox(width: AppTheme.spacing.md),
+              Expanded(
+                child: _buildSummaryCard(
+                  context,
+                  'Initial Max',
+                  '${oldestRecord.maxWeight} kg',
+                  DateFormat('MMM d, y').format(oldestRecord.date),
+                  colorScheme.secondaryContainer.withAlpha(76),
+                  colorScheme.secondary,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppTheme.spacing.md),
+          Container(
+            padding: EdgeInsets.all(AppTheme.spacing.md),
+            decoration: BoxDecoration(
+              color: improvement >= 0
+                  ? colorScheme.tertiaryContainer.withAlpha(26)
+                  : colorScheme.errorContainer.withAlpha(26),
+              borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+              border: Border.all(
+                color: (improvement >= 0
+                        ? colorScheme.tertiary
+                        : colorScheme.error)
+                    .withAlpha(51),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(AppTheme.spacing.sm),
+                  decoration: BoxDecoration(
+                    color: (improvement >= 0
+                            ? colorScheme.tertiaryContainer
+                            : colorScheme.errorContainer)
+                        .withAlpha(76),
+                    borderRadius: BorderRadius.circular(AppTheme.radii.md),
+                  ),
+                  child: Icon(
+                    improvement >= 0 ? Icons.trending_up : Icons.trending_down,
+                    color: improvement >= 0
+                        ? colorScheme.tertiary
+                        : colorScheme.error,
+                    size: 24,
+                  ),
+                ),
+                SizedBox(width: AppTheme.spacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Total Improvement',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: improvement >= 0
+                              ? colorScheme.tertiary
+                              : colorScheme.error,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(height: AppTheme.spacing.xs),
+                      Text(
+                        '${improvement.abs().toStringAsFixed(1)} kg',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color: improvement >= 0
+                              ? colorScheme.tertiary
+                              : colorScheme.error,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard(
+    BuildContext context,
+    String title,
+    String value,
+    String subtitle,
+    Color backgroundColor,
+    Color textColor,
+  ) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: EdgeInsets.all(AppTheme.spacing.md),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: textColor.withAlpha(51),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: textColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(height: AppTheme.spacing.xs),
+          Text(
+            value,
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: textColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(height: AppTheme.spacing.xs),
+          Text(
+            subtitle,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: textColor.withAlpha(179),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildPerformanceChart(
       List<ExerciseRecord> records, BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final sortedRecords = records.reversed.toList();
     final minWeight = sortedRecords
         .map((r) => r.maxWeight)
@@ -196,7 +456,7 @@ class ExerciseStats extends HookConsumerWidget {
             drawVerticalLine: false,
             getDrawingHorizontalLine: (value) {
               return FlLine(
-                color: Theme.of(context).colorScheme.onSurface.withAlpha(26),
+                color: colorScheme.onSurface.withAlpha(26),
                 strokeWidth: 1,
               );
             },
@@ -210,9 +470,8 @@ class ExerciseStats extends HookConsumerWidget {
                 getTitlesWidget: (value, meta) {
                   return Text(
                     '${value.toInt()}',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: 10,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   );
                 },
@@ -222,15 +481,14 @@ class ExerciseStats extends HookConsumerWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 30,
-                interval: (sortedRecords.length / 2).ceilToDouble(),
+                interval: (sortedRecords.length / 4).ceilToDouble(),
                 getTitlesWidget: (value, meta) {
                   if (value.toInt() < sortedRecords.length) {
                     return Text(
                       DateFormat('MMM d')
                           .format(sortedRecords[value.toInt()].date),
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontSize: 10,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     );
                   }
@@ -255,7 +513,7 @@ class ExerciseStats extends HookConsumerWidget {
                     entry.key.toDouble(), entry.value.maxWeight.toDouble());
               }).toList(),
               isCurved: true,
-              color: Theme.of(context).colorScheme.primary,
+              color: colorScheme.primary,
               barWidth: 3,
               isStrokeCapRound: true,
               dotData: FlDotData(
@@ -263,15 +521,15 @@ class ExerciseStats extends HookConsumerWidget {
                 getDotPainter: (spot, percent, barData, index) {
                   return FlDotCirclePainter(
                     radius: 4,
-                    color: Theme.of(context).colorScheme.primary,
+                    color: colorScheme.primary,
                     strokeWidth: 2,
-                    strokeColor: Theme.of(context).colorScheme.surface,
+                    strokeColor: colorScheme.surface,
                   );
                 },
               ),
               belowBarData: BarAreaData(
                 show: true,
-                color: Theme.of(context).colorScheme.primary.withAlpha(26),
+                color: colorScheme.primary.withAlpha(26),
               ),
             ),
           ],
@@ -279,13 +537,13 @@ class ExerciseStats extends HookConsumerWidget {
             horizontalLines: [
               HorizontalLine(
                 y: maxWeight,
-                color: Colors.green.withAlpha(204),
+                color: colorScheme.tertiary.withAlpha(204),
                 strokeWidth: 2,
                 dashArray: [5, 10],
               ),
               HorizontalLine(
                 y: minWeight,
-                color: Colors.red.withAlpha(204),
+                color: colorScheme.error.withAlpha(204),
                 strokeWidth: 2,
                 dashArray: [5, 10],
               ),
@@ -296,72 +554,111 @@ class ExerciseStats extends HookConsumerWidget {
     );
   }
 
-  double _calculateOptimalInterval(double min, double max) {
-    final range = max - min;
-    if (range == 0) return min; // Avoid division by zero
-    const targetSteps = 5;
-    final roughInterval = range / targetSteps;
-    final magnitude = pow(10, (log(roughInterval) / ln10).floor());
-    final normalizedInterval = roughInterval / magnitude;
-
-    if (normalizedInterval < 1.5) return magnitude.toDouble();
-    if (normalizedInterval < 3) return (2 * magnitude).toDouble();
-    if (normalizedInterval < 7) return (5 * magnitude).toDouble();
-    return (10 * magnitude).toDouble();
-  }
-
   Widget _buildRecordList(
       List<ExerciseRecord> records, BuildContext context, WidgetRef ref) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          'History',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: records.length,
+      separatorBuilder: (context, index) =>
+          SizedBox(height: AppTheme.spacing.sm),
+      itemBuilder: (context, index) {
+        final record = records[index];
+        return Container(
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+            border: Border.all(
+              color: colorScheme.outline.withAlpha(26),
+            ),
+            boxShadow: AppTheme.elevations.small,
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: ListTile(
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: AppTheme.spacing.lg,
+                vertical: AppTheme.spacing.sm,
               ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 12),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: records.length,
-          itemBuilder: (context, index) {
-            final record = records[index];
-            return Card(
-              elevation: 2,
-              margin: const EdgeInsets.symmetric(vertical: 4),
-              color: Theme.of(context).colorScheme.surface,
-              child: ListTile(
-                title: Text(
-                    '${record.maxWeight} kg x ${record.repetitions} reps',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface)),
-                subtitle: Text(DateFormat('MMMM d, yyyy').format(record.date),
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () => _showEditDialog(context, ref, record),
-                      color: Theme.of(context).colorScheme.onSurface,
+              title: Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppTheme.spacing.md,
+                      vertical: AppTheme.spacing.xs,
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () => _showDeleteDialog(context, ref, record),
-                      color: Theme.of(context).colorScheme.onSurface,
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer.withAlpha(76),
+                      borderRadius: BorderRadius.circular(AppTheme.radii.full),
+                    ),
+                    child: Text(
+                      '${record.maxWeight} kg',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  if (record.repetitions > 1) ...[
+                    SizedBox(width: AppTheme.spacing.sm),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppTheme.spacing.md,
+                        vertical: AppTheme.spacing.xs,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colorScheme.secondaryContainer.withAlpha(76),
+                        borderRadius:
+                            BorderRadius.circular(AppTheme.radii.full),
+                      ),
+                      child: Text(
+                        '${record.repetitions} reps',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: colorScheme.secondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ],
+                ],
+              ),
+              subtitle: Padding(
+                padding: EdgeInsets.only(top: AppTheme.spacing.sm),
+                child: Text(
+                  DateFormat('MMMM d, yyyy').format(record.date),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
-            );
-          },
-        ),
-      ],
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.edit_outlined,
+                      color: colorScheme.primary,
+                      size: 20,
+                    ),
+                    onPressed: () => _showEditDialog(context, ref, record),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.delete_outline,
+                      color: colorScheme.error,
+                      size: 20,
+                    ),
+                    onPressed: () => _showDeleteDialog(context, ref, record),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -439,6 +736,20 @@ class ExerciseStats extends HookConsumerWidget {
         );
       }
     }
+  }
+
+  double _calculateOptimalInterval(double min, double max) {
+    final range = max - min;
+    if (range == 0) return min; // Avoid division by zero
+    const targetSteps = 5;
+    final roughInterval = range / targetSteps;
+    final magnitude = pow(10, (log(roughInterval) / ln10).floor());
+    final normalizedInterval = roughInterval / magnitude;
+
+    if (normalizedInterval < 1.5) return magnitude.toDouble();
+    if (normalizedInterval < 3) return (2 * magnitude).toDouble();
+    if (normalizedInterval < 7) return (5 * magnitude).toDouble();
+    return (10 * magnitude).toDouble();
   }
 }
 
