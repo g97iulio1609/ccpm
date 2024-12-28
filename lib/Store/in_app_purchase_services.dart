@@ -287,28 +287,20 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
 
   Future<void> createGiftSubscription(String userId, int durationInDays) async {
     try {
-      final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser == null) {
-        throw Exception('Utente non autenticato');
-      }
+      final functions = FirebaseFunctions.instanceFor(region: 'europe-west1');
+      final callable = functions.httpsCallable('createGiftSubscription');
 
-      final token = await currentUser.getIdToken();
-      final response = await http.post(
-        Uri.parse('$_baseUrl/createGiftSubscription'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: json.encode({
-          'adminUid': currentUser.uid,
+      final result = await callable.call({
+        'data': {
           'userId': userId,
           'durationInDays': durationInDays,
-        }),
-      );
+        }
+      });
 
-      if (response.statusCode != 200) {
+      if (result.data == null || result.data['success'] != true) {
+        final error = result.data?['error']?.toString() ?? 'Errore sconosciuto';
         throw Exception(
-            'Errore nella creazione dell\'abbonamento regalo: ${response.statusCode}');
+            'Errore nella creazione dell\'abbonamento regalo: $error');
       }
     } catch (e) {
       throw Exception('Errore nella creazione dell\'abbonamento regalo: $e');

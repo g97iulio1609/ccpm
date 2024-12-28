@@ -490,4 +490,75 @@ export const syncSubscription = onCall({
     console.error('Errore nella sincronizzazione:', error);
     throw new Error(`Errore nella sincronizzazione: ${error.message}`);
   }
+});
+
+export const createGiftSubscription = onCall({
+  region: 'europe-west1',
+}, async (request) => {
+  console.log('createGiftSubscription called with data:', request.data);
+  
+  if (!request.auth) {
+    throw new Error('Devi essere autenticato.');
+  }
+
+  try {
+    const adminUid = request.auth.uid;
+    console.log('Admin UID:', adminUid);
+
+    // Estrai i dati dalla richiesta
+    const { userId, durationInDays } = request.data?.data || {};
+    console.log('Extracted data:', { userId, durationInDays });
+
+    if (!userId || !durationInDays) {
+      console.error('Missing required parameters:', { userId, durationInDays });
+      throw new Error('userId e durationInDays sono richiesti.');
+    }
+
+    // Verifica che l'utente sia admin
+    const adminDoc = await firestore.collection('users').doc(adminUid).get();
+    console.log('Admin doc exists:', adminDoc.exists, 'Admin role:', adminDoc.data()?.role);
+    
+    if (!adminDoc.exists || adminDoc.data().role !== 'admin') {
+      throw new Error('Devi essere un admin per eseguire questa operazione.');
+    }
+
+    // Verifica che l'utente target esista
+    const userDoc = await firestore.collection('users').doc(userId).get();
+    console.log('Target user exists:', userDoc.exists);
+    
+    if (!userDoc.exists) {
+      throw new Error('Utente target non trovato.');
+    }
+
+    const startDate = new Date();
+    const expiryDate = new Date(startDate.getTime() + durationInDays * 24 * 60 * 60 * 1000);
+    console.log('Dates:', { startDate, expiryDate });
+
+    // Aggiorna il documento dell'utente
+    await firestore.collection('users').doc(userId).update({
+      role: 'client_premium',
+      subscriptionStatus: 'active',
+      subscriptionPlatform: 'gift',
+      subscriptionStartDate: startDate,
+      subscriptionExpiryDate: expiryDate,
+      giftedBy: adminUid,
+      giftedAt: startDate,
+    });
+
+    console.log('User document updated successfully');
+
+    return {
+      success: true,
+      message: 'Abbonamento regalo creato con successo',
+      subscription: {
+        status: 'active',
+        platform: 'gift',
+        startDate: startDate.toISOString(),
+        expiryDate: expiryDate.toISOString(),
+      }
+    };
+  } catch (error) {
+    console.error('Error in createGiftSubscription:', error);
+    throw new Error(error.message || 'Errore sconosciuto');
+  }
 }); 

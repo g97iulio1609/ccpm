@@ -1,11 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:alphanessone/providers/providers.dart';
 import './trainingBuilder/controller/training_program_controller.dart';
 import './trainingBuilder/services/training_services.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/UI/components/button.dart';
 import 'UI/components/bottom_menu.dart';
 
 class UserProgramsScreen extends HookConsumerWidget {
@@ -72,54 +74,13 @@ class UserProgramsScreen extends HookConsumerWidget {
 
   Widget _buildAddProgramButton(BuildContext context, String userId,
       ThemeData theme, ColorScheme colorScheme) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            colorScheme.primary,
-            colorScheme.primary.withAlpha(204),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.primary.withAlpha(51),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _addProgram(context, userId),
-          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              vertical: AppTheme.spacing.lg,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.add_circle_outline,
-                  color: colorScheme.onPrimary,
-                  size: 24,
-                ),
-                SizedBox(width: AppTheme.spacing.sm),
-                Text(
-                  'Create New Program',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: colorScheme.onPrimary,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+    return AppButton(
+      label: 'Create New Program',
+      icon: Icons.add_circle_outline,
+      onPressed: () => _addProgram(context, userId),
+      variant: AppButtonVariant.primary,
+      size: AppButtonSize.sm,
+      block: true,
     );
   }
 
