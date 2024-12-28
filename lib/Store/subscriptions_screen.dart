@@ -1,18 +1,13 @@
 // subscriptions_screen.dart
 
-import 'package:alphanessone/models/user_model.dart';
-import 'package:alphanessone/UI/components/user_autocomplete.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:alphanessone/Store/in_app_purchase_services.dart';
-import 'package:alphanessone/Store/in_app_purchase_model.dart';
-import 'package:alphanessone/providers/providers.dart';
-import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import 'dart:async';
-import 'package:alphanessone/Main/app_theme.dart';
-import 'package:flutter/foundation.dart';
+import 'package:alphanessone/providers/auth_providers.dart';
+import 'package:alphanessone/providers/providers.dart';
+import 'package:alphanessone/Store/in_app_purchase_model.dart';
+import 'package:alphanessone/Store/in_app_purchase_services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Extension to capitalize strings
@@ -307,8 +302,10 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isAdmin = ref.watch(isAdminProvider);
+    final isOwnProfile =
+        widget.userId == FirebaseAuth.instance.currentUser?.uid;
 
-    if (isAdmin) {
+    if (isAdmin && isOwnProfile) {
       return const Center(
         child: Text('Gli amministratori non necessitano di un abbonamento'),
       );
@@ -329,6 +326,65 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Sezione pulsanti
+          Padding(
+            padding: const EdgeInsets.only(bottom: 24),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isWideScreen = constraints.maxWidth > 500;
+                final buttons = [
+                  if (isAdmin && !isOwnProfile)
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => _showGiftSubscriptionDialog(context),
+                        icon: const Icon(Icons.card_giftcard),
+                        label: const Text('Regala Abbonamento'),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
+                        ),
+                      ),
+                    ),
+                  if (isAdmin && !isOwnProfile && isWideScreen)
+                    const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: ref.watch(syncingProvider)
+                          ? null
+                          : _syncStripeSubscription,
+                      icon: ref.watch(syncingProvider)
+                          ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: theme.colorScheme.onPrimary,
+                              ),
+                            )
+                          : const Icon(Icons.sync),
+                      label: const Text('Sincronizza Abbonamento'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
+                      ),
+                    ),
+                  ),
+                ];
+
+                return isWideScreen
+                    ? Row(children: buttons)
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          ...buttons,
+                          if (buttons.length > 1) const SizedBox(height: 12),
+                        ],
+                      );
+              },
+            ),
+          ),
+
+          // Contenuto abbonamento
           if (subscription == null) ...[
             Center(
               child: Text(
@@ -357,26 +413,84 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
               return SubscriptionItemTile(item: item);
             }),
           ],
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed:
-                ref.watch(syncingProvider) ? null : _syncStripeSubscription,
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
-            child: ref.watch(syncingProvider)
-                ? SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: theme.colorScheme.onPrimary,
-                    ),
-                  )
-                : const Text('Sincronizza Abbonamento'),
-          ),
         ],
       ),
     );
+  }
+
+  void _showGiftSubscriptionDialog(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    int selectedDays = 30;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Regala Abbonamento'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Seleziona la durata dell\'abbonamento:'),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<int>(
+                    value: selectedDays,
+                    decoration: InputDecoration(
+                      labelText: 'Durata',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    items: [
+                      DropdownMenuItem(value: 7, child: Text('7 giorni')),
+                      DropdownMenuItem(value: 30, child: Text('30 giorni')),
+                      DropdownMenuItem(value: 90, child: Text('90 giorni')),
+                      DropdownMenuItem(value: 180, child: Text('180 giorni')),
+                      DropdownMenuItem(value: 365, child: Text('365 giorni')),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() => selectedDays = value);
+                      }
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Annulla'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    await _createGiftSubscription(selectedDays);
+                  },
+                  child: Text('Regala'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _createGiftSubscription(int durationInDays) async {
+    setState(() => _isLoading = true);
+    try {
+      await _inAppPurchaseService.createGiftSubscription(
+        widget.userId,
+        durationInDays,
+      );
+      _showSnackBar('Abbonamento regalo creato con successo!');
+      await _fetchSubscriptionDetails();
+    } catch (e) {
+      _showSnackBar('Errore nella creazione dell\'abbonamento regalo: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 }

@@ -44,9 +44,6 @@ final usersServiceProvider = Provider<UsersService>((ref) {
       ref.watch(firebaseAuthProvider));
 });
 
-// Provider per verifica admin
-final isAdminProvider = StateProvider<bool>((ref) => false);
-
 // Provider per TDEEService
 final tdeeServiceProvider = Provider<TDEEService>(
     (ref) => TDEEService(ref.watch(firebaseFirestoreProvider)));
