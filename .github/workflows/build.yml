@@ -11,7 +11,7 @@ on:
 
 jobs:
   build-android:
-    runs-on: macos-latest  # Considera di usare ubuntu-latest per maggiore velocità, se possibile
+    runs-on: ubuntu-latest  # Considera di usare ubuntu-latest per build più veloci, se possibile
     env:
       FLUTTER_VERSION: '3.27.1'
       JAVA_VERSION: '17'
@@ -44,9 +44,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # 6. (Opzionale) Precompila i plugin per ridurre i tempi di build
+      # 6. Precompila i plugin per ridurre i tempi di build (corretto con flag)
       - name: Precompile plugins
-        run: flutter pub run build_runner build --release
+        run: flutter pub run build_runner build --release --delete-conflicting-outputs
 
       # 7. Costruisci l'Android App Bundle (.aab) in modalità release
       - name: Build Android App Bundle
