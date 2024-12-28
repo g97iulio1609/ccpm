@@ -20,35 +20,43 @@ app.post('/handleWebhookEvents', async (req, res) => {
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, stripeWebhookSecret);
   } catch (err) {
+    console.error('Errore nella verifica della firma webhook:', err);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
   try {
+    console.log('Evento Stripe ricevuto:', event.type);
+
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object;
         await handleSuccessfulPayment(session);
         break;
       }
+      case 'customer.subscription.created':
       case 'customer.subscription.updated':
-      case 'customer.subscription.deleted': {
+      case 'customer.subscription.deleted':
+      case 'customer.subscription.trial_will_end':
+      case 'invoice.payment_succeeded':
+      case 'invoice.payment_failed': {
         const subscription = event.data.object;
         await handleSubscriptionUpdate(subscription);
         break;
       }
       default:
-        console.log(`Unhandled event type ${event.type}`);
+        console.log(`Evento non gestito: ${event.type}`);
     }
 
     res.json({ received: true });
   } catch (error) {
-    console.error('Error processing webhook:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Errore nell\'elaborazione del webhook:', error);
+    res.status(500).json({ error: 'Errore interno del server' });
   }
 });
 
 // Funzione per gestire pagamenti riusciti
 async function handleSuccessfulPayment(session) {
+  console.log('Gestione pagamento riuscito:', session.id);
   const userId = session.client_reference_id;
   const subscriptionId = session.subscription;
 
@@ -58,12 +66,13 @@ async function handleSuccessfulPayment(session) {
 
     const productDoc = await firestore.collection('products').doc(productId).get();
     if (!productDoc.exists) {
+      console.error('Prodotto non trovato:', productId);
       return;
     }
     const product = productDoc.data();
-
     const role = product.role || 'client_premium';
 
+    console.log('Aggiornamento stato utente:', userId);
     await firestore.collection('users').doc(userId).update({
       role: role,
       subscriptionId: subscriptionId,
@@ -72,19 +81,28 @@ async function handleSuccessfulPayment(session) {
       subscriptionPlatform: 'stripe',
       subscriptionStartDate: new Date(),
       subscriptionExpiryDate: new Date(subscription.current_period_end * 1000),
+      lastPaymentId: session.payment_intent,
+      lastPaymentDate: new Date(),
+      lastPaymentStatus: 'succeeded'
     });
+
+    console.log('Stato utente aggiornato con successo');
   } catch (error) {
-    console.error('Error in handleSuccessfulPayment:', error);
+    console.error('Errore in handleSuccessfulPayment:', error);
+    throw error;
   }
 }
 
 // Funzione per gestire aggiornamenti delle sottoscrizioni
 async function handleSubscriptionUpdate(subscription) {
   try {
+    console.log('Gestione aggiornamento sottoscrizione:', subscription.id);
+    
     const customerId = subscription.customer;
     const customer = await stripe.customers.retrieve(customerId);
     
     if (!customer?.email) {
+      console.error('Email cliente non trovata');
       return;
     }
     
@@ -93,6 +111,7 @@ async function handleSubscriptionUpdate(subscription) {
       .get();
 
     if (usersSnapshot.empty) {
+      console.error('Utente non trovato per email:', customer.email);
       return;
     }
 
@@ -102,22 +121,36 @@ async function handleSubscriptionUpdate(subscription) {
 
     const productDoc = await firestore.collection('products').doc(productId).get();
     if (!productDoc.exists) {
+      console.error('Prodotto non trovato:', productId);
       return;
     }
+    
     const product = productDoc.data();
     const role = product.role || 'client_premium';
 
+    let subscriptionStatus = subscription.status;
+    if (subscription.cancel_at_period_end) {
+      subscriptionStatus = 'canceling';
+    }
+
+    console.log('Aggiornamento stato sottoscrizione per utente:', userId);
     await firestore.collection('users').doc(userId).update({
-      role,
+      role: subscriptionStatus === 'active' ? role : 'client',
       subscriptionId: subscription.id,
-      subscriptionStatus: subscription.status,
+      subscriptionStatus: subscriptionStatus,
       subscriptionProductId: productId,
       subscriptionPlatform: 'stripe',
       subscriptionStartDate: new Date(subscription.start_date * 1000),
       subscriptionExpiryDate: new Date(subscription.current_period_end * 1000),
+      lastSubscriptionUpdate: new Date(),
+      cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
+      cancelAt: subscription.cancel_at ? new Date(subscription.cancel_at * 1000) : null
     });
+
+    console.log('Stato sottoscrizione aggiornato con successo');
   } catch (error) {
-    console.error('Error in handleSubscriptionUpdate:', error);
+    console.error('Errore in handleSubscriptionUpdate:', error);
+    throw error;
   }
 }
 
@@ -560,5 +593,80 @@ export const createGiftSubscription = onCall({
   } catch (error) {
     console.error('Error in createGiftSubscription:', error);
     throw new Error(error.message || 'Errore sconosciuto');
+  }
+});
+
+export const cancelSubscription = onCall({
+  region: 'europe-west1'
+}, async (request) => {
+  if (!request.auth) {
+    throw new Error('Devi essere autenticato per cancellare l\'abbonamento.');
+  }
+
+  try {
+    const callerUid = request.auth.uid;
+    const targetUserId = request.data?.userId || callerUid;
+
+    console.log('Richiesta cancellazione abbonamento:', {
+      callerUid,
+      targetUserId
+    });
+
+    // Se l'utente sta cercando di cancellare l'abbonamento di un altro utente, verifica che sia admin
+    if (targetUserId !== callerUid) {
+      const adminDoc = await firestore.collection('users').doc(callerUid).get();
+      if (!adminDoc.exists || adminDoc.data().role !== 'admin') {
+        throw new Error('Non hai i permessi per cancellare l\'abbonamento di altri utenti.');
+      }
+    }
+
+    // Recupera i dati dell'utente target
+    const userDoc = await firestore.collection('users').doc(targetUserId).get();
+    if (!userDoc.exists) {
+      throw new Error('Utente non trovato.');
+    }
+
+    const userData = userDoc.data();
+    const subscriptionId = userData.subscriptionId;
+
+    if (!subscriptionId) {
+      throw new Error('Nessun abbonamento attivo trovato.');
+    }
+
+    if (userData.subscriptionPlatform !== 'stripe') {
+      throw new Error('Questa operazione è supportata solo per abbonamenti Stripe.');
+    }
+
+    console.log('Cancellazione abbonamento Stripe:', subscriptionId);
+    
+    // Cancella l'abbonamento su Stripe
+    const subscription = await stripe.subscriptions.update(subscriptionId, {
+      cancel_at_period_end: true
+    });
+
+    // Aggiorna lo stato dell'abbonamento in Firestore
+    await firestore.collection('users').doc(targetUserId).update({
+      subscriptionStatus: 'canceling',
+      cancelAtPeriodEnd: true,
+      cancelAt: new Date(subscription.cancel_at * 1000),
+      lastSubscriptionUpdate: new Date(),
+      cancelledBy: callerUid,
+      cancelledAt: new Date()
+    });
+
+    console.log('Abbonamento cancellato con successo');
+
+    return {
+      success: true,
+      message: 'L\'abbonamento verrà cancellato alla fine del periodo corrente',
+      subscription: {
+        status: 'canceling',
+        currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+        cancelAt: new Date(subscription.cancel_at * 1000)
+      }
+    };
+  } catch (error) {
+    console.error('Errore nella cancellazione dell\'abbonamento:', error);
+    throw new Error(`Errore nella cancellazione dell'abbonamento: ${error.message}`);
   }
 }); 
