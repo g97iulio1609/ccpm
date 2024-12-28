@@ -1,4 +1,5 @@
-name: Build Android AppBundle & iOS IPA
+# .github/workflows/build-android.yml
+name: Build Android AppBundle
 
 on:
   push:
@@ -9,7 +10,7 @@ on:
       - main
 
 jobs:
-  build:
+  build-android:
     runs-on: macos-latest
 
     steps:
@@ -32,10 +33,8 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          # Se vuoi usare la versione più recente della major 17, abilita:
-          # check-latest: true
-          # Se vuoi abilitare la cache di Gradle, puoi aggiungere:
-          # cache: 'gradle'
+          # Opzionale: Abilita la cache di Gradle
+          cache: 'gradle'
 
       # 4. Configura Flutter utilizzando l'azione aggiornata
       - name: Set up Flutter
@@ -61,14 +60,3 @@ jobs:
         with:
           name: myapp-aab
           path: build/app/outputs/bundle/release/*.aab
-
-      # 9. Costruisci l'IPA per iOS senza code signing
-      - name: Build iOS IPA
-        run: flutter build ipa --release --no-codesign
-
-      # 10. Carica l'IPA come artifact
-      - name: Upload IPA
-        uses: actions/upload-artifact@v3
-        with:
-          name: myapp-ipa
-          path: build/ios/ipa/*.ipa
