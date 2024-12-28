@@ -287,22 +287,15 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
 
   Future<void> createGiftSubscription(String userId, int durationInDays) async {
     try {
-      final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser == null) {
-        throw Exception('Utente non autenticato');
-      }
-
       final functions = FirebaseFunctions.instanceFor(region: 'europe-west1');
       final callable = functions.httpsCallable('createGiftSubscription');
 
-      final data = {
+      final result = await callable.call({
         'data': {
           'userId': userId,
           'durationInDays': durationInDays,
         }
-      };
-
-      final result = await callable.call(data);
+      });
 
       if (result.data == null || result.data['success'] != true) {
         final error = result.data?['error']?.toString() ?? 'Errore sconosciuto';
