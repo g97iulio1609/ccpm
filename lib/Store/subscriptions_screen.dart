@@ -9,6 +9,7 @@ import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/Store/in_app_purchase_model.dart';
 import 'package:alphanessone/Store/in_app_purchase_services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 // Extension to capitalize strings
 extension StringCasingExtension on String {
@@ -25,6 +26,8 @@ class SubscriptionCard extends StatelessWidget {
   final String expiry;
   final bool isGift;
   final String? giftInfo;
+  final VoidCallback? onCancelSubscription;
+  final bool showCancelButton;
 
   const SubscriptionCard({
     super.key,
@@ -33,6 +36,8 @@ class SubscriptionCard extends StatelessWidget {
     required this.expiry,
     this.isGift = false,
     this.giftInfo,
+    this.onCancelSubscription,
+    this.showCancelButton = false,
   });
 
   @override
@@ -120,6 +125,25 @@ class SubscriptionCard extends StatelessWidget {
                 ),
               ),
             ],
+            if (showCancelButton &&
+                onCancelSubscription != null &&
+                !isGift &&
+                status.toLowerCase() == 'active') ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _showCancelConfirmationDialog(context),
+                  icon: const Icon(Icons.cancel_outlined),
+                  label: const Text('Disdici Abbonamento'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorScheme.errorContainer,
+                    foregroundColor: colorScheme.error,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -156,6 +180,38 @@ class SubscriptionCard extends StatelessWidget {
               ),
         ),
       ],
+    );
+  }
+
+  void _showCancelConfirmationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Conferma Disdetta'),
+          content: const Text(
+            'Sei sicuro di voler disdire l\'abbonamento? '
+            'Potrai continuare ad utilizzare il servizio fino alla fine del periodo corrente.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Annulla'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                onCancelSubscription?.call();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.errorContainer,
+                foregroundColor: Theme.of(context).colorScheme.error,
+              ),
+              child: const Text('Disdici'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -297,6 +353,29 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
     );
   }
 
+  Future<void> _cancelSubscription() async {
+    setState(() => _isLoading = true);
+    try {
+      final functions = FirebaseFunctions.instanceFor(region: 'europe-west1');
+      final callable = functions.httpsCallable('cancelSubscription');
+
+      final result = await callable.call({
+        'userId': widget.userId,
+      });
+
+      if (result.data['success'] == true) {
+        _showSnackBar(result.data['message']);
+        await _fetchSubscriptionDetails();
+      } else {
+        throw Exception(result.data['error'] ?? 'Errore sconosciuto');
+      }
+    } catch (e) {
+      _showSnackBar('Errore nella disdetta dell\'abbonamento: ${e.toString()}');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -402,6 +481,9 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
               isGift: subscription.platform == 'gift',
               giftInfo:
                   subscription.platform == 'gift' ? 'Abbonamento regalo' : null,
+              showCancelButton: (isAdmin || isOwnProfile) &&
+                  subscription.platform == 'stripe',
+              onCancelSubscription: _cancelSubscription,
             ),
             const SizedBox(height: 16),
             Text(
