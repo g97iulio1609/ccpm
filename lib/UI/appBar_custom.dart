@@ -15,7 +15,6 @@ import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:alphanessone/nutrition/models/meals_model.dart' as meals;
 import 'package:alphanessone/nutrition/services/meals_services.dart';
-import 'package:alphanessone/Viewer/UI/exercise_details.dart';
 import 'package:alphanessone/nutrition/models/diet_plan_model.dart';
 import 'package:alphanessone/nutrition/services/diet_plan_services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -58,8 +57,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
   }
 
   String _getTitleForRoute(String currentPath) {
-    if (currentPath.contains('/exercise_details/')) {
-      return ref.watch(currentExerciseNameProvider);
+    if (currentPath.contains('/workout_details/')) {
     } else if (currentPath.contains('/workout_details/')) {
       return ref.watch(currentWorkoutNameProvider);
     } else if (currentPath.contains('/week_details/')) {

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/button.dart';
@@ -11,6 +10,7 @@ import 'package:alphanessone/providers/providers.dart' as app_providers;
 import 'package:alphanessone/Viewer/UI/workout_provider.dart'
     as workout_provider;
 import 'package:alphanessone/Viewer/providers/training_program_provider.dart';
+import 'package:alphanessone/Viewer/UI/exercise_timer_bottom_sheet.dart';
 import 'workout_services.dart';
 
 class WorkoutDetails extends ConsumerStatefulWidget {
@@ -1112,20 +1112,43 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       [int startIndex = 0]) {
     if (!mounted) return;
 
-    final extra = {
-      'programId': widget.programId,
-      'weekId': widget.weekId,
-      'workoutId': widget.workoutId,
-      'exerciseId': exercise['id'],
-      'userId': widget.userId,
-      'superSetExercises': exercises,
-      'superSetExerciseIndex':
-          exercises.indexWhere((e) => e['id'] == exercise['id']),
-      'seriesList': exercise['series'],
-      'startIndex': startIndex
-    };
+    print('DEBUG: Inizio navigazione a ExerciseDetails');
+    print('DEBUG: Exercise ID: ${exercise['id']}');
+    print('DEBUG: Exercise data: $exercise');
+    print('DEBUG: Start Index: $startIndex');
 
-    context.pushNamed('exercise_details', extra: extra);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      isDismissible: false,
+      enableDrag: false,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width,
+        maxHeight: MediaQuery.of(context).size.height * 0.9,
+      ),
+      builder: (context) {
+        print('DEBUG: Building BottomSheet');
+        return SizedBox(
+          width: MediaQuery.of(context).size.width,
+          child: ExerciseTimer(
+            programId: widget.programId,
+            weekId: widget.weekId,
+            workoutId: widget.workoutId,
+            exerciseId: exercise['id'],
+            userId: widget.userId,
+            superSetExercises: exercises,
+            superSetExerciseIndex:
+                exercises.indexWhere((e) => e['id'] == exercise['id']),
+            seriesList: exercise['series'],
+            startIndex: startIndex,
+          ),
+        );
+      },
+    ).then((_) {
+      print('DEBUG: BottomSheet chiuso');
+    });
   }
 
   void _showChangeExerciseDialog(
