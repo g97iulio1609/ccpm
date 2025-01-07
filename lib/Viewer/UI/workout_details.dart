@@ -1112,11 +1112,6 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       [int startIndex = 0]) {
     if (!mounted) return;
 
-    print('DEBUG: Inizio navigazione a ExerciseDetails');
-    print('DEBUG: Exercise ID: ${exercise['id']}');
-    print('DEBUG: Exercise data: $exercise');
-    print('DEBUG: Start Index: $startIndex');
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1129,7 +1124,6 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
         maxHeight: MediaQuery.of(context).size.height * 0.9,
       ),
       builder: (context) {
-        print('DEBUG: Building BottomSheet');
         return SizedBox(
           width: MediaQuery.of(context).size.width,
           child: ExerciseTimer(
@@ -1146,9 +1140,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
           ),
         );
       },
-    ).then((_) {
-      print('DEBUG: BottomSheet chiuso');
-    });
+    ).then((_) {});
   }
 
   void _showChangeExerciseDialog(

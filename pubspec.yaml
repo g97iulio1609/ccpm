@@ -63,7 +63,7 @@ dependencies:
   flutter_native_splash: ^2.4.1
   flutter_stripe: ^11.1.0
   flutter_stripe_web: ^6.3.0
-  shared_preferences: ^2.3.3
+  shared_preferences: ^2.2.2
   http: ^1.2.2
   envied: ^1.0.0
   build_runner: ^2.4.13

@@ -8,7 +8,6 @@ import 'package:alphanessone/UI/home_screen.dart';
 import 'package:alphanessone/UI/settings/ai_settings_screen.dart';
 import 'package:alphanessone/Viewer/UI/training_viewer.dart';
 import 'package:alphanessone/Viewer/UI/workout_details.dart';
-import 'package:alphanessone/Viewer/models/timer_model.dart';
 import 'package:alphanessone/auth/auth_screen.dart';
 import 'package:alphanessone/measurements/measurements.dart';
 import 'package:alphanessone/nutrition/Calc/macros_selector.dart';

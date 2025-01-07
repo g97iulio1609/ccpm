@@ -6,10 +6,13 @@ import 'package:alphanessone/Main/app_theme.dart';
 import 'package:numberpicker/numberpicker.dart';
 import 'package:alphanessone/Viewer/UI/workout_provider.dart'
     as workout_provider;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 // Costanti per il layout
 class TimerConstants {
-  static const presets = [
+  static const defaultPresets = [
     {'label': '30s', 'seconds': 30},
     {'label': '1m', 'seconds': 60},
     {'label': '2m', 'seconds': 120},
@@ -154,11 +157,265 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
   int _timerMinutes = 1;
   int _timerSeconds = 0;
   int _remainingSeconds = 0;
+  List<Map<String, dynamic>> _presets = TimerConstants.defaultPresets;
 
   @override
   void initState() {
     super.initState();
+    _loadUserPresets();
     _initializeState();
+  }
+
+  List<Map<String, dynamic>> _loadPresetsFromCache(
+      SharedPreferences prefs, String key) {
+    final data = prefs.getString(key);
+    if (data == null) return [];
+    try {
+      final decoded = jsonDecode(data);
+      return decoded is List
+          ? decoded.map((item) => Map<String, dynamic>.from(item)).toList()
+          : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> _loadUserPresets() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // Carica dati dalla cache
+      final cachedPresets =
+          _loadPresetsFromCache(prefs, 'timer_presets_${widget.userId}');
+
+      // Sincronizza con Firestore
+      try {
+        final presets = await FirebaseFirestore.instance
+            .collection('timer_presets')
+            .where('userId', isEqualTo: widget.userId)
+            .orderBy('seconds')
+            .get();
+
+        if (presets.docs.isNotEmpty) {
+          final updatedPresets = _removeDuplicatePresets(presets.docs
+              .map((doc) => {
+                    'id': doc.id,
+                    'label': doc.data()['label'] as String,
+                    'seconds': doc.data()['seconds'] as int,
+                  })
+              .toList());
+
+          // Aggiorna cache
+          await _saveToCache(
+              prefs, 'timer_presets_${widget.userId}', updatedPresets);
+          setState(() => _presets = updatedPresets);
+          return;
+        }
+
+        // Se non ci sono preset, crea quelli predefiniti
+        final batch = FirebaseFirestore.instance.batch();
+        final defaultPresets = await Future.wait(
+          TimerConstants.defaultPresets.map((preset) async {
+            final docRef =
+                FirebaseFirestore.instance.collection('timer_presets').doc();
+            batch.set(docRef, {
+              'userId': widget.userId,
+              'label': preset['label'],
+              'seconds': preset['seconds'],
+              'createdAt': FieldValue.serverTimestamp(),
+            });
+            return {
+              'id': docRef.id,
+              ...preset,
+            };
+          }),
+        );
+
+        await batch.commit();
+        await _saveToCache(
+            prefs, 'timer_presets_${widget.userId}', defaultPresets);
+        setState(() => _presets = defaultPresets);
+      } catch (_) {
+        // Usa dati dalla cache se Firestore non disponibile
+        setState(() => _presets = _removeDuplicatePresets(cachedPresets));
+      }
+    } catch (_) {
+      setState(() => _presets = []);
+    }
+  }
+
+  List<Map<String, dynamic>> _removeDuplicatePresets(
+      List<Map<String, dynamic>> presets) {
+    final uniquePresets = <int, Map<String, dynamic>>{};
+    for (final preset in presets) {
+      final seconds = preset['seconds'] as int;
+      if (!uniquePresets.containsKey(seconds)) {
+        uniquePresets[seconds] = preset;
+      }
+    }
+    return uniquePresets.values.toList()
+      ..sort((a, b) => a['seconds'].compareTo(b['seconds']));
+  }
+
+  Future<void> _savePreset(String label, int seconds) async {
+    // Controlla se esiste già un preset con gli stessi secondi
+    if (_presets.any((p) => p['seconds'] == seconds)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Esiste già un preset da $seconds secondi')),
+        );
+      }
+      return;
+    }
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final docRef =
+          await FirebaseFirestore.instance.collection('timer_presets').add({
+        'userId': widget.userId,
+        'label': label,
+        'seconds': seconds,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      final newPreset = {
+        'id': docRef.id,
+        'label': label,
+        'seconds': seconds,
+      };
+
+      setState(() {
+        _presets = _removeDuplicatePresets([..._presets, newPreset]);
+      });
+
+      await _saveToCache(prefs, 'timer_presets_${widget.userId}', _presets);
+    } catch (_) {}
+  }
+
+  Future<void> _updatePreset(String presetId, String label, int seconds) async {
+    // Controlla se esiste già un altro preset con gli stessi secondi
+    if (_presets.any((p) => p['seconds'] == seconds && p['id'] != presetId)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Esiste già un preset da $seconds secondi')),
+        );
+      }
+      return;
+    }
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await FirebaseFirestore.instance
+          .collection('timer_presets')
+          .doc(presetId)
+          .update({
+        'label': label,
+        'seconds': seconds,
+      });
+
+      setState(() {
+        final index = _presets.indexWhere((p) => p['id'] == presetId);
+        if (index != -1) {
+          _presets[index] = {
+            'id': presetId,
+            'label': label,
+            'seconds': seconds,
+          };
+          _presets.sort((a, b) => a['seconds'].compareTo(b['seconds']));
+        }
+      });
+
+      await _saveToCache(prefs, 'timer_presets_${widget.userId}', _presets);
+    } catch (_) {}
+  }
+
+  Future<void> _deletePreset(String presetId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await FirebaseFirestore.instance
+          .collection('timer_presets')
+          .doc(presetId)
+          .delete();
+
+      setState(() {
+        _presets.removeWhere((preset) => preset['id'] == presetId);
+      });
+
+      await _saveToCache(prefs, 'timer_presets_${widget.userId}', _presets);
+    } catch (_) {}
+  }
+
+  void _showAddPresetDialog() {
+    final minutesController = TextEditingController();
+    final secondsController = TextEditingController();
+    final labelController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Aggiungi Preset'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: labelController,
+                decoration: const InputDecoration(
+                  labelText: 'Nome preset',
+                  hintText: 'es. Recupero breve',
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: minutesController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Minuti',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextField(
+                      controller: secondsController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Secondi',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Annulla'),
+            ),
+            TextButton(
+              onPressed: () {
+                final minutes = int.tryParse(minutesController.text) ?? 0;
+                final seconds = int.tryParse(secondsController.text) ?? 0;
+                final totalSeconds = (minutes * 60) + seconds;
+                final label = labelController.text.isNotEmpty
+                    ? labelController.text
+                    : '${minutes}m ${seconds}s';
+
+                if (totalSeconds > 0) {
+                  _savePreset(label, totalSeconds);
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Salva'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _initializeState() {
@@ -614,44 +871,83 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
   }
 
   Widget _buildPresetButtons(ThemeData theme, ColorScheme colorScheme) {
-    return Row(
-      children: TimerConstants.presets.map((preset) {
-        return Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(
-              right: preset == TimerConstants.presets.last
-                  ? 0
-                  : AppTheme.spacing.xs,
-            ),
-            child: OutlinedButton(
-              onPressed: () {
-                setState(() {
-                  final seconds = preset['seconds'] as int;
-                  _timerMinutes = seconds ~/ 60;
-                  _timerSeconds = seconds % 60;
-                });
-              },
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: colorScheme.primary),
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppTheme.spacing.xs,
-                  vertical: AppTheme.spacing.sm,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radii.md),
-                ),
-              ),
-              child: Text(
-                preset['label'] as String,
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: colorScheme.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          height: 48,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: _presets.map((preset) {
+                return Padding(
+                  padding: EdgeInsets.only(right: AppTheme.spacing.xs),
+                  child: SizedBox(
+                    height: 40,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        setState(() {
+                          final seconds = preset['seconds'] as int;
+                          _timerMinutes = seconds ~/ 60;
+                          _timerSeconds = seconds % 60;
+                        });
+                      },
+                      onLongPress: () => _showEditPresetDialog(preset),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: colorScheme.primary),
+                        padding: EdgeInsets.only(
+                          left: AppTheme.spacing.sm,
+                          right: AppTheme.spacing.xl,
+                          top: AppTheme.spacing.sm,
+                          bottom: AppTheme.spacing.sm,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radii.md),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _formatDuration(preset['seconds'] as int),
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: colorScheme.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(width: AppTheme.spacing.xs),
+                          IconButton(
+                            icon: Icon(
+                              Icons.close,
+                              size: 18,
+                              color: colorScheme.error,
+                            ),
+                            onPressed: () =>
+                                _deletePreset(preset['id'] as String),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            splashRadius: 16,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
           ),
-        );
-      }).toList(),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          onPressed: _showAddPresetDialog,
+          icon: const Icon(Icons.add),
+          label: const Text('Aggiungi preset'),
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(color: colorScheme.primary.withAlpha(128)),
+          ),
+        ),
+      ],
     );
   }
 
@@ -761,5 +1057,97 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
         ),
       ),
     );
+  }
+
+  String _formatDuration(int seconds) {
+    final minutes = seconds ~/ 60;
+    final remainingSeconds = seconds % 60;
+    if (minutes > 0) {
+      return remainingSeconds > 0
+          ? '${minutes}m ${remainingSeconds}s'
+          : '${minutes}m';
+    }
+    return '${remainingSeconds}s';
+  }
+
+  void _showEditPresetDialog(Map<String, dynamic> preset) {
+    final minutesController = TextEditingController(
+        text: ((preset['seconds'] as int) ~/ 60).toString());
+    final secondsController = TextEditingController(
+        text: ((preset['seconds'] as int) % 60).toString());
+    final labelController =
+        TextEditingController(text: preset['label'] as String);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Modifica Preset'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: labelController,
+                decoration: const InputDecoration(
+                  labelText: 'Nome preset',
+                  hintText: 'es. Recupero breve',
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: minutesController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Minuti',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextField(
+                      controller: secondsController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Secondi',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Annulla'),
+            ),
+            TextButton(
+              onPressed: () {
+                final minutes = int.tryParse(minutesController.text) ?? 0;
+                final seconds = int.tryParse(secondsController.text) ?? 0;
+                final totalSeconds = (minutes * 60) + seconds;
+                final label = labelController.text.isNotEmpty
+                    ? labelController.text
+                    : '${minutes}m ${seconds}s';
+
+                if (totalSeconds > 0) {
+                  _updatePreset(preset['id'] as String, label, totalSeconds);
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Salva'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _saveToCache(
+      SharedPreferences prefs, String key, dynamic data) async {
+    await prefs.setString(key, jsonEncode(data));
   }
 }
