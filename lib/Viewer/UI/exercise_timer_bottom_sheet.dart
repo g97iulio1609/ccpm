@@ -9,6 +9,7 @@ import 'package:alphanessone/Viewer/UI/workout_provider.dart'
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:alphanessone/Main/app_notifications.dart';
 
 // Costanti per il layout
 class TimerConstants {
@@ -30,11 +31,13 @@ class TimerManager {
   Timer? _timer;
   final AnimationController animationController;
   int _remainingSeconds = 0;
+  final String exerciseName;
 
   TimerManager({
     required this.onTick,
     required this.onComplete,
     required this.animationController,
+    required this.exerciseName,
   });
 
   void startTimer(int totalSeconds, bool isEmom) {
@@ -50,12 +53,27 @@ class TimerManager {
         if (isEmom) {
           _remainingSeconds = totalSeconds;
           animationController.forward(from: 0.0);
+          _showTimerCompleteNotification(isEmom: true);
         } else {
           stopTimer();
           onComplete();
+          _showTimerCompleteNotification(isEmom: false);
         }
       }
     });
+  }
+
+  Future<void> _showTimerCompleteNotification({required bool isEmom}) async {
+    final title = isEmom ? 'EMOM - Nuovo Round' : 'Timer Completato';
+    final body = isEmom
+        ? 'È ora di iniziare il prossimo round di $exerciseName!'
+        : 'Il recupero per $exerciseName è terminato!';
+
+    await showTimerNotification(
+      title: title,
+      body: body,
+      notificationId: exerciseName.hashCode,
+    );
   }
 
   void stopTimer() {
@@ -427,6 +445,8 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
       onTick: _onTimerTick,
       onComplete: _onTimerComplete,
       animationController: _animationController,
+      exerciseName: widget.superSetExercises[_currentSuperSetExerciseIndex]
+          ['name'] as String,
     );
   }
 
@@ -599,144 +619,198 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
     final currentExercise =
         widget.superSetExercises[_currentSuperSetExerciseIndex];
 
-    return GestureDetector(
-      onTap: () => Navigator.of(context).pop(),
-      child: Container(
-        color: Colors.black54,
-        child: DraggableScrollableSheet(
-          initialChildSize: 0.95,
-          minChildSize: 0.5,
-          maxChildSize: 0.95,
-          builder: (context, scrollController) {
-            return Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: theme.scaffoldBackgroundColor,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(16)),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Drag Handle
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: colorScheme.outline.withAlpha(77),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  // Header
-                  Column(
-                    children: [
-                      Text(
-                        currentExercise['name'] as String,
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Serie ${_currentSeriesIndex + 1}/${widget.seriesList.length}',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Timer or Input Fields
-                  if (_isTimerMode)
-                    _buildTimerDisplay(theme, colorScheme)
-                  else
-                    Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            CustomInputField(
-                              controller:
-                                  _repsControllers[currentExercise['id']]![
-                                      currentExercise['series']
-                                          [_currentSeriesIndex]['id']]!,
-                              label: 'REPS',
+    return Material(
+      color: Colors.transparent,
+      child: Stack(
+        children: [
+          // Sfondo scuro cliccabile per chiudere
+          GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Container(color: Colors.black54),
+          ),
+          // Bottom sheet trascinabile
+          DraggableScrollableSheet(
+            initialChildSize: 0.95,
+            minChildSize: 0.5,
+            maxChildSize: 0.95,
+            snap: true,
+            snapSizes: const [0.5, 0.95],
+            builder: (context, scrollController) {
+              return Container(
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(16)),
+                ),
+                child: Column(
+                  children: [
+                    // Drag Handle con area di tocco più ampia
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onVerticalDragUpdate: (details) {
+                        if (details.primaryDelta! > 0) {
+                          // Trascinamento verso il basso
+                          scrollController.jumpTo(
+                              scrollController.offset + details.primaryDelta!);
+                          if (scrollController.offset >=
+                              scrollController.position.maxScrollExtent) {
+                            Navigator.of(context).pop();
+                          }
+                        } else {
+                          // Trascinamento verso l'alto
+                          scrollController.jumpTo(
+                              scrollController.offset + details.primaryDelta!);
+                        }
+                      },
+                      onVerticalDragEnd: (details) {
+                        if (details.primaryVelocity! > 0 &&
+                            scrollController.offset == 0) {
+                          Navigator.of(context).pop();
+                        }
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        padding:
+                            EdgeInsets.symmetric(vertical: AppTheme.spacing.sm),
+                        child: Center(
+                          child: Container(
+                            width: 40,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: colorScheme.outline.withAlpha(77),
+                              borderRadius: BorderRadius.circular(2),
                             ),
-                            SizedBox(width: AppTheme.spacing.md),
-                            CustomInputField(
-                              controller:
-                                  _weightControllers[currentExercise['id']]![
-                                      currentExercise['series']
-                                          [_currentSeriesIndex]['id']]!,
-                              label: 'WEIGHT',
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        ListTile(
-                          title: const Text('Modalità EMOM'),
-                          trailing: Switch(
-                            value: _isEmomMode,
-                            onChanged: (value) =>
-                                setState(() => _isEmomMode = value),
-                            activeColor: colorScheme.primary,
-                            activeTrackColor: colorScheme.primaryContainer,
                           ),
                         ),
-                      ],
+                      ),
                     ),
-
-                  const SizedBox(height: 24),
-
-                  // Bottom Actions
-                  if (_isTimerMode)
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              _timerManager.stopTimer();
-                              setState(() => _isTimerMode = false);
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFEF4444),
-                              foregroundColor: Colors.white,
-                              padding: EdgeInsets.symmetric(
-                                  vertical: AppTheme.spacing.lg),
-                              shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.circular(AppTheme.radii.lg),
+                    // Contenuto scrollabile
+                    Expanded(
+                      child: SingleChildScrollView(
+                        controller: scrollController,
+                        physics: const ClampingScrollPhysics(),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // Header
+                              Column(
+                                children: [
+                                  Text(
+                                    currentExercise['name'] as String,
+                                    style: theme.textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Serie ${_currentSeriesIndex + 1}/${widget.seriesList.length}',
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
                               ),
-                            ),
-                            child: const Text('ANNULLA'),
+                              const SizedBox(height: 24),
+
+                              // Timer or Input Fields
+                              if (_isTimerMode)
+                                _buildTimerDisplay(theme, colorScheme)
+                              else
+                                Column(
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        CustomInputField(
+                                          controller: _repsControllers[
+                                                  currentExercise['id']]![
+                                              currentExercise['series']
+                                                  [_currentSeriesIndex]['id']]!,
+                                          label: 'REPS',
+                                        ),
+                                        SizedBox(width: AppTheme.spacing.md),
+                                        CustomInputField(
+                                          controller: _weightControllers[
+                                                  currentExercise['id']]![
+                                              currentExercise['series']
+                                                  [_currentSeriesIndex]['id']]!,
+                                          label: 'WEIGHT',
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    ListTile(
+                                      title: const Text('Modalità EMOM'),
+                                      trailing: Switch(
+                                        value: _isEmomMode,
+                                        onChanged: (value) =>
+                                            setState(() => _isEmomMode = value),
+                                        activeColor: colorScheme.primary,
+                                        activeTrackColor:
+                                            colorScheme.primaryContainer,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                              const SizedBox(height: 24),
+
+                              // Bottom Actions
+                              if (_isTimerMode)
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: ElevatedButton(
+                                        onPressed: () {
+                                          _timerManager.stopTimer();
+                                          setState(() => _isTimerMode = false);
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor:
+                                              const Color(0xFFEF4444),
+                                          foregroundColor: Colors.white,
+                                          padding: EdgeInsets.symmetric(
+                                              vertical: AppTheme.spacing.lg),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                                AppTheme.radii.lg),
+                                          ),
+                                        ),
+                                        child: const Text('ANNULLA'),
+                                      ),
+                                    ),
+                                    SizedBox(width: AppTheme.spacing.md),
+                                    Expanded(
+                                      child: _buildNextSeriesButton(
+                                          theme, colorScheme),
+                                    ),
+                                  ],
+                                )
+                              else
+                                Column(
+                                  children: [
+                                    _buildTimerSelector(theme, colorScheme),
+                                    SizedBox(height: AppTheme.spacing.lg),
+                                    _buildStartButton(theme, colorScheme),
+                                  ],
+                                ),
+                            ],
                           ),
                         ),
-                        SizedBox(width: AppTheme.spacing.md),
-                        Expanded(
-                          child: _buildNextSeriesButton(theme, colorScheme),
-                        ),
-                      ],
-                    )
-                  else
-                    Column(
-                      children: [
-                        _buildTimerSelector(theme, colorScheme),
-                        SizedBox(height: AppTheme.spacing.lg),
-                        _buildStartButton(theme, colorScheme),
-                      ],
+                      ),
                     ),
-                ],
-              ),
-            );
-          },
-        ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
