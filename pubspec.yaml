@@ -2,7 +2,7 @@ name: alphanessone
 description: "Official AlphanessOne App"
 publish_to: 'none'
 
-version: 1.41.00+83
+version: 1.42.00+84
 
 environment:
   sdk: '>=3.3.0 <4.0.0'

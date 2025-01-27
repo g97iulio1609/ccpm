@@ -953,24 +953,17 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
                       ],
                       SizedBox(height: AppTheme.spacing.md),
                       // Series List
-                      // Rimosso Expanded per evitare conflitti con Sliver
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          return Container(
-                            constraints: BoxConstraints(
-                              maxHeight:
-                                  200, // Imposta un'altezza massima se necessario
-                            ),
-                            child: TrainingProgramSeriesList(
-                              controller: controller,
-                              exerciseRecordService: exerciseRecordService,
-                              weekIndex: weekIndex,
-                              workoutIndex: workoutIndex,
-                              exerciseIndex: exercise.order - 1,
-                              exerciseType: exercise.type,
-                            ),
-                          );
-                        },
+                      Expanded(
+                        child: SingleChildScrollView(
+                          child: TrainingProgramSeriesList(
+                            controller: controller,
+                            exerciseRecordService: exerciseRecordService,
+                            weekIndex: weekIndex,
+                            workoutIndex: workoutIndex,
+                            exerciseIndex: exercise.order - 1,
+                            exerciseType: exercise.type,
+                          ),
+                        ),
                       ),
                       // Superset Badge
                       if (superSets.isNotEmpty) ...[

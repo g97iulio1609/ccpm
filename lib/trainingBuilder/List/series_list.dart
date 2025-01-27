@@ -100,30 +100,33 @@ class TrainingProgramSeriesListState
     final groupedSeries = _groupSeries(exercise.series);
     final expansionState = ref.watch(expansionStateProvider);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: groupedSeries.length,
-          itemBuilder: (context, index) {
-            final item = groupedSeries[index];
-            final key = 'series_group_$index';
-            final isExpanded = expansionState[key] ?? false;
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: groupedSeries.length,
+            itemBuilder: (context, index) {
+              final item = groupedSeries[index];
+              final key = 'series_group_$index';
+              final isExpanded = expansionState[key] ?? false;
 
-            if (item is List<Series>) {
-              return _buildSeriesGroupCard(
-                  context, item, index, isExpanded, key, theme, colorScheme);
-            } else {
-              return _buildSeriesCard(
-                  context, item as Series, index, theme, colorScheme);
-            }
-          },
-        ),
-        SizedBox(height: AppTheme.spacing.md),
-        _buildActionButtons(exercise.series, theme, colorScheme),
-      ],
+              if (item is List<Series>) {
+                return _buildSeriesGroupCard(
+                    context, item, index, isExpanded, key, theme, colorScheme);
+              } else {
+                return _buildSeriesCard(
+                    context, item as Series, index, theme, colorScheme);
+              }
+            },
+          ),
+          SizedBox(height: AppTheme.spacing.md),
+          _buildActionButtons(exercise.series, theme, colorScheme),
+        ],
+      ),
     );
   }
 
