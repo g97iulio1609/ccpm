@@ -11,6 +11,7 @@ import 'package:alphanessone/Viewer/UI/workout_provider.dart'
     as workout_provider;
 import 'package:alphanessone/Viewer/providers/training_program_provider.dart';
 import 'package:alphanessone/Viewer/UI/exercise_timer_bottom_sheet.dart';
+import 'package:flutter/services.dart';
 import 'workout_services.dart';
 
 class WorkoutDetails extends ConsumerStatefulWidget {
@@ -1283,7 +1284,11 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
             const SizedBox(height: 8),
             TextField(
               controller: repsController,
-              keyboardType: TextInputType.number,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+              ],
               decoration: InputDecoration(
                 labelText: 'Ripetizioni eseguite',
                 hintText: 'Inserisci le ripetizioni',
@@ -1303,7 +1308,11 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
             const SizedBox(height: 8),
             TextField(
               controller: weightController,
-              keyboardType: TextInputType.number,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+              ],
               decoration: InputDecoration(
                 labelText: 'Peso eseguito',
                 hintText: 'Inserisci il peso',
@@ -1325,8 +1334,8 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
           ),
           TextButton(
             onPressed: () {
-              final reps = int.tryParse(repsController.text);
-              final weight = int.tryParse(weightController.text);
+              final reps = double.tryParse(repsController.text);
+              final weight = double.tryParse(weightController.text);
 
               if (reps != null) {
                 seriesData['reps_done'] = reps;

@@ -30,6 +30,7 @@ class GenericAutocompleteField<T> extends HookConsumerWidget {
     final focusNode = useFocusNode();
 
     return TypeAheadField<T>(
+      controller: controller,
       suggestionsCallback: suggestionsCallback,
       itemBuilder: itemBuilder,
       onSelected: (T suggestion) {
@@ -50,11 +51,10 @@ class GenericAutocompleteField<T> extends HookConsumerWidget {
       },
       offset: const Offset(0, 8),
       constraints: const BoxConstraints(maxHeight: 200),
-      controller: controller,
       focusNode: focusNode,
       builder: (context, controller, focusNode) {
         return TextField(
-          controller: controller,
+          controller: this.controller, // Modifica chiave qui
           focusNode: focusNode,
           onChanged: onChanged,
           decoration: InputDecoration(
@@ -80,13 +80,15 @@ class GenericAutocompleteField<T> extends HookConsumerWidget {
             ),
             filled: true,
             fillColor: Theme.of(context).colorScheme.surface,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            prefixIcon: prefixIcon != null 
-                ? Icon(prefixIcon, color: Theme.of(context).colorScheme.onSurfaceVariant)
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            prefixIcon: prefixIcon != null
+                ? Icon(prefixIcon,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant)
                 : null,
           ),
         );
       },
     );
   }
-} 
+}

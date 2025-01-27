@@ -1,5 +1,3 @@
-// exercise_autocomplete_box.dart
-
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -31,9 +29,11 @@ class ExerciseAutocompleteBox extends HookConsumerWidget {
       suggestionsCallback: (search) async {
         final exercisesList = await exercisesService.getExercises().first;
         final suggestions = exercisesList
-            .where((exercise) => exercise.name.toLowerCase().contains(search.toLowerCase()))
+            .where((exercise) =>
+                exercise.name.toLowerCase().contains(search.toLowerCase()))
             .toList();
-        suggestions.add(ExerciseModel(id: '', name: 'Crea Esercizio', type: '', muscleGroups: []));
+        suggestions.add(ExerciseModel(
+            id: '', name: 'Crea Esercizio', type: '', muscleGroups: []));
         return suggestions;
       },
       itemBuilder: (context, suggestion) {
@@ -46,7 +46,8 @@ class ExerciseAutocompleteBox extends HookConsumerWidget {
           final newExercise = await showDialog<ExerciseModel>(
             context: context,
             builder: (context) => userId != null
-                ? AddExerciseDialog(exercisesService: exercisesService, userId: userId)
+                ? AddExerciseDialog(
+                    exercisesService: exercisesService, userId: userId)
                 : const SizedBox.shrink(),
           );
           if (newExercise != null) {

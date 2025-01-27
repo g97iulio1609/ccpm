@@ -37,7 +37,7 @@ dependencies:
   material_color_utilities: ^0.11.1
   meta: ^1.11.0
   vm_service:
-  flutter_slidable: ^3.1.0
+  flutter_slidable: ^4.0.0
   random_string: ^2.3.1
   google_sign_in_web: ^0.12.4
   firebase_storage: ^12.0.0
@@ -52,7 +52,7 @@ dependencies:
   openfoodfacts: ^3.10.0
   multi_select_flutter: ^4.1.3
   in_app_purchase: ^3.2.0
-  in_app_purchase_android: ^0.3.6
+  in_app_purchase_android: ^0.4.0
   url_launcher: ^6.3.0
   riverpod: ^2.5.1
   cloud_functions: ^5.0.3
