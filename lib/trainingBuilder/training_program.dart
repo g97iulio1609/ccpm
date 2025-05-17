@@ -73,22 +73,19 @@ class TrainingProgramPage extends HookConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _buildProgramForm(
-                          controller,
-                          userRole,
-                          theme,
-                          colorScheme,
-                          context,
-                          ref,
+                        _ProgramDetailsForm(
+                          controller: controller,
+                          userRole: userRole,
+                          theme: theme,
+                          colorScheme: colorScheme,
                         ),
                         SizedBox(height: AppTheme.spacing.xl),
-                        _buildWeeksList(
-                          controller,
-                          programId,
-                          userId,
-                          theme,
-                          colorScheme,
-                          context,
+                        _ProgramWeeksSection(
+                          controller: controller,
+                          programId: programId,
+                          userId: userId,
+                          theme: theme,
+                          colorScheme: colorScheme,
                         ),
                       ],
                     ),
@@ -98,15 +95,31 @@ class TrainingProgramPage extends HookConsumerWidget {
       ),
     );
   }
+}
 
-  Widget _buildProgramForm(
-    TrainingProgramController controller,
-    String userRole,
-    ThemeData theme,
-    ColorScheme colorScheme,
-    BuildContext context,
-    WidgetRef ref,
-  ) {
+class _ProgramDetailsForm extends ConsumerWidget {
+  final TrainingProgramController controller;
+  final String userRole;
+  final ThemeData theme;
+  final ColorScheme colorScheme;
+
+  const _ProgramDetailsForm({
+    required this.controller,
+    required this.userRole,
+    required this.theme,
+    required this.colorScheme,
+  });
+
+  void _showAthleteSelectionDialog(
+      BuildContext context, WidgetRef ref, TrainingProgramController controller) {
+    showDialog(
+      context: context,
+      builder: (context) => AthleteSelectionDialog(controller: controller),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       padding: EdgeInsets.all(AppTheme.spacing.lg),
       decoration: BoxDecoration(
@@ -120,19 +133,19 @@ class TrainingProgramPage extends HookConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildTextField(
+          _CustomTextFormField(
             controller: controller.nameController,
-            label: 'Program Name',
-            hint: 'Enter program name',
+            labelText: 'Program Name',
+            hintText: 'Enter program name',
             icon: Icons.title,
             theme: theme,
             colorScheme: colorScheme,
           ),
           SizedBox(height: AppTheme.spacing.md),
-          _buildTextField(
+          _CustomTextFormField(
             controller: controller.descriptionController,
-            label: 'Description',
-            hint: 'Enter program description',
+            labelText: 'Description',
+            hintText: 'Enter program description',
             icon: Icons.description,
             theme: theme,
             colorScheme: colorScheme,
@@ -140,225 +153,95 @@ class TrainingProgramPage extends HookConsumerWidget {
           ),
           SizedBox(height: AppTheme.spacing.md),
           if (userRole == 'admin')
-            _buildAthleteButton(context, ref, controller, theme, colorScheme),
+            _GradientElevatedButton(
+              onTap: () => _showAthleteSelectionDialog(context, ref, controller),
+              label: 'Select Athlete',
+              icon: Icons.person_add,
+              theme: theme,
+              colorScheme: colorScheme,
+              isPrimary: true, // Assuming this is a primary action
+            ),
           SizedBox(height: AppTheme.spacing.md),
-          _buildMesocycleField(controller, theme, colorScheme),
+          _CustomTextFormField(
+            controller: controller.mesocycleNumberController,
+            labelText: 'Mesocycle Number',
+            hintText: 'Enter mesocycle number',
+            icon: Icons.fitness_center,
+            theme: theme,
+            colorScheme: colorScheme,
+            keyboardType: TextInputType.number,
+          ),
           SizedBox(height: AppTheme.spacing.lg),
-          _buildProgramOptions(controller, theme, colorScheme),
+          _ProgramOptions(
+            controller: controller,
+            theme: theme,
+            colorScheme: colorScheme,
+          ),
           SizedBox(height: AppTheme.spacing.lg),
-          _buildActionButtons(controller, context, theme, colorScheme),
+          _ActionButtons(
+            controller: controller,
+            theme: theme,
+            colorScheme: colorScheme,
+          ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-    required ThemeData theme,
-    required ColorScheme colorScheme,
-    int? maxLines,
-  }) {
-    return TextFormField(
-      controller: controller,
-      maxLines: maxLines ?? 1,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        prefixIcon: Icon(icon, color: colorScheme.primary),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radii.md),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radii.md),
-          borderSide: BorderSide(
-            color: colorScheme.outline.withAlpha(76),
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radii.md),
-          borderSide: BorderSide(
-            color: colorScheme.primary,
-            width: 2,
-          ),
-        ),
-        filled: true,
-        fillColor: colorScheme.surfaceContainerHighest.withAlpha(76),
-      ),
-      style: theme.textTheme.bodyLarge?.copyWith(
-        color: colorScheme.onSurface,
-      ),
-    );
-  }
+class _ProgramOptions extends StatelessWidget {
+  final TrainingProgramController controller;
+  final ThemeData theme;
+  final ColorScheme colorScheme;
 
-  Widget _buildAthleteButton(
-    BuildContext context,
-    WidgetRef ref,
-    TrainingProgramController controller,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            colorScheme.primary,
-            colorScheme.primary.withAlpha(204),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.primary.withAlpha(51),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _showAthleteSelectionDialog(context, ref, controller),
-          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              vertical: AppTheme.spacing.md,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.person_add,
-                  color: colorScheme.onPrimary,
-                  size: 20,
-                ),
-                SizedBox(width: AppTheme.spacing.sm),
-                Text(
-                  'Select Athlete',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: colorScheme.onPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  const _ProgramOptions({
+    required this.controller,
+    required this.theme,
+    required this.colorScheme,
+  });
 
-  Widget _buildMesocycleField(
-    TrainingProgramController controller,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    return TextFormField(
-      controller: controller.mesocycleNumberController,
-      keyboardType: TextInputType.number,
-      decoration: InputDecoration(
-        labelText: 'Mesocycle Number',
-        prefixIcon: Icon(Icons.fitness_center, color: colorScheme.primary),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radii.md),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radii.md),
-          borderSide: BorderSide(
-            color: colorScheme.outline.withAlpha(76),
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radii.md),
-          borderSide: BorderSide(
-            color: colorScheme.primary,
-            width: 2,
-          ),
-        ),
-        filled: true,
-        fillColor: colorScheme.surfaceContainerHighest.withAlpha(76),
-      ),
-      style: theme.textTheme.bodyLarge?.copyWith(
-        color: colorScheme.onSurface,
-      ),
-    );
-  }
-
-  Widget _buildProgramOptions(
-    TrainingProgramController controller,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
+  @override
+  Widget build(BuildContext context) {
     return Column(
       children: [
-        _buildOptionSwitch(
-          'Hide Program',
-          controller.program.hide,
-          (value) => controller.updateHideProgram(value),
-          theme,
-          colorScheme,
+        _OptionSwitch(
+          label: 'Hide Program',
+          value: controller.program.hide,
+          onChanged: (value) => controller.updateHideProgram(value),
+          theme: theme,
+          colorScheme: colorScheme,
         ),
         SizedBox(height: AppTheme.spacing.sm),
-        _buildOptionSwitch(
-          'Public Program',
-          controller.program.status == 'public',
-          (value) =>
+        _OptionSwitch(
+          label: 'Public Program',
+          value: controller.program.status == 'public',
+          onChanged: (value) =>
               controller.updateProgramStatus(value ? 'public' : 'private'),
-          theme,
-          colorScheme,
+          theme: theme,
+          colorScheme: colorScheme,
         ),
       ],
     );
   }
+}
 
-  Widget _buildOptionSwitch(
-    String label,
-    bool value,
-    ValueChanged<bool> onChanged,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing.md,
-        vertical: AppTheme.spacing.sm,
-      ),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withAlpha(76),
-        borderRadius: BorderRadius.circular(AppTheme.radii.md),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: colorScheme.onSurface,
-            ),
-          ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeColor: colorScheme.primary,
-            activeTrackColor: colorScheme.primaryContainer.withAlpha(76),
-          ),
-        ],
-      ),
-    );
-  }
+class _ActionButtons extends StatelessWidget {
+  final TrainingProgramController controller;
+  final ThemeData theme;
+  final ColorScheme colorScheme;
 
-  Widget _buildActionButtons(
-    TrainingProgramController controller,
-    BuildContext context,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
+  const _ActionButtons({
+    required this.controller,
+    required this.theme,
+    required this.colorScheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
       children: [
         Expanded(
-          child: _buildActionButton(
+          child: _GradientElevatedButton(
             icon: Icons.add,
             label: 'Add Week',
             onTap: controller.addWeek,
@@ -369,7 +252,7 @@ class TrainingProgramPage extends HookConsumerWidget {
         ),
         SizedBox(width: AppTheme.spacing.md),
         Expanded(
-          child: _buildActionButton(
+          child: _GradientElevatedButton(
             icon: Icons.save,
             label: 'Save Program',
             onTap: () => controller.submitProgram(context),
@@ -381,73 +264,25 @@ class TrainingProgramPage extends HookConsumerWidget {
       ],
     );
   }
+}
 
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    required bool isPrimary,
-    required ThemeData theme,
-    required ColorScheme colorScheme,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isPrimary
-              ? [colorScheme.primary, colorScheme.primary.withAlpha(204)]
-              : [
-                  colorScheme.surfaceContainerHighest,
-                  colorScheme.surfaceContainerHighest.withAlpha(204)
-                ],
-        ),
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        boxShadow: isPrimary ? AppTheme.elevations.small : null,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              vertical: AppTheme.spacing.md,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  icon,
-                  color: isPrimary
-                      ? colorScheme.onPrimary
-                      : colorScheme.onSurfaceVariant,
-                  size: 20,
-                ),
-                SizedBox(width: AppTheme.spacing.sm),
-                Text(
-                  label,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: isPrimary
-                        ? colorScheme.onPrimary
-                        : colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+class _ProgramWeeksSection extends StatelessWidget {
+  final TrainingProgramController controller;
+  final String programId;
+  final String userId;
+  final ThemeData theme;
+  final ColorScheme colorScheme;
 
-  Widget _buildWeeksList(
-    TrainingProgramController controller,
-    String programId,
-    String userId,
-    ThemeData theme,
-    ColorScheme colorScheme,
-    BuildContext context,
-  ) {
+  const _ProgramWeeksSection({
+    required this.controller,
+    required this.programId,
+    required this.userId,
+    required this.theme,
+    required this.colorScheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(AppTheme.spacing.lg),
       decoration: BoxDecoration(
@@ -479,15 +314,181 @@ class TrainingProgramPage extends HookConsumerWidget {
       ),
     );
   }
+}
 
-  void _showAthleteSelectionDialog(
-    BuildContext context,
-    WidgetRef ref,
-    TrainingProgramController controller,
-  ) {
-    showDialog(
-      context: context,
-      builder: (context) => AthleteSelectionDialog(controller: controller),
+class _CustomTextFormField extends StatelessWidget {
+  final TextEditingController controller;
+  final String labelText;
+  final String hintText;
+  final IconData icon;
+  final ThemeData theme;
+  final ColorScheme colorScheme;
+  final int? maxLines;
+  final TextInputType? keyboardType;
+
+  const _CustomTextFormField({
+    required this.controller,
+    required this.labelText,
+    required this.hintText,
+    required this.icon,
+    required this.theme,
+    required this.colorScheme,
+    this.maxLines,
+    this.keyboardType,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines ?? 1,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        labelText: labelText,
+        hintText: hintText,
+        prefixIcon: Icon(icon, color: colorScheme.primary),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radii.md),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radii.md),
+          borderSide: BorderSide(
+            color: colorScheme.outline.withAlpha(76),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radii.md),
+          borderSide: BorderSide(
+            color: colorScheme.primary,
+            width: 2,
+          ),
+        ),
+        filled: true,
+        fillColor: colorScheme.surfaceContainerHighest.withAlpha(76),
+      ),
+      style: theme.textTheme.bodyLarge?.copyWith(
+        color: colorScheme.onSurface,
+      ),
+    );
+  }
+}
+
+class _GradientElevatedButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool isPrimary;
+  final ThemeData theme;
+  final ColorScheme colorScheme;
+
+  const _GradientElevatedButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    required this.isPrimary,
+    required this.theme,
+    required this.colorScheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isPrimary
+              ? [colorScheme.primary, colorScheme.primary.withAlpha(204)]
+              : [
+                  colorScheme.surfaceContainerHighest,
+                  colorScheme.surfaceContainerHighest.withAlpha(204)
+                ],
+        ),
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        boxShadow: isPrimary ? AppTheme.elevations.small : null,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              vertical: AppTheme.spacing.md,
+              horizontal: AppTheme.spacing.lg, // Added for better padding
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  color: isPrimary
+                      ? colorScheme.onPrimary
+                      : colorScheme.onSurfaceVariant,
+                  size: 20,
+                ),
+                SizedBox(width: AppTheme.spacing.sm),
+                Text(
+                  label,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: isPrimary
+                        ? colorScheme.onPrimary
+                        : colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OptionSwitch extends StatelessWidget {
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final ThemeData theme;
+  final ColorScheme colorScheme;
+
+  const _OptionSwitch({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+    required this.theme,
+    required this.colorScheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppTheme.spacing.md,
+        vertical: AppTheme.spacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withAlpha(76),
+        borderRadius: BorderRadius.circular(AppTheme.radii.md),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: colorScheme.onSurface,
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: colorScheme.primary,
+            activeTrackColor: colorScheme.primaryContainer.withAlpha(76),
+            inactiveThumbColor: colorScheme.onSurfaceVariant,
+            inactiveTrackColor: colorScheme.surfaceContainer.withAlpha(76),
+          ),
+        ],
+      ),
     );
   }
 }

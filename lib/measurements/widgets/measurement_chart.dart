@@ -209,7 +209,7 @@ class MeasurementChart extends StatelessWidget {
   LineTouchData _buildTouchData(ColorScheme colorScheme) {
     return LineTouchData(
       touchTooltipData: LineTouchTooltipData(
-        tooltipRoundedRadius: AppTheme.radii.md,
+        tooltipBorderRadius: BorderRadius.circular(AppTheme.radii.md),
         tooltipBorder: BorderSide(
           color: colorScheme.outline.withAlpha(26),
         ),

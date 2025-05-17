@@ -940,13 +940,13 @@ class _ProgressionsListState extends ConsumerState<ProgressionsList>
       ProgressionControllers controllers, String min, String max) {
     final minWeight = double.tryParse(min) ?? 0;
     final minIntensity = SeriesUtils.calculateIntensityFromWeight(
-        minWeight, widget.latestMaxWeight);
+        minWeight, widget.latestMaxWeight.toDouble());
     controllers.intensity.min.text = minIntensity.toStringAsFixed(1);
 
     if (max.isNotEmpty) {
       final maxWeight = double.tryParse(max) ?? 0;
       final maxIntensity = SeriesUtils.calculateIntensityFromWeight(
-          maxWeight, widget.latestMaxWeight);
+          maxWeight, widget.latestMaxWeight.toDouble());
       controllers.intensity.max.text = maxIntensity.toStringAsFixed(1);
     } else {
       controllers.intensity.max.text = '';
