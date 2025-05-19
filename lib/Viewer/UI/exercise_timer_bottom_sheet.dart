@@ -11,6 +11,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:alphanessone/Main/app_notifications.dart';
 
+// Componenti estratti
+import 'timer_constants.dart';
+import 'timer_manager.dart';
+import 'custom_input_field.dart';
+import 'timer_display.dart';
+import 'timer_controls.dart';
+import 'preset_manager.dart';
+
 // Costanti per il layout
 class TimerConstants {
   static const defaultPresets = [
@@ -164,6 +172,7 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
   late final TimerManager _timerManager;
   late final AnimationController _animationController;
   late final Animation<double> _animation;
+  late final PresetManager _presetManager;
 
   final Map<String, Map<String, TextEditingController>> _repsControllers = {};
   final Map<String, Map<String, TextEditingController>> _weightControllers = {};
@@ -180,266 +189,14 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
   @override
   void initState() {
     super.initState();
-    _loadUserPresets();
     _initializeState();
-  }
-
-  List<Map<String, dynamic>> _loadPresetsFromCache(
-      SharedPreferences prefs, String key) {
-    final data = prefs.getString(key);
-    if (data == null) return [];
-    try {
-      final decoded = jsonDecode(data);
-      return decoded is List
-          ? decoded.map((item) => Map<String, dynamic>.from(item)).toList()
-          : [];
-    } catch (_) {
-      return [];
-    }
-  }
-
-  Future<void> _loadUserPresets() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-
-      // Carica dati dalla cache
-      final cachedPresets =
-          _loadPresetsFromCache(prefs, 'timer_presets_${widget.userId}');
-
-      // Sincronizza con Firestore
-      try {
-        final presets = await FirebaseFirestore.instance
-            .collection('timer_presets')
-            .where('userId', isEqualTo: widget.userId)
-            .orderBy('seconds')
-            .get();
-
-        if (presets.docs.isNotEmpty) {
-          final updatedPresets = _removeDuplicatePresets(presets.docs
-              .map((doc) => {
-                    'id': doc.id,
-                    'label': doc.data()['label'] as String,
-                    'seconds': doc.data()['seconds'] as int,
-                  })
-              .toList());
-
-          // Aggiorna cache
-          await _saveToCache(
-              prefs, 'timer_presets_${widget.userId}', updatedPresets);
-          setState(() => _presets = updatedPresets);
-          return;
-        }
-
-        // Se non ci sono preset, crea quelli predefiniti
-        final batch = FirebaseFirestore.instance.batch();
-        final defaultPresets = await Future.wait(
-          TimerConstants.defaultPresets.map((preset) async {
-            final docRef =
-                FirebaseFirestore.instance.collection('timer_presets').doc();
-            batch.set(docRef, {
-              'userId': widget.userId,
-              'label': preset['label'],
-              'seconds': preset['seconds'],
-              'createdAt': FieldValue.serverTimestamp(),
-            });
-            return {
-              'id': docRef.id,
-              ...preset,
-            };
-          }),
-        );
-
-        await batch.commit();
-        await _saveToCache(
-            prefs, 'timer_presets_${widget.userId}', defaultPresets);
-        setState(() => _presets = defaultPresets);
-      } catch (_) {
-        // Usa dati dalla cache se Firestore non disponibile
-        setState(() => _presets = _removeDuplicatePresets(cachedPresets));
-      }
-    } catch (_) {
-      setState(() => _presets = []);
-    }
-  }
-
-  List<Map<String, dynamic>> _removeDuplicatePresets(
-      List<Map<String, dynamic>> presets) {
-    final uniquePresets = <int, Map<String, dynamic>>{};
-    for (final preset in presets) {
-      final seconds = preset['seconds'] as int;
-      if (!uniquePresets.containsKey(seconds)) {
-        uniquePresets[seconds] = preset;
-      }
-    }
-    return uniquePresets.values.toList()
-      ..sort((a, b) => a['seconds'].compareTo(b['seconds']));
-  }
-
-  Future<void> _savePreset(String label, int seconds) async {
-    // Controlla se esiste già un preset con gli stessi secondi
-    if (_presets.any((p) => p['seconds'] == seconds)) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Esiste già un preset da $seconds secondi')),
-        );
-      }
-      return;
-    }
-
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final docRef =
-          await FirebaseFirestore.instance.collection('timer_presets').add({
-        'userId': widget.userId,
-        'label': label,
-        'seconds': seconds,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-
-      final newPreset = {
-        'id': docRef.id,
-        'label': label,
-        'seconds': seconds,
-      };
-
-      setState(() {
-        _presets = _removeDuplicatePresets([..._presets, newPreset]);
-      });
-
-      await _saveToCache(prefs, 'timer_presets_${widget.userId}', _presets);
-    } catch (_) {}
-  }
-
-  Future<void> _updatePreset(String presetId, String label, int seconds) async {
-    // Controlla se esiste già un altro preset con gli stessi secondi
-    if (_presets.any((p) => p['seconds'] == seconds && p['id'] != presetId)) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Esiste già un preset da $seconds secondi')),
-        );
-      }
-      return;
-    }
-
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await FirebaseFirestore.instance
-          .collection('timer_presets')
-          .doc(presetId)
-          .update({
-        'label': label,
-        'seconds': seconds,
-      });
-
-      setState(() {
-        final index = _presets.indexWhere((p) => p['id'] == presetId);
-        if (index != -1) {
-          _presets[index] = {
-            'id': presetId,
-            'label': label,
-            'seconds': seconds,
-          };
-          _presets.sort((a, b) => a['seconds'].compareTo(b['seconds']));
-        }
-      });
-
-      await _saveToCache(prefs, 'timer_presets_${widget.userId}', _presets);
-    } catch (_) {}
-  }
-
-  Future<void> _deletePreset(String presetId) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await FirebaseFirestore.instance
-          .collection('timer_presets')
-          .doc(presetId)
-          .delete();
-
-      setState(() {
-        _presets.removeWhere((preset) => preset['id'] == presetId);
-      });
-
-      await _saveToCache(prefs, 'timer_presets_${widget.userId}', _presets);
-    } catch (_) {}
-  }
-
-  void _showAddPresetDialog() {
-    final minutesController = TextEditingController();
-    final secondsController = TextEditingController();
-    final labelController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Aggiungi Preset'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: labelController,
-                decoration: const InputDecoration(
-                  labelText: 'Nome preset',
-                  hintText: 'es. Recupero breve',
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: minutesController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Minuti',
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: TextField(
-                      controller: secondsController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Secondi',
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Annulla'),
-            ),
-            TextButton(
-              onPressed: () {
-                final minutes = int.tryParse(minutesController.text) ?? 0;
-                final seconds = int.tryParse(secondsController.text) ?? 0;
-                final totalSeconds = (minutes * 60) + seconds;
-                final label = labelController.text.isNotEmpty
-                    ? labelController.text
-                    : '${minutes}m ${seconds}s';
-
-                if (totalSeconds > 0) {
-                  _savePreset(label, totalSeconds);
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('Salva'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   void _initializeState() {
     _initializeControllers();
     _initializeIndices();
     _initializeAnimation();
+    _initializePresetManager();
 
     _timerManager = TimerManager(
       onTick: _onTimerTick,
@@ -448,6 +205,16 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
       exerciseName: widget.superSetExercises[_currentSuperSetExerciseIndex]
           ['name'] as String,
     );
+  }
+
+  void _initializePresetManager() {
+    _presetManager = PresetManager(
+      userId: widget.userId,
+      onPresetsUpdated: (presets) {
+        setState(() => _presets = presets);
+      },
+    );
+    _presetManager.loadUserPresets();
   }
 
   void _initializeControllers() {
@@ -719,7 +486,11 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
 
                               // Timer or Input Fields
                               if (_isTimerMode)
-                                _buildTimerDisplay(theme, colorScheme)
+                                TimerDisplay(
+                                  animation: _animation,
+                                  remainingSeconds: _remainingSeconds,
+                                  isEmomMode: _isEmomMode,
+                                )
                               else
                                 Column(
                                   children: [
@@ -793,12 +564,34 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
                                   ],
                                 )
                               else
-                                Column(
-                                  children: [
-                                    _buildTimerSelector(theme, colorScheme),
-                                    SizedBox(height: AppTheme.spacing.lg),
-                                    _buildStartButton(theme, colorScheme),
-                                  ],
+                                TimerControls(
+                                  timerMinutes: _timerMinutes,
+                                  timerSeconds: _timerSeconds,
+                                  onMinutesChanged: (value) =>
+                                      setState(() => _timerMinutes = value),
+                                  onSecondsChanged: (value) =>
+                                      setState(() => _timerSeconds = value),
+                                  onStartTimer: () {
+                                    setState(() => _isTimerMode = true);
+                                    final totalSeconds =
+                                        (_timerMinutes * 60) + _timerSeconds;
+                                    _remainingSeconds = totalSeconds;
+                                    _timerManager.startTimer(
+                                        totalSeconds, _isEmomMode);
+                                  },
+                                  presets: _presets,
+                                  onPresetSelected: (preset) {
+                                    setState(() {
+                                      final seconds = preset['seconds'] as int;
+                                      _timerMinutes = seconds ~/ 60;
+                                      _timerSeconds = seconds % 60;
+                                    });
+                                  },
+                                  onAddPresetPressed: _showAddPresetDialog,
+                                  onEditPresetPressed: _showEditPresetDialog,
+                                  onDeletePresetPressed:
+                                      _presetManager.deletePreset,
+                                  formatDuration: _presetManager.formatDuration,
                                 ),
                             ],
                           ),
@@ -815,333 +608,77 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
     );
   }
 
-  Widget _buildTimerDisplay(ThemeData theme, ColorScheme colorScheme) {
-    return Container(
-      width: double.infinity,
-      height: TimerConstants.timerDisplaySize,
-      padding: EdgeInsets.all(AppTheme.spacing.lg),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (_isEmomMode) _buildEmomLabel(theme, colorScheme),
-          Expanded(
-            child: AspectRatio(
-              aspectRatio: 1,
-              child: Stack(
-                fit: StackFit.expand,
+  void _showAddPresetDialog() {
+    final minutesController = TextEditingController();
+    final secondsController = TextEditingController();
+    final labelController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Aggiungi Preset'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: labelController,
+                decoration: const InputDecoration(
+                  labelText: 'Nome preset',
+                  hintText: 'es. Recupero breve',
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
                 children: [
-                  _buildTimerCircle(colorScheme),
-                  _buildTimerText(theme),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTimerCircle(ColorScheme colorScheme) {
-    return Container(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.black,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(26),
-            blurRadius: 10,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-      child: AnimatedBuilder(
-        animation: _animation,
-        builder: (context, child) {
-          return CircularProgressIndicator(
-            value: _animation.value,
-            strokeWidth: TimerConstants.progressStrokeWidth,
-            backgroundColor: colorScheme.surfaceContainerHighest.withAlpha(26),
-            color: AppTheme.primaryGold,
-            strokeCap: StrokeCap.round,
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildTimerText(ThemeData theme) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            _formatTime(_remainingSeconds),
-            style: theme.textTheme.displayLarge?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: 48,
-              height: 1,
-              letterSpacing: -1,
-            ),
-          ),
-          SizedBox(height: AppTheme.spacing.xs),
-          Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: AppTheme.spacing.sm,
-              vertical: AppTheme.spacing.xxs,
-            ),
-            decoration: BoxDecoration(
-              color: Colors.white.withAlpha(26),
-              borderRadius: BorderRadius.circular(AppTheme.radii.full),
-            ),
-            child: Text(
-              'rimanenti',
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: Colors.white.withAlpha(204),
-                fontWeight: FontWeight.w500,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmomLabel(ThemeData theme, ColorScheme colorScheme) {
-    return Container(
-      margin: EdgeInsets.only(bottom: AppTheme.spacing.md),
-      padding: EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing.md,
-        vertical: AppTheme.spacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(AppTheme.radii.full),
-      ),
-      child: Text(
-        'EMOM',
-        style: theme.textTheme.labelLarge?.copyWith(
-          color: colorScheme.onPrimaryContainer,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTimerSelector(ThemeData theme, ColorScheme colorScheme) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildPresetButtons(theme, colorScheme),
-        SizedBox(height: AppTheme.spacing.md),
-        _buildCustomTimePicker(theme, colorScheme),
-      ],
-    );
-  }
-
-  Widget _buildPresetButtons(ThemeData theme, ColorScheme colorScheme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SizedBox(
-          height: 48,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: _presets.map((preset) {
-                return Padding(
-                  padding: EdgeInsets.only(right: AppTheme.spacing.xs),
-                  child: SizedBox(
-                    height: 40,
-                    child: OutlinedButton(
-                      onPressed: () {
-                        setState(() {
-                          final seconds = preset['seconds'] as int;
-                          _timerMinutes = seconds ~/ 60;
-                          _timerSeconds = seconds % 60;
-                        });
-                      },
-                      onLongPress: () => _showEditPresetDialog(preset),
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: colorScheme.primary),
-                        padding: EdgeInsets.only(
-                          left: AppTheme.spacing.sm,
-                          right: AppTheme.spacing.xl,
-                          top: AppTheme.spacing.sm,
-                          bottom: AppTheme.spacing.sm,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(AppTheme.radii.md),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            _formatDuration(preset['seconds'] as int),
-                            style: theme.textTheme.labelLarge?.copyWith(
-                              color: colorScheme.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          SizedBox(width: AppTheme.spacing.xs),
-                          IconButton(
-                            icon: Icon(
-                              Icons.close,
-                              size: 18,
-                              color: colorScheme.error,
-                            ),
-                            onPressed: () =>
-                                _deletePreset(preset['id'] as String),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                            splashRadius: 16,
-                          ),
-                        ],
+                  Expanded(
+                    child: TextField(
+                      controller: minutesController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Minuti',
                       ),
                     ),
                   ),
-                );
-              }).toList(),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextField(
+                      controller: secondsController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Secondi',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Annulla'),
             ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        OutlinedButton.icon(
-          onPressed: _showAddPresetDialog,
-          icon: const Icon(Icons.add),
-          label: const Text('Aggiungi preset'),
-          style: OutlinedButton.styleFrom(
-            side: BorderSide(color: colorScheme.primary.withAlpha(128)),
-          ),
-        ),
-      ],
-    );
-  }
+            TextButton(
+              onPressed: () {
+                final minutes = int.tryParse(minutesController.text) ?? 0;
+                final seconds = int.tryParse(secondsController.text) ?? 0;
+                final totalSeconds = (minutes * 60) + seconds;
+                final label = labelController.text.isNotEmpty
+                    ? labelController.text
+                    : '${minutes}m ${seconds}s';
 
-  Widget _buildCustomTimePicker(ThemeData theme, ColorScheme colorScheme) {
-    return Container(
-      padding: EdgeInsets.all(AppTheme.spacing.md),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withAlpha(77),
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(color: colorScheme.outline.withAlpha(26)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _buildNumberPicker(
-            theme,
-            colorScheme,
-            'Minuti',
-            _timerMinutes,
-            59,
-            (value) => setState(() => _timerMinutes = value),
-          ),
-          VerticalDivider(
-            color: colorScheme.outline.withAlpha(26),
-            width: AppTheme.spacing.lg,
-          ),
-          _buildNumberPicker(
-            theme,
-            colorScheme,
-            'Secondi',
-            _timerSeconds,
-            59,
-            (value) => setState(() => _timerSeconds = value),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNumberPicker(
-    ThemeData theme,
-    ColorScheme colorScheme,
-    String label,
-    int value,
-    int maxValue,
-    ValueChanged<int> onChanged,
-  ) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          label,
-          style: theme.textTheme.titleSmall?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        SizedBox(height: AppTheme.spacing.xs),
-        NumberPicker(
-          value: value,
-          minValue: 0,
-          maxValue: maxValue,
-          onChanged: onChanged,
-          itemHeight: TimerConstants.numberPickerItemHeight,
-          textStyle: theme.textTheme.titleLarge?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-          ),
-          selectedTextStyle: theme.textTheme.headlineSmall?.copyWith(
-            color: colorScheme.primary,
-            fontWeight: FontWeight.w600,
-          ),
-          decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(color: colorScheme.outline.withAlpha(26)),
-              bottom: BorderSide(color: colorScheme.outline.withAlpha(26)),
+                if (totalSeconds > 0) {
+                  _presetManager.savePreset(label, totalSeconds, context);
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Salva'),
             ),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     );
-  }
-
-  Widget _buildStartButton(ThemeData theme, ColorScheme colorScheme) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: () {
-          setState(() => _isTimerMode = true);
-          final totalSeconds = (_timerMinutes * 60) + _timerSeconds;
-          _remainingSeconds = totalSeconds;
-          _timerManager.startTimer(totalSeconds, _isEmomMode);
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: colorScheme.primary,
-          foregroundColor: colorScheme.onPrimary,
-          padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.lg),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-          ),
-        ),
-        child: Text(
-          'AVVIA TIMER',
-          style: theme.textTheme.titleMedium?.copyWith(
-            color: colorScheme.onPrimary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _formatDuration(int seconds) {
-    final minutes = seconds ~/ 60;
-    final remainingSeconds = seconds % 60;
-    if (minutes > 0) {
-      return remainingSeconds > 0
-          ? '${minutes}m ${remainingSeconds}s'
-          : '${minutes}m';
-    }
-    return '${remainingSeconds}s';
   }
 
   void _showEditPresetDialog(Map<String, dynamic> preset) {
@@ -1208,7 +745,8 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
                     : '${minutes}m ${seconds}s';
 
                 if (totalSeconds > 0) {
-                  _updatePreset(preset['id'] as String, label, totalSeconds);
+                  _presetManager.updatePreset(
+                      preset['id'] as String, label, totalSeconds, context);
                   Navigator.pop(context);
                 }
               },
@@ -1218,10 +756,5 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
         );
       },
     );
-  }
-
-  Future<void> _saveToCache(
-      SharedPreferences prefs, String key, dynamic data) async {
-    await prefs.setString(key, jsonEncode(data));
   }
 }
