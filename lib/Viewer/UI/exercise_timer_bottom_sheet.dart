@@ -18,6 +18,7 @@ import 'custom_input_field.dart';
 import 'timer_display.dart';
 import 'timer_controls.dart';
 import 'preset_manager.dart';
+import 'mini_timer.dart';
 
 // Costanti per il layout
 class TimerConstants {
@@ -99,11 +100,15 @@ class TimerManager {
 class CustomInputField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
+  final String hint;
+  final IconData icon;
 
   const CustomInputField({
     super.key,
     required this.controller,
     required this.label,
+    required this.hint,
+    required this.icon,
   });
 
   @override
@@ -179,11 +184,13 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
 
   bool _isTimerMode = false;
   bool _isEmomMode = false;
+  bool _isCompactMode = false;
   int _currentSeriesIndex = 0;
   int _currentSuperSetExerciseIndex = 0;
   int _timerMinutes = 1;
   int _timerSeconds = 0;
   int _remainingSeconds = 0;
+  int _totalSeconds = 60; // Inizializzato a 60 secondi di default
   List<Map<String, dynamic>> _presets = TimerConstants.defaultPresets;
 
   @override
@@ -257,9 +264,17 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
     setState(() {
       _remainingSeconds = remainingSeconds;
     });
+
+    // Feedback aptico negli ultimi 5 secondi
+    if (remainingSeconds <= 5 && remainingSeconds > 0) {
+      HapticFeedback.lightImpact();
+    }
   }
 
   void _onTimerComplete() {
+    // Feedback aptico più forte quando il timer è completato
+    HapticFeedback.mediumImpact();
+
     if (_isEmomMode) {
       _resetEmomTimer();
     } else {
@@ -291,10 +306,35 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
         _currentSeriesIndex++;
         _currentSuperSetExerciseIndex = 0;
       } else {
+        if (_isCompactMode) {
+          _isCompactMode = false;
+        }
         Navigator.of(context).pop();
       }
-      _isTimerMode = false;
+
+      if (!_isCompactMode) {
+        _isTimerMode = false;
+      }
     });
+
+    // Feedback aptico quando si passa alla serie successiva
+    HapticFeedback.selectionClick();
+  }
+
+  void _toggleCompactMode() {
+    if (!_isTimerMode) return;
+
+    setState(() {
+      _isCompactMode = !_isCompactMode;
+    });
+
+    // Fornisci feedback aptico
+    HapticFeedback.mediumImpact();
+
+    // Chiudi il bottom sheet se stiamo entrando in modalità compatta
+    if (_isCompactMode) {
+      Navigator.of(context).pop();
+    }
   }
 
   Future<void> _updateSeriesData(Map<String, dynamic> exercise) async {
@@ -352,14 +392,33 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
         _moveToNextSeries();
       },
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFFFACC15),
+        backgroundColor: AppTheme.primaryGold,
         foregroundColor: Colors.black,
         padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.lg),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         ),
+        elevation: 6,
+        shadowColor: AppTheme.primaryGold.withAlpha(50),
       ),
-      child: Text(buttonText),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            buttonText,
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: Colors.black,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          SizedBox(width: AppTheme.spacing.xs),
+          Icon(
+            Icons.arrow_forward_rounded,
+            size: 20,
+            color: Colors.black,
+          ),
+        ],
+      ),
     );
   }
 
@@ -385,6 +444,37 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
     final colorScheme = theme.colorScheme;
     final currentExercise =
         widget.superSetExercises[_currentSuperSetExerciseIndex];
+
+    // Se siamo in modalità compatta, mostriamo solo il mini-timer flottante
+    if (_isCompactMode) {
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Stack(
+          children: [
+            GestureDetector(
+              onTap: () {}, // Impedisce che i tap passino attraverso
+              child: Container(color: Colors.transparent),
+            ),
+            MiniTimer(
+              remainingSeconds: _remainingSeconds,
+              isEmomMode: _isEmomMode,
+              onExpand: _toggleCompactMode,
+              onCancel: () {
+                _timerManager.stopTimer();
+                setState(() {
+                  _isCompactMode = false;
+                  _isTimerMode = false;
+                });
+              },
+              onNext: () {
+                _timerManager.stopTimer();
+                _moveToNextSeries();
+              },
+            ),
+          ],
+        ),
+      );
+    }
 
     return Material(
       color: Colors.transparent,
@@ -484,51 +574,250 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
                               ),
                               const SizedBox(height: 24),
 
-                              // Timer or Input Fields
-                              if (_isTimerMode)
-                                TimerDisplay(
-                                  animation: _animation,
-                                  remainingSeconds: _remainingSeconds,
-                                  isEmomMode: _isEmomMode,
-                                )
-                              else
-                                Column(
+                              // Timer or Input Fields with Swipe Gesture
+                              GestureDetector(
+                                onVerticalDragEnd: (details) {
+                                  // Swipe up: passa dalla modalità input a timer
+                                  if (details.primaryVelocity! < -500 &&
+                                      !_isTimerMode) {
+                                    HapticFeedback.mediumImpact();
+                                    final totalSeconds =
+                                        (_timerMinutes * 60) + _timerSeconds;
+                                    if (totalSeconds > 0) {
+                                      setState(() {
+                                        _isTimerMode = true;
+                                        _remainingSeconds = totalSeconds;
+                                        _totalSeconds = totalSeconds;
+                                      });
+                                      _timerManager.startTimer(
+                                          totalSeconds, _isEmomMode);
+                                    }
+                                  }
+                                  // Swipe down: passa dalla modalità timer a input
+                                  else if (details.primaryVelocity! > 500 &&
+                                      _isTimerMode) {
+                                    HapticFeedback.mediumImpact();
+                                    _timerManager.stopTimer();
+                                    setState(() => _isTimerMode = false);
+                                  }
+                                },
+                                child: Column(
                                   children: [
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        CustomInputField(
-                                          controller: _repsControllers[
-                                                  currentExercise['id']]![
-                                              currentExercise['series']
-                                                  [_currentSeriesIndex]['id']]!,
-                                          label: 'REPS',
+                                    // Indicatore di swipe solo in modalità input
+                                    if (!_isTimerMode)
+                                      Container(
+                                        width: 40,
+                                        height: 4,
+                                        margin: EdgeInsets.only(
+                                            bottom: AppTheme.spacing.md),
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.primaryGold
+                                              .withAlpha(150),
+                                          borderRadius:
+                                              BorderRadius.circular(2),
                                         ),
-                                        SizedBox(width: AppTheme.spacing.md),
-                                        CustomInputField(
-                                          controller: _weightControllers[
-                                                  currentExercise['id']]![
-                                              currentExercise['series']
-                                                  [_currentSeriesIndex]['id']]!,
-                                          label: 'WEIGHT',
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 16),
-                                    ListTile(
-                                      title: const Text('Modalità EMOM'),
-                                      trailing: Switch(
-                                        value: _isEmomMode,
-                                        onChanged: (value) =>
-                                            setState(() => _isEmomMode = value),
-                                        activeColor: colorScheme.primary,
-                                        activeTrackColor:
-                                            colorScheme.primaryContainer,
                                       ),
-                                    ),
+
+                                    // Contenuto effettivo (timer o input fields)
+                                    if (_isTimerMode)
+                                      Column(
+                                        children: [
+                                          // Pulsante per passare alla modalità compatta
+                                          GestureDetector(
+                                            onTap: _toggleCompactMode,
+                                            child: Container(
+                                              margin: EdgeInsets.only(
+                                                  bottom: AppTheme.spacing.sm),
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: AppTheme.spacing.sm,
+                                                vertical: AppTheme.spacing.xxs,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.black,
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                        AppTheme.radii.md),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    Icons.open_in_new,
+                                                    size: 14,
+                                                    color: Colors.white
+                                                        .withAlpha(200),
+                                                  ),
+                                                  SizedBox(width: 4),
+                                                  Text(
+                                                    'Modalità compatta',
+                                                    style: TextStyle(
+                                                      color: Colors.white
+                                                          .withAlpha(200),
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                          TimerDisplay(
+                                            animation: _animation,
+                                            remainingSeconds: _remainingSeconds,
+                                            totalSeconds: _totalSeconds,
+                                            isEmomMode: _isEmomMode,
+                                          ),
+                                        ],
+                                      )
+                                    else
+                                      Column(
+                                        children: [
+                                          Padding(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: AppTheme.spacing.md,
+                                              vertical: AppTheme.spacing.md,
+                                            ),
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                color: Colors.black,
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                        AppTheme.radii.lg),
+                                                border: Border.all(
+                                                  color: colorScheme.outline
+                                                      .withAlpha(40),
+                                                ),
+                                              ),
+                                              padding: EdgeInsets.all(
+                                                  AppTheme.spacing.md),
+                                              child: Column(
+                                                children: [
+                                                  Text(
+                                                    'Inserisci i valori per questa serie',
+                                                    style: theme
+                                                        .textTheme.titleSmall
+                                                        ?.copyWith(
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                  SizedBox(
+                                                      height:
+                                                          AppTheme.spacing.md),
+                                                  Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
+                                                    children: [
+                                                      CustomInputField(
+                                                        controller: _repsControllers[
+                                                                currentExercise[
+                                                                    'id']]![
+                                                            currentExercise[
+                                                                        'series']
+                                                                    [
+                                                                    _currentSeriesIndex]
+                                                                ['id']]!,
+                                                        label: 'REPS',
+                                                        hint: '0',
+                                                        icon: Icons.repeat,
+                                                      ),
+                                                      SizedBox(
+                                                          width: AppTheme
+                                                              .spacing.md),
+                                                      CustomInputField(
+                                                        controller: _weightControllers[
+                                                                currentExercise[
+                                                                    'id']]![
+                                                            currentExercise[
+                                                                        'series']
+                                                                    [
+                                                                    _currentSeriesIndex]
+                                                                ['id']]!,
+                                                        label: 'PESO (kg)',
+                                                        hint: '0',
+                                                        icon: Icons
+                                                            .fitness_center,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 16),
+                                          Container(
+                                            margin: EdgeInsets.symmetric(
+                                                horizontal:
+                                                    AppTheme.spacing.md),
+                                            decoration: BoxDecoration(
+                                              color: Colors.black,
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                      AppTheme.radii.md),
+                                            ),
+                                            child: ListTile(
+                                              leading: Icon(
+                                                Icons.loop,
+                                                color: _isEmomMode
+                                                    ? AppTheme.primaryGold
+                                                    : Colors.white
+                                                        .withAlpha(100),
+                                              ),
+                                              title: Text(
+                                                'Modalità EMOM',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                              subtitle: _isEmomMode
+                                                  ? Text(
+                                                      'Il timer si resetta automaticamente',
+                                                      style: TextStyle(
+                                                        color: Colors.white
+                                                            .withAlpha(150),
+                                                        fontSize: 12,
+                                                      ),
+                                                    )
+                                                  : null,
+                                              trailing: Switch(
+                                                value: _isEmomMode,
+                                                onChanged: (value) {
+                                                  HapticFeedback
+                                                      .selectionClick();
+                                                  setState(() =>
+                                                      _isEmomMode = value);
+                                                },
+                                                activeColor:
+                                                    AppTheme.primaryGold,
+                                                activeTrackColor: AppTheme
+                                                    .primaryGold
+                                                    .withAlpha(50),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+
+                                    // Indicatore di swipe in modalità timer
+                                    if (_isTimerMode)
+                                      Container(
+                                        width: 40,
+                                        height: 4,
+                                        margin: EdgeInsets.only(
+                                            top: AppTheme.spacing.md),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withAlpha(100),
+                                          borderRadius:
+                                              BorderRadius.circular(2),
+                                        ),
+                                      ),
                                   ],
                                 ),
+                              ),
 
                               const SizedBox(height: 24),
 
@@ -543,8 +832,7 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
                                           setState(() => _isTimerMode = false);
                                         },
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor:
-                                              const Color(0xFFEF4444),
+                                          backgroundColor: AppTheme.error,
                                           foregroundColor: Colors.white,
                                           padding: EdgeInsets.symmetric(
                                               vertical: AppTheme.spacing.lg),
@@ -552,8 +840,24 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
                                             borderRadius: BorderRadius.circular(
                                                 AppTheme.radii.lg),
                                           ),
+                                          elevation: 6,
+                                          shadowColor:
+                                              AppTheme.error.withAlpha(50),
                                         ),
-                                        child: const Text('ANNULLA'),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.cancel_outlined,
+                                              size: 20,
+                                              color: Colors.white,
+                                            ),
+                                            SizedBox(
+                                                width: AppTheme.spacing.xs),
+                                            const Text('ANNULLA'),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                     SizedBox(width: AppTheme.spacing.md),
@@ -572,15 +876,24 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
                                   onSecondsChanged: (value) =>
                                       setState(() => _timerSeconds = value),
                                   onStartTimer: () {
-                                    setState(() => _isTimerMode = true);
+                                    // Feedback aptico quando si avvia il timer
+                                    HapticFeedback.mediumImpact();
+
                                     final totalSeconds =
                                         (_timerMinutes * 60) + _timerSeconds;
-                                    _remainingSeconds = totalSeconds;
+                                    setState(() {
+                                      _isTimerMode = true;
+                                      _remainingSeconds = totalSeconds;
+                                      _totalSeconds = totalSeconds;
+                                    });
                                     _timerManager.startTimer(
                                         totalSeconds, _isEmomMode);
                                   },
                                   presets: _presets,
                                   onPresetSelected: (preset) {
+                                    // Feedback aptico leggero quando si seleziona un preset
+                                    HapticFeedback.selectionClick();
+
                                     setState(() {
                                       final seconds = preset['seconds'] as int;
                                       _timerMinutes = seconds ~/ 60;
