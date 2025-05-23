@@ -1,36 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:alphanessone/Main/app_theme.dart';
-import 'package:alphanessone/UI/components/dialog.dart';
-import 'package:alphanessone/UI/components/weight_input_fields.dart';
-import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
-import 'package:alphanessone/trainingBuilder/models/series_model.dart';
-import 'package:alphanessone/trainingBuilder/shared/utils/format_utils.dart';
-import 'package:alphanessone/trainingBuilder/shared/widgets/range_input_field.dart';
-import 'package:alphanessone/trainingBuilder/shared/widgets/range_controllers.dart';
-import 'package:alphanessone/trainingBuilder/services/exercise_service.dart';
-import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
-import 'package:alphanessone/trainingBuilder/utility_functions.dart';
+import '../models/exercise_model.dart';
+import '../models/series_model.dart';
+import '../controllers/series_controllers.dart';
+import '../controller/training_program_controller.dart';
+import '../series_utils.dart';
+import '../utility_functions.dart';
+import '../services/exercise_service.dart';
+import '../../UI/components/dialog.dart';
+import '../../UI/components/weight_input_fields.dart';
+import '../../Main/app_theme.dart';
+import '../../providers/providers.dart';
 
-/// Dialog for selecting exercises for bulk series management
-class BulkSeriesSelectionDialog extends HookWidget {
+/// Dialog per la selezione degli esercizi per la gestione bulk delle serie
+class BulkSeriesSelectionDialog extends HookConsumerWidget {
   final Exercise initialExercise;
   final List<Exercise> workoutExercises;
+  final ColorScheme colorScheme;
   final Function(List<Exercise>) onNext;
 
   const BulkSeriesSelectionDialog({
-    super.key,
     required this.initialExercise,
     required this.workoutExercises,
+    required this.colorScheme,
     required this.onNext,
+    super.key,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final selectedExercises = useState<List<Exercise>>([initialExercise]);
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
     return AppDialog(
       title: 'Gestione Serie in Bulk',
@@ -59,67 +59,59 @@ class BulkSeriesSelectionDialog extends HookWidget {
         ),
       ],
       children: [
-        _buildExerciseSelection(context, selectedExercises, theme, colorScheme),
+        _buildExerciseSelectionContent(context, selectedExercises),
       ],
     );
   }
 
-  Widget _buildExerciseSelection(
+  Widget _buildExerciseSelectionContent(
     BuildContext context,
     ValueNotifier<List<Exercise>> selectedExercises,
-    ThemeData theme,
-    ColorScheme colorScheme,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Seleziona gli Esercizi',
-          style: theme.textTheme.titleSmall?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w500,
-          ),
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
         ),
         SizedBox(height: AppTheme.spacing.md),
         ...workoutExercises.map((exercise) => _buildExerciseCheckbox(
+              context,
               exercise,
               selectedExercises,
-              theme,
-              colorScheme,
             )),
       ],
     );
   }
 
   Widget _buildExerciseCheckbox(
+    BuildContext context,
     Exercise exercise,
     ValueNotifier<List<Exercise>> selectedExercises,
-    ThemeData theme,
-    ColorScheme colorScheme,
   ) {
     return CheckboxListTile(
       value: selectedExercises.value.contains(exercise),
-      onChanged: (checked) {
-        if (checked ?? false) {
-          selectedExercises.value = [...selectedExercises.value, exercise];
-        } else {
-          selectedExercises.value = selectedExercises.value
-              .where((selected) => selected.id != exercise.id)
-              .toList();
-        }
-      },
+      onChanged: (checked) => _handleExerciseSelection(
+        exercise,
+        checked ?? false,
+        selectedExercises,
+      ),
       title: Text(
         exercise.name,
-        style: theme.textTheme.bodyLarge?.copyWith(
-          color: colorScheme.onSurface,
-        ),
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: colorScheme.onSurface,
+            ),
       ),
       subtitle: exercise.variant.isNotEmpty
           ? Text(
               exercise.variant,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
             )
           : null,
       secondary: Container(
@@ -130,181 +122,146 @@ class BulkSeriesSelectionDialog extends HookWidget {
         ),
         child: Text(
           exercise.type,
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: colorScheme.primary,
-          ),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: colorScheme.primary,
+              ),
         ),
       ),
     );
   }
+
+  void _handleExerciseSelection(
+    Exercise exercise,
+    bool isSelected,
+    ValueNotifier<List<Exercise>> selectedExercises,
+  ) {
+    if (isSelected) {
+      selectedExercises.value = [...selectedExercises.value, exercise];
+    } else {
+      selectedExercises.value = selectedExercises.value
+          .where((selected) => selected.id != exercise.id)
+          .toList();
+    }
+  }
 }
 
-/// Dialog for configuring bulk series
+/// Dialog per la configurazione delle serie bulk
 class BulkSeriesConfigurationDialog extends HookConsumerWidget {
   final List<Exercise> exercises;
+  final ColorScheme colorScheme;
   final TrainingProgramController controller;
   final int weekIndex;
   final int workoutIndex;
 
   const BulkSeriesConfigurationDialog({
-    super.key,
     required this.exercises,
+    required this.colorScheme,
     required this.controller,
     required this.weekIndex,
     required this.workoutIndex,
+    super.key,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    // Controllers for form inputs
-    final setsController = useTextEditingController(text: '1');
-    final repsControllers = useMemoized(() => RangeControllers());
-    final intensityControllers = useMemoized(() => RangeControllers());
-    final rpeControllers = useMemoized(() => RangeControllers());
-
-    // State for max weights and UI updates
+    final exerciseRecordService = ref.watch(exerciseRecordServiceProvider);
     final maxWeights = useState<Map<String, num>>({});
     final forceUpdate = useState(0);
+    final localController = useMemoized(() => SeriesControllers(), []);
 
-    // Load max weights on init
     useEffect(() {
-      _loadMaxWeights(maxWeights);
-      return () {
-        repsControllers.dispose();
-        intensityControllers.dispose();
-        rpeControllers.dispose();
-      };
+      _loadMaxWeights(exerciseRecordService, maxWeights);
+      return () => localController.dispose();
     }, []);
 
     return AppDialog(
       title: 'Configura Serie',
       subtitle: 'Le serie verranno applicate a ${exercises.length} esercizi',
-      leading: Container(
-        padding: EdgeInsets.all(AppTheme.spacing.sm),
-        decoration: BoxDecoration(
-          color: colorScheme.primaryContainer.withAlpha(76),
-          borderRadius: BorderRadius.circular(AppTheme.radii.md),
-        ),
-        child: Icon(
-          Icons.playlist_add_check,
-          color: colorScheme.primary,
-          size: 24,
-        ),
-      ),
+      leading: _buildDialogIcon(),
       actions: [
         AppDialog.buildCancelButton(context: context),
         AppDialog.buildActionButton(
           context: context,
           label: 'Applica',
           icon: Icons.check,
-          onPressed: () => _applySeriesToExercises(
+          onPressed: () => _applyBulkSeries(
             context,
-            setsController,
-            repsControllers,
-            intensityControllers,
-            rpeControllers,
-            maxWeights.value,
             ref,
+            localController,
+            maxWeights.value,
           ),
         ),
       ],
       children: [
-        _buildConfigurationForm(
+        _buildConfigurationContent(
           context,
-          setsController,
-          repsControllers,
-          intensityControllers,
-          rpeControllers,
+          localController,
           maxWeights,
           forceUpdate,
-          theme,
-          colorScheme,
         ),
       ],
     );
   }
 
-  Widget _buildConfigurationForm(
+  Widget _buildDialogIcon() {
+    return Container(
+      padding: EdgeInsets.all(AppTheme.spacing.sm),
+      decoration: BoxDecoration(
+        color: colorScheme.primaryContainer.withAlpha(76),
+        borderRadius: BorderRadius.circular(AppTheme.radii.md),
+      ),
+      child: Icon(
+        Icons.playlist_add_check,
+        color: colorScheme.primary,
+        size: 24,
+      ),
+    );
+  }
+
+  Widget _buildConfigurationContent(
     BuildContext context,
-    TextEditingController setsController,
-    RangeControllers repsControllers,
-    RangeControllers intensityControllers,
-    RangeControllers rpeControllers,
+    SeriesControllers localController,
     ValueNotifier<Map<String, num>> maxWeights,
     ValueNotifier<int> forceUpdate,
-    ThemeData theme,
-    ColorScheme colorScheme,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Configurazione Serie',
-          style: theme.textTheme.titleSmall?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w500,
-          ),
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
         ),
         SizedBox(height: AppTheme.spacing.lg),
-        _buildSetsField(setsController, theme, colorScheme),
+        _buildSetsField(context, localController),
         SizedBox(height: AppTheme.spacing.lg),
-        RangeInputField(
-          label: 'Ripetizioni',
-          controllers: repsControllers,
-          icon: Icons.repeat,
-          hint: 'Ripetizioni',
-          maxHint: 'Max Ripetizioni',
-        ),
+        _buildRepsField(context, localController),
         SizedBox(height: AppTheme.spacing.lg),
-        RangeInputField(
-          label: 'Intensità (%)',
-          controllers: intensityControllers,
-          icon: Icons.speed,
-          hint: 'Intensità',
-          maxHint: 'Max Intensità',
-          onChanged: (min, max) => _updateWeightsFromIntensity(
-            min,
-            max,
-            maxWeights,
-            forceUpdate,
-          ),
-        ),
+        _buildIntensityField(context, localController, maxWeights, forceUpdate),
         SizedBox(height: AppTheme.spacing.lg),
-        RangeInputField(
-          label: 'RPE',
-          controllers: rpeControllers,
-          icon: Icons.trending_up,
-          hint: 'RPE',
-          maxHint: 'Max RPE',
-        ),
+        _buildRpeField(context, localController, forceUpdate),
         SizedBox(height: AppTheme.spacing.lg),
-        _buildExerciseWeights(maxWeights.value, forceUpdate, context),
+        _buildWeightFields(context, localController, maxWeights, forceUpdate),
       ],
     );
   }
 
   Widget _buildSetsField(
-    TextEditingController controller,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
+      BuildContext context, SeriesControllers localController) {
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withAlpha(77),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(128),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(128)),
       ),
       child: TextField(
-        controller: controller,
+        controller: localController.sets,
         keyboardType: TextInputType.number,
-        style: theme.textTheme.bodyLarge?.copyWith(
-          color: colorScheme.onSurface,
-        ),
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: colorScheme.onSurface,
+            ),
         decoration: InputDecoration(
           border: InputBorder.none,
           contentPadding: EdgeInsets.all(AppTheme.spacing.md),
@@ -319,10 +276,61 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
     );
   }
 
-  Widget _buildExerciseWeights(
-    Map<String, num> maxWeights,
-    ValueNotifier<int> forceUpdate,
+  Widget _buildRepsField(
+      BuildContext context, SeriesControllers localController) {
+    return _buildRangeField(
+      context: context,
+      label: 'Ripetizioni',
+      controllers: localController.reps,
+      icon: Icons.repeat,
+      hint: 'Ripetizioni',
+      maxHint: 'Max Ripetizioni',
+    );
+  }
+
+  Widget _buildIntensityField(
     BuildContext context,
+    SeriesControllers localController,
+    ValueNotifier<Map<String, num>> maxWeights,
+    ValueNotifier<int> forceUpdate,
+  ) {
+    return _buildRangeField(
+      context: context,
+      label: 'Intensità (%)',
+      controllers: localController.intensity,
+      icon: Icons.speed,
+      hint: 'Intensità',
+      maxHint: 'Max Intensità',
+      onChanged: (min, max) => _updateWeightsFromIntensity(
+        min,
+        max,
+        maxWeights.value,
+        forceUpdate,
+      ),
+    );
+  }
+
+  Widget _buildRpeField(
+    BuildContext context,
+    SeriesControllers localController,
+    ValueNotifier<int> forceUpdate,
+  ) {
+    return _buildRangeField(
+      context: context,
+      label: 'RPE',
+      controllers: localController.rpe,
+      icon: Icons.trending_up,
+      hint: 'RPE',
+      maxHint: 'Max RPE',
+      onChanged: (min, max) => forceUpdate.value++,
+    );
+  }
+
+  Widget _buildWeightFields(
+    BuildContext context,
+    SeriesControllers localController,
+    ValueNotifier<Map<String, num>> maxWeights,
+    ValueNotifier<int> forceUpdate,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -330,111 +338,257 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
         Text(
           'Pesi per Esercizio',
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                color: colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w500,
               ),
         ),
         SizedBox(height: AppTheme.spacing.md),
         ...exercises.map((exercise) => WeightInputFields(
-              maxWeight: maxWeights[exercise.exerciseId] ?? 0,
-              intensity: '',
-              maxIntensity: '',
+              maxWeight: _getMaxWeight(exercise, maxWeights.value),
+              intensity: localController.intensity.min.text,
+              maxIntensity: localController.intensity.max.text,
               exerciseName: exercise.name,
-              onWeightChanged: (weight) =>
-                  _updateExerciseWeight(exercise, weight),
-              onMaxWeightChanged: (maxWeight) =>
-                  _updateExerciseMaxWeight(exercise, maxWeight),
+              onWeightChanged: (weight) => _updateExerciseWeight(
+                exercise,
+                weight,
+                forceUpdate,
+              ),
+              onMaxWeightChanged: (maxWeight) => _updateExerciseMaxWeight(
+                exercise,
+                maxWeight,
+                forceUpdate,
+              ),
             )),
       ],
     );
   }
 
+  Widget _buildRangeField({
+    required BuildContext context,
+    required String label,
+    required RangeControllers controllers,
+    required IconData icon,
+    String? hint,
+    String? maxHint,
+    Function(String, String)? onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
+        ),
+        SizedBox(height: AppTheme.spacing.xs),
+        Row(
+          children: [
+            Expanded(
+              child: _buildRangeInput(
+                context,
+                controllers.min,
+                hint ?? 'Min',
+                icon,
+                onChanged != null
+                    ? (value) => onChanged(value, controllers.max.text)
+                    : null,
+              ),
+            ),
+            SizedBox(width: AppTheme.spacing.md),
+            Expanded(
+              child: _buildRangeInput(
+                context,
+                controllers.max,
+                maxHint ?? 'Max',
+                Icons.arrow_upward,
+                onChanged != null
+                    ? (value) => onChanged(controllers.min.text, value)
+                    : null,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRangeInput(
+    BuildContext context,
+    TextEditingController controller,
+    String hint,
+    IconData icon,
+    Function(String)? onChanged,
+  ) {
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withAlpha(77),
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(color: colorScheme.outline.withAlpha(128)),
+      ),
+      child: TextField(
+        controller: controller,
+        keyboardType: TextInputType.number,
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: colorScheme.onSurface,
+            ),
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.all(AppTheme.spacing.md),
+          hintText: hint,
+          prefixIcon: Icon(
+            icon,
+            color: colorScheme.onSurfaceVariant.withAlpha(128),
+            size: 20,
+          ),
+        ),
+        onChanged: onChanged,
+      ),
+    );
+  }
+
+  // Metodi helper
   Future<void> _loadMaxWeights(
-      ValueNotifier<Map<String, num>> maxWeights) async {
+    dynamic exerciseRecordService,
+    ValueNotifier<Map<String, num>> maxWeights,
+  ) async {
     final Map<String, num> weights = {};
     for (var exercise in exercises) {
       if (exercise.exerciseId != null) {
-        // This would need to be injected properly in a real implementation
-        // For now, we'll set a placeholder
-        weights[exercise.exerciseId!] = 100; // Placeholder value
+        final record = await exerciseRecordService.getLatestExerciseRecord(
+          userId: controller.program.athleteId,
+          exerciseId: exercise.exerciseId!,
+        );
+        weights[exercise.exerciseId!] = record?.maxWeight ?? 0;
       }
     }
     maxWeights.value = weights;
   }
 
+  num _getMaxWeight(Exercise exercise, Map<String, num> maxWeights) {
+    if (exercise.exerciseId == null) return 0;
+    return maxWeights[exercise.exerciseId] ?? 0;
+  }
+
+  double _calculateWeight(num maxWeight, double intensity) {
+    return SeriesUtils.calculateWeightFromIntensity(
+      maxWeight.toDouble(),
+      intensity,
+    );
+  }
+
   void _updateWeightsFromIntensity(
     String min,
     String max,
-    ValueNotifier<Map<String, num>> maxWeights,
+    Map<String, num> maxWeights,
     ValueNotifier<int> forceUpdate,
   ) {
     final minIntensity = double.tryParse(min) ?? 0;
     final maxIntensity = double.tryParse(max);
 
     for (var exercise in exercises) {
-      final maxWeight = maxWeights.value[exercise.exerciseId] ?? 0;
+      final maxWeight = _getMaxWeight(exercise, maxWeights);
       if (maxWeight <= 0) continue;
 
-      final minWeight = maxWeight * (minIntensity / 100);
-      final maxWeightValue =
-          maxIntensity != null ? maxWeight * (maxIntensity / 100) : null;
+      final calculatedWeight = _calculateWeight(maxWeight, minIntensity);
+      final calculatedMaxWeight = maxIntensity != null
+          ? _calculateWeight(maxWeight, maxIntensity)
+          : null;
 
-      _updateExerciseWeight(exercise, minWeight.toDouble());
-      if (maxWeightValue != null) {
-        _updateExerciseMaxWeight(exercise, maxWeightValue);
+      for (var series in exercise.series) {
+        series.weight = calculatedWeight.toDouble();
+        series.maxWeight = calculatedMaxWeight?.toDouble();
       }
     }
-
     forceUpdate.value++;
   }
 
-  void _updateExerciseWeight(Exercise exercise, double weight) {
+  void _updateExerciseWeight(
+    Exercise exercise,
+    double weight,
+    ValueNotifier<int> forceUpdate,
+  ) {
     for (var series in exercise.series) {
       series.weight = weight;
     }
+    forceUpdate.value++;
   }
 
-  void _updateExerciseMaxWeight(Exercise exercise, double? maxWeight) {
+  void _updateExerciseMaxWeight(
+    Exercise exercise,
+    double? maxWeight,
+    ValueNotifier<int> forceUpdate,
+  ) {
     for (var series in exercise.series) {
       series.maxWeight = maxWeight;
     }
+    forceUpdate.value++;
   }
 
-  void _applySeriesToExercises(
+  void _applyBulkSeries(
     BuildContext context,
-    TextEditingController setsController,
-    RangeControllers repsControllers,
-    RangeControllers intensityControllers,
-    RangeControllers rpeControllers,
-    Map<String, num> maxWeights,
     WidgetRef ref,
+    SeriesControllers localController,
+    Map<String, num> maxWeights,
   ) {
-    final sets = int.tryParse(setsController.text) ?? 1;
-    final reps = int.tryParse(repsControllers.min.text) ?? 12;
-    final maxReps = repsControllers.max.text.isNotEmpty
-        ? int.tryParse(repsControllers.max.text)
+    final sets = int.tryParse(localController.sets.text) ?? 1;
+    final reps = int.tryParse(localController.reps.min.text) ?? 12;
+    final maxReps = localController.reps.max.text.isNotEmpty
+        ? int.tryParse(localController.reps.max.text)
+        : null;
+    final intensity = localController.intensity.min.text;
+    final maxIntensity = localController.intensity.max.text.isNotEmpty
+        ? localController.intensity.max.text
+        : null;
+    final rpe = localController.rpe.min.text;
+    final maxRpe = localController.rpe.max.text.isNotEmpty
+        ? localController.rpe.max.text
         : null;
 
-    ExerciseService.createBulkSeries(
-      exercises: exercises,
-      sets: sets,
-      reps: reps,
-      maxReps: maxReps,
-      intensity: intensityControllers.min.text,
-      maxIntensity: intensityControllers.max.text.isNotEmpty
-          ? intensityControllers.max.text
-          : null,
-      rpe: rpeControllers.min.text,
-      maxRpe:
-          rpeControllers.max.text.isNotEmpty ? rpeControllers.max.text : null,
-      exerciseMaxWeights: maxWeights,
-    );
+    for (var exercise in exercises) {
+      final maxWeight = _getMaxWeight(exercise, maxWeights);
+      final minIntensity = double.tryParse(intensity) ?? 0;
+      final maxIntensityValue = double.tryParse(maxIntensity ?? '');
+
+      final calculatedWeight =
+          maxWeight > 0 ? _calculateWeight(maxWeight, minIntensity) : 0;
+      final calculatedMaxWeight = maxIntensityValue != null && maxWeight > 0
+          ? _calculateWeight(maxWeight, maxIntensityValue)
+          : null;
+
+      final newSeries = List.generate(
+        sets,
+        (index) => Series(
+          serieId: generateRandomId(16),
+          reps: reps,
+          maxReps: maxReps,
+          sets: 1,
+          intensity: intensity,
+          maxIntensity: maxIntensity,
+          rpe: rpe,
+          maxRpe: maxRpe,
+          weight: calculatedWeight.toDouble(),
+          maxWeight: calculatedMaxWeight?.toDouble(),
+          order: index + 1,
+          done: false,
+          reps_done: 0,
+          weight_done: 0,
+        ),
+      );
+
+      exercise.series = newSeries;
+    }
+
+    ref
+        .read(bulkSeriesControllersProvider.notifier)
+        .updateControllersForExercises(exercises);
 
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Serie aggiornate per ${exercises.length} esercizi'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: colorScheme.primary,
         behavior: SnackBarBehavior.floating,
       ),
     );
