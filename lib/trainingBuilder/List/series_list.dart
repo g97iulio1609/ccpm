@@ -1,4 +1,5 @@
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
+import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
 import 'package:alphanessone/trainingBuilder/models/series_model.dart';
 import 'package:alphanessone/trainingBuilder/models/superseries_model.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
@@ -13,6 +14,9 @@ import 'package:alphanessone/UI/components/bottom_menu.dart';
 import 'package:alphanessone/UI/components/button.dart';
 import 'package:go_router/go_router.dart';
 import 'package:alphanessone/UI/components/series_input_fields.dart';
+import 'package:alphanessone/trainingBuilder/shared/mixins/training_list_mixin.dart';
+import 'package:alphanessone/trainingBuilder/shared/widgets/series_components.dart';
+import 'package:alphanessone/trainingBuilder/shared/utils/format_utils.dart';
 
 final expansionStateProvider = StateNotifierProvider.autoDispose<
     ExpansionStateNotifier, Map<String, bool>>((ref) {
@@ -31,6 +35,7 @@ class ExpansionStateNotifier extends StateNotifier<Map<String, bool>> {
   }
 }
 
+/// Widget for displaying and managing series list
 class TrainingProgramSeriesList extends ConsumerStatefulWidget {
   final TrainingProgramController controller;
   final ExerciseRecordService exerciseRecordService;
@@ -55,7 +60,7 @@ class TrainingProgramSeriesList extends ConsumerStatefulWidget {
 }
 
 class TrainingProgramSeriesListState
-    extends ConsumerState<TrainingProgramSeriesList> {
+    extends ConsumerState<TrainingProgramSeriesList> with TrainingListMixin {
   late num latestMaxWeight = 0;
 
   @override
@@ -65,9 +70,7 @@ class TrainingProgramSeriesListState
   }
 
   Future<void> _fetchLatestMaxWeight() async {
-    final exercise = widget.controller.program.weeks[widget.weekIndex]
-        .workouts[widget.workoutIndex].exercises[widget.exerciseIndex];
-
+    final exercise = _getCurrentExercise();
     final maxWeight = await SeriesUtils.getLatestMaxWeight(
         widget.exerciseRecordService,
         widget.controller.program.athleteId,
@@ -82,374 +85,211 @@ class TrainingProgramSeriesListState
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final isSmallScreen = screenSize.width < 600;
     final workout = widget.controller.program.weeks[widget.weekIndex]
         .workouts[widget.workoutIndex];
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
     if (widget.exerciseIndex >= workout.exercises.length) {
-      return Text(
-        'Invalid exercise index',
-        style: theme.textTheme.titleMedium?.copyWith(
-          color: colorScheme.error,
-        ),
-      );
+      return _buildErrorWidget('Invalid exercise index');
     }
 
     final exercise = workout.exercises[widget.exerciseIndex];
-    final groupedSeries = _groupSeries(exercise.series);
+    final groupedSeries = _SeriesGrouper.groupSeries(exercise.series);
     final expansionState = ref.watch(expansionStateProvider);
 
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: groupedSeries.length,
-            itemBuilder: (context, index) {
-              final item = groupedSeries[index];
-              final key = 'series_group_$index';
-              final isExpanded = expansionState[key] ?? false;
-
-              if (item is List<Series>) {
-                return _buildSeriesGroupCard(
-                    context, item, index, isExpanded, key, theme, colorScheme);
-              } else {
-                return _buildSeriesCard(
-                    context, item as Series, index, theme, colorScheme);
-              }
-            },
-          ),
-          SizedBox(height: AppTheme.spacing.md),
-          _buildActionButtons(exercise.series, theme, colorScheme),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSeriesGroupCard(
-    BuildContext context,
-    List<Series> seriesGroup,
-    int groupIndex,
-    bool isExpanded,
-    String key,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    final series = seriesGroup.first;
-
-    return Container(
-      margin: EdgeInsets.only(bottom: AppTheme.spacing.sm),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
-        boxShadow: AppTheme.elevations.small,
-      ),
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          key: Key(key),
-          initiallyExpanded: isExpanded,
-          onExpansionChanged: (value) {
-            ref.read(expansionStateProvider.notifier).toggleExpansionState(key);
-          },
-          title: Row(
-            children: [
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppTheme.spacing.sm,
-                  vertical: AppTheme.spacing.xs,
-                ),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withAlpha(77),
-                  borderRadius: BorderRadius.circular(AppTheme.radii.full),
-                ),
-                child: Text(
-                  '${seriesGroup.length} serie',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              SizedBox(width: AppTheme.spacing.sm),
-              Expanded(
-                child: Text(
-                  _formatSeriesInfo(series),
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: colorScheme.onSurface,
-                  ),
-                  softWrap: true,
-                  maxLines: 2,
-                ),
-              ),
-            ],
-          ),
-          trailing: IconButton(
-            icon: Icon(
-              Icons.more_vert,
-              color: colorScheme.onSurfaceVariant.withAlpha(128),
-            ),
-            onPressed: () => _showSeriesGroupOptions(
-              context,
-              seriesGroup,
-              groupIndex,
-              theme,
-              colorScheme,
-            ),
-          ),
-          children: [
-            for (int i = 0; i < seriesGroup.length; i++)
-              _buildSeriesCard(
-                context,
-                seriesGroup[i],
-                groupIndex,
-                theme,
-                colorScheme,
-                i,
-                () {
-                  seriesGroup.removeAt(i);
-                  widget.controller.updateSeries(
-                    widget.weekIndex,
-                    widget.workoutIndex,
-                    widget.exerciseIndex,
-                    seriesGroup,
-                  );
-                },
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSeriesCard(
-    BuildContext context,
-    Series series,
-    int groupIndex,
-    ThemeData theme,
-    ColorScheme colorScheme, [
-    int? seriesIndex,
-    VoidCallback? onRemove,
-  ]) {
-    final exercise = widget.controller.program.weeks[widget.weekIndex]
-        .workouts[widget.workoutIndex].exercises[widget.exerciseIndex];
-
-    return Container(
-      margin: EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing.md,
-        vertical: AppTheme.spacing.xs,
-      ),
-      padding: EdgeInsets.all(AppTheme.spacing.sm),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withAlpha(76),
-        borderRadius: BorderRadius.circular(AppTheme.radii.md),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Serie ${series.order}',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: colorScheme.onSurface,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    SizedBox(height: AppTheme.spacing.xs),
-                    Text(
-                      _formatSeriesInfo(series),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant.withAlpha(128),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (onRemove != null)
-                IconButton(
-                  icon: Icon(
-                    Icons.remove_circle_outline,
-                    color: colorScheme.error,
-                  ),
-                  onPressed: onRemove,
-                ),
-            ],
-          ),
-          SizedBox(height: AppTheme.spacing.sm),
-          SeriesInputFields(
-            maxWeight: latestMaxWeight,
-            exerciseName: exercise.name,
-            initialIntensity: series.intensity,
-            initialMaxIntensity: series.maxIntensity,
-            initialRpe: series.rpe,
-            initialMaxRpe: series.maxRpe,
-            initialWeight: series.weight.toString(),
-            initialMaxWeight: series.maxWeight?.toString(),
-            onIntensityChanged: (intensity) {
-              setState(() {
-                series.intensity = intensity.toStringAsFixed(1);
-                ref
-                    .read(trainingProgramControllerProvider.notifier)
-                    .updateSeries(
-                      widget.weekIndex,
-                      widget.workoutIndex,
-                      widget.exerciseIndex,
-                      exercise.series,
-                    );
-              });
-            },
-            onMaxIntensityChanged: (maxIntensity) {
-              setState(() {
-                series.maxIntensity = maxIntensity?.toStringAsFixed(1);
-                ref
-                    .read(trainingProgramControllerProvider.notifier)
-                    .updateSeries(
-                      widget.weekIndex,
-                      widget.workoutIndex,
-                      widget.exerciseIndex,
-                      exercise.series,
-                    );
-              });
-            },
-            onRpeChanged: (rpe) {
-              setState(() {
-                series.rpe = rpe.toStringAsFixed(1);
-                ref
-                    .read(trainingProgramControllerProvider.notifier)
-                    .updateSeries(
-                      widget.weekIndex,
-                      widget.workoutIndex,
-                      widget.exerciseIndex,
-                      exercise.series,
-                    );
-              });
-            },
-            onMaxRpeChanged: (maxRpe) {
-              setState(() {
-                series.maxRpe = maxRpe?.toStringAsFixed(1);
-                ref
-                    .read(trainingProgramControllerProvider.notifier)
-                    .updateSeries(
-                      widget.weekIndex,
-                      widget.workoutIndex,
-                      widget.exerciseIndex,
-                      exercise.series,
-                    );
-              });
-            },
-            onWeightChanged: (weight) {
-              setState(() {
-                series.weight = weight;
-                ref
-                    .read(trainingProgramControllerProvider.notifier)
-                    .updateSeries(
-                      widget.weekIndex,
-                      widget.workoutIndex,
-                      widget.exerciseIndex,
-                      exercise.series,
-                    );
-              });
-            },
-            onMaxWeightChanged: (maxWeight) {
-              setState(() {
-                series.maxWeight = maxWeight;
-                ref
-                    .read(trainingProgramControllerProvider.notifier)
-                    .updateSeries(
-                      widget.weekIndex,
-                      widget.workoutIndex,
-                      widget.exerciseIndex,
-                      exercise.series,
-                    );
-              });
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButtons(
-      List<Series> series, ThemeData theme, ColorScheme colorScheme) {
-    final isSmallScreen = MediaQuery.of(context).size.width < 600;
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Expanded(
-          child: AppButton(
-            label: isSmallScreen ? 'Reorder' : 'Reorder Series',
-            icon: Icons.reorder,
-            onPressed: () => _showReorderSeriesDialog(series),
-            variant: AppButtonVariant.ghost,
-            backgroundColor: colorScheme.surfaceContainerHighest,
-            iconColor: colorScheme.onSurfaceVariant,
-            size: isSmallScreen ? AppButtonSize.sm : AppButtonSize.md,
-            block: true,
-          ),
-        ),
-        SizedBox(width: AppTheme.spacing.md),
-        Expanded(
-          child: AppButton(
-            label: isSmallScreen ? 'Add' : 'Add Series',
-            icon: Icons.add,
-            onPressed: () => _showEditSeriesDialog(null),
-            variant: AppButtonVariant.primary,
-            size: isSmallScreen ? AppButtonSize.sm : AppButtonSize.md,
-            block: true,
-          ),
+        _buildSeriesList(groupedSeries, expansionState),
+        SizedBox(height: AppTheme.spacing.md),
+        SeriesActionButtons(
+          onReorder: () => _showReorderDialog(exercise.series),
+          onAdd: () => _showEditSeriesDialog(null),
+          isSmallScreen: isSmallScreen,
         ),
       ],
     );
   }
 
-  List<dynamic> _groupSeries(List<Series> series) {
-    final groupedSeries = <dynamic>[];
-    List<Series> currentGroup = [];
+  Widget _buildErrorWidget(String message) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-    for (int i = 0; i < series.length; i++) {
-      final currentSeries = series[i];
-      if (i == 0 || !_areSeriesEqual(currentSeries, series[i - 1])) {
-        if (currentGroup.isNotEmpty) {
-          groupedSeries.add(currentGroup);
-          currentGroup = [];
+    return Text(
+      message,
+      style: theme.textTheme.titleMedium?.copyWith(
+        color: colorScheme.error,
+      ),
+    );
+  }
+
+  Widget _buildSeriesList(
+    List<dynamic> groupedSeries,
+    Map<String, bool> expansionState,
+  ) {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: groupedSeries.length,
+      itemBuilder: (context, index) {
+        final item = groupedSeries[index];
+        final key = 'series_group_$index';
+        final isExpanded = expansionState[key] ?? false;
+
+        if (item is List<Series>) {
+          return _buildSeriesGroupCard(item, index, isExpanded, key);
+        } else {
+          return _buildSingleSeriesCard(item as Series, index);
         }
-        currentGroup.add(currentSeries);
-      } else {
-        currentGroup.add(currentSeries);
+      },
+    );
+  }
+
+  Widget _buildSeriesGroupCard(
+    List<Series> seriesGroup,
+    int groupIndex,
+    bool isExpanded,
+    String key,
+  ) {
+    return SeriesGroupCard(
+      seriesGroup: seriesGroup,
+      isExpanded: isExpanded,
+      onExpansionChanged: () {
+        ref.read(expansionStateProvider.notifier).toggleExpansionState(key);
+      },
+      onOptionsPressed: () => _showSeriesGroupOptions(seriesGroup, groupIndex),
+      seriesBuilder: (series, seriesIndex) => _buildSeriesWithInput(
+        series,
+        groupIndex,
+        seriesIndex,
+        () => _removeSeriesFromGroup(seriesGroup, seriesIndex),
+      ),
+    );
+  }
+
+  Widget _buildSingleSeriesCard(Series series, int groupIndex) {
+    return Container(
+      margin: EdgeInsets.only(bottom: AppTheme.spacing.sm),
+      child: SeriesInfoCard(
+        series: series,
+        onRemove: () => _removeSingleSeries(groupIndex),
+      ),
+    );
+  }
+
+  Widget _buildSeriesWithInput(
+    Series series,
+    int groupIndex,
+    int seriesIndex,
+    VoidCallback onRemove,
+  ) {
+    final exercise = _getCurrentExercise();
+
+    return Column(
+      children: [
+        SeriesInfoCard(
+          series: series,
+          onRemove: onRemove,
+        ),
+        SizedBox(height: AppTheme.spacing.sm),
+        SeriesInputFields(
+          maxWeight: latestMaxWeight,
+          exerciseName: exercise.name,
+          initialIntensity: series.intensity,
+          initialMaxIntensity: series.maxIntensity,
+          initialRpe: series.rpe,
+          initialMaxRpe: series.maxRpe,
+          initialWeight: series.weight.toString(),
+          initialMaxWeight: series.maxWeight?.toString(),
+          onIntensityChanged: (intensity) => _updateSeriesField(
+              series, 'intensity', intensity.toStringAsFixed(1)),
+          onMaxIntensityChanged: (maxIntensity) => _updateSeriesField(
+              series, 'maxIntensity', maxIntensity?.toStringAsFixed(1)),
+          onRpeChanged: (rpe) =>
+              _updateSeriesField(series, 'rpe', rpe.toStringAsFixed(1)),
+          onMaxRpeChanged: (maxRpe) =>
+              _updateSeriesField(series, 'maxRpe', maxRpe?.toStringAsFixed(1)),
+          onWeightChanged: (weight) =>
+              _updateSeriesField(series, 'weight', weight),
+          onMaxWeightChanged: (maxWeight) =>
+              _updateSeriesField(series, 'maxWeight', maxWeight),
+        ),
+      ],
+    );
+  }
+
+  // Helper methods
+  Exercise _getCurrentExercise() {
+    return widget.controller.program.weeks[widget.weekIndex]
+        .workouts[widget.workoutIndex].exercises[widget.exerciseIndex];
+  }
+
+  void _updateSeriesField(Series series, String field, dynamic value) {
+    setState(() {
+      switch (field) {
+        case 'intensity':
+          series.intensity = value;
+          break;
+        case 'maxIntensity':
+          series.maxIntensity = value;
+          break;
+        case 'rpe':
+          series.rpe = value;
+          break;
+        case 'maxRpe':
+          series.maxRpe = value;
+          break;
+        case 'weight':
+          series.weight = value;
+          break;
+        case 'maxWeight':
+          series.maxWeight = value;
+          break;
       }
-    }
-
-    if (currentGroup.isNotEmpty) {
-      groupedSeries.add(currentGroup);
-    }
-
-    return groupedSeries;
+      _updateSeriesInController();
+    });
   }
 
-  bool _areSeriesEqual(Series a, Series b) {
-    return a.reps == b.reps &&
-        a.maxReps == b.maxReps &&
-        a.intensity == b.intensity &&
-        a.maxIntensity == b.maxIntensity &&
-        a.rpe == b.rpe &&
-        a.maxRpe == b.maxRpe &&
-        a.weight == b.weight &&
-        a.maxWeight == b.maxWeight;
+  void _updateSeriesInController() {
+    final exercise = _getCurrentExercise();
+    ref.read(trainingProgramControllerProvider.notifier).updateSeries(
+          widget.weekIndex,
+          widget.workoutIndex,
+          widget.exerciseIndex,
+          exercise.series,
+        );
   }
 
-  void _showReorderSeriesDialog(List<Series> series) {
+  void _removeSeriesFromGroup(List<Series> seriesGroup, int seriesIndex) {
+    seriesGroup.removeAt(seriesIndex);
+    widget.controller.updateSeries(
+      widget.weekIndex,
+      widget.workoutIndex,
+      widget.exerciseIndex,
+      seriesGroup,
+    );
+  }
+
+  void _removeSingleSeries(int groupIndex) {
+    ref.read(trainingProgramControllerProvider.notifier).removeSeries(
+          widget.weekIndex,
+          widget.workoutIndex,
+          widget.exerciseIndex,
+          groupIndex,
+          0,
+        );
+  }
+
+  void _showReorderDialog(List<Series> series) {
     final seriesNames = series.map((s) {
-      return 'Series ${s.order}: ${_formatSeriesInfo(s)}';
+      return 'Series ${s.order}: ${FormatUtils.formatSeriesInfo(
+        reps: s.reps,
+        maxReps: s.maxReps,
+        weight: s.weight,
+        maxWeight: s.maxWeight,
+      )}';
     }).toList();
 
     showDialog(
@@ -466,8 +306,7 @@ class TrainingProgramSeriesListState
 
   void _showEditSeriesDialog(List<Series>? seriesGroup,
       {bool isIndividualEdit = false}) {
-    final exercise = widget.controller.program.weeks[widget.weekIndex]
-        .workouts[widget.workoutIndex].exercises[widget.exerciseIndex];
+    final exercise = _getCurrentExercise();
 
     showDialog(
       context: context,
@@ -496,285 +335,140 @@ class TrainingProgramSeriesListState
 
   void _updateExistingSeries(
       List<Series> oldSeriesGroup, List<Series> updatedSeries) {
-    final exercise = widget.controller.program.weeks[widget.weekIndex]
-        .workouts[widget.workoutIndex].exercises[widget.exerciseIndex];
-
-    // Trova l'indice di inizio del gruppo di serie da aggiornare
+    final exercise = _getCurrentExercise();
     final startIndex = exercise.series
         .indexWhere((s) => s.serieId == oldSeriesGroup.first.serieId);
+
     if (startIndex != -1) {
-      // Rimuovi le vecchie serie
       exercise.series
           .removeRange(startIndex, startIndex + oldSeriesGroup.length);
-
-      // Inserisci le serie aggiornate
       exercise.series.insertAll(startIndex, updatedSeries);
-
-      // Aggiorna gli ordini delle serie
-      for (int i = 0; i < exercise.series.length; i++) {
-        exercise.series[i].order = i + 1;
-      }
-
-      ref.read(trainingProgramControllerProvider.notifier).updateSeries(
-            widget.weekIndex,
-            widget.workoutIndex,
-            widget.exerciseIndex,
-            exercise.series,
-          );
+      _reorderSeriesNumbers();
+      _updateSeriesInController();
     }
   }
 
   void _addNewSeries(List<Series> newSeries) {
-    final exercise = widget.controller.program.weeks[widget.weekIndex]
-        .workouts[widget.workoutIndex].exercises[widget.exerciseIndex];
-
+    final exercise = _getCurrentExercise();
     exercise.series.addAll(newSeries);
+    _reorderSeriesNumbers();
+    _updateSeriesInController();
+  }
 
+  void _reorderSeriesNumbers() {
+    final exercise = _getCurrentExercise();
     for (int i = 0; i < exercise.series.length; i++) {
       exercise.series[i].order = i + 1;
     }
-
-    ref.read(trainingProgramControllerProvider.notifier).updateSeries(
-          widget.weekIndex,
-          widget.workoutIndex,
-          widget.exerciseIndex,
-          exercise.series,
-        );
   }
 
-  String _formatSeriesInfo(Series series) {
-    final reps =
-        _formatRange(series.reps.toString(), series.maxReps?.toString());
-    final weight =
-        _formatRange(series.weight.toString(), series.maxWeight?.toString());
-    return '$reps reps x $weight kg';
-  }
-
-  String _formatRange(String minValue, String? maxValue) {
-    if (maxValue != null && maxValue != minValue) {
-      return '$minValue-$maxValue';
-    }
-    return minValue;
-  }
-
-  void _showDeleteSeriesGroupDialog(List<Series> seriesGroup, int groupIndex) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Elimina Gruppo Di Serie'),
-        content:
-            const Text('Confermi Di Voler Eliminare Questo Gruppo Di Serie'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Annulla'),
-          ),
-          TextButton(
-            onPressed: () {
-              _deleteSeriesGroup(seriesGroup, groupIndex);
-              Navigator.pop(context);
-            },
-            child: const Text('Elimina'),
-          ),
-        ],
-      ),
+  void _showSeriesGroupOptions(List<Series> seriesGroup, int groupIndex) {
+    showOptionsBottomSheet(
+      context,
+      title: 'Gruppo Serie',
+      subtitle: '${seriesGroup.length} serie',
+      leadingIcon: Icons.format_list_numbered,
+      items: _buildSeriesGroupMenuItems(seriesGroup, groupIndex),
     );
+  }
+
+  List<BottomMenuItem> _buildSeriesGroupMenuItems(
+      List<Series> seriesGroup, int groupIndex) {
+    final exercise = _getCurrentExercise();
+
+    return [
+      BottomMenuItem(
+        title: 'Modifica Gruppo',
+        icon: Icons.edit_outlined,
+        onTap: () => _showEditSeriesDialog(seriesGroup),
+      ),
+      BottomMenuItem(
+        title: 'Duplica Gruppo',
+        icon: Icons.content_copy_outlined,
+        onTap: () {
+          final newSeriesGroup = seriesGroup
+              .map((s) => s.copyWith(
+                    serieId: generateRandomId(16),
+                    order: exercise.series.length + seriesGroup.indexOf(s) + 1,
+                  ))
+              .toList();
+          _addNewSeries(newSeriesGroup);
+        },
+      ),
+      BottomMenuItem(
+        title: 'Riordina Serie',
+        icon: Icons.reorder,
+        onTap: () => _showReorderDialog(seriesGroup),
+      ),
+      BottomMenuItem(
+        title: 'Elimina Gruppo',
+        icon: Icons.delete_outline,
+        onTap: () => _handleDeleteSeriesGroup(seriesGroup, groupIndex),
+        isDestructive: true,
+      ),
+    ];
+  }
+
+  void _handleDeleteSeriesGroup(
+      List<Series> seriesGroup, int groupIndex) async {
+    final confirmed = await showDeleteConfirmation(
+      context,
+      title: 'Elimina Gruppo Di Serie',
+      content: 'Confermi Di Voler Eliminare Questo Gruppo Di Serie',
+    );
+
+    if (confirmed && mounted) {
+      _deleteSeriesGroup(seriesGroup, groupIndex);
+    }
   }
 
   void _deleteSeriesGroup(List<Series> seriesGroup, int groupIndex) {
-    final exercise = widget.controller.program.weeks[widget.weekIndex]
-        .workouts[widget.workoutIndex].exercises[widget.exerciseIndex];
+    final exercise = _getCurrentExercise();
 
-    List<Series> seriesToRemove = List.from(seriesGroup);
-
-    for (Series series in seriesToRemove) {
+    for (Series series in seriesGroup) {
       widget.controller.program.trackToDeleteSeries.add(series.serieId);
     }
 
-    exercise.series.removeWhere((series) => seriesToRemove.contains(series));
+    exercise.series.removeWhere((series) => seriesGroup.contains(series));
+    _reorderSeriesNumbers();
+    _updateSeriesInController();
+  }
+}
 
-    for (int i = 0; i < exercise.series.length; i++) {
-      exercise.series[i].order = i + 1;
+/// Helper class for grouping series logic (following SRP)
+class _SeriesGrouper {
+  static List<dynamic> groupSeries(List<Series> series) {
+    final groupedSeries = <dynamic>[];
+    List<Series> currentGroup = [];
+
+    for (int i = 0; i < series.length; i++) {
+      final currentSeries = series[i];
+      if (i == 0 || !_areSeriesEqual(currentSeries, series[i - 1])) {
+        if (currentGroup.isNotEmpty) {
+          groupedSeries.add(currentGroup);
+          currentGroup = [];
+        }
+        currentGroup.add(currentSeries);
+      } else {
+        currentGroup.add(currentSeries);
+      }
     }
 
-    ref.read(trainingProgramControllerProvider.notifier).updateSeries(
-          widget.weekIndex,
-          widget.workoutIndex,
-          widget.exerciseIndex,
-          exercise.series,
-        );
-  }
-
-  void _showSeriesOptions(
-    BuildContext context,
-    Series series,
-    List<Series> seriesGroup,
-    int groupIndex,
-    int? seriesIndex,
-    VoidCallback? onRemove,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    final exercise = widget.controller.program.weeks[widget.weekIndex]
-        .workouts[widget.workoutIndex].exercises[widget.exerciseIndex];
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => BottomMenu(
-        title: 'Serie ${series.order}',
-        subtitle: _formatSeriesInfo(series),
-        leading: Container(
-          padding: EdgeInsets.all(AppTheme.spacing.sm),
-          decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withAlpha(77),
-            borderRadius: BorderRadius.circular(AppTheme.radii.md),
-          ),
-          child: Icon(
-            Icons.fitness_center,
-            color: colorScheme.primary,
-            size: 24,
-          ),
-        ),
-        items: [
-          BottomMenuItem(
-            title: 'Modifica',
-            icon: Icons.edit_outlined,
-            onTap: () =>
-                _showEditSeriesDialog([series], isIndividualEdit: true),
-          ),
-          BottomMenuItem(
-            title: 'Duplica Serie',
-            icon: Icons.content_copy_outlined,
-            onTap: () {
-              final newSeries = series.copyWith(
-                serieId: generateRandomId(16),
-                order: exercise.series.length + 1,
-              );
-              _addNewSeries([newSeries]);
-            },
-          ),
-          BottomMenuItem(
-            title: 'Elimina',
-            icon: Icons.delete_outline,
-            onTap: () {
-              if (onRemove != null) {
-                onRemove();
-              } else {
-                ref
-                    .read(trainingProgramControllerProvider.notifier)
-                    .removeSeries(
-                      widget.weekIndex,
-                      widget.workoutIndex,
-                      widget.exerciseIndex,
-                      groupIndex,
-                      seriesIndex ?? 0,
-                    );
-              }
-            },
-            isDestructive: true,
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showSeriesGroupOptions(
-    BuildContext context,
-    List<Series> seriesGroup,
-    int groupIndex,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    final exercise = widget.controller.program.weeks[widget.weekIndex]
-        .workouts[widget.workoutIndex].exercises[widget.exerciseIndex];
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => BottomMenu(
-        title: 'Gruppo Serie',
-        subtitle: '${seriesGroup.length} serie',
-        leading: Container(
-          padding: EdgeInsets.all(AppTheme.spacing.sm),
-          decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withAlpha(77),
-            borderRadius: BorderRadius.circular(AppTheme.radii.md),
-          ),
-          child: Icon(
-            Icons.format_list_numbered,
-            color: colorScheme.primary,
-            size: 24,
-          ),
-        ),
-        items: [
-          BottomMenuItem(
-            title: 'Modifica Gruppo',
-            icon: Icons.edit_outlined,
-            onTap: () => _showEditSeriesDialog(seriesGroup),
-          ),
-          BottomMenuItem(
-            title: 'Duplica Gruppo',
-            icon: Icons.content_copy_outlined,
-            onTap: () {
-              final newSeriesGroup = seriesGroup
-                  .map((s) => s.copyWith(
-                        serieId: generateRandomId(16),
-                        order:
-                            exercise.series.length + seriesGroup.indexOf(s) + 1,
-                      ))
-                  .toList();
-              _addNewSeries(newSeriesGroup);
-            },
-          ),
-          BottomMenuItem(
-            title: 'Riordina Serie',
-            icon: Icons.reorder,
-            onTap: () => _showReorderSeriesDialog(seriesGroup),
-          ),
-          BottomMenuItem(
-            title: 'Elimina Gruppo',
-            icon: Icons.delete_outline,
-            onTap: () => _showDeleteSeriesGroupDialog(seriesGroup, groupIndex),
-            isDestructive: true,
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _navigateToExerciseDetails(BuildContext context,
-      {required String? userId,
-      required String? programId,
-      required String? weekId,
-      required String? workoutId,
-      required String? exerciseId,
-      required List<SuperSet> superSets,
-      required int superSetExerciseIndex,
-      required List<Series> seriesList,
-      required int startIndex}) {
-    if (userId == null ||
-        programId == null ||
-        weekId == null ||
-        workoutId == null ||
-        exerciseId == null) {
-      return;
+    if (currentGroup.isNotEmpty) {
+      groupedSeries.add(currentGroup);
     }
 
-    context.go(
-        '/user_programs/training_viewer/week_details/workout_details/exercise_details',
-        extra: {
-          'programId': programId,
-          'weekId': weekId,
-          'workoutId': workoutId,
-          'exerciseId': exerciseId,
-          'userId': userId,
-          'superSetExercises': superSets.map((s) => s.toMap()).toList(),
-          'superSetExerciseIndex': superSetExerciseIndex,
-          'seriesList': seriesList.map((s) => s.toMap()).toList(),
-          'startIndex': startIndex
-        });
+    return groupedSeries;
+  }
+
+  static bool _areSeriesEqual(Series a, Series b) {
+    return a.reps == b.reps &&
+        a.maxReps == b.maxReps &&
+        a.intensity == b.intensity &&
+        a.maxIntensity == b.maxIntensity &&
+        a.rpe == b.rpe &&
+        a.maxRpe == b.maxRpe &&
+        a.weight == b.weight &&
+        a.maxWeight == b.maxWeight;
   }
 }

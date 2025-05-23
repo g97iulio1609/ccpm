@@ -36,9 +36,13 @@ Future<SharedPreferences> initializeServices() async {
   }
 
   if (kIsWeb) {
+    // Temporaneamente commentato per compatibilità con Flutter 3.32
+    // TODO: Riattivare quando flutter_stripe_web sarà compatibile con Flutter 3.32
+    /*
     Stripe.publishableKey =
         'pk_live_51Lk8noGIoD20nGKnKB5igqB4Kpry8VQpYgWwm0t5dJWTCOX4pQXdg9N24dM1fSgZP3oVoYPTZj4SGYIp9aT05Mrr00a4XOvZg6';
     await Stripe.instance.applySettings();
+    */
   }
 
   return results[1] as SharedPreferences;

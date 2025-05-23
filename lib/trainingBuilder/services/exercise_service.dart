@@ -2,6 +2,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/exercise_model.dart';
 import '../models/series_model.dart';
 import 'series_service.dart';
+import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
+import 'package:alphanessone/models/exercise_record.dart';
+import 'package:alphanessone/trainingBuilder/utility_functions.dart';
+import 'package:intl/intl.dart';
 
 class ExerciseService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -83,5 +87,182 @@ class ExerciseService {
     var exercises =
         snapshot.docs.map((doc) => Exercise.fromFirestore(doc)).toList();
     return exercises;
+  }
+
+  /// Gets the latest max weight for an exercise
+  static Future<num> getLatestMaxWeight(
+    ExerciseRecordService exerciseRecordService,
+    String athleteId,
+    String exerciseId,
+  ) async {
+    if (exerciseId.isEmpty) return 0;
+
+    try {
+      final record = await exerciseRecordService.getLatestExerciseRecord(
+        userId: athleteId,
+        exerciseId: exerciseId,
+      );
+      return record?.maxWeight ?? 0;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  /// Calculates and updates max RM for an exercise
+  static Future<void> updateMaxRM({
+    required ExerciseRecordService exerciseRecordService,
+    required String athleteId,
+    required Exercise exercise,
+    required double maxWeight,
+    required int repetitions,
+    required String exerciseType,
+  }) async {
+    if (exercise.exerciseId == null) return;
+
+    final dateFormat = DateFormat('yyyy-MM-dd');
+    final roundedMaxWeight = roundWeight(maxWeight, exerciseType);
+
+    try {
+      final existingRecord =
+          await exerciseRecordService.getLatestExerciseRecord(
+        userId: athleteId,
+        exerciseId: exercise.exerciseId!,
+      );
+
+      if (existingRecord != null) {
+        await exerciseRecordService.updateExerciseRecord(
+          userId: athleteId,
+          exerciseId: exercise.exerciseId!,
+          recordId: existingRecord.id,
+          maxWeight: roundedMaxWeight.round(),
+          repetitions: 1,
+        );
+      } else {
+        await exerciseRecordService.addExerciseRecord(
+          userId: athleteId,
+          exerciseId: exercise.exerciseId!,
+          exerciseName: exercise.name,
+          maxWeight: roundedMaxWeight.round(),
+          repetitions: 1,
+          date: dateFormat.format(DateTime.now()),
+        );
+      }
+    } catch (e) {
+      throw Exception('Failed to update max RM: $e');
+    }
+  }
+
+  /// Calculates max RM from weight and repetitions
+  static double calculateMaxRM(double weight, int repetitions) {
+    if (repetitions <= 1) return weight;
+    return weight / (1.0278 - (0.0278 * repetitions));
+  }
+
+  /// Creates bulk series for multiple exercises
+  static void createBulkSeries({
+    required List<Exercise> exercises,
+    required int sets,
+    required int reps,
+    int? maxReps,
+    String? intensity,
+    String? maxIntensity,
+    String? rpe,
+    String? maxRpe,
+    required Map<String, num> exerciseMaxWeights,
+  }) {
+    for (var exercise in exercises) {
+      final maxWeight = exerciseMaxWeights[exercise.exerciseId] ?? 0;
+      final calculatedWeight = _calculateWeightFromIntensity(
+        maxWeight.toDouble(),
+        double.tryParse(intensity ?? '') ?? 0,
+      );
+      final calculatedMaxWeight = maxIntensity != null
+          ? _calculateWeightFromIntensity(
+              maxWeight.toDouble(),
+              double.tryParse(maxIntensity) ?? 0,
+            )
+          : null;
+
+      final newSeries = List.generate(
+        sets,
+        (index) => Series(
+          serieId: generateRandomId(16),
+          reps: reps,
+          maxReps: maxReps,
+          sets: 1,
+          intensity: intensity ?? '',
+          maxIntensity: maxIntensity,
+          rpe: rpe ?? '',
+          maxRpe: maxRpe,
+          weight: calculatedWeight,
+          maxWeight: calculatedMaxWeight,
+          order: index + 1,
+          done: false,
+          reps_done: 0,
+          weight_done: 0,
+        ),
+      );
+
+      exercise.series = newSeries;
+    }
+  }
+
+  /// Calculates weight from intensity percentage
+  static double _calculateWeightFromIntensity(
+      double maxWeight, double intensity) {
+    if (maxWeight <= 0 || intensity <= 0) return 0;
+    return maxWeight * (intensity / 100);
+  }
+
+  /// Validates exercise data
+  static bool isValidExercise(Exercise exercise) {
+    return exercise.name.isNotEmpty && exercise.type.isNotEmpty;
+  }
+
+  /// Creates a copy of an exercise with new ID
+  static Exercise copyExercise(Exercise original) {
+    return Exercise(
+      id: generateRandomId(16),
+      name: original.name,
+      type: original.type,
+      variant: original.variant,
+      order: original.order,
+      exerciseId: original.exerciseId,
+      series: original.series
+          .map((s) => s.copyWith(
+                serieId: generateRandomId(16),
+              ))
+          .toList(),
+      weekProgressions: original.weekProgressions,
+    );
+  }
+
+  /// Groups exercises by type for better organization
+  static Map<String, List<Exercise>> groupExercisesByType(
+      List<Exercise> exercises) {
+    final groupedExercises = <String, List<Exercise>>{};
+
+    for (var exercise in exercises) {
+      if (!groupedExercises.containsKey(exercise.type)) {
+        groupedExercises[exercise.type] = [];
+      }
+      groupedExercises[exercise.type]!.add(exercise);
+    }
+
+    return groupedExercises;
+  }
+
+  /// Calculates total volume for an exercise
+  static double calculateExerciseVolume(Exercise exercise) {
+    double totalVolume = 0;
+
+    for (var series in exercise.series) {
+      final reps = series.reps_done > 0 ? series.reps_done : series.reps;
+      final weight =
+          series.weight_done > 0 ? series.weight_done : series.weight;
+      totalVolume += reps * weight;
+    }
+
+    return totalVolume;
   }
 }

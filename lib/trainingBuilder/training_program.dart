@@ -110,8 +110,8 @@ class _ProgramDetailsForm extends ConsumerWidget {
     required this.colorScheme,
   });
 
-  void _showAthleteSelectionDialog(
-      BuildContext context, WidgetRef ref, TrainingProgramController controller) {
+  void _showAthleteSelectionDialog(BuildContext context, WidgetRef ref,
+      TrainingProgramController controller) {
     showDialog(
       context: context,
       builder: (context) => AthleteSelectionDialog(controller: controller),
@@ -154,7 +154,8 @@ class _ProgramDetailsForm extends ConsumerWidget {
           SizedBox(height: AppTheme.spacing.md),
           if (userRole == 'admin')
             _GradientElevatedButton(
-              onTap: () => _showAthleteSelectionDialog(context, ref, controller),
+              onTap: () =>
+                  _showAthleteSelectionDialog(context, ref, controller),
               label: 'Select Athlete',
               icon: Icons.person_add,
               theme: theme,

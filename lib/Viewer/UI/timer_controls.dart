@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:numberpicker/numberpicker.dart';
-import 'timer_constants.dart';
 import 'package:flutter/services.dart';
 
 class TimerControls extends StatelessWidget {
@@ -40,272 +39,356 @@ class TimerControls extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _buildPresetGrid(theme, colorScheme),
-        SizedBox(height: AppTheme.spacing.lg),
-        _buildCustomTimePicker(theme, colorScheme),
-        SizedBox(height: AppTheme.spacing.lg),
-        _buildStartButton(theme, colorScheme),
+        _buildPresetSection(theme, colorScheme),
+        SizedBox(height: AppTheme.spacing.xl),
+        _buildEnhancedTimePicker(theme, colorScheme),
+        SizedBox(height: AppTheme.spacing.xl),
+        _buildEnhancedStartButton(theme, colorScheme),
       ],
     );
   }
 
-  Widget _buildPresetGrid(ThemeData theme, ColorScheme colorScheme) {
-    // Organizziamo i preset in categorie basate sulla durata
-    final shortPresets =
-        presets.where((p) => (p['seconds'] as int) <= 60).toList();
-    final mediumPresets = presets
-        .where(
-            (p) => (p['seconds'] as int) > 60 && (p['seconds'] as int) <= 180)
-        .toList();
-    final longPresets =
-        presets.where((p) => (p['seconds'] as int) > 180).toList();
-
+  Widget _buildPresetSection(ThemeData theme, ColorScheme colorScheme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          'Preset Timer',
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.sm),
+          child: Row(
+            children: [
+              Icon(
+                Icons.access_time_rounded,
+                size: 20,
+                color: AppTheme.primaryGold,
+              ),
+              SizedBox(width: AppTheme.spacing.xs),
+              Text(
+                'Preset Rapidi',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 8),
-
-        // Griglia di preset
+        SizedBox(height: AppTheme.spacing.md),
         if (presets.isNotEmpty)
-          Container(
-            height: 120,
-            decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-            ),
-            child: Scrollbar(
-              thumbVisibility: true,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: EdgeInsets.all(AppTheme.spacing.sm),
-                children: [
-                  if (shortPresets.isNotEmpty)
-                    _buildPresetCategory(theme, colorScheme, shortPresets,
-                        'Brevi', AppTheme.accentGreen),
-                  if (mediumPresets.isNotEmpty)
-                    _buildPresetCategory(theme, colorScheme, mediumPresets,
-                        'Medi', AppTheme.primaryGold),
-                  if (longPresets.isNotEmpty)
-                    _buildPresetCategory(theme, colorScheme, longPresets,
-                        'Lunghi', AppTheme.accentPurple),
+          _buildEnhancedPresetGrid(theme, colorScheme)
+        else
+          _buildEmptyPresetState(theme, colorScheme),
+        SizedBox(height: AppTheme.spacing.md),
+        _buildAddPresetButton(theme, colorScheme),
+      ],
+    );
+  }
 
-                  // Pulsante per aggiungere un nuovo preset
-                  GestureDetector(
-                    onTap: onAddPresetPressed,
+  Widget _buildEnhancedPresetGrid(ThemeData theme, ColorScheme colorScheme) {
+    final sortedPresets = List<Map<String, dynamic>>.from(presets)
+      ..sort((a, b) => (a['seconds'] as int).compareTo(b['seconds'] as int));
+
+    return SizedBox(
+      height: 80,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.sm),
+        itemCount: sortedPresets.length,
+        separatorBuilder: (context, index) =>
+            SizedBox(width: AppTheme.spacing.sm),
+        itemBuilder: (context, index) {
+          final preset = sortedPresets[index];
+          return _buildModernPresetCard(preset, theme, colorScheme, index);
+        },
+      ),
+    );
+  }
+
+  Widget _buildModernPresetCard(Map<String, dynamic> preset, ThemeData theme,
+      ColorScheme colorScheme, int index) {
+    final seconds = preset['seconds'] as int;
+    final isQuick = seconds <= 60;
+    final isMedium = seconds > 60 && seconds <= 180;
+    final isLong = seconds > 180;
+
+    Color categoryColor = AppTheme.primaryGold;
+    IconData categoryIcon = Icons.timer_rounded;
+
+    if (isQuick) {
+      categoryColor = AppTheme.success;
+      categoryIcon = Icons.flash_on_rounded;
+    } else if (isMedium) {
+      categoryColor = AppTheme.primaryGold;
+      categoryIcon = Icons.timer_rounded;
+    } else if (isLong) {
+      categoryColor = AppTheme.accentPurple;
+      categoryIcon = Icons.schedule_rounded;
+    }
+
+    return SizedBox(
+      width: 100,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.selectionClick();
+            onPresetSelected(preset);
+          },
+          onLongPress: () {
+            HapticFeedback.mediumImpact();
+            onEditPresetPressed(preset);
+          },
+          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  categoryColor.withAlpha(20),
+                  categoryColor.withAlpha(5),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+              border: Border.all(
+                color: categoryColor.withAlpha(80),
+                width: 1.5,
+              ),
+            ),
+            child: Stack(
+              children: [
+                Padding(
+                  padding: EdgeInsets.all(AppTheme.spacing.sm),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        categoryIcon,
+                        color: categoryColor,
+                        size: 24,
+                      ),
+                      SizedBox(height: AppTheme.spacing.xs),
+                      Text(
+                        formatDuration(seconds),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: categoryColor,
+                          fontWeight: FontWeight.w800,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      onDeletePresetPressed(preset['id'] as String);
+                    },
                     child: Container(
-                      width: 80,
-                      margin: EdgeInsets.only(left: AppTheme.spacing.sm),
+                      width: 20,
+                      height: 20,
                       decoration: BoxDecoration(
-                        color: Colors.black,
-                        borderRadius: BorderRadius.circular(AppTheme.radii.md),
+                        color: AppTheme.error.withAlpha(20),
+                        shape: BoxShape.circle,
                         border: Border.all(
-                          color: colorScheme.primary.withAlpha(100),
+                          color: AppTheme.error.withAlpha(80),
                           width: 1,
                         ),
                       ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.add_circle_outline,
-                            color: colorScheme.primary,
-                            size: 28,
-                          ),
-                          SizedBox(height: AppTheme.spacing.xs),
-                          Text(
-                            'Nuovo',
-                            style: theme.textTheme.labelMedium?.copyWith(
-                              color: colorScheme.primary,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 12,
+                        color: AppTheme.error,
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
-          )
-        else
-          // Se non ci sono preset, mostriamo un pulsante per crearne uno
-          OutlinedButton.icon(
-            onPressed: onAddPresetPressed,
-            icon: const Icon(Icons.add),
-            label: const Text('Aggiungi il tuo primo preset'),
-            style: OutlinedButton.styleFrom(
-              padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.md),
-              side: BorderSide(color: colorScheme.primary.withAlpha(128)),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildPresetCategory(
-    ThemeData theme,
-    ColorScheme colorScheme,
-    List<Map<String, dynamic>> categoryPresets,
-    String categoryName,
-    Color categoryColor,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: EdgeInsets.only(left: AppTheme.spacing.sm),
-          child: Text(
-            categoryName,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: categoryColor.withAlpha(200),
-              fontWeight: FontWeight.w500,
+                ),
+              ],
             ),
           ),
         ),
-        SizedBox(height: 4),
-        Row(
-          children: categoryPresets.map((preset) {
-            // Calcola una dimensione proporzionale al tempo (minimo 70, massimo 110)
-            final seconds = preset['seconds'] as int;
-            double width = 70 + (seconds / 300 * 40);
-            if (width > 110) width = 110;
-
-            return GestureDetector(
-              onTap: () => onPresetSelected(preset),
-              onLongPress: () => onEditPresetPressed(preset),
-              child: Container(
-                width: width,
-                height: 70,
-                margin: EdgeInsets.only(left: AppTheme.spacing.sm),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      categoryColor.withAlpha(40),
-                      categoryColor.withAlpha(70),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(AppTheme.radii.md),
-                  border: Border.all(
-                    color: categoryColor.withAlpha(100),
-                    width: 1,
-                  ),
-                ),
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            formatDuration(seconds),
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          if (preset['label'] != null &&
-                              preset['label'] != formatDuration(seconds))
-                            Text(
-                              preset['label'] as String,
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: Colors.white.withAlpha(180),
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                        ],
-                      ),
-                    ),
-                    // Pulsante elimina
-                    Positioned(
-                      top: 4,
-                      right: 4,
-                      child: GestureDetector(
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          onDeletePresetPressed(preset['id'] as String);
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withAlpha(100),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.close,
-                            size: 14,
-                            color: AppTheme.error.withAlpha(220),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
+      ),
     );
   }
 
-  Widget _buildCustomTimePicker(ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildAddPresetButton(ThemeData theme, ColorScheme colorScheme) {
     return Container(
-      padding: EdgeInsets.all(AppTheme.spacing.md),
+      height: 48,
       decoration: BoxDecoration(
-        color: Colors.black,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(color: colorScheme.outline.withAlpha(40)),
+        border: Border.all(
+          color: AppTheme.primaryGold.withAlpha(60),
+          width: 1.5,
+        ),
+      ),
+      child: TextButton.icon(
+        onPressed: onAddPresetPressed,
+        icon: Icon(
+          Icons.add_rounded,
+          size: 20,
+          color: AppTheme.primaryGold,
+        ),
+        label: Text(
+          'Crea Nuovo Preset',
+          style: theme.textTheme.titleSmall?.copyWith(
+            color: AppTheme.primaryGold,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        style: TextButton.styleFrom(
+          padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.lg),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyPresetState(ThemeData theme, ColorScheme colorScheme) {
+    return Container(
+      height: 80,
+      padding: EdgeInsets.all(AppTheme.spacing.lg),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withAlpha(30),
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: colorScheme.outline.withAlpha(20),
+          width: 1,
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.timer_off_rounded,
+              color: colorScheme.onSurfaceVariant.withAlpha(120),
+              size: 24,
+            ),
+            SizedBox(height: AppTheme.spacing.xs),
+            Text(
+              'Nessun preset salvato',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEnhancedTimePicker(ThemeData theme, ColorScheme colorScheme) {
+    return Container(
+      padding: EdgeInsets.all(AppTheme.spacing.lg),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colorScheme.surfaceContainerHighest.withAlpha(40),
+            colorScheme.surfaceContainerHighest.withAlpha(10),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(AppTheme.radii.xl),
+        border: Border.all(
+          color: colorScheme.outline.withAlpha(30),
+          width: 1,
+        ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Timer Personalizzato',
-            style: theme.textTheme.titleSmall?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          SizedBox(height: AppTheme.spacing.md),
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildNumberPicker(
-                theme,
-                colorScheme,
-                'Minuti',
-                timerMinutes,
-                59,
-                onMinutesChanged,
+              Icon(
+                Icons.tune_rounded,
+                color: AppTheme.primaryGold,
+                size: 20,
               ),
-              VerticalDivider(
-                color: colorScheme.outline.withAlpha(50),
-                width: AppTheme.spacing.lg,
-              ),
-              _buildNumberPicker(
-                theme,
-                colorScheme,
-                'Secondi',
-                timerSeconds,
-                59,
-                onSecondsChanged,
+              SizedBox(width: AppTheme.spacing.xs),
+              Text(
+                'Timer Personalizzato',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
+          ),
+          SizedBox(height: AppTheme.spacing.lg),
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppTheme.spacing.lg,
+              vertical: AppTheme.spacing.md,
+            ),
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+              border: Border.all(
+                color: AppTheme.primaryGold.withAlpha(30),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: colorScheme.shadow.withAlpha(5),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildEnhancedNumberPicker(
+                    theme,
+                    colorScheme,
+                    'Minuti',
+                    timerMinutes,
+                    59,
+                    onMinutesChanged,
+                  ),
+                ),
+                Container(
+                  width: 3,
+                  height: 80,
+                  margin: EdgeInsets.symmetric(horizontal: AppTheme.spacing.lg),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        AppTheme.primaryGold.withAlpha(50),
+                        Colors.transparent,
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Expanded(
+                  child: _buildEnhancedNumberPicker(
+                    theme,
+                    colorScheme,
+                    'Secondi',
+                    timerSeconds,
+                    59,
+                    onSecondsChanged,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildNumberPicker(
+  Widget _buildEnhancedNumberPicker(
     ThemeData theme,
     ColorScheme colorScheme,
     String label,
@@ -318,32 +401,54 @@ class TimerControls extends StatelessWidget {
       children: [
         Text(
           label,
-          style: theme.textTheme.titleSmall?.copyWith(
-            color: Colors.white.withAlpha(150),
-            fontWeight: FontWeight.w500,
+          style: theme.textTheme.labelLarge?.copyWith(
+            color: AppTheme.primaryGold,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
           ),
         ),
-        SizedBox(height: AppTheme.spacing.xs),
-        NumberPicker(
-          value: value,
-          minValue: 0,
-          maxValue: maxValue,
-          onChanged: (value) {
-            HapticFeedback.selectionClick();
-            onChanged(value);
-          },
-          itemHeight: TimerConstants.numberPickerItemHeight,
-          textStyle: theme.textTheme.titleLarge?.copyWith(
-            color: Colors.white.withAlpha(100),
-          ),
-          selectedTextStyle: theme.textTheme.headlineSmall?.copyWith(
-            color: AppTheme.primaryGold,
-            fontWeight: FontWeight.w600,
-          ),
+        SizedBox(height: AppTheme.spacing.sm),
+        Container(
+          height: 120,
           decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(color: colorScheme.outline.withAlpha(40)),
-              bottom: BorderSide(color: colorScheme.outline.withAlpha(40)),
+            color: colorScheme.surfaceContainerHighest.withAlpha(30),
+            borderRadius: BorderRadius.circular(AppTheme.radii.md),
+          ),
+          child: NumberPicker(
+            value: value,
+            minValue: 0,
+            maxValue: maxValue,
+            onChanged: (value) {
+              HapticFeedback.selectionClick();
+              onChanged(value);
+            },
+            itemHeight: 40,
+            itemWidth: 80,
+            textStyle: theme.textTheme.titleLarge?.copyWith(
+              color: colorScheme.onSurfaceVariant.withAlpha(120),
+              fontWeight: FontWeight.w500,
+            ),
+            selectedTextStyle: theme.textTheme.headlineMedium?.copyWith(
+              color: AppTheme.primaryGold,
+              fontWeight: FontWeight.w800,
+              shadows: [
+                Shadow(
+                  color: AppTheme.primaryGold.withAlpha(30),
+                  blurRadius: 4,
+                ),
+              ],
+            ),
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(
+                  color: AppTheme.primaryGold.withAlpha(60),
+                  width: 2,
+                ),
+                bottom: BorderSide(
+                  color: AppTheme.primaryGold.withAlpha(60),
+                  width: 2,
+                ),
+              ),
             ),
           ),
         ),
@@ -351,35 +456,82 @@ class TimerControls extends StatelessWidget {
     );
   }
 
-  Widget _buildStartButton(ThemeData theme, ColorScheme colorScheme) {
-    return SizedBox(
+  Widget _buildEnhancedStartButton(ThemeData theme, ColorScheme colorScheme) {
+    final totalSeconds = (timerMinutes * 60) + timerSeconds;
+    final isEnabled = totalSeconds > 0;
+
+    return Container(
       width: double.infinity,
       height: 56,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppTheme.radii.xl),
+        gradient: isEnabled
+            ? LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppTheme.primaryGold,
+                  AppTheme.primaryGoldDark,
+                ],
+              )
+            : null,
+        color: !isEnabled
+            ? colorScheme.surfaceContainerHighest.withAlpha(60)
+            : null,
+        boxShadow: isEnabled
+            ? [
+                BoxShadow(
+                  color: AppTheme.primaryGold.withAlpha(30),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
+      ),
       child: ElevatedButton(
-        onPressed: onStartTimer,
+        onPressed: isEnabled
+            ? () {
+                HapticFeedback.heavyImpact();
+                onStartTimer();
+              }
+            : null,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppTheme.success,
-          foregroundColor: Colors.white,
-          padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.lg),
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          elevation: 0,
+          padding: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+            borderRadius: BorderRadius.circular(AppTheme.radii.xl),
           ),
-          elevation: 6,
-          shadowColor: AppTheme.success.withAlpha(50),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.play_arrow_rounded, size: 24),
-            SizedBox(width: AppTheme.spacing.xs),
-            Text(
-              'AVVIA TIMER',
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppTheme.radii.xl),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.play_arrow_rounded,
+                size: 28,
+                color: isEnabled
+                    ? Colors.black
+                    : colorScheme.onSurfaceVariant.withAlpha(80),
               ),
-            ),
-          ],
+              SizedBox(width: AppTheme.spacing.sm),
+              Text(
+                'AVVIA TIMER',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: isEnabled
+                      ? Colors.black
+                      : colorScheme.onSurfaceVariant.withAlpha(80),
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

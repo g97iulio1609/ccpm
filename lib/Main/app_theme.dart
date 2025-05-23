@@ -302,7 +302,7 @@ class AppTheme {
       ),
 
       // Card Theme
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: isDark
             ? colorScheme.surfaceContainerHighest.withAlpha(76)
             : colorScheme.surface,
@@ -393,7 +393,7 @@ class AppTheme {
       ),
 
       // Dialog Theme
-      dialogTheme: DialogTheme(
+      dialogTheme: DialogThemeData(
         backgroundColor:
             isDark ? colorScheme.surface : colorScheme.surface.withAlpha(242),
         elevation: 0,

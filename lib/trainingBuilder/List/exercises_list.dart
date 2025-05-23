@@ -22,6 +22,11 @@ import 'package:go_router/go_router.dart';
 import 'package:alphanessone/trainingBuilder/series_utils.dart';
 import 'package:alphanessone/UI/components/weight_input_fields.dart';
 import 'package:alphanessone/UI/components/button.dart';
+import 'package:alphanessone/trainingBuilder/shared/mixins/training_list_mixin.dart';
+import 'package:alphanessone/trainingBuilder/shared/widgets/exercise_components.dart';
+import 'package:alphanessone/trainingBuilder/dialogs/bulk_series_dialogs.dart';
+import 'package:alphanessone/trainingBuilder/services/exercise_service.dart';
+import 'package:alphanessone/trainingBuilder/shared/utils/format_utils.dart';
 
 // Controller per i range di valori
 class RangeControllers {
@@ -688,6 +693,7 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
   }
 }
 
+/// Widget for displaying and managing exercise list
 class TrainingProgramExerciseList extends HookConsumerWidget {
   final TrainingProgramController controller;
   final int weekIndex;
@@ -707,301 +713,222 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
     final usersService = ref.watch(usersServiceProvider);
     final exerciseRecordService = usersService.exerciseRecordService;
     final athleteId = controller.athleteIdController.text;
-    final dateFormat = DateFormat('yyyy-MM-dd');
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isListMode = screenWidth < 600;
-    final padding = AppTheme.spacing.md;
-    final spacing = AppTheme.spacing.md;
+
+    return _ExerciseListView(
+      controller: controller,
+      weekIndex: weekIndex,
+      workoutIndex: workoutIndex,
+      exercises: exercises,
+      exerciseRecordService: exerciseRecordService,
+      athleteId: athleteId,
+      theme: theme,
+      colorScheme: colorScheme,
+    );
+  }
+}
+
+/// Separated widget for exercise list view following SRP
+class _ExerciseListView extends StatefulWidget {
+  final TrainingProgramController controller;
+  final int weekIndex;
+  final int workoutIndex;
+  final List<Exercise> exercises;
+  final ExerciseRecordService exerciseRecordService;
+  final String athleteId;
+  final ThemeData theme;
+  final ColorScheme colorScheme;
+
+  const _ExerciseListView({
+    required this.controller,
+    required this.weekIndex,
+    required this.workoutIndex,
+    required this.exercises,
+    required this.exerciseRecordService,
+    required this.athleteId,
+    required this.theme,
+    required this.colorScheme,
+  });
+
+  @override
+  State<_ExerciseListView> createState() => _ExerciseListViewState();
+}
+
+class _ExerciseListViewState extends State<_ExerciseListView>
+    with TrainingListMixin {
+  @override
+  Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final isCompact = screenSize.width < 600;
+    final spacing = isCompact ? AppTheme.spacing.sm : AppTheme.spacing.md;
+    final padding = EdgeInsets.all(
+      isCompact ? AppTheme.spacing.md : AppTheme.spacing.lg,
+    );
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: widget.colorScheme.surface,
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withAlpha(128),
-            ],
-            stops: const [0.0, 1.0],
-          ),
-        ),
+        decoration: _buildBackgroundGradient(),
         child: SafeArea(
           child: CustomScrollView(
             slivers: [
               SliverPadding(
-                padding: EdgeInsets.all(padding),
-                sliver: isListMode
-                    ? SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            if (index == exercises.length) {
-                              return Padding(
-                                padding: EdgeInsets.only(top: spacing),
-                                child: _buildAddExerciseButton(
-                                    context, colorScheme, theme),
-                              );
-                            }
-                            return Padding(
-                              padding: EdgeInsets.only(bottom: spacing),
-                              child: _buildExerciseCard(
-                                context,
-                                exercises[index],
-                                exerciseRecordService,
-                                athleteId,
-                                dateFormat,
-                                theme,
-                                colorScheme,
-                              ),
-                            );
-                          },
-                          childCount: exercises.length + 1,
-                        ),
-                      )
-                    : SliverGrid(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            if (index == exercises.length) {
-                              return _buildAddExerciseButton(
-                                  context, colorScheme, theme);
-                            }
-                            return _buildExerciseCard(
-                              context,
-                              exercises[index],
-                              exerciseRecordService,
-                              athleteId,
-                              dateFormat,
-                              theme,
-                              colorScheme,
-                            );
-                          },
-                          childCount: exercises.length + 1,
-                        ),
-                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 600,
-                          mainAxisSpacing: spacing,
-                          crossAxisSpacing: spacing,
-                          mainAxisExtent: 400,
-                          childAspectRatio: 0.8,
-                        ),
-                      ),
+                padding: padding,
+                sliver: widget.exercises.isEmpty
+                    ? _buildEmptyState(isCompact)
+                    : _buildExerciseGrid(isCompact, spacing),
               ),
             ],
           ),
+        ),
+      ),
+      floatingActionButton: widget.exercises.length >= 2
+          ? FloatingActionButton.extended(
+              onPressed: () => _showReorderExercisesDialog(),
+              backgroundColor: widget.colorScheme.primaryContainer,
+              foregroundColor: widget.colorScheme.onPrimaryContainer,
+              icon: const Icon(Icons.reorder),
+              label: Text(
+                isCompact ? 'Riordina' : 'Riordina Esercizi',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radii.xl),
+              ),
+            )
+          : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+    );
+  }
+
+  Widget _buildEmptyState(bool isCompact) {
+    return SliverFillRemaining(
+      hasScrollBody: false,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: EdgeInsets.all(AppTheme.spacing.lg),
+              decoration: BoxDecoration(
+                color: widget.colorScheme.surfaceContainerHighest.withAlpha(76),
+                borderRadius: BorderRadius.circular(AppTheme.radii.xl),
+              ),
+              child: Icon(
+                Icons.fitness_center_outlined,
+                size: isCompact ? 48 : 64,
+                color: widget.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            SizedBox(height: AppTheme.spacing.lg),
+            Text(
+              'Nessun esercizio disponibile',
+              style: widget.theme.textTheme.titleLarge?.copyWith(
+                color: widget.colorScheme.onSurface,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: AppTheme.spacing.sm),
+            Text(
+              'Aggiungi il primo esercizio per iniziare',
+              style: widget.theme.textTheme.bodyLarge?.copyWith(
+                color: widget.colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: AppTheme.spacing.xl),
+            _buildAddExerciseButton(isCompact),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildExerciseCard(
-    BuildContext context,
-    Exercise exercise,
-    ExerciseRecordService exerciseRecordService,
-    String athleteId,
-    DateFormat dateFormat,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    final superSets = controller
-        .program.weeks[weekIndex].workouts[workoutIndex].superSets
-        .where((ss) => ss.exerciseIds.contains(exercise.id))
-        .toList();
+  BoxDecoration _buildBackgroundGradient() {
+    return BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          widget.colorScheme.surface,
+          widget.colorScheme.surfaceContainerHighest.withAlpha(128),
+        ],
+        stops: const [0.0, 1.0],
+      ),
+    );
+  }
+
+  Widget _buildExerciseGrid(bool isCompact, double spacing) {
+    return isCompact ? _buildListView(spacing) : _buildGridView(spacing);
+  }
+
+  Widget _buildListView(double spacing) {
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          if (index == widget.exercises.length) {
+            return Padding(
+              padding: EdgeInsets.only(top: spacing),
+              child: _buildAddExerciseButton(true),
+            );
+          }
+          return Padding(
+            padding: EdgeInsets.only(bottom: spacing),
+            child: _buildExerciseCard(widget.exercises[index]),
+          );
+        },
+        childCount: widget.exercises.length + 1,
+      ),
+    );
+  }
+
+  Widget _buildGridView(double spacing) {
+    return SliverGrid(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          if (index == widget.exercises.length) {
+            return _buildAddExerciseButton(false);
+          }
+          return _buildExerciseCard(widget.exercises[index]);
+        },
+        childCount: widget.exercises.length + 1,
+      ),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: MediaQuery.of(context).size.width > 900 ? 2 : 1,
+        mainAxisSpacing: spacing,
+        crossAxisSpacing: spacing,
+        childAspectRatio: 0.75,
+        mainAxisExtent: null,
+      ),
+    );
+  }
+
+  Widget _buildExerciseCard(Exercise exercise) {
+    final superSets = _getSuperSets(exercise);
 
     return FutureBuilder<num>(
-      future: getLatestMaxWeight(
-        exerciseRecordService,
-        athleteId,
+      future: ExerciseService.getLatestMaxWeight(
+        widget.exerciseRecordService,
+        widget.athleteId,
         exercise.exerciseId ?? '',
       ),
       builder: (context, snapshot) {
-        final latestMaxWeight = snapshot.data ?? 0;
-
-        return Container(
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-            border: Border.all(
-              color: colorScheme.outline.withAlpha(26),
-            ),
-            boxShadow: AppTheme.elevations.small,
-          ),
-          child: Slidable(
-            startActionPane: ActionPane(
-              motion: const ScrollMotion(),
-              children: [
-                SlidableAction(
-                  onPressed: (context) =>
-                      controller.addExercise(weekIndex, workoutIndex, context),
-                  backgroundColor: colorScheme.primaryContainer,
-                  foregroundColor: colorScheme.onPrimaryContainer,
-                  borderRadius: BorderRadius.horizontal(
-                    left: Radius.circular(AppTheme.radii.lg),
-                  ),
-                  icon: Icons.add,
-                  label: 'Add',
-                ),
-              ],
-            ),
-            endActionPane: ActionPane(
-              motion: const ScrollMotion(),
-              children: [
-                SlidableAction(
-                  onPressed: (context) => controller.removeExercise(
-                    weekIndex,
-                    workoutIndex,
-                    exercise.order - 1,
-                  ),
-                  backgroundColor: colorScheme.errorContainer,
-                  foregroundColor: colorScheme.onErrorContainer,
-                  borderRadius: BorderRadius.horizontal(
-                    right: Radius.circular(AppTheme.radii.lg),
-                  ),
-                  icon: Icons.delete_outline,
-                  label: 'Delete',
-                ),
-              ],
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () => _navigateToExerciseDetails(context,
-                    userId: controller.program.athleteId,
-                    programId: controller.program.id,
-                    weekId: controller.program.weeks[weekIndex].id,
-                    workoutId: controller
-                        .program.weeks[weekIndex].workouts[workoutIndex].id,
-                    exerciseId: exercise.id,
-                    superSets: superSets,
-                    superSetExerciseIndex:
-                        superSets.indexOf(superSets.firstWhere(
-                      (ss) => ss.exerciseIds.contains(exercise.id),
-                      orElse: () => SuperSet(id: '', exerciseIds: []),
-                    )),
-                    seriesList: exercise.series,
-                    startIndex: 0),
-                borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                child: Padding(
-                  padding: EdgeInsets.all(AppTheme.spacing.lg),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          // Exercise Type Badge
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: AppTheme.spacing.md,
-                              vertical: AppTheme.spacing.xs,
-                            ),
-                            decoration: BoxDecoration(
-                              color: colorScheme.primaryContainer.withAlpha(76),
-                              borderRadius:
-                                  BorderRadius.circular(AppTheme.radii.xxl),
-                            ),
-                            child: Text(
-                              exercise.type,
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                color: colorScheme.primary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                          const Spacer(),
-                          IconButton(
-                            icon: Icon(
-                              Icons.more_vert,
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                            onPressed: () => _showExerciseOptions(
-                              context,
-                              exercise,
-                              exerciseRecordService,
-                              athleteId,
-                              dateFormat,
-                              latestMaxWeight,
-                              colorScheme,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: AppTheme.spacing.md),
-                      // Exercise Name and Variant
-                      Text(
-                        exercise.name,
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          color: colorScheme.onSurface,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: -0.5,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (exercise.variant.isNotEmpty &&
-                          exercise.variant != '') ...[
-                        SizedBox(height: AppTheme.spacing.xs),
-                        Text(
-                          exercise.variant,
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                      SizedBox(height: AppTheme.spacing.md),
-                      // Series List
-                      Expanded(
-                        child: SingleChildScrollView(
-                          child: TrainingProgramSeriesList(
-                            controller: controller,
-                            exerciseRecordService: exerciseRecordService,
-                            weekIndex: weekIndex,
-                            workoutIndex: workoutIndex,
-                            exerciseIndex: exercise.order - 1,
-                            exerciseType: exercise.type,
-                          ),
-                        ),
-                      ),
-                      // Superset Badge
-                      if (superSets.isNotEmpty) ...[
-                        SizedBox(height: AppTheme.spacing.md),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: AppTheme.spacing.md,
-                            vertical: AppTheme.spacing.xs,
-                          ),
-                          decoration: BoxDecoration(
-                            color: colorScheme.secondaryContainer.withAlpha(77),
-                            borderRadius:
-                                BorderRadius.circular(AppTheme.radii.lg),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.group_work,
-                                size: 18,
-                                color: colorScheme.secondary,
-                              ),
-                              SizedBox(width: AppTheme.spacing.xs),
-                              Text(
-                                'Superset',
-                                style: theme.textTheme.labelMedium?.copyWith(
-                                  color: colorScheme.secondary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
+        return Slidable(
+          startActionPane: _buildStartActionPane(),
+          endActionPane: _buildEndActionPane(exercise),
+          child: ExerciseCard(
+            exercise: exercise,
+            superSets: superSets,
+            seriesSection: _buildSeriesSection(exercise),
+            onTap: () => _navigateToExerciseDetails(exercise, superSets),
+            onOptionsPressed: () => _showExerciseOptions(
+              exercise,
+              snapshot.data ?? 0,
             ),
           ),
         );
@@ -1009,299 +936,384 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
     );
   }
 
-  Widget _buildAddExerciseButton(
-    BuildContext context,
-    ColorScheme colorScheme,
-    ThemeData theme,
-  ) {
-    final isSmallScreen = MediaQuery.of(context).size.width < 600;
+  ActionPane _buildStartActionPane() {
+    return ActionPane(
+      motion: const ScrollMotion(),
+      children: [
+        SlidableAction(
+          onPressed: (_) => widget.controller
+              .addExercise(widget.weekIndex, widget.workoutIndex, context),
+          backgroundColor: widget.colorScheme.primaryContainer,
+          foregroundColor: widget.colorScheme.onPrimaryContainer,
+          borderRadius: BorderRadius.horizontal(
+            left: Radius.circular(AppTheme.radii.lg),
+          ),
+          icon: Icons.add,
+          label: 'Add',
+        ),
+      ],
+    );
+  }
+
+  ActionPane _buildEndActionPane(Exercise exercise) {
+    return ActionPane(
+      motion: const ScrollMotion(),
+      children: [
+        SlidableAction(
+          onPressed: (_) => widget.controller.removeExercise(
+            widget.weekIndex,
+            widget.workoutIndex,
+            exercise.order - 1,
+          ),
+          backgroundColor: widget.colorScheme.errorContainer,
+          foregroundColor: widget.colorScheme.onErrorContainer,
+          borderRadius: BorderRadius.horizontal(
+            right: Radius.circular(AppTheme.radii.lg),
+          ),
+          icon: Icons.delete_outline,
+          label: 'Delete',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSeriesSection(Exercise exercise) {
+    return TrainingProgramSeriesList(
+      controller: widget.controller,
+      exerciseRecordService: widget.exerciseRecordService,
+      weekIndex: widget.weekIndex,
+      workoutIndex: widget.workoutIndex,
+      exerciseIndex: exercise.order - 1,
+      exerciseType: exercise.type,
+    );
+  }
+
+  Widget _buildAddExerciseButton(bool isCompact) {
     return Center(
       child: Container(
         constraints: BoxConstraints(
-          maxWidth: isSmallScreen ? double.infinity : 300,
+          maxWidth: isCompact ? double.infinity : 300,
         ),
         child: AppButton(
           label: 'Add Exercise',
           icon: Icons.add_circle_outline,
           variant: AppButtonVariant.primary,
-          size: isSmallScreen ? AppButtonSize.sm : AppButtonSize.md,
+          size: isCompact ? AppButtonSize.sm : AppButtonSize.md,
           block: true,
-          onPressed: () =>
-              controller.addExercise(weekIndex, workoutIndex, context),
+          onPressed: () => widget.controller
+              .addExercise(widget.weekIndex, widget.workoutIndex, context),
         ),
       ),
     );
   }
 
-  void _showExerciseOptions(
-    BuildContext context,
-    Exercise exercise,
-    ExerciseRecordService exerciseRecordService,
-    String athleteId,
-    DateFormat dateFormat,
-    num latestMaxWeight,
-    ColorScheme colorScheme,
-  ) {
-    final workout = controller.program.weeks[weekIndex].workouts[workoutIndex];
-    final superSet = workout.superSets.firstWhere(
-      (ss) => ss.exerciseIds.contains(exercise.id),
-      orElse: () => SuperSet(id: '', exerciseIds: []),
-    );
-    final isInSuperSet = superSet.id.isNotEmpty;
+  List<SuperSet> _getSuperSets(Exercise exercise) {
+    final workout = widget.controller.program.weeks[widget.weekIndex]
+        .workouts[widget.workoutIndex];
+    return workout.superSets
+        .where((ss) => ss.exerciseIds.contains(exercise.id))
+        .toList();
+  }
 
-    showModalBottomSheet(
+  void _showExerciseOptions(Exercise exercise, num latestMaxWeight) {
+    final superSets = _getSuperSets(exercise);
+    final isInSuperSet = superSets.isNotEmpty;
+    final superSet = isInSuperSet ? superSets.first : null;
+
+    showOptionsBottomSheet(
+      context,
+      title: exercise.name,
+      subtitle: exercise.variant,
+      leadingIcon: Icons.fitness_center,
+      items: [
+        BottomMenuItem(
+          title: 'Modifica',
+          icon: Icons.edit_outlined,
+          onTap: () => widget.controller.editExercise(
+            widget.weekIndex,
+            widget.workoutIndex,
+            exercise.order - 1,
+            context,
+          ),
+        ),
+        BottomMenuItem(
+          title: 'Gestione Serie in Bulk',
+          icon: Icons.format_list_numbered,
+          onTap: () => _showBulkSeriesDialog(exercise),
+        ),
+        BottomMenuItem(
+          title: 'Sposta Esercizio',
+          icon: Icons.move_up,
+          onTap: () => _showMoveExerciseDialog(exercise),
+        ),
+        BottomMenuItem(
+          title: 'Duplica Esercizio',
+          icon: Icons.content_copy_outlined,
+          onTap: () => widget.controller.duplicateExercise(
+            widget.weekIndex,
+            widget.workoutIndex,
+            exercise.order - 1,
+          ),
+        ),
+        if (!isInSuperSet)
+          BottomMenuItem(
+            title: 'Aggiungi a Super Set',
+            icon: Icons.group_add_outlined,
+            onTap: () => _showAddToSuperSetDialog(exercise),
+          ),
+        if (isInSuperSet && superSet != null)
+          BottomMenuItem(
+            title: 'Rimuovi da Super Set',
+            icon: Icons.group_remove_outlined,
+            onTap: () => widget.controller.removeExerciseFromSuperSet(
+              widget.weekIndex,
+              widget.workoutIndex,
+              superSet.id,
+              exercise.id!,
+            ),
+          ),
+        BottomMenuItem(
+          title: 'Imposta Progressione',
+          icon: Icons.trending_up,
+          onTap: () => _navigateToProgressions(exercise, latestMaxWeight),
+        ),
+        BottomMenuItem(
+          title: 'Aggiorna Max RM',
+          icon: Icons.fitness_center,
+          onTap: () => _showUpdateMaxRMDialog(exercise),
+        ),
+        BottomMenuItem(
+          title: 'Elimina',
+          icon: Icons.delete_outline,
+          onTap: () => widget.controller.removeExercise(
+            widget.weekIndex,
+            widget.workoutIndex,
+            exercise.order - 1,
+          ),
+          isDestructive: true,
+        ),
+      ],
+    );
+  }
+
+  void _showBulkSeriesDialog(Exercise exercise) {
+    final workout = widget.controller.program.weeks[widget.weekIndex]
+        .workouts[widget.workoutIndex];
+
+    showDialog(
       context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => BottomMenu(
-        title: exercise.name,
-        subtitle: exercise.variant,
-        leading: Container(
-          padding: EdgeInsets.all(AppTheme.spacing.sm),
-          decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withAlpha(76),
-            borderRadius: BorderRadius.circular(AppTheme.radii.md),
-          ),
-          child: Icon(
-            Icons.fitness_center,
-            color: colorScheme.primary,
-            size: 24,
-          ),
-        ),
-        items: [
-          BottomMenuItem(
-            title: 'Modifica',
-            icon: Icons.edit_outlined,
-            onTap: () => controller.editExercise(
-              weekIndex,
-              workoutIndex,
-              exercise.order - 1,
-              context,
-            ),
-          ),
-          BottomMenuItem(
-            title: 'Gestione Serie in Bulk',
-            icon: Icons.format_list_numbered,
-            onTap: () => _showBulkSeriesDialog(
-              context,
-              exercise,
-              colorScheme,
-            ),
-          ),
-          BottomMenuItem(
-            title: 'Sposta Esercizio',
-            icon: Icons.move_up,
-            onTap: () => _showMoveExerciseDialog(
-              context,
-              weekIndex,
-              workoutIndex,
-              exercise,
-            ),
-          ),
-          BottomMenuItem(
-            title: 'Duplica Esercizio',
-            icon: Icons.content_copy_outlined,
-            onTap: () => controller.duplicateExercise(
-              weekIndex,
-              workoutIndex,
-              exercise.order - 1,
-            ),
-          ),
-          if (!isInSuperSet)
-            BottomMenuItem(
-              title: 'Aggiungi a Super Set',
-              icon: Icons.group_add_outlined,
-              onTap: () => _showAddToSuperSetDialog(
-                context,
-                exercise,
-                colorScheme,
-              ),
-            ),
-          if (isInSuperSet)
-            BottomMenuItem(
-              title: 'Rimuovi da Super Set',
-              icon: Icons.group_remove_outlined,
-              onTap: () => controller.removeExerciseFromSuperSet(
-                weekIndex,
-                workoutIndex,
-                superSet.id,
-                exercise.id!,
-              ),
-            ),
-          BottomMenuItem(
-            title: 'Imposta Progressione',
-            icon: Icons.trending_up,
-            onTap: () => _showSetProgressionScreen(
-              context,
-              exercise,
-              latestMaxWeight,
-              colorScheme,
-            ),
-          ),
-          BottomMenuItem(
-            title: 'Aggiorna Max RM',
-            icon: Icons.fitness_center,
-            onTap: () => _addOrUpdateMaxRM(
-              exercise,
-              context,
-              exerciseRecordService,
-              athleteId,
-              dateFormat,
-              colorScheme,
-            ),
-          ),
-          BottomMenuItem(
-            title: 'Elimina',
-            icon: Icons.delete_outline,
-            onTap: () => controller.removeExercise(
-              weekIndex,
-              workoutIndex,
-              exercise.order - 1,
-            ),
-            isDestructive: true,
-          ),
-        ],
+      builder: (context) => BulkSeriesSelectionDialog(
+        initialExercise: exercise,
+        workoutExercises: workout.exercises,
+        colorScheme: widget.colorScheme,
+        onNext: (selectedExercises) =>
+            _showBulkConfigurationDialog(selectedExercises),
       ),
     );
   }
 
-  void _showMoveExerciseDialog(
-    BuildContext context,
-    int weekIndex,
-    int sourceWorkoutIndex,
-    Exercise exercise,
-  ) {
-    final sourceExerciseIndex = exercise.order - 1;
-    final week = controller.program.weeks[weekIndex];
+  void _showBulkConfigurationDialog(List<Exercise> exercises) {
+    showDialog(
+      context: context,
+      builder: (context) => BulkSeriesConfigurationDialog(
+        exercises: exercises,
+        colorScheme: widget.colorScheme,
+        controller: widget.controller,
+        weekIndex: widget.weekIndex,
+        workoutIndex: widget.workoutIndex,
+      ),
+    );
+  }
+
+  void _showMoveExerciseDialog(Exercise exercise) {
+    final week = widget.controller.program.weeks[widget.weekIndex];
 
     showDialog<int>(
       context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text('Seleziona l\'Allenamento di Destinazione'),
-          content: DropdownButtonFormField<int>(
-            value: null,
-            items: List.generate(
-              week.workouts.length,
-              (index) => DropdownMenuItem(
-                value: index,
-                child: Text('Allenamento ${week.workouts[index].order}'),
-              ),
-            ),
-            onChanged: (value) {
-              Navigator.pop(dialogContext, value);
-            },
-            decoration: const InputDecoration(
-              labelText: 'Allenamento di Destinazione',
+      builder: (BuildContext dialogContext) => AlertDialog(
+        title: const Text('Seleziona l\'Allenamento di Destinazione'),
+        content: DropdownButtonFormField<int>(
+          value: null,
+          items: List.generate(
+            week.workouts.length,
+            (index) => DropdownMenuItem(
+              value: index,
+              child: Text('Allenamento ${week.workouts[index].order}'),
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Annulla'),
-            ),
-          ],
-        );
-      },
+          onChanged: (value) => Navigator.pop(dialogContext, value),
+          decoration: const InputDecoration(
+            labelText: 'Allenamento di Destinazione',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Annulla'),
+          ),
+        ],
+      ),
     ).then((destinationWorkoutIndex) {
       if (destinationWorkoutIndex != null &&
-          destinationWorkoutIndex != sourceWorkoutIndex) {
-        controller.moveExercise(
-          weekIndex,
-          sourceWorkoutIndex,
-          sourceExerciseIndex,
-          weekIndex,
+          destinationWorkoutIndex != widget.workoutIndex) {
+        widget.controller.moveExercise(
+          widget.weekIndex,
+          widget.workoutIndex,
+          exercise.order - 1,
+          widget.weekIndex,
           destinationWorkoutIndex,
         );
       }
     });
   }
 
-  void _addOrUpdateMaxRM(
-    Exercise exercise,
-    BuildContext context,
-    ExerciseRecordService exerciseRecordService,
-    String athleteId,
-    DateFormat dateFormat,
-    ColorScheme colorScheme,
-  ) {
-    exerciseRecordService
-        .getLatestExerciseRecord(
-      userId: athleteId,
-      exerciseId: exercise.exerciseId!,
-    )
-        .then((record) {
-      final maxWeightController =
-          TextEditingController(text: record?.maxWeight.toString() ?? '');
-      final repetitionsController =
-          TextEditingController(text: record?.repetitions.toString() ?? '');
+  void _showAddToSuperSetDialog(Exercise exercise) {
+    final superSets = widget.controller.program.weeks[widget.weekIndex]
+        .workouts[widget.workoutIndex].superSets;
 
-      repetitionsController.addListener(() {
-        var repetitions = int.tryParse(repetitionsController.text) ?? 0;
-        if (repetitions > 1) {
-          final maxWeight = double.tryParse(maxWeightController.text) ?? 0;
-          final calculatedMaxWeight = roundWeight(
-              maxWeight / (1.0278 - (0.0278 * repetitions)), exercise.type);
-          maxWeightController.text = calculatedMaxWeight.toString();
-          repetitionsController.text = '1';
-        }
-      });
+    if (superSets.isEmpty) {
+      widget.controller.createSuperSet(widget.weekIndex, widget.workoutIndex);
+      final newSuperSetId = widget.controller.program.weeks[widget.weekIndex]
+          .workouts[widget.workoutIndex].superSets.first.id;
+      widget.controller.addExerciseToSuperSet(
+        widget.weekIndex,
+        widget.workoutIndex,
+        newSuperSetId,
+        exercise.id!,
+      );
+    } else {
+      _showSuperSetSelectionDialog(exercise, superSets);
+    }
+  }
 
-      showDialog<bool>(
-        context: context,
-        builder: (BuildContext dialogContext) {
-          return AlertDialog(
-            backgroundColor: colorScheme.surface,
-            title: Text(
-              'Aggiorna Max RM',
-              style: TextStyle(
-                color: colorScheme.onSurface,
+  void _showSuperSetSelectionDialog(
+      Exercise exercise, List<SuperSet> superSets) {
+    String? selectedSuperSetId;
+
+    showDialog<String>(
+      context: context,
+      builder: (BuildContext dialogContext) => StatefulBuilder(
+        builder: (BuildContext builderContext, setState) => AlertDialog(
+          backgroundColor: widget.colorScheme.surface,
+          title: Text(
+            'Aggiungi al Superset',
+            style: TextStyle(color: widget.colorScheme.onSurface),
+          ),
+          content: DropdownButtonFormField<String>(
+            value: selectedSuperSetId,
+            items: superSets
+                .map((ss) => DropdownMenuItem<String>(
+                      value: ss.id,
+                      child: Text(
+                        ss.name ?? '',
+                        style: TextStyle(color: widget.colorScheme.onSurface),
+                      ),
+                    ))
+                .toList(),
+            onChanged: (value) => setState(() => selectedSuperSetId = value),
+            decoration: InputDecoration(
+              hintText: 'Seleziona il Superset',
+              hintStyle: TextStyle(color: widget.colorScheme.onSurface),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(null),
+              child: Text(
+                'Annulla',
+                style: TextStyle(color: widget.colorScheme.onSurface),
               ),
             ),
-            content: _buildMaxRMInputFields(
-                maxWeightController, repetitionsController, colorScheme),
-            actions: [
+            if (superSets.isNotEmpty)
               TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
+                onPressed: () {
+                  widget.controller
+                      .createSuperSet(widget.weekIndex, widget.workoutIndex);
+                  setState(() {});
+                  Navigator.of(dialogContext).pop(superSets.last.id);
+                },
                 child: Text(
-                  'Annulla',
-                  style: TextStyle(
-                    color: colorScheme.onSurface,
-                  ),
+                  'Crea Nuovo Superset',
+                  style: TextStyle(color: widget.colorScheme.onSurface),
                 ),
               ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(dialogContext, true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colorScheme.primary,
-                  foregroundColor: colorScheme.onPrimary,
-                ),
-                child: const Text('Salva'),
+            TextButton(
+              onPressed: () =>
+                  Navigator.of(dialogContext).pop(selectedSuperSetId),
+              child: Text(
+                'Aggiungi',
+                style: TextStyle(color: widget.colorScheme.onSurface),
               ),
-            ],
-          );
-        },
-      ).then((result) {
-        if (result == true) {
-          _saveMaxRM(
-            record,
-            athleteId,
-            exercise,
-            maxWeightController,
-            repetitionsController,
-            exerciseRecordService,
-            dateFormat,
-            exercise.type,
-          );
-        }
-      });
+            ),
+          ],
+        ),
+      ),
+    ).then((result) {
+      if (result != null) {
+        widget.controller.addExerciseToSuperSet(
+          widget.weekIndex,
+          widget.workoutIndex,
+          result,
+          exercise.id!,
+        );
+      }
+    });
+  }
+
+  void _showUpdateMaxRMDialog(Exercise exercise) {
+    final maxWeightController = TextEditingController();
+    final repetitionsController = TextEditingController(text: '1');
+
+    repetitionsController.addListener(() {
+      final repetitions = int.tryParse(repetitionsController.text) ?? 1;
+      if (repetitions > 1) {
+        final maxWeight = double.tryParse(maxWeightController.text) ?? 0;
+        final calculatedMaxWeight =
+            ExerciseService.calculateMaxRM(maxWeight, repetitions);
+        maxWeightController.text =
+            FormatUtils.formatNumber(calculatedMaxWeight);
+        repetitionsController.text = '1';
+      }
+    });
+
+    showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) => AlertDialog(
+        backgroundColor: widget.colorScheme.surface,
+        title: Text(
+          'Aggiorna Max RM',
+          style: TextStyle(color: widget.colorScheme.onSurface),
+        ),
+        content:
+            _buildMaxRMInputFields(maxWeightController, repetitionsController),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(
+              'Annulla',
+              style: TextStyle(color: widget.colorScheme.onSurface),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: widget.colorScheme.primary,
+              foregroundColor: widget.colorScheme.onPrimary,
+            ),
+            child: const Text('Salva'),
+          ),
+        ],
+      ),
+    ).then((result) {
+      if (result == true) {
+        _saveMaxRM(exercise, maxWeightController, repetitionsController);
+      }
     });
   }
 
   Widget _buildMaxRMInputFields(
     TextEditingController maxWeightController,
     TextEditingController repetitionsController,
-    ColorScheme colorScheme,
   ) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -1319,200 +1331,57 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
               );
             }),
           ],
-          style: TextStyle(
-            color: colorScheme.onSurface,
-          ),
+          style: TextStyle(color: widget.colorScheme.onSurface),
           decoration: InputDecoration(
             labelText: 'Peso Massimo',
-            labelStyle: TextStyle(
-              color: colorScheme.onSurface,
-            ),
+            labelStyle: TextStyle(color: widget.colorScheme.onSurface),
           ),
         ),
         TextField(
           controller: repetitionsController,
           keyboardType: TextInputType.number,
-          style: TextStyle(
-            color: colorScheme.onSurface,
-          ),
+          style: TextStyle(color: widget.colorScheme.onSurface),
           decoration: InputDecoration(
             labelText: 'Ripetizioni',
-            labelStyle: TextStyle(
-              color: colorScheme.onSurface,
-            ),
+            labelStyle: TextStyle(color: widget.colorScheme.onSurface),
           ),
         ),
       ],
     );
   }
 
-  void _saveMaxRM(
-    ExerciseRecord? record,
-    String athleteId,
+  Future<void> _saveMaxRM(
     Exercise exercise,
     TextEditingController maxWeightController,
     TextEditingController repetitionsController,
-    ExerciseRecordService exerciseRecordService,
-    DateFormat dateFormat,
-    String exerciseType,
-  ) {
+  ) async {
     final maxWeight = double.tryParse(maxWeightController.text) ?? 0;
-    final roundedMaxWeight = roundWeight(maxWeight, exercise.type);
+    final repetitions = int.tryParse(repetitionsController.text) ?? 1;
 
-    if (record != null) {
-      exerciseRecordService.updateExerciseRecord(
-        userId: athleteId,
-        exerciseId: exercise.exerciseId!,
-        recordId: record.id,
-        maxWeight: roundedMaxWeight.round(),
-        repetitions: 1,
+    try {
+      await ExerciseService.updateMaxRM(
+        exerciseRecordService: widget.exerciseRecordService,
+        athleteId: widget.athleteId,
+        exercise: exercise,
+        maxWeight: maxWeight,
+        repetitions: repetitions,
+        exerciseType: exercise.type,
       );
-    } else {
-      exerciseRecordService.addExerciseRecord(
-        userId: athleteId,
-        exerciseId: exercise.exerciseId!,
-        exerciseName: exercise.name,
-        maxWeight: roundedMaxWeight.round(),
-        repetitions: 1,
-        date: dateFormat.format(DateTime.now()),
-      );
-    }
 
-    controller.updateExercise(exercise);
-  }
-
-  void _showReorderExercisesDialog(
-      BuildContext context, int weekIndex, int workoutIndex) {
-    final exerciseNames = controller
-        .program.weeks[weekIndex].workouts[workoutIndex].exercises
-        .map((exercise) => exercise.name)
-        .toList();
-    showDialog(
-      context: context,
-      builder: (context) => ReorderDialog(
-        items: exerciseNames,
-        onReorder: (oldIndex, newIndex) => controller.reorderExercises(
-            weekIndex, workoutIndex, oldIndex, newIndex),
-      ),
-    );
-  }
-
-  void _showAddToSuperSetDialog(
-    BuildContext context,
-    Exercise exercise,
-    ColorScheme colorScheme,
-  ) {
-    String? selectedSuperSetId;
-    final superSets =
-        controller.program.weeks[weekIndex].workouts[workoutIndex].superSets;
-
-    if (superSets.isEmpty) {
-      controller.createSuperSet(weekIndex, workoutIndex);
-      selectedSuperSetId = controller
-          .program.weeks[weekIndex].workouts[workoutIndex].superSets.first.id;
-      controller.addExerciseToSuperSet(
-        weekIndex,
-        workoutIndex,
-        selectedSuperSetId,
-        exercise.id!,
-      );
-    } else {
-      showDialog<String>(
-        context: context,
-        builder: (BuildContext dialogContext) {
-          return StatefulBuilder(
-            builder: (BuildContext builderContext, setState) {
-              return AlertDialog(
-                backgroundColor: colorScheme.surface,
-                title: Text(
-                  'Aggiungi al Superset',
-                  style: TextStyle(
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-                content: DropdownButtonFormField<String>(
-                  value: selectedSuperSetId,
-                  items: superSets.map((ss) {
-                    return DropdownMenuItem<String>(
-                      value: ss.id,
-                      child: Text(
-                        ss.name ?? '',
-                        style: TextStyle(
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedSuperSetId = value;
-                    });
-                  },
-                  decoration: InputDecoration(
-                    hintText: 'Seleziona il Superset',
-                    hintStyle: TextStyle(
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(dialogContext).pop(null),
-                    child: Text(
-                      'Annulla',
-                      style: TextStyle(
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                  ),
-                  if (superSets.isNotEmpty)
-                    TextButton(
-                      onPressed: () {
-                        controller.createSuperSet(weekIndex, workoutIndex);
-                        setState(() {});
-                        Navigator.of(dialogContext).pop(superSets.last.id);
-                      },
-                      child: Text(
-                        'Crea Nuovo Superset',
-                        style: TextStyle(
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-                    ),
-                  TextButton(
-                    onPressed: () =>
-                        Navigator.of(dialogContext).pop(selectedSuperSetId),
-                    child: Text(
-                      'Aggiungi',
-                      style: TextStyle(
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
-          );
-        },
-      ).then((result) {
-        if (result != null) {
-          controller.addExerciseToSuperSet(
-            weekIndex,
-            workoutIndex,
-            result,
-            exercise.id!,
-          );
-        }
-      });
+      widget.controller.updateExercise(exercise);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Errore nell\'aggiornamento: $e'),
+            backgroundColor: widget.colorScheme.error,
+          ),
+        );
+      }
     }
   }
 
-  void _showSetProgressionScreen(
-    BuildContext context,
-    Exercise exercise,
-    num latestMaxWeight,
-    ColorScheme colorScheme,
-  ) {
+  void _navigateToProgressions(Exercise exercise, num latestMaxWeight) {
     Navigator.push<Exercise>(
       context,
       MaterialPageRoute(
@@ -1524,81 +1393,77 @@ class TrainingProgramExerciseList extends HookConsumerWidget {
       ),
     ).then((updatedExercise) {
       if (updatedExercise != null) {
-        controller.updateExercise(updatedExercise);
+        widget.controller.updateExercise(updatedExercise);
       }
     });
   }
 
-  void _navigateToExerciseDetails(BuildContext context,
-      {required String? userId,
-      required String? programId,
-      required String? weekId,
-      required String? workoutId,
-      required String? exerciseId,
-      required List<SuperSet> superSets,
-      required int superSetExerciseIndex,
-      required List<Series> seriesList,
-      required int startIndex}) {
-    if (userId == null ||
-        programId == null ||
-        weekId == null ||
-        workoutId == null ||
-        exerciseId == null) {
-      return;
-    }
+  void _navigateToExerciseDetails(Exercise exercise, List<SuperSet> superSets) {
+    final superSetExerciseIndex = superSets.isNotEmpty
+        ? superSets.indexWhere((ss) => ss.exerciseIds.contains(exercise.id))
+        : 0;
 
     context.go(
-        '/user_programs/training_viewer/week_details/workout_details/exercise_details',
-        extra: {
-          'programId': programId,
-          'weekId': weekId,
-          'workoutId': workoutId,
-          'exerciseId': exerciseId,
-          'userId': userId,
-          'superSetExercises': superSets.map((s) => s.toMap()).toList(),
-          'superSetExerciseIndex': superSetExerciseIndex,
-          'seriesList': seriesList.map((s) => s.toMap()).toList(),
-          'startIndex': startIndex
-        });
-  }
-
-  void _showBulkSeriesDialog(
-    BuildContext context,
-    Exercise exercise,
-    ColorScheme colorScheme,
-  ) {
-    final workout = controller.program.weeks[weekIndex].workouts[workoutIndex];
-
-    showDialog(
-      context: context,
-      builder: (context) => BulkSeriesSelectionDialog(
-        initialExercise: exercise,
-        workoutExercises: workout.exercises,
-        colorScheme: colorScheme,
-        onNext: (selectedExercises) {
-          _showBulkSeriesManagementDialog(
-            context,
-            selectedExercises,
-            colorScheme,
-          );
-        },
-      ),
+      '/user_programs/training_viewer/week_details/workout_details/exercise_details',
+      extra: {
+        'programId': widget.controller.program.id,
+        'weekId': widget.controller.program.weeks[widget.weekIndex].id,
+        'workoutId': widget.controller.program.weeks[widget.weekIndex]
+            .workouts[widget.workoutIndex].id,
+        'exerciseId': exercise.id,
+        'userId': widget.controller.program.athleteId,
+        'superSetExercises': superSets.map((s) => s.toMap()).toList(),
+        'superSetExerciseIndex': superSetExerciseIndex,
+        'seriesList': exercise.series.map((s) => s.toMap()).toList(),
+        'startIndex': 0,
+      },
     );
   }
 
-  void _showBulkSeriesManagementDialog(
-    BuildContext context,
-    List<Exercise> exercises,
-    ColorScheme colorScheme,
-  ) {
+  void _showReorderExercisesDialog() {
+    final workout = widget.controller.program.weeks[widget.weekIndex]
+        .workouts[widget.workoutIndex];
+
+    final exerciseNames = workout.exercises
+        .map((exercise) =>
+            '${exercise.order}. ${exercise.name}${exercise.variant.isNotEmpty ? ' (${exercise.variant})' : ''}')
+        .toList();
+
     showDialog(
       context: context,
-      builder: (context) => BulkSeriesConfigurationDialog(
-        exercises: exercises,
-        colorScheme: colorScheme,
-        controller: controller,
-        weekIndex: weekIndex,
-        workoutIndex: workoutIndex,
+      builder: (context) => ReorderDialog(
+        items: exerciseNames,
+        onReorder: (oldIndex, newIndex) {
+          widget.controller.reorderExercises(
+            widget.weekIndex,
+            widget.workoutIndex,
+            oldIndex,
+            newIndex,
+          );
+
+          // Mostra notifica di successo
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(
+                    Icons.check_circle_outline,
+                    color: widget.colorScheme.onPrimary,
+                    size: 20,
+                  ),
+                  SizedBox(width: 8),
+                  Text('Esercizi riordinati con successo'),
+                ],
+              ),
+              backgroundColor: widget.colorScheme.primary,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+              ),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        },
       ),
     );
   }

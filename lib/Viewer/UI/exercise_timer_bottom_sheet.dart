@@ -3,146 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/Main/app_theme.dart';
-import 'package:numberpicker/numberpicker.dart';
 import 'package:alphanessone/Viewer/UI/workout_provider.dart'
     as workout_provider;
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
-import 'package:alphanessone/Main/app_notifications.dart';
 
 // Componenti estratti
-import 'timer_constants.dart';
-import 'timer_manager.dart';
-import 'custom_input_field.dart';
 import 'timer_display.dart';
 import 'timer_controls.dart';
 import 'preset_manager.dart';
-import 'mini_timer.dart';
-
-// Costanti per il layout
-class TimerConstants {
-  static const defaultPresets = [
-    {'label': '30s', 'seconds': 30},
-    {'label': '1m', 'seconds': 60},
-    {'label': '2m', 'seconds': 120},
-    {'label': '3m', 'seconds': 180},
-  ];
-  static const timerDisplaySize = 300.0;
-  static const progressStrokeWidth = 8.0;
-  static const numberPickerItemHeight = 42.0;
-}
-
-// Classe per gestire la logica del timer
-class TimerManager {
-  final void Function(int) onTick;
-  final void Function() onComplete;
-  Timer? _timer;
-  final AnimationController animationController;
-  int _remainingSeconds = 0;
-  final String exerciseName;
-
-  TimerManager({
-    required this.onTick,
-    required this.onComplete,
-    required this.animationController,
-    required this.exerciseName,
-  });
-
-  void startTimer(int totalSeconds, bool isEmom) {
-    _remainingSeconds = totalSeconds;
-    _timer?.cancel();
-    animationController.duration = Duration(seconds: totalSeconds);
-    animationController.forward(from: 0.0);
-
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      _remainingSeconds--;
-      onTick(_remainingSeconds);
-      if (_remainingSeconds <= 0) {
-        if (isEmom) {
-          _remainingSeconds = totalSeconds;
-          animationController.forward(from: 0.0);
-          _showTimerCompleteNotification(isEmom: true);
-        } else {
-          stopTimer();
-          onComplete();
-          _showTimerCompleteNotification(isEmom: false);
-        }
-      }
-    });
-  }
-
-  Future<void> _showTimerCompleteNotification({required bool isEmom}) async {
-    final title = isEmom ? 'EMOM - Nuovo Round' : 'Timer Completato';
-    final body = isEmom
-        ? 'È ora di iniziare il prossimo round di $exerciseName!'
-        : 'Il recupero per $exerciseName è terminato!';
-
-    await showTimerNotification(
-      title: title,
-      body: body,
-      notificationId: exerciseName.hashCode,
-    );
-  }
-
-  void stopTimer() {
-    _timer?.cancel();
-    animationController.stop();
-  }
-
-  void dispose() {
-    _timer?.cancel();
-    animationController.dispose();
-  }
-}
-
-// Widget per il campo di input personalizzato
-class CustomInputField extends StatelessWidget {
-  final TextEditingController controller;
-  final String label;
-  final String hint;
-  final IconData icon;
-
-  const CustomInputField({
-    super.key,
-    required this.controller,
-    required this.label,
-    required this.hint,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return SizedBox(
-      width: 100,
-      child: TextField(
-        controller: controller,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        inputFormatters: [
-          FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*'))
-        ],
-        textAlign: TextAlign.center,
-        style: theme.textTheme.headlineSmall?.copyWith(
-          color: colorScheme.onSurface,
-          fontWeight: FontWeight.w600,
-        ),
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: AppTheme.spacing.sm,
-            vertical: AppTheme.spacing.sm,
-          ),
-          alignLabelWithHint: true,
-          floatingLabelAlignment: FloatingLabelAlignment.center,
-        ),
-      ),
-    );
-  }
-}
+import 'timer_manager.dart';
+import 'custom_input_field.dart';
 
 class ExerciseTimer extends ConsumerStatefulWidget {
   final String userId;
@@ -184,14 +53,18 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
 
   bool _isTimerMode = false;
   bool _isEmomMode = false;
-  bool _isCompactMode = false;
   int _currentSeriesIndex = 0;
   int _currentSuperSetExerciseIndex = 0;
   int _timerMinutes = 1;
   int _timerSeconds = 0;
   int _remainingSeconds = 0;
   int _totalSeconds = 60; // Inizializzato a 60 secondi di default
-  List<Map<String, dynamic>> _presets = TimerConstants.defaultPresets;
+  List<Map<String, dynamic>> _presets = [
+    {'label': '30s', 'seconds': 30},
+    {'label': '1m', 'seconds': 60},
+    {'label': '2m', 'seconds': 120},
+    {'label': '3m', 'seconds': 180},
+  ];
 
   @override
   void initState() {
@@ -306,35 +179,14 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
         _currentSeriesIndex++;
         _currentSuperSetExerciseIndex = 0;
       } else {
-        if (_isCompactMode) {
-          _isCompactMode = false;
-        }
         Navigator.of(context).pop();
       }
 
-      if (!_isCompactMode) {
-        _isTimerMode = false;
-      }
+      _isTimerMode = false;
     });
 
     // Feedback aptico quando si passa alla serie successiva
     HapticFeedback.selectionClick();
-  }
-
-  void _toggleCompactMode() {
-    if (!_isTimerMode) return;
-
-    setState(() {
-      _isCompactMode = !_isCompactMode;
-    });
-
-    // Fornisci feedback aptico
-    HapticFeedback.mediumImpact();
-
-    // Chiudi il bottom sheet se stiamo entrando in modalità compatta
-    if (_isCompactMode) {
-      Navigator.of(context).pop();
-    }
   }
 
   Future<void> _updateSeriesData(Map<String, dynamic> exercise) async {
@@ -351,12 +203,6 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
         'weight_done': double.tryParse(weightController.text) ?? 0.0,
       },
     );
-  }
-
-  String _formatTime(int totalSeconds) {
-    final minutes = (totalSeconds ~/ 60).toString().padLeft(2, '0');
-    final seconds = (totalSeconds % 60).toString().padLeft(2, '0');
-    return '$minutes:$seconds';
   }
 
   String _getNextSeriesWeight() {
@@ -398,8 +244,8 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         ),
-        elevation: 6,
-        shadowColor: AppTheme.primaryGold.withAlpha(50),
+        elevation: 0,
+        shadowColor: Colors.transparent,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -444,37 +290,6 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
     final colorScheme = theme.colorScheme;
     final currentExercise =
         widget.superSetExercises[_currentSuperSetExerciseIndex];
-
-    // Se siamo in modalità compatta, mostriamo solo il mini-timer flottante
-    if (_isCompactMode) {
-      return Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Stack(
-          children: [
-            GestureDetector(
-              onTap: () {}, // Impedisce che i tap passino attraverso
-              child: Container(color: Colors.transparent),
-            ),
-            MiniTimer(
-              remainingSeconds: _remainingSeconds,
-              isEmomMode: _isEmomMode,
-              onExpand: _toggleCompactMode,
-              onCancel: () {
-                _timerManager.stopTimer();
-                setState(() {
-                  _isCompactMode = false;
-                  _isTimerMode = false;
-                });
-              },
-              onNext: () {
-                _timerManager.stopTimer();
-                _moveToNextSeries();
-              },
-            ),
-          ],
-        ),
-      );
-    }
 
     return Material(
       color: Colors.transparent,
@@ -622,46 +437,6 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
                                     if (_isTimerMode)
                                       Column(
                                         children: [
-                                          // Pulsante per passare alla modalità compatta
-                                          GestureDetector(
-                                            onTap: _toggleCompactMode,
-                                            child: Container(
-                                              margin: EdgeInsets.only(
-                                                  bottom: AppTheme.spacing.sm),
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: AppTheme.spacing.sm,
-                                                vertical: AppTheme.spacing.xxs,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: Colors.black,
-                                                borderRadius:
-                                                    BorderRadius.circular(
-                                                        AppTheme.radii.md),
-                                              ),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Icon(
-                                                    Icons.open_in_new,
-                                                    size: 14,
-                                                    color: Colors.white
-                                                        .withAlpha(200),
-                                                  ),
-                                                  SizedBox(width: 4),
-                                                  Text(
-                                                    'Modalità compatta',
-                                                    style: TextStyle(
-                                                      color: Colors.white
-                                                          .withAlpha(200),
-                                                      fontSize: 12,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
                                           TimerDisplay(
                                             animation: _animation,
                                             remainingSeconds: _remainingSeconds,
@@ -680,7 +455,18 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
                                             ),
                                             child: Container(
                                               decoration: BoxDecoration(
-                                                color: Colors.black,
+                                                gradient: LinearGradient(
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
+                                                  colors: [
+                                                    colorScheme
+                                                        .surfaceContainerHighest
+                                                        .withAlpha(100),
+                                                    colorScheme
+                                                        .surfaceContainerHighest
+                                                        .withAlpha(60),
+                                                  ],
+                                                ),
                                                 borderRadius:
                                                     BorderRadius.circular(
                                                         AppTheme.radii.lg),
@@ -688,24 +474,40 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
                                                   color: colorScheme.outline
                                                       .withAlpha(40),
                                                 ),
+                                                boxShadow:
+                                                    AppTheme.elevations.small,
                                               ),
                                               padding: EdgeInsets.all(
-                                                  AppTheme.spacing.md),
+                                                  AppTheme.spacing.lg),
                                               child: Column(
                                                 children: [
-                                                  Text(
-                                                    'Inserisci i valori per questa serie',
-                                                    style: theme
-                                                        .textTheme.titleSmall
-                                                        ?.copyWith(
-                                                      color: Colors.white,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
+                                                  Row(
+                                                    children: [
+                                                      Icon(
+                                                        Icons.edit_rounded,
+                                                        size: 20,
+                                                        color:
+                                                            colorScheme.primary,
+                                                      ),
+                                                      SizedBox(
+                                                          width: AppTheme
+                                                              .spacing.xs),
+                                                      Text(
+                                                        'Inserisci i valori per questa serie',
+                                                        style: theme.textTheme
+                                                            .titleSmall
+                                                            ?.copyWith(
+                                                          color: colorScheme
+                                                              .onSurface,
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
                                                   SizedBox(
                                                       height:
-                                                          AppTheme.spacing.md),
+                                                          AppTheme.spacing.lg),
                                                   Row(
                                                     mainAxisAlignment:
                                                         MainAxisAlignment
@@ -726,7 +528,7 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
                                                       ),
                                                       SizedBox(
                                                           width: AppTheme
-                                                              .spacing.md),
+                                                              .spacing.lg),
                                                       CustomInputField(
                                                         controller: _weightControllers[
                                                                 currentExercise[
@@ -753,36 +555,83 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
                                                 horizontal:
                                                     AppTheme.spacing.md),
                                             decoration: BoxDecoration(
-                                              color: Colors.black,
+                                              gradient: LinearGradient(
+                                                begin: Alignment.topLeft,
+                                                end: Alignment.bottomRight,
+                                                colors: [
+                                                  colorScheme
+                                                      .surfaceContainerHighest
+                                                      .withAlpha(80),
+                                                  colorScheme
+                                                      .surfaceContainerHighest
+                                                      .withAlpha(40),
+                                                ],
+                                              ),
                                               borderRadius:
                                                   BorderRadius.circular(
-                                                      AppTheme.radii.md),
+                                                      AppTheme.radii.lg),
+                                              border: Border.all(
+                                                color: colorScheme.outline
+                                                    .withAlpha(30),
+                                                width: 1,
+                                              ),
                                             ),
                                             child: ListTile(
-                                              leading: Icon(
-                                                Icons.loop,
-                                                color: _isEmomMode
-                                                    ? AppTheme.primaryGold
-                                                    : Colors.white
-                                                        .withAlpha(100),
+                                              leading: Container(
+                                                padding: EdgeInsets.all(
+                                                    AppTheme.spacing.xs),
+                                                decoration: BoxDecoration(
+                                                  color: _isEmomMode
+                                                      ? AppTheme.primaryGold
+                                                          .withAlpha(30)
+                                                      : colorScheme
+                                                          .surfaceContainerHighest
+                                                          .withAlpha(50),
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          AppTheme.radii.sm),
+                                                  border: Border.all(
+                                                    color: _isEmomMode
+                                                        ? AppTheme.primaryGold
+                                                            .withAlpha(100)
+                                                        : colorScheme.outline
+                                                            .withAlpha(50),
+                                                    width: 1,
+                                                  ),
+                                                ),
+                                                child: Icon(
+                                                  Icons.loop_rounded,
+                                                  color: _isEmomMode
+                                                      ? AppTheme.primaryGold
+                                                      : colorScheme
+                                                          .onSurfaceVariant,
+                                                  size: 20,
+                                                ),
                                               ),
                                               title: Text(
                                                 'Modalità EMOM',
                                                 style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.w500,
+                                                  color: colorScheme.onSurface,
+                                                  fontWeight: FontWeight.w600,
                                                 ),
                                               ),
                                               subtitle: _isEmomMode
                                                   ? Text(
                                                       'Il timer si resetta automaticamente',
                                                       style: TextStyle(
-                                                        color: Colors.white
-                                                            .withAlpha(150),
+                                                        color: colorScheme
+                                                            .onSurfaceVariant,
                                                         fontSize: 12,
                                                       ),
                                                     )
-                                                  : null,
+                                                  : Text(
+                                                      'Timer normale per recupero',
+                                                      style: TextStyle(
+                                                        color: colorScheme
+                                                            .onSurfaceVariant,
+                                                        fontSize: 12,
+                                                      ),
+                                                    ),
                                               trailing: Switch(
                                                 value: _isEmomMode,
                                                 onChanged: (value) {
@@ -795,7 +644,11 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
                                                     AppTheme.primaryGold,
                                                 activeTrackColor: AppTheme
                                                     .primaryGold
-                                                    .withAlpha(50),
+                                                    .withAlpha(80),
+                                                inactiveThumbColor:
+                                                    colorScheme.outline,
+                                                inactiveTrackColor: colorScheme
+                                                    .surfaceContainerHighest,
                                               ),
                                             ),
                                           ),
@@ -840,9 +693,8 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
                                             borderRadius: BorderRadius.circular(
                                                 AppTheme.radii.lg),
                                           ),
-                                          elevation: 6,
-                                          shadowColor:
-                                              AppTheme.error.withAlpha(50),
+                                          elevation: 0,
+                                          shadowColor: Colors.transparent,
                                         ),
                                         child: Row(
                                           mainAxisAlignment:
@@ -855,7 +707,14 @@ class _ExerciseTimerState extends ConsumerState<ExerciseTimer>
                                             ),
                                             SizedBox(
                                                 width: AppTheme.spacing.xs),
-                                            const Text('ANNULLA'),
+                                            Text(
+                                              'ANNULLA',
+                                              style: theme.textTheme.titleMedium
+                                                  ?.copyWith(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
                                           ],
                                         ),
                                       ),

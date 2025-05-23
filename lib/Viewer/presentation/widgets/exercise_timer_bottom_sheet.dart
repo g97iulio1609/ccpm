@@ -4,11 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:numberpicker/numberpicker.dart';
-import 'package:alphanessone/Main/app_notifications.dart';
 import 'package:alphanessone/viewer/domain/entities/timer_preset.dart';
 import 'package:alphanessone/viewer/presentation/notifiers/exercise_timer_notifier.dart';
-import 'package:alphanessone/viewer/domain/usecases/complete_series_use_case.dart';
-import 'package:alphanessone/viewer/viewer_providers.dart';
 
 // Costanti per il layout (manteniamo quelle esistenti)
 class TimerConstants {
@@ -223,7 +220,7 @@ class _ExerciseTimerBottomSheetState
 
                 if (totalSeconds > 0) {
                   // Usa il notifier per salvare il preset
-                  final notifier = ref.read(exerciseTimerNotifierProvider((
+                  final notifier = ref.read(exerciseTimerStateProvider((
                     userId: widget.userId,
                     initialDuration: widget.initialTimerSeconds
                   )).notifier);
@@ -303,7 +300,7 @@ class _ExerciseTimerBottomSheetState
 
                 if (totalSeconds > 0) {
                   // Usa il notifier per aggiornare il preset
-                  final notifier = ref.read(exerciseTimerNotifierProvider((
+                  final notifier = ref.read(exerciseTimerStateProvider((
                     userId: widget.userId,
                     initialDuration: widget.initialTimerSeconds
                   )).notifier);
@@ -322,9 +319,9 @@ class _ExerciseTimerBottomSheetState
   @override
   Widget build(BuildContext context) {
     // Accedi allo stato del timer attraverso il provider
-    final timerState = ref.watch(exerciseTimerNotifierProvider(
+    final timerState = ref.watch(exerciseTimerStateProvider(
         (userId: widget.userId, initialDuration: widget.initialTimerSeconds)));
-    final timerNotifier = ref.read(exerciseTimerNotifierProvider((
+    final timerNotifier = ref.read(exerciseTimerStateProvider((
       userId: widget.userId,
       initialDuration: widget.initialTimerSeconds
     )).notifier);

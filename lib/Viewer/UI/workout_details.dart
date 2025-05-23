@@ -192,64 +192,98 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: loading
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(
-                    color: colorScheme.primary,
-                  ),
-                  SizedBox(height: AppTheme.spacing.md),
-                  Text(
-                    'Caricamento esercizi...',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: colorScheme.onSurface,
-                        ),
-                  ),
-                ],
-              ),
-            )
+          ? _buildLoadingState(colorScheme, context)
           : ref.watch(workout_provider.loadingProvider)
-              ? Center(
-                  child: CircularProgressIndicator(
-                    color: colorScheme.primary,
-                  ),
-                )
+              ? _buildProgressIndicator(colorScheme)
               : exercises.isEmpty
-                  ? Center(
-                      child: Text(
-                        'Nessun esercizio trovato',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              color: colorScheme.onSurface,
-                            ),
-                      ),
-                    )
-                  : isListMode
-                      ? ListView.builder(
-                          padding: EdgeInsets.all(padding),
-                          itemCount: exercises.length,
-                          itemBuilder: (context, index) => Padding(
-                            padding: EdgeInsets.only(bottom: spacing),
-                            child:
-                                _buildExerciseCard(exercises[index], context),
-                          ),
-                        )
-                      : GridView.builder(
-                          padding: EdgeInsets.all(padding),
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: crossAxisCount,
-                            crossAxisSpacing: spacing,
-                            mainAxisSpacing: spacing,
-                            childAspectRatio: 1.2,
-                          ),
-                          itemCount: exercises.length,
-                          key: PageStorageKey(
-                              'workout_exercises_${widget.workoutId}'),
-                          itemBuilder: (context, index) =>
-                              _buildExerciseCard(exercises[index], context),
-                        ),
+                  ? _buildEmptyState(colorScheme, context)
+                  : _buildExercisesList(exercises, isListMode, padding, spacing,
+                      crossAxisCount, context),
     );
+  }
+
+  Widget _buildLoadingState(ColorScheme colorScheme, BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(
+            color: colorScheme.primary,
+            semanticsLabel: 'Caricamento esercizi in corso',
+          ),
+          SizedBox(height: AppTheme.spacing.md),
+          Text(
+            'Caricamento esercizi...',
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.onSurface,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProgressIndicator(ColorScheme colorScheme) {
+    return Center(
+      child: CircularProgressIndicator(
+        color: colorScheme.primary,
+        semanticsLabel: 'Aggiornamento in corso',
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(ColorScheme colorScheme, BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.fitness_center,
+            color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+            size: 48,
+            semanticLabel: 'Nessun esercizio',
+          ),
+          SizedBox(height: AppTheme.spacing.md),
+          Text(
+            'Nessun esercizio trovato',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: colorScheme.onSurface,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExercisesList(
+      List<dynamic> exercises,
+      bool isListMode,
+      double padding,
+      double spacing,
+      int crossAxisCount,
+      BuildContext context) {
+    return isListMode
+        ? ListView.builder(
+            padding: EdgeInsets.all(padding),
+            itemCount: exercises.length,
+            itemBuilder: (context, index) => Padding(
+              padding: EdgeInsets.only(bottom: spacing),
+              child: _buildExerciseCard(exercises[index], context),
+            ),
+          )
+        : GridView.builder(
+            padding: EdgeInsets.all(padding),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              crossAxisSpacing: spacing,
+              mainAxisSpacing: spacing,
+              childAspectRatio: 1.2,
+            ),
+            itemCount: exercises.length,
+            key: PageStorageKey('workout_exercises_${widget.workoutId}'),
+            itemBuilder: (context, index) =>
+                _buildExerciseCard(exercises[index], context),
+          );
   }
 
   Widget _buildExerciseCard(
@@ -274,6 +308,9 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   Widget _buildSuperSetCard(
       List<Map<String, dynamic>> superSetExercises, BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isListMode = screenWidth < 600;
+
     final allSeriesCompleted = superSetExercises.every((exercise) {
       final series = List<Map<String, dynamic>>.from(exercise['series']);
       return series.every((serie) => ref
@@ -282,55 +319,119 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     });
 
     return Container(
-      decoration: _buildCardDecoration(context),
-      child: Column(
-        children: [
-          Container(
-            padding: EdgeInsets.all(AppTheme.spacing.md),
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withAlpha(77),
-              border: Border(
-                bottom: BorderSide(
-                  color: colorScheme.outline.withAlpha(26),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(
+          color: colorScheme.outline.withAlpha(26),
+          width: 1,
+        ),
+        boxShadow: AppTheme.elevations.small,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        child: Column(
+          children: [
+            // Header della superserie
+            Container(
+              padding: EdgeInsets.all(AppTheme.spacing.md),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest.withAlpha(77),
+                border: Border(
+                  bottom: BorderSide(
+                    color: colorScheme.outline.withAlpha(26),
+                  ),
                 ),
               ),
-            ),
-            child: Column(
-              children: [
-                Text(
-                  'Super Set',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.group_work,
+                        color: colorScheme.primary,
+                        size: 20,
                       ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                ...superSetExercises.asMap().entries.map((entry) =>
-                    _buildSuperSetExerciseName(
-                        entry.key, entry.value, context)),
-              ],
+                      SizedBox(width: AppTheme.spacing.xs),
+                      Text(
+                        'Super Set',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onSurface,
+                            ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: AppTheme.spacing.md),
+                  // Lista esercizi della superserie - ottimizzata per mobile
+                  Column(
+                    children: superSetExercises
+                        .asMap()
+                        .entries
+                        .map((entry) => _buildSuperSetExerciseName(
+                            entry.key, entry.value, context))
+                        .toList(),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
+
+            // Contenuto della superserie - gestione responsive migliorata
+            if (isListMode)
+              // Layout per mobile - più lineare e scrollabile
+              Padding(
                 padding: EdgeInsets.all(AppTheme.spacing.md),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (!allSeriesCompleted) ...[
                       _buildSuperSetStartButton(superSetExercises, context),
-                      const SizedBox(height: 24),
+                      SizedBox(height: AppTheme.spacing.lg),
                     ],
-                    _buildSeriesHeaderRow(context),
-                    ..._buildSeriesRows(superSetExercises, context),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        vertical: AppTheme.spacing.xs,
+                        horizontal: AppTheme.spacing.sm,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            colorScheme.surfaceContainerHighest.withAlpha(77),
+                        borderRadius: BorderRadius.circular(AppTheme.radii.sm),
+                      ),
+                      child: _buildSeriesHeaderRow(context),
+                    ),
+                    SizedBox(height: AppTheme.spacing.sm),
+                    // Serie ottimizzate per mobile
+                    ..._buildMobileSuperSetSeriesRows(
+                        superSetExercises, context),
                   ],
                 ),
+              )
+            else
+              // Layout per desktop/tablet
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: EdgeInsets.all(AppTheme.spacing.md),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (!allSeriesCompleted) ...[
+                          _buildSuperSetStartButton(superSetExercises, context),
+                          SizedBox(height: AppTheme.spacing.lg),
+                        ],
+                        _buildSeriesHeaderRow(context),
+                        SizedBox(height: AppTheme.spacing.sm),
+                        ..._buildSeriesRows(superSetExercises, context),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -362,6 +463,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         child: Column(
           children: [
+            // Header dell'esercizio
             Container(
               padding: EdgeInsets.all(AppTheme.spacing.md),
               decoration: BoxDecoration(
@@ -374,7 +476,10 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
               ),
               child: _buildExerciseName(exercise, context),
             ),
+
+            // Contenuto dell'esercizio - layout responsive
             if (isListMode)
+              // Layout per mobile
               Padding(
                 padding: EdgeInsets.all(AppTheme.spacing.md),
                 child: Column(
@@ -403,6 +508,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
                 ),
               )
             else
+              // Layout per desktop/tablet
               Expanded(
                 child: SingleChildScrollView(
                   child: Padding(
@@ -441,31 +547,43 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     );
   }
 
-  BoxDecoration _buildCardDecoration(BuildContext context) {
-    return BoxDecoration(
-      color: Theme.of(context).colorScheme.surface,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: Colors.white, width: 0.5),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withAlpha(26),
-          blurRadius: 10,
-          offset: const Offset(0, 5),
-        ),
-      ],
-    );
-  }
-
   Widget _buildSuperSetExerciseName(
       int index, Map<String, dynamic> exercise, BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Text(
-        '${index + 1}. ${exercise['name']} ${exercise['variant'] ?? ''}',
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: colorScheme.onSurface,
+    return Container(
+      margin: EdgeInsets.only(bottom: AppTheme.spacing.xs),
+      child: Row(
+        children: [
+          Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: colorScheme.primary,
+              shape: BoxShape.circle,
             ),
+            child: Center(
+              child: Text(
+                String.fromCharCode(65 + index), // A, B, C...
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: colorScheme.onPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ),
+          ),
+          SizedBox(width: AppTheme.spacing.sm),
+          Expanded(
+            child: Text(
+              '${exercise['name']} ${exercise['variant'] ?? ''}',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w500,
+                  ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -684,6 +802,31 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       'compact': '$valueDone$unit',
       'extended': '$valueDone/$targetText$unit',
     };
+  }
+
+  // Metodo helper per formattare i valori in modo ottimizzato per mobile
+  String _formatSeriesValueForMobile(
+      Map<String, dynamic> seriesData, String field) {
+    final value = seriesData[field];
+    final maxValue = seriesData['max${field.capitalize()}'];
+    final valueDone = seriesData['${field}_done'];
+    final isDone = ref
+        .read(workout_provider.workoutServiceProvider)
+        .isSeriesDone(seriesData);
+    final unit = field == 'reps' ? 'R' : 'Kg';
+
+    if (valueDone == null || valueDone == 0) {
+      return maxValue != null && maxValue != value
+          ? '$value-$maxValue$unit'
+          : '$value$unit';
+    }
+
+    if (isDone) {
+      return '$valueDone$unit';
+    }
+
+    // Su mobile mostra solo il valore compatto per risparmiare spazio
+    return '$valueDone$unit';
   }
 
   Widget _buildExerciseName(
@@ -1362,5 +1505,195 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
         ],
       ),
     );
+  }
+
+  // Nuovo metodo per gestire le serie delle superserie su mobile
+  List<Widget> _buildMobileSuperSetSeriesRows(
+      List<Map<String, dynamic>> superSetExercises, BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final maxSeriesCount = superSetExercises
+        .map((exercise) => exercise['series'].length)
+        .reduce((a, b) => a > b ? a : b);
+
+    return List.generate(maxSeriesCount, (seriesIndex) {
+      return Container(
+        margin: EdgeInsets.only(bottom: AppTheme.spacing.md),
+        padding: EdgeInsets.all(AppTheme.spacing.sm),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHighest.withAlpha(38),
+          borderRadius: BorderRadius.circular(AppTheme.radii.md),
+          border: Border.all(
+            color: colorScheme.outline.withAlpha(26),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Intestazione della serie
+            Padding(
+              padding: EdgeInsets.only(bottom: AppTheme.spacing.sm),
+              child: Text(
+                'Serie ${seriesIndex + 1}',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                    ),
+              ),
+            ),
+            // Esercizi della serie
+            ...superSetExercises.asMap().entries.map((exerciseEntry) {
+              final exerciseIndex = exerciseEntry.key;
+              final exercise = exerciseEntry.value;
+              final series = exercise['series'].length > seriesIndex
+                  ? exercise['series'][seriesIndex]
+                  : null;
+
+              if (series == null) return const SizedBox.shrink();
+
+              return Container(
+                margin: EdgeInsets.only(bottom: AppTheme.spacing.xs),
+                padding: EdgeInsets.all(AppTheme.spacing.sm),
+                decoration: BoxDecoration(
+                  color: ref
+                          .read(workout_provider.workoutServiceProvider)
+                          .isSeriesDone(series)
+                      ? colorScheme.primaryContainer.withAlpha(51)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(AppTheme.radii.sm),
+                ),
+                child: Row(
+                  children: [
+                    // Indicatore esercizio (A, B, C...)
+                    Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          String.fromCharCode(65 + exerciseIndex), // A, B, C...
+                          style:
+                              Theme.of(context).textTheme.labelMedium?.copyWith(
+                                    color: colorScheme.onPrimary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: AppTheme.spacing.sm),
+                    // Nome esercizio (troncato se necessario)
+                    Expanded(
+                      flex: 3,
+                      child: Text(
+                        exercise['name'],
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                              color: colorScheme.onSurface,
+                            ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
+                    SizedBox(width: AppTheme.spacing.sm),
+                    // Reps
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => _showUserSeriesInputDialog(series, 'reps'),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            vertical: AppTheme.spacing.xs,
+                            horizontal: AppTheme.spacing.sm,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.surface,
+                            borderRadius:
+                                BorderRadius.circular(AppTheme.radii.sm),
+                            border: Border.all(
+                              color: colorScheme.outline.withAlpha(26),
+                            ),
+                          ),
+                          child: Text(
+                            _formatSeriesValueForMobile(series, 'reps'),
+                            style: Theme.of(context).textTheme.bodySmall,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: AppTheme.spacing.xs),
+                    // Weight
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () =>
+                            _showUserSeriesInputDialog(series, 'weight'),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            vertical: AppTheme.spacing.xs,
+                            horizontal: AppTheme.spacing.sm,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.surface,
+                            borderRadius:
+                                BorderRadius.circular(AppTheme.radii.sm),
+                            border: Border.all(
+                              color: colorScheme.outline.withAlpha(26),
+                            ),
+                          ),
+                          child: Text(
+                            _formatSeriesValueForMobile(series, 'weight'),
+                            style: Theme.of(context).textTheme.bodySmall,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: AppTheme.spacing.xs),
+                    // Completion button
+                    GestureDetector(
+                      onTap: () => ref
+                          .read(workout_provider.workoutServiceProvider)
+                          .toggleSeriesDone(series),
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: ref
+                                  .read(workout_provider.workoutServiceProvider)
+                                  .isSeriesDone(series)
+                              ? colorScheme.primary
+                              : Colors.transparent,
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radii.sm),
+                          border: Border.all(
+                            color: ref
+                                    .read(
+                                        workout_provider.workoutServiceProvider)
+                                    .isSeriesDone(series)
+                                ? colorScheme.primary
+                                : colorScheme.outline,
+                            width: 2,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.check,
+                          color: ref
+                                  .read(workout_provider.workoutServiceProvider)
+                                  .isSeriesDone(series)
+                              ? colorScheme.onPrimary
+                              : colorScheme.onSurfaceVariant,
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ],
+        ),
+      );
+    });
   }
 }

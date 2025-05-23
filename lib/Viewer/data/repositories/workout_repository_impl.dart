@@ -41,7 +41,6 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
       }
       return 'Settimana';
     } catch (e) {
-      print('Errore in getWeekName: $e');
       return 'Settimana';
     }
   }
@@ -165,7 +164,6 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
       }
       return 'Allenamento';
     } catch (e) {
-      print('Errore in getWorkoutName: $e');
       return 'Allenamento';
     }
   }
@@ -321,8 +319,6 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
     } else {
       // Logga un avviso o gestisci il caso in cui workoutId non sia recuperabile
       // Potrebbe significare che l'esercizio non era ben formato o è un dato orfano.
-      print(
-          'Attenzione: workoutId non trovato per l\'esercizio $exerciseId durante l\'eliminazione della nota.');
     }
 
     // 3. Elimina l'esercizio
@@ -520,10 +516,7 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
         'reps_done': repsDone,
         'weight_done': weightDone,
       });
-    } else {
-      print(
-          'Series con ID $seriesId non trovata per l\'aggiornamento reps/weight.');
-    }
+    } else {}
   }
 
   @override
@@ -581,7 +574,6 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
       return null;
     } catch (e) {
       // Log dell'errore o gestione specifica
-      print('Errore durante il recupero della nota: $e');
       return null;
     }
   }
@@ -606,7 +598,6 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
       await _firestore.collection('exercise_notes').doc(noteDocId).delete();
     } catch (e) {
       // Log dell'errore o gestione specifica
-      print('Errore durante l\'eliminazione della nota: $e');
     }
   }
 

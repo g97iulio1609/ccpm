@@ -3,6 +3,7 @@ import 'package:alphanessone/viewer/data/repositories/workout_repository_impl.da
 import 'package:alphanessone/viewer/domain/repositories/timer_preset_repository.dart';
 import 'package:alphanessone/viewer/domain/repositories/workout_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:alphanessone/viewer/domain/usecases/complete_series_use_case.dart';
@@ -42,36 +43,27 @@ final workoutRepositoryProvider = Provider<WorkoutRepository>((ref) {
   return WorkoutRepositoryImpl(firestore);
 });
 
-final timerPresetRepositoryProvider = Provider<TimerPresetRepository>((ref) {
+// Implementazione corretta e asincrona del TimerPresetRepository
+final timerPresetRepositoryProvider =
+    FutureProvider<TimerPresetRepository>((ref) async {
   final firestore = ref.watch(firestoreProvider);
-  // Per ora, un'iniezione più semplice assumendo che SharedPreferences sia
-  // ottenibile in modo sincrono (es. inizializzato e passato all'app principale)
-  // Questo è meno ideale ma semplifica l'esempio iniziale.
-  // NELLA VITA REALE: preferire l'approccio con FutureProvider e la gestione asincrona.
-  // TODO: Sostituire con un accesso corretto e asincrono a SharedPreferences se necessario.
+  final sharedPrefs = await ref.watch(sharedPreferencesProvider.future);
+  return TimerPresetRepositoryImpl(firestore, sharedPrefs);
+});
 
-  // Temporaneamente usiamo un late final per shared prefs o lo passiamo diversamente.
-  // Questa è una semplificazione per non bloccare il flusso del refactoring qui.
-  // Idealmente, l'app inizializza SharedPreferences e lo rende disponibile.
-  // Se questo non è il caso, timerPresetRepositoryProvider dovrebbe essere un FutureProvider.
-  final sharedPrefs = ref.watch(sharedPreferencesProvider);
+// Provider sincrono di fallback per quando SharedPreferences non è disponibile
+final timerPresetRepositoryFallbackProvider =
+    Provider<TimerPresetRepository?>((ref) {
+  final firestore = ref.watch(firestoreProvider);
+  final sharedPrefsAsync = ref.watch(sharedPreferencesProvider);
 
-  return sharedPrefs.when(
+  return sharedPrefsAsync.when(
     data: (prefs) => TimerPresetRepositoryImpl(firestore, prefs),
-    loading: () {
-      // Potremmo voler restituire un'implementazione di fallback o lanciare un errore specifico
-      // print("SharedPreferences is loading for TimerPresetRepository");
-      // Per ora, per non bloccare, potremmo lanciare un errore se usato troppo presto
-      // o attendere. Ma un Provider normale non può essere async.
-      // Questo scenario evidenzia la necessità di gestire dipendenze asincrone.
-      // Un approccio comune è rendere questo provider dipendente da un FutureProvider
-      // e gestire lo stato di caricamento a livello UI o in un UseCase.
-      throw Exception("SharedPreferences not ready for TimerPresetRepository");
-    },
+    loading: () => null, // Restituisce null durante il caricamento
     error: (err, stack) {
-      // print("Error loading SharedPreferences for TimerPresetRepository: $err");
-      throw Exception(
-          "Error loading SharedPreferences for TimerPresetRepository: $err");
+      // Log dell'errore per debugging
+      debugPrint("Errore nel caricamento di SharedPreferences: $err");
+      return null; // Restituisce null in caso di errore
     },
   );
 });
@@ -100,31 +92,33 @@ final deleteExerciseNoteUseCaseProvider =
   return DeleteExerciseNoteUseCaseImpl(workoutRepository);
 });
 
-final getTimerPresetsUseCaseProvider = Provider<GetTimerPresetsUseCase>((ref) {
-  final timerRepository = ref.watch(timerPresetRepositoryProvider);
+final getTimerPresetsUseCaseProvider =
+    FutureProvider<GetTimerPresetsUseCase>((ref) async {
+  final timerRepository = await ref.watch(timerPresetRepositoryProvider.future);
   return GetTimerPresetsUseCaseImpl(timerRepository);
 });
 
-final saveTimerPresetUseCaseProvider = Provider<SaveTimerPresetUseCase>((ref) {
-  final timerRepository = ref.watch(timerPresetRepositoryProvider);
+final saveTimerPresetUseCaseProvider =
+    FutureProvider<SaveTimerPresetUseCase>((ref) async {
+  final timerRepository = await ref.watch(timerPresetRepositoryProvider.future);
   return SaveTimerPresetUseCaseImpl(timerRepository);
 });
 
 final updateTimerPresetUseCaseProvider =
-    Provider<UpdateTimerPresetUseCase>((ref) {
-  final timerRepository = ref.watch(timerPresetRepositoryProvider);
+    FutureProvider<UpdateTimerPresetUseCase>((ref) async {
+  final timerRepository = await ref.watch(timerPresetRepositoryProvider.future);
   return UpdateTimerPresetUseCaseImpl(timerRepository);
 });
 
 final deleteTimerPresetUseCaseProvider =
-    Provider<DeleteTimerPresetUseCase>((ref) {
-  final timerRepository = ref.watch(timerPresetRepositoryProvider);
+    FutureProvider<DeleteTimerPresetUseCase>((ref) async {
+  final timerRepository = await ref.watch(timerPresetRepositoryProvider.future);
   return DeleteTimerPresetUseCaseImpl(timerRepository);
 });
 
 final saveDefaultTimerPresetsUseCaseProvider =
-    Provider<SaveDefaultTimerPresetsUseCase>((ref) {
-  final timerRepository = ref.watch(timerPresetRepositoryProvider);
+    FutureProvider<SaveDefaultTimerPresetsUseCase>((ref) async {
+  final timerRepository = await ref.watch(timerPresetRepositoryProvider.future);
   return SaveDefaultTimerPresetsUseCaseImpl(timerRepository);
 });
 

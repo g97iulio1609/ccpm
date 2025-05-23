@@ -6,7 +6,9 @@ import '../controller/training_program_controller.dart';
 import '../dialog/reorder_dialog.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
+import 'package:alphanessone/trainingBuilder/shared/mixins/training_list_mixin.dart';
 
+/// Widget for displaying and managing week list
 class TrainingProgramWeekList extends ConsumerWidget {
   final String programId;
   final String userId;
@@ -23,155 +25,205 @@ class TrainingProgramWeekList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final program = ref.watch(trainingProgramStateProvider);
     final weeks = program.weeks;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
-    return _buildWeeksList(
-        controller, programId, userId, theme, colorScheme, context);
+    return _WeekListView(
+      controller: controller,
+      programId: programId,
+      userId: userId,
+      weeks: weeks,
+    );
   }
+}
 
-  Widget _buildWeeksList(
-    TrainingProgramController controller,
-    String programId,
-    String userId,
-    ThemeData theme,
-    ColorScheme colorScheme,
-    BuildContext context,
-  ) {
+/// Separated widget for week list view following SRP
+class _WeekListView extends StatefulWidget {
+  final TrainingProgramController controller;
+  final String programId;
+  final String userId;
+  final List weeks;
+
+  const _WeekListView({
+    required this.controller,
+    required this.programId,
+    required this.userId,
+    required this.weeks,
+  });
+
+  @override
+  State<_WeekListView> createState() => _WeekListViewState();
+}
+
+class _WeekListViewState extends State<_WeekListView> with TrainingListMixin {
+  @override
+  Widget build(BuildContext context) {
+    final layout = getLayoutProperties(context);
+
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: controller.program.weeks.length,
+      itemCount: widget.controller.program.weeks.length,
       itemBuilder: (context, index) => Container(
-        margin: EdgeInsets.only(bottom: AppTheme.spacing.md),
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest.withAlpha(76),
-          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-          border: Border.all(
-            color: colorScheme.outline.withAlpha(26),
-          ),
-          boxShadow: AppTheme.elevations.small,
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () => context.go('/user_programs/training_program/week',
-                extra: {
-                  'userId': userId,
-                  'programId': programId,
-                  'weekIndex': index
-                }),
-            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-            child: Padding(
-              padding: EdgeInsets.all(AppTheme.spacing.lg),
-              child: Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer.withAlpha(76),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        '${controller.program.weeks[index].number}',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          color: colorScheme.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: AppTheme.spacing.lg),
-                  Expanded(
-                    child: Text(
-                      'Week ${controller.program.weeks[index].number}',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        color: colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.more_vert,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                    onPressed: () =>
-                        _showWeekOptions(context, index, theme, colorScheme),
-                  ),
-                ],
-              ),
-            ),
-          ),
+        margin: EdgeInsets.only(bottom: layout.spacing),
+        child: _buildWeekCard(context, index),
+      ),
+    );
+  }
+
+  Widget _buildWeekCard(BuildContext context, int index) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final week = widget.controller.program.weeks[index];
+
+    return buildCard(
+      colorScheme: colorScheme,
+      onTap: () => _navigateToWeek(index),
+      child: Padding(
+        padding: EdgeInsets.all(AppTheme.spacing.lg),
+        child: _WeekCardContent(
+          weekNumber: week.number,
+          theme: theme,
+          colorScheme: colorScheme,
+          onOptionsPressed: () => _showWeekOptions(context, index),
         ),
       ),
     );
   }
 
-  void _showWeekOptions(
-    BuildContext context,
-    int index,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => BottomMenu(
-        title: 'Settimana ${index + 1}',
-        subtitle: 'Gestisci settimana',
-        leading: Container(
-          padding: EdgeInsets.all(AppTheme.spacing.sm),
-          decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withAlpha(76),
-            borderRadius: BorderRadius.circular(AppTheme.radii.md),
-          ),
-          child: Icon(
-            Icons.calendar_today,
-            color: colorScheme.primary,
-            size: 24,
-          ),
-        ),
-        items: [
-          BottomMenuItem(
-            title: 'Copia Settimana',
-            icon: Icons.content_copy_outlined,
-            onTap: () => controller.copyWeek(index, context),
-          ),
-          BottomMenuItem(
-            title: 'Riordina Settimane',
-            icon: Icons.reorder,
-            onTap: () => _showReorderWeeksDialog(context),
-          ),
-          BottomMenuItem(
-            title: 'Aggiungi Settimana',
-            icon: Icons.add,
-            onTap: () => controller.addWeek(),
-          ),
-          BottomMenuItem(
-            title: 'Elimina Settimana',
-            icon: Icons.delete_outline,
-            onTap: () => controller.removeWeek(index),
-            isDestructive: true,
-          ),
-        ],
-      ),
+  void _navigateToWeek(int index) {
+    context.go('/user_programs/training_program/week', extra: {
+      'userId': widget.userId,
+      'programId': widget.programId,
+      'weekIndex': index
+    });
+  }
+
+  void _showWeekOptions(BuildContext context, int index) {
+    showOptionsBottomSheet(
+      context,
+      title: 'Settimana ${index + 1}',
+      subtitle: 'Gestisci settimana',
+      leadingIcon: Icons.calendar_today,
+      items: _buildWeekMenuItems(index),
     );
   }
 
-  void _showReorderWeeksDialog(BuildContext context) {
-    final weekNames =
-        controller.program.weeks.map((week) => 'Week ${week.number}').toList();
+  List<BottomMenuItem> _buildWeekMenuItems(int index) {
+    return [
+      BottomMenuItem(
+        title: 'Copia Settimana',
+        icon: Icons.content_copy_outlined,
+        onTap: () => widget.controller.copyWeek(index, context),
+      ),
+      BottomMenuItem(
+        title: 'Riordina Settimane',
+        icon: Icons.reorder,
+        onTap: () => _showReorderDialog(),
+      ),
+      BottomMenuItem(
+        title: 'Aggiungi Settimana',
+        icon: Icons.add,
+        onTap: () => widget.controller.addWeek(),
+      ),
+      BottomMenuItem(
+        title: 'Elimina Settimana',
+        icon: Icons.delete_outline,
+        onTap: () => _handleDeleteWeek(index),
+        isDestructive: true,
+      ),
+    ];
+  }
+
+  void _showReorderDialog() {
+    final weekNames = widget.controller.program.weeks
+        .map((week) => 'Week ${week.number}')
+        .toList();
+
     showDialog(
       context: context,
       builder: (context) => ReorderDialog(
         items: weekNames,
-        onReorder: controller.reorderWeeks,
+        onReorder: widget.controller.reorderWeeks,
       ),
+    );
+  }
+
+  void _handleDeleteWeek(int index) async {
+    final confirmed = await showDeleteConfirmation(
+      context,
+      title: 'Elimina Settimana',
+      content: 'Sei sicuro di voler eliminare questa settimana?',
+    );
+
+    if (confirmed && mounted) {
+      widget.controller.removeWeek(index);
+    }
+  }
+}
+
+/// Content widget for week card to improve separation of concerns
+class _WeekCardContent extends StatelessWidget {
+  final int weekNumber;
+  final ThemeData theme;
+  final ColorScheme colorScheme;
+  final VoidCallback onOptionsPressed;
+
+  const _WeekCardContent({
+    required this.weekNumber,
+    required this.theme,
+    required this.colorScheme,
+    required this.onOptionsPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        _buildWeekIcon(),
+        SizedBox(width: AppTheme.spacing.lg),
+        Expanded(child: _buildWeekTitle()),
+        _buildOptionsButton(),
+      ],
+    );
+  }
+
+  Widget _buildWeekIcon() {
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        color: colorScheme.primaryContainer.withAlpha(76),
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Text(
+          '$weekNumber',
+          style: theme.textTheme.titleLarge?.copyWith(
+            color: colorScheme.primary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWeekTitle() {
+    return Text(
+      'Week $weekNumber',
+      style: theme.textTheme.titleLarge?.copyWith(
+        color: colorScheme.onSurface,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.5,
+      ),
+    );
+  }
+
+  Widget _buildOptionsButton() {
+    return IconButton(
+      icon: Icon(
+        Icons.more_vert,
+        color: colorScheme.onSurfaceVariant,
+      ),
+      onPressed: onOptionsPressed,
     );
   }
 }
