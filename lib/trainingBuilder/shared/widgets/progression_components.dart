@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/trainingBuilder/shared/widgets/range_controllers.dart';
-import 'package:alphanessone/trainingBuilder/shared/utils/format_utils.dart';
-import 'package:alphanessone/trainingBuilder/services/progression_service.dart';
 
 /// Component for displaying progression table header
 class ProgressionTableHeader extends StatelessWidget {
