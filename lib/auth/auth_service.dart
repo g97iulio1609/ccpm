@@ -15,7 +15,7 @@ class AuthService {
   final Ref ref;
 
   FirebaseAuth get auth => FirebaseAuth.instance;
-  GoogleSignIn get googleSignIn => GoogleSignIn();
+  GoogleSignIn get googleSignIn => GoogleSignIn.instance;
   FirebaseFirestore get firestore => FirebaseFirestore.instance;
 
   UsersService get usersService => ref.read(usersServiceProvider);
@@ -69,16 +69,36 @@ Future<UserCredential> signUpWithEmailAndPassword(String email,
 
 Future<UserCredential?> signInWithGoogle() async {
   try {
-    GoogleSignInAccount? googleUser = await googleSignIn.signInSilently();
-    googleUser ??= await googleSignIn.signIn();
+    // Initialize GoogleSignIn if not already done
+    await googleSignIn.initialize();
+    
+    // Try lightweight authentication first
+    GoogleSignInAccount? googleUser;
+    try {
+      final result = googleSignIn.attemptLightweightAuthentication();
+      if (result is Future<GoogleSignInAccount?>) {
+        googleUser = await result;
+      } else {
+        googleUser = result as GoogleSignInAccount?;
+      }
+    } catch (e) {
+      // If lightweight auth fails, try full authentication
+      googleUser = null;
+    }
+    
+    // If lightweight auth didn't work, try full authentication
+    if (googleUser == null) {
+      googleUser = await googleSignIn.authenticate(
+        scopeHint: ['email', 'profile'],
+      );
+    }
 
     if (googleUser == null) {
       return null;
     }
 
-    final googleAuth = await googleUser.authentication;
+    final googleAuth = googleUser.authentication;
     final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
       idToken: googleAuth.idToken,
     );
 

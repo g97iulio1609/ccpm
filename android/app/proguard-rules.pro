@@ -46,3 +46,16 @@
 
 # Keep custom application class
 -keep class com.alphaness.alphanessone.Application { *; }
+
+# Stripe
+-keep class com.stripe.android.** { *; }
+-keep class com.stripe.android.pushProvisioning.** { *; }
+-dontwarn com.stripe.android.**
+
+# Google Play Core
+-keep class com.google.android.play.core.** { *; }
+-dontwarn com.google.android.play.core.**
+
+# Flutter deferred components
+-keep class io.flutter.embedding.engine.deferredcomponents.** { *; }
+-dontwarn io.flutter.embedding.engine.deferredcomponents.**

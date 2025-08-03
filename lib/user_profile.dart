@@ -220,16 +220,17 @@ class UserProfileState extends ConsumerState<UserProfile>
       }
 
       if (isGoogleUser) {
-        final GoogleSignIn googleSignIn = GoogleSignIn();
-        final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+        final GoogleSignIn googleSignIn = GoogleSignIn.instance;
+        await googleSignIn.initialize();
+        final GoogleSignInAccount? googleUser = await googleSignIn.authenticate(
+          scopeHint: ['email', 'profile'],
+        );
         if (googleUser == null) {
           throw Exception("Autenticazione Google fallita.");
         }
 
-        final GoogleSignInAuthentication googleAuth =
-            await googleUser.authentication;
+        final GoogleSignInAuthentication googleAuth = googleUser.authentication;
         final credential = GoogleAuthProvider.credential(
-          accessToken: googleAuth.accessToken,
           idToken: googleAuth.idToken,
         );
 
