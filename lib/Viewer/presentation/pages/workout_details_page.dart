@@ -115,7 +115,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
             children: [
               Icon(
                 Icons.fitness_center,
-                color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                 size: 48,
               ),
               SizedBox(height: AppTheme.spacing.md),
@@ -332,7 +332,6 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
 
   Widget _buildExerciseName(Exercise exercise, BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final state = ref.watch(workoutDetailsNotifierProvider(widget.workoutId));
     final notifier =
         ref.read(workoutDetailsNotifierProvider(widget.workoutId).notifier);
 
@@ -451,7 +450,6 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
   Widget _buildSuperSetExerciseName(
       int index, Exercise exercise, BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final state = ref.watch(workoutDetailsNotifierProvider(widget.workoutId));
     final notifier =
         ref.read(workoutDetailsNotifierProvider(widget.workoutId).notifier);
 

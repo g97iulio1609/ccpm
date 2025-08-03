@@ -1,34 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/Main/app_theme.dart';
-import 'package:alphanessone/trainingBuilder/models/series_model.dart';
+import 'package:alphanessone/providers/providers.dart' as app_providers;
 import 'package:alphanessone/Viewer/UI/workout_provider.dart'
     as workout_provider;
 import 'package:alphanessone/Viewer/UI/exercise_timer_bottom_sheet.dart';
 import 'package:alphanessone/Viewer/UI/widgets/exercise_card.dart';
 import 'package:alphanessone/Viewer/UI/widgets/superset_card.dart';
+import 'workout_services.dart';
 
-class WorkoutDetails extends ConsumerStatefulWidget {
+class WorkoutDetailsRefactored extends ConsumerStatefulWidget {
   final String programId;
   final String userId;
   final String weekId;
   final String workoutId;
-  final List<Series>? currentSeriesGroup;
 
-  const WorkoutDetails({
+  const WorkoutDetailsRefactored({
     super.key,
     required this.userId,
     required this.programId,
     required this.weekId,
     required this.workoutId,
-    this.currentSeriesGroup,
   });
 
   @override
-  ConsumerState<WorkoutDetails> createState() => _WorkoutDetailsState();
+  ConsumerState<WorkoutDetailsRefactored> createState() =>
+      _WorkoutDetailsRefactoredState();
 }
 
-class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
+class _WorkoutDetailsRefactoredState
+    extends ConsumerState<WorkoutDetailsRefactored> {
   @override
   void initState() {
     super.initState();
@@ -43,9 +44,10 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
   }
 
   @override
-  void didUpdateWidget(WorkoutDetails oldWidget) {
+  void didUpdateWidget(WorkoutDetailsRefactored oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.workoutId != oldWidget.workoutId) {
+      // Reset exercises immediately
       ref.read(workout_provider.exercisesProvider.notifier).state = [];
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
@@ -60,6 +62,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
 
   @override
   void dispose() {
+    // Clear the exercises state when disposing
     if (mounted) {
       ref.read(workout_provider.exercisesProvider.notifier).state = [];
       ref.read(workout_provider.workoutServiceProvider).dispose();
@@ -75,6 +78,7 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
     final screenWidth = MediaQuery.of(context).size.width;
     final isListMode = screenWidth < 600;
 
+    // Determina il numero di colonne in base alla larghezza dello schermo
     final crossAxisCount = isListMode ? 1 : 2;
     final padding = AppTheme.spacing.md;
     final spacing = AppTheme.spacing.md;
@@ -83,10 +87,12 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
       backgroundColor: colorScheme.surface,
       body: loading
           ? _buildLoadingState(colorScheme, context)
-          : exercises.isEmpty
-              ? _buildEmptyState(colorScheme, context)
-              : _buildExercisesList(exercises, isListMode, padding, spacing,
-                  crossAxisCount, context),
+          : ref.watch(workout_provider.loadingProvider)
+              ? _buildProgressIndicator(colorScheme)
+              : exercises.isEmpty
+                  ? _buildEmptyState(colorScheme, context)
+                  : _buildExercisesList(exercises, isListMode, padding, spacing,
+                      crossAxisCount, context),
     );
   }
 
@@ -107,6 +113,15 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
                 ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildProgressIndicator(ColorScheme colorScheme) {
+    return Center(
+      child: CircularProgressIndicator(
+        color: colorScheme.primary,
+        semanticsLabel: 'Aggiornamento in corso',
       ),
     );
   }
@@ -226,6 +241,6 @@ class _WorkoutDetailsState extends ConsumerState<WorkoutDetails> {
           ),
         );
       },
-    );
+    ).then((_) {});
   }
 }

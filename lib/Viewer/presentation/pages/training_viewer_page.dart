@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/viewer/domain/entities/week.dart';
 import 'package:alphanessone/viewer/domain/entities/workout.dart';
-import 'package:alphanessone/viewer/domain/repositories/workout_repository.dart';
+
 import 'package:alphanessone/viewer/presentation/pages/workout_details_page.dart';
 import 'package:alphanessone/viewer/viewer_providers.dart';
 
@@ -164,7 +164,7 @@ class _TrainingViewerPageState extends ConsumerState<TrainingViewerPage>
             children: [
               Icon(
                 Icons.calendar_month,
-                color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                 size: 48,
               ),
               SizedBox(height: AppTheme.spacing.md),
@@ -247,7 +247,7 @@ class _WeekView extends ConsumerWidget {
           children: [
             Icon(
               Icons.fitness_center,
-              color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
               size: 48,
             ),
             SizedBox(height: AppTheme.spacing.md),

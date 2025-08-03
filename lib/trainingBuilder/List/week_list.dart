@@ -56,14 +56,12 @@ class _WeekListView extends StatefulWidget {
 class _WeekListViewState extends State<_WeekListView> with TrainingListMixin {
   @override
   Widget build(BuildContext context) {
-    final layout = getLayoutProperties(context);
-
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: widget.controller.program.weeks.length,
       itemBuilder: (context, index) => Container(
-        margin: EdgeInsets.only(bottom: layout.spacing),
+        margin: EdgeInsets.only(bottom: AppTheme.spacing.md),
         child: _buildWeekCard(context, index),
       ),
     );
