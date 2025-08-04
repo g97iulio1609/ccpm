@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:alphanessone/UI/legal/privacy_policy_link.dart';
 import 'auth_service.dart';
 import 'auth_buttons.dart';
 import 'form_fields.dart';
@@ -72,9 +73,7 @@ class AuthForm extends HookConsumerWidget {
           Row(
             children: [
               Expanded(
-                child: Divider(
-                  color: theme.colorScheme.outline.withAlpha(26),
-                ),
+                child: Divider(color: theme.colorScheme.outline.withAlpha(26)),
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -86,9 +85,7 @@ class AuthForm extends HookConsumerWidget {
                 ),
               ),
               Expanded(
-                child: Divider(
-                  color: theme.colorScheme.outline.withAlpha(26),
-                ),
+                child: Divider(color: theme.colorScheme.outline.withAlpha(26)),
               ),
             ],
           ),
@@ -164,6 +161,46 @@ class AuthForm extends HookConsumerWidget {
                   color: theme.colorScheme.primary,
                   fontWeight: FontWeight.w500,
                 ),
+              ),
+            ),
+          ],
+
+          // Privacy Policy Link - Prominente e ben visibile
+          const SizedBox(height: 24),
+          const PrivacyPolicyLink(),
+
+          // Terms and Conditions Text per registrazione
+          if (!isLogin.value) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.symmetric(horizontal: 8),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: theme.colorScheme.outline.withOpacity(0.2),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 16,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Registrandoti accetti la nostra Privacy Policy e i Termini di Servizio',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontSize: 11,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
