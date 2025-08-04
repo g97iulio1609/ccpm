@@ -1,5 +1,4 @@
-import '../../models/training_model.dart';
-import 'package:alphanessone/shared/shared.dart';
+import 'package:alphanessone/shared/shared.dart' hide ValidationUtils, ModelUtils, WeekRepository;
 import '../repositories/training_repository.dart';
 import '../../shared/utils/validation_utils.dart';
 import '../../shared/utils/model_utils.dart';
@@ -24,6 +23,7 @@ class WeekBusinessService {
       workouts: [
         Workout(
           id: '',
+          name: 'Workout 1',
           order: 1,
           exercises: [],
         ),
@@ -66,8 +66,10 @@ class WeekBusinessService {
       }
       program.weeks[destinationWeekIndex] = copiedWeek;
     } else {
-      copiedWeek.number = program.weeks.length + 1;
-      program.weeks.add(copiedWeek);
+      final weekWithNewNumber = copiedWeek.copyWith(
+        number: program.weeks.length + 1
+      );
+      program.weeks.add(weekWithNewNumber);
     }
   }
 
@@ -166,6 +168,8 @@ class WeekBusinessService {
   }
 
   void _trackSeriesForDeletion(TrainingProgram program, series) {
-    program.trackToDeleteSeries.add(series.serieId);
+    if (series.serieId != null) {
+      program.trackToDeleteSeries.add(series.serieId!);
+    }
   }
 }

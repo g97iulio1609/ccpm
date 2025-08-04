@@ -236,7 +236,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
     final currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
     final userAsyncValue = ref.watch(userProvider(currentUserId));

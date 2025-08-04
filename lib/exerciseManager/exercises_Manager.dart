@@ -12,7 +12,7 @@ import 'controllers/exercise_list_controller.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
 import 'package:alphanessone/Main/app_theme.dart';
-import 'package:alphanessone/UI/components/IconButtonWithBackground.dart';
+import 'package:alphanessone/UI/components/icon_button_with_background.dart';
 import 'package:alphanessone/UI/components/bottom_input_form.dart';
 
 // Providers per i muscleGroups e exerciseTypes

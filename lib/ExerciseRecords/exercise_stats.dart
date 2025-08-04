@@ -8,7 +8,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../models/exercise_record.dart';
 import '../../exerciseManager/exercise_model.dart';
 import '../providers/providers.dart';
-import 'package:alphanessone/UI/appBar_custom.dart';
+import 'package:alphanessone/UI/app_bar_custom.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 
 class ExerciseStats extends HookConsumerWidget {

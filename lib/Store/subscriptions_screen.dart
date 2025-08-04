@@ -502,7 +502,6 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
 
   void _showGiftSubscriptionDialog(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     int selectedDays = 30;
 
     showDialog(

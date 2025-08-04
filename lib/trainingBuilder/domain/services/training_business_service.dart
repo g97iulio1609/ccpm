@@ -1,9 +1,10 @@
 import '../../models/training_model.dart';
-import '../../../shared/shared.dart';
+import '../../../shared/shared.dart' hide ValidationUtils, ModelUtils;
 import '../repositories/training_repository.dart';
 import '../../../ExerciseRecords/exercise_record_services.dart';
 import '../../shared/utils/validation_utils.dart';
 import '../../shared/utils/model_utils.dart';
+import '../../utility_functions.dart';
 
 /// Business service that handles training program business logic
 /// Follows Single Responsibility Principle
@@ -149,10 +150,11 @@ class TrainingBusinessService {
         .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     final duplicatedExercise = ModelUtils.copyExercise(sourceExercise);
 
-    duplicatedExercise.order =
-        program.weeks[weekIndex].workouts[workoutIndex].exercises.length + 1;
+    final exerciseWithNewOrder = duplicatedExercise.copyWith(
+      order: program.weeks[weekIndex].workouts[workoutIndex].exercises.length + 1
+    );
     program.weeks[weekIndex].workouts[workoutIndex].exercises
-        .add(duplicatedExercise);
+        .add(exerciseWithNewOrder);
   }
 
   /// Copies a week to another position
@@ -173,8 +175,10 @@ class TrainingBusinessService {
       }
       program.weeks[destinationWeekIndex] = copiedWeek;
     } else {
-      copiedWeek.number = program.weeks.length + 1;
-      program.weeks.add(copiedWeek);
+      final weekWithNewNumber = copiedWeek.copyWith(
+        number: program.weeks.length + 1
+      );
+      program.weeks.add(weekWithNewNumber);
     }
   }
 
@@ -253,31 +257,36 @@ class TrainingBusinessService {
   void _updateExerciseWeightsInternal(
       Exercise exercise, double maxWeight, String exerciseType) {
     // Update series weights
-    for (final series in exercise.series) {
-      final intensity = series.intensity.isNotEmpty
-          ? double.tryParse(series.intensity)
+    for (int i = 0; i < exercise.series.length; i++) {
+      final series = exercise.series[i];
+      final intensity = series.intensity?.isNotEmpty == true
+          ? double.tryParse(series.intensity!)
           : null;
       if (intensity != null) {
         final calculatedWeight =
             _calculateWeightFromIntensity(maxWeight, intensity);
-        series.weight = _roundWeight(calculatedWeight, exerciseType);
+        exercise.series[i] = series.copyWith(
+          weight: roundWeight(calculatedWeight, exerciseType),
+        );
       }
     }
 
     // Update week progressions weights
-    for (final weekProgressions in exercise.weekProgressions) {
-      for (final progression in weekProgressions) {
-        for (int i = 0; i < progression.series.length; i++) {
-          final series = progression.series[i];
-          final intensity = series.intensity.isNotEmpty
-              ? double.tryParse(series.intensity)
-              : null;
-          if (intensity != null) {
-            final calculatedWeight =
-                _calculateWeightFromIntensity(maxWeight, intensity);
-            progression.series[i] = series.copyWith(
-              weight: _roundWeight(calculatedWeight, exerciseType),
-            );
+    if (exercise.weekProgressions != null) {
+      for (final weekProgressions in exercise.weekProgressions!) {
+        for (final progression in weekProgressions) {
+          for (int i = 0; i < progression.series.length; i++) {
+            final series = progression.series[i];
+            final intensity = series.intensity?.isNotEmpty == true
+                ? double.tryParse(series.intensity!)
+                : null;
+            if (intensity != null) {
+              final calculatedWeight =
+                  _calculateWeightFromIntensity(maxWeight, intensity);
+              progression.series[i] = series.copyWith(
+                weight: roundWeight(calculatedWeight, exerciseType),
+              );
+            }
           }
         }
       }
@@ -290,12 +299,7 @@ class TrainingBusinessService {
     return maxWeight * (intensity / 100);
   }
 
-  /// Rounds weight based on exercise type
-  double _roundWeight(double weight, String exerciseType) {
-    // Logic for rounding weights can be implemented here
-    // For now, return the weight rounded to 1 decimal place
-    return double.parse(weight.toStringAsFixed(1));
-  }
+
 
   /// Tracks week for deletion
   void _trackWeekForDeletion(TrainingProgram program, Week week) {
@@ -329,6 +333,8 @@ class TrainingBusinessService {
 
   /// Tracks series for deletion
   void _trackSeriesForDeletion(TrainingProgram program, Series series) {
-    program.trackToDeleteSeries.add(series.serieId);
+    if (series.serieId != null) {
+      program.trackToDeleteSeries.add(series.serieId!);
+    }
   }
 }

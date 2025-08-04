@@ -1,5 +1,4 @@
-import '../../models/training_model.dart';
-import 'package:alphanessone/shared/shared.dart';
+import 'package:alphanessone/shared/shared.dart' hide ValidationUtils, ModelUtils, ExerciseRepository;
 import '../repositories/training_repository.dart';
 import '../../shared/utils/validation_utils.dart';
 import '../../shared/utils/model_utils.dart';
@@ -23,6 +22,7 @@ class WorkoutBusinessService {
     }
 
     final newWorkout = Workout(
+      name: 'Workout ${program.weeks[weekIndex].workouts.length + 1}',
       order: program.weeks[weekIndex].workouts.length + 1,
       exercises: [],
     );
@@ -128,8 +128,10 @@ class WorkoutBusinessService {
     final sourceWorkout = program.weeks[weekIndex].workouts[workoutIndex];
     final duplicatedWorkout = ModelUtils.copyWorkout(sourceWorkout);
 
-    duplicatedWorkout.order = program.weeks[weekIndex].workouts.length + 1;
-    program.weeks[weekIndex].workouts.add(duplicatedWorkout);
+    final workoutWithNewOrder = duplicatedWorkout.copyWith(
+      order: program.weeks[weekIndex].workouts.length + 1
+    );
+    program.weeks[weekIndex].workouts.add(workoutWithNewOrder);
   }
 
   /// Valida che tutti i workout della settimana siano corretti
@@ -194,7 +196,9 @@ class WorkoutBusinessService {
   }
 
   void _trackSeriesForDeletion(TrainingProgram program, series) {
-    program.trackToDeleteSeries.add(series.serieId);
+    if (series.serieId != null) {
+      program.trackToDeleteSeries.add(series.serieId!);
+    }
   }
 
   void _addWeekToProgram(TrainingProgram program) {
@@ -204,6 +208,7 @@ class WorkoutBusinessService {
       workouts: [
         Workout(
           id: '',
+          name: 'Workout 1',
           order: 1,
           exercises: [],
         ),

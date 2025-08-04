@@ -314,13 +314,14 @@ class ExerciseBusinessService {
 
   void _updateSeriesWeights(
       List<Series> series, double maxWeight, String exerciseType) {
-    for (final s in series) {
+    for (int i = 0; i < series.length; i++) {
+      final s = series[i];
       final intensity =
           s.intensity.isNotEmpty ? double.tryParse(s.intensity) : null;
       if (intensity != null) {
         final calculatedWeight =
             calculateWeightFromIntensity(maxWeight, intensity);
-        s.weight = roundWeight(calculatedWeight, exerciseType);
+        series[i] = s.copyWith(weight: roundWeight(calculatedWeight, exerciseType));
       }
     }
   }
@@ -360,6 +361,8 @@ class ExerciseBusinessService {
   }
 
   void _trackSeriesForDeletion(TrainingProgram program, Series series) {
-    program.trackToDeleteSeries.add(series.serieId);
+    if (series.serieId != null) {
+      program.trackToDeleteSeries.add(series.serieId!);
+    }
   }
 }

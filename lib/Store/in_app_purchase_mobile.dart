@@ -163,21 +163,7 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
     }
   }
 
-  Future<void> _restorePurchases() async {
-    try {
-      await _inAppPurchase.restorePurchases();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ripristino acquisti in corso...')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Errore nel ripristino: ${e.toString()}'),
-          backgroundColor: AppTheme.error,
-        ),
-      );
-    }
-  }
+
 
   @override
   void dispose() {

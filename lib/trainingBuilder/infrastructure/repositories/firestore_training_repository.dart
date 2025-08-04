@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/repositories/training_repository.dart';
-import '../../models/training_model.dart';
-import '../../../shared/shared.dart';
+import '../../../shared/shared.dart' hide WeekRepository, ExerciseRepository;
 
 /// Firestore implementation of repository interfaces
 /// Follows Dependency Inversion Principle
@@ -106,11 +105,13 @@ class FirestoreTrainingRepository implements TrainingRepository {
     final weeks = snapshot.docs.map((doc) => Week.fromFirestore(doc)).toList();
 
     // Fetch workouts for each week in parallel
-    await Future.wait(weeks.map((week) async {
-      week.workouts = await _fetchWorkouts(week.id!);
-    }));
-
-    return weeks;
+    final updatedWeeks = <Week>[];
+    for (final week in weeks) {
+      final workouts = await _fetchWorkouts(week.id!);
+      updatedWeeks.add(week.copyWith(workouts: workouts));
+    }
+    
+    return updatedWeeks;
   }
 
   Future<List<Workout>> _fetchWorkouts(String weekId) async {
@@ -124,11 +125,13 @@ class FirestoreTrainingRepository implements TrainingRepository {
         snapshot.docs.map((doc) => Workout.fromFirestore(doc)).toList();
 
     // Fetch exercises for each workout in parallel
-    await Future.wait(workouts.map((workout) async {
-      workout.exercises = await _fetchExercises(workout.id!);
-    }));
+    final updatedWorkouts = <Workout>[];
+    for (final workout in workouts) {
+      final exercises = await _fetchExercises(workout.id!);
+      updatedWorkouts.add(workout.copyWith(exercises: exercises));
+    }
 
-    return workouts;
+    return updatedWorkouts;
   }
 
   Future<List<Exercise>> _fetchExercises(String workoutId) async {
@@ -142,11 +145,13 @@ class FirestoreTrainingRepository implements TrainingRepository {
         snapshot.docs.map((doc) => Exercise.fromFirestore(doc)).toList();
 
     // Fetch series for each exercise in parallel
-    await Future.wait(exercises.map((exercise) async {
-      exercise.series = await _fetchSeries(exercise.id!);
-    }));
+    final updatedExercises = <Exercise>[];
+    for (final exercise in exercises) {
+      final series = await _fetchSeries(exercise.id!);
+      updatedExercises.add(exercise.copyWith(series: series));
+    }
 
-    return exercises;
+    return updatedExercises;
   }
 
   Future<List<Series>> _fetchSeries(String exerciseId) async {
@@ -163,10 +168,14 @@ class FirestoreTrainingRepository implements TrainingRepository {
     final programId = program.id?.trim().isEmpty ?? true
         ? _db.collection('programs').doc().id
         : program.id!;
-    program.id = programId;
+    
+    // Create a new program with the correct ID if needed
+    final programToSave = program.id != programId 
+        ? program.copyWith(id: programId)
+        : program;
 
     final programRef = _db.collection('programs').doc(programId);
-    batch.set(programRef, program.toMap(), SetOptions(merge: true));
+    batch.set(programRef, programToSave.toMap(), SetOptions(merge: true));
   }
 
   Future<void> _saveWeeks(WriteBatch batch, TrainingProgram program) async {
@@ -179,19 +188,23 @@ class FirestoreTrainingRepository implements TrainingRepository {
     final weekId = week.id?.trim().isEmpty ?? true
         ? _db.collection('weeks').doc().id
         : week.id!;
-    week.id = weekId;
+    
+    // Create a new week with the correct ID if needed
+    final weekToSave = week.id != weekId 
+        ? week.copyWith(id: weekId)
+        : week;
 
     final weekRef = _db.collection('weeks').doc(weekId);
     batch.set(
         weekRef,
         {
-          'number': week.number,
+          'number': weekToSave.number,
           'programId': programId,
         },
         SetOptions(merge: true));
 
     // Save workouts
-    for (final workout in week.workouts) {
+    for (final workout in weekToSave.workouts) {
       await _saveWorkout(batch, workout, weekId);
     }
   }
@@ -201,20 +214,24 @@ class FirestoreTrainingRepository implements TrainingRepository {
     final workoutId = workout.id?.trim().isEmpty ?? true
         ? _db.collection('workouts').doc().id
         : workout.id!;
-    workout.id = workoutId;
+    
+    // Create a new workout with the correct ID if needed
+    final workoutToSave = workout.id != workoutId 
+        ? workout.copyWith(id: workoutId)
+        : workout;
 
     final workoutRef = _db.collection('workouts').doc(workoutId);
     batch.set(
         workoutRef,
         {
-          'order': workout.order,
+          'order': workoutToSave.order,
           'weekId': weekId,
-          'name': workout.name,
+          'name': workoutToSave.name,
         },
         SetOptions(merge: true));
 
     // Save exercises
-    for (final exercise in workout.exercises) {
+    for (final exercise in workoutToSave.exercises) {
       await _saveExercise(batch, exercise, workoutId);
     }
   }
@@ -224,58 +241,66 @@ class FirestoreTrainingRepository implements TrainingRepository {
     final exerciseId = exercise.id?.trim().isEmpty ?? true
         ? _db.collection('exercisesWorkout').doc().id
         : exercise.id!;
-    exercise.id = exerciseId;
+    
+    // Create a new exercise with the correct ID if needed
+    final exerciseToSave = exercise.id != exerciseId 
+        ? exercise.copyWith(id: exerciseId)
+        : exercise;
 
     final exerciseRef = _db.collection('exercisesWorkout').doc(exerciseId);
     batch.set(
         exerciseRef,
         {
-          'name': exercise.name,
-          'order': exercise.order,
-          'variant': exercise.variant,
+          'name': exerciseToSave.name,
+          'order': exerciseToSave.order,
+          'variant': exerciseToSave.variant,
           'workoutId': workoutId,
-          'exerciseId': exercise.exerciseId,
-          'type': exercise.type,
-          'superSetId': exercise.superSetId,
-          'latestMaxWeight': exercise.latestMaxWeight,
+          'exerciseId': exerciseToSave.exerciseId,
+          'type': exerciseToSave.type,
+          'superSetId': exerciseToSave.superSetId,
+          'latestMaxWeight': exerciseToSave.latestMaxWeight,
         },
         SetOptions(merge: true));
 
     // Save series
-    for (int i = 0; i < exercise.series.length; i++) {
+    for (int i = 0; i < exerciseToSave.series.length; i++) {
       await _saveSeries(
-          batch, exercise.series[i], exerciseId, i + 1, exercise.exerciseId);
+          batch, exerciseToSave.series[i], exerciseId, i + 1, exerciseToSave.exerciseId);
     }
   }
 
   Future<void> _saveSeries(WriteBatch batch, Series series, String exerciseId,
       int order, String? originalExerciseId) async {
-    final seriesId = series.serieId.trim().isEmpty
+    final seriesId = series.serieId?.trim().isEmpty ?? true
         ? _db.collection('series').doc().id
-        : series.serieId;
-    series.serieId = seriesId;
+        : series.serieId!;
+    
+    // Create a new series with the correct ID if needed
+    final seriesToSave = series.serieId != seriesId 
+        ? series.copyWith(serieId: seriesId)
+        : series;
 
     final seriesRef = _db.collection('series').doc(seriesId);
     batch.set(
         seriesRef,
         {
-          'reps': series.reps,
-          'sets': series.sets,
-          'intensity': series.intensity,
-          'rpe': series.rpe,
-          'weight': series.weight,
+          'reps': seriesToSave.reps,
+          'sets': seriesToSave.sets,
+          'intensity': seriesToSave.intensity,
+          'rpe': seriesToSave.rpe,
+          'weight': seriesToSave.weight,
           'exerciseId': exerciseId,
-          'serieId': series.serieId,
+          'serieId': seriesToSave.serieId,
           'originalExerciseId': originalExerciseId,
           'order': order,
-          'done': series.done,
-          'reps_done': series.reps_done,
-          'weight_done': series.weight_done,
-          'maxReps': series.maxReps,
-          'maxSets': series.maxSets,
-          'maxIntensity': series.maxIntensity,
-          'maxRpe': series.maxRpe,
-          'maxWeight': series.maxWeight,
+          'done': seriesToSave.done,
+          'reps_done': seriesToSave.reps_done,
+          'weight_done': seriesToSave.weight_done,
+          'maxReps': seriesToSave.maxReps,
+          'maxSets': seriesToSave.maxSets,
+          'maxIntensity': seriesToSave.maxIntensity,
+          'maxRpe': seriesToSave.maxRpe,
+          'maxWeight': seriesToSave.maxWeight,
         },
         SetOptions(merge: true));
   }

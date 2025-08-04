@@ -7,6 +7,7 @@ import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 import 'package:alphanessone/Viewer/UI/workout_provider.dart';
 import 'package:logging/logging.dart';
+import 'package:alphanessone/trainingBuilder/utility_functions.dart' as utility_functions;
 
 class WorkoutService {
   final Ref ref;
@@ -326,16 +327,16 @@ class WorkoutService {
       if (seriesMap['intensity'] != null) {
         final double intensity =
             double.parse(seriesMap['intensity'].toString());
-        final double newWeight =
-            (latestMaxWeight * intensity / 100).roundToDouble();
+        final double calculatedWeight = latestMaxWeight * intensity / 100;
+        final double newWeight = utility_functions.roundWeight(calculatedWeight, exercise['type']);
         seriesMap['weight'] = newWeight;
       }
 
       if (seriesMap['maxIntensity'] != null) {
         final double maxIntensity =
             double.parse(seriesMap['maxIntensity'].toString());
-        final double newMaxWeight =
-            (latestMaxWeight * maxIntensity / 100).roundToDouble();
+        final double calculatedMaxWeight = latestMaxWeight * maxIntensity / 100;
+        final double newMaxWeight = utility_functions.roundWeight(calculatedMaxWeight, exercise['type']);
         seriesMap['maxWeight'] = newMaxWeight;
       }
 

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../exercise_model.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
-import 'package:alphanessone/UI/components/IconButtonWithBackground.dart';
+import 'package:alphanessone/UI/components/icon_button_with_background.dart';
 
 class PendingApprovalBadge extends StatelessWidget {
   const PendingApprovalBadge({super.key});

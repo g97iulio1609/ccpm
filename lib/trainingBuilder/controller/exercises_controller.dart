@@ -138,16 +138,18 @@ class ExerciseController extends ChangeNotifier {
   void _updateSeriesWeights(
       List<Series>? series, num maxWeight, String exerciseType) {
     if (series != null) {
-      for (final item in series) {
+      for (int i = 0; i < series.length; i++) {
+        final item = series[i];
         final intensity = item.intensity != null && item.intensity!.isNotEmpty 
             ? double.tryParse(item.intensity!) : null;
 
         if (intensity != null) {
           final calculatedWeight =
               calculateWeightFromIntensity(maxWeight, intensity);
-
-          // Note: Series is immutable, weight updates should be handled differently
-          // This might need to be refactored to use copyWith or similar approach
+          final roundedWeight = roundWeight(calculatedWeight, exerciseType);
+          
+          // Update the series with the new weight
+          series[i] = item.copyWith(weight: roundedWeight);
         }
       }
     }

@@ -77,13 +77,6 @@ class InAppPurchaseServiceMobile {
         throw Exception('Store non disponibile');
       }
 
-      final existingProduct = _products.firstWhere(
-        (p) => p.id == productId,
-        orElse: () {
-          throw Exception('Prodotto non trovato nella cache');
-        },
-      );
-
       final ProductDetailsResponse response =
           await _inAppPurchase.queryProductDetails({productId});
 
