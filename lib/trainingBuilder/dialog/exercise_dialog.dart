@@ -2,7 +2,7 @@
 
 import 'package:alphanessone/ExerciseRecords/exercise_autocomplete.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
-import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/dialog.dart';
 import 'package:flutter/material.dart';

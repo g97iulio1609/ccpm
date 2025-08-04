@@ -1,8 +1,6 @@
-import '../../../models/exercise_record.dart';
-import '../../models/exercise_model.dart';
-import '../../models/superseries_model.dart';
+import '../../../shared/shared.dart';
 import '../../../ExerciseRecords/exercise_record_services.dart';
-import './format_utils.dart';
+import './format_utils.dart' as training_builder_format_utils;
 
 /// Utility class per operazioni sugli esercizi
 class ExerciseUtils {
@@ -99,7 +97,7 @@ class ExerciseUtils {
   static List<String> formatExerciseNames(List<Exercise> exercises) {
     return exercises
         .map((exercise) =>
-            '${exercise.order}. ${exercise.name}${exercise.variant.isNotEmpty ? ' (${exercise.variant})' : ''}')
+            '${exercise.order}. ${exercise.name}${exercise.variant?.isNotEmpty == true ? ' (${exercise.variant})' : ''}')
         .toList();
   }
 
@@ -124,8 +122,8 @@ class ExerciseUtils {
         .reduce((a, b) => a > b ? a : b);
 
     return minReps == maxReps
-        ? FormatUtils.formatNumber(minReps)
-        : '${FormatUtils.formatNumber(minReps)}-${FormatUtils.formatNumber(maxReps)}';
+        ? training_builder_format_utils.FormatUtils.formatNumber(minReps)
+        : '${training_builder_format_utils.FormatUtils.formatNumber(minReps)}-${training_builder_format_utils.FormatUtils.formatNumber(maxReps)}';
   }
 
   /// Ottiene il range di intensità per un esercizio
@@ -144,8 +142,8 @@ class ExerciseUtils {
     final maxIntensity = intensities.reduce((a, b) => a > b ? a : b);
 
     return minIntensity == maxIntensity
-        ? '${FormatUtils.formatNumber(minIntensity)}%'
-        : '${FormatUtils.formatNumber(minIntensity)}-${FormatUtils.formatNumber(maxIntensity)}%';
+        ? '${training_builder_format_utils.FormatUtils.formatNumber(minIntensity)}%'
+        : '${training_builder_format_utils.FormatUtils.formatNumber(minIntensity)}-${training_builder_format_utils.FormatUtils.formatNumber(maxIntensity)}%';
   }
 
   /// Ottiene il range di peso per un esercizio
@@ -163,8 +161,8 @@ class ExerciseUtils {
     final maxWeight = weights.reduce((a, b) => a > b ? a : b);
 
     return minWeight == maxWeight
-        ? '${FormatUtils.formatNumber(minWeight)} kg'
-        : '${FormatUtils.formatNumber(minWeight)}-${FormatUtils.formatNumber(maxWeight)} kg';
+        ? '${training_builder_format_utils.FormatUtils.formatNumber(minWeight)} kg'
+        : '${training_builder_format_utils.FormatUtils.formatNumber(minWeight)}-${training_builder_format_utils.FormatUtils.formatNumber(maxWeight)} kg';
   }
 
   /// Clona un esercizio per la duplicazione
@@ -195,7 +193,7 @@ class ExerciseUtils {
     parts.add(exercise.name);
 
     // Variante se presente
-    if (exercise.variant.isNotEmpty) {
+    if (exercise.variant?.isNotEmpty == true) {
       parts.add('(${exercise.variant})');
     }
 

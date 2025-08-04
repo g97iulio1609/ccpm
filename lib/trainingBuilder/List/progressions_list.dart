@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/presentation/pages/progressions_list_page.dart';
-import 'package:alphanessone/trainingBuilder/shared/utils/format_utils.dart';
-
 // Backward compatibility - utility function for number formatting
 String formatNumber(dynamic value) {
-  return FormatUtils.formatNumber(value);
+  if (value == null) return '0';
+  if (value is num) {
+    return value % 1 == 0 ? value.toInt().toString() : value.toStringAsFixed(1);
+  }
+  return value.toString();
 }
 
 /// Main progressions list widget - now acts as a wrapper for the new modular architecture

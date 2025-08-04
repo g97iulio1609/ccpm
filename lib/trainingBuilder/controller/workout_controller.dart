@@ -1,7 +1,5 @@
 import 'package:alphanessone/trainingBuilder/controller/week_controller.dart';
-import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
-import 'package:alphanessone/trainingBuilder/models/series_model.dart';
-import 'package:alphanessone/trainingBuilder/models/workout_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
 
@@ -10,6 +8,7 @@ import 'package:alphanessone/trainingBuilder/models/training_model.dart';
 class WorkoutController {
   void addWorkout(TrainingProgram program, int weekIndex) {
     final newWorkout = Workout(
+      name: 'Workout ${program.weeks[weekIndex].workouts.length + 1}',
       order: program.weeks[weekIndex].workouts.length + 1,
       exercises: [],
     );
@@ -44,7 +43,9 @@ class WorkoutController {
   }
 
   void _removeSeriesData(TrainingProgram program, Series series) {
-    program.trackToDeleteSeries.add(series.serieId);
+    if (series.serieId != null) {
+      program.trackToDeleteSeries.add(series.serieId!);
+    }
   }
 
   void _updateWorkoutOrders(
@@ -52,7 +53,7 @@ class WorkoutController {
     for (int i = startIndex;
         i < program.weeks[weekIndex].workouts.length;
         i++) {
-      program.weeks[weekIndex].workouts[i].order = i + 1;
+      program.weeks[weekIndex].workouts[i] = program.weeks[weekIndex].workouts[i].copyWith(order: i + 1);
     }
   }
 
@@ -95,6 +96,7 @@ class WorkoutController {
         .toList();
 
     return Workout(
+      name: sourceWorkout.name,
       id: null,
       order: sourceWorkout.order,
       exercises: copiedExercises,
@@ -116,8 +118,8 @@ class WorkoutController {
     return sourceSeries.copyWith(
       serieId: generateRandomId(16).toString(),
       done: false,
-      reps_done: 0,
-      weight_done: 0.0,
+      repsDone: 0,
+      weightDone: 0.0,
     );
   }
 

@@ -1,9 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/exercise_model.dart';
-import '../models/series_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import 'series_service.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
-import 'package:alphanessone/models/exercise_record.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:intl/intl.dart';
 
@@ -159,7 +157,7 @@ class ExerciseService {
   }
 
   /// Creates bulk series for multiple exercises
-  static void createBulkSeries({
+  static List<Exercise> createBulkSeries({
     required List<Exercise> exercises,
     required int sets,
     required int reps,
@@ -170,7 +168,7 @@ class ExerciseService {
     String? maxRpe,
     required Map<String, num> exerciseMaxWeights,
   }) {
-    for (var exercise in exercises) {
+    return exercises.map((exercise) {
       final maxWeight = exerciseMaxWeights[exercise.exerciseId] ?? 0;
       final calculatedWeight = _calculateWeightFromIntensity(
         maxWeight.toDouble(),
@@ -187,6 +185,7 @@ class ExerciseService {
         sets,
         (index) => Series(
           serieId: generateRandomId(16),
+          exerciseId: exercise.exerciseId ?? '',
           reps: reps,
           maxReps: maxReps,
           sets: 1,
@@ -198,13 +197,13 @@ class ExerciseService {
           maxWeight: calculatedMaxWeight,
           order: index + 1,
           done: false,
-          reps_done: 0,
-          weight_done: 0,
+          repsDone: 0,
+          weightDone: 0,
         ),
       );
 
-      exercise.series = newSeries;
-    }
+      return exercise.copyWith(series: newSeries);
+    }).toList();
   }
 
   /// Calculates weight from intensity percentage
@@ -257,9 +256,9 @@ class ExerciseService {
     double totalVolume = 0;
 
     for (var series in exercise.series) {
-      final reps = series.reps_done > 0 ? series.reps_done : series.reps;
+      final reps = series.repsDone > 0 ? series.repsDone : series.reps;
       final weight =
-          series.weight_done > 0 ? series.weight_done : series.weight;
+          series.weightDone > 0 ? series.weightDone : series.weight;
       totalVolume += reps * weight;
     }
 

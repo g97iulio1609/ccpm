@@ -6,7 +6,7 @@ import 'package:alphanessone/providers/providers.dart' as app_providers;
 import 'package:alphanessone/Viewer/UI/workout_provider.dart'
     as workout_provider;
 import 'package:alphanessone/Viewer/UI/widgets/workout_dialogs.dart';
-import 'package:alphanessone/Viewer/UI/widgets/workout_formatters.dart';
+
 import 'package:alphanessone/Viewer/UI/widgets/series_widgets.dart';
 
 class ExerciseCard extends ConsumerWidget {

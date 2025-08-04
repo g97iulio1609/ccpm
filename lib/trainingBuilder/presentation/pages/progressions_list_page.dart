@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/models/progressions_model.dart';
 import 'package:alphanessone/trainingBuilder/models/progression_view_model.dart';
 import 'package:alphanessone/trainingBuilder/controllers/progression_controllers.dart';

@@ -1,8 +1,5 @@
 import '../../models/training_model.dart';
-import '../../models/exercise_model.dart';
-import '../../models/series_model.dart';
-import '../../models/week_model.dart';
-import '../../models/workout_model.dart';
+import '../../../shared/shared.dart';
 
 abstract class TrainingRepository {
   Future<TrainingProgram?> getTrainingProgram(String programId);

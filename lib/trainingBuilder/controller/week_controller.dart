@@ -1,12 +1,8 @@
-import 'package:alphanessone/trainingBuilder/models/series_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/models/superseries_model.dart';
-import 'package:alphanessone/trainingBuilder/models/week_model.dart';
-import 'package:alphanessone/trainingBuilder/models/workout_model.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:alphanessone/trainingBuilder/models/training_model.dart';
-
-import '../models/exercise_model.dart';
 
 class WeekController {
   void addWeek(TrainingProgram program) {
@@ -16,6 +12,7 @@ class WeekController {
       workouts: [
         Workout(
           id: '',
+          name: 'Workout 1',
           order: 1,
           exercises: [],
         ),
@@ -61,12 +58,14 @@ class WeekController {
   }
 
   void _removeSeriesData(TrainingProgram program, Series series) {
-    program.trackToDeleteSeries.add(series.serieId);
+    if (series.serieId != null) {
+      program.trackToDeleteSeries.add(series.serieId!);
+    }
   }
 
   void _updateWeekNumbers(TrainingProgram program, int startIndex) {
     for (int i = startIndex; i < program.weeks.length; i++) {
-      program.weeks[i].number = i + 1;
+      program.weeks[i] = program.weeks[i].copyWith(number: i + 1);
     }
   }
 
@@ -82,8 +81,8 @@ class WeekController {
         program.trackToDeleteWeeks.add(destinationWeek.id!);
         program.weeks[destinationWeekIndex] = copiedWeek;
       } else {
-        copiedWeek.number = program.weeks.length + 1;
-        program.weeks.add(copiedWeek);
+        final updatedWeek = copiedWeek.copyWith(number: program.weeks.length + 1);
+        program.weeks.add(updatedWeek);
       }
     }
   }
@@ -145,28 +144,31 @@ class WeekController {
       return copiedExercise;
     }).toList();
 
-    final copiedSuperSets = sourceWorkout.superSets.map((superSet) {
+    final copiedSuperSets = sourceWorkout.superSets?.map((superSetMap) {
       final newSuperSetId = generateRandomId(16);
-      final copiedExerciseIds = superSet.exerciseIds.map((exerciseId) {
+      final exerciseIds = List<String>.from(superSetMap['exerciseIds'] ?? []);
+      final copiedExerciseIds = exerciseIds.map((exerciseId) {
         final newExerciseId = exerciseIdMap[exerciseId];
         if (newExerciseId != null) {
           final copiedExercise =
               copiedExercises.firstWhere((e) => e.id == newExerciseId);
-          copiedExercise.superSetId = newSuperSetId;
+          final updatedExercise = copiedExercise.copyWith(superSetId: newSuperSetId);
+          copiedExercises[copiedExercises.indexOf(copiedExercise)] = updatedExercise;
           return newExerciseId;
         }
         return exerciseId; // Fallback to original ID if not found (shouldn't happen)
       }).toList();
 
-      return SuperSet(
-        id: newSuperSetId,
-        name: superSet.name,
-        exerciseIds: copiedExerciseIds,
-      );
+      return {
+        'id': newSuperSetId,
+        'name': superSetMap['name'],
+        'exerciseIds': copiedExerciseIds,
+      };
     }).toList();
 
     return Workout(
       id: null,
+      name: sourceWorkout.name,
       order: sourceWorkout.order,
       exercises: copiedExercises,
       superSets: copiedSuperSets,
@@ -190,8 +192,8 @@ class WeekController {
     return sourceSeries.copyWith(
       serieId: generateRandomId(16).toString(),
       done: false,
-      reps_done: 0,
-      weight_done: 0.0,
+      repsDone: 0,
+      weightDone: 0.0,
     );
   }
 

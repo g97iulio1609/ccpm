@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/Main/app_theme.dart';
-import 'package:alphanessone/trainingBuilder/models/series_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/Viewer/UI/workout_provider.dart'
     as workout_provider;
 import 'package:alphanessone/Viewer/UI/exercise_timer_bottom_sheet.dart';

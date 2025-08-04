@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/Main/app_theme.dart';
-import 'package:alphanessone/viewer/domain/entities/week.dart';
-import 'package:alphanessone/viewer/domain/entities/workout.dart';
+import 'package:alphanessone/shared/shared.dart';
 
 import 'package:alphanessone/viewer/presentation/pages/workout_details_page.dart';
 import 'package:alphanessone/viewer/viewer_providers.dart';

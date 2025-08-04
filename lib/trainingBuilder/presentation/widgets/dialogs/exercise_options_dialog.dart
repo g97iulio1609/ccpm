@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
-import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/models/superseries_model.dart';
 import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
 import 'package:alphanessone/trainingBuilder/List/progressions_list.dart';

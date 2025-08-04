@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
-import 'package:alphanessone/trainingBuilder/models/series_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/series_utils.dart';
 import '../../../shared/widgets/number_input_field.dart';
 

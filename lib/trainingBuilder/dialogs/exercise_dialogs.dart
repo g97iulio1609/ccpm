@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../models/exercise_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import '../models/superseries_model.dart';
 import '../services/exercise_service.dart';
-import '../shared/utils/format_utils.dart';
 import '../../Main/app_theme.dart';
 
 /// Dialog per aggiornare il Max RM di un esercizio
@@ -51,8 +50,7 @@ class _UpdateMaxRMDialogState extends State<UpdateMaxRMDialog> {
       if (weight > 0) {
         final calculatedMaxWeight =
             ExerciseService.calculateMaxRM(weight, repetitions);
-        maxWeightController.text =
-            FormatUtils.formatNumber(calculatedMaxWeight);
+        maxWeightController.text = calculatedMaxWeight.toStringAsFixed(1);
         repetitionsController.text = '1';
       }
     }

@@ -1,8 +1,4 @@
-import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
-import 'package:alphanessone/trainingBuilder/models/progressions_model.dart';
-import 'package:alphanessone/trainingBuilder/models/series_model.dart';
-import 'package:alphanessone/trainingBuilder/models/superseries_model.dart';
-import 'package:alphanessone/trainingBuilder/models/week_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/providers/training_providers.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
@@ -138,16 +134,17 @@ class TrainingProgramController extends ChangeNotifier {
           final exercise = workout.exercises[exerciseIndex];
 
           for (final series in exercise.series) {
-            if (!program.trackToDeleteSeries.contains(series.serieId)) {
-              program.trackToDeleteSeries.add(series.serieId);
+            if (!program.trackToDeleteSeries.contains(series.serieId ?? '')) {
+              program.trackToDeleteSeries.add(series.serieId ?? '');
             }
           }
 
-          // Update the series with the new progressions
-          exercise.series = updatedProgressions[weekIndex][workoutIndex]
+          // Create updated series with the new progressions
+          final updatedSeries = updatedProgressions[weekIndex][workoutIndex]
               .series
               .map((s) => Series(
                     serieId: s.serieId,
+                    exerciseId: s.exerciseId,
                     reps: s.reps,
                     maxReps: s.maxReps, // This will be null if it was cleared
                     sets: s.sets,
@@ -162,19 +159,22 @@ class TrainingProgramController extends ChangeNotifier {
                         s.maxWeight, // This will be null if it was cleared
                     order: s.order,
                     done: s.done,
-                    reps_done: s.reps_done,
-                    weight_done: s.weight_done,
+                    repsDone: s.repsDone,
+                    weightDone: s.weightDone,
                   ))
               .toList();
 
-          exercise.weekProgressions ??= [];
+          // Initialize weekProgressions if null
+          var currentProgressions = exercise.weekProgressions ?? <List<WeekProgression>>[];
 
-          while (exercise.weekProgressions.length <= weekIndex) {
-            exercise.weekProgressions.add([]);
+          // Ensure we have enough weeks
+          while (currentProgressions.length <= weekIndex) {
+            currentProgressions.add(<WeekProgression>[]);
           }
 
-          if (exercise.weekProgressions[weekIndex].isEmpty) {
-            exercise.weekProgressions[weekIndex] = [
+          // Initialize week progression if empty
+          if (currentProgressions[weekIndex].isEmpty) {
+            currentProgressions[weekIndex] = [
               WeekProgression(
                   weekNumber: weekIndex + 1,
                   sessionNumber: workoutIndex + 1,
@@ -182,8 +182,17 @@ class TrainingProgramController extends ChangeNotifier {
             ];
           }
 
-          exercise.weekProgressions[weekIndex][0] =
-              updatedProgressions[weekIndex][workoutIndex];
+          // Update the progression
+          currentProgressions[weekIndex][0] = updatedProgressions[weekIndex][workoutIndex];
+          
+          // Create new exercise instance with updated progressions and series
+          final updatedExercise = exercise.copyWith(
+            weekProgressions: currentProgressions,
+            series: updatedSeries,
+          );
+          
+          // Replace the exercise in the workout
+          workout.exercises[exerciseIndex] = updatedExercise;
         }
       }
     }
@@ -204,13 +213,17 @@ class TrainingProgramController extends ChangeNotifier {
 
       final exercisesService = ref.read(exercisesServiceProvider);
 
-      for (final week in _program.weeks) {
-        for (final workout in week.workouts) {
-          for (final exercise in workout.exercises) {
+      for (int weekIndex = 0; weekIndex < _program.weeks.length; weekIndex++) {
+        final week = _program.weeks[weekIndex];
+        for (int workoutIndex = 0; workoutIndex < week.workouts.length; workoutIndex++) {
+          final workout = week.workouts[workoutIndex];
+          for (int exerciseIndex = 0; exerciseIndex < workout.exercises.length; exerciseIndex++) {
+            final exercise = workout.exercises[exerciseIndex];
             final exerciseModel = await exercisesService
                 .getExerciseById(exercise.exerciseId ?? '');
             if (exerciseModel != null) {
-              exercise.type = exerciseModel.type;
+              final updatedExercise = exercise.copyWith(type: exerciseModel.type);
+              workout.exercises[exerciseIndex] = updatedExercise;
             }
           }
         }
@@ -359,7 +372,8 @@ class TrainingProgramController extends ChangeNotifier {
       List<Series> updatedSeries) {
     final exercise = program
         .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
-    exercise.series = updatedSeries;
+    final updatedExercise = exercise.copyWith(series: updatedSeries);
+    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] = updatedExercise;
     notifyListeners();
   }
 
@@ -508,19 +522,20 @@ class TrainingProgramController extends ChangeNotifier {
                   series: exercise.series.map((series) {
                     return series.copyWith(
                       serieId: generateRandomId(16).toString(),
-                      reps_done: 0,
-                      weight_done: 0.0,
+                      repsDone: 0,
+                      weightDone: 0.0,
                       done: false,
                     );
                   }).toList(),
                 );
               }).toList(),
-              superSets: workout.superSets.map((superSet) {
-                return SuperSet(
-                  id: generateRandomId(16).toString(),
-                  name: superSet.name,
-                  exerciseIds: superSet.exerciseIds,
-                );
+              superSets: workout.superSets?.map<Map<String, dynamic>>((superSet) {
+                final superSetMap = superSet as Map<String, dynamic>;
+                return {
+                  'id': generateRandomId(16).toString(),
+                  'name': superSetMap['name'] ?? '',
+                  'exerciseIds': List<String>.from(superSetMap['exerciseIds'] ?? []),
+                };
               }).toList(),
             );
           }).toList(),
@@ -529,13 +544,17 @@ class TrainingProgramController extends ChangeNotifier {
 
       final exercisesService = ref.read(exercisesServiceProvider);
 
-      for (final week in newProgram.weeks) {
-        for (final workout in week.workouts) {
-          for (final exercise in workout.exercises) {
+      for (int weekIndex = 0; weekIndex < newProgram.weeks.length; weekIndex++) {
+        final week = newProgram.weeks[weekIndex];
+        for (int workoutIndex = 0; workoutIndex < week.workouts.length; workoutIndex++) {
+          final workout = week.workouts[workoutIndex];
+          for (int exerciseIndex = 0; exerciseIndex < workout.exercises.length; exerciseIndex++) {
+            final exercise = workout.exercises[exerciseIndex];
             final exerciseModel = await exercisesService
                 .getExerciseById(exercise.exerciseId ?? '');
             if (exerciseModel != null) {
-              exercise.type = exerciseModel.type;
+              final updatedExercise = exercise.copyWith(type: exerciseModel.type);
+              workout.exercises[exerciseIndex] = updatedExercise;
             }
 
             await _exerciseController.updateNewProgramExercises(

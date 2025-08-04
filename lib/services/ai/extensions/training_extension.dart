@@ -2,13 +2,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:logger/logger.dart';
 import 'package:alphanessone/models/user_model.dart';
-import 'package:alphanessone/trainingBuilder/models/training_model.dart';
-import 'package:alphanessone/trainingBuilder/models/week_model.dart';
-import 'package:alphanessone/trainingBuilder/models/workout_model.dart';
-import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import 'ai_extension.dart';
 import 'package:alphanessone/trainingBuilder/services/training_services.dart';
-import 'package:alphanessone/trainingBuilder/models/series_model.dart';
 
 class TrainingExtension implements AIExtension {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -295,7 +291,7 @@ class TrainingExtension implements AIExtension {
 
           final weekRef =
               await programRef.collection('weeks').add(week.toMap());
-          week.id = weekRef.id;
+          // Note: Cannot set id on final field, handled by Firestore
 
           if (weekData['workouts'] != null) {
             for (var workoutData in weekData['workouts']) {
@@ -307,7 +303,7 @@ class TrainingExtension implements AIExtension {
 
               final workoutRef =
                   await weekRef.collection('workouts').add(workout.toMap());
-              workout.id = workoutRef.id;
+              // Note: Cannot set id on final field, handled by Firestore
 
               if (workoutData['exercises'] != null) {
                 for (var exerciseData in workoutData['exercises']) {
@@ -321,7 +317,7 @@ class TrainingExtension implements AIExtension {
                   final exerciseRef = await workoutRef
                       .collection('exercises')
                       .add(exercise.toMap());
-                  exercise.id = exerciseRef.id;
+                  // Note: Cannot set id on final field, handled by Firestore
 
                   if (exerciseData['series'] != null) {
                     for (var seriesData in exerciseData['series']) {
@@ -333,14 +329,15 @@ class TrainingExtension implements AIExtension {
                         intensity: seriesData['intensity'] ?? '',
                         order: seriesData['order'] ?? 0,
                         done: false,
-                        reps_done: 0,
-                        weight_done: 0,
+                        repsDone: 0,
+                        weightDone: 0.0,
                         maxReps: seriesData['reps'] ?? 0,
                         maxSets: seriesData['sets'] ?? 0,
                         maxWeight: (seriesData['weight'] ?? 0).toDouble(),
                         maxIntensity: seriesData['intensity'] ?? '',
                         maxRpe: '',
                         rpe: '',
+                        exerciseId: exerciseData['exerciseId'] ?? '',
                       );
 
                       await exerciseRef
@@ -407,7 +404,7 @@ class TrainingExtension implements AIExtension {
                 if (series.weight > 0) {
                   buffer.write(' @${series.weight}kg');
                 }
-                if (series.intensity.isNotEmpty && series.intensity != '0') {
+                if (series.intensity?.isNotEmpty == true && series.intensity != '0') {
                   buffer.write(' ${series.intensity}');
                 }
                 buffer.writeln();
@@ -565,8 +562,8 @@ class TrainingExtension implements AIExtension {
           }
           // Per ogni serie nell'esercizio
           for (var series in exercise.series) {
-            if (series.serieId.isNotEmpty) {
-              program.trackToDeleteSeries.add(series.serieId);
+            if (series.serieId != null && series.serieId!.isNotEmpty) {
+              program.trackToDeleteSeries.add(series.serieId!);
             }
           }
         }
@@ -683,8 +680,8 @@ class TrainingExtension implements AIExtension {
         }
         // Per ogni serie nell'esercizio
         for (var series in exercise.series) {
-          if (series.serieId.isNotEmpty) {
-            program.trackToDeleteSeries.add(series.serieId);
+          if (series.serieId != null && series.serieId!.isNotEmpty) {
+            program.trackToDeleteSeries.add(series.serieId!);
           }
         }
       }
@@ -695,7 +692,7 @@ class TrainingExtension implements AIExtension {
       // Riordina gli allenamenti rimanenti
       for (var i = 0; i < week.workouts.length; i++) {
         if (week.workouts[i].order > workoutOrder) {
-          week.workouts[i].order = week.workouts[i].order - 1;
+          week.workouts[i] = week.workouts[i].copyWith(order: week.workouts[i].order - 1);
         }
       }
 
@@ -867,8 +864,8 @@ class TrainingExtension implements AIExtension {
 
       // Per ogni serie nell'esercizio
       for (var series in exercise.series) {
-        if (series.serieId.isNotEmpty) {
-          program.trackToDeleteSeries.add(series.serieId);
+        if (series.serieId != null && series.serieId!.isNotEmpty) {
+          program.trackToDeleteSeries.add(series.serieId!);
         }
       }
 
@@ -876,9 +873,10 @@ class TrainingExtension implements AIExtension {
       workout.exercises.removeAt(exerciseIndex);
 
       // Riordina gli esercizi rimanenti
-      for (var exercise in workout.exercises) {
+      for (int i = 0; i < workout.exercises.length; i++) {
+        var exercise = workout.exercises[i];
         if (exercise.order > exerciseOrder) {
-          exercise.order = exercise.order - 1;
+          workout.exercises[i] = exercise.copyWith(order: exercise.order - 1);
         }
       }
 
@@ -1001,14 +999,15 @@ class TrainingExtension implements AIExtension {
           intensity: minIntensity,
           order: maxOrder + i + 1,
           done: false,
-          reps_done: 0,
-          weight_done: 0,
+          repsDone: 0,
+          weightDone: 0.0,
           maxReps: maxReps,
           maxSets: 1,
           maxWeight: maxWeightValue,
           maxIntensity: maxIntensityValue,
           maxRpe: '',
           rpe: '',
+          exerciseId: exercise.exerciseId ?? '',
         );
         exercise.series.add(series);
       }
@@ -1108,17 +1107,18 @@ class TrainingExtension implements AIExtension {
       final series = exercise.series[seriesIndex];
 
       // Aggiungi l'ID della serie alla lista di tracking
-      if (series.serieId.isNotEmpty) {
-        program.trackToDeleteSeries.add(series.serieId);
+      if (series.serieId != null && series.serieId!.isNotEmpty) {
+        program.trackToDeleteSeries.add(series.serieId!);
       }
 
       // Rimuovi la serie dall'array
       exercise.series.removeAt(seriesIndex);
 
       // Riordina le serie rimanenti
-      for (var series in exercise.series) {
+      for (int i = 0; i < exercise.series.length; i++) {
+        var series = exercise.series[i];
         if (series.order > seriesOrder) {
-          series.order = series.order - 1;
+          exercise.series[i] = series.copyWith(order: series.order - 1);
         }
       }
 

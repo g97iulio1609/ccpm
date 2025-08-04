@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/workout_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 
 class TrainingWorkoutService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;

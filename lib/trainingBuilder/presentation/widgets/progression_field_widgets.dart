@@ -4,7 +4,7 @@ import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/trainingBuilder/shared/widgets/progression_components.dart';
 import 'package:alphanessone/trainingBuilder/controllers/progression_controllers.dart';
 import 'package:alphanessone/trainingBuilder/models/progression_view_model.dart';
-import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/services/progression_service.dart';
 
 /// Widget for progression group fields following single responsibility principle

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import '../models/exercise_model.dart';
-import '../models/superseries_model.dart';
+import '../../shared/shared.dart';
 import '../shared/widgets/exercise_components.dart';
 import '../../Main/app_theme.dart';
 import '../../UI/components/button.dart';

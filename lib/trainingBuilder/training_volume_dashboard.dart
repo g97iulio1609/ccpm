@@ -2,9 +2,7 @@ import 'package:alphanessone/providers/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:alphanessone/trainingBuilder/models/training_model.dart';
-import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
-import 'package:alphanessone/trainingBuilder/models/series_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/providers/training_providers.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 

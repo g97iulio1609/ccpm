@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/training_model.dart';
-import '../models/exercise_model.dart';
-import '../models/series_model.dart';
-import '../models/week_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import '../models/progressions_model.dart';
 import '../models/progression_view_model.dart';
 import '../services/progression_business_service_optimized.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
-import 'package:alphanessone/trainingBuilder/models/series_model.dart';
-import 'package:alphanessone/trainingBuilder/shared/utils/format_utils.dart';
+import 'package:alphanessone/shared/shared.dart';
+import 'package:alphanessone/trainingBuilder/shared/utils/format_utils.dart' as tb_format;
 
 /// Component for displaying series group information
 class SeriesGroupHeader extends StatelessWidget {
@@ -56,7 +56,7 @@ class SeriesGroupHeader extends StatelessWidget {
   Widget _buildSeriesInfo(
       Series series, ThemeData theme, ColorScheme colorScheme) {
     return Text(
-      FormatUtils.formatSeriesInfo(
+      tb_format.FormatUtils.formatSeriesInfo(
         reps: series.reps,
         maxReps: series.maxReps,
         weight: series.weight,
@@ -119,7 +119,7 @@ class SeriesInfoCard extends StatelessWidget {
         ),
         SizedBox(height: AppTheme.spacing.xs),
         Text(
-          FormatUtils.formatSeriesInfo(
+          tb_format.FormatUtils.formatSeriesInfo(
             reps: series.reps,
             maxReps: series.maxReps,
             weight: series.weight,

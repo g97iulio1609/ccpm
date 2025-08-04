@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'week_model.dart';
+import '../../shared/shared.dart';
 
 class TrainingProgram {
   String? id;

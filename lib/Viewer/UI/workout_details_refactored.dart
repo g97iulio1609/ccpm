@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/Main/app_theme.dart';
-import 'package:alphanessone/providers/providers.dart' as app_providers;
+
 import 'package:alphanessone/Viewer/UI/workout_provider.dart'
     as workout_provider;
 import 'package:alphanessone/Viewer/UI/exercise_timer_bottom_sheet.dart';
 import 'package:alphanessone/Viewer/UI/widgets/exercise_card.dart';
 import 'package:alphanessone/Viewer/UI/widgets/superset_card.dart';
-import 'workout_services.dart';
+
 
 class WorkoutDetailsRefactored extends ConsumerStatefulWidget {
   final String programId;

@@ -1,10 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/repositories/training_repository.dart';
 import '../../models/training_model.dart';
-import '../../models/exercise_model.dart';
-import '../../models/series_model.dart';
-import '../../models/week_model.dart';
-import '../../models/workout_model.dart';
+import '../../../shared/shared.dart';
 
 /// Firestore implementation of repository interfaces
 /// Follows Dependency Inversion Principle

@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/week_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 
 class WeekService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;

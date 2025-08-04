@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
-import 'package:alphanessone/trainingBuilder/models/series_model.dart';
-import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 
@@ -417,8 +416,8 @@ class SeriesFormController {
       final firstSeries = currentSeriesGroup!.first;
       repsController.text = firstSeries.reps.toString();
       setsController.text = currentSeriesGroup!.length.toString();
-      intensityController.text = firstSeries.intensity;
-      rpeController.text = firstSeries.rpe;
+      intensityController.text = firstSeries.intensity ?? '';
+      rpeController.text = firstSeries.rpe ?? '';
       weightController.text = firstSeries.weight.toString();
 
       if (firstSeries.maxReps != null) {
@@ -530,8 +529,8 @@ class SeriesFormController {
           maxWeight: maxWeight,
           order: i,
           done: existingSeries.done,
-          reps_done: existingSeries.reps_done,
-          weight_done: existingSeries.weight_done,
+          repsDone: existingSeries.repsDone,
+          weightDone: existingSeries.weightDone,
         ));
       }
     }
@@ -540,6 +539,7 @@ class SeriesFormController {
     for (int i = (currentSeriesGroup?.length ?? 0); i < sets; i++) {
       newSeries.add(Series(
         serieId: generateRandomId(16),
+        exerciseId: originalExerciseId ?? '',
         originalExerciseId: originalExerciseId,
         reps: reps,
         maxReps: maxReps,
@@ -552,8 +552,8 @@ class SeriesFormController {
         maxWeight: maxWeight,
         order: i,
         done: false,
-        reps_done: 0,
-        weight_done: 0.0,
+        repsDone: 0,
+        weightDone: 0.0,
       ));
     }
 

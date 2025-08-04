@@ -1,11 +1,7 @@
-import '../models/exercise_model.dart';
-import '../models/progressions_model.dart';
-import '../models/series_model.dart';
-import '../models/week_model.dart';
-import '../models/workout_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import '../models/progression_view_model.dart';
-import '../shared/utils/validation_utils.dart';
-import '../shared/utils/model_utils.dart';
+import '../shared/utils/validation_utils.dart' as tb_validation;
+import '../shared/utils/model_utils.dart' as tb_model_utils;
 
 /// Optimized business service for progression operations
 /// Follows SOLID principles and reduces complexity
@@ -41,7 +37,7 @@ class ProgressionBusinessServiceOptimized {
           weekIndex,
           workout.order,
           exerciseInWorkout,
-          exercise.weekProgressions,
+          exercise.weekProgressions ?? [],
         );
       }).toList();
     }).toList();
@@ -55,7 +51,7 @@ class ProgressionBusinessServiceOptimized {
     required List<List<WeekProgression>> weekProgressions,
     required Exercise exercise,
   }) {
-    if (!ValidationUtils.isValidProgressionIndex(
+    if (!tb_validation.ValidationUtils.isValidProgressionIndex(
         weekProgressions, weekIndex, sessionIndex)) {
       throw ArgumentError('Invalid progression indices');
     }
@@ -78,14 +74,14 @@ class ProgressionBusinessServiceOptimized {
     required int groupIndex,
     required List<List<WeekProgression>> weekProgressions,
   }) {
-    if (!ValidationUtils.isValidProgressionIndex(
+    if (!tb_validation.ValidationUtils.isValidProgressionIndex(
         weekProgressions, weekIndex, sessionIndex)) {
       throw ArgumentError('Invalid progression indices');
     }
 
     try {
       final session = weekProgressions[weekIndex][sessionIndex];
-      final groupedSeries = ModelUtils.groupSimilarSeries(session.series);
+      final groupedSeries = tb_model_utils.ModelUtils.groupSimilarSeries(session.series);
 
       if (groupIndex >= 0 && groupIndex < groupedSeries.length) {
         groupedSeries.removeAt(groupIndex);
@@ -101,7 +97,7 @@ class ProgressionBusinessServiceOptimized {
     required SeriesUpdateParams params,
     required List<List<WeekProgression>> weekProgressions,
   }) {
-    if (!ValidationUtils.isValidProgressionIndex(
+    if (!tb_validation.ValidationUtils.isValidProgressionIndex(
         weekProgressions, params.weekIndex, params.sessionIndex)) {
       throw ArgumentError('Invalid progression indices');
     }
@@ -110,7 +106,7 @@ class ProgressionBusinessServiceOptimized {
       final session = weekProgressions[params.weekIndex][params.sessionIndex];
       if (session.series.isEmpty) return;
 
-      final groupedSeries = ModelUtils.groupSimilarSeries(session.series);
+      final groupedSeries = tb_model_utils.ModelUtils.groupSimilarSeries(session.series);
 
       if (!_isValidGroupIndex(params.groupIndex, groupedSeries.length)) {
         throw ArgumentError('Invalid group index');
@@ -137,7 +133,7 @@ class ProgressionBusinessServiceOptimized {
     required Exercise exercise,
     required List<List<WeekProgression>> weekProgressions,
   }) {
-    if (!ValidationUtils.isValidExercise(exercise)) {
+    if (!tb_validation.ValidationUtils.isValidExercise(exercise)) {
       return false;
     }
 
@@ -148,7 +144,7 @@ class ProgressionBusinessServiceOptimized {
     return weekProgressions.every((week) {
       return week.every((session) {
         return session.series.every((series) {
-          return ValidationUtils.isValidSeries(series);
+          return tb_validation.ValidationUtils.isValidSeries(series as Series);
         });
       });
     });
@@ -212,11 +208,11 @@ class ProgressionBusinessServiceOptimized {
     int weekIndex,
     int sessionOrder,
     Exercise exerciseInWorkout,
-    List<List<WeekProgression>> existingProgressions,
+    List<List<WeekProgression>>? existingProgressions,
   ) {
     // Check for existing progressions
-    if (existingProgressions.isNotEmpty &&
-        weekIndex < existingProgressions.length) {
+    if (existingProgressions?.isNotEmpty == true &&
+        weekIndex < existingProgressions!.length) {
       final existingProgression = existingProgressions[weekIndex].firstWhere(
         (progression) => progression.sessionNumber == sessionOrder,
         orElse: () => WeekProgression(
@@ -244,9 +240,10 @@ class ProgressionBusinessServiceOptimized {
     int sessionOrder,
   ) {
     final groupedSeries =
-        ModelUtils.groupSimilarSeries(existingProgression.series);
-    final representativeSeries =
-        groupedSeries.map(ModelUtils.createRepresentativeSeries).toList();
+        tb_model_utils.ModelUtils.groupSimilarSeries(existingProgression.series);
+    final representativeSeries = groupedSeries
+        .map((group) => tb_model_utils.ModelUtils.createRepresentativeSeries(group))
+        .toList();
 
     return WeekProgression(
       weekNumber: weekIndex + 1,
@@ -261,9 +258,10 @@ class ProgressionBusinessServiceOptimized {
     int weekIndex,
     int sessionOrder,
   ) {
-    final groupedSeries = ModelUtils.groupSimilarSeries(exercise.series);
-    final representativeSeries =
-        groupedSeries.map(ModelUtils.createRepresentativeSeries).toList();
+    final groupedSeries = tb_model_utils.ModelUtils.groupSimilarSeries(exercise.series);
+    final representativeSeries = groupedSeries
+        .map((group) => tb_model_utils.ModelUtils.createRepresentativeSeries(group))
+        .toList();
 
     return WeekProgression(
       weekNumber: weekIndex + 1,
@@ -276,6 +274,7 @@ class ProgressionBusinessServiceOptimized {
   static Series _createDefaultSeries(int order) {
     return Series(
       serieId: DateTime.now().millisecondsSinceEpoch.toString(),
+      exerciseId: '',
       reps: 0,
       sets: 1,
       intensity: '',
@@ -283,8 +282,8 @@ class ProgressionBusinessServiceOptimized {
       weight: 0.0,
       order: order + 1,
       done: false,
-      reps_done: 0,
-      weight_done: 0.0,
+      repsDone: 0,
+      weightDone: 0.0,
     );
   }
 
@@ -298,28 +297,29 @@ class ProgressionBusinessServiceOptimized {
 
     for (int i = 0; i < controllers.length; i++) {
       final controller = controllers[i];
-      final sets = parseInt(_getControllerText(controller, 'sets'));
+      final sets = parseInt(_getControllerText(controller, 'sets') ?? '1');
 
       for (int j = 0; j < sets; j++) {
         series.add(Series(
           serieId: '${DateTime.now().millisecondsSinceEpoch}_${i}_$j',
-          reps: parseInt(_getControllerText(controller, 'reps', 'min')),
+          exerciseId: '',
+          reps: parseInt(_getControllerText(controller, 'reps', 'min') ?? '0'),
           maxReps:
               _parseOptionalInt(_getControllerText(controller, 'reps', 'max')),
           sets: 1,
-          intensity: _getControllerText(controller, 'intensity', 'min'),
+          intensity: _getControllerText(controller, 'intensity', 'min') ?? '',
           maxIntensity: _parseOptionalString(
               _getControllerText(controller, 'intensity', 'max')),
-          rpe: _getControllerText(controller, 'rpe', 'min'),
+          rpe: _getControllerText(controller, 'rpe', 'min') ?? '',
           maxRpe: _parseOptionalString(
               _getControllerText(controller, 'rpe', 'max')),
-          weight: parseDouble(_getControllerText(controller, 'weight', 'min')),
+          weight: parseDouble(_getControllerText(controller, 'weight', 'min') ?? '0.0'),
           maxWeight: _parseOptionalDouble(
               _getControllerText(controller, 'weight', 'max')),
           order: series.length + 1,
           done: false,
-          reps_done: 0,
-          weight_done: 0.0,
+          repsDone: 0,
+          weightDone: 0.0,
         ));
       }
     }
@@ -328,7 +328,7 @@ class ProgressionBusinessServiceOptimized {
   }
 
   /// Safely gets text from controller
-  static String _getControllerText(dynamic controller, String field,
+  static String? _getControllerText(dynamic controller, String field,
       [String? subField]) {
     try {
       dynamic fieldController = controller;
@@ -358,12 +358,12 @@ class ProgressionBusinessServiceOptimized {
   static Series _updateSeriesFromParams(
       Series series, SeriesUpdateParams params) {
     return series.copyWith(
-      reps: _parseIntOrKeepOriginal(params.reps, series.reps),
+      reps: _parseIntOrKeepOriginal(params.reps ?? '0', series.reps),
       maxReps: _parseOptionalInt(params.maxReps),
-      sets: _parseIntOrKeepOriginal(params.sets, series.sets),
-      intensity: _parseStringOrKeepOriginal(params.intensity, series.intensity),
+      sets: _parseIntOrKeepOriginal(params.sets ?? '1', series.sets),
+      intensity: params.intensity ?? series.intensity,
       maxIntensity: _parseOptionalString(params.maxIntensity),
-      rpe: _parseStringOrKeepOriginal(params.rpe, series.rpe),
+      rpe: params.rpe ?? series.rpe,
       maxRpe: _parseOptionalString(params.maxRpe),
       weight: _parseDoubleOrKeepOriginal(params.weight, series.weight),
       maxWeight: _parseOptionalDouble(params.maxWeight),
@@ -387,9 +387,7 @@ class ProgressionBusinessServiceOptimized {
     return double.tryParse(value!) ?? original;
   }
 
-  static String _parseStringOrKeepOriginal(String? value, String original) {
-    return value?.isEmpty ?? true ? original : value!;
-  }
+
 
   static int? _parseOptionalInt(String? value) {
     if (value?.isEmpty ?? true) return null;

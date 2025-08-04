@@ -3,8 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/trainingBuilder/dialog/exercise_dialog.dart';
 import 'package:alphanessone/trainingBuilder/dialog/series_dialog.dart';
-import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
-import 'package:alphanessone/trainingBuilder/models/series_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/providers/providers.dart' as app_providers;
 import 'package:alphanessone/Viewer/UI/workout_provider.dart'
     as workout_provider;
@@ -237,7 +236,7 @@ class WorkoutDialogs {
       if (newExercise != null) {
         await ref
             .read(workout_provider.workoutServiceProvider)
-            .updateExercise(currentExercise, newExercise as Exercise);
+            .updateExercise(currentExercise, newExercise);
       }
     });
   }
@@ -284,7 +283,7 @@ class WorkoutDialogs {
         exerciseType: exercise['type'] ?? 'weight',
         weekIndex: 0,
         exercise: Exercise.fromMap(exercise),
-        currentSeriesGroup: seriesList,
+        currentSeriesGroup: seriesList.map((s) => Series.fromMap(s.toMap())).toList(),
         latestMaxWeight: latestMaxWeight.toDouble(),
         weightNotifier: weightNotifier,
       ),

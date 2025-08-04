@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/series_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 
 class SeriesService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
-import 'package:alphanessone/trainingBuilder/models/series_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import '../forms/series_form_fields.dart';
 
 class SeriesCard extends StatelessWidget {

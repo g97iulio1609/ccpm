@@ -1,10 +1,6 @@
-import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
-import 'package:alphanessone/trainingBuilder/models/series_model.dart';
-import 'package:alphanessone/trainingBuilder/models/week_model.dart';
-import 'package:alphanessone/trainingBuilder/models/progressions_model.dart';
-import 'package:alphanessone/trainingBuilder/utility_functions.dart';
+import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/series_utils.dart';
-import 'package:alphanessone/trainingBuilder/shared/utils/format_utils.dart';
+import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 
 /// Service for handling progression-related business logic
 class ProgressionService {
@@ -62,15 +58,18 @@ class ProgressionService {
         final existingProgressions = exerciseInWorkout.weekProgressions;
         WeekProgression? sessionProgression;
 
-        if (existingProgressions.isNotEmpty &&
-            existingProgressions.length > weekIndex) {
-          sessionProgression = existingProgressions[weekIndex].firstWhere(
-            (progression) => progression.sessionNumber == workout.order,
-            orElse: () => WeekProgression(
-                weekNumber: weekIndex + 1,
-                sessionNumber: workout.order,
-                series: []),
-          );
+        if (existingProgressions?.isNotEmpty == true &&
+            existingProgressions!.length > weekIndex) {
+          try {
+            sessionProgression = existingProgressions[weekIndex].firstWhere(
+              (progression) => progression.sessionNumber == workout.order,
+            );
+          } catch (e) {
+            sessionProgression = WeekProgression(
+              weekNumber: weekIndex + 1,
+              sessionNumber: workout.order,
+              series: []);
+          }
         }
 
         if (sessionProgression?.series.isNotEmpty == true) {
@@ -93,8 +92,9 @@ class ProgressionService {
                 maxWeight: firstSeries.maxWeight,
                 order: firstSeries.order,
                 done: firstSeries.done,
-                reps_done: firstSeries.reps_done,
-                weight_done: firstSeries.weight_done,
+                repsDone: firstSeries.repsDone,
+                weightDone: firstSeries.weightDone,
+                exerciseId: firstSeries.exerciseId,
               );
             }).toList(),
           );
@@ -118,8 +118,9 @@ class ProgressionService {
                 maxWeight: firstSeries.maxWeight,
                 order: firstSeries.order,
                 done: firstSeries.done,
-                reps_done: firstSeries.reps_done,
-                weight_done: firstSeries.weight_done,
+                repsDone: firstSeries.repsDone,
+                weightDone: firstSeries.weightDone,
+                exerciseId: firstSeries.exerciseId,
               );
             }).toList(),
           );
@@ -183,6 +184,7 @@ class ProgressionService {
   }) {
     return Series(
       serieId: generateRandomId(16).toString(),
+      exerciseId: '',
       reps: 0,
       sets: 1,
       intensity: '',
@@ -190,8 +192,8 @@ class ProgressionService {
       weight: 0.0,
       order: groupIndex + 1,
       done: false,
-      reps_done: 0,
-      weight_done: 0.0,
+      repsDone: 0,
+      weightDone: 0.0,
     );
   }
 
@@ -231,6 +233,7 @@ class ProgressionService {
           for (int i = 0; i < sets; i++) {
             updatedSeries.add(Series(
               serieId: generateRandomId(16).toString(),
+              exerciseId: '',
               reps: parseAndDefaultInt(groupControllers.reps.min.text),
               maxReps: int.tryParse(groupControllers.reps.max.text),
               sets: 1, // Ogni serie individuale ha sets=1
@@ -246,8 +249,8 @@ class ProgressionService {
               maxWeight: double.tryParse(groupControllers.weight.max.text),
               order: updatedSeries.length + 1,
               done: false,
-              reps_done: 0,
-              weight_done: 0.0,
+              repsDone: 0,
+              weightDone: 0.0,
             ));
           }
         }

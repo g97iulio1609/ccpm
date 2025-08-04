@@ -1,6 +1,4 @@
-import '../../models/training_model.dart';
-import '../../models/exercise_model.dart';
-import '../../models/series_model.dart';
+import '../../../shared/shared.dart';
 
 /// Utility class for common validations following DRY principle
 class ValidationUtils {
@@ -40,8 +38,9 @@ class ValidationUtils {
     int? groupIndex,
   ]) {
     if (weekIndex < 0 || weekIndex >= weekProgressions.length) return false;
-    if (sessionIndex < 0 || sessionIndex >= weekProgressions[weekIndex].length)
+    if (sessionIndex < 0 || sessionIndex >= weekProgressions[weekIndex].length) {
       return false;
+    }
 
     if (groupIndex != null) {
       return groupIndex >= 0 &&

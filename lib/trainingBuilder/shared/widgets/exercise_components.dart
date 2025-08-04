@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
-import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
-import 'package:alphanessone/trainingBuilder/models/superseries_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 
 /// Component for displaying exercise card header with type badge
 class ExerciseCardHeader extends StatelessWidget {
@@ -86,10 +85,10 @@ class ExerciseTitleSection extends StatelessWidget {
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
-        if (exercise.variant.isNotEmpty && exercise.variant != '') ...[
+        if (exercise.variant?.isNotEmpty == true && exercise.variant != '') ...[
           SizedBox(height: AppTheme.spacing.xs),
           Text(
-            exercise.variant,
+            exercise.variant!,
             style: theme.textTheme.bodyLarge?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),

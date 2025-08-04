@@ -47,7 +47,7 @@ Il file `workout_details.dart` è stato **completamente refactorizzato e sostitu
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/Main/app_theme.dart';
-import 'package:alphanessone/trainingBuilder/models/series_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/Viewer/UI/workout_provider.dart' as workout_provider;
 import 'package:alphanessone/Viewer/UI/exercise_timer_bottom_sheet.dart';
 import 'package:alphanessone/Viewer/UI/widgets/exercise_card.dart';
@@ -116,4 +116,4 @@ flutter analyze --fatal-infos
 
 **✅ Status**: **MIGRAZIONE COMPLETATA CON SUCCESSO**  
 **📊 Risultato**: **0 errori di linting, -86% righe di codice, +100% manutenibilità**  
-**🚀 Pronto per**: **Utilizzo immediato in produzione** 
+**🚀 Pronto per**: **Utilizzo immediato in produzione**

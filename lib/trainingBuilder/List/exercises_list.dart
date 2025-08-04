@@ -1,7 +1,7 @@
 import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/trainingBuilder/dialogs/exercise_dialogs.dart';
 import 'package:alphanessone/trainingBuilder/dialogs/bulk_series_dialogs.dart';
-import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/List/progressions_list.dart';
 import 'package:alphanessone/trainingBuilder/widgets/exercise_list_widgets.dart';
 import 'package:flutter/material.dart';
@@ -15,7 +15,7 @@ import 'package:alphanessone/UI/components/bottom_menu.dart';
 import 'package:go_router/go_router.dart';
 import 'package:alphanessone/trainingBuilder/shared/mixins/training_list_mixin.dart';
 import 'package:alphanessone/trainingBuilder/services/exercise_service.dart';
-import 'package:alphanessone/trainingBuilder/shared/utils/exercise_utils.dart';
+import 'package:alphanessone/trainingBuilder/shared/utils/exercise_utils.dart' as training_exercise_utils;
 
 /// Widget principale per la gestione degli esercizi in un allenamento
 class TrainingProgramExerciseList extends HookConsumerWidget {
@@ -191,7 +191,17 @@ class _ExerciseListViewState extends State<ExerciseListView>
   List<SuperSet> _getSuperSets(Exercise exercise) {
     final workout = widget.controller.program.weeks[widget.weekIndex]
         .workouts[widget.workoutIndex];
-    return ExerciseUtils.getSuperSets(exercise, workout.superSets);
+    
+    // Converte i superSets da Map a SuperSet
+    final superSets = workout.superSets?.map((superSetMap) {
+      return SuperSet(
+        id: superSetMap['id'] ?? '',
+        name: superSetMap['name'],
+        exerciseIds: List<String>.from(superSetMap['exerciseIds'] ?? []),
+      );
+    }).toList() ?? [];
+    
+    return training_exercise_utils.ExerciseUtils.getSuperSets(exercise, superSets);
   }
 
   /// Aggiunge un nuovo esercizio
@@ -215,8 +225,8 @@ class _ExerciseListViewState extends State<ExerciseListView>
   /// Mostra le opzioni dell'esercizio
   void _showExerciseOptions(Exercise exercise, num latestMaxWeight) {
     final superSets = _getSuperSets(exercise);
-    final isInSuperSet = ExerciseUtils.isInSuperSet(exercise, superSets);
-    final superSet = ExerciseUtils.getFirstSuperSet(exercise, superSets);
+    final isInSuperSet = training_exercise_utils.ExerciseUtils.isInSuperSet(exercise, superSets);
+    final superSet = training_exercise_utils.ExerciseUtils.getFirstSuperSet(exercise, superSets);
 
     showOptionsBottomSheet(
       context,
@@ -367,12 +377,21 @@ class _ExerciseListViewState extends State<ExerciseListView>
   }
 
   void _showAddToSuperSetDialog(Exercise exercise) {
-    final superSets = widget.controller.program.weeks[widget.weekIndex]
+    final superSetsData = widget.controller.program.weeks[widget.weekIndex]
         .workouts[widget.workoutIndex].superSets;
 
-    if (superSets.isEmpty) {
+    if (superSetsData?.isEmpty ?? true) {
       _createNewSuperSetAndAdd(exercise);
     } else {
+      // Converte i superSets da Map a SuperSet
+      final superSets = superSetsData!.map((superSetMap) {
+        return SuperSet(
+          id: superSetMap['id'] ?? '',
+          name: superSetMap['name'],
+          exerciseIds: List<String>.from(superSetMap['exerciseIds'] ?? []),
+        );
+      }).toList();
+      
       showDialog(
         context: context,
         builder: (context) => SuperSetSelectionDialog(
@@ -405,7 +424,7 @@ class _ExerciseListViewState extends State<ExerciseListView>
   }
 
   void _showReorderExercisesDialog() {
-    final exerciseNames = ExerciseUtils.formatExerciseNames(widget.exercises);
+    final exerciseNames = training_exercise_utils.ExerciseUtils.formatExerciseNames(widget.exercises);
 
     showDialog(
       context: context,
@@ -430,8 +449,9 @@ class _ExerciseListViewState extends State<ExerciseListView>
 
   void _createNewSuperSetAndAdd(Exercise exercise) {
     widget.controller.createSuperSet(widget.weekIndex, widget.workoutIndex);
-    final newSuperSetId = widget.controller.program.weeks[widget.weekIndex]
-        .workouts[widget.workoutIndex].superSets.first.id;
+    final superSetsData = widget.controller.program.weeks[widget.weekIndex]
+        .workouts[widget.workoutIndex].superSets;
+    final newSuperSetId = superSetsData?.first['id'] ?? '';
     _addToSuperSet(exercise, newSuperSetId);
   }
 

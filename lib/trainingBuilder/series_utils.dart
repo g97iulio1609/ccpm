@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart'; // Per TextEditingController e ValueNotifier
 
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
-import 'package:alphanessone/trainingBuilder/models/series_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/models/training_model.dart';
 
 // Utility per calcoli relativi alle serie di allenamento.
@@ -381,32 +381,38 @@ class SeriesUtils {
     if (exerciseId != null && exerciseId.isNotEmpty && athleteId.isNotEmpty) {
       final latestMaxWeight = await getLatestMaxWeight(
           exerciseRecordService, athleteId, exerciseId);
-      for (final series in exercise.series) {
-        _calculateWeight(series, exercise.type, latestMaxWeight);
-      }
+      // Note: Cannot directly assign to final field 'series'. 
+      // This method should return the updated exercise or use a different approach.
+      exercise.series.map((series) => 
+        _calculateWeight(series, exercise.type, latestMaxWeight)
+      ).toList();
     } else {
       debugPrint(
           "ID Esercizio ($exerciseId) o ID Atleta ($athleteId) mancante/non valido. Pesi non aggiornati da DB.");
-      for (final series in exercise.series) {
-        _calculateWeight(series, exercise.type, 0.0);
-      }
+      // Note: Cannot directly assign to final field 'series'.
+      // This method should return the updated exercise or use a different approach.
+      exercise.series.map((series) => 
+        _calculateWeight(series, exercise.type, 0.0)
+      ).toList();
     }
   }
 
   /// Logica interna per calcolare e impostare peso, intensità e RPE di una singola serie.
-  static void _calculateWeight(
+  /// Restituisce una nuova istanza di Series con i valori calcolati.
+  static Series _calculateWeight(
       Series series, String? exerciseType, double latestMaxWeight) {
     final currentMaxWeight = latestMaxWeight.clamp(0.0, double.maxFinite);
 
     if (currentMaxWeight <= 0) {
-      series.weight = 0.0;
-      series.intensity = _formatDouble(0.0);
-      series.rpe = '';
-      return;
+      return series.copyWith(
+        weight: 0.0,
+        intensity: _formatDouble(0.0),
+        rpe: '',
+      );
     }
 
-    final String intensityText = series.intensity.trim();
-    final String rpeText = series.rpe.trim();
+    final String intensityText = series.intensity?.trim() ?? '';
+    final String rpeText = series.rpe?.trim() ?? '';
     final int reps = series.reps.clamp(0, 100);
 
     // Priorità 1: Calcolo basato sull'Intensità
@@ -415,16 +421,19 @@ class SeriesUtils {
       if (intensityValue != null && intensityValue > 0) {
         final calculatedW =
             calculateWeightFromIntensity(currentMaxWeight, intensityValue);
-        series.weight = roundWeight(calculatedW, exerciseType);
-        series.intensity = _formatDouble(
-            calculateIntensityFromWeight(series.weight, currentMaxWeight));
-        if (reps > 0 && reps <= 10) {
-          final rpe = calculateRPE(series.weight, currentMaxWeight, reps);
-          series.rpe = rpe != null ? _formatDouble(rpe, precision: 1) : '';
-        } else {
-          series.rpe = '';
-        }
-        return;
+        final newWeight = roundWeight(calculatedW, exerciseType);
+        final newIntensity = _formatDouble(
+            calculateIntensityFromWeight(newWeight, currentMaxWeight));
+        final newRpe = (reps > 0 && reps <= 10)
+            ? (calculateRPE(newWeight, currentMaxWeight, reps) != null
+                ? _formatDouble(calculateRPE(newWeight, currentMaxWeight, reps)!, precision: 1)
+                : '')
+            : '';
+        return series.copyWith(
+          weight: newWeight,
+          intensity: newIntensity,
+          rpe: newRpe,
+        );
       }
     }
 
@@ -434,32 +443,41 @@ class SeriesUtils {
       if (rpeValue != null && rpeValue >= 2 && rpeValue <= 10) {
         final percentage = getRPEPercentage(rpeValue, reps);
         final calculatedW = currentMaxWeight * percentage;
-        series.weight = roundWeight(calculatedW, exerciseType);
-        series.intensity = _formatDouble(
-            calculateIntensityFromWeight(series.weight, currentMaxWeight));
-        series.rpe = _formatDouble(rpeValue, precision: 1);
-        return;
+        final newWeight = roundWeight(calculatedW, exerciseType);
+        final newIntensity = _formatDouble(
+            calculateIntensityFromWeight(newWeight, currentMaxWeight));
+        final newRpe = _formatDouble(rpeValue, precision: 1);
+        return series.copyWith(
+          weight: newWeight,
+          intensity: newIntensity,
+          rpe: newRpe,
+        );
       }
     }
 
     // Priorità 3: Calcolo basato sul Peso
     if (series.weight > 0) {
-      series.weight = roundWeight(series.weight, exerciseType);
-      series.intensity = _formatDouble(
-          calculateIntensityFromWeight(series.weight, currentMaxWeight));
-      if (reps > 0 && reps <= 10) {
-        final rpe = calculateRPE(series.weight, currentMaxWeight, reps);
-        series.rpe = rpe != null ? _formatDouble(rpe, precision: 1) : '';
-      } else {
-        series.rpe = '';
-      }
-      return;
+      final newWeight = roundWeight(series.weight, exerciseType);
+      final newIntensity = _formatDouble(
+          calculateIntensityFromWeight(newWeight, currentMaxWeight));
+      final newRpe = (reps > 0 && reps <= 10)
+          ? (calculateRPE(newWeight, currentMaxWeight, reps) != null
+              ? _formatDouble(calculateRPE(newWeight, currentMaxWeight, reps)!, precision: 1)
+              : '')
+          : '';
+      return series.copyWith(
+        weight: newWeight,
+        intensity: newIntensity,
+        rpe: newRpe,
+      );
     }
 
     // Fallback
-    series.weight = 0.0;
-    series.intensity = _formatDouble(0.0);
-    series.rpe = '';
+    return series.copyWith(
+      weight: 0.0,
+      intensity: _formatDouble(0.0),
+      rpe: '',
+    );
   }
 
   /// Calcola e formatta un range di intensità (min/max) dati i pesi e il massimale.

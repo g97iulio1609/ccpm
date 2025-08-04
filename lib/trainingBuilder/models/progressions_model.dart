@@ -1,4 +1,4 @@
-import 'series_model.dart';
+import '../../shared/models/series.dart';
 
 class WeekProgression {
   int weekNumber;

@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../models/training_model.dart';
-import '../models/exercise_model.dart';
-import '../models/series_model.dart';
-import '../models/week_model.dart';
+import '../../shared/shared.dart';
 import '../domain/services/training_business_service.dart';
 import '../shared/utils/validation_utils.dart';
 import '../../services/users_services.dart';

@@ -1,8 +1,4 @@
-import '../../models/exercise_model.dart';
-import '../../models/series_model.dart';
-import '../../models/week_model.dart';
-import '../../models/workout_model.dart';
-import '../../models/superseries_model.dart';
+import '../../../shared/shared.dart';
 import '../../utility_functions.dart';
 
 /// Utility class for common model operations following DRY principle
@@ -23,8 +19,8 @@ class ModelUtils {
     return source.copyWith(
       serieId: generateRandomId(16).toString(),
       done: false,
-      reps_done: 0,
-      weight_done: 0.0,
+      repsDone: 0,
+      weightDone: 0.0,
     );
   }
 
@@ -41,27 +37,24 @@ class ModelUtils {
       return copiedExercise;
     }).toList();
 
-    final copiedSuperSets = source.superSets.map((superSet) {
-      final newSuperSetId = generateRandomId(16);
+    final copiedSuperSets = source.superSets?.map((superSetData) {
+      final newSuperSetId = generateRandomId(16).toString();
+      final exerciseIds = superSetData['exerciseIds'] as List<dynamic>? ?? [];
       final newExerciseIds =
-          superSet.exerciseIds.map((id) => newExerciseIdMap[id] ?? id).toList();
+          exerciseIds.map((id) => newExerciseIdMap[id.toString()] ?? id.toString()).toList();
 
-      // Update superset IDs in exercises
-      for (final exerciseId in newExerciseIds) {
-        final exercise = copiedExercises.firstWhere(
-          (e) => e.id == exerciseId,
-          orElse: () => Exercise(name: '', type: '', variant: '', order: 0),
-        );
-        if (exercise.id != null) {
-          exercise.superSetId = newSuperSetId;
+      // Update superset IDs in exercises by creating new instances
+      for (int i = 0; i < copiedExercises.length; i++) {
+        if (newExerciseIds.contains(copiedExercises[i].id)) {
+          copiedExercises[i] = copiedExercises[i].copyWith(superSetId: newSuperSetId);
         }
       }
 
-      return SuperSet(
-        id: newSuperSetId,
-        name: superSet.name,
-        exerciseIds: newExerciseIds,
-      );
+      return {
+        'id': newSuperSetId,
+        'name': superSetData['name'] ?? '',
+        'exerciseIds': newExerciseIds,
+      };
     }).toList();
 
     return source.copyWith(
@@ -89,42 +82,34 @@ class ModelUtils {
 
   /// Updates exercise orders
   static void updateExerciseOrders(List<Exercise> exercises, int startIndex) {
-    updateOrders(
-      exercises,
-      (exercise) => exercise.order,
-      (exercise, order) => exercise.order = order,
-      startIndex,
-    );
+    for (int i = startIndex; i < exercises.length; i++) {
+      // Create new exercise with updated order since order is final
+      exercises[i] = exercises[i].copyWith(order: i + 1);
+    }
   }
 
   /// Updates series orders
   static void updateSeriesOrders(List<Series> series, int startIndex) {
-    updateOrders(
-      series,
-      (s) => s.order,
-      (s, order) => s.order = order,
-      startIndex,
-    );
+    for (int i = startIndex; i < series.length; i++) {
+      // Create new series with updated order since order is final
+      series[i] = series[i].copyWith(order: i + 1);
+    }
   }
 
   /// Updates workout orders
   static void updateWorkoutOrders(List<Workout> workouts, int startIndex) {
-    updateOrders(
-      workouts,
-      (workout) => workout.order,
-      (workout, order) => workout.order = order,
-      startIndex,
-    );
+    for (int i = startIndex; i < workouts.length; i++) {
+      // Create new workout with updated order since order is final
+      workouts[i] = workouts[i].copyWith(order: i + 1);
+    }
   }
 
   /// Updates week numbers
   static void updateWeekNumbers(List<Week> weeks, int startIndex) {
-    updateOrders(
-      weeks,
-      (week) => week.number,
-      (week, number) => week.number = number,
-      startIndex,
-    );
+    for (int i = startIndex; i < weeks.length; i++) {
+      // Create new week with updated number since number is final
+      weeks[i] = weeks[i].copyWith(number: i + 1);
+    }
   }
 
   /// Groups series by similar properties

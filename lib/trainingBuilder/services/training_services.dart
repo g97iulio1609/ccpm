@@ -1,9 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/training_model.dart';
-import '../models/week_model.dart';
-import '../models/workout_model.dart';
-import '../models/exercise_model.dart';
-import '../models/series_model.dart';
+import '../../shared/shared.dart';
 
 class TrainingProgramService {
   final FirestoreService _service;
@@ -163,9 +159,9 @@ class FirestoreService {
       List<Week> weeks = weeksSnapshot.docs.map((doc) => Week.fromFirestore(doc)).toList();
 
       List<Future<void>> fetchWorkoutsFutures = [];
-      for (Week week in weeks) {
-        fetchWorkoutsFutures.add(_fetchWorkouts(week.id!).then((workouts) {
-          week.workouts = workouts;
+      for (int i = 0; i < weeks.length; i++) {
+        fetchWorkoutsFutures.add(_fetchWorkouts(weeks[i].id!).then((workouts) {
+          weeks[i] = weeks[i].copyWith(workouts: workouts);
         }));
       }
       await Future.wait(fetchWorkoutsFutures);
@@ -187,9 +183,9 @@ class FirestoreService {
       List<Workout> workouts = workoutsSnapshot.docs.map((doc) => Workout.fromFirestore(doc)).toList();
 
       List<Future<void>> fetchExercisesFutures = [];
-      for (Workout workout in workouts) {
-        fetchExercisesFutures.add(_fetchExercises(workout.id!).then((exercises) {
-          workout.exercises = exercises;
+      for (int i = 0; i < workouts.length; i++) {
+        fetchExercisesFutures.add(_fetchExercises(workouts[i].id!).then((exercises) {
+          workouts[i] = workouts[i].copyWith(exercises: exercises);
         }));
       }
       await Future.wait(fetchExercisesFutures);
@@ -209,15 +205,14 @@ class FirestoreService {
 
     List<Exercise> exercises = exercisesSnapshot.docs.map((doc) {
       Exercise exercise = Exercise.fromFirestore(doc);
-      exercise.superSetId =
-          (doc.data() as Map<String, dynamic>)['superSetId'] as String?;
-      return exercise;
+      String? superSetId = (doc.data() as Map<String, dynamic>)['superSetId'] as String?;
+      return exercise.copyWith(superSetId: superSetId);
     }).toList();
 
     List<Future<void>> fetchSeriesFutures = [];
-    for (Exercise exercise in exercises) {
-      fetchSeriesFutures.add(_fetchSeries(exercise.id!).then((series) {
-        exercise.series = series;
+    for (int i = 0; i < exercises.length; i++) {
+      fetchSeriesFutures.add(_fetchSeries(exercises[i].id!).then((series) {
+        exercises[i] = exercises[i].copyWith(series: series);
       }));
     }
     await Future.wait(fetchSeriesFutures);
@@ -241,7 +236,7 @@ class FirestoreService {
       String programId = program.id?.trim().isEmpty ?? true
           ? _db.collection('programs').doc().id
           : program.id!;
-      program.id = programId;
+      program = program.copyWith(id: programId);
 
       await _addOrUpdateProgram(batch, program);
       await _addOrUpdateWeeks(batch, program);
@@ -264,14 +259,15 @@ class FirestoreService {
 
   Future<void> _addOrUpdateWeeks(
       WriteBatch batch, TrainingProgram program) async {
-    for (Week week in program.weeks) {
+    for (int i = 0; i < program.weeks.length; i++) {
+      Week week = program.weeks[i];
       String weekId = week.id?.trim().isEmpty ?? true
           ? _db.collection('weeks').doc().id
           : week.id!;
-      week.id = weekId;
+      final updatedWeek = week.copyWith(id: weekId);
 
-      await _addOrUpdateWeek(batch, week, program.id!);
-      await _addOrUpdateWorkouts(batch, week);
+      await _addOrUpdateWeek(batch, updatedWeek, program.id!);
+      await _addOrUpdateWorkouts(batch, updatedWeek);
     }
   }
 
@@ -289,14 +285,15 @@ class FirestoreService {
   }
 
   Future<void> _addOrUpdateWorkouts(WriteBatch batch, Week week) async {
-    for (Workout workout in week.workouts) {
+    for (int i = 0; i < week.workouts.length; i++) {
+      Workout workout = week.workouts[i];
       String workoutId = workout.id?.trim().isEmpty ?? true
           ? _db.collection('workouts').doc().id
           : workout.id!;
-      workout.id = workoutId;
+      final updatedWorkout = workout.copyWith(id: workoutId);
 
-      await _addOrUpdateWorkout(batch, workout, week.id!);
-      await _addOrUpdateExercises(batch, workout);
+      await _addOrUpdateWorkout(batch, updatedWorkout, week.id!);
+      await _addOrUpdateExercises(batch, updatedWorkout);
     }
   }
 
@@ -314,14 +311,15 @@ class FirestoreService {
   }
 
   Future<void> _addOrUpdateExercises(WriteBatch batch, Workout workout) async {
-    for (Exercise exercise in workout.exercises) {
+    for (int i = 0; i < workout.exercises.length; i++) {
+      Exercise exercise = workout.exercises[i];
       String exerciseId = exercise.id?.trim().isEmpty ?? true
           ? _db.collection('exercisesWorkout').doc().id
           : exercise.id!;
-      exercise.id = exerciseId;
+      final updatedExercise = exercise.copyWith(id: exerciseId);
 
-      await _addOrUpdateExercise(batch, exercise, workout.id!);
-      await _addOrUpdateSeries(batch, exercise);
+      await _addOrUpdateExercise(batch, updatedExercise, workout.id!);
+      await _addOrUpdateSeries(batch, updatedExercise);
     }
   }
 
@@ -348,19 +346,19 @@ class FirestoreService {
   Future<void> _addOrUpdateSeries(WriteBatch batch, Exercise exercise) async {
     for (int i = 0; i < exercise.series.length; i++) {
       Series series = exercise.series[i];
-      String seriesId = series.serieId.trim().isEmpty ?? true
+      String seriesId = (series.serieId?.trim().isEmpty ?? true)
           ? _db.collection('series').doc().id
-          : series.serieId;
-      series.serieId = seriesId;
+          : series.serieId!;
+      final updatedSeries = series.copyWith(serieId: seriesId);
 
       await _addOrUpdateSingleSeries(
-          batch, series, exercise.id!, i + 1, exercise.exerciseId);
+          batch, updatedSeries, exercise.id!, i + 1, exercise.exerciseId);
     }
   }
 
   Future<void> _addOrUpdateSingleSeries(WriteBatch batch, Series series,
       String exerciseId, int order, String? originalExerciseId) async {
-    DocumentReference seriesRef = _db.collection('series').doc(series.serieId);
+    DocumentReference seriesRef = _db.collection('series').doc(series.serieId ?? series.id ?? '');
     batch.set(
       seriesRef,
       {
@@ -370,12 +368,12 @@ class FirestoreService {
         'rpe': series.rpe,
         'weight': series.weight,
         'exerciseId': exerciseId,
-        'serieId': series.serieId,
+        'serieId': series.serieId ?? series.id,
         'originalExerciseId': originalExerciseId,
         'order': order,
         'done': series.done,
-        'reps_done': series.reps_done,
-        'weight_done': series.weight_done,
+        'reps_done': series.repsDone,
+        'weight_done': series.weightDone,
         //new interval
         'maxReps': series.maxReps,
         'maxSets': series.maxSets,

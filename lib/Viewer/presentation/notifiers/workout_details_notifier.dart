@@ -1,7 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:alphanessone/viewer/domain/entities/workout.dart';
-import 'package:alphanessone/viewer/domain/entities/exercise.dart';
-import 'package:alphanessone/viewer/domain/entities/series.dart';
+import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/viewer/domain/repositories/workout_repository.dart'; // Per caricare il workout completo
 import 'package:alphanessone/viewer/domain/usecases/complete_series_use_case.dart';
 import 'package:alphanessone/viewer/domain/usecases/save_exercise_note_use_case.dart';

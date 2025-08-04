@@ -34,11 +34,11 @@ class TrainingProgramPage extends HookConsumerWidget {
     final colorScheme = theme.colorScheme;
 
     useEffect(() {
-      if (programId.isNotEmpty && program.id != programId) {
+      if (programId.isNotEmpty && controller.program.id != programId) {
         controller.loadProgram(programId);
       }
       return null;
-    }, [programId]);
+    }, [programId, controller.program.id]);
 
     return Scaffold(
       backgroundColor: colorScheme.surface,

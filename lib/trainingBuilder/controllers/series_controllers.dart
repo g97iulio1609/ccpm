@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import '../models/exercise_model.dart';
-import '../models/series_model.dart';
-import '../shared/utils/format_utils.dart';
+import 'package:alphanessone/shared/shared.dart';
+
 
 /// Controller per i range di valori (min-max)
 class RangeControllers {
@@ -19,11 +18,18 @@ class RangeControllers {
   }
 
   String get displayText {
-    final minText = FormatUtils.formatNumber(min.text);
-    final maxText = FormatUtils.formatNumber(max.text);
+    final minText = _formatNumber(min.text);
+    final maxText = _formatNumber(max.text);
     if (maxText.isEmpty) return minText;
     if (minText.isEmpty) return maxText;
     return "$minText-$maxText";
+  }
+
+  String _formatNumber(String value) {
+    if (value.isEmpty) return '';
+    final num? parsed = num.tryParse(value);
+    if (parsed == null) return value;
+    return parsed % 1 == 0 ? parsed.toInt().toString() : parsed.toStringAsFixed(1);
   }
 
   void updateFromDialog(String minValue, String maxValue) {
@@ -64,15 +70,22 @@ class SeriesControllers {
   }
 
   void initializeFromSeries(Series series) {
-    reps.min.text = FormatUtils.formatNumber(series.reps);
-    reps.max.text = FormatUtils.formatNumber(series.maxReps);
-    sets.text = FormatUtils.formatNumber(series.sets);
-    intensity.min.text = FormatUtils.formatNumber(series.intensity);
-    intensity.max.text = FormatUtils.formatNumber(series.maxIntensity);
-    rpe.min.text = FormatUtils.formatNumber(series.rpe);
-    rpe.max.text = FormatUtils.formatNumber(series.maxRpe);
-    weight.min.text = FormatUtils.formatNumber(series.weight);
-    weight.max.text = FormatUtils.formatNumber(series.maxWeight);
+    reps.min.text = _formatNumber(series.reps.toString());
+    reps.max.text = _formatNumber(series.maxReps?.toString() ?? '');
+    sets.text = _formatNumber(series.sets.toString());
+    intensity.min.text = _formatNumber(series.intensity ?? '');
+    intensity.max.text = _formatNumber(series.maxIntensity ?? '');
+    rpe.min.text = _formatNumber(series.rpe ?? '');
+    rpe.max.text = _formatNumber(series.maxRpe ?? '');
+    weight.min.text = _formatNumber(series.weight.toString());
+    weight.max.text = _formatNumber(series.maxWeight?.toString() ?? '');
+  }
+
+  String _formatNumber(String value) {
+    if (value.isEmpty) return '';
+    final num? parsed = num.tryParse(value);
+    if (parsed == null) return value;
+    return parsed % 1 == 0 ? parsed.toInt().toString() : parsed.toStringAsFixed(1);
   }
 
   void clear() {

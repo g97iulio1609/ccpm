@@ -1,6 +1,5 @@
 import 'package:alphanessone/trainingBuilder/dialog/series_dialog.dart';
-import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
-import 'package:alphanessone/trainingBuilder/models/series_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/series_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:alphanessone/trainingBuilder/models/training_model.dart';
@@ -36,11 +35,11 @@ class SeriesController extends ChangeNotifier {
 
     if (seriesList != null && seriesList.isNotEmpty) {
       // Set originalExerciseId for each series
-      for (var series in seriesList) {
-        series.originalExerciseId = originalExerciseId;
-      }
+      final updatedSeriesList = seriesList.map((series) => 
+        series.copyWith(originalExerciseId: originalExerciseId)
+      ).toList();
 
-      exercise.series.addAll(seriesList);
+      exercise.series.addAll(updatedSeriesList);
       await SeriesUtils.updateSeriesWeights(program, weekIndex, workoutIndex,
           exerciseIndex, exerciseRecordService);
       notifyListeners();
@@ -104,7 +103,9 @@ class SeriesController extends ChangeNotifier {
       if (startIndex != -1) {
         // Remove old series from database
         for (var series in currentSeriesGroup) {
-          program.trackToDeleteSeries.add(series.serieId);
+          if (series.serieId != null) {
+            program.trackToDeleteSeries.add(series.serieId!);
+          }
         }
 
         // Replace old series with updated ones
@@ -113,7 +114,7 @@ class SeriesController extends ChangeNotifier {
 
         // Update series order
         for (int i = 0; i < exercise.series.length; i++) {
-          exercise.series[i].order = i + 1;
+          exercise.series[i] = exercise.series[i].copyWith(order: i + 1);
         }
 
         await SeriesUtils.updateSeriesWeights(program, weekIndex, workoutIndex,
@@ -164,7 +165,9 @@ class SeriesController extends ChangeNotifier {
   }
 
   void removeSeriesData(TrainingProgram program, Series series) {
-    program.trackToDeleteSeries.add(series.serieId);
+    if (series.serieId != null) {
+      program.trackToDeleteSeries.add(series.serieId!);
+    }
     notifyListeners();
   }
 
@@ -175,8 +178,9 @@ class SeriesController extends ChangeNotifier {
       return;
     }
 
-    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex]
-        .series = updatedSeries;
+    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+    final updatedExercise = exercise.copyWith(series: updatedSeries);
+    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] = updatedExercise;
     notifyListeners();
   }
 
@@ -190,7 +194,7 @@ class SeriesController extends ChangeNotifier {
     final exercise = program
         .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     for (int i = startIndex; i < exercise.series.length; i++) {
-      exercise.series[i].order = i + 1;
+      exercise.series[i] = exercise.series[i].copyWith(order: i + 1);
     }
   }
 
@@ -259,10 +263,11 @@ class SeriesController extends ChangeNotifier {
         currentGroup = series.copyWith(sets: 1);
         groupedSeries.add(currentGroup);
       } else {
-        currentGroup.sets += 1;
-        if (series.maxSets != null) {
-          currentGroup.maxSets = (currentGroup.maxSets ?? 0) + 1;
-        }
+        currentGroup = currentGroup.copyWith(
+          sets: currentGroup.sets + 1,
+          maxSets: series.maxSets != null ? (currentGroup.maxSets ?? 0) + 1 : currentGroup.maxSets,
+        );
+        groupedSeries[groupedSeries.length - 1] = currentGroup;
       }
     }
 
@@ -307,31 +312,32 @@ class SeriesController extends ChangeNotifier {
     }
 
     final series = exercise.series[seriesIndex];
+    Series updatedSeries;
     switch (field) {
       case 'reps':
-        series.reps = value;
-        series.maxReps = maxValue;
+        updatedSeries = series.copyWith(reps: value, maxReps: maxValue);
         break;
       case 'sets':
-        series.sets = value;
-        series.maxSets = maxValue;
+        updatedSeries = series.copyWith(sets: value, maxSets: maxValue);
         break;
       case 'intensity':
-        series.intensity = value;
-        series.maxIntensity = maxValue;
+        updatedSeries = series.copyWith(intensity: value, maxIntensity: maxValue);
         break;
       case 'rpe':
-        series.rpe = value;
-        series.maxRpe = maxValue;
+        updatedSeries = series.copyWith(rpe: value, maxRpe: maxValue);
         break;
       case 'weight':
-        series.weight = value;
-        series.maxWeight = maxValue;
+        updatedSeries = series.copyWith(weight: value, maxWeight: maxValue);
         break;
       default:
         debugPrint('Invalid field: $field');
         return;
     }
+    
+    final updatedExercise = exercise.copyWith(
+      series: List<Series>.from(exercise.series)..[seriesIndex] = updatedSeries,
+    );
+    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] = updatedExercise;
 
     await updateSeriesWeights(program, weekIndex, workoutIndex, exerciseIndex);
   }

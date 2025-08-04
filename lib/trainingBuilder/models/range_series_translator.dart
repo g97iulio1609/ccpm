@@ -1,4 +1,4 @@
-import 'package:alphanessone/trainingBuilder/models/series_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 
 class RangeSeriesTranslator {

@@ -1,7 +1,5 @@
 import '../../models/training_model.dart';
-import '../../models/week_model.dart';
-import '../../models/workout_model.dart';
-import '../../models/exercise_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import '../repositories/training_repository.dart';
 import '../../shared/utils/validation_utils.dart';
 import '../../shared/utils/model_utils.dart';

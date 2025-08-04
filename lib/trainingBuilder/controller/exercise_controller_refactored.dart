@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/training_model.dart';
-import '../models/exercise_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import '../domain/services/exercise_business_service.dart';
 import '../shared/utils/validation_utils.dart';
 import '../dialog/exercise_dialog.dart';

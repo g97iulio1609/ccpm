@@ -1,6 +1,5 @@
 import '../../models/training_model.dart';
-import '../../models/exercise_model.dart';
-import '../../models/series_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import '../../models/progressions_model.dart';
 import '../repositories/training_repository.dart';
 import '../../../ExerciseRecords/exercise_record_services.dart';
