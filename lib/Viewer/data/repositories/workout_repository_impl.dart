@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:alphanessone/viewer/domain/entities/week.dart';
 import 'package:alphanessone/viewer/domain/entities/workout.dart';
 import 'package:alphanessone/viewer/domain/entities/exercise.dart';
-import 'package:alphanessone/viewer/domain/entities/series.dart';
+import 'package:alphanessone/shared/models/series.dart';
 import 'package:alphanessone/viewer/domain/repositories/workout_repository.dart';
 
 class WorkoutRepositoryImpl implements WorkoutRepository {

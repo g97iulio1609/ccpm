@@ -1,5 +1,5 @@
 import 'package:alphanessone/viewer/domain/entities/exercise.dart';
-import 'package:alphanessone/viewer/domain/entities/series.dart';
+import 'package:alphanessone/shared/models/series.dart';
 import 'package:alphanessone/viewer/domain/entities/workout.dart';
 import 'package:alphanessone/viewer/domain/entities/week.dart';
 

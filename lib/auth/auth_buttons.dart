@@ -5,6 +5,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'auth_service.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../services/privacy_consent_service.dart';
 
 class SubmitButton extends ConsumerStatefulWidget {
   const SubmitButton({
@@ -16,6 +17,7 @@ class SubmitButton extends ConsumerStatefulWidget {
     required this.userPassword,
     required this.userName,
     required this.userGender,
+    this.privacyConsentAccepted,
   });
 
   final GlobalKey<FormState> formKey;
@@ -25,6 +27,7 @@ class SubmitButton extends ConsumerStatefulWidget {
   final ValueNotifier<String> userPassword;
   final ValueNotifier<String> userName;
   final ValueNotifier<String> userGender;
+  final ValueNotifier<bool>? privacyConsentAccepted;
 
   @override
   SubmitButtonState createState() => SubmitButtonState();
@@ -87,33 +90,62 @@ class SubmitButtonState extends ConsumerState<SubmitButton> {
 
   Future<void> _submit(String userRole) async {
     if (!mounted) return;
-    if (widget.formKey.currentState?.validate() ?? false) {
-      setState(() => _isLoading = true);
-      widget.formKey.currentState?.save();
+    
+    // Validazione del form
+    if (!(widget.formKey.currentState?.validate() ?? false)) {
+      return;
+    }
+    
+    // Validazione del consenso privacy per registrazione
+    if (!widget.isLogin.value) {
+      if (widget.privacyConsentAccepted?.value != true) {
+        _showSnackBar(
+          'È necessario accettare la Privacy Policy per procedere con la registrazione',
+          Colors.red,
+        );
+        return;
+      }
+    }
+    
+    setState(() => _isLoading = true);
+    widget.formKey.currentState?.save();
 
-      try {
-        final email = widget.userEmail.value.trim();
-        final password = widget.userPassword.value.trim();
-        final UserCredential userCredential =
-            await _performAuthentication(email, password);
+    try {
+      final email = widget.userEmail.value.trim();
+      final password = widget.userPassword.value.trim();
+      final UserCredential userCredential =
+          await _performAuthentication(email, password);
 
-        final userId = userCredential.user?.uid;
-        if (userId != null) {
-          await widget.authService.updateUserName(userCredential.user!);
-          if (!mounted) return;
-          _showSnackBar('Authentication successful', Colors.green);
-          _navigateToAppropriateScreen(userRole, userId);
-        } else {
-          if (!mounted) return;
-          _showSnackBar('Failed to retrieve user ID', Colors.red);
+      final userId = userCredential.user?.uid;
+      if (userId != null) {
+        await widget.authService.updateUserName(userCredential.user!);
+        
+        // Salva il consenso privacy se è una registrazione
+        if (!widget.isLogin.value && widget.privacyConsentAccepted?.value == true) {
+          try {
+            await PrivacyConsentService.saveConsentOnRegistration(
+              userId: userId,
+              consentGiven: true,
+            );
+          } catch (consentError) {
+            // Log dell'errore ma non bloccare il processo di registrazione
+            debugPrint('Errore nel salvare il consenso privacy: $consentError');
+          }
         }
-      } catch (error) {
+        
         if (!mounted) return;
-        _showSnackBar(error.toString(), Colors.red);
-      } finally {
-        if (mounted) {
-          setState(() => _isLoading = false);
-        }
+        _showSnackBar('Authentication successful', Colors.green);
+        _navigateToAppropriateScreen(userRole, userId);
+      } else {
+        if (!mounted) return;
+        _showSnackBar('Failed to retrieve user ID', Colors.red);
+      }
+    } catch (error) {
+      if (!mounted) return;
+      _showSnackBar(error.toString(), Colors.red);
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
   }
