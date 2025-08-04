@@ -45,7 +45,6 @@ class ExtensionsManager {
           final featureType = action['featureType'];
           if (featureType == null) continue;
 
-          bool handled = false;
           for (var ext in _extensions) {
             if (await ext.canHandle(action)) {
               try {
@@ -53,7 +52,6 @@ class ExtensionsManager {
                 if (result != null) {
                   results.add(result);
                 }
-                handled = true;
                 break;
               } catch (e) {
                 _logger.e('Error executing action', error: e);

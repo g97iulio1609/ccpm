@@ -92,7 +92,6 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final userId = ref.watch(activeUserIdProvider);
 
     // Osserva il provider di inizializzazione

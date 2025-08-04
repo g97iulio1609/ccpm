@@ -6,7 +6,6 @@ import 'package:alphanessone/exerciseManager/exercise_model.dart';
 import 'ai_extension.dart';
 
 class ExercisesExtension implements AIExtension {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final Logger _logger = Logger(
     printer: PrettyPrinter(),
   );

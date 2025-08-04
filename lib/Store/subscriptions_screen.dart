@@ -378,8 +378,7 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
     final isAdmin = ref.watch(isAdminProvider);
     final isOwnProfile =
         widget.userId == FirebaseAuth.instance.currentUser?.uid;
@@ -437,7 +436,7 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
                               height: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: theme.colorScheme.onPrimary,
+                                color: Theme.of(context).colorScheme.onPrimary,
                               ),
                             )
                           : const Icon(Icons.sync),
@@ -468,7 +467,7 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
             Center(
               child: Text(
                 'Nessun abbonamento attivo.',
-                style: theme.textTheme.titleLarge,
+                style: Theme.of(context).textTheme.titleLarge,
               ),
             ),
           ] else ...[
@@ -488,7 +487,7 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
             const SizedBox(height: 16),
             Text(
               'Dettagli Abbonamento',
-              style: theme.textTheme.titleLarge,
+              style: Theme.of(context).textTheme.titleLarge,
             ),
             const Divider(),
             ...subscription.items.map((item) {

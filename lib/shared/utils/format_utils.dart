@@ -16,9 +16,6 @@ class FormatUtils {
   static final DateFormat _isoFormat = DateFormat('yyyy-MM-dd');
   
   // Number formatters
-  static final NumberFormat _decimalFormat = NumberFormat('#0.0');
-  static final NumberFormat _integerFormat = NumberFormat('#0');
-  static final NumberFormat _percentageFormat = NumberFormat('#0.0%');
   static final NumberFormat _currencyFormat = NumberFormat.currency(symbol: '€');
   
   /// Format date to string (dd/MM/yyyy)

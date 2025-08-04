@@ -58,7 +58,6 @@ class TrainingExtension implements AIExtension {
         try {
           switch (actionType) {
             case 'add_week':
-              final weekNumber = actionData['params']?['weekNumber'] as int?;
               result = await _handleAddWeek(userId);
               if (result?.contains('Ho aggiunto la settimana') ?? false) {
                 final weekMatch =
@@ -446,42 +445,6 @@ class TrainingExtension implements AIExtension {
     }
   }
 
-  Future<String?> _handleCurrentProgramInfo(String userId) async {
-    _logger.i('Retrieving current training program info for user: $userId');
-    try {
-      final programsQuery = await _firestore
-          .collection('programs')
-          .where('athleteId', isEqualTo: userId)
-          .where('status', isEqualTo: 'active')
-          .get();
-
-      if (programsQuery.docs.isEmpty) {
-        final response =
-            'Non hai un programma di allenamento attivo al momento.';
-        _logger.d(response);
-        return response;
-      }
-
-      final program = TrainingProgram.fromFirestore(programsQuery.docs.first);
-
-      final buffer = StringBuffer();
-      buffer.writeln('Il tuo programma attuale: ${program.name}');
-      if (program.description.isNotEmpty) {
-        buffer.writeln('Descrizione: ${program.description}');
-      }
-      buffer.writeln('Durata: ${program.mesocycleNumber} settimane');
-
-      // Aggiungi ulteriori dettagli se necessario
-
-      final result = buffer.toString();
-      _logger.d('Current training program info: $result');
-      return result;
-    } catch (e, stackTrace) {
-      _logger.e('Error retrieving current program',
-          error: e, stackTrace: stackTrace);
-      return 'Si è verificato un errore durante la ricerca del programma attuale.';
-    }
-  }
 
   Future<String?> _handleAddWeek(String userId) async {
     try {

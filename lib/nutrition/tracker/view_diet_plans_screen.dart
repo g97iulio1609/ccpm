@@ -31,9 +31,7 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
 
     final dietPlansStream =
         ref.watch(dietPlanServiceProvider).getDietPlansStream(userId);
-    final isAdminOrCoach =
-        currentUserRole == 'admin' || currentUserRole == 'coach';
-
+    
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       body: StreamBuilder<List<DietPlan>>(
@@ -183,7 +181,7 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
                                   context, dietPlan.name);
                               if (newName != null && newName.isNotEmpty) {
                                 try {
-                                  final duplicatedId = await ref
+                                  await ref
                                       .read(dietPlanServiceProvider)
                                       .duplicateDietPlan(userId, dietPlan.id!,
                                           newName: newName);
@@ -338,128 +336,6 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
     );
   }
 
-  /// Seleziona un template da applicare
-  Future<DietPlan?> _selectTemplate(BuildContext context) async {
-    final userService = ref.read(usersServiceProvider);
-    final adminId = userService.getCurrentUserId();
-    final templates = await ref
-        .read(dietPlanServiceProvider)
-        .getDietPlanTemplatesStream(adminId)
-        .first;
-
-    if (templates.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No templates available')));
-      return null;
-    }
-
-    return showDialog<DietPlan>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Select a Template',
-              style: GoogleFonts.roboto(fontWeight: FontWeight.bold)),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: templates.length,
-              itemBuilder: (context, index) {
-                final template = templates[index];
-                return ListTile(
-                  title: Text(template.name, style: GoogleFonts.roboto()),
-                  subtitle: Text('Duration: ${template.durationDays} days',
-                      style: GoogleFonts.roboto()),
-                  onTap: () => Navigator.of(context).pop(template),
-                );
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancel', style: GoogleFonts.roboto()),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  /// Mostra i dettagli del piano dietetico in un dialogo
-  void _showDietPlanDetails(BuildContext context, DietPlan dietPlan) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(dietPlan.name,
-              style: GoogleFonts.roboto(
-                  fontSize: 20, fontWeight: FontWeight.bold)),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                    'Start Date: ${dietPlan.startDate.day}/${dietPlan.startDate.month}/${dietPlan.startDate.year}',
-                    style: GoogleFonts.roboto()),
-                Text('Duration: ${dietPlan.durationDays} days',
-                    style: GoogleFonts.roboto()),
-                const SizedBox(height: 16),
-                Text('Daily Plans:',
-                    style: GoogleFonts.roboto(
-                        fontSize: 16, fontWeight: FontWeight.bold)),
-                ...dietPlan.days.map((day) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(day.dayOfWeek,
-                              style: GoogleFonts.roboto(
-                                  fontSize: 14, fontWeight: FontWeight.bold)),
-                          ...day.mealIds.map((mealId) => FutureBuilder<Meal?>(
-                                future: ref
-                                    .read(mealsServiceProvider)
-                                    .getMealById(dietPlan.userId, mealId),
-                                builder: (context, snapshot) {
-                                  if (snapshot.connectionState ==
-                                      ConnectionState.waiting) {
-                                    return Text('- Loading...',
-                                        style:
-                                            GoogleFonts.roboto(fontSize: 14));
-                                  } else if (snapshot.hasError) {
-                                    return Text('- Error loading meal',
-                                        style: GoogleFonts.roboto(
-                                            fontSize: 14, color: Colors.red));
-                                  } else if (!snapshot.hasData ||
-                                      snapshot.data == null) {
-                                    return Text('- Meal not found',
-                                        style: GoogleFonts.roboto(
-                                            fontSize: 14, color: Colors.red));
-                                  } else {
-                                    final meal = snapshot.data!;
-                                    return Text(
-                                        '- ${meal.mealType} (${meal.totalCalories} kcal)',
-                                        style:
-                                            GoogleFonts.roboto(fontSize: 14));
-                                  }
-                                },
-                              )),
-                        ],
-                      ),
-                    )),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Close', style: GoogleFonts.roboto()),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   void _navigateToEditDietPlan(BuildContext context, DietPlan dietPlan) {
     context.go('/food_tracker/diet_plan/edit', extra: {'dietPlan': dietPlan});

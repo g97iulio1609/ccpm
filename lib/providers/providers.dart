@@ -209,7 +209,6 @@ final nutritionServiceProvider = Provider<NutritionService>((ref) {
 // Provider per misurazioni precedenti
 final previousMeasurementsProvider =
     StreamProvider<List<MeasurementModel>>((ref) {
-  final measurementsService = ref.watch(measurementsServiceProvider);
   final firestore = ref.watch(firebaseFirestoreProvider);
   final auth = ref.watch(firebaseAuthProvider);
 
