@@ -109,12 +109,12 @@ class AuthForm extends HookConsumerWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: theme.colorScheme.surfaceContainerHighest.opacity * 0.3),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: privacyConsentAccepted.value 
-                      ? theme.colorScheme.primary.withOpacity(0.5)
-                      : theme.colorScheme.outline.withOpacity(0.3),
+                      ? theme.colorScheme.primary.withValues(alpha: theme.colorScheme.primary.opacity * 0.5)
+                      : theme.colorScheme.outline.withValues(alpha: theme.colorScheme.outline.opacity * 0.3),
                   width: privacyConsentAccepted.value ? 2 : 1,
                 ),
               ),
@@ -180,7 +180,7 @@ class AuthForm extends HookConsumerWidget {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.errorContainer.withOpacity(0.3),
+                              color: theme.colorScheme.errorContainer.withValues(alpha: theme.colorScheme.errorContainer.opacity * 0.3),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Row(
@@ -284,10 +284,10 @@ class AuthForm extends HookConsumerWidget {
             padding: const EdgeInsets.all(12),
             margin: const EdgeInsets.symmetric(horizontal: 8),
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceVariant.withOpacity(0.2),
+              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: theme.colorScheme.surfaceContainerHighest.opacity * 0.2),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: theme.colorScheme.outline.withOpacity(0.2),
+                color: theme.colorScheme.outline.withValues(alpha: theme.colorScheme.outline.opacity * 0.2),
               ),
             ),
             child: Row(

@@ -3,8 +3,6 @@ import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
 
-import 'package:alphanessone/trainingBuilder/models/training_model.dart';
-
 class WorkoutController {
   void addWorkout(TrainingProgram program, int weekIndex) {
     final newWorkout = Workout(

@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/repositories/training_repository.dart';
-import '../../../shared/shared.dart' hide WeekRepository, ExerciseRepository;
+import '../../../shared/shared.dart' hide ExerciseRepository, WeekRepository;
 
 /// Firestore implementation of repository interfaces
 /// Follows Dependency Inversion Principle
@@ -346,61 +346,7 @@ class FirestoreTrainingRepository implements TrainingRepository {
   }
 }
 
-/// Implementation for Exercise Repository
-class FirestoreExerciseRepository implements ExerciseRepository {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  @override
-  Future<String> addExerciseToWorkout(
-      String workoutId, Map<String, dynamic> exerciseData) async {
-    try {
-      final ref = await _db.collection('exercisesWorkout').add({
-        ...exerciseData,
-        'workoutId': workoutId,
-      });
-      return ref.id;
-    } catch (e) {
-      throw Exception('Failed to add exercise: $e');
-    }
-  }
-
-  @override
-  Future<void> updateExercise(
-      String exerciseId, Map<String, dynamic> exerciseData) async {
-    try {
-      await _db
-          .collection('exercisesWorkout')
-          .doc(exerciseId)
-          .update(exerciseData);
-    } catch (e) {
-      throw Exception('Failed to update exercise: $e');
-    }
-  }
-
-  @override
-  Future<void> removeExercise(String exerciseId) async {
-    try {
-      await _db.collection('exercisesWorkout').doc(exerciseId).delete();
-    } catch (e) {
-      throw Exception('Failed to remove exercise: $e');
-    }
-  }
-
-  @override
-  Future<List<Exercise>> getExercisesByWorkoutId(String workoutId) async {
-    try {
-      final snapshot = await _db
-          .collection('exercisesWorkout')
-          .where('workoutId', isEqualTo: workoutId)
-          .orderBy('order')
-          .get();
-
-      return snapshot.docs.map((doc) => Exercise.fromFirestore(doc)).toList();
-    } catch (e) {
-      throw Exception('Failed to fetch exercises: $e');
-    }
-  }
-}
 
 /// Implementation for Series Repository
 class FirestoreSeriesRepository implements SeriesRepository {
@@ -454,111 +400,6 @@ class FirestoreSeriesRepository implements SeriesRepository {
       return snapshot.docs.map((doc) => Series.fromFirestore(doc)).toList();
     } catch (e) {
       throw Exception('Failed to fetch series: $e');
-    }
-  }
-}
-
-/// Implementation for Week Repository
-class FirestoreWeekRepository implements WeekRepository {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
-
-  @override
-  Future<String> addWeekToProgram(
-      String programId, Map<String, dynamic> weekData) async {
-    try {
-      final ref = await _db.collection('weeks').add({
-        ...weekData,
-        'programId': programId,
-      });
-      return ref.id;
-    } catch (e) {
-      throw Exception('Failed to add week: $e');
-    }
-  }
-
-  @override
-  Future<void> updateWeek(String weekId, Map<String, dynamic> weekData) async {
-    try {
-      await _db.collection('weeks').doc(weekId).update(weekData);
-    } catch (e) {
-      throw Exception('Failed to update week: $e');
-    }
-  }
-
-  @override
-  Future<void> removeWeek(String weekId) async {
-    try {
-      await _db.collection('weeks').doc(weekId).delete();
-    } catch (e) {
-      throw Exception('Failed to remove week: $e');
-    }
-  }
-
-  @override
-  Future<List<Week>> getWeeksByProgramId(String programId) async {
-    try {
-      final snapshot = await _db
-          .collection('weeks')
-          .where('programId', isEqualTo: programId)
-          .orderBy('number')
-          .get();
-
-      return snapshot.docs.map((doc) => Week.fromFirestore(doc)).toList();
-    } catch (e) {
-      throw Exception('Failed to fetch weeks: $e');
-    }
-  }
-}
-
-/// Implementation for Workout Repository
-class FirestoreWorkoutRepository implements WorkoutRepository {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
-
-  @override
-  Future<String> addWorkoutToWeek(
-      String weekId, Map<String, dynamic> workoutData) async {
-    try {
-      final ref = await _db.collection('workouts').add({
-        ...workoutData,
-        'weekId': weekId,
-      });
-      return ref.id;
-    } catch (e) {
-      throw Exception('Failed to add workout: $e');
-    }
-  }
-
-  @override
-  Future<void> updateWorkout(
-      String workoutId, Map<String, dynamic> workoutData) async {
-    try {
-      await _db.collection('workouts').doc(workoutId).update(workoutData);
-    } catch (e) {
-      throw Exception('Failed to update workout: $e');
-    }
-  }
-
-  @override
-  Future<void> removeWorkout(String workoutId) async {
-    try {
-      await _db.collection('workouts').doc(workoutId).delete();
-    } catch (e) {
-      throw Exception('Failed to remove workout: $e');
-    }
-  }
-
-  @override
-  Future<List<Workout>> getWorkoutsByWeekId(String weekId) async {
-    try {
-      final snapshot = await _db
-          .collection('workouts')
-          .where('weekId', isEqualTo: weekId)
-          .orderBy('order')
-          .get();
-
-      return snapshot.docs.map((doc) => Workout.fromFirestore(doc)).toList();
-    } catch (e) {
-      throw Exception('Failed to fetch workouts: $e');
     }
   }
 }

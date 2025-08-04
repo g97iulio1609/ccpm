@@ -6,7 +6,6 @@ import '../controllers/series_controllers.dart';
 import '../controller/training_program_controller.dart';
 import '../series_utils.dart';
 import '../utility_functions.dart';
-import '../services/exercise_service.dart';
 import '../../UI/components/dialog.dart';
 import '../../UI/components/weight_input_fields.dart';
 import '../../Main/app_theme.dart';

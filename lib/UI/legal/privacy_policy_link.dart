@@ -64,11 +64,11 @@ class PrivacyPolicyLink extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             decoration: BoxDecoration(
               border: Border.all(
-                color: theme.colorScheme.outline.withOpacity(0.3),
+                color: theme.colorScheme.outline.withValues(alpha: theme.colorScheme.outline.opacity * 0.3),
                 width: 1,
               ),
               borderRadius: BorderRadius.circular(12),
-              color: theme.colorScheme.surface.withOpacity(0.5),
+              color: theme.colorScheme.surface.withValues(alpha: theme.colorScheme.surface.opacity * 0.5),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -76,7 +76,7 @@ class PrivacyPolicyLink extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withOpacity(0.1),
+                    color: theme.colorScheme.primary.withValues(alpha: theme.colorScheme.primary.opacity * 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(

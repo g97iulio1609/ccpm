@@ -256,7 +256,7 @@ class _MeasurementsContent extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final selectedComparisons = ref.watch(selectedMeasurementsProvider);
+    // Rimosso selectedComparisons inutilizzato per eliminare il warning.
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 

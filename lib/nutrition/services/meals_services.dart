@@ -44,6 +44,7 @@ class MealsService extends ChangeNotifier {
   }
 
   void _handleMealsUpdate(QuerySnapshot snapshot) {
+    // Genera la lista e aggiorna cache + stream; variabile locale utilizzata
     final mealsList = snapshot.docs.map((doc) {
       final meal = meals.Meal.fromFirestore(doc);
       _mealsCache[meal.id!] = meal;

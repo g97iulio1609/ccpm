@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/training_model.dart';
 import 'package:alphanessone/shared/shared.dart';
 import '../domain/services/week_business_service.dart';
-import '../shared/utils/validation_utils.dart';
 
 /// Controller refactorizzato per le operazioni sulle settimane
 /// Segue il principio Single Responsibility - solo presentazione

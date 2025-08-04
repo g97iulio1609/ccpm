@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:alphanessone/shared/shared.dart';
-import '../models/superseries_model.dart';
 import '../services/exercise_service.dart';
 import '../../Main/app_theme.dart';
 

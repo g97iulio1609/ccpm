@@ -1,19 +1,13 @@
 import 'package:alphanessone/shared/shared.dart' hide ValidationUtils, ModelUtils, WeekRepository;
-import '../repositories/training_repository.dart';
 import '../../shared/utils/validation_utils.dart';
 import '../../shared/utils/model_utils.dart';
 
 /// Business service per le operazioni sulle settimane
 /// Segue il principio Single Responsibility
 class WeekBusinessService {
-  final WeekRepository _weekRepository;
-  final WorkoutRepository _workoutRepository;
 
-  WeekBusinessService({
-    required WeekRepository weekRepository,
-    required WorkoutRepository workoutRepository,
-  })  : _weekRepository = weekRepository,
-        _workoutRepository = workoutRepository;
+
+  WeekBusinessService();
 
   /// Aggiunge una nuova settimana al programma
   void addWeek(TrainingProgram program) {

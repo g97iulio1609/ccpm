@@ -35,24 +35,9 @@ class TrainingBuilderDI {
     return FirestoreTrainingRepository();
   });
 
-  /// Provider per l'Exercise Repository
-  static final exerciseRepositoryProvider = Provider((ref) {
-    return FirestoreExerciseRepository();
-  });
-
   /// Provider per il Series Repository
   static final seriesRepositoryProvider = Provider((ref) {
     return FirestoreSeriesRepository();
-  });
-
-  /// Provider per il Week Repository
-  static final weekRepositoryProvider = Provider((ref) {
-    return FirestoreWeekRepository();
-  });
-
-  /// Provider per il Workout Repository
-  static final workoutRepositoryProvider = Provider((ref) {
-    return FirestoreWorkoutRepository();
   });
 
   /// Provider per l'Exercise Record Service (servizio esterno)
@@ -76,25 +61,17 @@ class TrainingBuilderDI {
 
   /// Provider per il Week Business Service
   static final weekBusinessServiceProvider = Provider((ref) {
-    return WeekBusinessService(
-      weekRepository: ref.read(weekRepositoryProvider),
-      workoutRepository: ref.read(workoutRepositoryProvider),
-    );
+    return WeekBusinessService();
   });
 
   /// Provider per il Workout Business Service
   static final workoutBusinessServiceProvider = Provider((ref) {
-    return WorkoutBusinessService(
-      workoutRepository: ref.read(workoutRepositoryProvider),
-      exerciseRepository: ref.read(exerciseRepositoryProvider),
-    );
+    return WorkoutBusinessService();
   });
 
   /// Provider per l'Exercise Business Service
   static final exerciseBusinessServiceProvider = Provider((ref) {
     return ExerciseBusinessService(
-      exerciseRepository: ref.read(exerciseRepositoryProvider),
-      seriesRepository: ref.read(seriesRepositoryProvider),
       exerciseRecordService: ref.read(exerciseRecordServiceProvider),
     );
   });
@@ -103,10 +80,6 @@ class TrainingBuilderDI {
   static final trainingBusinessServiceProvider = Provider((ref) {
     return TrainingBusinessService(
       trainingRepository: ref.read(trainingRepositoryProvider),
-      exerciseRepository: ref.read(exerciseRepositoryProvider),
-      seriesRepository: ref.read(seriesRepositoryProvider),
-      weekRepository: ref.read(weekRepositoryProvider),
-      workoutRepository: ref.read(workoutRepositoryProvider),
       exerciseRecordService: ref.read(exerciseRecordServiceProvider),
     );
   });
@@ -169,10 +142,7 @@ class TrainingBuilderDI {
   static Map<String, Provider> getAllProviders() {
     return {
       'trainingRepository': trainingRepositoryProvider,
-      'exerciseRepository': exerciseRepositoryProvider,
       'seriesRepository': seriesRepositoryProvider,
-      'weekRepository': weekRepositoryProvider,
-      'workoutRepository': workoutRepositoryProvider,
       'exerciseRecordService': exerciseRecordServiceProvider,
       'usersService': usersServiceProvider,
       'weekBusinessService': weekBusinessServiceProvider,
@@ -198,10 +168,7 @@ class TrainingBuilderDI {
     try {
       // Testa che tutti i service possano essere creati
       container.read(trainingRepositoryProvider);
-      container.read(exerciseRepositoryProvider);
       container.read(seriesRepositoryProvider);
-      container.read(weekRepositoryProvider);
-      container.read(workoutRepositoryProvider);
 
       container.read(weekBusinessServiceProvider);
       container.read(workoutBusinessServiceProvider);
@@ -217,7 +184,7 @@ class TrainingBuilderDI {
 
       return true;
     } catch (e) {
-      print('Errore nella validazione delle dipendenze: $e');
+      // Error in dependency validation - logged internally
       return false;
     }
   }

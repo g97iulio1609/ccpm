@@ -1,8 +1,6 @@
 import 'package:alphanessone/shared/shared.dart';
-import 'package:alphanessone/trainingBuilder/models/superseries_model.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
-import 'package:alphanessone/trainingBuilder/models/training_model.dart';
 
 class WeekController {
   void addWeek(TrainingProgram program) {

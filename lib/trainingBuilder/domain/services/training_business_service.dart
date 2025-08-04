@@ -1,5 +1,4 @@
-import '../../models/training_model.dart';
-import '../../../shared/shared.dart' hide ValidationUtils, ModelUtils;
+import '../../../shared/shared.dart' hide ValidationUtils, ModelUtils, ExerciseRepository, WeekRepository;
 import '../repositories/training_repository.dart';
 import '../../../ExerciseRecords/exercise_record_services.dart';
 import '../../shared/utils/validation_utils.dart';
@@ -10,24 +9,12 @@ import '../../utility_functions.dart';
 /// Follows Single Responsibility Principle
 class TrainingBusinessService {
   final TrainingRepository _trainingRepository;
-  final ExerciseRepository _exerciseRepository;
-  final SeriesRepository _seriesRepository;
-  final WeekRepository _weekRepository;
-  final WorkoutRepository _workoutRepository;
   final ExerciseRecordService _exerciseRecordService;
 
   TrainingBusinessService({
     required TrainingRepository trainingRepository,
-    required ExerciseRepository exerciseRepository,
-    required SeriesRepository seriesRepository,
-    required WeekRepository weekRepository,
-    required WorkoutRepository workoutRepository,
     required ExerciseRecordService exerciseRecordService,
   })  : _trainingRepository = trainingRepository,
-        _exerciseRepository = exerciseRepository,
-        _seriesRepository = seriesRepository,
-        _weekRepository = weekRepository,
-        _workoutRepository = workoutRepository,
         _exerciseRecordService = exerciseRecordService;
 
   /// Validates and saves a training program
@@ -54,6 +41,7 @@ class TrainingBusinessService {
       workouts: [
         Workout(
           id: '',
+          name: 'Workout 1',
           order: 1,
           exercises: [],
         ),
@@ -81,6 +69,7 @@ class TrainingBusinessService {
     }
 
     final newWorkout = Workout(
+      name: 'Workout ${program.weeks[weekIndex].workouts.length + 1}',
       order: program.weeks[weekIndex].workouts.length + 1,
       exercises: [],
     );
@@ -113,11 +102,12 @@ class TrainingBusinessService {
       throw ArgumentError('Invalid exercise data');
     }
 
-    exercise.id = null;
-    exercise.order =
-        program.weeks[weekIndex].workouts[workoutIndex].exercises.length + 1;
-    exercise.weekProgressions = List.generate(program.weeks.length, (_) => []);
-    program.weeks[weekIndex].workouts[workoutIndex].exercises.add(exercise);
+    final exerciseToAdd = exercise.copyWith(
+      id: null,
+      order: program.weeks[weekIndex].workouts[workoutIndex].exercises.length + 1,
+      weekProgressions: List.generate(program.weeks.length, (_) => []),
+    );
+    program.weeks[weekIndex].workouts[workoutIndex].exercises.add(exerciseToAdd);
   }
 
   /// Removes an exercise from a workout

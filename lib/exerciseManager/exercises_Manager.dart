@@ -75,7 +75,7 @@ class ExercisesList extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final searchController = useTextEditingController();
     final selectedMuscleGroups = useState<List<String>>([]);
-    final selectedExerciseType = useState<String?>(null);
+    // Rimosso: selectedExerciseType locale non utilizzato per evitare warning.
     final exercisesState = ref.watch(exerciseListControllerProvider);
     final controller = ref.watch(exerciseListControllerProvider.notifier);
     final currentUserRole = ref.watch(userRoleProvider);

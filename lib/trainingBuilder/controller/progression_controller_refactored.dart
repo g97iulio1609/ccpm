@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import '../models/training_model.dart';
 import 'package:alphanessone/shared/shared.dart';
 import '../models/progressions_model.dart';
 import '../models/progression_view_model.dart';
 import '../services/progression_business_service_optimized.dart';
-import '../shared/utils/validation_utils.dart';
 
 /// Controller refactorizzato per le operazioni sulle progressioni
 /// Segue il principio Single Responsibility - solo presentazione
@@ -20,17 +18,16 @@ class ProgressionControllerRefactored extends ChangeNotifier {
   List<List<WeekProgression>> get weekProgressions => _weekProgressions;
 
   /// Costruisce le progressioni settimanali per un esercizio
-  void buildWeekProgressions(
-    List<Week> weeks,
-    Exercise exercise,
-  ) {
+  void buildWeekProgressions(List<Week> weeks, Exercise exercise) {
     _clearError();
 
     try {
       _setLoading(true);
       _weekProgressions =
           ProgressionBusinessServiceOptimized.buildWeekProgressions(
-              weeks, exercise);
+            weeks,
+            exercise,
+          );
       notifyListeners();
     } catch (e) {
       _setError('Errore nella costruzione delle progressioni: $e');
@@ -135,7 +132,9 @@ class ProgressionControllerRefactored extends ChangeNotifier {
     try {
       if (group.isEmpty) return null;
       return ProgressionBusinessServiceOptimized.getRepresentativeSeries(
-          group, groupIndex);
+        group,
+        groupIndex,
+      );
     } catch (e) {
       _setError('Errore nell\'ottenimento della serie rappresentativa: $e');
       return null;
@@ -154,27 +153,33 @@ class ProgressionControllerRefactored extends ChangeNotifier {
     try {
       final export = <String, dynamic>{};
 
-      for (int weekIndex = 0;
-          weekIndex < _weekProgressions.length;
-          weekIndex++) {
+      for (
+        int weekIndex = 0;
+        weekIndex < _weekProgressions.length;
+        weekIndex++
+      ) {
         final weekData = <String, dynamic>{};
 
-        for (int sessionIndex = 0;
-            sessionIndex < _weekProgressions[weekIndex].length;
-            sessionIndex++) {
+        for (
+          int sessionIndex = 0;
+          sessionIndex < _weekProgressions[weekIndex].length;
+          sessionIndex++
+        ) {
           final session = _weekProgressions[weekIndex][sessionIndex];
           weekData['session_${sessionIndex + 1}'] = {
             'weekNumber': session.weekNumber,
             'sessionNumber': session.sessionNumber,
             'seriesCount': session.series.length,
             'series': session.series
-                .map((s) => {
-                      'reps': s.reps,
-                      'sets': s.sets,
-                      'weight': s.weight,
-                      'intensity': s.intensity,
-                      'rpe': s.rpe,
-                    })
+                .map(
+                  (s) => {
+                    'reps': s.reps,
+                    'sets': s.sets,
+                    'weight': s.weight,
+                    'intensity': s.intensity,
+                    'rpe': s.rpe,
+                  },
+                )
                 .toList(),
           };
         }
@@ -225,11 +230,13 @@ class ProgressionControllerRefactored extends ChangeNotifier {
             );
           }).toList();
 
-          weekProgressions.add(WeekProgression(
-            weekNumber: sessionData['weekNumber'] ?? 1,
-            sessionNumber: sessionData['sessionNumber'] ?? 1,
-            series: series,
-          ));
+          weekProgressions.add(
+            WeekProgression(
+              weekNumber: sessionData['weekNumber'] ?? 1,
+              sessionNumber: sessionData['sessionNumber'] ?? 1,
+              series: series,
+            ),
+          );
         }
 
         newProgressions.add(weekProgressions);
@@ -252,8 +259,9 @@ class ProgressionControllerRefactored extends ChangeNotifier {
         return AlertDialog(
           title: const Text('Conferma Reset'),
           content: const Text(
-              'Sei sicuro di voler resettare tutte le progressioni?\n\n'
-              'Questa azione non può essere annullata.'),
+            'Sei sicuro di voler resettare tutte le progressioni?\n\n'
+            'Questa azione non può essere annullata.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),

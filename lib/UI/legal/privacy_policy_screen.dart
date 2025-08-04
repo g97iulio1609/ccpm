@@ -13,7 +13,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen>
     with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
-  
+
   @override
   void initState() {
     super.initState();
@@ -21,16 +21,12 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeInOut,
-    ));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    );
     _fadeController.forward();
   }
-  
+
   @override
   void dispose() {
     _fadeController.dispose();
@@ -40,7 +36,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       body: CustomScrollView(
@@ -54,7 +50,10 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen>
             leading: Container(
               margin: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceVariant.withOpacity(0.8),
+                color: theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha:
+                      theme.colorScheme.surfaceContainerHighest.opacity * 0.8,
+                ),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: IconButton(
@@ -85,7 +84,9 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen>
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      theme.colorScheme.primary.withOpacity(0.1),
+                      theme.colorScheme.primary.withValues(
+                        alpha: theme.colorScheme.primary.opacity * 0.1,
+                      ),
                       theme.colorScheme.surface,
                     ],
                   ),
@@ -117,11 +118,11 @@ class PrivacyPolicyContent extends StatefulWidget {
 
 class _PrivacyPolicyContentState extends State<PrivacyPolicyContent> {
   final Map<String, bool> _expandedSections = {};
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -133,13 +134,19 @@ class _PrivacyPolicyContentState extends State<PrivacyPolicyContent> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                theme.colorScheme.primaryContainer.withOpacity(0.3),
-                theme.colorScheme.secondaryContainer.withOpacity(0.2),
+                theme.colorScheme.primaryContainer.withValues(
+                  alpha: theme.colorScheme.primaryContainer.opacity * 0.3,
+                ),
+                theme.colorScheme.secondaryContainer.withValues(
+                  alpha: theme.colorScheme.secondaryContainer.opacity * 0.2,
+                ),
               ],
             ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: theme.colorScheme.outline.withOpacity(0.2),
+              color: theme.colorScheme.outline.withValues(
+                alpha: theme.colorScheme.outline.opacity * 0.2,
+              ),
             ),
           ),
           child: Column(
@@ -174,7 +181,9 @@ class _PrivacyPolicyContentState extends State<PrivacyPolicyContent> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.1),
+                  color: theme.colorScheme.primary.withValues(
+                    alpha: theme.colorScheme.primary.opacity * 0.1,
+                  ),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -188,7 +197,6 @@ class _PrivacyPolicyContentState extends State<PrivacyPolicyContent> {
             ],
           ),
         ),
-
 
         _buildExpandableSection(
           context,
@@ -333,7 +341,7 @@ g) Revoca del consenso: revocare il consenso in qualsiasi momento
 h) Reclamo: presentare reclamo all'autorità di controllo
 i) Non essere sottoposto a decisioni automatizzate
 
-Per esercitare i tuoi diritti, contattaci all'indirizzo: giulio.leone.dev@gmail.com
+Per esercitare i tuoi diritti, contattaci all'indirizzo: giulio97.leone@gmail.com
 Risponderemo entro 30 giorni dalla richiesta.''',
           'diritti',
         ),
@@ -511,14 +519,18 @@ Hai il diritto di presentare reclamo se ritieni che il trattamento dei tuoi dati
   ) {
     final theme = Theme.of(context);
     final isExpanded = _expandedSections[sectionKey] ?? false;
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(
+          alpha: theme.colorScheme.surfaceContainerHighest.opacity * 0.3,
+        ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.2),
+          color: theme.colorScheme.outline.withValues(
+            alpha: theme.colorScheme.outline.opacity * 0.2,
+          ),
         ),
       ),
       child: Column(
@@ -538,7 +550,9 @@ Hai il diritto di presentare reclamo se ritieni che il trattamento dei tuoi dati
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withOpacity(0.1),
+                      color: theme.colorScheme.primary.withValues(
+                        alpha: theme.colorScheme.primary.opacity * 0.1,
+                      ),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(

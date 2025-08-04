@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import '../models/training_model.dart';
 import 'package:alphanessone/shared/shared.dart';
 import '../domain/services/workout_business_service.dart';
-import '../shared/utils/validation_utils.dart';
+import '../shared/utils/validation_utils.dart' as local_validation_utils;
 
 /// Controller refactorizzato per le operazioni sui workout
 /// Segue il principio Single Responsibility - solo presentazione
@@ -112,7 +111,7 @@ class WorkoutControllerRefactored extends ChangeNotifier {
 
   /// Valida i workout di una settimana
   bool validateWeekWorkouts(int weekIndex, TrainingProgram program) {
-    if (!ValidationUtils.isValidProgramIndex(program, weekIndex)) {
+    if (!local_validation_utils.ValidationUtils.isValidProgramIndex(program, weekIndex)) {
       return false;
     }
 
@@ -127,7 +126,7 @@ class WorkoutControllerRefactored extends ChangeNotifier {
   /// Ottiene statistiche sui workout per una settimana
   Map<String, dynamic> getWorkoutStatistics(
       int weekIndex, TrainingProgram program) {
-    if (!ValidationUtils.isValidProgramIndex(program, weekIndex)) {
+    if (!local_validation_utils.ValidationUtils.isValidProgramIndex(program, weekIndex)) {
       return {};
     }
 

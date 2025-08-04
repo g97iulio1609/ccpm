@@ -1,19 +1,13 @@
 import 'package:alphanessone/shared/shared.dart' hide ValidationUtils, ModelUtils, ExerciseRepository;
-import '../repositories/training_repository.dart';
 import '../../shared/utils/validation_utils.dart';
 import '../../shared/utils/model_utils.dart';
 
 /// Business service per le operazioni sui workout
 /// Segue il principio Single Responsibility
 class WorkoutBusinessService {
-  final WorkoutRepository _workoutRepository;
-  final ExerciseRepository _exerciseRepository;
 
-  WorkoutBusinessService({
-    required WorkoutRepository workoutRepository,
-    required ExerciseRepository exerciseRepository,
-  })  : _workoutRepository = workoutRepository,
-        _exerciseRepository = exerciseRepository;
+
+  WorkoutBusinessService();
 
   /// Aggiunge un nuovo workout alla settimana
   void addWorkout(TrainingProgram program, int weekIndex) {
