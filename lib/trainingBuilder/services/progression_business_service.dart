@@ -88,7 +88,7 @@ class ProgressionBusinessService {
         }).toList();
 
         // Validate updated group
-        if (updatedGroup.any((series) => series == null)) {
+        if (updatedGroup.isEmpty) {
           throw Exception('Failed to update series: invalid series data');
         }
 
@@ -130,7 +130,7 @@ class ProgressionBusinessService {
         if (session.series.isEmpty) continue;
 
         for (final series in session.series) {
-          if (series == null || !_isValidSeries(series)) {
+          if (!_isValidSeries(series)) {
             return false;
           }
         }
@@ -150,9 +150,6 @@ class ProgressionBusinessService {
     }
 
     final firstSeries = group.first;
-    if (firstSeries == null) {
-      throw ArgumentError('First series in group cannot be null');
-    }
 
     try {
       return firstSeries.copyWith(sets: group.length);
@@ -228,8 +225,9 @@ class ProgressionBusinessService {
       if (series.reps < 0 || series.sets < 0) return false;
       if (series.weight < 0) return false;
       if (series.maxReps != null && series.maxReps! < series.reps) return false;
-      if (series.maxWeight != null && series.maxWeight! < series.weight)
+      if (series.maxWeight != null && series.maxWeight! < series.weight) {
         return false;
+      }
 
       return true;
     } catch (e) {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/shared/shared.dart';
-import 'package:alphanessone/trainingBuilder/models/superseries_model.dart';
+
 
 class ExerciseCard extends StatelessWidget {
   final Exercise exercise;
@@ -115,10 +115,10 @@ class ExerciseCard extends StatelessWidget {
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
-        if (exercise.variant.isNotEmpty) ...[
+        if (exercise.variant?.isNotEmpty ?? false) ...[
           SizedBox(height: AppTheme.spacing.xs),
           Text(
-            exercise.variant,
+            exercise.variant!,
             style: theme.textTheme.bodyLarge?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),

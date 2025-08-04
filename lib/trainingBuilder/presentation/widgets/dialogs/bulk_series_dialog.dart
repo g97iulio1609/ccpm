@@ -111,9 +111,9 @@ class BulkSeriesSelectionDialog extends HookConsumerWidget {
           color: colorScheme.onSurface,
         ),
       ),
-      subtitle: exercise.variant.isNotEmpty
+      subtitle: (exercise.variant?.isNotEmpty ?? false)
           ? Text(
-              exercise.variant,
+              exercise.variant!,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),

@@ -370,7 +370,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                 : colorScheme.onSurfaceVariant,
           ),
           onPressed: () => _showNoteDialog(
-              exercise.id, exercise.name, exercise.note, notifier),
+                exercise.id ?? '', exercise.name, exercise.note, notifier),
           tooltip: 'Nota',
         ),
       ],
@@ -493,7 +493,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                   : colorScheme.onSurfaceVariant,
             ),
             onPressed: () => _showNoteDialog(
-                exercise.id, exercise.name, exercise.note, notifier),
+                exercise.id ?? '', exercise.name, exercise.note, notifier),
             tooltip: 'Nota',
           ),
         ],
@@ -850,7 +850,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
         ExerciseTimerBottomSheet.show(
           context: context,
           userId: widget.userId,
-          exerciseId: exercise.id,
+          exerciseId: exercise.id ?? '',
           workoutId: widget.workoutId,
           exerciseName: exercise.name,
           onSeriesComplete: (repsDone, weightDone) {
@@ -915,7 +915,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
         ExerciseTimerBottomSheet.show(
           context: context,
           userId: widget.userId,
-          exerciseId: firstExercise.id,
+          exerciseId: firstExercise.id ?? '',
           workoutId: widget.workoutId,
           exerciseName: firstExercise.name,
           onSeriesComplete: (repsDone, weightDone) {

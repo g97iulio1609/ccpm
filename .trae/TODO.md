@@ -1,8 +1,9 @@
 # TODO:
 
-- [x] privacy_consent_model: Creare modello PrivacyConsent per tracciare consenso GDPR con tutti i campi necessari (priority: High)
-- [x] update_user_model: Aggiornare UserModel per includere campi di consenso privacy (priority: High)
-- [x] privacy_consent_service: Creare servizio PrivacyConsentService per gestire il consenso nel database (priority: High)
-- [x] add_consent_checkbox: Modificare auth_form.dart per includere checkbox obbligatorio consenso privacy (priority: High)
-- [x] improve_privacy_ui: Migliorare esteticamente la privacy policy screen con design moderno (priority: Medium)
-- [x] test_consent_system: Testare il sistema completo di tracciamento consenso (priority: Medium)
+- [x] analyze_errors: Analizzare e classificare tutti i 420 errori trovati da flutter analyze (priority: High)
+- [x] fix_critical: Correggere errori critici: file mancanti nel modulo Viewer (week.dart, workout.dart, exercise.dart) (priority: High)
+- [x] fix_type_errors: Correggere errori di tipo: argument_type_not_assignable (String? vs String) (priority: High)
+- [x] fix_remaining_errors: Correggere errori rimanenti: unchecked_use_of_nullable_value, argument_type_not_assignable in vari file (priority: High)
+- [x] fix_warnings: Correggere warning: variabili non utilizzate, operatori null non necessari, cast non necessari (priority: Medium)
+- [x] final_check: Eseguire flutter analyze finale per verificare che tutti gli errori siano stati corretti (priority: Medium)
+- [x] fix_info: Correggere info: import non necessari, annotazioni di tipo mancanti, BuildContext async, nomi file (priority: Low)

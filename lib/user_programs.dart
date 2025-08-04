@@ -512,6 +512,7 @@ class UserProgramsScreen extends HookConsumerWidget {
 
     if (newProgramName != null && newProgramName.isNotEmpty) {
       try {
+        if (!context.mounted) return;
         final result =
             await controller.duplicateProgram(docId, newProgramName, context);
         if (context.mounted) {

@@ -271,7 +271,7 @@ class _WeekView extends ConsumerWidget {
           workout: workout,
           userId: userId,
           programId: programId,
-          weekId: week.id,
+          weekId: week.id ?? '',
         );
       },
     );
@@ -318,7 +318,7 @@ class _WorkoutCard extends StatelessWidget {
                 userId: userId,
                 programId: programId,
                 weekId: weekId,
-                workoutId: workout.id,
+                workoutId: workout.id ?? '',
               ),
             ),
           );

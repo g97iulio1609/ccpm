@@ -96,10 +96,10 @@ class WorkoutDetailsNotifier extends StateNotifier<WorkoutDetailsState> {
   }
 
   Future<void> saveExerciseNote(String exerciseId, String note) async {
-    if (state.workout == null) return;
+    if (state.workout == null || state.workout!.id == null) return;
     try {
       await _saveExerciseNoteUseCase.call(SaveExerciseNoteParams(
-        workoutId: state.workout!.id,
+        workoutId: state.workout!.id!,
         exerciseId: exerciseId,
         note: note,
       ));
@@ -112,10 +112,10 @@ class WorkoutDetailsNotifier extends StateNotifier<WorkoutDetailsState> {
   }
 
   Future<void> deleteExerciseNote(String exerciseId) async {
-    if (state.workout == null) return;
+    if (state.workout == null || state.workout!.id == null) return;
     try {
       await _deleteExerciseNoteUseCase.call(DeleteExerciseNoteParams(
-        workoutId: state.workout!.id,
+        workoutId: state.workout!.id!,
         exerciseId: exerciseId,
       ));
       // Ricarica per vedere la nota rimossa

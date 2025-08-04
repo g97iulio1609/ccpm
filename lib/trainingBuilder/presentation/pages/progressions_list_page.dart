@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:alphanessone/shared/shared.dart';
-import 'package:alphanessone/trainingBuilder/models/progressions_model.dart';
+
 import 'package:alphanessone/trainingBuilder/models/progression_view_model.dart';
 import 'package:alphanessone/trainingBuilder/controllers/progression_controllers.dart';
 import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
@@ -229,8 +229,8 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
       if (session.series.isEmpty) return;
 
       // Get the first series as representative if available
-      final firstSeries = session.series.first;
-      if (firstSeries != null) {
+      if (session.series.isNotEmpty) {
+        final firstSeries = session.series.first;
         final representativeSeries =
             firstSeries.copyWith(sets: session.series.length);
 
@@ -284,7 +284,7 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
     }
   }
 
-  void _updateProgressionsWithNewSeries(weekProgressions) {
+  void _updateProgressionsWithNewSeries(List<List<WeekProgression>> weekProgressions) {
     ref
         .read(trainingProgramControllerProvider)
         .updateWeekProgressions(weekProgressions, widget.exercise!.exerciseId!);

@@ -144,7 +144,7 @@ class ProgressionBusinessServiceOptimized {
     return weekProgressions.every((week) {
       return week.every((session) {
         return session.series.every((series) {
-          return tb_validation.ValidationUtils.isValidSeries(series as Series);
+          return tb_validation.ValidationUtils.isValidSeries(series);
         });
       });
     });

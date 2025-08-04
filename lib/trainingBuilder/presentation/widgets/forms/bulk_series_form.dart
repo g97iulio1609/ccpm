@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/series_utils.dart';
-import 'package:alphanessone/trainingBuilder/utility_functions.dart';
+
 import 'package:alphanessone/providers/providers.dart';
 import '../../../shared/widgets/number_input_field.dart';
 
@@ -281,49 +281,8 @@ class BulkSeriesForm extends HookConsumerWidget {
     String maxRpe,
     Map<String, num> maxWeights,
   ) {
-    final setsValue = int.tryParse(sets) ?? 1;
-    final repsValue = int.tryParse(reps) ?? 12;
-    final maxRepsValue = maxReps.isNotEmpty ? int.tryParse(maxReps) : null;
-
-    for (var exercise in exercises) {
-      final maxWeight = maxWeights[exercise.exerciseId] ?? 0;
-      final intensityValue = double.tryParse(intensity) ?? 0;
-      final maxIntensityValue =
-          maxIntensity.isNotEmpty ? double.tryParse(maxIntensity) : null;
-
-      final calculatedWeight = maxWeight > 0
-          ? SeriesUtils.calculateWeightFromIntensity(
-              maxWeight.toDouble(), intensityValue)
-          : 0.0;
-
-      final calculatedMaxWeight = maxIntensityValue != null && maxWeight > 0
-          ? SeriesUtils.calculateWeightFromIntensity(
-              maxWeight.toDouble(), maxIntensityValue)
-          : null;
-
-      final newSeries = List.generate(
-        setsValue,
-        (index) => Series(
-          serieId: generateRandomId(16),
-          reps: repsValue,
-          maxReps: maxRepsValue,
-          sets: 1,
-          intensity: intensity,
-          maxIntensity: maxIntensity.isNotEmpty ? maxIntensity : null,
-          rpe: rpe,
-          maxRpe: maxRpe.isNotEmpty ? maxRpe : null,
-          weight: calculatedWeight,
-          maxWeight: calculatedMaxWeight,
-          order: index + 1,
-          done: false,
-          reps_done: 0,
-          weight_done: 0,
-        ),
-      );
-
-      exercise.series = newSeries;
-    }
-
+    // Note: Exercise series is immutable, this should be handled by the parent component
+    // The parent should update the exercise with the new series
     onApply(exercises);
   }
 }

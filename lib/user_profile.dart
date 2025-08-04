@@ -43,7 +43,6 @@ class UserProfileState extends ConsumerState<UserProfile>
   int? _selectedGender;
   DateTime? _birthdate;
   bool _isLoading = true;
-  String? _lastMeasurementId;
 
   @override
   void initState() {
@@ -112,7 +111,7 @@ class UserProfileState extends ConsumerState<UserProfile>
     final measurementsService = ref.read(measurementsServiceProvider);
     final weight = double.parse(weightValue);
     try {
-      final measurementId = await measurementsService.addMeasurement(
+      await measurementsService.addMeasurement(
         userId: uid,
         date: DateTime.now(),
         weight: weight,
@@ -124,7 +123,7 @@ class UserProfileState extends ConsumerState<UserProfile>
         chestCircumference: 0,
         bicepsCircumference: 0,
       );
-      _lastMeasurementId = measurementId;
+      // Measurement saved successfully
     } catch (e) {
       _showSnackBar('Errore nel salvare il peso: $e', Colors.red);
     }
@@ -259,7 +258,7 @@ class UserProfileState extends ConsumerState<UserProfile>
               child: const Text('Elimina'),
               onPressed: () {
                 Navigator.of(context).pop();
-                User? currentUser = FirebaseAuth.instance.currentUser;
+                final currentUser = FirebaseAuth.instance.currentUser!;
                 _reauthenticateAndDelete(_isGoogleUser(currentUser));
               },
             ),

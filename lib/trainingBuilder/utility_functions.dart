@@ -44,7 +44,7 @@ double roundWeight(double weight, String? exerciseType) {
   }
 
 
-double calculateWeightFromIntensity(latestMaxWeight, double intensity) {
+double calculateWeightFromIntensity(num latestMaxWeight, double intensity) {
   return (latestMaxWeight * intensity) / 100;
 }
 

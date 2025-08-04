@@ -419,7 +419,7 @@ class TrainingGalleryScreen extends HookConsumerWidget {
                     return SetCurrentProgramDialog(programId: doc.id);
                   },
                 );
-                if (result == true) {
+                if (result == true && context.mounted) {
                   await setCurrentProgram(context, ref, doc.id, programName);
                 }
               },

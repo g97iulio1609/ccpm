@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/shared/shared.dart';
-import 'package:alphanessone/trainingBuilder/models/progressions_model.dart';
+
 import 'package:alphanessone/trainingBuilder/controllers/progression_controllers.dart';
 
 /// View model for progression data following MVVM pattern

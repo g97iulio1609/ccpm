@@ -3,7 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/shared/shared.dart';
-import 'package:alphanessone/trainingBuilder/models/superseries_model.dart';
+
 import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
 import 'package:alphanessone/trainingBuilder/presentation/widgets/cards/exercise_card.dart';
 import 'package:alphanessone/trainingBuilder/presentation/widgets/dialogs/bulk_series_dialog.dart';
@@ -120,8 +120,9 @@ class ExercisesPage extends ConsumerWidget {
     dynamic exerciseRecordService,
   ) {
     final workout = controller.program.weeks[weekIndex].workouts[workoutIndex];
-    final superSets = workout.superSets
-        .where((ss) => ss.exerciseIds.contains(exercise.id))
+    final superSets = (workout.superSets as List<dynamic>? ?? [])
+        .where((ss) => (ss['exerciseIds'] as List<dynamic>? ?? []).contains(exercise.id))
+        .map((ss) => SuperSet.fromMap(ss as Map<String, dynamic>))
         .toList();
 
     return FutureBuilder<num>(

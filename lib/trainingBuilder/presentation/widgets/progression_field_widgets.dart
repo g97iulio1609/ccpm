@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/trainingBuilder/shared/widgets/progression_components.dart';
 import 'package:alphanessone/trainingBuilder/controllers/progression_controllers.dart';

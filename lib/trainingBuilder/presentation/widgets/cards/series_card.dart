@@ -161,8 +161,8 @@ class SeriesCard extends StatelessWidget {
     final weight =
         _formatRange(series.weight.toString(), series.maxWeight?.toString());
     final intensity =
-        series.intensity.isNotEmpty ? ' (${series.intensity}%)' : '';
-    final rpe = series.rpe.isNotEmpty ? ' RPE ${series.rpe}' : '';
+        (series.intensity?.isNotEmpty ?? false) ? ' (${series.intensity}%)' : '';
+    final rpe = (series.rpe?.isNotEmpty ?? false) ? ' RPE ${series.rpe}' : '';
 
     return '$reps reps × $weight kg$intensity$rpe';
   }

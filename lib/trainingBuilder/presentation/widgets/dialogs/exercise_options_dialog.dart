@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
 import 'package:alphanessone/shared/shared.dart';
-import 'package:alphanessone/trainingBuilder/models/superseries_model.dart';
+
 import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
 import 'package:alphanessone/trainingBuilder/List/progressions_list.dart';
 import 'package:alphanessone/providers/providers.dart';
@@ -38,11 +38,11 @@ class ExerciseOptionsDialog extends ConsumerWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final workout = controller.program.weeks[weekIndex].workouts[workoutIndex];
-    final superSet = workout.superSets.firstWhere(
-      (ss) => ss.exerciseIds.contains(exercise.id),
-      orElse: () => SuperSet(id: '', exerciseIds: []),
-    );
-    final isInSuperSet = superSet.id.isNotEmpty;
+    final superSet = workout.superSets?.cast<Map<String, dynamic>>().firstWhere(
+      (ss) => (ss['exerciseIds'] as List?)?.contains(exercise.id) == true,
+      orElse: () => <String, dynamic>{'id': '', 'exerciseIds': []},
+    ) ?? <String, dynamic>{'id': '', 'exerciseIds': []};
+    final isInSuperSet = (superSet['id'] as String?)?.isNotEmpty == true;
 
     return BottomMenu(
       title: exercise.name,
@@ -110,7 +110,7 @@ class ExerciseOptionsDialog extends ConsumerWidget {
               controller.removeExerciseFromSuperSet(
                 weekIndex,
                 workoutIndex,
-                superSet.id,
+                superSet['id'] as String,
                 exercise.id!,
               );
             },
@@ -196,16 +196,18 @@ class ExerciseOptionsDialog extends ConsumerWidget {
         controller.program.weeks[weekIndex].workouts[workoutIndex].superSets;
     String? selectedSuperSetId;
 
-    if (superSets.isEmpty) {
+    if (superSets?.isEmpty ?? true) {
       controller.createSuperSet(weekIndex, workoutIndex);
       selectedSuperSetId = controller
-          .program.weeks[weekIndex].workouts[workoutIndex].superSets.first.id;
-      controller.addExerciseToSuperSet(
-        weekIndex,
-        workoutIndex,
-        selectedSuperSetId,
-        exercise.id!,
-      );
+          .program.weeks[weekIndex].workouts[workoutIndex].superSets?.first['id'] as String?;
+      if (selectedSuperSetId != null) {
+        controller.addExerciseToSuperSet(
+          weekIndex,
+          workoutIndex,
+          selectedSuperSetId,
+          exercise.id!,
+        );
+      }
     } else {
       showDialog<String>(
         context: context,
@@ -216,12 +218,12 @@ class ExerciseOptionsDialog extends ConsumerWidget {
                 title: const Text('Aggiungi al Superset'),
                 content: DropdownButtonFormField<String>(
                   value: selectedSuperSetId,
-                  items: superSets.map((ss) {
+                  items: superSets?.map((ss) {
                     return DropdownMenuItem<String>(
-                      value: ss.id,
-                      child: Text(ss.name ?? 'Superset ${ss.id}'),
+                      value: ss['id'] as String?,
+                      child: Text(ss['name'] as String? ?? 'Superset ${ss['id']}'),
                     );
-                  }).toList(),
+                  }).toList() ?? [],
                   onChanged: (value) {
                     setState(() {
                       selectedSuperSetId = value;
@@ -236,12 +238,12 @@ class ExerciseOptionsDialog extends ConsumerWidget {
                     onPressed: () => Navigator.of(dialogContext).pop(null),
                     child: const Text('Annulla'),
                   ),
-                  if (superSets.isNotEmpty)
+                  if (superSets?.isNotEmpty == true)
                     TextButton(
                       onPressed: () {
                         controller.createSuperSet(weekIndex, workoutIndex);
                         setState(() {});
-                        Navigator.of(dialogContext).pop(superSets.last.id);
+                        Navigator.of(dialogContext).pop(superSets?.isNotEmpty == true ? superSets!.last['id'] as String? : null);
                       },
                       child: const Text('Crea Nuovo Superset'),
                     ),

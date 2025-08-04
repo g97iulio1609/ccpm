@@ -29,6 +29,7 @@ class RangeSeriesTranslator {
       for (int j = 0; j < (isSetRange ? currentSets : totalSets); j++) {
         translatedSeries.add(Series(
           serieId: generateRandomId(16),
+          exerciseId: '',
           reps: currentReps,
           sets: 1,
           intensity: currentIntensity,
@@ -36,8 +37,8 @@ class RangeSeriesTranslator {
           weight: currentWeight,
           order: currentOrder++,
           done: false,
-          reps_done: 0,
-          weight_done: 0.0,
+          repsDone: 0,
+          weightDone: 0.0,
         ));
       }
     }

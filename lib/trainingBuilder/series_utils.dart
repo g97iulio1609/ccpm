@@ -2,7 +2,6 @@ import 'package:flutter/material.dart'; // Per TextEditingController e ValueNoti
 
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 import 'package:alphanessone/shared/shared.dart';
-import 'package:alphanessone/trainingBuilder/models/training_model.dart';
 
 // Utility per calcoli relativi alle serie di allenamento.
 // Fornisce metodi per calcolare peso, intensità, RPE e per aggiornare
