@@ -142,15 +142,29 @@ class ExerciseController extends ChangeNotifier {
         final item = series[i];
         final intensity = item.intensity != null && item.intensity!.isNotEmpty 
             ? double.tryParse(item.intensity!) : null;
+        final maxIntensity = item.maxIntensity != null && item.maxIntensity!.isNotEmpty 
+            ? double.tryParse(item.maxIntensity!) : null;
 
+        double? newWeight;
+        double? newMaxWeight;
+        
         if (intensity != null) {
           final calculatedWeight =
               calculateWeightFromIntensity(maxWeight, intensity);
-          final roundedWeight = roundWeight(calculatedWeight, exerciseType);
-          
-          // Update the series with the new weight
-          series[i] = item.copyWith(weight: roundedWeight);
+          newWeight = roundWeight(calculatedWeight, exerciseType);
         }
+        
+        if (maxIntensity != null) {
+          final calculatedMaxWeight =
+              calculateWeightFromIntensity(maxWeight, maxIntensity);
+          newMaxWeight = roundWeight(calculatedMaxWeight, exerciseType);
+        }
+          
+        // Update the series with the new weights
+        series[i] = item.copyWith(
+          weight: newWeight ?? item.weight,
+          maxWeight: newMaxWeight ?? item.maxWeight,
+        );
       }
     }
   }

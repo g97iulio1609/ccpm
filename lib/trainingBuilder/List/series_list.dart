@@ -2,6 +2,7 @@ import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/models/superseries_model.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../controller/training_program_controller.dart';
@@ -253,6 +254,16 @@ class TrainingProgramSeriesListState
         );
   }
 
+  /// Salva automaticamente il programma dopo le modifiche alle serie
+  void _autoSaveProgram() async {
+    try {
+      await widget.controller.submitProgram(context);
+    } catch (e) {
+      // Gestione silenziosa degli errori per non interrompere l'UX
+      debugPrint('Errore durante il salvataggio automatico: $e');
+    }
+  }
+
   void _removeSeriesFromGroup(List<Series> seriesGroup, int seriesIndex) {
     seriesGroup.removeAt(seriesIndex);
     widget.controller.updateSeries(
@@ -328,11 +339,24 @@ class TrainingProgramSeriesListState
         .indexWhere((s) => s.serieId == oldSeriesGroup.first.serieId);
 
     if (startIndex != -1) {
+      // Se il numero di serie è stato ridotto, aggiungi le serie rimosse a trackToDeleteSeries
+      if (updatedSeries.length < oldSeriesGroup.length) {
+        for (int i = updatedSeries.length; i < oldSeriesGroup.length; i++) {
+          final seriesToDelete = oldSeriesGroup[i];
+          if (seriesToDelete.serieId != null) {
+            widget.controller.program.trackToDeleteSeries.add(seriesToDelete.serieId!);
+          }
+        }
+      }
+      
       exercise.series
           .removeRange(startIndex, startIndex + oldSeriesGroup.length);
       exercise.series.insertAll(startIndex, updatedSeries);
       _reorderSeriesNumbers();
       _updateSeriesInController();
+      
+      // Salvataggio automatico dopo le modifiche
+      _autoSaveProgram();
     }
   }
 
@@ -341,6 +365,9 @@ class TrainingProgramSeriesListState
     exercise.series.addAll(newSeries);
     _reorderSeriesNumbers();
     _updateSeriesInController();
+    
+    // Salvataggio automatico dopo l'aggiunta
+    _autoSaveProgram();
   }
 
   void _reorderSeriesNumbers() {
@@ -423,6 +450,9 @@ class TrainingProgramSeriesListState
     exercise.series.removeWhere((series) => seriesGroup.contains(series));
     _reorderSeriesNumbers();
     _updateSeriesInController();
+    
+    // Salvataggio automatico dopo l'eliminazione
+    _autoSaveProgram();
   }
 }
 
