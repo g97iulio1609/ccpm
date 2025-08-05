@@ -50,10 +50,9 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen>
             leading: Container(
               margin: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest.withValues(
-                  alpha:
-                      theme.colorScheme.surfaceContainerHighest.opacity * 0.8,
-                ),
+color: theme.colorScheme.surfaceContainerHighest.withAlpha(
+  (theme.colorScheme.surfaceContainerHighest.alpha * 0.8).toInt(),
+),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: IconButton(
@@ -134,12 +133,12 @@ class _PrivacyPolicyContentState extends State<PrivacyPolicyContent> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                theme.colorScheme.primaryContainer.withValues(
-                  alpha: theme.colorScheme.primaryContainer.opacity * 0.3,
-                ),
-                theme.colorScheme.secondaryContainer.withValues(
-                  alpha: theme.colorScheme.secondaryContainer.opacity * 0.2,
-                ),
+theme.colorScheme.primaryContainer.withAlpha(
+  (theme.colorScheme.primaryContainer.alpha * 0.3).toInt(),
+),
+theme.colorScheme.secondaryContainer.withAlpha(
+  (theme.colorScheme.secondaryContainer.alpha * 0.2).toInt(),
+),
               ],
             ),
             borderRadius: BorderRadius.circular(16),
@@ -181,9 +180,9 @@ class _PrivacyPolicyContentState extends State<PrivacyPolicyContent> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(
-                    alpha: theme.colorScheme.primary.opacity * 0.1,
-                  ),
+color: theme.colorScheme.primary.withAlpha(
+  (theme.colorScheme.primary.alpha * 0.1).toInt(),
+),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -523,15 +522,15 @@ Hai il diritto di presentare reclamo se ritieni che il trattamento dei tuoi dati
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(
-          alpha: theme.colorScheme.surfaceContainerHighest.opacity * 0.3,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.colorScheme.outline.withValues(
-            alpha: theme.colorScheme.outline.opacity * 0.2,
-          ),
-        ),
+color: theme.colorScheme.surfaceContainerHighest.withAlpha(
+  (theme.colorScheme.surfaceContainerHighest.alpha * 0.3).toInt(),
+),
+borderRadius: BorderRadius.circular(16),
+border: Border.all(
+  color: theme.colorScheme.outline.withAlpha(
+    (theme.colorScheme.outline.alpha * 0.2).toInt(),
+  ),
+),
       ),
       child: Column(
         children: [

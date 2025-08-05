@@ -14,9 +14,13 @@ abstract class TrainingRepository {
 /// Provides simplified interface for training builder operations
 abstract class ExerciseRepository {
   Future<String> addExerciseToWorkout(
-      String workoutId, Map<String, dynamic> exerciseData);
+    String workoutId,
+    Map<String, dynamic> exerciseData,
+  );
   Future<void> updateExercise(
-      String exerciseId, Map<String, dynamic> exerciseData);
+    String exerciseId,
+    Map<String, dynamic> exerciseData,
+  );
   Future<void> removeExercise(String exerciseId);
   Future<List<Exercise>> getExercisesByWorkoutId(String workoutId);
 }
@@ -24,8 +28,11 @@ abstract class ExerciseRepository {
 /// Series repository interface specific to training builder
 /// Handles series operations with training-specific features
 abstract class SeriesRepository {
-  Future<String> addSeriesToExercise(String exerciseId, Series series,
-      {String? originalExerciseId});
+  Future<String> addSeriesToExercise(
+    String exerciseId,
+    Series series, {
+    String? originalExerciseId,
+  });
   Future<void> updateSeries(String seriesId, Series series);
   Future<void> removeSeries(String seriesId);
   Future<List<Series>> getSeriesByExerciseId(String exerciseId);
@@ -35,7 +42,9 @@ abstract class SeriesRepository {
 /// Provides simplified interface for training builder operations
 abstract class WeekRepository {
   Future<String> addWeekToProgram(
-      String programId, Map<String, dynamic> weekData);
+    String programId,
+    Map<String, dynamic> weekData,
+  );
   Future<void> updateWeek(String weekId, Map<String, dynamic> weekData);
   Future<void> removeWeek(String weekId);
   Future<List<Week>> getWeeksByProgramId(String programId);
@@ -45,9 +54,13 @@ abstract class WeekRepository {
 /// Provides simplified interface for training builder operations
 abstract class WorkoutRepository {
   Future<String> addWorkoutToWeek(
-      String weekId, Map<String, dynamic> workoutData);
+    String weekId,
+    Map<String, dynamic> workoutData,
+  );
   Future<void> updateWorkout(
-      String workoutId, Map<String, dynamic> workoutData);
+    String workoutId,
+    Map<String, dynamic> workoutData,
+  );
   Future<void> removeWorkout(String workoutId);
   Future<List<Workout>> getWorkoutsByWeekId(String weekId);
 }

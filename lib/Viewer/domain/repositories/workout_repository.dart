@@ -1,7 +1,7 @@
-import 'package:alphanessone/viewer/domain/entities/exercise.dart';
+import 'package:alphanessone/shared/models/exercise.dart';
 import 'package:alphanessone/shared/models/series.dart';
-import 'package:alphanessone/viewer/domain/entities/workout.dart';
-import 'package:alphanessone/viewer/domain/entities/week.dart';
+import 'package:alphanessone/shared/models/workout.dart';
+import 'package:alphanessone/shared/models/week.dart';
 
 abstract class WorkoutRepository {
   // Week Operations

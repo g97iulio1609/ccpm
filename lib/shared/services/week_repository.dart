@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/week.dart';
-import '../models/workout.dart';
 import 'base_repository.dart';
 import 'workout_repository.dart';
 
@@ -9,28 +8,29 @@ import 'workout_repository.dart';
 class WeekRepository extends BaseRepository<Week> with RepositoryMixin<Week> {
   static const String collectionName = 'weeks';
   final WorkoutRepository _workoutRepository = WorkoutRepository();
-  
+
   @override
-  CollectionReference get collection => FirebaseFirestore.instance.collection(collectionName);
-  
+  CollectionReference get collection =>
+      FirebaseFirestore.instance.collection(collectionName);
+
   @override
   Week fromFirestore(DocumentSnapshot doc) {
     return Week.fromFirestore(doc);
   }
-  
+
   @override
   Map<String, dynamic> toFirestore(Week model) {
     validateModel(model);
     return model.toFirestore();
   }
-  
+
   @override
   void validateModel(Week model) {
     if (model.number <= 0) {
       throw RepositoryException('Week number must be positive');
     }
   }
-  
+
   /// Get weeks by program ID
   Future<List<Week>> getByProgramId(String programId) async {
     try {
@@ -44,7 +44,7 @@ class WeekRepository extends BaseRepository<Week> with RepositoryMixin<Week> {
       handleError('get weeks by program ID', e);
     }
   }
-  
+
   /// Get weeks by completion status
   Future<List<Week>> getByCompletionStatus(bool isCompleted) async {
     try {
@@ -58,7 +58,7 @@ class WeekRepository extends BaseRepository<Week> with RepositoryMixin<Week> {
       handleError('get weeks by completion status', e);
     }
   }
-  
+
   /// Get active weeks
   Future<List<Week>> getActive() async {
     try {
@@ -72,13 +72,13 @@ class WeekRepository extends BaseRepository<Week> with RepositoryMixin<Week> {
       handleError('get active weeks', e);
     }
   }
-  
+
   /// Get current week (active and within date range)
   Future<Week?> getCurrentWeek() async {
     try {
       logOperation('getCurrentWeek');
       final now = DateTime.now();
-      
+
       final weeks = await getWhere(
         queryBuilder: (query) => query
             .where('isActive', isEqualTo: true)
@@ -86,48 +86,57 @@ class WeekRepository extends BaseRepository<Week> with RepositoryMixin<Week> {
             .where('endDate', isGreaterThanOrEqualTo: Timestamp.fromDate(now))
             .limit(1),
       );
-      
+
       return weeks.isNotEmpty ? weeks.first : null;
     } catch (e) {
       handleError('get current week', e);
     }
   }
-  
+
   /// Get week with workouts populated
   Future<Week?> getWithWorkouts(String weekId) async {
     try {
       logOperation('getWithWorkouts', {'weekId': weekId});
-      
+
       final week = await getById(weekId);
       if (week == null) return null;
-      
+
       final workouts = await _workoutRepository.getOrderedByWeek(weekId);
-      
+
       return week.copyWith(workouts: workouts);
     } catch (e) {
       handleError('get week with workouts', e);
     }
   }
-  
+
   /// Get weeks in date range
-  Future<List<Week>> getInDateRange(DateTime startDate, DateTime endDate) async {
+  Future<List<Week>> getInDateRange(
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
     try {
       logOperation('getInDateRange', {
         'startDate': startDate.toIso8601String(),
         'endDate': endDate.toIso8601String(),
       });
-      
+
       return await getWhere(
         queryBuilder: (query) => query
-            .where('startDate', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
-            .where('startDate', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
+            .where(
+              'startDate',
+              isGreaterThanOrEqualTo: Timestamp.fromDate(startDate),
+            )
+            .where(
+              'startDate',
+              isLessThanOrEqualTo: Timestamp.fromDate(endDate),
+            )
             .orderBy('startDate'),
       );
     } catch (e) {
       handleError('get weeks in date range', e);
     }
   }
-  
+
   /// Update week completion status
   Future<void> updateCompletionStatus(String weekId, bool isCompleted) async {
     try {
@@ -135,7 +144,7 @@ class WeekRepository extends BaseRepository<Week> with RepositoryMixin<Week> {
         'weekId': weekId,
         'isCompleted': isCompleted,
       });
-      
+
       await updateFields(weekId, {
         'isCompleted': isCompleted,
         'updatedAt': FieldValue.serverTimestamp(),
@@ -144,22 +153,22 @@ class WeekRepository extends BaseRepository<Week> with RepositoryMixin<Week> {
       handleError('update week completion status', e);
     }
   }
-  
+
   /// Mark week as completed
   Future<void> markAsCompleted(String weekId) async {
     await updateCompletionStatus(weekId, true);
   }
-  
+
   /// Reset week completion
   Future<void> resetCompletion(String weekId) async {
     try {
       logOperation('resetCompletion', {'weekId': weekId});
-      
+
       await updateFields(weekId, {
         'isCompleted': false,
         'updatedAt': FieldValue.serverTimestamp(),
       });
-      
+
       // Also reset all workouts in this week
       final workouts = await _workoutRepository.getByWeekId(weekId);
       for (final workout in workouts) {
@@ -171,7 +180,7 @@ class WeekRepository extends BaseRepository<Week> with RepositoryMixin<Week> {
       handleError('reset week completion', e);
     }
   }
-  
+
   /// Update week active status
   Future<void> updateActiveStatus(String weekId, bool isActive) async {
     try {
@@ -179,7 +188,7 @@ class WeekRepository extends BaseRepository<Week> with RepositoryMixin<Week> {
         'weekId': weekId,
         'isActive': isActive,
       });
-      
+
       await updateFields(weekId, {
         'isActive': isActive,
         'updatedAt': FieldValue.serverTimestamp(),
@@ -188,44 +197,38 @@ class WeekRepository extends BaseRepository<Week> with RepositoryMixin<Week> {
       handleError('update week active status', e);
     }
   }
-  
+
   /// Set week as current (deactivate others and activate this one)
   Future<void> setAsCurrent(String weekId) async {
     try {
       logOperation('setAsCurrent', {'weekId': weekId});
-      
+
       final batch = FirebaseFirestore.instance.batch();
-      
+
       // Deactivate all other weeks
       final activeWeeks = await getActive();
       for (final week in activeWeeks) {
         if (week.id != null && week.id != weekId) {
-          batch.update(
-            collection.doc(week.id),
-            {
-              'isActive': false,
-              'updatedAt': FieldValue.serverTimestamp(),
-            },
-          );
+          batch.update(collection.doc(week.id), {
+            'isActive': false,
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
         }
       }
-      
+
       // Activate the target week
-      batch.update(
-        collection.doc(weekId),
-        {
-          'isActive': true,
-          'startDate': FieldValue.serverTimestamp(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        },
-      );
-      
+      batch.update(collection.doc(weekId), {
+        'isActive': true,
+        'startDate': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
       await batch.commit();
     } catch (e) {
       handleError('set week as current', e);
     }
   }
-  
+
   /// Update week notes
   Future<void> updateNotes(String weekId, String notes) async {
     try {
@@ -233,7 +236,7 @@ class WeekRepository extends BaseRepository<Week> with RepositoryMixin<Week> {
         'weekId': weekId,
         'notesLength': notes.length,
       });
-      
+
       await updateFields(weekId, {
         'notes': notes,
         'updatedAt': FieldValue.serverTimestamp(),
@@ -242,16 +245,20 @@ class WeekRepository extends BaseRepository<Week> with RepositoryMixin<Week> {
       handleError('update week notes', e);
     }
   }
-  
+
   /// Update week date range
-  Future<void> updateDateRange(String weekId, DateTime startDate, DateTime endDate) async {
+  Future<void> updateDateRange(
+    String weekId,
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
     try {
       logOperation('updateDateRange', {
         'weekId': weekId,
         'startDate': startDate.toIso8601String(),
         'endDate': endDate.toIso8601String(),
       });
-      
+
       await updateFields(weekId, {
         'startDate': Timestamp.fromDate(startDate),
         'endDate': Timestamp.fromDate(endDate),
@@ -261,21 +268,25 @@ class WeekRepository extends BaseRepository<Week> with RepositoryMixin<Week> {
       handleError('update week date range', e);
     }
   }
-  
+
   /// Duplicate week with new number
-  Future<String> duplicateWeek(String weekId, int newNumber, {String? newProgramId}) async {
+  Future<String> duplicateWeek(
+    String weekId,
+    int newNumber, {
+    String? newProgramId,
+  }) async {
     try {
       logOperation('duplicateWeek', {
         'originalWeekId': weekId,
         'newNumber': newNumber,
         'newProgramId': newProgramId,
       });
-      
+
       final originalWeek = await getWithWorkouts(weekId);
       if (originalWeek == null) {
         throw RepositoryException('Week not found for duplication: $weekId');
       }
-      
+
       // Create duplicated week
       final duplicatedWeek = originalWeek.copyWith(
         id: null, // Will be auto-generated
@@ -289,9 +300,9 @@ class WeekRepository extends BaseRepository<Week> with RepositoryMixin<Week> {
         updatedAt: DateTime.now(),
         workouts: [], // Will be added separately
       );
-      
+
       final newWeekId = await create(duplicatedWeek);
-      
+
       // Duplicate workouts
       for (final workout in originalWeek.workouts) {
         if (workout.id != null) {
@@ -302,51 +313,46 @@ class WeekRepository extends BaseRepository<Week> with RepositoryMixin<Week> {
           );
         }
       }
-      
+
       return newWeekId;
     } catch (e) {
       handleError('duplicate week', e);
     }
   }
-  
+
   /// Reorder weeks in a program
   Future<void> reorderWeeks(List<Week> weeks) async {
     try {
-      logOperation('reorderWeeks', {
-        'weekCount': weeks.length,
-      });
-      
+      logOperation('reorderWeeks', {'weekCount': weeks.length});
+
       final batch = FirebaseFirestore.instance.batch();
-      
+
       for (int i = 0; i < weeks.length; i++) {
         final week = weeks[i];
         if (week.id != null) {
-          batch.update(
-            collection.doc(week.id),
-            {
-              'number': i + 1,
-              'updatedAt': FieldValue.serverTimestamp(),
-            },
-          );
+          batch.update(collection.doc(week.id), {
+            'number': i + 1,
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
         }
       }
-      
+
       await batch.commit();
     } catch (e) {
       handleError('reorder weeks', e);
     }
   }
-  
+
   /// Get week statistics
   Future<WeekStats> getWeekStats(String weekId) async {
     try {
       logOperation('getWeekStats', {'weekId': weekId});
-      
+
       final week = await getWithWorkouts(weekId);
       if (week == null) {
         return WeekStats.empty();
       }
-      
+
       int totalWorkouts = week.workouts.length;
       int completedWorkouts = week.workouts.where((w) => w.isCompleted).length;
       int totalExercises = 0;
@@ -355,13 +361,13 @@ class WeekRepository extends BaseRepository<Week> with RepositoryMixin<Week> {
       int completedSeries = 0;
       double totalVolume = 0.0;
       int totalDuration = 0;
-      
+
       for (final workout in week.workouts) {
         totalExercises += workout.totalExercises;
         completedExercises += workout.completedExercises;
         totalSeries += workout.totalSeries;
         totalDuration += workout.estimatedDuration;
-        
+
         for (final exercise in workout.exercises) {
           for (final series in exercise.series) {
             if (series.completionStatus) {
@@ -371,7 +377,7 @@ class WeekRepository extends BaseRepository<Week> with RepositoryMixin<Week> {
           }
         }
       }
-      
+
       return WeekStats(
         totalWorkouts: totalWorkouts,
         completedWorkouts: completedWorkouts,
@@ -380,9 +386,15 @@ class WeekRepository extends BaseRepository<Week> with RepositoryMixin<Week> {
         totalSeries: totalSeries,
         completedSeries: completedSeries,
         totalVolume: totalVolume,
-        workoutCompletionRate: totalWorkouts > 0 ? (completedWorkouts / totalWorkouts) * 100 : 0.0,
-        exerciseCompletionRate: totalExercises > 0 ? (completedExercises / totalExercises) * 100 : 0.0,
-        seriesCompletionRate: totalSeries > 0 ? (completedSeries / totalSeries) * 100 : 0.0,
+        workoutCompletionRate: totalWorkouts > 0
+            ? (completedWorkouts / totalWorkouts) * 100
+            : 0.0,
+        exerciseCompletionRate: totalExercises > 0
+            ? (completedExercises / totalExercises) * 100
+            : 0.0,
+        seriesCompletionRate: totalSeries > 0
+            ? (completedSeries / totalSeries) * 100
+            : 0.0,
         estimatedTotalDuration: totalDuration,
         weekNumber: week.number,
         isActive: week.isActive,
@@ -393,18 +405,18 @@ class WeekRepository extends BaseRepository<Week> with RepositoryMixin<Week> {
       handleError('get week statistics', e);
     }
   }
-  
+
   /// Get program statistics (all weeks)
   Future<ProgramStats> getProgramStats(String programId) async {
     try {
       logOperation('getProgramStats', {'programId': programId});
-      
+
       final weeks = await getByProgramId(programId);
-      
+
       if (weeks.isEmpty) {
         return ProgramStats.empty();
       }
-      
+
       int totalWeeks = weeks.length;
       int completedWeeks = weeks.where((w) => w.isCompleted).length;
       int totalWorkouts = 0;
@@ -412,29 +424,33 @@ class WeekRepository extends BaseRepository<Week> with RepositoryMixin<Week> {
       double totalVolume = 0.0;
       int totalDuration = 0;
       Week? currentWeek;
-      
+
       for (final week in weeks) {
         if (week.isActive) {
           currentWeek = week;
         }
-        
+
         totalWorkouts += week.totalWorkouts;
         completedWorkouts += week.completedWorkouts;
         totalDuration += week.estimatedTotalDuration;
-        
+
         // Get detailed stats for volume calculation
         final weekStats = await getWeekStats(week.id!);
         totalVolume += weekStats.totalVolume;
       }
-      
+
       return ProgramStats(
         totalWeeks: totalWeeks,
         completedWeeks: completedWeeks,
         totalWorkouts: totalWorkouts,
         completedWorkouts: completedWorkouts,
         totalVolume: totalVolume,
-        weekCompletionRate: totalWeeks > 0 ? (completedWeeks / totalWeeks) * 100 : 0.0,
-        workoutCompletionRate: totalWorkouts > 0 ? (completedWorkouts / totalWorkouts) * 100 : 0.0,
+        weekCompletionRate: totalWeeks > 0
+            ? (completedWeeks / totalWeeks) * 100
+            : 0.0,
+        workoutCompletionRate: totalWorkouts > 0
+            ? (completedWorkouts / totalWorkouts) * 100
+            : 0.0,
         estimatedTotalDuration: totalDuration,
         currentWeekNumber: currentWeek?.number,
         programId: programId,
@@ -443,12 +459,12 @@ class WeekRepository extends BaseRepository<Week> with RepositoryMixin<Week> {
       handleError('get program statistics', e);
     }
   }
-  
+
   /// Delete week and all its workouts
   Future<void> deleteWithWorkouts(String weekId) async {
     try {
       logOperation('deleteWithWorkouts', {'weekId': weekId});
-      
+
       // Delete all workouts first
       final workouts = await _workoutRepository.getByWeekId(weekId);
       for (final workout in workouts) {
@@ -456,14 +472,14 @@ class WeekRepository extends BaseRepository<Week> with RepositoryMixin<Week> {
           await _workoutRepository.deleteWithExercises(workout.id!);
         }
       }
-      
+
       // Then delete the week
       await delete(weekId);
     } catch (e) {
       handleError('delete week with workouts', e);
     }
   }
-  
+
   /// Listen to weeks by program ID
   Stream<List<Week>> listenByProgramId(String programId) {
     logOperation('listenByProgramId', {'programId': programId});
@@ -473,7 +489,7 @@ class WeekRepository extends BaseRepository<Week> with RepositoryMixin<Week> {
       queryBuilder: (query) => query.orderBy('number'),
     );
   }
-  
+
   /// Listen to current week
   Stream<Week?> listenToCurrent() {
     logOperation('listenToCurrent');
@@ -483,14 +499,14 @@ class WeekRepository extends BaseRepository<Week> with RepositoryMixin<Week> {
       queryBuilder: (query) => query.limit(1),
     ).map((weeks) => weeks.isNotEmpty ? weeks.first : null);
   }
-  
+
   /// Listen to week with workouts
   Stream<Week?> listenWithWorkouts(String weekId) {
     logOperation('listenWithWorkouts', {'weekId': weekId});
-    
+
     return listenById(weekId).asyncMap((week) async {
       if (week == null) return null;
-      
+
       final workouts = await _workoutRepository.getOrderedByWeek(weekId);
       return week.copyWith(workouts: workouts);
     });
@@ -514,7 +530,7 @@ class WeekStats {
   final bool isActive;
   final DateTime? startDate;
   final DateTime? endDate;
-  
+
   const WeekStats({
     required this.totalWorkouts,
     required this.completedWorkouts,
@@ -532,7 +548,7 @@ class WeekStats {
     this.startDate,
     this.endDate,
   });
-  
+
   factory WeekStats.empty() {
     return const WeekStats(
       totalWorkouts: 0,
@@ -550,7 +566,7 @@ class WeekStats {
       isActive: false,
     );
   }
-  
+
   @override
   String toString() {
     return 'WeekStats(week: $weekNumber, workouts: $completedWorkouts/$totalWorkouts, volume: ${totalVolume.toStringAsFixed(1)}kg)';
@@ -569,7 +585,7 @@ class ProgramStats {
   final int estimatedTotalDuration;
   final int? currentWeekNumber;
   final String programId;
-  
+
   const ProgramStats({
     required this.totalWeeks,
     required this.completedWeeks,
@@ -582,7 +598,7 @@ class ProgramStats {
     this.currentWeekNumber,
     required this.programId,
   });
-  
+
   factory ProgramStats.empty() {
     return const ProgramStats(
       totalWeeks: 0,
@@ -596,7 +612,7 @@ class ProgramStats {
       programId: '',
     );
   }
-  
+
   @override
   String toString() {
     return 'ProgramStats(weeks: $completedWeeks/$totalWeeks, workouts: $completedWorkouts/$totalWorkouts, volume: ${totalVolume.toStringAsFixed(1)}kg)';
@@ -604,43 +620,74 @@ class ProgramStats {
 }
 
 /// Cached version of WeekRepository for better performance
-class CachedWeekRepository extends CachedRepository<Week> with RepositoryMixin<Week> {
+class CachedWeekRepository extends CachedRepository<Week>
+    with RepositoryMixin<Week> {
   final WeekRepository _baseRepository = WeekRepository();
-  
+
   CachedWeekRepository({super.cacheDuration});
-  
+
   @override
   CollectionReference get collection => _baseRepository.collection;
-  
+
   @override
-  Week fromFirestore(DocumentSnapshot doc) => _baseRepository.fromFirestore(doc);
-  
+  Week fromFirestore(DocumentSnapshot doc) =>
+      _baseRepository.fromFirestore(doc);
+
   @override
-  Map<String, dynamic> toFirestore(Week model) => _baseRepository.toFirestore(model);
-  
+  Map<String, dynamic> toFirestore(Week model) =>
+      _baseRepository.toFirestore(model);
+
   @override
   void validateModel(Week model) => _baseRepository.validateModel(model);
-  
+
   // Delegate methods to base repository
-  Future<List<Week>> getByProgramId(String programId) => _baseRepository.getByProgramId(programId);
-  Future<List<Week>> getByCompletionStatus(bool isCompleted) => _baseRepository.getByCompletionStatus(isCompleted);
+  Future<List<Week>> getByProgramId(String programId) =>
+      _baseRepository.getByProgramId(programId);
+  Future<List<Week>> getByCompletionStatus(bool isCompleted) =>
+      _baseRepository.getByCompletionStatus(isCompleted);
   Future<List<Week>> getActive() => _baseRepository.getActive();
   Future<Week?> getCurrentWeek() => _baseRepository.getCurrentWeek();
-  Future<Week?> getWithWorkouts(String weekId) => _baseRepository.getWithWorkouts(weekId);
-  Future<List<Week>> getInDateRange(DateTime startDate, DateTime endDate) => _baseRepository.getInDateRange(startDate, endDate);
-  Future<void> updateCompletionStatus(String weekId, bool isCompleted) => _baseRepository.updateCompletionStatus(weekId, isCompleted);
-  Future<void> markAsCompleted(String weekId) => _baseRepository.markAsCompleted(weekId);
-  Future<void> resetCompletion(String weekId) => _baseRepository.resetCompletion(weekId);
-  Future<void> updateActiveStatus(String weekId, bool isActive) => _baseRepository.updateActiveStatus(weekId, isActive);
-  Future<void> setAsCurrent(String weekId) => _baseRepository.setAsCurrent(weekId);
-  Future<void> updateNotes(String weekId, String notes) => _baseRepository.updateNotes(weekId, notes);
-  Future<void> updateDateRange(String weekId, DateTime startDate, DateTime endDate) => _baseRepository.updateDateRange(weekId, startDate, endDate);
-  Future<String> duplicateWeek(String weekId, int newNumber, {String? newProgramId}) => _baseRepository.duplicateWeek(weekId, newNumber, newProgramId: newProgramId);
-  Future<void> reorderWeeks(List<Week> weeks) => _baseRepository.reorderWeeks(weeks);
-  Future<WeekStats> getWeekStats(String weekId) => _baseRepository.getWeekStats(weekId);
-  Future<ProgramStats> getProgramStats(String programId) => _baseRepository.getProgramStats(programId);
-  Future<void> deleteWithWorkouts(String weekId) => _baseRepository.deleteWithWorkouts(weekId);
-  Stream<List<Week>> listenByProgramId(String programId) => _baseRepository.listenByProgramId(programId);
+  Future<Week?> getWithWorkouts(String weekId) =>
+      _baseRepository.getWithWorkouts(weekId);
+  Future<List<Week>> getInDateRange(DateTime startDate, DateTime endDate) =>
+      _baseRepository.getInDateRange(startDate, endDate);
+  Future<void> updateCompletionStatus(String weekId, bool isCompleted) =>
+      _baseRepository.updateCompletionStatus(weekId, isCompleted);
+  Future<void> markAsCompleted(String weekId) =>
+      _baseRepository.markAsCompleted(weekId);
+  Future<void> resetCompletion(String weekId) =>
+      _baseRepository.resetCompletion(weekId);
+  Future<void> updateActiveStatus(String weekId, bool isActive) =>
+      _baseRepository.updateActiveStatus(weekId, isActive);
+  Future<void> setAsCurrent(String weekId) =>
+      _baseRepository.setAsCurrent(weekId);
+  Future<void> updateNotes(String weekId, String notes) =>
+      _baseRepository.updateNotes(weekId, notes);
+  Future<void> updateDateRange(
+    String weekId,
+    DateTime startDate,
+    DateTime endDate,
+  ) => _baseRepository.updateDateRange(weekId, startDate, endDate);
+  Future<String> duplicateWeek(
+    String weekId,
+    int newNumber, {
+    String? newProgramId,
+  }) => _baseRepository.duplicateWeek(
+    weekId,
+    newNumber,
+    newProgramId: newProgramId,
+  );
+  Future<void> reorderWeeks(List<Week> weeks) =>
+      _baseRepository.reorderWeeks(weeks);
+  Future<WeekStats> getWeekStats(String weekId) =>
+      _baseRepository.getWeekStats(weekId);
+  Future<ProgramStats> getProgramStats(String programId) =>
+      _baseRepository.getProgramStats(programId);
+  Future<void> deleteWithWorkouts(String weekId) =>
+      _baseRepository.deleteWithWorkouts(weekId);
+  Stream<List<Week>> listenByProgramId(String programId) =>
+      _baseRepository.listenByProgramId(programId);
   Stream<Week?> listenToCurrent() => _baseRepository.listenToCurrent();
-  Stream<Week?> listenWithWorkouts(String weekId) => _baseRepository.listenWithWorkouts(weekId);
+  Stream<Week?> listenWithWorkouts(String weekId) =>
+      _baseRepository.listenWithWorkouts(weekId);
 }

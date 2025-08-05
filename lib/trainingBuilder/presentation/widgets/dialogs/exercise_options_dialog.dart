@@ -38,10 +38,12 @@ class ExerciseOptionsDialog extends ConsumerWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final workout = controller.program.weeks[weekIndex].workouts[workoutIndex];
-    final superSet = workout.superSets?.cast<Map<String, dynamic>>().firstWhere(
-      (ss) => (ss['exerciseIds'] as List?)?.contains(exercise.id) == true,
-      orElse: () => <String, dynamic>{'id': '', 'exerciseIds': []},
-    ) ?? <String, dynamic>{'id': '', 'exerciseIds': []};
+    final superSet =
+        workout.superSets?.cast<Map<String, dynamic>>().firstWhere(
+          (ss) => (ss['exerciseIds'] as List?)?.contains(exercise.id) == true,
+          orElse: () => <String, dynamic>{'id': '', 'exerciseIds': []},
+        ) ??
+        <String, dynamic>{'id': '', 'exerciseIds': []};
     final isInSuperSet = (superSet['id'] as String?)?.isNotEmpty == true;
 
     return BottomMenu(
@@ -53,11 +55,7 @@ class ExerciseOptionsDialog extends ConsumerWidget {
           color: colorScheme.primaryContainer.withAlpha(76),
           borderRadius: BorderRadius.circular(AppTheme.radii.md),
         ),
-        child: Icon(
-          Icons.fitness_center,
-          color: colorScheme.primary,
-          size: 24,
-        ),
+        child: Icon(Icons.fitness_center, color: colorScheme.primary, size: 24),
       ),
       items: [
         BottomMenuItem(
@@ -146,7 +144,6 @@ class ExerciseOptionsDialog extends ConsumerWidget {
 
   void _showMoveExerciseDialog(BuildContext context) {
     final week = controller.program.weeks[weekIndex];
-    final sourceExerciseIndex = exercise.order - 1;
 
     showDialog<int>(
       context: context,
@@ -180,13 +177,31 @@ class ExerciseOptionsDialog extends ConsumerWidget {
     ).then((destinationWorkoutIndex) {
       if (destinationWorkoutIndex != null &&
           destinationWorkoutIndex != workoutIndex) {
-        controller.moveExercise(
-          weekIndex,
-          workoutIndex,
-          sourceExerciseIndex,
-          weekIndex,
-          destinationWorkoutIndex,
-        );
+        try {
+          controller.moveExercise(
+            weekIndex,
+            workoutIndex,
+            destinationWorkoutIndex,
+            exercise.order - 1,
+          );
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Esercizio spostato con successo'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        } catch (e) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Errore nello spostamento: $e'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
       }
     });
   }
@@ -198,8 +213,14 @@ class ExerciseOptionsDialog extends ConsumerWidget {
 
     if (superSets?.isEmpty ?? true) {
       controller.createSuperSet(weekIndex, workoutIndex);
-      selectedSuperSetId = controller
-          .program.weeks[weekIndex].workouts[workoutIndex].superSets?.first['id'] as String?;
+      selectedSuperSetId =
+          controller
+                  .program
+                  .weeks[weekIndex]
+                  .workouts[workoutIndex]
+                  .superSets
+                  ?.first['id']
+              as String?;
       if (selectedSuperSetId != null) {
         controller.addExerciseToSuperSet(
           weekIndex,
@@ -218,12 +239,16 @@ class ExerciseOptionsDialog extends ConsumerWidget {
                 title: const Text('Aggiungi al Superset'),
                 content: DropdownButtonFormField<String>(
                   value: selectedSuperSetId,
-                  items: superSets?.map((ss) {
-                    return DropdownMenuItem<String>(
-                      value: ss['id'] as String?,
-                      child: Text(ss['name'] as String? ?? 'Superset ${ss['id']}'),
-                    );
-                  }).toList() ?? [],
+                  items:
+                      superSets?.map((ss) {
+                        return DropdownMenuItem<String>(
+                          value: ss['id'] as String?,
+                          child: Text(
+                            ss['name'] as String? ?? 'Superset ${ss['id']}',
+                          ),
+                        );
+                      }).toList() ??
+                      [],
                   onChanged: (value) {
                     setState(() {
                       selectedSuperSetId = value;
@@ -243,7 +268,11 @@ class ExerciseOptionsDialog extends ConsumerWidget {
                       onPressed: () {
                         controller.createSuperSet(weekIndex, workoutIndex);
                         setState(() {});
-                        Navigator.of(dialogContext).pop(superSets?.isNotEmpty == true ? superSets!.last['id'] as String? : null);
+                        Navigator.of(dialogContext).pop(
+                          superSets?.isNotEmpty == true
+                              ? superSets!.last['id'] as String?
+                              : null,
+                        );
                       },
                       child: const Text('Crea Nuovo Superset'),
                     ),
@@ -289,8 +318,9 @@ class ExerciseOptionsDialog extends ConsumerWidget {
   }
 
   void _showUpdateMaxRMDialog(BuildContext context, WidgetRef ref) {
-    final maxWeightController =
-        TextEditingController(text: latestMaxWeight.toString());
+    final maxWeightController = TextEditingController(
+      text: latestMaxWeight.toString(),
+    );
     final repetitionsController = TextEditingController(text: '1');
 
     showDialog<bool>(
@@ -303,8 +333,9 @@ class ExerciseOptionsDialog extends ConsumerWidget {
             children: [
               TextField(
                 controller: maxWeightController,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 decoration: const InputDecoration(
                   labelText: 'Peso Massimo (kg)',
                   hintText: 'Inserisci il peso massimo',
@@ -363,7 +394,9 @@ class ExerciseOptionsDialog extends ConsumerWidget {
 
       if (repetitions == null || repetitions <= 0) {
         _showErrorSnackBar(
-            context, 'Inserisci un numero di ripetizioni valido');
+          context,
+          'Inserisci un numero di ripetizioni valido',
+        );
         return;
       }
 

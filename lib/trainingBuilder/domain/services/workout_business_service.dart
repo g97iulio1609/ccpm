@@ -1,12 +1,11 @@
-import 'package:alphanessone/shared/shared.dart' hide ValidationUtils, ModelUtils, ExerciseRepository;
+import 'package:alphanessone/shared/shared.dart'
+    hide ValidationUtils, ModelUtils, ExerciseRepository;
 import '../../shared/utils/validation_utils.dart';
 import '../../shared/utils/model_utils.dart';
 
 /// Business service per le operazioni sui workout
 /// Segue il principio Single Responsibility
 class WorkoutBusinessService {
-
-
   WorkoutBusinessService();
 
   /// Aggiunge un nuovo workout alla settimana
@@ -26,16 +25,22 @@ class WorkoutBusinessService {
   /// Rimuove un workout dalla settimana
   void removeWorkout(TrainingProgram program, int weekIndex, int workoutIndex) {
     if (!ValidationUtils.isValidProgramIndex(
-        program, weekIndex, workoutIndex)) {
+      program,
+      weekIndex,
+      workoutIndex,
+    )) {
       throw ArgumentError(
-          'Indici non validi: week=$weekIndex, workout=$workoutIndex');
+        'Indici non validi: week=$weekIndex, workout=$workoutIndex',
+      );
     }
 
     final workout = program.weeks[weekIndex].workouts[workoutIndex];
     _trackWorkoutForDeletion(program, workout);
     program.weeks[weekIndex].workouts.removeAt(workoutIndex);
     ModelUtils.updateWorkoutOrders(
-        program.weeks[weekIndex].workouts, workoutIndex);
+      program.weeks[weekIndex].workouts,
+      workoutIndex,
+    );
   }
 
   /// Copia un workout in un'altra settimana
@@ -46,7 +51,10 @@ class WorkoutBusinessService {
     int? destinationWeekIndex,
   ) async {
     if (!ValidationUtils.isValidProgramIndex(
-        program, sourceWeekIndex, workoutIndex)) {
+      program,
+      sourceWeekIndex,
+      workoutIndex,
+    )) {
       throw ArgumentError('Indici sorgente non validi');
     }
 
@@ -82,7 +90,11 @@ class WorkoutBusinessService {
 
   /// Riordina i workout in una settimana
   void reorderWorkouts(
-      TrainingProgram program, int weekIndex, int oldIndex, int newIndex) {
+    TrainingProgram program,
+    int weekIndex,
+    int oldIndex,
+    int newIndex,
+  ) {
     if (!ValidationUtils.isValidProgramIndex(program, weekIndex) ||
         oldIndex < 0 ||
         oldIndex >= program.weeks[weekIndex].workouts.length ||
@@ -101,10 +113,17 @@ class WorkoutBusinessService {
   }
 
   /// Aggiorna un workout specifico
-  void updateWorkout(TrainingProgram program, int weekIndex, int workoutIndex,
-      Workout updatedWorkout) {
+  void updateWorkout(
+    TrainingProgram program,
+    int weekIndex,
+    int workoutIndex,
+    Workout updatedWorkout,
+  ) {
     if (!ValidationUtils.isValidProgramIndex(
-        program, weekIndex, workoutIndex)) {
+      program,
+      weekIndex,
+      workoutIndex,
+    )) {
       throw ArgumentError('Indici non validi per aggiornamento workout');
     }
 
@@ -113,9 +132,15 @@ class WorkoutBusinessService {
 
   /// Duplica un workout nella stessa settimana
   void duplicateWorkout(
-      TrainingProgram program, int weekIndex, int workoutIndex) {
+    TrainingProgram program,
+    int weekIndex,
+    int workoutIndex,
+  ) {
     if (!ValidationUtils.isValidProgramIndex(
-        program, weekIndex, workoutIndex)) {
+      program,
+      weekIndex,
+      workoutIndex,
+    )) {
       throw ArgumentError('Indici non validi per duplicazione workout');
     }
 
@@ -123,7 +148,7 @@ class WorkoutBusinessService {
     final duplicatedWorkout = ModelUtils.copyWorkout(sourceWorkout);
 
     final workoutWithNewOrder = duplicatedWorkout.copyWith(
-      order: program.weeks[weekIndex].workouts.length + 1
+      order: program.weeks[weekIndex].workouts.length + 1,
     );
     program.weeks[weekIndex].workouts.add(workoutWithNewOrder);
   }
@@ -140,8 +165,9 @@ class WorkoutBusinessService {
     }
 
     // Controlla che ogni workout abbia almeno un esercizio o sia configurato correttamente
-    return workouts
-        .every((workout) => workout.exercises.isNotEmpty || workout.order > 0);
+    return workouts.every(
+      (workout) => workout.exercises.isNotEmpty || workout.order > 0,
+    );
   }
 
   /// Ottiene statistiche sui workout per una settimana
@@ -163,8 +189,9 @@ class WorkoutBusinessService {
       'totalWorkouts': week.workouts.length,
       'totalExercises': totalExercises,
       'totalSeries': totalSeries,
-      'averageExercisesPerWorkout':
-          week.workouts.isNotEmpty ? totalExercises / week.workouts.length : 0,
+      'averageExercisesPerWorkout': week.workouts.isNotEmpty
+          ? totalExercises / week.workouts.length
+          : 0,
       'exerciseTypeDistribution': exerciseTypes,
     };
   }
@@ -199,14 +226,7 @@ class WorkoutBusinessService {
     final newWeek = Week(
       id: null,
       number: program.weeks.length + 1,
-      workouts: [
-        Workout(
-          id: '',
-          name: 'Workout 1',
-          order: 1,
-          exercises: [],
-        ),
-      ],
+      workouts: [Workout(id: '', name: 'Workout 1', order: 1, exercises: [])],
     );
     program.weeks.add(newWeek);
   }

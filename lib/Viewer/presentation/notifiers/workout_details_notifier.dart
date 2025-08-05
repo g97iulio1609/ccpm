@@ -12,7 +12,7 @@ class WorkoutDetailsState {
   final bool isLoading;
   final String? error;
   final String?
-      activeExerciseId; // ID dell'esercizio attualmente "aperto" o in focus
+  activeExerciseId; // ID dell'esercizio attualmente "aperto" o in focus
   // Potremmo aggiungere qui altri stati specifici della UI, es. per i dialoghi
 
   WorkoutDetailsState({
@@ -74,15 +74,21 @@ class WorkoutDetailsNotifier extends StateNotifier<WorkoutDetailsState> {
   }
 
   Future<void> completeSeries(
-      String seriesId, bool isDone, int repsDone, double weightDone) async {
+    String seriesId,
+    bool isDone,
+    int repsDone,
+    double weightDone,
+  ) async {
     // Potremmo voler mostrare un feedback di caricamento specifico per la serie
     try {
-      await _completeSeriesUseCase.call(CompleteSeriesParams(
-        seriesId: seriesId,
-        isDone: isDone,
-        repsDone: repsDone,
-        weightDone: weightDone,
-      ));
+      await _completeSeriesUseCase.call(
+        CompleteSeriesParams(
+          seriesId: seriesId,
+          isDone: isDone,
+          repsDone: repsDone,
+          weightDone: weightDone,
+        ),
+      );
       // Dopo aver completato la serie, ricarichiamo il workout per riflettere i cambiamenti.
       // Questo è un approccio semplice. Alternative più complesse potrebbero aggiornare
       // solo la serie specifica nello stato locale per una UI più reattiva,
@@ -91,38 +97,45 @@ class WorkoutDetailsNotifier extends StateNotifier<WorkoutDetailsState> {
     } catch (e) {
       // Gestire l'errore, magari mostrandolo nella UI
       state = state.copyWith(
-          error: "Errore nel completare la serie: ${e.toString()}");
+        error: "Errore nel completare la serie: ${e.toString()}",
+      );
     }
   }
 
   Future<void> saveExerciseNote(String exerciseId, String note) async {
     if (state.workout == null || state.workout!.id == null) return;
     try {
-      await _saveExerciseNoteUseCase.call(SaveExerciseNoteParams(
-        workoutId: state.workout!.id!,
-        exerciseId: exerciseId,
-        note: note,
-      ));
+      await _saveExerciseNoteUseCase.call(
+        SaveExerciseNoteParams(
+          workoutId: state.workout!.id!,
+          exerciseId: exerciseId,
+          note: note,
+        ),
+      );
       // Ricarica per vedere la nota aggiornata
       await _loadWorkout();
     } catch (e) {
-      state =
-          state.copyWith(error: "Errore nel salvare la nota: ${e.toString()}");
+      state = state.copyWith(
+        error: "Errore nel salvare la nota: ${e.toString()}",
+      );
     }
   }
 
   Future<void> deleteExerciseNote(String exerciseId) async {
     if (state.workout == null || state.workout!.id == null) return;
     try {
-      await _deleteExerciseNoteUseCase.call(DeleteExerciseNoteParams(
-        workoutId: state.workout!.id!,
-        exerciseId: exerciseId,
-      ));
+      await _deleteExerciseNoteUseCase.call(
+        DeleteExerciseNoteParams(
+          workoutId: state.workout!.id!,
+          exerciseId: exerciseId,
+        ),
+      );
       // Ricarica per vedere la nota rimossa
       await _loadWorkout();
     } catch (e) {
       state = state.copyWith(
-          error: "Errore nell'eliminare la nota: ${e.toString()}");
+        error: "Errore nell'eliminare la nota: ${e.toString()}",
+      );
     }
   }
 
@@ -131,14 +144,22 @@ class WorkoutDetailsNotifier extends StateNotifier<WorkoutDetailsState> {
 
 // Provider per WorkoutDetailsNotifier
 final workoutDetailsNotifierProvider = StateNotifierProvider.family
-    .autoDispose<WorkoutDetailsNotifier, WorkoutDetailsState, String>(
-        (ref, workoutId) {
-  final workoutRepository = ref
-      .watch(workoutRepositoryProvider); // Importato da viewer_providers.dart
-  final completeSeriesUseCase = ref.watch(completeSeriesUseCaseProvider);
-  final saveNoteUseCase = ref.watch(saveExerciseNoteUseCaseProvider);
-  final deleteNoteUseCase = ref.watch(deleteExerciseNoteUseCaseProvider);
+    .autoDispose<WorkoutDetailsNotifier, WorkoutDetailsState, String>((
+      ref,
+      workoutId,
+    ) {
+      final workoutRepository = ref.watch(
+        workoutRepositoryProvider,
+      ); // Importato da viewer_providers.dart
+      final completeSeriesUseCase = ref.watch(completeSeriesUseCaseProvider);
+      final saveNoteUseCase = ref.watch(saveExerciseNoteUseCaseProvider);
+      final deleteNoteUseCase = ref.watch(deleteExerciseNoteUseCaseProvider);
 
-  return WorkoutDetailsNotifier(workoutRepository, completeSeriesUseCase,
-      saveNoteUseCase, deleteNoteUseCase, workoutId);
-});
+      return WorkoutDetailsNotifier(
+        workoutRepository,
+        completeSeriesUseCase,
+        saveNoteUseCase,
+        deleteNoteUseCase,
+        workoutId,
+      );
+    });

@@ -4,6 +4,7 @@ import 'package:alphanessone/services/ai/ai_keys_service.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:alphanessone/models/ai_keys_model.dart';
+import 'package:logger/logger.dart';
 
 enum AIProvider {
   openAI('OpenAI'),
@@ -165,7 +166,7 @@ final aiSettingsServiceProvider = Provider<AISettingsService>((ref) {
     loading: () =>
         AISettingsService(null), // Provide a default or handle loading state
     error: (error, stackTrace) {
-      print('Error loading shared preferences: $error');
+      Logger().e('Error loading shared preferences: $error');
       return AISettingsService(null); // Handle error state
     },
   );
@@ -249,8 +250,6 @@ class AISettingsNotifier extends StateNotifier<AISettings> {
         return 'claude';
       case AIProvider.azureOpenAI:
         return 'azure';
-      default:
-        return '';
     }
   }
 }

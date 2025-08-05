@@ -70,22 +70,22 @@ class ExercisesPage extends ConsumerWidget {
     dynamic exerciseRecordService,
   ) {
     return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          if (index == exercises.length) {
-            return Padding(
-              padding: EdgeInsets.only(top: AppTheme.spacing.md),
-              child: _buildAddExerciseButton(context),
-            );
-          }
+      delegate: SliverChildBuilderDelegate((context, index) {
+        if (index == exercises.length) {
           return Padding(
-            padding: EdgeInsets.only(bottom: AppTheme.spacing.md),
-            child: _buildExerciseCard(
-                context, exercises[index], exerciseRecordService),
+            padding: EdgeInsets.only(top: AppTheme.spacing.md),
+            child: _buildAddExerciseButton(context),
           );
-        },
-        childCount: exercises.length + 1,
-      ),
+        }
+        return Padding(
+          padding: EdgeInsets.only(bottom: AppTheme.spacing.md),
+          child: _buildExerciseCard(
+            context,
+            exercises[index],
+            exerciseRecordService,
+          ),
+        );
+      }, childCount: exercises.length + 1),
     );
   }
 
@@ -95,16 +95,16 @@ class ExercisesPage extends ConsumerWidget {
     dynamic exerciseRecordService,
   ) {
     return SliverGrid(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          if (index == exercises.length) {
-            return _buildAddExerciseButton(context);
-          }
-          return _buildExerciseCard(
-              context, exercises[index], exerciseRecordService);
-        },
-        childCount: exercises.length + 1,
-      ),
+      delegate: SliverChildBuilderDelegate((context, index) {
+        if (index == exercises.length) {
+          return _buildAddExerciseButton(context);
+        }
+        return _buildExerciseCard(
+          context,
+          exercises[index],
+          exerciseRecordService,
+        );
+      }, childCount: exercises.length + 1),
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 600,
         mainAxisSpacing: AppTheme.spacing.md,
@@ -121,13 +121,18 @@ class ExercisesPage extends ConsumerWidget {
   ) {
     final workout = controller.program.weeks[weekIndex].workouts[workoutIndex];
     final superSets = (workout.superSets as List<dynamic>? ?? [])
-        .where((ss) => (ss['exerciseIds'] as List<dynamic>? ?? []).contains(exercise.id))
+        .where(
+          (ss) =>
+              (ss['exerciseIds'] as List<dynamic>? ?? []).contains(exercise.id),
+        )
         .map((ss) => SuperSet.fromMap(ss as Map<String, dynamic>))
         .toList();
 
     return FutureBuilder<num>(
-      future:
-          _getLatestMaxWeight(exerciseRecordService, exercise.exerciseId ?? ''),
+      future: _getLatestMaxWeight(
+        exerciseRecordService,
+        exercise.exerciseId ?? '',
+      ),
       builder: (context, snapshot) {
         final latestMaxWeight = snapshot.data ?? 0;
 
@@ -173,7 +178,9 @@ class ExercisesPage extends ConsumerWidget {
   }
 
   Future<num> _getLatestMaxWeight(
-      dynamic exerciseRecordService, String exerciseId) async {
+    dynamic exerciseRecordService,
+    String exerciseId,
+  ) async {
     if (exerciseId.isEmpty) return 0;
 
     try {
@@ -193,10 +200,12 @@ class ExercisesPage extends ConsumerWidget {
     List<SuperSet> superSets,
   ) {
     final superSetExerciseIndex = superSets.isNotEmpty
-        ? superSets.indexOf(superSets.firstWhere(
-            (ss) => ss.exerciseIds.contains(exercise.id),
-            orElse: () => SuperSet(id: '', exerciseIds: []),
-          ))
+        ? superSets.indexOf(
+            superSets.firstWhere(
+              (ss) => ss.exerciseIds.contains(exercise.id),
+              orElse: () => SuperSet(id: '', exerciseIds: []),
+            ),
+          )
         : 0;
 
     context.go(

@@ -1,6 +1,7 @@
 # TODO:
 
-- [x] analyze_series_save_flow: Analizzare il flusso di salvataggio delle serie per identificare il problema della mancata rimozione (priority: High)
-- [x] implement_auto_save: Implementare salvataggio automatico dopo modifiche alle serie o migliorare il flusso esistente (priority: High)
-- [x] test_series_removal: Testare la rimozione delle serie dopo l'implementazione (priority: Medium)
-- [x] verify_save_functionality: Verificare che il salvataggio funzioni correttamente in tutti i casi (priority: Medium)
+- [x] fix_weight_calculation_bug: Correggere il bug nel trainingBuilder: updateExerciseWeights deve sostituire l'esercizio aggiornato nella lista del programma (priority: High)
+- [x] consolidate_weight_calculation: Consolidare calculateWeightFromIntensity nel WeightCalculationService condiviso ed eliminare duplicazioni (priority: High)
+- [x] consolidate_round_weight: Consolidare roundWeight nel WeightCalculationService condiviso ed eliminare duplicazioni (priority: High)
+- [x] fix_deprecated_code: Verificare e correggere errori deprecati nel codice (priority: Medium)
+- [x] test_fixes: Testare le correzioni per assicurarsi che funzionino correttamente (priority: Medium)

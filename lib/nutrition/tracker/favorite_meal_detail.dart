@@ -170,11 +170,4 @@ class FavoriteMealDetailState extends ConsumerState<FavoriteMealDetail> {
     });
   }
 
-  void _navigateToFoodSelector(BuildContext context, String? myFoodId) {
-    context.push('/food_tracker/food_selector', extra: {
-      'meal': widget.meal.toMap(),
-      'myFoodId': myFoodId,
-      'isFavoriteMeal': true
-    });
-  }
 }

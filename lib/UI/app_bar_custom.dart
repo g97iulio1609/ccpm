@@ -13,7 +13,6 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:alphanessone/nutrition/models/meals_model.dart' as meals;
 import 'package:alphanessone/nutrition/services/meals_services.dart';
 import 'package:alphanessone/nutrition/models/diet_plan_model.dart';
 import 'package:alphanessone/nutrition/services/diet_plan_services.dart';
@@ -299,8 +298,6 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
     );
   }
 
-
-
   Future<void> _syncProducts() async {
     _showSnackBar('Sincronizzazione prodotti in corso...');
     try {
@@ -308,7 +305,8 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
       _showSnackBar('Prodotti sincronizzati con successo');
     } catch (e) {
       _showSnackBar(
-          'Errore durante la sincronizzazione dei prodotti: ${e.toString()}');
+        'Errore durante la sincronizzazione dei prodotti: ${e.toString()}',
+      );
     }
   }
 
@@ -319,7 +317,8 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
       _showSnackBar('Store inizializzato con successo');
     } catch (e) {
       _showSnackBar(
-          'Errore durante l\'inizializzazione dello store: ${e.toString()}');
+        'Errore durante l\'inizializzazione dello store: ${e.toString()}',
+      );
     }
   }
 
@@ -356,8 +355,9 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading:
-            isBackButtonVisible ? _buildLeadingButtons(currentRoute) : null,
+        leading: isBackButtonVisible
+            ? _buildLeadingButtons(currentRoute)
+            : null,
         title: _isDailyFoodTrackerRoute(currentRoute)
             ? _buildDateSelector(selectedDate)
             : _buildTitle(currentRoute),
@@ -453,9 +453,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withAlpha(77),
         borderRadius: BorderRadius.circular(AppTheme.radii.full),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -467,9 +465,9 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
               size: 20,
             ),
             onPressed: () {
-              ref.read(selectedDateProvider.notifier).update(
-                    (state) => state.subtract(const Duration(days: 1)),
-                  );
+              ref
+                  .read(selectedDateProvider.notifier)
+                  .update((state) => state.subtract(const Duration(days: 1)));
             },
           ),
           Text(
@@ -486,9 +484,9 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
               size: 20,
             ),
             onPressed: () {
-              ref.read(selectedDateProvider.notifier).update(
-                    (state) => state.add(const Duration(days: 1)),
-                  );
+              ref
+                  .read(selectedDateProvider.notifier)
+                  .update((state) => state.add(const Duration(days: 1)));
             },
           ),
           PopupMenuButton<String>(
@@ -613,14 +611,19 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
                 await ref
                     .read(dietPlanServiceProvider)
                     .applyDietPlan(createdDietPlan);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text('Template Applied as New Diet Plan')));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Template Applied as New Diet Plan'),
+                  ),
+                );
               }
             }
           },
           itemBuilder: (context) => [
             const PopupMenuItem(
-                value: 'apply_template', child: Text('Apply Template')),
+              value: 'apply_template',
+              child: Text('Apply Template'),
+            ),
           ],
         ),
       );
@@ -676,8 +679,9 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
         .first;
 
     if (templates.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No templates available')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No templates available')));
       return null;
     }
 
@@ -685,8 +689,10 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Select a Template',
-              style: GoogleFonts.roboto(fontWeight: FontWeight.bold)),
+          title: Text(
+            'Select a Template',
+            style: GoogleFonts.roboto(fontWeight: FontWeight.bold),
+          ),
           content: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
@@ -696,8 +702,10 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
                 final template = templates[index];
                 return ListTile(
                   title: Text(template.name, style: GoogleFonts.roboto()),
-                  subtitle: Text('Duration: ${template.durationDays} days',
-                      style: GoogleFonts.roboto()),
+                  subtitle: Text(
+                    'Duration: ${template.durationDays} days',
+                    style: GoogleFonts.roboto(),
+                  ),
                   onTap: () => Navigator.of(context).pop(template),
                 );
               },

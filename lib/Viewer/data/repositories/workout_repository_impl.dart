@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:alphanessone/viewer/domain/entities/week.dart';
-import 'package:alphanessone/viewer/domain/entities/workout.dart';
-import 'package:alphanessone/viewer/domain/entities/exercise.dart';
+import 'package:alphanessone/shared/models/week.dart';
+import 'package:alphanessone/shared/models/workout.dart';
+import 'package:alphanessone/shared/models/exercise.dart';
 import 'package:alphanessone/shared/models/series.dart';
 import 'package:alphanessone/viewer/domain/repositories/workout_repository.dart';
 
@@ -19,16 +19,16 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
         .orderBy('number')
         .snapshots()
         .asyncMap((snapshot) async {
-      final weeks = <Week>[];
-      for (final doc in snapshot.docs) {
-        // Carichiamo i workout per OGNI settimana. Questo rimane N+1 query.
-        // Se diventa un problema di performance, considerare la denormalizzazione
-        // o caricare solo i dati della settimana e i workout su richiesta.
-        final workouts = await getWorkouts(doc.id).first;
-        weeks.add(Week.fromMap(doc.data(), doc.id, workouts));
-      }
-      return weeks;
-    });
+          final weeks = <Week>[];
+          for (final doc in snapshot.docs) {
+            // Carichiamo i workout per OGNI settimana. Questo rimane N+1 query.
+            // Se diventa un problema di performance, considerare la denormalizzazione
+            // o caricare solo i dati della settimana e i workout su richiesta.
+            final workouts = await getWorkouts(doc.id).first;
+            weeks.add(Week.fromMap(doc.data(), doc.id, workouts));
+          }
+          return weeks;
+        });
   }
 
   @override
@@ -126,18 +126,18 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
         .orderBy('order')
         .snapshots()
         .asyncMap((snapshot) async {
-      final workouts = <Workout>[];
-      for (final doc in snapshot.docs) {
-        final exercises = await getExercisesForWorkout(doc.id).first;
-        // Le note per gli esercizi del workout vengono caricate separatamente o da un livello superiore
-        // Qui passiamo una lista di esercizi già popolata, e Exercise.fromMap si aspetta la nota singola.
-        // Questo richiede un aggiustamento: o Workout.fromMap gestisce il caricamento delle note
-        // o gli esercizi vengono popolati con le note prima di creare il Workout.
-        // Per ora, manteniamo la logica di caricamento note a livello di Exercise.
-        workouts.add(Workout.fromMap(doc.data(), doc.id, exercises));
-      }
-      return workouts;
-    });
+          final workouts = <Workout>[];
+          for (final doc in snapshot.docs) {
+            final exercises = await getExercisesForWorkout(doc.id).first;
+            // Le note per gli esercizi del workout vengono caricate separatamente o da un livello superiore
+            // Qui passiamo una lista di esercizi già popolata, e Exercise.fromMap si aspetta la nota singola.
+            // Questo richiede un aggiustamento: o Workout.fromMap gestisce il caricamento delle note
+            // o gli esercizi vengono popolati con le note prima di creare il Workout.
+            // Per ora, manteniamo la logica di caricamento note a livello di Exercise.
+            workouts.add(Workout.fromMap(doc.data(), doc.id, exercises));
+          }
+          return workouts;
+        });
   }
 
   @override
@@ -154,8 +154,10 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
   @override
   Future<String> getWorkoutName(String workoutId) async {
     try {
-      final workoutDoc =
-          await _firestore.collection('workouts').doc(workoutId).get();
+      final workoutDoc = await _firestore
+          .collection('workouts')
+          .doc(workoutId)
+          .get();
       if (workoutDoc.exists && workoutDoc.data() != null) {
         final name = workoutDoc.data()!['name'] as String?;
         final order = workoutDoc.data()!['order']?.toString() ?? '';
@@ -235,21 +237,23 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
         .orderBy('order')
         .snapshots()
         .asyncMap((snapshot) async {
-      final exercises = <Exercise>[];
-      for (final doc in snapshot.docs) {
-        final data = doc.data();
-        final series = await getSeriesForExercise(doc.id).first;
-        final note = await getNoteForExercise(workoutId, doc.id);
-        exercises.add(Exercise.fromMap(data, doc.id, series, note));
-      }
-      return exercises;
-    });
+          final exercises = <Exercise>[];
+          for (final doc in snapshot.docs) {
+            final data = doc.data();
+            final series = await getSeriesForExercise(doc.id).first;
+            final note = await getNoteForExercise(workoutId, doc.id);
+            exercises.add(Exercise.fromMap(data, doc.id, series, note));
+          }
+          return exercises;
+        });
   }
 
   @override
   Future<Exercise> getExercise(String exerciseId) async {
-    final doc =
-        await _firestore.collection('exercisesWorkout').doc(exerciseId).get();
+    final doc = await _firestore
+        .collection('exercisesWorkout')
+        .doc(exerciseId)
+        .get();
     if (!doc.exists || doc.data() == null) {
       throw Exception('Esercizio non trovato con ID: $exerciseId');
     }
@@ -296,8 +300,10 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
     final batch = _firestore.batch();
 
     // 0. Recupera l'esercizio per ottenere il workoutId (necessario per l'ID della nota)
-    final exerciseDocSnapshot =
-        await _firestore.collection('exercisesWorkout').doc(exerciseId).get();
+    final exerciseDocSnapshot = await _firestore
+        .collection('exercisesWorkout')
+        .doc(exerciseId)
+        .get();
     String? workoutId;
     if (exerciseDocSnapshot.exists && exerciseDocSnapshot.data() != null) {
       workoutId = exerciseDocSnapshot.data()!['workoutId'] as String?;
@@ -329,7 +335,9 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
 
   @override
   Future<void> updateExercisesInWorkout(
-      String workoutId, List<Exercise> exercises) async {
+    String workoutId,
+    List<Exercise> exercises,
+  ) async {
     // Implementazione completa e robusta per aggiornare gli esercizi di un workout
 
     // Preparo un batch di operazioni per garantire la consistenza
@@ -342,9 +350,6 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
         .get();
 
     // Mappa per accesso rapido agli esercizi attuali per ID
-    final Map<String, DocumentSnapshot> currentExercisesMap = {
-      for (var doc in currentExercisesSnapshot.docs) doc.id: doc
-    };
 
     // Insieme degli ID degli esercizi che vogliamo mantenere
     final Set<String> exerciseIdsToKeep = {};
@@ -368,10 +373,11 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
         for (final series in exercise.series) {
           final newSeriesRef = _firestore.collection('series').doc();
           batch.set(
-              newSeriesRef,
-              series
-                  .copyWith(id: newSeriesRef.id, exerciseId: newExerciseRef.id)
-                  .toMap());
+            newSeriesRef,
+            series
+                .copyWith(id: newSeriesRef.id, exerciseId: newExerciseRef.id)
+                .toMap(),
+          );
         }
 
         // Salva la nota se presente
@@ -391,8 +397,10 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
 
         // Aggiorna l'esercizio (assicurandoci che il workoutId sia corretto)
         final exerciseData = exercise.copyWith(workoutId: workoutId).toMap();
-        batch.update(_firestore.collection('exercisesWorkout').doc(exerciseId),
-            exerciseData);
+        batch.update(
+          _firestore.collection('exercisesWorkout').doc(exerciseId),
+          exerciseData,
+        );
 
         // Recupera le serie esistenti per questo esercizio
         final existingSeriesSnapshot = await _firestore
@@ -401,9 +409,6 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
             .get();
 
         // Mappa per accesso rapido alle serie esistenti per ID
-        final Map<String, DocumentSnapshot> existingSeriesMap = {
-          for (var doc in existingSeriesSnapshot.docs) doc.id: doc
-        };
 
         // Insieme degli ID delle serie che vogliamo mantenere
         final Set<String> seriesIdsToKeep = {};
@@ -414,16 +419,19 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
           if (series.id.isEmpty) {
             final newSeriesRef = _firestore.collection('series').doc();
             batch.set(
-                newSeriesRef,
-                series
-                    .copyWith(id: newSeriesRef.id, exerciseId: exerciseId)
-                    .toMap());
+              newSeriesRef,
+              series
+                  .copyWith(id: newSeriesRef.id, exerciseId: exerciseId)
+                  .toMap(),
+            );
           }
           // Se l'ID serie esiste già, aggiorna la serie
           else {
             seriesIdsToKeep.add(series.id);
-            batch.update(_firestore.collection('series').doc(series.id),
-                series.copyWith(exerciseId: exerciseId).toMap());
+            batch.update(
+              _firestore.collection('series').doc(series.id),
+              series.copyWith(exerciseId: exerciseId).toMap(),
+            );
           }
         }
 
@@ -489,9 +497,11 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
         .where('exerciseId', isEqualTo: exerciseId)
         .orderBy('order')
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => Series.fromMap(doc.data(), doc.id))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => Series.fromMap(doc.data(), doc.id))
+              .toList(),
+        );
   }
 
   @override
@@ -505,7 +515,10 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
 
   @override
   Future<void> updateSeriesRepsAndWeight(
-      String seriesId, int repsDone, double weightDone) async {
+    String seriesId,
+    int repsDone,
+    double weightDone,
+  ) async {
     // Logica simile a TrainingProgramServices.updateSeries o WorkoutService.updateSeriesData
     final seriesRef = _firestore.collection('series').doc(seriesId);
     final seriesDoc = await seriesRef.get();
@@ -521,7 +534,11 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
 
   @override
   Future<void> updateSeriesDoneStatus(
-      String seriesId, bool isDone, int repsDone, double weightDone) async {
+    String seriesId,
+    bool isDone,
+    int repsDone,
+    double weightDone,
+  ) async {
     // Questo metodo combina l'aggiornamento dello stato 'done'
     // con l'aggiornamento di reps_done e weight_done,
     // simile a TrainingProgramServices.updateSeriesWithMaxValues ma più focalizzato sullo stato 'done' effettivo.
@@ -562,12 +579,16 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
   // --- Note Operations ---
   @override
   Future<String?> getNoteForExercise(
-      String workoutId, String exerciseId) async {
+    String workoutId,
+    String exerciseId,
+  ) async {
     // L'ID del documento nota è una combinazione di workoutId e exerciseId
     final noteDocId = '${workoutId}_$exerciseId';
     try {
-      final docSnapshot =
-          await _firestore.collection('exercise_notes').doc(noteDocId).get();
+      final docSnapshot = await _firestore
+          .collection('exercise_notes')
+          .doc(noteDocId)
+          .get();
       if (docSnapshot.exists) {
         return docSnapshot.data()?['note'] as String?;
       }
@@ -580,7 +601,10 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
 
   @override
   Future<void> saveNoteForExercise(
-      String workoutId, String exerciseId, String note) async {
+    String workoutId,
+    String exerciseId,
+    String note,
+  ) async {
     final noteDocId = '${workoutId}_$exerciseId';
     await _firestore.collection('exercise_notes').doc(noteDocId).set({
       'workoutId': workoutId,
@@ -592,7 +616,9 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
 
   @override
   Future<void> deleteNoteForExercise(
-      String workoutId, String exerciseId) async {
+    String workoutId,
+    String exerciseId,
+  ) async {
     final noteDocId = '${workoutId}_$exerciseId';
     try {
       await _firestore.collection('exercise_notes').doc(noteDocId).delete();
@@ -608,16 +634,16 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
         .where('workoutId', isEqualTo: workoutId)
         .snapshots()
         .map((snapshot) {
-      final notes = <String, String>{};
-      for (var doc in snapshot.docs) {
-        final data = doc.data();
-        final exerciseId = data['exerciseId'] as String?;
-        final noteContent = data['note'] as String?;
-        if (exerciseId != null && noteContent != null) {
-          notes[exerciseId] = noteContent;
-        }
-      }
-      return notes;
-    });
+          final notes = <String, String>{};
+          for (var doc in snapshot.docs) {
+            final data = doc.data();
+            final exerciseId = data['exerciseId'] as String?;
+            final noteContent = data['note'] as String?;
+            if (exerciseId != null && noteContent != null) {
+              notes[exerciseId] = noteContent;
+            }
+          }
+          return notes;
+        });
   }
 }

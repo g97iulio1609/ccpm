@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-import '../models/training_model.dart';
 import '../../shared/shared.dart';
 import '../domain/services/training_business_service.dart';
-import '../shared/utils/validation_utils.dart';
+import '../shared/utils/validation_utils.dart' as local_validation;
 import '../../services/users_services.dart';
 
 /// Refactored TrainingProgramController following SOLID principles
@@ -27,8 +25,8 @@ class TrainingProgramControllerRefactored extends ChangeNotifier {
     required TrainingBusinessService businessService,
     required UsersService usersService,
     TrainingProgram? initialProgram,
-  })  : _businessService = businessService,
-        _usersService = usersService {
+  }) : _businessService = businessService,
+       _usersService = usersService {
     _initializeProgram(initialProgram);
   }
 
@@ -46,7 +44,8 @@ class TrainingProgramControllerRefactored extends ChangeNotifier {
 
   /// Initialize program with default or provided values
   void _initializeProgram(TrainingProgram? initialProgram) {
-    _program = initialProgram ??
+    _program =
+        initialProgram ??
         TrainingProgram(
           id: '',
           name: '',
@@ -64,10 +63,12 @@ class TrainingProgramControllerRefactored extends ChangeNotifier {
   /// Initialize text controllers
   void _initializeControllers() {
     _nameController = TextEditingController(text: _program?.name ?? '');
-    _descriptionController =
-        TextEditingController(text: _program?.description ?? '');
-    _athleteIdController =
-        TextEditingController(text: _program?.athleteId ?? '');
+    _descriptionController = TextEditingController(
+      text: _program?.description ?? '',
+    );
+    _athleteIdController = TextEditingController(
+      text: _program?.athleteId ?? '',
+    );
     _mesocycleNumberController = TextEditingController(
       text: _program?.mesocycleNumber.toString() ?? '1',
     );
@@ -134,17 +135,16 @@ class TrainingProgramControllerRefactored extends ChangeNotifier {
     try {
       _updateProgram();
 
-      if (!ValidationUtils.isValidTrainingProgram(_program!)) {
+      if (!local_validation.ValidationUtils.isValidTrainingProgram(_program!)) {
         throw ArgumentError('Dati del programma non validi');
       }
 
       await _businessService.saveTrainingProgram(_program!);
 
       // Update user's current program
-      await _usersService.updateUser(
-        _program!.athleteId,
-        {'currentProgram': _program!.id},
-      );
+      await _usersService.updateUser(_program!.athleteId, {
+        'currentProgram': _program!.id,
+      });
     } catch (e) {
       _setError('Errore nel salvataggio: $e');
       rethrow;
@@ -185,7 +185,10 @@ class TrainingProgramControllerRefactored extends ChangeNotifier {
 
     try {
       await _businessService.copyWeek(
-          _program!, sourceWeekIndex, destinationWeekIndex);
+        _program!,
+        sourceWeekIndex,
+        destinationWeekIndex,
+      );
       notifyListeners();
     } catch (e) {
       _setError('Errore nella copia della settimana: $e');
@@ -220,12 +223,19 @@ class TrainingProgramControllerRefactored extends ChangeNotifier {
 
   /// Copy a workout
   Future<void> copyWorkout(
-      int sourceWeekIndex, int workoutIndex, int? destinationWeekIndex) async {
+    int sourceWeekIndex,
+    int workoutIndex,
+    int? destinationWeekIndex,
+  ) async {
     if (_program == null) return;
 
     try {
       await _businessService.copyWorkout(
-          _program!, sourceWeekIndex, workoutIndex, destinationWeekIndex);
+        _program!,
+        sourceWeekIndex,
+        workoutIndex,
+        destinationWeekIndex,
+      );
       notifyListeners();
     } catch (e) {
       _setError('Errore nella copia dell\'allenamento: $e');
@@ -240,7 +250,11 @@ class TrainingProgramControllerRefactored extends ChangeNotifier {
 
     try {
       _businessService.addExercise(
-          _program!, weekIndex, workoutIndex, exercise);
+        _program!,
+        weekIndex,
+        workoutIndex,
+        exercise,
+      );
       notifyListeners();
     } catch (e) {
       _setError('Errore nell\'aggiunta dell\'esercizio: $e');
@@ -253,7 +267,11 @@ class TrainingProgramControllerRefactored extends ChangeNotifier {
 
     try {
       _businessService.removeExercise(
-          _program!, weekIndex, workoutIndex, exerciseIndex);
+        _program!,
+        weekIndex,
+        workoutIndex,
+        exerciseIndex,
+      );
       notifyListeners();
     } catch (e) {
       _setError('Errore nella rimozione dell\'esercizio: $e');
@@ -266,7 +284,11 @@ class TrainingProgramControllerRefactored extends ChangeNotifier {
 
     try {
       _businessService.duplicateExercise(
-          _program!, weekIndex, workoutIndex, exerciseIndex);
+        _program!,
+        weekIndex,
+        workoutIndex,
+        exerciseIndex,
+      );
       notifyListeners();
     } catch (e) {
       _setError('Errore nella duplicazione dell\'esercizio: $e');
@@ -275,12 +297,17 @@ class TrainingProgramControllerRefactored extends ChangeNotifier {
 
   /// Update exercise weights
   Future<void> updateExerciseWeights(
-      String exerciseId, String exerciseType) async {
+    String exerciseId,
+    String exerciseType,
+  ) async {
     if (_program == null) return;
 
     try {
       await _businessService.updateExerciseWeights(
-          _program!, exerciseId, exerciseType);
+        _program!,
+        exerciseId,
+        exerciseType,
+      );
       notifyListeners();
     } catch (e) {
       _setError('Errore nell\'aggiornamento dei pesi: $e');
@@ -332,7 +359,10 @@ class TrainingProgramControllerRefactored extends ChangeNotifier {
   /// Reorder weeks
   void reorderWeeks(int oldIndex, int newIndex) {
     if (_program == null ||
-        !ValidationUtils.isValidProgramIndex(_program!, oldIndex)) {
+        !local_validation.ValidationUtils.isValidProgramIndex(
+          _program!,
+          oldIndex,
+        )) {
       return;
     }
 
@@ -345,7 +375,7 @@ class TrainingProgramControllerRefactored extends ChangeNotifier {
 
     // Update week numbers
     for (int i = 0; i < _program!.weeks.length; i++) {
-      _program!.weeks[i].number = i + 1;
+      _program!.weeks[i] = _program!.weeks[i].copyWith(number: i + 1);
     }
 
     notifyListeners();
@@ -354,7 +384,10 @@ class TrainingProgramControllerRefactored extends ChangeNotifier {
   /// Reorder workouts in a week
   void reorderWorkouts(int weekIndex, int oldIndex, int newIndex) {
     if (_program == null ||
-        !ValidationUtils.isValidProgramIndex(_program!, weekIndex) ||
+        !local_validation.ValidationUtils.isValidProgramIndex(
+          _program!,
+          weekIndex,
+        ) ||
         oldIndex < 0 ||
         oldIndex >= _program!.weeks[weekIndex].workouts.length ||
         newIndex < 0 ||
@@ -371,7 +404,10 @@ class TrainingProgramControllerRefactored extends ChangeNotifier {
 
     // Update workout orders
     for (int i = 0; i < _program!.weeks[weekIndex].workouts.length; i++) {
-      _program!.weeks[weekIndex].workouts[i].order = i + 1;
+      _program!.weeks[weekIndex].workouts[i] = _program!
+          .weeks[weekIndex]
+          .workouts[i]
+          .copyWith(order: i + 1);
     }
 
     notifyListeners();
@@ -379,18 +415,31 @@ class TrainingProgramControllerRefactored extends ChangeNotifier {
 
   /// Reorder exercises in a workout
   void reorderExercises(
-      int weekIndex, int workoutIndex, int oldIndex, int newIndex) {
+    int weekIndex,
+    int workoutIndex,
+    int oldIndex,
+    int newIndex,
+  ) {
     if (_program == null ||
-        !ValidationUtils.isValidProgramIndex(
-            _program!, weekIndex, workoutIndex) ||
+        !local_validation.ValidationUtils.isValidProgramIndex(
+          _program!,
+          weekIndex,
+          workoutIndex,
+        ) ||
         oldIndex < 0 ||
         oldIndex >=
             _program!
-                .weeks[weekIndex].workouts[workoutIndex].exercises.length ||
+                .weeks[weekIndex]
+                .workouts[workoutIndex]
+                .exercises
+                .length ||
         newIndex < 0 ||
         newIndex >
             _program!
-                .weeks[weekIndex].workouts[workoutIndex].exercises.length) {
+                .weeks[weekIndex]
+                .workouts[workoutIndex]
+                .exercises
+                .length) {
       return;
     }
 
@@ -400,14 +449,16 @@ class TrainingProgramControllerRefactored extends ChangeNotifier {
 
     final exercise = _program!.weeks[weekIndex].workouts[workoutIndex].exercises
         .removeAt(oldIndex);
-    _program!.weeks[weekIndex].workouts[workoutIndex].exercises
-        .insert(newIndex, exercise);
+    _program!.weeks[weekIndex].workouts[workoutIndex].exercises.insert(
+      newIndex,
+      exercise,
+    );
 
     // Update exercise orders
     final exercises =
         _program!.weeks[weekIndex].workouts[workoutIndex].exercises;
     for (int i = 0; i < exercises.length; i++) {
-      exercises[i].order = i + 1;
+      exercises[i] = exercises[i].copyWith(order: i + 1);
     }
 
     notifyListeners();

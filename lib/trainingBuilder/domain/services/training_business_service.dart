@@ -3,7 +3,8 @@ import '../repositories/training_repository.dart';
 import '../../../ExerciseRecords/exercise_record_services.dart';
 import '../../shared/utils/validation_utils.dart';
 import '../../shared/utils/model_utils.dart';
-import '../../utility_functions.dart';
+
+import '../../../shared/services/weight_calculation_service.dart';
 
 /// Business service that handles training program business logic
 /// Follows Single Responsibility Principle
@@ -254,9 +255,9 @@ class TrainingBusinessService {
           : null;
       if (intensity != null) {
         final calculatedWeight =
-            _calculateWeightFromIntensity(maxWeight, intensity);
+            WeightCalculationService.calculateWeightFromIntensity(maxWeight, intensity);
         exercise.series[i] = series.copyWith(
-          weight: roundWeight(calculatedWeight, exerciseType),
+          weight: WeightCalculationService.roundWeight(calculatedWeight, exerciseType),
         );
       }
     }
@@ -272,9 +273,9 @@ class TrainingBusinessService {
                 : null;
             if (intensity != null) {
               final calculatedWeight =
-                  _calculateWeightFromIntensity(maxWeight, intensity);
+                  WeightCalculationService.calculateWeightFromIntensity(maxWeight, intensity);
               progression.series[i] = series.copyWith(
-                weight: roundWeight(calculatedWeight, exerciseType),
+                weight: WeightCalculationService.roundWeight(calculatedWeight, exerciseType),
               );
             }
           }
@@ -282,13 +283,6 @@ class TrainingBusinessService {
       }
     }
   }
-
-  /// Calculates weight from intensity percentage
-  double _calculateWeightFromIntensity(double maxWeight, double intensity) {
-    if (maxWeight <= 0 || intensity <= 0) return 0;
-    return maxWeight * (intensity / 100);
-  }
-
 
 
   /// Tracks week for deletion

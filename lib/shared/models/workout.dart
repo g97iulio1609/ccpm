@@ -10,17 +10,17 @@ class Workout {
   final int order;
   final String name;
   final String? description; // Viewer compatibility
-  
+
   // Content fields
   final List<Exercise> exercises;
   final List<Map<String, dynamic>>? superSets; // TrainingBuilder compatibility
-  
+
   // Status and tracking fields
   final DateTime? lastPerformed; // Viewer compatibility
   final bool isCompleted; // Viewer compatibility
   final DateTime? createdAt;
   final DateTime? updatedAt;
-  
+
   // Additional metadata
   final Map<String, dynamic>? metadata;
   final String? notes;
@@ -47,11 +47,7 @@ class Workout {
 
   /// Factory constructor for empty workout
   factory Workout.empty() {
-    return const Workout(
-      order: 0,
-      name: '',
-      exercises: [],
-    );
+    return const Workout(order: 0, name: '', exercises: []);
   }
 
   /// Factory constructor from Firestore document
@@ -113,7 +109,8 @@ class Workout {
       updatedAt: updatedAt ?? this.updatedAt,
       metadata: metadata ?? this.metadata,
       notes: notes ?? this.notes,
-      estimatedDurationMinutes: estimatedDurationMinutes ?? this.estimatedDurationMinutes,
+      estimatedDurationMinutes:
+          estimatedDurationMinutes ?? this.estimatedDurationMinutes,
       tags: tags ?? this.tags,
     );
   }
@@ -128,13 +125,15 @@ class Workout {
       if (description != null) 'description': description,
       'exercises': exercises.map((e) => e.toMap()).toList(),
       if (superSets != null) 'superSets': superSets,
-      if (lastPerformed != null) 'lastPerformed': Timestamp.fromDate(lastPerformed!),
+      if (lastPerformed != null)
+        'lastPerformed': Timestamp.fromDate(lastPerformed!),
       'isCompleted': isCompleted,
       if (createdAt != null) 'createdAt': Timestamp.fromDate(createdAt!),
       if (updatedAt != null) 'updatedAt': Timestamp.fromDate(updatedAt!),
       if (metadata != null) 'metadata': metadata,
       if (notes != null) 'notes': notes,
-      if (estimatedDurationMinutes != null) 'estimatedDurationMinutes': estimatedDurationMinutes,
+      if (estimatedDurationMinutes != null)
+        'estimatedDurationMinutes': estimatedDurationMinutes,
       if (tags != null) 'tags': tags,
     };
   }
@@ -148,7 +147,7 @@ class Workout {
   static List<Exercise> _parseExercises(dynamic data) {
     if (data == null) return [];
     if (data is! List) return [];
-    
+
     return data
         .map((item) {
           if (item is Map<String, dynamic>) {
@@ -165,10 +164,8 @@ class Workout {
   static List<Map<String, dynamic>>? _parseSuperSets(dynamic data) {
     if (data == null) return null;
     if (data is! List) return null;
-    
-    return data
-        .map((item) => item as Map<String, dynamic>)
-        .toList();
+
+    return data.map((item) => item as Map<String, dynamic>).toList();
   }
 
   /// Helper method for parsing timestamps
@@ -183,17 +180,16 @@ class Workout {
   static List<String>? _parseStringList(dynamic data) {
     if (data == null) return null;
     if (data is! List) return null;
-    
-    return data
-        .map((item) => item.toString())
-        .toList();
+
+    return data.map((item) => item.toString()).toList();
   }
 
   /// Get total number of exercises
   int get totalExercises => exercises.length;
 
   /// Get total number of series across all exercises
-  int get totalSeries => exercises.fold(0, (sum, exercise) => sum + exercise.series.length);
+  int get totalSeries =>
+      exercises.fold(0, (total, exercise) => total + exercise.series.length);
 
   /// Get completed exercises count
   int get completedExercises => exercises.where((e) => e.isCompleted).length;
@@ -208,14 +204,15 @@ class Workout {
   bool get hasExercises => exercises.isNotEmpty;
 
   /// Check if workout is fully completed
-  bool get isFullyCompleted => exercises.isNotEmpty && exercises.every((e) => e.isCompleted);
+  bool get isFullyCompleted =>
+      exercises.isNotEmpty && exercises.every((e) => e.isCompleted);
 
   /// Get estimated duration in minutes
   int get estimatedDuration {
     if (estimatedDurationMinutes != null) {
       return estimatedDurationMinutes!;
     }
-    
+
     // Calculate based on exercises and series
     int totalSets = totalSeries;
     int estimatedMinutes = (totalSets * 2.5).round(); // ~2.5 minutes per set
@@ -225,7 +222,7 @@ class Workout {
   /// Get exercises grouped by supersets
   Map<String?, List<Exercise>> get exercisesBySuperset {
     final Map<String?, List<Exercise>> grouped = {};
-    
+
     for (final exercise in exercises) {
       final supersetId = exercise.superSetId;
       if (!grouped.containsKey(supersetId)) {
@@ -233,7 +230,7 @@ class Workout {
       }
       grouped[supersetId]!.add(exercise);
     }
-    
+
     return grouped;
   }
 
@@ -262,14 +259,7 @@ class Workout {
 
   @override
   int get hashCode {
-    return Object.hash(
-      id,
-      weekId,
-      order,
-      name,
-      description,
-      isCompleted,
-    );
+    return Object.hash(id, weekId, order, name, description, isCompleted);
   }
 
   @override
@@ -282,29 +272,29 @@ class Workout {
 extension WorkoutCompatibility on Workout {
   /// TrainingBuilder compatibility - get exercises list
   List<Exercise> get exercisesList => exercises;
-  
+
   /// Viewer compatibility - check if workout was performed
   bool get wasPerformed => lastPerformed != null;
-  
+
   /// Get days since last performed
   int? get daysSinceLastPerformed {
     if (lastPerformed == null) return null;
     return DateTime.now().difference(lastPerformed!).inDays;
   }
-  
+
   /// Check if workout is overdue (more than 7 days since last performed)
   bool get isOverdue {
     final days = daysSinceLastPerformed;
     return days != null && days > 7;
   }
-  
+
   /// Get workout status as string
   String get statusText {
     if (isCompleted) return 'Completed';
     if (completedExercises > 0) return 'In Progress';
     return 'Not Started';
   }
-  
+
   /// Get formatted duration string
   String get durationText {
     final duration = estimatedDuration;
@@ -316,7 +306,7 @@ extension WorkoutCompatibility on Workout {
       return '${hours}h ${minutes}min';
     }
   }
-  
+
   /// Create a copy with updated completion status
   Workout markAsCompleted() {
     return copyWith(
@@ -325,52 +315,37 @@ extension WorkoutCompatibility on Workout {
       updatedAt: DateTime.now(),
     );
   }
-  
+
   /// Create a copy with reset completion status
   Workout resetCompletion() {
-    return copyWith(
-      isCompleted: false,
-      updatedAt: DateTime.now(),
-    );
+    return copyWith(isCompleted: false, updatedAt: DateTime.now());
   }
-  
+
   /// Add exercise to workout
   Workout addExercise(Exercise exercise) {
     final updatedExercises = List<Exercise>.from(exercises);
     updatedExercises.add(exercise);
-    return copyWith(
-      exercises: updatedExercises,
-      updatedAt: DateTime.now(),
-    );
+    return copyWith(exercises: updatedExercises, updatedAt: DateTime.now());
   }
-  
+
   /// Remove exercise from workout
   Workout removeExercise(String exerciseId) {
     final updatedExercises = exercises
         .where((e) => e.id != exerciseId)
         .toList();
-    return copyWith(
-      exercises: updatedExercises,
-      updatedAt: DateTime.now(),
-    );
+    return copyWith(exercises: updatedExercises, updatedAt: DateTime.now());
   }
-  
+
   /// Update exercise in workout
   Workout updateExercise(Exercise updatedExercise) {
     final updatedExercises = exercises
         .map((e) => e.id == updatedExercise.id ? updatedExercise : e)
         .toList();
-    return copyWith(
-      exercises: updatedExercises,
-      updatedAt: DateTime.now(),
-    );
+    return copyWith(exercises: updatedExercises, updatedAt: DateTime.now());
   }
-  
+
   /// Reorder exercises
   Workout reorderExercises(List<Exercise> reorderedExercises) {
-    return copyWith(
-      exercises: reorderedExercises,
-      updatedAt: DateTime.now(),
-    );
+    return copyWith(exercises: reorderedExercises, updatedAt: DateTime.now());
   }
 }

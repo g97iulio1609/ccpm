@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:logger/logger.dart';
 import '../models/nutrition_stats.dart';
 
 class NutritionService {
@@ -49,6 +50,9 @@ class NutritionService {
       } else {
         await snapshot.docs.first.reference.update(stats.toMap());
       }
-    } catch (e) {}
+    } catch (e) {
+      // Log error but don't throw to avoid breaking the flow
+      Logger().e('Error updating daily nutrition stats: $e');
+    }
   }
 }

@@ -1,28 +1,7 @@
 import 'dart:math';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 
-double roundWeight(double weight, String? exerciseType) {
-  // Imposta un valore predefinito per exerciseType se è null o una stringa vuota
-  final effectiveExerciseType =
-      exerciseType?.isNotEmpty == true ? exerciseType : 'Default';
-  switch (effectiveExerciseType) {
-    case 'Manubri':
-      // Arrotonda al numero pari più vicino
-      return (weight / 2).round() * 2.0;
-    case 'Bilanciere':
-      // Gestisci il caso in cui weight è 0
-      if (weight == 0) {
-        return 0;
-      } else {
-        // Mantieni il comportamento esistente
-        return (weight / 2.5).round() * 2.5;
-      }
-    default:
-      // Arrotonda al numero pari più vicino
-      final roundedWeight = double.parse((weight).toStringAsFixed(1));
-      return (roundedWeight / 2).round() * 2.0;
-  }
-}
+
 
 
 
@@ -44,17 +23,7 @@ double roundWeight(double weight, String? exerciseType) {
   }
 
 
-double calculateWeightFromIntensity(num latestMaxWeight, double intensity) {
-  return (latestMaxWeight * intensity) / 100;
-}
 
-double calculateIntensityFromWeight(double weight, num latestMaxWeight) {
-  if (latestMaxWeight != 0) {
-    return (weight / latestMaxWeight) * 100;
-  } else {
-    return 0;
-  }
-}
 
 double? calculateRPE(double weight, num latestMaxWeight, int reps) {
   final rpeTable = {

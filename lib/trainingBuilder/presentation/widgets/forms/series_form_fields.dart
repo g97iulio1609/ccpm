@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/shared/shared.dart';
-import 'package:alphanessone/trainingBuilder/series_utils.dart';
+
+import 'package:alphanessone/shared/services/weight_calculation_service.dart';
 import '../../../shared/widgets/number_input_field.dart';
 
 class SeriesFormFields extends StatefulWidget {
@@ -193,7 +194,7 @@ class _SeriesFormFieldsState extends State<SeriesFormFields> {
   void _onIntensityChanged() {
     final intensity = double.tryParse(_intensityController.text) ?? 0.0;
     if (intensity > 0 && widget.maxWeight > 0) {
-      final weight = SeriesUtils.calculateWeightFromIntensity(
+      final weight = WeightCalculationService.calculateWeightFromIntensity(
         widget.maxWeight.toDouble(),
         intensity,
       );
@@ -201,7 +202,7 @@ class _SeriesFormFieldsState extends State<SeriesFormFields> {
 
       final maxIntensity = double.tryParse(_maxIntensityController.text);
       if (maxIntensity != null && maxIntensity > 0) {
-        final maxWeight = SeriesUtils.calculateWeightFromIntensity(
+        final maxWeight = WeightCalculationService.calculateWeightFromIntensity(
           widget.maxWeight.toDouble(),
           maxIntensity,
         );
@@ -213,7 +214,7 @@ class _SeriesFormFieldsState extends State<SeriesFormFields> {
   void _onWeightChanged() {
     final weight = double.tryParse(_weightController.text) ?? 0.0;
     if (weight > 0 && widget.maxWeight > 0) {
-      final intensity = SeriesUtils.calculateIntensityFromWeight(
+      final intensity = WeightCalculationService.calculateIntensityFromWeight(
         weight,
         widget.maxWeight.toDouble(),
       );
@@ -221,7 +222,7 @@ class _SeriesFormFieldsState extends State<SeriesFormFields> {
 
       final maxWeight = double.tryParse(_maxWeightController.text);
       if (maxWeight != null && maxWeight > 0) {
-        final maxIntensity = SeriesUtils.calculateIntensityFromWeight(
+        final maxIntensity = WeightCalculationService.calculateIntensityFromWeight(
           maxWeight,
           widget.maxWeight.toDouble(),
         );

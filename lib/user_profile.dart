@@ -35,7 +35,7 @@ class UserProfileState extends ConsumerState<UserProfile>
     'socialLinks',
     'id',
     'photoURL',
-    'gender'
+    'gender',
   ];
   final _debouncer = Debouncer(milliseconds: 1000);
   late TabController _tabController;
@@ -63,8 +63,10 @@ class UserProfileState extends ConsumerState<UserProfile>
     setState(() => _isLoading = true);
     try {
       String uid = widget.userId ?? FirebaseAuth.instance.currentUser!.uid;
-      DocumentSnapshot userData =
-          await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      DocumentSnapshot userData = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
       final userProfileData = userData.data() as Map<String, dynamic>?;
 
       if (userProfileData != null) {
@@ -87,8 +89,9 @@ class UserProfileState extends ConsumerState<UserProfile>
   void _updateControllers(Map<String, dynamic> data) {
     data.forEach((key, value) {
       if (!_excludedFields.contains(key)) {
-        _controllers[key] =
-            TextEditingController(text: value?.toString() ?? '');
+        _controllers[key] = TextEditingController(
+          text: value?.toString() ?? '',
+        );
       }
     });
   }
@@ -130,10 +133,9 @@ class UserProfileState extends ConsumerState<UserProfile>
   }
 
   void _showSnackBar(String message, Color color) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message),
-      backgroundColor: color,
-    ));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message), backgroundColor: color));
   }
 
   Future<void> _uploadProfilePicture() async {
@@ -166,9 +168,9 @@ class UserProfileState extends ConsumerState<UserProfile>
         await storageRef.putFile(file);
         final downloadURL = await storageRef.getDownloadURL();
 
-        await ref
-            .read(usersServiceProvider)
-            .updateUser(uid, {'photoURL': downloadURL});
+        await ref.read(usersServiceProvider).updateUser(uid, {
+          'photoURL': downloadURL,
+        });
 
         setState(() {
           _photoURL = downloadURL;
@@ -194,7 +196,9 @@ class UserProfileState extends ConsumerState<UserProfile>
           await FirebaseAuth.instance.signOut();
           if (mounted) {
             _showSnackBar(
-                'Il tuo account è stato eliminato con successo.', Colors.green);
+              'Il tuo account è stato eliminato con successo.',
+              Colors.green,
+            );
             context.go('/');
           }
         } else {
@@ -221,12 +225,12 @@ class UserProfileState extends ConsumerState<UserProfile>
       if (isGoogleUser) {
         final GoogleSignIn googleSignIn = GoogleSignIn.instance;
         await googleSignIn.initialize();
-        final GoogleSignInAccount? googleUser = await googleSignIn.authenticate(
-          scopeHint: ['email', 'profile'],
-        );
-        if (googleUser == null) {
+        final googleUserResult =
+            await googleSignIn.authenticate(scopeHint: ['email', 'profile']);
+        if (googleUserResult == null) {
           throw Exception("Autenticazione Google fallita.");
         }
+        final GoogleSignInAccount googleUser = googleUserResult;
 
         final GoogleSignInAuthentication googleAuth = googleUser.authentication;
         final credential = GoogleAuthProvider.credential(
@@ -268,10 +272,10 @@ class UserProfileState extends ConsumerState<UserProfile>
     );
   }
 
-  bool _isGoogleUser(User? user) {
-    return user?.providerData
-            .any((userInfo) => userInfo.providerId == 'google.com') ??
-        false;
+  bool _isGoogleUser(User user) {
+    return user.providerData.any(
+      (userInfo) => userInfo.providerId == 'google.com',
+    );
   }
 
   @override
@@ -306,9 +310,7 @@ class UserProfileState extends ConsumerState<UserProfile>
         child: SafeArea(
           child: _isLoading
               ? Center(
-                  child: CircularProgressIndicator(
-                    color: colorScheme.primary,
-                  ),
+                  child: CircularProgressIndicator(color: colorScheme.primary),
                 )
               : Column(
                   children: [
@@ -477,7 +479,8 @@ class UserProfileState extends ConsumerState<UserProfile>
 
   Widget _buildSubscriptionsTab() {
     return SubscriptionsScreen(
-        userId: widget.userId ?? FirebaseAuth.instance.currentUser!.uid);
+      userId: widget.userId ?? FirebaseAuth.instance.currentUser!.uid,
+    );
   }
 
   Widget _buildEditableField(String field, TextEditingController? controller) {
@@ -503,16 +506,11 @@ class UserProfileState extends ConsumerState<UserProfile>
       labelStyle: TextStyle(color: theme.colorScheme.onSurfaceVariant),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(
-          color: theme.colorScheme.outline.withAlpha(51),
-        ),
+        borderSide: BorderSide(color: theme.colorScheme.outline.withAlpha(51)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(
-          color: theme.colorScheme.primary,
-          width: 2,
-        ),
+        borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
       ),
       filled: true,
       fillColor: theme.colorScheme.surfaceContainerHighest.withAlpha(77),
@@ -582,8 +580,10 @@ class UserProfileState extends ConsumerState<UserProfile>
             child: Text(entry.value),
           );
         }).toList(),
-        hint: Text('Seleziona genere',
-            style: TextStyle(color: Colors.white.withAlpha(179))),
+        hint: Text(
+          'Seleziona genere',
+          style: TextStyle(color: Colors.white.withAlpha(179)),
+        ),
       ),
     );
   }
@@ -595,9 +595,7 @@ class UserProfileTabContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text('Contenuto della scheda'),
-    );
+    return const Center(child: Text('Contenuto della scheda'));
   }
 }
 

@@ -105,20 +105,12 @@ class PresetManager {
   Future<void> savePreset(
       String label, int seconds, BuildContext context) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final docRef =
-          await FirebaseFirestore.instance.collection('timer_presets').add({
+      await FirebaseFirestore.instance.collection('timer_presets').add({
         'userId': userId,
         'label': label,
         'seconds': seconds,
         'createdAt': FieldValue.serverTimestamp(),
       });
-
-      final newPreset = {
-        'id': docRef.id,
-        'label': label,
-        'seconds': seconds,
-      };
 
       // Ricarica i preset per aggiornare la lista
       loadUserPresets();

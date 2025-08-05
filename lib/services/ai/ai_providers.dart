@@ -6,7 +6,7 @@ import 'package:alphanessone/services/ai/openai_service.dart';
 import 'package:alphanessone/services/ai/gemini_service.dart';
 import 'ai_service.dart';
 import 'ai_settings_service.dart';
-import 'AIServices.dart';
+import 'ai_services.dart';
 
 final aiSettingsServiceProvider = Provider<AISettingsService>((ref) {
   final sharedPreferencesAsync = ref.watch(sharedPreferencesProvider);

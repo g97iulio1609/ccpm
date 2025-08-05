@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/shared/shared.dart';
-import '../models/progressions_model.dart';
 import '../models/progression_view_model.dart';
 import '../services/progression_business_service_optimized.dart';
 
@@ -218,6 +217,7 @@ class ProgressionControllerRefactored extends ChangeNotifier {
             final seriesMap = s as Map<String, dynamic>;
             return Series(
               serieId: DateTime.now().millisecondsSinceEpoch.toString(),
+              exerciseId: '',
               reps: seriesMap['reps'] ?? 0,
               sets: seriesMap['sets'] ?? 1,
               weight: (seriesMap['weight'] ?? 0.0).toDouble(),
@@ -225,8 +225,8 @@ class ProgressionControllerRefactored extends ChangeNotifier {
               rpe: seriesMap['rpe'] ?? '',
               order: 1,
               done: false,
-              reps_done: 0,
-              weight_done: 0.0,
+              repsDone: 0,
+              weightDone: 0.0,
             );
           }).toList();
 

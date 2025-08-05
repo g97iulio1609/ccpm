@@ -9,7 +9,7 @@ class Series {
   final String exerciseId;
   final String? originalExerciseId;
   final int order;
-  
+
   // Target values (what should be performed)
   final int reps;
   final int? maxReps;
@@ -22,13 +22,13 @@ class Series {
   final String? rpe;
   final String? maxRpe;
   final String? rpeMax; // Viewer compatibility
-  
+
   // Execution values (what was actually performed)
   final int repsDone;
   final double weightDone;
   final bool done; // TrainingBuilder naming
   final bool isCompleted; // Viewer naming
-  
+
   // Additional fields
   final int? restTimeSeconds;
   final String? type; // 'normal', 'drop_set', 'myo_reps', etc.
@@ -64,12 +64,7 @@ class Series {
 
   /// Factory constructor for empty series
   factory Series.empty() {
-    return const Series(
-      exerciseId: '',
-      order: 0,
-      reps: 0,
-      weight: 0.0,
-    );
+    return const Series(exerciseId: '', order: 0, reps: 0, weight: 0.0);
   }
 
   /// Factory constructor from Firestore document
@@ -182,8 +177,8 @@ class Series {
       if (rpe != null) 'rpe': rpe,
       if (maxRpe != null) 'maxRpe': maxRpe,
       if (rpeMax != null) 'rpeMax': rpeMax,
-      'reps_done': repsDone,
-      'weight_done': weightDone,
+      'repsDone': repsDone,
+      'weightDone': weightDone,
       'done': done,
       'isCompleted': isCompleted,
       if (restTimeSeconds != null) 'restTimeSeconds': restTimeSeconds,
@@ -207,7 +202,11 @@ class Series {
   }
 
   /// Check if series has range values (min-max)
-  bool get hasRange => maxReps != null || maxWeight != null || maxIntensity != null || maxRpe != null;
+  bool get hasRange =>
+      maxReps != null ||
+      maxWeight != null ||
+      maxIntensity != null ||
+      maxRpe != null;
 
   /// Get completion status (unified from both naming conventions)
   bool get completionStatus => done || isCompleted;
@@ -264,24 +263,18 @@ class Series {
 
 /// Extension methods for backward compatibility
 extension SeriesCompatibility on Series {
-  /// TrainingBuilder compatibility - get reps_done
-  int get reps_done => repsDone;
-  
-  /// TrainingBuilder compatibility - get weight_done
-  double get weight_done => weightDone;
-  
   /// Viewer compatibility - get repsDone
   int get repsDoneCompat => repsDone;
-  
+
   /// Viewer compatibility - get weightDone
   double get weightDoneCompat => weightDone;
-  
+
   /// Unified completion check
   bool get isDone => completionStatus;
-  
+
   /// Check if this is a range series
   bool get isRange => hasRange;
-  
+
   /// Get display text for reps (handles ranges)
   String get repsDisplay {
     if (maxReps != null && maxReps != reps) {
@@ -289,7 +282,7 @@ extension SeriesCompatibility on Series {
     }
     return reps.toString();
   }
-  
+
   /// Get display text for weight (handles ranges)
   String get weightDisplay {
     if (maxWeight != null && maxWeight != weight) {
@@ -297,12 +290,12 @@ extension SeriesCompatibility on Series {
     }
     return weight.toStringAsFixed(1);
   }
-  
+
   /// Get display text for RPE (handles ranges)
   String get rpeDisplay {
     final rpeValue = rpe ?? '';
     final maxRpeValue = maxRpe ?? rpeMax ?? '';
-    
+
     if (maxRpeValue.isNotEmpty && maxRpeValue != rpeValue) {
       return '$rpeValue-$maxRpeValue';
     }

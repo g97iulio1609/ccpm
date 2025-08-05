@@ -24,18 +24,7 @@ class ExerciseUtils {
     return exerciseSuperSets.isNotEmpty ? exerciseSuperSets.first : null;
   }
 
-  /// Calcola il peso in base all'intensità e al massimale
-  static double calculateWeightFromIntensity(
-      double maxWeight, double intensity) {
-    if (maxWeight <= 0 || intensity <= 0) return 0;
-    return maxWeight * (intensity / 100);
-  }
 
-  /// Calcola l'intensità in base al peso e al massimale
-  static double calculateIntensityFromWeight(double weight, double maxWeight) {
-    if (maxWeight <= 0 || weight <= 0) return 0;
-    return (weight / maxWeight) * 100;
-  }
 
   /// Calcola il Max RM usando la formula di Brzycki
   static double calculateMaxRM(double weight, int repetitions) {

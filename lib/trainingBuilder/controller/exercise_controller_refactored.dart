@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import '../models/training_model.dart';
 import 'package:alphanessone/shared/shared.dart';
 import '../domain/services/exercise_business_service.dart';
-import '../shared/utils/validation_utils.dart';
 import '../dialog/exercise_dialog.dart';
+import '../shared/utils/validation_utils.dart' as local_validation_utils;
 
 /// Controller refactorizzato per le operazioni sugli esercizi
 /// Segue il principio Single Responsibility - solo presentazione
@@ -32,12 +31,19 @@ class ExerciseControllerRefactored extends ChangeNotifier {
     _clearError();
 
     try {
-      final exercise =
-          await _showExerciseDialog(context, null, program.athleteId);
+      final exercise = await _showExerciseDialog(
+        context,
+        null,
+        program.athleteId,
+      );
       if (exercise != null) {
         _setLoading(true);
         await _businessService.addExercise(
-            program, weekIndex, workoutIndex, exercise);
+          program,
+          weekIndex,
+          workoutIndex,
+          exercise,
+        );
         notifyListeners();
       }
     } catch (e) {
@@ -58,7 +64,11 @@ class ExerciseControllerRefactored extends ChangeNotifier {
 
     try {
       _businessService.removeExercise(
-          program, weekIndex, workoutIndex, exerciseIndex);
+        program,
+        weekIndex,
+        workoutIndex,
+        exerciseIndex,
+      );
       notifyListeners();
     } catch (e) {
       _setError('Errore nella rimozione dell\'esercizio: $e');
@@ -76,7 +86,11 @@ class ExerciseControllerRefactored extends ChangeNotifier {
 
     try {
       _businessService.duplicateExercise(
-          program, weekIndex, workoutIndex, exerciseIndex);
+        program,
+        weekIndex,
+        workoutIndex,
+        exerciseIndex,
+      );
       notifyListeners();
     } catch (e) {
       _setError('Errore nella duplicazione dell\'esercizio: $e');
@@ -95,15 +109,25 @@ class ExerciseControllerRefactored extends ChangeNotifier {
 
     try {
       final currentExercise = program
-          .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+          .weeks[weekIndex]
+          .workouts[workoutIndex]
+          .exercises[exerciseIndex];
 
       final updatedExercise = await _showExerciseDialog(
-          context, currentExercise, program.athleteId);
+        context,
+        currentExercise,
+        program.athleteId,
+      );
 
       if (updatedExercise != null) {
         _setLoading(true);
         await _businessService.updateExercise(
-            program, weekIndex, workoutIndex, exerciseIndex, updatedExercise);
+          program,
+          weekIndex,
+          workoutIndex,
+          exerciseIndex,
+          updatedExercise,
+        );
         notifyListeners();
       }
     } catch (e) {
@@ -124,7 +148,10 @@ class ExerciseControllerRefactored extends ChangeNotifier {
     try {
       _setLoading(true);
       await _businessService.updateExerciseWeights(
-          program, exerciseId, exerciseType);
+        program,
+        exerciseId,
+        exerciseType,
+      );
       notifyListeners();
     } catch (e) {
       _setError('Errore nell\'aggiornamento dei pesi: $e');
@@ -144,7 +171,10 @@ class ExerciseControllerRefactored extends ChangeNotifier {
     try {
       _setLoading(true);
       await _businessService.updateSingleProgramExercise(
-          program, exerciseId, exerciseType);
+        program,
+        exerciseId,
+        exerciseType,
+      );
       notifyListeners();
     } catch (e) {
       _setError('Errore nell\'aggiornamento dell\'esercizio: $e');
@@ -165,10 +195,39 @@ class ExerciseControllerRefactored extends ChangeNotifier {
 
     try {
       _businessService.reorderExercises(
-          program, weekIndex, workoutIndex, oldIndex, newIndex);
+        program,
+        weekIndex,
+        workoutIndex,
+        oldIndex,
+        newIndex,
+      );
       notifyListeners();
     } catch (e) {
       _setError('Errore nel riordinamento degli esercizi: $e');
+    }
+  }
+
+  /// Sposta un esercizio da un workout a un altro
+  void moveExercise(
+    TrainingProgram program,
+    int weekIndex,
+    int sourceWorkoutIndex,
+    int destinationWorkoutIndex,
+    int exerciseIndex,
+  ) {
+    _clearError();
+
+    try {
+      _businessService.moveExercise(
+        program,
+        weekIndex,
+        sourceWorkoutIndex,
+        destinationWorkoutIndex,
+        exerciseIndex,
+      );
+      notifyListeners();
+    } catch (e) {
+      _setError('Errore nello spostamento dell\'esercizio: $e');
     }
   }
 
@@ -183,7 +242,11 @@ class ExerciseControllerRefactored extends ChangeNotifier {
 
     try {
       _businessService.addSeriesToProgression(
-          program, weekIndex, workoutIndex, exerciseIndex);
+        program,
+        weekIndex,
+        workoutIndex,
+        exerciseIndex,
+      );
       notifyListeners();
     } catch (e) {
       _setError('Errore nell\'aggiunta della serie: $e');
@@ -196,8 +259,11 @@ class ExerciseControllerRefactored extends ChangeNotifier {
     int weekIndex,
     int workoutIndex,
   ) {
-    if (!ValidationUtils.isValidProgramIndex(
-        program, weekIndex, workoutIndex)) {
+    if (!local_validation_utils.ValidationUtils.isValidProgramIndex(
+      program,
+      weekIndex,
+      workoutIndex,
+    )) {
       return false;
     }
 
@@ -217,8 +283,11 @@ class ExerciseControllerRefactored extends ChangeNotifier {
     int weekIndex,
     int workoutIndex,
   ) {
-    if (!ValidationUtils.isValidProgramIndex(
-        program, weekIndex, workoutIndex)) {
+    if (!local_validation_utils.ValidationUtils.isValidProgramIndex(
+      program,
+      weekIndex,
+      workoutIndex,
+    )) {
       return {};
     }
 
@@ -265,8 +334,9 @@ class ExerciseControllerRefactored extends ChangeNotifier {
         return AlertDialog(
           title: const Text('Conferma Rimozione'),
           content: Text(
-              'Sei sicuro di voler rimuovere l\'esercizio "$exerciseName"?\n\n'
-              'Questa azione eliminerà anche tutte le serie associate.'),
+            'Sei sicuro di voler rimuovere l\'esercizio "$exerciseName"?\n\n'
+            'Questa azione eliminerà anche tutte le serie associate.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),

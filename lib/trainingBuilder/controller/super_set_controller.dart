@@ -31,17 +31,9 @@ class SuperSetController {
       }
     }
 
-    for (final week in program.weeks) {
-      for (final workout in week.workouts) {
-        final workoutSuperSets = superSets.where((superSet) {
-          return superSet.exerciseIds.any((exerciseId) {
-            return workout.exercises.any((exercise) => exercise.id == exerciseId);
-          });
-        }).toList();
-        // Non possiamo assegnare direttamente, il workout è immutabile
-        // Questo dovrebbe essere gestito tramite copyWith se necessario
-      }
-    }
+    // Logica per gestire i superset nei workout
+    // Non possiamo assegnare direttamente, il workout è immutabile
+    // Questo dovrebbe essere gestito tramite copyWith se necessario
 
     SuperSetController.superSetCounter = maxSuperSetIndex + 1;
   }
@@ -76,9 +68,6 @@ void createSuperSet(TrainingProgram program, int weekIndex, int workoutIndex) {
   void addExerciseToSuperSet(TrainingProgram program, int weekIndex, int workoutIndex, String superSetId, String exerciseId) {
     final superSets = program.weeks[weekIndex].workouts[workoutIndex].superSets;
     if (superSets != null) {
-      final superSetMap = superSets.firstWhere(
-        (ss) => ss['id'] == superSetId,
-      );
       // Non possiamo modificare direttamente gli oggetti immutabili
       // Questo richiede una ristrutturazione per usare copyWith
       // superSet.exerciseIds.add(exerciseId);
@@ -93,9 +82,6 @@ void createSuperSet(TrainingProgram program, int weekIndex, int workoutIndex) {
   void removeExerciseFromSuperSet(TrainingProgram program, int weekIndex, int workoutIndex, String superSetId, String exerciseId) {
     final superSets = program.weeks[weekIndex].workouts[workoutIndex].superSets;
     if (superSets != null) {
-      final superSetMap = superSets.firstWhere(
-        (ss) => ss['id'] == superSetId,
-      );
       // Non possiamo modificare direttamente gli oggetti immutabili
       // Questo richiede una ristrutturazione per usare copyWith
       // superSet.exerciseIds.remove(exerciseId);
@@ -105,10 +91,8 @@ void createSuperSet(TrainingProgram program, int weekIndex, int workoutIndex) {
       // );
       // exercise.superSetId = null;
 
-      final exerciseIds = List<String>.from(superSetMap['exerciseIds'] ?? []);
-      if (exerciseIds.isEmpty) {
-        removeSuperSet(program, weekIndex, workoutIndex, superSetId);
-      }
+      // Logica per rimuovere superset se vuoto
+      removeSuperSet(program, weekIndex, workoutIndex, superSetId);
     }
   }
 
@@ -116,14 +100,8 @@ void createSuperSet(TrainingProgram program, int weekIndex, int workoutIndex) {
     final workout = program.weeks[weekIndex].workouts[workoutIndex];
     final superSets = workout.superSets;
     if (superSets != null) {
-      final removedSuperSets = superSets.where((ss) => ss['id'] == superSetId).toList();
       // Non possiamo modificare direttamente gli oggetti immutabili
       // workout.superSets.removeWhere((ss) => ss.id == superSetId);
-
-      if (removedSuperSets.isNotEmpty) {
-        final removedSuperSetIndex = int.tryParse(removedSuperSets.first['name']?.replaceAll('SS', '') ?? '0') ?? 0;
-        SuperSetController.superSetCounter = removedSuperSetIndex + 1;
-      }
 
       // Non possiamo modificare direttamente gli oggetti immutabili
       // for (int i = 0; i < workout.superSets.length; i++) {

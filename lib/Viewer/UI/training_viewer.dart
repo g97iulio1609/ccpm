@@ -104,7 +104,6 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
     final inAppPurchaseService = InAppPurchaseService();
     final subscriptionDetails =
         await inAppPurchaseService.getSubscriptionDetails();
-    final platform = subscriptionDetails?.platform ?? 'stripe';
 
     if (!mounted) return;
 
@@ -176,7 +175,6 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
   Widget build(BuildContext context) {
     final loading = ref.watch(trainingLoadingProvider);
     final weeks = ref.watch(trainingWeeksProvider);
-    final expandedWeekId = ref.watch(expandedWeekProvider);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final screenSize = MediaQuery.of(context).size;

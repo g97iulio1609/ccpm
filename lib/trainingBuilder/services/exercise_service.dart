@@ -3,6 +3,7 @@ import 'package:alphanessone/shared/shared.dart';
 import 'series_service.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
+import 'package:alphanessone/shared/services/weight_calculation_service.dart';
 import 'package:intl/intl.dart';
 
 class ExerciseService {
@@ -118,7 +119,7 @@ class ExerciseService {
     if (exercise.exerciseId == null) return;
 
     final dateFormat = DateFormat('yyyy-MM-dd');
-    final roundedMaxWeight = roundWeight(maxWeight, exerciseType);
+    final roundedMaxWeight = WeightCalculationService.roundWeight(maxWeight, exerciseType);
 
     try {
       final existingRecord =
@@ -170,12 +171,12 @@ class ExerciseService {
   }) {
     return exercises.map((exercise) {
       final maxWeight = exerciseMaxWeights[exercise.exerciseId] ?? 0;
-      final calculatedWeight = _calculateWeightFromIntensity(
+      final calculatedWeight = WeightCalculationService.calculateWeightFromIntensity(
         maxWeight.toDouble(),
         double.tryParse(intensity ?? '') ?? 0,
       );
       final calculatedMaxWeight = maxIntensity != null
-          ? _calculateWeightFromIntensity(
+          ? WeightCalculationService.calculateWeightFromIntensity(
               maxWeight.toDouble(),
               double.tryParse(maxIntensity) ?? 0,
             )
@@ -206,12 +207,7 @@ class ExerciseService {
     }).toList();
   }
 
-  /// Calculates weight from intensity percentage
-  static double _calculateWeightFromIntensity(
-      double maxWeight, double intensity) {
-    if (maxWeight <= 0 || intensity <= 0) return 0;
-    return maxWeight * (intensity / 100);
-  }
+
 
   /// Validates exercise data
   static bool isValidExercise(Exercise exercise) {

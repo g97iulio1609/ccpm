@@ -2,8 +2,6 @@
 
 import 'package:alphanessone/nutrition/models/diet_plan_model.dart';
 import 'package:alphanessone/nutrition/services/diet_plan_services.dart';
-import 'package:alphanessone/nutrition/models/meals_model.dart';
-import 'package:alphanessone/nutrition/services/meals_services.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -24,14 +22,14 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
   Widget build(BuildContext context) {
     final userService = ref.read(usersServiceProvider);
     final currentUserId = userService.getCurrentUserId();
-    final currentUserRole = userService.getCurrentUserRole();
     final selectedUserId = ref.read(selectedUserIdProvider);
     final userId = selectedUserId ?? currentUserId;
     final theme = Theme.of(context);
 
-    final dietPlansStream =
-        ref.watch(dietPlanServiceProvider).getDietPlansStream(userId);
-    
+    final dietPlansStream = ref
+        .watch(dietPlanServiceProvider)
+        .getDietPlansStream(userId);
+
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       body: StreamBuilder<List<DietPlan>>(
@@ -94,8 +92,9 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
                               ),
                               decoration: BoxDecoration(
                                 color: theme.colorScheme.primary.withAlpha(77),
-                                borderRadius:
-                                    BorderRadius.circular(AppTheme.radii.full),
+                                borderRadius: BorderRadius.circular(
+                                  AppTheme.radii.full,
+                                ),
                               ),
                               child: Text(
                                 '${dietPlan.durationDays} giorni',
@@ -126,13 +125,16 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
                           ),
                           onSelected: (value) async {
                             if (value == 'delete') {
-                              final confirm = await showDialog<bool>(
+                              final confirm =
+                                  await showDialog<bool>(
                                     context: context,
                                     builder: (context) => AlertDialog(
-                                      title:
-                                          const Text('Elimina Piano Dietetico'),
+                                      title: const Text(
+                                        'Elimina Piano Dietetico',
+                                      ),
                                       content: const Text(
-                                          'Sei sicuro di voler eliminare questo piano dietetico?'),
+                                        'Sei sicuro di voler eliminare questo piano dietetico?',
+                                      ),
                                       actions: [
                                         TextButton(
                                           onPressed: () =>
@@ -159,8 +161,9 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
                                     .deleteDietPlan(userId, dietPlan.id!);
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content:
-                                        const Text('Piano Dietetico Eliminato'),
+                                    content: const Text(
+                                      'Piano Dietetico Eliminato',
+                                    ),
                                     backgroundColor: theme.colorScheme.error,
                                   ),
                                 );
@@ -171,24 +174,31 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
                                   .applyDietPlan(dietPlan);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content:
-                                      const Text('Piano Dietetico Applicato'),
+                                  content: const Text(
+                                    'Piano Dietetico Applicato',
+                                  ),
                                   backgroundColor: theme.colorScheme.primary,
                                 ),
                               );
                             } else if (value == 'duplicate') {
                               final newName = await _promptForDuplicateName(
-                                  context, dietPlan.name);
+                                context,
+                                dietPlan.name,
+                              );
                               if (newName != null && newName.isNotEmpty) {
                                 try {
                                   await ref
                                       .read(dietPlanServiceProvider)
-                                      .duplicateDietPlan(userId, dietPlan.id!,
-                                          newName: newName);
+                                      .duplicateDietPlan(
+                                        userId,
+                                        dietPlan.id!,
+                                        newName: newName,
+                                      );
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
-                                          'Piano Dietetico Duplicato come "$newName"'),
+                                        'Piano Dietetico Duplicato come "$newName"',
+                                      ),
                                       backgroundColor:
                                           theme.colorScheme.primary,
                                     ),
@@ -211,8 +221,10 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
                               value: 'apply',
                               child: Row(
                                 children: [
-                                  Icon(Icons.check,
-                                      color: theme.colorScheme.primary),
+                                  Icon(
+                                    Icons.check,
+                                    color: theme.colorScheme.primary,
+                                  ),
                                   SizedBox(width: AppTheme.spacing.sm),
                                   const Text('Applica'),
                                 ],
@@ -222,8 +234,10 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
                               value: 'duplicate',
                               child: Row(
                                 children: [
-                                  Icon(Icons.copy,
-                                      color: theme.colorScheme.primary),
+                                  Icon(
+                                    Icons.copy,
+                                    color: theme.colorScheme.primary,
+                                  ),
                                   SizedBox(width: AppTheme.spacing.sm),
                                   const Text('Duplica'),
                                 ],
@@ -233,8 +247,10 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
                               value: 'edit',
                               child: Row(
                                 children: [
-                                  Icon(Icons.edit,
-                                      color: theme.colorScheme.primary),
+                                  Icon(
+                                    Icons.edit,
+                                    color: theme.colorScheme.primary,
+                                  ),
                                   SizedBox(width: AppTheme.spacing.sm),
                                   const Text('Modifica'),
                                 ],
@@ -244,12 +260,17 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
                               value: 'delete',
                               child: Row(
                                 children: [
-                                  Icon(Icons.delete,
-                                      color: theme.colorScheme.error),
+                                  Icon(
+                                    Icons.delete,
+                                    color: theme.colorScheme.error,
+                                  ),
                                   SizedBox(width: AppTheme.spacing.sm),
-                                  Text('Elimina',
-                                      style: TextStyle(
-                                          color: theme.colorScheme.error)),
+                                  Text(
+                                    'Elimina',
+                                    style: TextStyle(
+                                      color: theme.colorScheme.error,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -303,14 +324,18 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
 
   /// Mostra un dialogo per inserire il nuovo nome del piano dietetico duplicato
   Future<String?> _promptForDuplicateName(
-      BuildContext context, String originalName) async {
+    BuildContext context,
+    String originalName,
+  ) async {
     String? newName;
     return showDialog<String>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Duplicate Diet Plan',
-              style: GoogleFonts.roboto(fontWeight: FontWeight.bold)),
+          title: Text(
+            'Duplicate Diet Plan',
+            style: GoogleFonts.roboto(fontWeight: FontWeight.bold),
+          ),
           content: TextField(
             decoration: const InputDecoration(
               labelText: 'New Diet Plan Name',
@@ -335,7 +360,6 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
       },
     );
   }
-
 
   void _navigateToEditDietPlan(BuildContext context, DietPlan dietPlan) {
     context.go('/food_tracker/diet_plan/edit', extra: {'dietPlan': dietPlan});

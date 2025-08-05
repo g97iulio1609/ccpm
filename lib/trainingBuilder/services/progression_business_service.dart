@@ -21,7 +21,10 @@ class ProgressionBusinessService {
     required Exercise exercise,
   }) {
     if (!ProgressionService.isValidIndex(
-        weekProgressions, weekIndex, sessionIndex)) {
+      weekProgressions,
+      weekIndex,
+      sessionIndex,
+    )) {
       return;
     }
 
@@ -47,17 +50,22 @@ class ProgressionBusinessService {
     required List<List<WeekProgression>> weekProgressions,
   }) {
     if (!ProgressionService.isValidIndex(
-        weekProgressions, weekIndex, sessionIndex)) {
+      weekProgressions,
+      weekIndex,
+      sessionIndex,
+    )) {
       return;
     }
 
     final groupedSeries = ProgressionService.groupSeries(
-        weekProgressions[weekIndex][sessionIndex].series);
+      weekProgressions[weekIndex][sessionIndex].series,
+    );
 
     if (groupIndex >= 0 && groupIndex < groupedSeries.length) {
       groupedSeries.removeAt(groupIndex);
-      weekProgressions[weekIndex][sessionIndex].series =
-          groupedSeries.expand((group) => group).toList();
+      weekProgressions[weekIndex][sessionIndex].series = groupedSeries
+          .expand((group) => group)
+          .toList();
     }
   }
 
@@ -67,7 +75,10 @@ class ProgressionBusinessService {
     required List<List<WeekProgression>> weekProgressions,
   }) {
     if (!ProgressionService.isValidIndex(
-        weekProgressions, params.weekIndex, params.sessionIndex)) {
+      weekProgressions,
+      params.weekIndex,
+      params.sessionIndex,
+    )) {
       return;
     }
 
@@ -141,10 +152,7 @@ class ProgressionBusinessService {
   }
 
   /// Gets the representative series for a group - Fixed null handling
-  static Series getRepresentativeSeries(
-    List<Series> group,
-    int groupIndex,
-  ) {
+  static Series getRepresentativeSeries(List<Series> group, int groupIndex) {
     if (group.isEmpty) {
       throw ArgumentError('Group cannot be empty');
     }
@@ -175,7 +183,9 @@ class ProgressionBusinessService {
 
   /// Updates series from parameters with improved null safety
   static Series _updateSeriesFromParams(
-      Series series, SeriesUpdateParams params) {
+    Series series,
+    SeriesUpdateParams params,
+  ) {
     try {
       return series.copyWith(
         reps: _parseIntOrKeepOriginal(params.reps, series.reps),

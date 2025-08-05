@@ -42,19 +42,16 @@ class TrainingBuilderDI {
 
   /// Provider per l'Exercise Record Service (servizio esterno)
   /// Configurato per utilizzare FirebaseFirestore.instance
-  static final exerciseRecordServiceProvider =
-      Provider<ExerciseRecordService>((ref) {
+  static final exerciseRecordServiceProvider = Provider<ExerciseRecordService>((
+    ref,
+  ) {
     return ExerciseRecordService(FirebaseFirestore.instance);
   });
 
   /// Provider per l'Users Service (servizio esterno)
   /// Configurato con Ref, FirebaseFirestore e FirebaseAuth
   static final usersServiceProvider = Provider<UsersService>((ref) {
-    return UsersService(
-      ref,
-      FirebaseFirestore.instance,
-      FirebaseAuth.instance,
-    );
+    return UsersService(ref, FirebaseFirestore.instance, FirebaseAuth.instance);
   });
 
   // Business Services Providers
@@ -87,8 +84,9 @@ class TrainingBuilderDI {
   // Controllers Providers
 
   /// Provider per il Training Program Controller refactorizzato
-  static final trainingProgramControllerProvider =
-      ChangeNotifierProvider((ref) {
+  static final trainingProgramControllerProvider = ChangeNotifierProvider((
+    ref,
+  ) {
     return TrainingProgramControllerRefactored(
       businessService: ref.read(trainingBusinessServiceProvider),
       usersService: ref.read(usersServiceProvider),
@@ -125,8 +123,9 @@ class TrainingBuilderDI {
 
   /// Factory per creare Training Program Controller con programma specifico
   static ChangeNotifierProvider<TrainingProgramControllerRefactored>
-      trainingProgramControllerWithProgramProvider(
-          TrainingProgram? initialProgram) {
+  trainingProgramControllerWithProgramProvider(
+    TrainingProgram? initialProgram,
+  ) {
     return ChangeNotifierProvider((ref) {
       return TrainingProgramControllerRefactored(
         businessService: ref.read(trainingBusinessServiceProvider),

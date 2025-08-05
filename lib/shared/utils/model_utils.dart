@@ -479,13 +479,13 @@ class FirestoreUtils {
   /// Create model from Firestore data
   static T fromFirestoreData<T>(Map<String, dynamic> data, String id) {
     switch (T) {
-      case Exercise:
+      case Exercise _:
         return Exercise.fromMap(data, id) as T;
-      case Series:
+      case Series _:
         return Series.fromMap(data, id) as T;
-      case Workout:
+      case Workout _:
         return Workout.fromMap(data, id) as T;
-      case Week:
+      case Week _:
         return Week.fromMap(data, id) as T;
       default:
         throw ArgumentError('Unsupported model type: $T');

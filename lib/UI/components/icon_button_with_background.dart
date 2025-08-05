@@ -31,20 +31,12 @@ class IconButtonWithBackground extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: isGradient
-            ? LinearGradient(
-                colors: [
-                  color,
-                  color.withAlpha(204),
-                ],
-              )
+            ? LinearGradient(colors: [color, color.withAlpha(204)])
             : null,
         color: isGradient ? null : color.withAlpha(26),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: isOutlined
-            ? Border.all(
-                color: color.withAlpha(76),
-                width: 1.5,
-              )
+            ? Border.all(color: color.withAlpha(76), width: 1.5)
             : null,
         boxShadow: isGradient
             ? [

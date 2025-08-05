@@ -251,7 +251,8 @@ class MeasurementCard extends StatelessWidget {
         return colorScheme.secondary;
       case MeasurementStatus.obese:
         return colorScheme.error;
-      default:
+      case MeasurementStatus.essentialFat:
+      case MeasurementStatus.athletes:
         return colorScheme.onSurface;
     }
   }

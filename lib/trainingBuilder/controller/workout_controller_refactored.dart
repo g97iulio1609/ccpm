@@ -12,9 +12,8 @@ class WorkoutControllerRefactored extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
-  WorkoutControllerRefactored({
-    required WorkoutBusinessService businessService,
-  }) : _businessService = businessService;
+  WorkoutControllerRefactored({required WorkoutBusinessService businessService})
+    : _businessService = businessService;
 
   // Getters
   bool get isLoading => _isLoading;
@@ -54,12 +53,18 @@ class WorkoutControllerRefactored extends ChangeNotifier {
     _clearError();
 
     try {
-      final destinationWeekIndex =
-          await _showCopyWorkoutDialog(program, context);
+      final destinationWeekIndex = await _showCopyWorkoutDialog(
+        program,
+        context,
+      );
       if (destinationWeekIndex != null) {
         _setLoading(true);
         await _businessService.copyWorkout(
-            program, sourceWeekIndex, workoutIndex, destinationWeekIndex);
+          program,
+          sourceWeekIndex,
+          workoutIndex,
+          destinationWeekIndex,
+        );
         notifyListeners();
       }
     } catch (e) {
@@ -71,7 +76,10 @@ class WorkoutControllerRefactored extends ChangeNotifier {
 
   /// Duplica un workout nella stessa settimana
   void duplicateWorkout(
-      TrainingProgram program, int weekIndex, int workoutIndex) {
+    TrainingProgram program,
+    int weekIndex,
+    int workoutIndex,
+  ) {
     _clearError();
 
     try {
@@ -84,7 +92,11 @@ class WorkoutControllerRefactored extends ChangeNotifier {
 
   /// Riordina i workout in una settimana
   void reorderWorkouts(
-      TrainingProgram program, int weekIndex, int oldIndex, int newIndex) {
+    TrainingProgram program,
+    int weekIndex,
+    int oldIndex,
+    int newIndex,
+  ) {
     _clearError();
 
     try {
@@ -96,13 +108,21 @@ class WorkoutControllerRefactored extends ChangeNotifier {
   }
 
   /// Aggiorna un workout
-  void updateWorkout(TrainingProgram program, int weekIndex, int workoutIndex,
-      Workout updatedWorkout) {
+  void updateWorkout(
+    TrainingProgram program,
+    int weekIndex,
+    int workoutIndex,
+    Workout updatedWorkout,
+  ) {
     _clearError();
 
     try {
       _businessService.updateWorkout(
-          program, weekIndex, workoutIndex, updatedWorkout);
+        program,
+        weekIndex,
+        workoutIndex,
+        updatedWorkout,
+      );
       notifyListeners();
     } catch (e) {
       _setError('Errore nell\'aggiornamento dell\'allenamento: $e');
@@ -111,7 +131,10 @@ class WorkoutControllerRefactored extends ChangeNotifier {
 
   /// Valida i workout di una settimana
   bool validateWeekWorkouts(int weekIndex, TrainingProgram program) {
-    if (!local_validation_utils.ValidationUtils.isValidProgramIndex(program, weekIndex)) {
+    if (!local_validation_utils.ValidationUtils.isValidProgramIndex(
+      program,
+      weekIndex,
+    )) {
       return false;
     }
 
@@ -125,8 +148,13 @@ class WorkoutControllerRefactored extends ChangeNotifier {
 
   /// Ottiene statistiche sui workout per una settimana
   Map<String, dynamic> getWorkoutStatistics(
-      int weekIndex, TrainingProgram program) {
-    if (!local_validation_utils.ValidationUtils.isValidProgramIndex(program, weekIndex)) {
+    int weekIndex,
+    TrainingProgram program,
+  ) {
+    if (!local_validation_utils.ValidationUtils.isValidProgramIndex(
+      program,
+      weekIndex,
+    )) {
       return {};
     }
 
@@ -140,7 +168,9 @@ class WorkoutControllerRefactored extends ChangeNotifier {
 
   /// Mostra dialog per selezione settimana di destinazione per copia
   Future<int?> _showCopyWorkoutDialog(
-      TrainingProgram program, BuildContext context) async {
+    TrainingProgram program,
+    BuildContext context,
+  ) async {
     return showDialog<int>(
       context: context,
       builder: (context) {
@@ -191,15 +221,18 @@ class WorkoutControllerRefactored extends ChangeNotifier {
 
   /// Mostra dialog di conferma rimozione
   Future<bool> showRemoveWorkoutConfirmation(
-      BuildContext context, int workoutOrder) async {
+    BuildContext context,
+    int workoutOrder,
+  ) async {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: const Text('Conferma Rimozione'),
           content: Text(
-              'Sei sicuro di voler rimuovere l\'Allenamento $workoutOrder?\n\n'
-              'Questa azione eliminerà anche tutti gli esercizi contenuti.'),
+            'Sei sicuro di voler rimuovere l\'Allenamento $workoutOrder?\n\n'
+            'Questa azione eliminerà anche tutti gli esercizi contenuti.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -223,7 +256,9 @@ class WorkoutControllerRefactored extends ChangeNotifier {
 
   /// Mostra dialog per rinominare workout
   Future<String?> showRenameWorkoutDialog(
-      BuildContext context, String currentName) async {
+    BuildContext context,
+    String currentName,
+  ) async {
     final textController = TextEditingController(text: currentName);
 
     final result = await showDialog<String>(

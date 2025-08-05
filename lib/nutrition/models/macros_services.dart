@@ -27,17 +27,14 @@ class MacrosService {
   String _searchQuery = '';
   Timer? _searchDebouncer;
 
-  // Batch operations
-  final _batchQueue = <Future Function()>[];
-  bool _isBatchProcessing = false;
-
   MacrosService(this.ref, this._firestore) {
     _initializeService();
   }
 
   void _initializeService() {
     _subscriptions.add(
-        _firestore.collection('foods').snapshots().listen(_handleFoodsUpdate));
+      _firestore.collection('foods').snapshots().listen(_handleFoodsUpdate),
+    );
   }
 
   void _handleFoodsUpdate(QuerySnapshot snapshot) {
@@ -114,29 +111,6 @@ class MacrosService {
     return food;
   }
 
-  // Batch processing ottimizzato
-  Future<void> _processBatchQueue() async {
-    if (_isBatchProcessing) return;
-    _isBatchProcessing = true;
-
-    try {
-      while (_batchQueue.isNotEmpty) {
-        final batch = _firestore.batch();
-        final operations =
-            _batchQueue.take(500).toList(); // Limite di Firestore
-        _batchQueue.removeRange(0, operations.length);
-
-        for (final operation in operations) {
-          await operation();
-        }
-
-        await batch.commit();
-      }
-    } finally {
-      _isBatchProcessing = false;
-    }
-  }
-
   // Ottimizzazione delle operazioni di scrittura
   Future<void> addFood(Food food) async {
     final batch = _firestore.batch();
@@ -159,8 +133,11 @@ class MacrosService {
     if (foodData == null) return;
 
     final batch = _firestore.batch();
-    final userFoodRef =
-        _firestore.collection('users').doc(userId).collection('foods').doc();
+    final userFoodRef = _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('foods')
+        .doc();
 
     final userFoodData = {
       'foodId': foodId,
@@ -188,16 +165,16 @@ class MacrosService {
         .orderBy('date', descending: true)
         .snapshots()
         .map((snapshot) {
-      final foods = snapshot.docs.map((doc) {
-        final food = Food.fromFirestore(doc);
-        if (!_userFoodsCache.containsKey(userId)) {
-          _userFoodsCache[userId] = {};
-        }
-        _userFoodsCache[userId]![food.id!] = food;
-        return food;
-      }).toList();
-      return foods;
-    });
+          final foods = snapshot.docs.map((doc) {
+            final food = Food.fromFirestore(doc);
+            if (!_userFoodsCache.containsKey(userId)) {
+              _userFoodsCache[userId] = {};
+            }
+            _userFoodsCache[userId]![food.id!] = food;
+            return food;
+          }).toList();
+          return foods;
+        });
   }
 
   // Gestione efficiente della memoria

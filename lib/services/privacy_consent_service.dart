@@ -1,15 +1,14 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../models/privacy_consent_model.dart';
-import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class PrivacyConsentService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  
+
   // Versione corrente della privacy policy
   static const String currentPrivacyPolicyVersion = '1.0.0';
-  
+
   /// Salva il consenso privacy per un utente durante la registrazione
   static Future<void> saveConsentOnRegistration({
     required String userId,
@@ -25,21 +24,20 @@ class PrivacyConsentService {
         userAgent: userAgent ?? _getUserAgent(),
         privacyPolicyVersion: currentPrivacyPolicyVersion,
       );
-      
+
       // Salva il consenso nella collezione privacy_consents
       await _firestore
           .collection('privacy_consents')
           .doc(userId)
           .set(consent.toMap());
-      
+
       // Aggiorna anche i campi nel documento utente
       await _updateUserConsentFields(userId, consent);
-      
     } catch (e) {
       throw Exception('Errore nel salvare il consenso privacy: $e');
     }
   }
-  
+
   /// Aggiorna il consenso privacy per un utente esistente
   static Future<void> updateConsent({
     required String userId,
@@ -59,34 +57,33 @@ class PrivacyConsentService {
         privacyPolicyVersion: currentPrivacyPolicyVersion,
         consentMethod: consentMethod,
       );
-      
+
       // Aggiorna il consenso nella collezione privacy_consents
       await _firestore
           .collection('privacy_consents')
           .doc(userId)
           .set(consent.toMap(), SetOptions(merge: true));
-      
+
       // Aggiorna anche i campi nel documento utente
       await _updateUserConsentFields(userId, consent);
-      
     } catch (e) {
       throw Exception('Errore nell\'aggiornare il consenso privacy: $e');
     }
   }
-  
+
   /// Ritira il consenso privacy per un utente
   static Future<void> withdrawConsent(String userId) async {
     try {
       final currentConsent = await getConsentForUser(userId);
       if (currentConsent != null) {
         final withdrawnConsent = currentConsent.withdraw();
-        
+
         // Salva il consenso ritirato
         await _firestore
             .collection('privacy_consents')
             .doc(userId)
             .set(withdrawnConsent.toMap(), SetOptions(merge: true));
-        
+
         // Aggiorna i campi nel documento utente
         await _updateUserConsentFields(userId, withdrawnConsent);
       }
@@ -94,7 +91,7 @@ class PrivacyConsentService {
       throw Exception('Errore nel ritirare il consenso privacy: $e');
     }
   }
-  
+
   /// Ottiene il consenso privacy per un utente
   static Future<PrivacyConsentModel?> getConsentForUser(String userId) async {
     try {
@@ -102,7 +99,7 @@ class PrivacyConsentService {
           .collection('privacy_consents')
           .doc(userId)
           .get();
-      
+
       if (doc.exists && doc.data() != null) {
         return PrivacyConsentModel.fromMap(doc.data()!);
       }
@@ -111,7 +108,7 @@ class PrivacyConsentService {
       throw Exception('Errore nel recuperare il consenso privacy: $e');
     }
   }
-  
+
   /// Verifica se un utente ha dato il consenso valido
   static Future<bool> hasValidConsent(String userId) async {
     try {
@@ -121,20 +118,20 @@ class PrivacyConsentService {
       return false;
     }
   }
-  
+
   /// Verifica se è necessario richiedere un nuovo consenso
   static Future<bool> needsConsentUpdate(String userId) async {
     try {
       final consent = await getConsentForUser(userId);
       if (consent == null) return true;
-      
+
       // Verifica se la versione della privacy policy è cambiata
       return consent.privacyPolicyVersion != currentPrivacyPolicyVersion;
     } catch (e) {
       return true;
     }
   }
-  
+
   /// Ottiene tutti i consensi per audit (solo per admin)
   static Future<List<PrivacyConsentModel>> getAllConsents() async {
     try {
@@ -142,7 +139,7 @@ class PrivacyConsentService {
           .collection('privacy_consents')
           .orderBy('consentTimestamp', descending: true)
           .get();
-      
+
       return querySnapshot.docs
           .map((doc) => PrivacyConsentModel.fromMap(doc.data()))
           .toList();
@@ -150,11 +147,11 @@ class PrivacyConsentService {
       throw Exception('Errore nel recuperare tutti i consensi: $e');
     }
   }
-  
+
   /// Aggiorna i campi di consenso nel documento utente
   static Future<void> _updateUserConsentFields(
-    String userId, 
-    PrivacyConsentModel consent
+    String userId,
+    PrivacyConsentModel consent,
   ) async {
     await _firestore.collection('users').doc(userId).update({
       'privacyConsentGiven': consent.consentGiven,
@@ -163,7 +160,7 @@ class PrivacyConsentService {
       'lastConsentMethod': consent.consentMethod,
     });
   }
-  
+
   /// Ottiene l'indirizzo IP del client (simulato per web/mobile)
   static Future<String> _getClientIP() async {
     // In un'app reale, dovresti implementare la logica per ottenere l'IP
@@ -174,7 +171,7 @@ class PrivacyConsentService {
       return 'mobile-client-ip';
     }
   }
-  
+
   /// Ottiene il user agent del client
   static String _getUserAgent() {
     if (kIsWeb) {
@@ -187,15 +184,17 @@ class PrivacyConsentService {
       return 'Unknown Platform';
     }
   }
-  
+
   /// Esporta i dati di consenso per un utente (per GDPR data portability)
-  static Future<Map<String, dynamic>> exportUserConsentData(String userId) async {
+  static Future<Map<String, dynamic>> exportUserConsentData(
+    String userId,
+  ) async {
     try {
       final consent = await getConsentForUser(userId);
       if (consent == null) {
         return {'error': 'Nessun consenso trovato per l\'utente'};
       }
-      
+
       return {
         'userId': consent.userId,
         'consentGiven': consent.consentGiven,
@@ -208,16 +207,13 @@ class PrivacyConsentService {
       throw Exception('Errore nell\'esportare i dati di consenso: $e');
     }
   }
-  
+
   /// Elimina tutti i dati di consenso per un utente (per GDPR right to be forgotten)
   static Future<void> deleteUserConsentData(String userId) async {
     try {
       // Elimina dalla collezione privacy_consents
-      await _firestore
-          .collection('privacy_consents')
-          .doc(userId)
-          .delete();
-      
+      await _firestore.collection('privacy_consents').doc(userId).delete();
+
       // Rimuove i campi di consenso dal documento utente
       await _firestore.collection('users').doc(userId).update({
         'privacyConsentGiven': FieldValue.delete(),

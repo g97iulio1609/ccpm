@@ -203,13 +203,13 @@ class Week {
   bool get isFullyCompleted => workouts.isNotEmpty && workouts.every((w) => w.isCompleted);
 
   /// Get total exercises across all workouts
-  int get totalExercises => workouts.fold(0, (sum, workout) => sum + workout.totalExercises);
+  int get totalExercises => workouts.fold(0, (total, workout) => total + workout.totalExercises);
 
   /// Get total series across all workouts
-  int get totalSeries => workouts.fold(0, (sum, workout) => sum + workout.totalSeries);
+  int get totalSeries => workouts.fold(0, (total, workout) => total + workout.totalSeries);
 
   /// Get estimated total duration for the week
-  int get estimatedTotalDuration => workouts.fold(0, (sum, workout) => sum + workout.estimatedDuration);
+  int get estimatedTotalDuration => workouts.fold(0, (total, workout) => total + workout.estimatedDuration);
 
   /// Check if week is current (within date range)
   bool get isCurrent {

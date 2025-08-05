@@ -4,8 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:alphanessone/shared/shared.dart';
 import '../controllers/series_controllers.dart';
 import '../controller/training_program_controller.dart';
-import '../series_utils.dart';
-import '../utility_functions.dart';
+
 import '../../UI/components/dialog.dart';
 import '../../UI/components/weight_input_fields.dart';
 import '../../Main/app_theme.dart';
@@ -469,12 +468,7 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
     return maxWeights[exercise.exerciseId] ?? 0;
   }
 
-  double _calculateWeight(num maxWeight, double intensity) {
-    return SeriesUtils.calculateWeightFromIntensity(
-      maxWeight.toDouble(),
-      intensity,
-    );
-  }
+
 
   void _updateWeightsFromIntensity(
     String min,
@@ -482,17 +476,9 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
     Map<String, num> maxWeights,
     ValueNotifier<int> forceUpdate,
   ) {
-    final minIntensity = double.tryParse(min) ?? 0;
-    final maxIntensity = double.tryParse(max);
-
     for (var exercise in exercises) {
       final maxWeight = _getMaxWeight(exercise, maxWeights);
       if (maxWeight <= 0) continue;
-
-      final calculatedWeight = _calculateWeight(maxWeight, minIntensity);
-      final calculatedMaxWeight = maxIntensity != null
-          ? _calculateWeight(maxWeight, maxIntensity)
-          : null;
 
       // Note: Cannot modify exercise.series directly as it's final
       // This would need to be handled by the calling code using exercise.copyWith()
@@ -526,55 +512,9 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
     SeriesControllers localController,
     Map<String, num> maxWeights,
   ) {
-    final sets = int.tryParse(localController.sets.text) ?? 1;
-    final reps = int.tryParse(localController.reps.min.text) ?? 12;
-    final maxReps = localController.reps.max.text.isNotEmpty
-        ? int.tryParse(localController.reps.max.text)
-        : null;
-    final intensity = localController.intensity.min.text;
-    final maxIntensity = localController.intensity.max.text.isNotEmpty
-        ? localController.intensity.max.text
-        : null;
-    final rpe = localController.rpe.min.text;
-    final maxRpe = localController.rpe.max.text.isNotEmpty
-        ? localController.rpe.max.text
-        : null;
-
-    for (var exercise in exercises) {
-      final maxWeight = _getMaxWeight(exercise, maxWeights);
-      final minIntensity = double.tryParse(intensity) ?? 0;
-      final maxIntensityValue = double.tryParse(maxIntensity ?? '');
-
-      final calculatedWeight =
-          maxWeight > 0 ? _calculateWeight(maxWeight, minIntensity) : 0;
-      final calculatedMaxWeight = maxIntensityValue != null && maxWeight > 0
-          ? _calculateWeight(maxWeight, maxIntensityValue)
-          : null;
-
-      final newSeries = List.generate(
-        sets,
-        (index) => Series(
-          serieId: generateRandomId(16),
-          exerciseId: exercise.id ?? '',
-          reps: reps,
-          maxReps: maxReps,
-          sets: 1,
-          intensity: intensity,
-          maxIntensity: maxIntensity,
-          rpe: rpe,
-          maxRpe: maxRpe,
-          weight: calculatedWeight.toDouble(),
-          maxWeight: calculatedMaxWeight?.toDouble(),
-          order: index + 1,
-          done: false,
-          repsDone: 0,
-          weightDone: 0,
-        ),
-      );
-
-      // Note: Cannot modify exercise.series directly as it's final
-      // This would need to be handled by the calling code using exercise.copyWith()
-    }
+    // Note: Cannot modify exercise.series directly as it's final
+    // This would need to be handled by the calling code using exercise.copyWith()
+    // Series generation logic would be handled by the calling code
 
     ref
         .read(bulkSeriesControllersProvider.notifier)

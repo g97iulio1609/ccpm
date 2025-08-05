@@ -1,6 +1,7 @@
 import 'package:alphanessone/shared/shared.dart';
-import 'package:alphanessone/trainingBuilder/series_utils.dart';
+
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
+import 'package:alphanessone/shared/services/weight_calculation_service.dart';
 
 /// Service for handling progression-related business logic
 class ProgressionService {
@@ -138,16 +139,16 @@ class ProgressionService {
     required void Function(String, String) onUpdate,
   }) {
     final minIntensityValue = double.tryParse(minIntensity) ?? 0;
-    final minWeight = SeriesUtils.calculateWeightFromIntensity(
+    final minWeight = WeightCalculationService.calculateWeightFromIntensity(
         latestMaxWeight, minIntensityValue);
-    final roundedMinWeight = SeriesUtils.roundWeight(minWeight, exerciseType);
+    final roundedMinWeight = WeightCalculationService.roundWeight(minWeight, exerciseType);
 
     String maxWeightValue = '';
     if (maxIntensity.isNotEmpty) {
       final maxIntensityValue = double.tryParse(maxIntensity) ?? 0;
-      final maxWeight = SeriesUtils.calculateWeightFromIntensity(
-          latestMaxWeight, maxIntensityValue);
-      final roundedMaxWeight = SeriesUtils.roundWeight(maxWeight, exerciseType);
+      final maxWeight = WeightCalculationService.calculateWeightFromIntensity(
+        latestMaxWeight, maxIntensityValue);
+      final roundedMaxWeight = WeightCalculationService.roundWeight(maxWeight, exerciseType);
       maxWeightValue = roundedMaxWeight.toStringAsFixed(1);
     }
 
@@ -162,14 +163,14 @@ class ProgressionService {
     required void Function(String, String) onUpdate,
   }) {
     final minWeightValue = double.tryParse(minWeight) ?? 0;
-    final minIntensity = SeriesUtils.calculateIntensityFromWeight(
+    final minIntensity = WeightCalculationService.calculateIntensityFromWeight(
         minWeightValue, latestMaxWeight);
 
     String maxIntensityValue = '';
     if (maxWeight.isNotEmpty) {
       final maxWeightValue = double.tryParse(maxWeight) ?? 0;
-      final maxIntensity = SeriesUtils.calculateIntensityFromWeight(
-          maxWeightValue, latestMaxWeight);
+      final maxIntensity = WeightCalculationService.calculateIntensityFromWeight(
+        maxWeightValue, latestMaxWeight);
       maxIntensityValue = maxIntensity.toStringAsFixed(1);
     }
 
@@ -283,10 +284,10 @@ class ProgressionService {
       final maxIntensityValue =
           maxIntensity.isNotEmpty ? double.tryParse(maxIntensity) : null;
 
-      final minWeight = SeriesUtils.calculateWeightFromIntensity(
+      final minWeight = WeightCalculationService.calculateWeightFromIntensity(
           latestMaxWeight, minIntensityValue);
       final maxWeight = maxIntensityValue != null
-          ? SeriesUtils.calculateWeightFromIntensity(
+          ? WeightCalculationService.calculateWeightFromIntensity(
               latestMaxWeight, maxIntensityValue)
           : null;
 

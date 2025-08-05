@@ -1,5 +1,3 @@
-import 'package:alphanessone/shared/shared.dart';
-
 // Potremmo definire un'entità o un semplice tipo per i parametri se diventano complessi
 class CompleteSeriesParams {
   final String seriesId;

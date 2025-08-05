@@ -1,8 +1,6 @@
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 import 'package:alphanessone/shared/shared.dart';
-import 'package:alphanessone/trainingBuilder/models/superseries_model.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../controller/training_program_controller.dart';
@@ -11,12 +9,9 @@ import '../series_utils.dart';
 import '../dialog/series_dialog.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
-import 'package:alphanessone/UI/components/button.dart';
-import 'package:go_router/go_router.dart';
 import 'package:alphanessone/UI/components/series_input_fields.dart';
 import 'package:alphanessone/trainingBuilder/shared/mixins/training_list_mixin.dart';
 import 'package:alphanessone/trainingBuilder/shared/widgets/series_components.dart';
-import 'package:alphanessone/trainingBuilder/shared/utils/format_utils.dart';
 
 final expansionStateProvider = StateNotifierProvider.autoDispose<
     ExpansionStateNotifier, Map<String, bool>>((ref) {
@@ -286,9 +281,9 @@ class TrainingProgramSeriesListState
 
   void _showReorderDialog(List<Series> series) {
     final seriesNames = series.map((s) {
-      final repsText = s.maxReps != null ? '${s.reps}-${s.maxReps}' : '${s.reps}';
+      final repsText = s.maxReps != null ? '${s.reps}-${s.maxReps}' : s.reps.toString();
       final weightText = s.maxWeight != null ? '${s.weight.toStringAsFixed(1)}-${s.maxWeight!.toStringAsFixed(1)}kg' : '${s.weight.toStringAsFixed(1)}kg';
-      return 'Series ${s.order}: ${repsText} reps @ ${weightText}';
+      return 'Series ${s.order}: $repsText reps @ $weightText';
     }).toList();
 
     showDialog(

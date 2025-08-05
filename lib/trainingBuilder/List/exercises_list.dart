@@ -10,12 +10,12 @@ import '../controller/training_program_controller.dart';
 import 'series_list.dart';
 import '../dialog/reorder_dialog.dart';
 import 'package:alphanessone/Main/app_theme.dart';
-import 'package:alphanessone/trainingBuilder/models/superseries_model.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
 import 'package:go_router/go_router.dart';
 import 'package:alphanessone/trainingBuilder/shared/mixins/training_list_mixin.dart';
 import 'package:alphanessone/trainingBuilder/services/exercise_service.dart';
-import 'package:alphanessone/trainingBuilder/shared/utils/exercise_utils.dart' as training_exercise_utils;
+import 'package:alphanessone/trainingBuilder/shared/utils/exercise_utils.dart'
+    as training_exercise_utils;
 
 /// Widget principale per la gestione degli esercizi in un allenamento
 class TrainingProgramExerciseList extends HookConsumerWidget {
@@ -150,10 +150,8 @@ class _ExerciseListViewState extends State<ExerciseListView>
           superSets: superSets,
           seriesSection: _buildSeriesSection(exercise),
           onTap: () => _navigateToExerciseDetails(exercise, superSets),
-          onOptionsPressed: () => _showExerciseOptions(
-            exercise,
-            snapshot.data ?? 0,
-          ),
+          onOptionsPressed: () =>
+              _showExerciseOptions(exercise, snapshot.data ?? 0),
           onAddExercise: _addExercise,
           onDeleteExercise: () => _deleteExercise(exercise),
           colorScheme: widget.colorScheme,
@@ -189,19 +187,27 @@ class _ExerciseListViewState extends State<ExerciseListView>
 
   /// Ottiene i SuperSet associati a un esercizio
   List<SuperSet> _getSuperSets(Exercise exercise) {
-    final workout = widget.controller.program.weeks[widget.weekIndex]
+    final workout = widget
+        .controller
+        .program
+        .weeks[widget.weekIndex]
         .workouts[widget.workoutIndex];
-    
+
     // Converte i superSets da Map a SuperSet
-    final superSets = workout.superSets?.map((superSetMap) {
-      return SuperSet(
-        id: superSetMap['id'] ?? '',
-        name: superSetMap['name'],
-        exerciseIds: List<String>.from(superSetMap['exerciseIds'] ?? []),
-      );
-    }).toList() ?? [];
-    
-    return training_exercise_utils.ExerciseUtils.getSuperSets(exercise, superSets);
+    final superSets =
+        workout.superSets?.map((superSetMap) {
+          return SuperSet(
+            id: superSetMap['id'] ?? '',
+            name: superSetMap['name'],
+            exerciseIds: List<String>.from(superSetMap['exerciseIds'] ?? []),
+          );
+        }).toList() ??
+        [];
+
+    return training_exercise_utils.ExerciseUtils.getSuperSets(
+      exercise,
+      superSets,
+    );
   }
 
   /// Aggiunge un nuovo esercizio
@@ -225,8 +231,14 @@ class _ExerciseListViewState extends State<ExerciseListView>
   /// Mostra le opzioni dell'esercizio
   void _showExerciseOptions(Exercise exercise, num latestMaxWeight) {
     final superSets = _getSuperSets(exercise);
-    final isInSuperSet = training_exercise_utils.ExerciseUtils.isInSuperSet(exercise, superSets);
-    final superSet = training_exercise_utils.ExerciseUtils.getFirstSuperSet(exercise, superSets);
+    final isInSuperSet = training_exercise_utils.ExerciseUtils.isInSuperSet(
+      exercise,
+      superSets,
+    );
+    final superSet = training_exercise_utils.ExerciseUtils.getFirstSuperSet(
+      exercise,
+      superSets,
+    );
 
     showOptionsBottomSheet(
       context,
@@ -332,7 +344,10 @@ class _ExerciseListViewState extends State<ExerciseListView>
   // ========== METODI PER I DIALOG ==========
 
   void _showBulkSeriesDialog(Exercise exercise) {
-    final workout = widget.controller.program.weeks[widget.weekIndex]
+    final workout = widget
+        .controller
+        .program
+        .weeks[widget.weekIndex]
         .workouts[widget.workoutIndex];
 
     showDialog(
@@ -368,17 +383,19 @@ class _ExerciseListViewState extends State<ExerciseListView>
         workouts: week.workouts,
         currentWorkoutIndex: widget.workoutIndex,
         colorScheme: widget.colorScheme,
-        onWorkoutSelected: (destinationIndex) => _moveExercise(
-          exercise,
-          destinationIndex,
-        ),
+        onWorkoutSelected: (destinationIndex) =>
+            _moveExercise(exercise, destinationIndex),
       ),
     );
   }
 
   void _showAddToSuperSetDialog(Exercise exercise) {
-    final superSetsData = widget.controller.program.weeks[widget.weekIndex]
-        .workouts[widget.workoutIndex].superSets;
+    final superSetsData = widget
+        .controller
+        .program
+        .weeks[widget.weekIndex]
+        .workouts[widget.workoutIndex]
+        .superSets;
 
     if (superSetsData?.isEmpty ?? true) {
       _createNewSuperSetAndAdd(exercise);
@@ -391,17 +408,15 @@ class _ExerciseListViewState extends State<ExerciseListView>
           exerciseIds: List<String>.from(superSetMap['exerciseIds'] ?? []),
         );
       }).toList();
-      
+
       showDialog(
         context: context,
         builder: (context) => SuperSetSelectionDialog(
           exercise: exercise,
           superSets: superSets,
           colorScheme: widget.colorScheme,
-          onSuperSetSelected: (superSetId) => _addToSuperSet(
-            exercise,
-            superSetId,
-          ),
+          onSuperSetSelected: (superSetId) =>
+              _addToSuperSet(exercise, superSetId),
           onCreateNewSuperSet: () => _createNewSuperSetAndAdd(exercise),
         ),
       );
@@ -414,43 +429,87 @@ class _ExerciseListViewState extends State<ExerciseListView>
       builder: (context) => UpdateMaxRMDialog(
         exercise: exercise,
         colorScheme: widget.colorScheme,
-        onSave: (maxWeight, repetitions) => _saveMaxRM(
-          exercise,
-          maxWeight,
-          repetitions,
-        ),
+        onSave: (maxWeight, repetitions) =>
+            _saveMaxRM(exercise, maxWeight, repetitions),
       ),
     );
   }
 
   void _showReorderExercisesDialog() {
-    final exerciseNames = training_exercise_utils.ExerciseUtils.formatExerciseNames(widget.exercises);
+    final exerciseNames = training_exercise_utils
+        .ExerciseUtils.formatExerciseNames(widget.exercises);
 
     showDialog(
       context: context,
-      builder: (context) => ReorderDialog(
-        items: exerciseNames,
-        onReorder: _reorderExercises,
-      ),
+      builder: (context) =>
+          ReorderDialog(items: exerciseNames, onReorder: _reorderExercises),
     );
   }
 
   // ========== METODI DI SUPPORTO ==========
 
   void _moveExercise(Exercise exercise, int destinationWorkoutIndex) {
-    widget.controller.moveExercise(
-      widget.weekIndex,
-      widget.workoutIndex,
-      exercise.order - 1,
-      widget.weekIndex,
-      destinationWorkoutIndex,
-    );
+    try {
+      widget.controller.moveExercise(
+        widget.weekIndex,
+        widget.workoutIndex,
+        destinationWorkoutIndex,
+        exercise.order - 1,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                Icons.check_circle_outline,
+                color: widget.colorScheme.onPrimary,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              const Text('Esercizio spostato con successo'),
+            ],
+          ),
+          backgroundColor: widget.colorScheme.primary,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                Icons.error_outline,
+                color: widget.colorScheme.onError,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text('Errore nello spostamento: $e'),
+            ],
+          ),
+          backgroundColor: widget.colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   void _createNewSuperSetAndAdd(Exercise exercise) {
     widget.controller.createSuperSet(widget.weekIndex, widget.workoutIndex);
-    final superSetsData = widget.controller.program.weeks[widget.weekIndex]
-        .workouts[widget.workoutIndex].superSets;
+    final superSetsData = widget
+        .controller
+        .program
+        .weeks[widget.weekIndex]
+        .workouts[widget.workoutIndex]
+        .superSets;
     final newSuperSetId = superSetsData?.first['id'] ?? '';
     _addToSuperSet(exercise, newSuperSetId);
   }
@@ -563,8 +622,12 @@ class _ExerciseListViewState extends State<ExerciseListView>
       extra: {
         'programId': widget.controller.program.id,
         'weekId': widget.controller.program.weeks[widget.weekIndex].id,
-        'workoutId': widget.controller.program.weeks[widget.weekIndex]
-            .workouts[widget.workoutIndex].id,
+        'workoutId': widget
+            .controller
+            .program
+            .weeks[widget.weekIndex]
+            .workouts[widget.workoutIndex]
+            .id,
         'exerciseId': exercise.id,
         'userId': widget.controller.program.athleteId,
         'superSetExercises': superSets.map((s) => s.toMap()).toList(),

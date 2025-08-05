@@ -4,7 +4,8 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/shared/shared.dart';
-import 'package:alphanessone/trainingBuilder/series_utils.dart';
+
+import 'package:alphanessone/shared/services/weight_calculation_service.dart';
 
 import 'package:alphanessone/providers/providers.dart';
 import '../../../shared/widgets/number_input_field.dart';
@@ -225,7 +226,7 @@ class BulkSeriesForm extends HookConsumerWidget {
         ...exercises.map((exercise) {
           final maxWeight = maxWeights[exercise.exerciseId] ?? 0;
           final calculatedWeight = maxWeight > 0
-              ? SeriesUtils.calculateWeightFromIntensity(
+              ? WeightCalculationService.calculateWeightFromIntensity(
                   maxWeight.toDouble(), intensityValue)
               : 0.0;
 

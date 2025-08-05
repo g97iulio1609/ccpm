@@ -11,9 +11,8 @@ class WeekControllerRefactored extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
-  WeekControllerRefactored({
-    required WeekBusinessService businessService,
-  }) : _businessService = businessService;
+  WeekControllerRefactored({required WeekBusinessService businessService})
+    : _businessService = businessService;
 
   // Getters
   bool get isLoading => _isLoading;
@@ -56,7 +55,10 @@ class WeekControllerRefactored extends ChangeNotifier {
       if (destinationWeekIndex != null) {
         _setLoading(true);
         await _businessService.copyWeek(
-            program, sourceWeekIndex, destinationWeekIndex);
+          program,
+          sourceWeekIndex,
+          destinationWeekIndex,
+        );
         notifyListeners();
       }
     } catch (e) {
@@ -107,7 +109,9 @@ class WeekControllerRefactored extends ChangeNotifier {
 
   /// Mostra dialog per selezione settimana di destinazione per copia
   Future<int?> _showCopyWeekDialog(
-      TrainingProgram program, BuildContext context) async {
+    TrainingProgram program,
+    BuildContext context,
+  ) async {
     return showDialog<int>(
       context: context,
       builder: (context) {
@@ -158,14 +162,17 @@ class WeekControllerRefactored extends ChangeNotifier {
 
   /// Mostra dialog di conferma rimozione
   Future<bool> showRemoveWeekConfirmation(
-      BuildContext context, int weekNumber) async {
+    BuildContext context,
+    int weekNumber,
+  ) async {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: const Text('Conferma Rimozione'),
           content: Text(
-              'Sei sicuro di voler rimuovere la Settimana $weekNumber?\n\nQuesta azione eliminerà anche tutti gli allenamenti e gli esercizi contenuti.'),
+            'Sei sicuro di voler rimuovere la Settimana $weekNumber?\n\nQuesta azione eliminerà anche tutti gli allenamenti e gli esercizi contenuti.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),

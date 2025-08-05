@@ -1,5 +1,6 @@
 import 'package:alphanessone/shared/shared.dart' hide ValidationUtils, ModelUtils, ExerciseRepository;
 import '../../../ExerciseRecords/exercise_record_services.dart';
+import '../../../shared/services/weight_calculation_service.dart';
 import '../../shared/utils/validation_utils.dart' as local_validation_utils;
 import '../../shared/utils/model_utils.dart' as local_model_utils;
 import '../../utility_functions.dart';
@@ -9,10 +10,14 @@ import '../../utility_functions.dart';
 class ExerciseBusinessService {
 
   final ExerciseRecordService _exerciseRecordService;
+  final WeightCalculationService _weightCalculationService;
 
   ExerciseBusinessService({
     required ExerciseRecordService exerciseRecordService,
-  })  : _exerciseRecordService = exerciseRecordService;
+  })  : _exerciseRecordService = exerciseRecordService,
+        _weightCalculationService = WeightCalculationService(
+          exerciseRecordService: exerciseRecordService,
+        );
 
   // Getter pubblico per permettere l'accesso dall'esterno
   ExerciseRecordService get exerciseRecordService => _exerciseRecordService;
@@ -25,7 +30,10 @@ class ExerciseBusinessService {
     Exercise exercise,
   ) async {
     if (!local_validation_utils.ValidationUtils.isValidProgramIndex(
-        program, weekIndex, workoutIndex)) {
+      program,
+      weekIndex,
+      workoutIndex,
+    )) {
       throw ArgumentError('Indici non validi per aggiunta esercizio');
     }
 
@@ -35,14 +43,21 @@ class ExerciseBusinessService {
 
     final exerciseToAdd = exercise.copyWith(
       id: null,
-      order: program.weeks[weekIndex].workouts[workoutIndex].exercises.length + 1,
+      order:
+          program.weeks[weekIndex].workouts[workoutIndex].exercises.length + 1,
       weekProgressions: List.generate(program.weeks.length, (_) => []),
     );
 
-    program.weeks[weekIndex].workouts[workoutIndex].exercises.add(exerciseToAdd);
+    program.weeks[weekIndex].workouts[workoutIndex].exercises.add(
+      exerciseToAdd,
+    );
 
     if (exerciseToAdd.exerciseId != null) {
-      await updateExerciseWeights(program, exerciseToAdd.exerciseId!, exerciseToAdd.type);
+      await updateExerciseWeights(
+        program,
+        exerciseToAdd.exerciseId!,
+        exerciseToAdd.type,
+      );
     }
   }
 
@@ -54,15 +69,22 @@ class ExerciseBusinessService {
     int exerciseIndex,
   ) {
     if (!local_validation_utils.ValidationUtils.isValidProgramIndex(
-        program, weekIndex, workoutIndex, exerciseIndex)) {
+      program,
+      weekIndex,
+      workoutIndex,
+      exerciseIndex,
+    )) {
       throw ArgumentError('Indici non validi per rimozione esercizio');
     }
 
     final exercise = program
-        .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+        .weeks[weekIndex]
+        .workouts[workoutIndex]
+        .exercises[exerciseIndex];
     _trackExerciseForDeletion(program, exercise);
-    program.weeks[weekIndex].workouts[workoutIndex].exercises
-        .removeAt(exerciseIndex);
+    program.weeks[weekIndex].workouts[workoutIndex].exercises.removeAt(
+      exerciseIndex,
+    );
 
     final exercises = program.weeks[weekIndex].workouts[workoutIndex].exercises;
     local_model_utils.ModelUtils.updateExerciseOrders(exercises, exerciseIndex);
@@ -76,19 +98,29 @@ class ExerciseBusinessService {
     int exerciseIndex,
   ) {
     if (!local_validation_utils.ValidationUtils.isValidProgramIndex(
-        program, weekIndex, workoutIndex, exerciseIndex)) {
+      program,
+      weekIndex,
+      workoutIndex,
+      exerciseIndex,
+    )) {
       throw ArgumentError('Indici non validi per duplicazione esercizio');
     }
 
     final sourceExercise = program
-        .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
-    final duplicatedExercise = local_model_utils.ModelUtils.copyExercise(sourceExercise);
+        .weeks[weekIndex]
+        .workouts[workoutIndex]
+        .exercises[exerciseIndex];
+    final duplicatedExercise = local_model_utils.ModelUtils.copyExercise(
+      sourceExercise,
+    );
 
     final exerciseWithNewOrder = duplicatedExercise.copyWith(
-      order: program.weeks[weekIndex].workouts[workoutIndex].exercises.length + 1,
+      order:
+          program.weeks[weekIndex].workouts[workoutIndex].exercises.length + 1,
     );
-    program.weeks[weekIndex].workouts[workoutIndex].exercises
-        .add(exerciseWithNewOrder);
+    program.weeks[weekIndex].workouts[workoutIndex].exercises.add(
+      exerciseWithNewOrder,
+    );
   }
 
   /// Aggiorna un esercizio esistente
@@ -100,27 +132,47 @@ class ExerciseBusinessService {
     Exercise updatedExercise,
   ) async {
     if (!local_validation_utils.ValidationUtils.isValidProgramIndex(
-        program, weekIndex, workoutIndex, exerciseIndex)) {
+      program,
+      weekIndex,
+      workoutIndex,
+      exerciseIndex,
+    )) {
       throw ArgumentError('Indici non validi per aggiornamento esercizio');
     }
 
-    if (!local_validation_utils.ValidationUtils.isValidExercise(updatedExercise)) {
+    if (!local_validation_utils.ValidationUtils.isValidExercise(
+      updatedExercise,
+    )) {
       throw ArgumentError('Dati esercizio aggiornato non validi');
     }
 
     final originalExercise = program
-        .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+        .weeks[weekIndex]
+        .workouts[workoutIndex]
+        .exercises[exerciseIndex];
     final exerciseWithCorrectData = updatedExercise.copyWith(
       order: originalExercise.order,
       weekProgressions: originalExercise.weekProgressions,
     );
 
+    // Verifica se l'exerciseId o il tipo sono cambiati
+    final exerciseIdChanged =
+        originalExercise.exerciseId != exerciseWithCorrectData.exerciseId;
+    final exerciseTypeChanged =
+        originalExercise.type != exerciseWithCorrectData.type;
+    final shouldRecalculateWeights = exerciseIdChanged || exerciseTypeChanged;
+
     program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] =
         exerciseWithCorrectData;
 
-    if (exerciseWithCorrectData.exerciseId != null) {
+    // Ricalcola i pesi se l'esercizio o il tipo sono cambiati
+    if (shouldRecalculateWeights &&
+        exerciseWithCorrectData.exerciseId != null) {
       await updateExerciseWeights(
-          program, exerciseWithCorrectData.exerciseId!, exerciseWithCorrectData.type);
+        program,
+        exerciseWithCorrectData.exerciseId!,
+        exerciseWithCorrectData.type,
+      );
     }
   }
 
@@ -135,15 +187,20 @@ class ExerciseBusinessService {
     }
 
     try {
-      final newMaxWeight =
-          await _getLatestMaxWeight(program.athleteId, exerciseId);
-
       for (final week in program.weeks) {
         for (final workout in week.workouts) {
-          for (final exercise in workout.exercises) {
+          for (int i = 0; i < workout.exercises.length; i++) {
+            final exercise = workout.exercises[i];
             if (exercise.exerciseId == exerciseId) {
-              _updateExerciseWeightsInternal(
-                  exercise, newMaxWeight.toDouble(), exerciseType);
+              // Ottieni l'esercizio aggiornato dal servizio
+              final updatedExercise = await _weightCalculationService.updateExerciseWeights(
+                exercise,
+                program.athleteId,
+                exerciseId,
+                exerciseType,
+              );
+              // Sostituisci l'esercizio nella lista con quello aggiornato
+              workout.exercises[i] = updatedExercise;
             }
           }
         }
@@ -160,12 +217,24 @@ class ExerciseBusinessService {
     String exerciseId,
     String exerciseType,
   ) async {
-    final exercise = _findExerciseById(program, exerciseId);
-    if (exercise != null) {
-      final newMaxWeight =
-          await _getLatestMaxWeight(program.athleteId, exerciseId);
-      _updateExerciseWeightsInternal(
-          exercise, newMaxWeight.toDouble(), exerciseType);
+    for (final week in program.weeks) {
+      for (final workout in week.workouts) {
+        for (int i = 0; i < workout.exercises.length; i++) {
+          final exercise = workout.exercises[i];
+          if (exercise.exerciseId == exerciseId) {
+            // Ottieni l'esercizio aggiornato dal servizio
+            final updatedExercise = await _weightCalculationService.updateExerciseWeights(
+              exercise,
+              program.athleteId,
+              exerciseId,
+              exerciseType,
+            );
+            // Sostituisci l'esercizio nella lista con quello aggiornato
+            workout.exercises[i] = updatedExercise;
+            return; // Esce dopo aver trovato e aggiornato l'esercizio
+          }
+        }
+      }
     }
   }
 
@@ -178,7 +247,10 @@ class ExerciseBusinessService {
     int newIndex,
   ) {
     if (!local_validation_utils.ValidationUtils.isValidProgramIndex(
-            program, weekIndex, workoutIndex) ||
+          program,
+          weekIndex,
+          workoutIndex,
+        ) ||
         oldIndex < 0 ||
         oldIndex >=
             program.weeks[weekIndex].workouts[workoutIndex].exercises.length ||
@@ -199,6 +271,73 @@ class ExerciseBusinessService {
     local_model_utils.ModelUtils.updateExerciseOrders(exercises, 0);
   }
 
+  /// Sposta un esercizio da un workout a un altro
+  void moveExercise(
+    TrainingProgram program,
+    int weekIndex,
+    int sourceWorkoutIndex,
+    int destinationWorkoutIndex,
+    int exerciseIndex,
+  ) {
+    // Validazione degli indici
+    if (!local_validation_utils.ValidationUtils.isValidProgramIndex(
+      program,
+      weekIndex,
+      sourceWorkoutIndex,
+      exerciseIndex,
+    )) {
+      throw ArgumentError(
+        'Indici di origine non validi per spostamento esercizio',
+      );
+    }
+
+    if (!local_validation_utils.ValidationUtils.isValidProgramIndex(
+      program,
+      weekIndex,
+      destinationWorkoutIndex,
+    )) {
+      throw ArgumentError(
+        'Indici di destinazione non validi per spostamento esercizio',
+      );
+    }
+
+    if (sourceWorkoutIndex == destinationWorkoutIndex) {
+      throw ArgumentError(
+        'Il workout di origine e destinazione non possono essere uguali',
+      );
+    }
+
+    // Ottieni l'esercizio da spostare
+    final exerciseToMove = program
+        .weeks[weekIndex]
+        .workouts[sourceWorkoutIndex]
+        .exercises[exerciseIndex];
+
+    // Rimuovi l'esercizio dal workout di origine
+    program.weeks[weekIndex].workouts[sourceWorkoutIndex].exercises.removeAt(
+      exerciseIndex,
+    );
+
+    // Aggiorna gli ordini nel workout di origine
+    final sourceExercises =
+        program.weeks[weekIndex].workouts[sourceWorkoutIndex].exercises;
+    local_model_utils.ModelUtils.updateExerciseOrders(
+      sourceExercises,
+      exerciseIndex,
+    );
+
+    // Calcola il nuovo ordine per il workout di destinazione
+    final destinationExercises =
+        program.weeks[weekIndex].workouts[destinationWorkoutIndex].exercises;
+    final newOrder = destinationExercises.length + 1;
+
+    // Aggiorna l'ordine dell'esercizio
+    final exerciseWithNewOrder = exerciseToMove.copyWith(order: newOrder);
+
+    // Aggiungi l'esercizio al workout di destinazione
+    destinationExercises.add(exerciseWithNewOrder);
+  }
+
   /// Aggiunge una serie alla progressione di un esercizio
   void addSeriesToProgression(
     TrainingProgram program,
@@ -207,12 +346,18 @@ class ExerciseBusinessService {
     int exerciseIndex,
   ) {
     if (!local_validation_utils.ValidationUtils.isValidProgramIndex(
-        program, weekIndex, workoutIndex, exerciseIndex)) {
+      program,
+      weekIndex,
+      workoutIndex,
+      exerciseIndex,
+    )) {
       throw ArgumentError('Indici non validi per aggiunta serie');
     }
 
     final exercise = program
-        .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+        .weeks[weekIndex]
+        .workouts[workoutIndex]
+        .exercises[exerciseIndex];
     final newSeriesOrder = exercise.series.length + 1;
 
     final newSeries = Series(
@@ -242,7 +387,9 @@ class ExerciseBusinessService {
     }
 
     // Valida ogni esercizio
-    return exercises.every(local_validation_utils.ValidationUtils.isValidExercise);
+    return exercises.every(
+      local_validation_utils.ValidationUtils.isValidExercise,
+    );
   }
 
   /// Ottiene statistiche sugli esercizi per un workout
@@ -260,8 +407,9 @@ class ExerciseBusinessService {
     return {
       'totalExercises': exercises.length,
       'totalSeries': totalSeries,
-      'averageSeriesPerExercise':
-          exercises.isNotEmpty ? totalSeries / exercises.length : 0,
+      'averageSeriesPerExercise': exercises.isNotEmpty
+          ? totalSeries / exercises.length
+          : 0,
       'exerciseTypeDistribution': exerciseTypes,
       'mostUsedExercises': exerciseNames,
     };
@@ -269,83 +417,7 @@ class ExerciseBusinessService {
 
   // Metodi privati helper
 
-  Future<num> _getLatestMaxWeight(String athleteId, String exerciseId) async {
-    if (exerciseId.isEmpty || athleteId.isEmpty) return 0;
 
-    try {
-      final record = await _exerciseRecordService.getLatestExerciseRecord(
-        userId: athleteId,
-        exerciseId: exerciseId,
-      );
-      return record?.maxWeight ?? 0;
-    } catch (e) {
-      return 0;
-    }
-  }
-
-  Exercise? _findExerciseById(TrainingProgram program, String exerciseId) {
-    for (final week in program.weeks) {
-      for (final workout in week.workouts) {
-        for (final exercise in workout.exercises) {
-          if (exercise.exerciseId == exerciseId) {
-            return exercise;
-          }
-        }
-      }
-    }
-    return null;
-  }
-
-  void _updateExerciseWeightsInternal(
-      Exercise exercise, double maxWeight, String exerciseType) {
-    // Aggiorna pesi delle serie
-    _updateSeriesWeights(exercise.series, maxWeight, exerciseType);
-
-    // Aggiorna pesi delle progressioni settimanali
-    if (exercise.weekProgressions != null && exercise.weekProgressions!.isNotEmpty) {
-      _updateWeekProgressionWeights(
-          exercise.weekProgressions!, maxWeight, exerciseType);
-    }
-  }
-
-  void _updateSeriesWeights(
-      List<Series> series, double maxWeight, String exerciseType) {
-    for (int i = 0; i < series.length; i++) {
-      final s = series[i];
-      final intensity = s.intensity != null && s.intensity!.isNotEmpty 
-          ? double.tryParse(s.intensity!) : null;
-      if (intensity != null) {
-        final calculatedWeight =
-            calculateWeightFromIntensity(maxWeight, intensity);
-        series[i] = s.copyWith(weight: roundWeight(calculatedWeight, exerciseType));
-      }
-    }
-  }
-
-  void _updateWeekProgressionWeights(
-    List<List<WeekProgression>> progressions,
-    double maxWeight,
-    String exerciseType,
-  ) {
-    for (final weekProgressions in progressions) {
-      for (final progression in weekProgressions) {
-        for (int i = 0; i < progression.series.length; i++) {
-          final series = progression.series[i];
-          final intensity = series.intensity != null && series.intensity!.isNotEmpty
-              ? double.tryParse(series.intensity!)
-              : null;
-
-          if (intensity != null) {
-            final calculatedWeight =
-                calculateWeightFromIntensity(maxWeight, intensity);
-            progression.series[i] = series.copyWith(
-              weight: roundWeight(calculatedWeight, exerciseType),
-            );
-          }
-        }
-      }
-    }
-  }
 
   void _trackExerciseForDeletion(TrainingProgram program, Exercise exercise) {
     if (exercise.id != null) {

@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'privacy_consent_model.dart';
 
 class UserModel {
   final String id;
