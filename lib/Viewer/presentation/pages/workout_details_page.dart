@@ -39,8 +39,14 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
     final screenWidth = MediaQuery.of(context).size.width;
     final isListMode = screenWidth < 600;
 
-    // Determina il numero di colonne in base alla larghezza dello schermo
-    final crossAxisCount = isListMode ? 1 : 2;
+    // Determina il numero di colonne in base alla larghezza dello schermo (responsive)
+    final crossAxisCount = isListMode
+        ? 1
+        : screenWidth >= 1600
+            ? 4
+            : screenWidth >= 1200
+                ? 3
+                : 2;
     final padding = AppTheme.spacing.md;
     final spacing = AppTheme.spacing.md;
 
@@ -161,7 +167,8 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                   crossAxisCount: crossAxisCount,
                   crossAxisSpacing: spacing,
                   mainAxisSpacing: spacing,
-                  childAspectRatio: 1.2,
+                  // Più spazio verticale per contenuti leggibili nelle card
+                  childAspectRatio: screenWidth >= 1200 ? 1.0 : 0.9,
                 ),
                 itemCount: groupedExercises.length,
                 key: PageStorageKey('workout_exercises_${widget.workoutId}'),
