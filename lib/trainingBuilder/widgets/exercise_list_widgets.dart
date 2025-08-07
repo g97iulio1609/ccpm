@@ -212,6 +212,14 @@ class ExerciseLayoutBuilder extends StatelessWidget {
   }
 
   Widget _buildGridLayout(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final crossAxisCount = width >= 1600
+        ? 4
+        : width >= 1200
+            ? 3
+            : 2;
+    final aspectRatio = width >= 1400 ? 1.0 : 0.9;
+
     return SliverGrid(
       delegate: SliverChildBuilderDelegate(
         (context, index) {
@@ -223,11 +231,10 @@ class ExerciseLayoutBuilder extends StatelessWidget {
         childCount: exercises.length + 1,
       ),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: MediaQuery.of(context).size.width > 900 ? 2 : 1,
+        crossAxisCount: crossAxisCount,
         mainAxisSpacing: spacing,
         crossAxisSpacing: spacing,
-        childAspectRatio: 0.75,
-        mainAxisExtent: null,
+        childAspectRatio: aspectRatio,
       ),
     );
   }

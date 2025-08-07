@@ -16,6 +16,7 @@ import 'package:alphanessone/trainingBuilder/shared/mixins/training_list_mixin.d
 import 'package:alphanessone/trainingBuilder/services/exercise_service.dart';
 import 'package:alphanessone/trainingBuilder/shared/utils/exercise_utils.dart'
     as training_exercise_utils;
+import 'package:alphanessone/UI/components/section_header.dart';
 
 /// Widget principale per la gestione degli esercizi in un allenamento
 class TrainingProgramExerciseList extends HookConsumerWidget {
@@ -96,6 +97,26 @@ class _ExerciseListViewState extends State<ExerciseListView>
         child: SafeArea(
           child: CustomScrollView(
             slivers: [
+              // Header di sezione
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    padding.left,
+                    padding.top,
+                    padding.right,
+                    AppTheme.spacing.sm,
+                  ),
+                  child: SectionHeader(
+                    title: 'Esercizi',
+                    subtitle: 'Gestisci serie, superset e progressioni',
+                    trailing: IconButton(
+                      icon: const Icon(Icons.add),
+                      tooltip: 'Aggiungi esercizio',
+                      onPressed: _addExercise,
+                    ),
+                  ),
+                ),
+              ),
               SliverPadding(
                 padding: padding,
                 sliver: widget.exercises.isEmpty

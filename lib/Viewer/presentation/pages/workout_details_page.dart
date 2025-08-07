@@ -43,10 +43,10 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
     final crossAxisCount = isListMode
         ? 1
         : screenWidth >= 1600
-            ? 4
-            : screenWidth >= 1200
-                ? 3
-                : 2;
+        ? 4
+        : screenWidth >= 1200
+        ? 3
+        : 2;
     final padding = AppTheme.spacing.md;
     final spacing = AppTheme.spacing.md;
 
