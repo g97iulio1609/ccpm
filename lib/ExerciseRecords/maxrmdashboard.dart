@@ -16,6 +16,8 @@ import '../UI/components/user_autocomplete.dart';
 import '../UI/components/bottom_menu.dart';
 import '../../providers/providers.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/UI/components/app_card.dart';
+import 'package:alphanessone/UI/components/section_header.dart';
 
 class MaxRMDashboard extends HookConsumerWidget {
   const MaxRMDashboard({super.key});
@@ -203,36 +205,41 @@ class MaxRMDashboard extends HookConsumerWidget {
                     .toList();
 
                 if (latestRecords.isEmpty) {
-                  return SliverToBoxAdapter(
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.fitness_center_outlined,
-                            size: 64,
-                            color: colorScheme.onSurfaceVariant.withAlpha(128),
-                          ),
-                          SizedBox(height: AppTheme.spacing.md),
-                          Text(
-                            'No Records Found',
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                              fontWeight: FontWeight.w600,
+                      return SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.only(top: AppTheme.spacing.xl),
+                          child: AppCard(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.fitness_center_outlined,
+                                  size: 64,
+                                  color: colorScheme.onSurfaceVariant.withAlpha(128),
+                                ),
+                                SizedBox(height: AppTheme.spacing.md),
+                                Text(
+                                  'No Records Found',
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                SizedBox(height: AppTheme.spacing.sm),
+                                Text(
+                                  'Start adding your max records',
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                    color: colorScheme.onSurfaceVariant.withAlpha(128),
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
                             ),
                           ),
-                          SizedBox(height: AppTheme.spacing.sm),
-                          Text(
-                            'Start adding your max records',
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color:
-                                  colorScheme.onSurfaceVariant.withAlpha(128),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
+                        ),
+                      );
                 }
 
                 // Calcola il numero di colonne
@@ -273,21 +280,56 @@ class MaxRMDashboard extends HookConsumerWidget {
                                             ? AppTheme.spacing.xl
                                             : 0,
                                       ),
-                                      child: _buildRecordCard(
-                                        rowRecords[i],
-                                        exercises.firstWhere(
-                                          (ex) =>
-                                              ex.id == rowRecords[i].exerciseId,
-                                          orElse: () => ExerciseModel(
-                                            id: '',
-                                            name: 'Exercise not found',
-                                            type: '',
-                                            muscleGroups: [],
+                                      child: AppCard(
+                                        header: SectionHeader(
+                                          title: exercises
+                                                  .firstWhere(
+                                                    (ex) => ex.id == rowRecords[i].exerciseId,
+                                                    orElse: () => ExerciseModel(
+                                                      id: '',
+                                                      name: 'Exercise not found',
+                                                      type: '',
+                                                      muscleGroups: [],
+                                                    ),
+                                                  )
+                                                  .muscleGroups
+                                                  .firstOrNull ?? '',
+                                          trailing: IconButton(
+                                            icon: Icon(
+                                              Icons.more_vert,
+                                              color: colorScheme.onSurfaceVariant,
+                                            ),
+                                            onPressed: () => _showRecordOptions(
+                                              context,
+                                              rowRecords[i],
+                                              exercises.firstWhere(
+                                                (ex) => ex.id == rowRecords[i].exerciseId,
+                                                orElse: () => ExerciseModel(
+                                                  id: '',
+                                                  name: 'Exercise not found',
+                                                  type: '',
+                                                  muscleGroups: [],
+                                                ),
+                                              ),
+                                              ProviderScope.containerOf(context),
+                                            ),
                                           ),
                                         ),
-                                        theme,
-                                        colorScheme,
-                                        context,
+                                        child: _buildRecordBody(
+                                          rowRecords[i],
+                                          exercises.firstWhere(
+                                            (ex) => ex.id == rowRecords[i].exerciseId,
+                                            orElse: () => ExerciseModel(
+                                              id: '',
+                                              name: 'Exercise not found',
+                                              type: '',
+                                              muscleGroups: [],
+                                            ),
+                                          ),
+                                          theme,
+                                          colorScheme,
+                                          context,
+                                        ),
                                       ),
                                     ),
                                   )
@@ -330,6 +372,8 @@ class MaxRMDashboard extends HookConsumerWidget {
     return 1;
   }
 
+  // Legacy: mantenuto come riferimento; il rendering principale usa AppCard direttamente nel builder
+  // ignore: unused_element
   Widget _buildRecordCard(
     ExerciseRecord record,
     ExerciseModel exercise,
@@ -337,137 +381,71 @@ class MaxRMDashboard extends HookConsumerWidget {
     ColorScheme colorScheme,
     BuildContext context,
   ) {
-    return Builder(builder: (context) {
-      final ref = ProviderScope.containerOf(context);
-
-      return Container(
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-          border: Border.all(
-            color: colorScheme.outline.withAlpha(26),
-          ),
-          boxShadow: AppTheme.elevations.small,
+    return AppCard(
+      child: InkWell(
+        onTap: () => _navigateToExerciseStats(
+          context,
+          exercise,
+          record.id.split('_')[0],
         ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () => _navigateToExerciseStats(
-              context,
-              exercise,
-              record.id.split('_')[0],
-            ),
-            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-            child: Padding(
-              padding: EdgeInsets.all(AppTheme.spacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Muscolo + menu (altezza fissa 40)
-                  SizedBox(
-                    height: 40,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: AppTheme.spacing.md,
-                              vertical: AppTheme.spacing.xs,
-                            ),
-                            decoration: BoxDecoration(
-                              color: colorScheme.primaryContainer.withAlpha(76),
-                              borderRadius:
-                                  BorderRadius.circular(AppTheme.radii.xxl),
-                            ),
-                            child: Text(
-                              exercise.muscleGroups.firstOrNull ?? '',
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                color: colorScheme.primary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: AppTheme.spacing.sm),
-                        IconButton(
-                          icon: Icon(
-                            Icons.more_vert,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                          onPressed: () => _showRecordOptions(
-                              context, record, exercise, ref),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: AppTheme.spacing.lg),
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        child: _buildRecordBody(record, exercise, theme, colorScheme, context),
+      ),
+    );
+  }
 
-                  // Nome esercizio
-                  Text(
-                    exercise.name,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: colorScheme.onSurface,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -0.5,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-
-                  // Spazio esplicito per tenere "aria"
-                  SizedBox(height: AppTheme.spacing.lg),
-
-                  // Questo Spacer mantiene la parte sottostante (badge+data)
-                  // ancorata in basso, rendendo l'altezza uguale in tutte le card
-                  const Spacer(),
-
-                  // Riga con il badge di peso e la data
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Badge del massimale
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppTheme.spacing.md,
-                          vertical: AppTheme.spacing.xs,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colorScheme.primaryContainer.withAlpha(76),
-                          borderRadius:
-                              BorderRadius.circular(AppTheme.radii.xxl),
-                        ),
-                        child: Text(
-                          '${record.maxWeight} kg',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: colorScheme.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-
-                      // Data
-                      Text(
-                        DateFormat('d MMM yyyy').format(record.date),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+  Widget _buildRecordBody(
+    ExerciseRecord record,
+    ExerciseModel exercise,
+    ThemeData theme,
+    ColorScheme colorScheme,
+    BuildContext context,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          exercise.name,
+          style: theme.textTheme.titleLarge?.copyWith(
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.5,
+          ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        SizedBox(height: AppTheme.spacing.lg),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppTheme.spacing.md,
+                vertical: AppTheme.spacing.xs,
+              ),
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer.withAlpha(76),
+                borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
+              ),
+              child: Text(
+                '${record.maxWeight} kg',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
               ),
             ),
-          ),
+            Text(
+              DateFormat('d MMM yyyy').format(record.date),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
         ),
-      );
-    });
+      ],
+    );
   }
 
   void _showRecordOptions(

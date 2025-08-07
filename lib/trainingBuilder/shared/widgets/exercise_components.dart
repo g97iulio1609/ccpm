@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/shared/shared.dart';
+import 'package:alphanessone/UI/components/app_card.dart';
+import 'package:alphanessone/UI/components/section_header.dart';
 
 /// Component for displaying exercise card header with type badge
 class ExerciseCardHeader extends StatelessWidget {
@@ -172,24 +174,13 @@ class _ExerciseCardState extends State<ExerciseCard>
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
+    return AppCard(
+      child: InkWell(
+        onTap: widget.onTap,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(color: colorScheme.outline.withAlpha(26)),
-        boxShadow: AppTheme.elevations.small,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: widget.onTap,
-          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-          child: Padding(
-            padding: EdgeInsets.all(AppTheme.spacing.lg),
-            child: _buildCardContent(),
-          ),
+        child: Padding(
+          padding: EdgeInsets.all(AppTheme.spacing.lg),
+          child: _buildCardContent(),
         ),
       ),
     );
@@ -207,6 +198,8 @@ class _ExerciseCardState extends State<ExerciseCard>
         SizedBox(height: AppTheme.spacing.md),
         ExerciseTitleSection(exercise: widget.exercise),
         SizedBox(height: AppTheme.spacing.md),
+        SectionHeader(title: 'Serie'),
+        SizedBox(height: AppTheme.spacing.sm),
         // Contenitore scrollabile con estetica migliorata
         Flexible(
           child: AnimatedSize(
