@@ -45,6 +45,8 @@ class EmailField extends StatelessWidget {
                 ? 'Please enter a valid email address'
                 : null,
         keyboardType: TextInputType.emailAddress,
+        textInputAction: TextInputAction.next,
+        autofillHints: const [AutofillHints.email],
         style: theme.textTheme.bodyLarge?.copyWith(
           color: theme.colorScheme.onSurface,
         ),
@@ -89,6 +91,10 @@ class EmailField extends StatelessWidget {
           hintStyle: theme.textTheme.bodyLarge?.copyWith(
             color: theme.colorScheme.onSurfaceVariant.withAlpha(128),
           ),
+          helperText: 'We will never share your email',
+          helperStyle: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
         onSaved: (value) => userEmail.value = value ?? '',
       ),
@@ -117,6 +123,8 @@ class PasswordField extends StatelessWidget {
                 (value == null || value.isEmpty || value.length < 7)
                     ? 'Password must be at least 7 characters long'
                     : null,
+            textInputAction: TextInputAction.done,
+            autofillHints: const [AutofillHints.password],
             style: theme.textTheme.bodyLarge?.copyWith(
               color: theme.colorScheme.onSurface,
             ),
@@ -162,6 +170,10 @@ class PasswordField extends StatelessWidget {
               hintStyle: theme.textTheme.bodyLarge?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant.withAlpha(128),
               ),
+              helperText: 'At least 7 characters',
+              helperStyle: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
               suffixIcon: IconButton(
                 icon: Icon(
                   isVisible ? Icons.visibility_off : Icons.visibility,
@@ -193,6 +205,8 @@ class UsernameField extends StatelessWidget {
             (value == null || value.isEmpty || value.length < 4)
                 ? 'Please enter at least 4 characters'
                 : null,
+        textInputAction: TextInputAction.next,
+        autofillHints: const [AutofillHints.username],
         style: theme.textTheme.bodyLarge?.copyWith(
           color: theme.colorScheme.onSurface,
         ),
@@ -236,6 +250,10 @@ class UsernameField extends StatelessWidget {
           hintText: 'Choose a username',
           hintStyle: theme.textTheme.bodyLarge?.copyWith(
             color: theme.colorScheme.onSurfaceVariant.withAlpha(128),
+          ),
+          helperText: 'This will be visible to others',
+          helperStyle: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
         onSaved: (value) => userName.value = value ?? '',
