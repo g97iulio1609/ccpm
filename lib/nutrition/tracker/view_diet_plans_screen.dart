@@ -7,6 +7,8 @@ import 'package:alphanessone/Main/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:alphanessone/UI/components/app_card.dart';
+import 'package:alphanessone/UI/components/badge.dart';
 import 'package:alphanessone/UI/components/skeleton.dart';
 import 'package:go_router/go_router.dart';
 
@@ -69,129 +71,154 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
               itemCount: dietPlans.length,
               itemBuilder: (context, index) {
                 final dietPlan = dietPlans[index];
-                return Card(
+                return AppCard(
                   margin: EdgeInsets.only(bottom: AppTheme.spacing.md),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      ListTile(
-                        contentPadding: EdgeInsets.all(AppTheme.spacing.md),
-                        title: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                dietPlan.name,
-                                style: theme.textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              dietPlan.name,
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: AppTheme.spacing.sm,
-                                vertical: AppTheme.spacing.xxs,
-                              ),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primary.withAlpha(77),
-                                borderRadius: BorderRadius.circular(
-                                  AppTheme.radii.full,
+                          ),
+                          AppBadge(label: '${dietPlan.durationDays} giorni'),
+                          SizedBox(width: AppTheme.spacing.sm),
+                          MenuAnchor(
+                            builder: (context, controller, child) {
+                              return IconButton(
+                                icon: Icon(
+                                  Icons.more_vert,
+                                  color: theme.colorScheme.onSurface,
                                 ),
-                              ),
-                              child: Text(
-                                '${dietPlan.durationDays} giorni',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.primary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SizedBox(height: AppTheme.spacing.sm),
-                            Text(
-                              'Data Inizio: ${dietPlan.startDate.day}/${dietPlan.startDate.month}/${dietPlan.startDate.year}',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                        trailing: MenuAnchor(
-                          builder: (context, controller, child) {
-                            return IconButton(
-                              icon: Icon(
-                                Icons.more_vert,
-                                color: theme.colorScheme.onSurface,
-                              ),
-                              onPressed: () {
-                                if (controller.isOpen) {
-                                  controller.close();
-                                } else {
-                                  controller.open();
-                                }
-                              },
-                            );
-                          },
-                          menuChildren: [
-                            MenuItemButton(
-                              onPressed: () async {
-                                await ref
-                                    .read(dietPlanServiceProvider)
-                                    .applyDietPlan(dietPlan);
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: const Text(
-                                        'Piano Dietetico Applicato',
+                                onPressed: () => controller.isOpen
+                                    ? controller.close()
+                                    : controller.open(),
+                              );
+                            },
+                            menuChildren: <Widget>[
+                              MenuItemButton(
+                                onPressed: () async {
+                                  await ref
+                                      .read(dietPlanServiceProvider)
+                                      .applyDietPlan(dietPlan);
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: const Text(
+                                          'Piano Dietetico Applicato',
+                                        ),
+                                        backgroundColor:
+                                            theme.colorScheme.primary,
                                       ),
-                                      backgroundColor:
-                                          theme.colorScheme.primary,
-                                    ),
+                                    );
+                                  }
+                                },
+                                leadingIcon: const Icon(Icons.check),
+                                child: const Text('Applica'),
+                              ),
+                              MenuItemButton(
+                                onPressed: () async {
+                                  final newName = await _promptForDuplicateName(
+                                    context,
+                                    dietPlan.name,
                                   );
-                                }
-                              },
-                              leadingIcon: const Icon(Icons.check),
-                              child: const Text('Applica'),
-                            ),
-                            MenuItemButton(
-                              onPressed: () async {
-                                final newName = await _promptForDuplicateName(
-                                  context,
-                                  dietPlan.name,
-                                );
-                                if (newName != null && newName.isNotEmpty) {
-                                  try {
+                                  if (newName != null && newName.isNotEmpty) {
+                                    try {
+                                      await ref
+                                          .read(dietPlanServiceProvider)
+                                          .duplicateDietPlan(
+                                            userId,
+                                            dietPlan.id!,
+                                            newName: newName,
+                                          );
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'Piano Dietetico Duplicato come "$newName"',
+                                            ),
+                                            backgroundColor:
+                                                theme.colorScheme.primary,
+                                          ),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'Errore: ${e.toString()}',
+                                            ),
+                                            backgroundColor:
+                                                theme.colorScheme.error,
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  }
+                                },
+                                leadingIcon: const Icon(Icons.copy),
+                                child: const Text('Duplica'),
+                              ),
+                              MenuItemButton(
+                                onPressed: () =>
+                                    _navigateToEditDietPlan(context, dietPlan),
+                                leadingIcon: const Icon(Icons.edit),
+                                child: const Text('Modifica'),
+                              ),
+                              MenuItemButton(
+                                onPressed: () async {
+                                  final confirm =
+                                      await showDialog<bool>(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          title: const Text(
+                                            'Elimina Piano Dietetico',
+                                          ),
+                                          content: const Text(
+                                            'Sei sicuro di voler eliminare questo piano dietetico?',
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Navigator.of(
+                                                context,
+                                              ).pop(false),
+                                              child: const Text('Annulla'),
+                                            ),
+                                            ElevatedButton(
+                                              onPressed: () => Navigator.of(
+                                                context,
+                                              ).pop(true),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor:
+                                                    theme.colorScheme.error,
+                                              ),
+                                              child: const Text('Elimina'),
+                                            ),
+                                          ],
+                                        ),
+                                      ) ??
+                                      false;
+                                  if (confirm) {
                                     await ref
                                         .read(dietPlanServiceProvider)
-                                        .duplicateDietPlan(
-                                          userId,
-                                          dietPlan.id!,
-                                          newName: newName,
-                                        );
+                                        .deleteDietPlan(userId, dietPlan.id!);
                                     if (mounted) {
                                       ScaffoldMessenger.of(
                                         context,
                                       ).showSnackBar(
                                         SnackBar(
-                                          content: Text(
-                                            'Piano Dietetico Duplicato come "$newName"',
-                                          ),
-                                          backgroundColor:
-                                              theme.colorScheme.primary,
-                                        ),
-                                      );
-                                    }
-                                  } catch (e) {
-                                    if (mounted) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            'Errore: ${e.toString()}',
+                                          content: const Text(
+                                            'Piano Dietetico Eliminato',
                                           ),
                                           backgroundColor:
                                               theme.colorScheme.error,
@@ -199,80 +226,28 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
                                       );
                                     }
                                   }
-                                }
-                              },
-                              leadingIcon: const Icon(Icons.copy),
-                              child: const Text('Duplica'),
-                            ),
-                            MenuItemButton(
-                              onPressed: () =>
-                                  _navigateToEditDietPlan(context, dietPlan),
-                              leadingIcon: const Icon(Icons.edit),
-                              child: const Text('Modifica'),
-                            ),
-                            MenuItemButton(
-                              onPressed: () async {
-                                final confirm =
-                                    await showDialog<bool>(
-                                      context: context,
-                                      builder: (context) => AlertDialog(
-                                        title: const Text(
-                                          'Elimina Piano Dietetico',
-                                        ),
-                                        content: const Text(
-                                          'Sei sicuro di voler eliminare questo piano dietetico?',
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () => Navigator.of(
-                                              context,
-                                            ).pop(false),
-                                            child: const Text('Annulla'),
-                                          ),
-                                          ElevatedButton(
-                                            onPressed: () =>
-                                                Navigator.of(context).pop(true),
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor:
-                                                  theme.colorScheme.error,
-                                            ),
-                                            child: const Text('Elimina'),
-                                          ),
-                                        ],
-                                      ),
-                                    ) ??
-                                    false;
-                                if (confirm) {
-                                  await ref
-                                      .read(dietPlanServiceProvider)
-                                      .deleteDietPlan(userId, dietPlan.id!);
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: const Text(
-                                          'Piano Dietetico Eliminato',
-                                        ),
-                                        backgroundColor:
-                                            theme.colorScheme.error,
-                                      ),
-                                    );
-                                  }
-                                }
-                              },
-                              leadingIcon: Icon(
-                                Icons.delete,
-                                color: theme.colorScheme.error,
-                              ),
-                              child: Text(
-                                'Elimina',
-                                style: TextStyle(
+                                },
+                                leadingIcon: Icon(
+                                  Icons.delete,
                                   color: theme.colorScheme.error,
                                 ),
+                                child: Text(
+                                  'Elimina',
+                                  style: TextStyle(
+                                    color: theme.colorScheme.error,
+                                  ),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: AppTheme.spacing.sm),
+                      Text(
+                        'Data Inizio: ${dietPlan.startDate.day}/${dietPlan.startDate.month}/${dietPlan.startDate.year}',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
-                        onTap: () => _navigateToEditDietPlan(context, dietPlan),
                       ),
                     ],
                   ),

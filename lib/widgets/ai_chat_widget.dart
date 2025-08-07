@@ -68,18 +68,7 @@ class AIChatWidget extends HookConsumerWidget {
     );
 
     if (settings.availableProviders.isEmpty) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('AI Assistant'),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.settings),
-              onPressed: () => context.go('/settings/ai'),
-            ),
-          ],
-        ),
-        body: const _APIKeyWarning(),
-      );
+      return const Scaffold(body: _APIKeyWarning());
     }
 
     /// Processa la risposta dell'AI e gestisce l'interpretazione
@@ -216,35 +205,6 @@ class AIChatWidget extends HookConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('AI Assistant'),
-            Text(
-              'Powered by ${settings.selectedProvider.displayName}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              Icons.settings_rounded,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            style: IconButton.styleFrom(
-              backgroundColor: Theme.of(
-                context,
-              ).colorScheme.primaryContainer.withAlpha(26),
-            ),
-            onPressed: () => context.go('/settings/ai'),
-          ),
-          SizedBox(width: AppTheme.spacing.sm),
-        ],
-      ),
       body: Column(
         children: [
           if (settings.availableProviders.isNotEmpty) ...[

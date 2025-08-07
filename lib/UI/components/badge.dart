@@ -1,27 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 
-enum AppBadgeVariant {
-  filled,
-  outline,
-  subtle,
-  gradient,
-}
+enum AppBadgeVariant { filled, outline, subtle, gradient }
 
-enum AppBadgeSize {
-  small,
-  medium,
-  large,
-}
+enum AppBadgeSize { small, medium, large }
 
-enum AppBadgeStatus {
-  primary,
-  success,
-  warning,
-  error,
-  info,
-  neutral,
-}
+enum AppBadgeStatus { primary, success, warning, error, info, neutral }
 
 class AppBadge extends StatelessWidget {
   final String label;
@@ -73,8 +57,8 @@ class AppBadge extends StatelessWidget {
     final double textSize = size == AppBadgeSize.small
         ? 11
         : size == AppBadgeSize.medium
-            ? 12
-            : 14;
+        ? 12
+        : 14;
 
     BoxDecoration getDecoration() {
       switch (variant) {
@@ -121,11 +105,7 @@ class AppBadge extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (icon != null) ...[
-          Icon(
-            icon,
-            size: textSize + 2,
-            color: getTextColor(),
-          ),
+          Icon(icon, size: textSize + 2, color: getTextColor()),
           SizedBox(width: AppTheme.spacing.xs),
         ],
         Text(

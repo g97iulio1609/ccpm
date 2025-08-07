@@ -46,7 +46,7 @@ Rewamp UI/UX massivo e modulare dell’intera app (TrainingBuilder, Viewer, MaxR
 - Migliorare azioni contestuali (MenuAnchor) e Semantics [todo]
 
 8) Nutrition
-- Migrazione menu → `MenuAnchor` (view_diet_plans_screen, food_list) [partially done]
+- Migrazione menu → `MenuAnchor` (view_diet_plans_screen, food_list) [done]
 - Migliorare bottom sheet e controlli (iOS/Android) [todo]
 
 9) Accessibilità (A11y)
@@ -73,17 +73,34 @@ Rewamp UI/UX massivo e modulare dell’intera app (TrainingBuilder, Viewer, MaxR
 
 ## Stato rapido
 - Tema M3/transizioni: done
-- MenuAnchor: exercise_card, app_bar_custom, food_list migrati; view_diet_plans in corso
+- MenuAnchor: exercise_card, app_bar_custom, food_list, view_diet_plans migrati
+ - MenuAnchor: exercise_card, app_bar_custom, food_list, view_diet_plans migrati
+ - AppBar → CustomAppBar: AI Chat, AI Settings, Workout Details migrati
 - Semantics principali: inserite in Viewer/TrainingBuilder dialog [ongoing]
 - Performance Viewer: ottimizzazioni repository e subscription: done
 - Skeletons: introdotti per Diet Plans, Food List, Workout Details loading [ongoing]
+ - Superset layout (serie in colonne per esercizio) in Workout Details: done
 
 ## Prossime azioni (immediate)
-- Migrare `view_diet_plans_screen` → `MenuAnchor`
 - Ricerca e migrazione ulteriori `PopupMenuButton` [repo]
 - Introdurre skeleton generici condivisi per liste/workout/esercizi [scaffold]
 - `flutter analyze` globale e smoke test flussi principali
  - Audit UI/UX Auth e bozza componenti M3 (login/registrazione)
  - Verifica che tutte le schermate usino il `CustomAppBar` globale (niente duplicati)
+ - Verifica che tutte le schermate usino il `CustomAppBar` globale (niente duplicati) [ongoing]
+ - Estendere il nuovo layout superset alle viste simili (se presenti) in Viewer/Builder
+
+## Definition of Done (per modulo)
+- TrainingBuilder: dialog/bulk serie uniformati, nessuna sovrapposizione UI, validazioni live, skeleton su carichi pesanti
+- Viewer: superset layout stabile, refresh consistente, note/timer integri, skeleton su liste principali
+- Nutrition: MenuAnchor ovunque, skeleton su liste, bottom sheet rifiniti
+- Auth: login/registrazione M3, autofill e validazioni accessibili, SSO stabile
+- MaxRMDashboard/ExerciseDashboard: card/grafici uniformi, filtri chiari, skeleton durante fetch
+
+## Timeline suggerita (indicativa)
+- Set A: Fix superset e skeleton principali [done]
+- Set B: Migrazioni MenuAnchor residue + A11y pass [ongoing]
+- Set C: Auth (UI/UX), bottom sheet iOS/Android [next]
+- Set D: Dashboard (MaxRM/Exercise), rifiniture e test [next]
 
 

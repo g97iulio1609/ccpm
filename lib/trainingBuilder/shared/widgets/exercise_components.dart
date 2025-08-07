@@ -49,10 +49,7 @@ class ExerciseCardHeader extends StatelessWidget {
 
   Widget _buildOptionsButton(ColorScheme colorScheme) {
     return IconButton(
-      icon: Icon(
-        Icons.more_vert,
-        color: colorScheme.onSurfaceVariant,
-      ),
+      icon: Icon(Icons.more_vert, color: colorScheme.onSurfaceVariant),
       onPressed: onOptionsPressed,
     );
   }
@@ -62,10 +59,7 @@ class ExerciseCardHeader extends StatelessWidget {
 class ExerciseTitleSection extends StatelessWidget {
   final Exercise exercise;
 
-  const ExerciseTitleSection({
-    super.key,
-    required this.exercise,
-  });
+  const ExerciseTitleSection({super.key, required this.exercise});
 
   @override
   Widget build(BuildContext context) {
@@ -105,10 +99,7 @@ class ExerciseTitleSection extends StatelessWidget {
 class SupersetBadge extends StatelessWidget {
   final List<SuperSet> superSets;
 
-  const SupersetBadge({
-    super.key,
-    required this.superSets,
-  });
+  const SupersetBadge({super.key, required this.superSets});
 
   @override
   Widget build(BuildContext context) {
@@ -129,11 +120,7 @@ class SupersetBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.group_work,
-            size: 18,
-            color: colorScheme.secondary,
-          ),
+          Icon(Icons.group_work, size: 18, color: colorScheme.secondary),
           SizedBox(width: AppTheme.spacing.xs),
           Text(
             'Superset',
@@ -149,7 +136,7 @@ class SupersetBadge extends StatelessWidget {
 }
 
 /// Component for exercise card layout
-class ExerciseCard extends StatelessWidget {
+class ExerciseCard extends StatefulWidget {
   final Exercise exercise;
   final List<SuperSet> superSets;
   final Widget seriesSection;
@@ -170,6 +157,20 @@ class ExerciseCard extends StatelessWidget {
   });
 
   @override
+  State<ExerciseCard> createState() => _ExerciseCardState();
+}
+
+class _ExerciseCardState extends State<ExerciseCard>
+    with TickerProviderStateMixin {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -177,15 +178,13 @@ class ExerciseCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
         boxShadow: AppTheme.elevations.small,
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onTap,
+          onTap: widget.onTap,
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           child: Padding(
             padding: EdgeInsets.all(AppTheme.spacing.lg),
@@ -202,23 +201,104 @@ class ExerciseCard extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         ExerciseCardHeader(
-          exercise: exercise,
-          onOptionsPressed: onOptionsPressed,
+          exercise: widget.exercise,
+          onOptionsPressed: widget.onOptionsPressed,
         ),
         SizedBox(height: AppTheme.spacing.md),
-        ExerciseTitleSection(exercise: exercise),
+        ExerciseTitleSection(exercise: widget.exercise),
         SizedBox(height: AppTheme.spacing.md),
+        // Contenitore scrollabile con estetica migliorata
         Flexible(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              minHeight: 100,
-              maxHeight: 300,
+          child: AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 100, maxHeight: 300),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppTheme.radii.md),
+                child: Stack(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHighest.withAlpha(26),
+                        border: Border.all(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.outline.withAlpha(26),
+                        ),
+                      ),
+                    ),
+                    Scrollbar(
+                      controller: _scrollController,
+                      thumbVisibility: true,
+                      interactive: true,
+                      radius: Radius.circular(AppTheme.radii.full),
+                      child: SingleChildScrollView(
+                        controller: _scrollController,
+                        physics: const BouncingScrollPhysics(),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppTheme.spacing.xs,
+                          vertical: AppTheme.spacing.xs,
+                        ),
+                        child: widget.seriesSection,
+                      ),
+                    ),
+                    // Fade top
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: IgnorePointer(
+                        child: Container(
+                          height: 12,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Theme.of(
+                                  context,
+                                ).colorScheme.surface.withAlpha(180),
+                                Colors.transparent,
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Fade bottom
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: IgnorePointer(
+                        child: Container(
+                          height: 12,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                              colors: [
+                                Theme.of(
+                                  context,
+                                ).colorScheme.surface.withAlpha(180),
+                                Colors.transparent,
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            child: seriesSection,
           ),
         ),
         SizedBox(height: AppTheme.spacing.sm),
-        SupersetBadge(superSets: superSets),
+        SupersetBadge(superSets: widget.superSets),
       ],
     );
   }

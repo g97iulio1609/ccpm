@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/button.dart';
+import 'package:alphanessone/UI/components/app_card.dart';
 import 'package:alphanessone/providers/providers.dart' as app_providers;
 import 'package:alphanessone/Viewer/UI/workout_provider.dart'
     as workout_provider;
@@ -39,101 +40,82 @@ class ExerciseCard extends ConsumerWidget {
     final screenWidth = MediaQuery.of(context).size.width;
     final isListMode = screenWidth < 600;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(color: colorScheme.outline.withAlpha(26), width: 1),
-        boxShadow: AppTheme.elevations.small,
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        child: Column(
-          children: [
-            // Header dell'esercizio
-            Container(
+    return AppCard(
+      header: _buildExerciseName(context, ref),
+      child: Column(
+        children: [
+          // Contenuto dell'esercizio - layout responsive
+          if (isListMode)
+            // Layout per mobile
+            Padding(
               padding: EdgeInsets.all(AppTheme.spacing.md),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withAlpha(77),
-                border: Border(
-                  bottom: BorderSide(color: colorScheme.outline.withAlpha(26)),
-                ),
-              ),
-              child: _buildExerciseName(context, ref),
-            ),
-
-            // Contenuto dell'esercizio - layout responsive
-            if (isListMode)
-              // Layout per mobile
-              Padding(
-                padding: EdgeInsets.all(AppTheme.spacing.md),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (!allSeriesCompleted) ...[
-                      _buildStartButton(
-                        context,
-                        firstNotDoneSeriesIndex,
-                        isContinueMode,
-                      ),
-                      SizedBox(height: AppTheme.spacing.md),
-                    ],
-                    const SeriesHeaderRow(),
-                    SizedBox(height: AppTheme.spacing.sm),
-                    ...SeriesWidgets.buildSeriesContainers(
-                      series,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (!allSeriesCompleted) ...[
+                    _buildStartButton(
                       context,
-                      ref,
-                      _showEditSeriesDialog,
+                      firstNotDoneSeriesIndex,
+                      isContinueMode,
                     ),
+                    SizedBox(height: AppTheme.spacing.md),
                   ],
-                ),
-              )
-            else
-              // Layout per desktop/tablet
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding: EdgeInsets.all(AppTheme.spacing.md),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        if (!allSeriesCompleted) ...[
-                          _buildStartButton(
-                            context,
-                            firstNotDoneSeriesIndex,
-                            isContinueMode,
-                          ),
-                          SizedBox(height: AppTheme.spacing.md),
-                        ],
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            vertical: AppTheme.spacing.xs,
-                            horizontal: AppTheme.spacing.sm,
-                          ),
-                          decoration: BoxDecoration(
-                            color: colorScheme.surfaceContainerHighest
-                                .withAlpha(77),
-                            borderRadius: BorderRadius.circular(
-                              AppTheme.radii.sm,
-                            ),
-                          ),
-                          child: const SeriesHeaderRow(),
-                        ),
-                        SizedBox(height: AppTheme.spacing.sm),
-                        ...SeriesWidgets.buildSeriesContainers(
-                          series,
+                  const SeriesHeaderRow(),
+                  SizedBox(height: AppTheme.spacing.sm),
+                  ...SeriesWidgets.buildSeriesContainers(
+                    series,
+                    context,
+                    ref,
+                    _showEditSeriesDialog,
+                  ),
+                ],
+              ),
+            )
+          else
+            // Layout per desktop/tablet
+            Expanded(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: EdgeInsets.all(AppTheme.spacing.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (!allSeriesCompleted) ...[
+                        _buildStartButton(
                           context,
-                          ref,
-                          _showEditSeriesDialog,
+                          firstNotDoneSeriesIndex,
+                          isContinueMode,
                         ),
+                        SizedBox(height: AppTheme.spacing.md),
                       ],
-                    ),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          vertical: AppTheme.spacing.xs,
+                          horizontal: AppTheme.spacing.sm,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHighest.withAlpha(
+                            77,
+                          ),
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radii.sm,
+                          ),
+                        ),
+                        child: const SeriesHeaderRow(),
+                      ),
+                      SizedBox(height: AppTheme.spacing.sm),
+                      ...SeriesWidgets.buildSeriesContainers(
+                        series,
+                        context,
+                        ref,
+                        _showEditSeriesDialog,
+                      ),
+                    ],
                   ),
                 ),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }

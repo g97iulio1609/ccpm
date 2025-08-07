@@ -57,7 +57,6 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
 
   String _getTitleForRoute(String currentPath) {
     if (currentPath.contains('/workout_details/')) {
-    } else if (currentPath.contains('/workout_details/')) {
       return ref.watch(currentWorkoutNameProvider);
     } else if (currentPath.contains('/week_details/')) {
       return ref.watch(currentWeekNameProvider);
@@ -98,6 +97,10 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
         return 'Aggiungi Piano Dietetico';
       case '/food_tracker/view_diet_plans':
         return 'Visualizza Piani Dietetici';
+      case '/ai/chat':
+        return 'AI Assistant';
+      case '/settings/ai':
+        return 'Impostazioni AI';
       default:
         return 'Alphaness One';
     }
@@ -664,6 +667,16 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
               child: const Text('Apply Template'),
             ),
           ],
+        ),
+      );
+    }
+
+    if (currentRoute == '/ai/chat') {
+      actions.add(
+        IconButton(
+          onPressed: () => context.go('/settings/ai'),
+          icon: const Icon(Icons.settings_rounded),
+          tooltip: 'Impostazioni AI',
         ),
       );
     }

@@ -4,6 +4,8 @@ import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/Viewer/presentation/notifiers/workout_details_notifier.dart';
 import 'package:alphanessone/UI/components/skeleton.dart';
+import 'package:alphanessone/UI/components/app_card.dart';
+import 'package:alphanessone/UI/components/section_header.dart';
 import 'package:alphanessone/Viewer/presentation/widgets/exercise_timer_bottom_sheet.dart';
 
 class WorkoutDetailsPage extends ConsumerStatefulWidget {
@@ -123,24 +125,6 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
     // Mostra gli esercizi in una lista o griglia
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      appBar: AppBar(
-        title: Text(
-          state.workout!.name,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: colorScheme.onSurface,
-          ),
-        ),
-        backgroundColor: colorScheme.surface,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => notifier.refreshWorkout(),
-            tooltip: 'Aggiorna',
-          ),
-        ],
-      ),
       body: isListMode
           ? RefreshIndicator(
               onRefresh: () => notifier.refreshWorkout(),
@@ -159,7 +143,11 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                       padding: EdgeInsets.only(bottom: spacing),
                       child: superSetId == null || superSetId.isEmpty
                           ? _buildSingleExerciseCard(exercises.first, context)
-                          : _buildSuperSetCard(exercises, context),
+                          : _buildSuperSetCard(
+                              superSetExercises: exercises,
+                              context: context,
+                              isListMode: true,
+                            ),
                     );
                   },
                 ),
@@ -184,7 +172,11 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
 
                   return superSetId == null || superSetId.isEmpty
                       ? _buildSingleExerciseCard(exercises.first, context)
-                      : _buildSuperSetCard(exercises, context);
+                      : _buildSuperSetCard(
+                          superSetExercises: exercises,
+                          context: context,
+                          isListMode: false,
+                        );
                 },
               ),
             ),
@@ -233,100 +225,81 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
     final screenWidth = MediaQuery.of(context).size.width;
     final isListMode = screenWidth < 600;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(color: colorScheme.outline.withAlpha(26), width: 1),
-        boxShadow: AppTheme.elevations.small,
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        child: Column(
-          children: [
-            Container(
+    return AppCard(
+      header: _buildExerciseName(exercise, context),
+      child: Column(
+        children: [
+          if (isListMode)
+            Padding(
               padding: EdgeInsets.all(AppTheme.spacing.md),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withAlpha(77),
-                border: Border(
-                  bottom: BorderSide(color: colorScheme.outline.withAlpha(26)),
-                ),
-              ),
-              child: _buildExerciseName(exercise, context),
-            ),
-            if (isListMode)
-              Padding(
-                padding: EdgeInsets.all(AppTheme.spacing.md),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (!allSeriesCompleted) ...[
-                      _buildStartButton(
-                        exercise,
-                        firstNotDoneSeriesIndex,
-                        isContinueMode,
-                        context,
-                      ),
-                      SizedBox(height: AppTheme.spacing.md),
-                    ],
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        vertical: AppTheme.spacing.xs,
-                        horizontal: AppTheme.spacing.sm,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest.withAlpha(
-                          77,
-                        ),
-                        borderRadius: BorderRadius.circular(AppTheme.radii.sm),
-                      ),
-                      child: _buildSeriesHeaderRow(context),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (!allSeriesCompleted) ...[
+                    _buildStartButton(
+                      exercise,
+                      firstNotDoneSeriesIndex,
+                      isContinueMode,
+                      context,
                     ),
-                    SizedBox(height: AppTheme.spacing.sm),
-                    ..._buildSeriesContainers(series, context),
+                    SizedBox(height: AppTheme.spacing.md),
                   ],
-                ),
-              )
-            else
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding: EdgeInsets.all(AppTheme.spacing.md),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        if (!allSeriesCompleted) ...[
-                          _buildStartButton(
-                            exercise,
-                            firstNotDoneSeriesIndex,
-                            isContinueMode,
-                            context,
-                          ),
-                          SizedBox(height: AppTheme.spacing.md),
-                        ],
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            vertical: AppTheme.spacing.xs,
-                            horizontal: AppTheme.spacing.sm,
-                          ),
-                          decoration: BoxDecoration(
-                            color: colorScheme.surfaceContainerHighest
-                                .withAlpha(77),
-                            borderRadius: BorderRadius.circular(
-                              AppTheme.radii.sm,
-                            ),
-                          ),
-                          child: _buildSeriesHeaderRow(context),
-                        ),
-                        SizedBox(height: AppTheme.spacing.sm),
-                        ..._buildSeriesContainers(series, context),
-                      ],
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      vertical: AppTheme.spacing.xs,
+                      horizontal: AppTheme.spacing.sm,
                     ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest.withAlpha(77),
+                      borderRadius: BorderRadius.circular(AppTheme.radii.sm),
+                    ),
+                    child: _buildSeriesHeaderRow(context),
+                  ),
+                  SizedBox(height: AppTheme.spacing.sm),
+                  ..._buildSeriesContainers(series, context),
+                ],
+              ),
+            )
+          else
+            Expanded(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: EdgeInsets.all(AppTheme.spacing.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (!allSeriesCompleted) ...[
+                        _buildStartButton(
+                          exercise,
+                          firstNotDoneSeriesIndex,
+                          isContinueMode,
+                          context,
+                        ),
+                        SizedBox(height: AppTheme.spacing.md),
+                      ],
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          vertical: AppTheme.spacing.xs,
+                          horizontal: AppTheme.spacing.sm,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHighest.withAlpha(
+                            77,
+                          ),
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radii.sm,
+                          ),
+                        ),
+                        child: _buildSeriesHeaderRow(context),
+                      ),
+                      SizedBox(height: AppTheme.spacing.sm),
+                      ..._buildSeriesContainers(series, context),
+                    ],
                   ),
                 ),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
@@ -384,43 +357,23 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
     );
   }
 
-  Widget _buildSuperSetCard(
-    List<Exercise> superSetExercises,
-    BuildContext context,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
+  Widget _buildSuperSetCard({
+    required List<Exercise> superSetExercises,
+    required BuildContext context,
+    required bool isListMode,
+  }) {
     final allSeriesCompleted = superSetExercises.every((exercise) {
       return exercise.series.every((series) => series.isCompleted);
     });
 
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(color: colorScheme.outline.withAlpha(26), width: 1),
-        boxShadow: AppTheme.elevations.small,
-      ),
+    return AppCard(
+      header: SectionHeader(title: 'Super Set'),
       child: Column(
         children: [
-          Container(
-            padding: EdgeInsets.all(AppTheme.spacing.md),
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withAlpha(77),
-              border: Border(
-                bottom: BorderSide(color: colorScheme.outline.withAlpha(26)),
-              ),
-            ),
+          Padding(
+            padding: EdgeInsets.only(bottom: AppTheme.spacing.md),
             child: Column(
               children: [
-                Text(
-                  'Super Set',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
                 ...superSetExercises.asMap().entries.map(
                   (entry) => _buildSuperSetExerciseName(
                     entry.key,
@@ -431,24 +384,40 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
               ],
             ),
           ),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: EdgeInsets.all(AppTheme.spacing.md),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (!allSeriesCompleted) ...[
-                      _buildSuperSetStartButton(superSetExercises, context),
-                      const SizedBox(height: 24),
-                    ],
-                    _buildSeriesHeaderRow(context),
-                    ..._buildSeriesRows(superSetExercises, context),
+          if (isListMode)
+            Padding(
+              padding: EdgeInsets.all(AppTheme.spacing.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (!allSeriesCompleted) ...[
+                    _buildSuperSetStartButton(superSetExercises, context),
+                    const SizedBox(height: 24),
                   ],
+                  _buildSeriesHeaderRow(context),
+                  ..._buildSeriesRows(superSetExercises, context),
+                ],
+              ),
+            )
+          else
+            Expanded(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: EdgeInsets.all(AppTheme.spacing.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (!allSeriesCompleted) ...[
+                        _buildSuperSetStartButton(superSetExercises, context),
+                        const SizedBox(height: 24),
+                      ],
+                      _buildSeriesHeaderRow(context),
+                      ..._buildSeriesRows(superSetExercises, context),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -680,73 +649,107 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
     List<Exercise> exercises,
     BuildContext context,
   ) {
-    final rows = <Widget>[];
+    // Modello a colonne per evitare sovrapposizioni: una colonna per ogni esercizio del superset
+    final maxSeries = exercises
+        .map((e) => e.series.length)
+        .fold<int>(0, (p, c) => c > p ? c : p);
 
-    // Assumiamo che ogni esercizio nel superset abbia lo stesso numero di serie
-    final seriesCount = exercises.first.series.length;
-
-    for (var i = 0; i < seriesCount; i++) {
-      for (var j = 0; j < exercises.length; j++) {
-        final exercise = exercises[j];
-        final series = exercise.series[i];
-
-        rows.add(
-          Container(
-            margin: EdgeInsets.only(bottom: AppTheme.spacing.xs),
-            padding: EdgeInsets.symmetric(
-              vertical: AppTheme.spacing.xs,
-              horizontal: AppTheme.spacing.sm,
+    return List<Widget>.generate(maxSeries, (rowIndex) {
+      return Container(
+        margin: EdgeInsets.only(bottom: AppTheme.spacing.xs),
+        padding: EdgeInsets.symmetric(
+          vertical: AppTheme.spacing.xs,
+          horizontal: AppTheme.spacing.sm,
+        ),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppTheme.radii.sm),
+          color: Colors.transparent,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 30,
+              child: Text(
+                '${rowIndex + 1}',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
             ),
-            decoration: BoxDecoration(
-              color: series.isCompleted
-                  ? Colors.green.withAlpha(26)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(AppTheme.radii.sm),
-            ),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 30,
-                  child: Text(
-                    '${i + 1}${String.fromCharCode(65 + j)}', // 1A, 1B, 2A, 2B, etc.
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text('${series.reps}', textAlign: TextAlign.center),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    '${series.weight} kg',
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    series.isCompleted
-                        ? '${series.repsDone}×${series.weightDone}'
-                        : '-',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: series.isCompleted ? FontWeight.bold : null,
-                    ),
-                  ),
-                ),
-                _buildCompletionButton(series, exercise.name, context),
-              ],
-            ),
-          ),
-        );
-      }
-    }
+            ...exercises.asMap().entries.map((entry) {
+              final exIndex = entry.key;
+              final exercise = entry.value;
+              final hasSeries = rowIndex < exercise.series.length;
+              final series = hasSeries ? exercise.series[rowIndex] : null;
 
-    return rows;
+              return Expanded(
+                child: Container(
+                  margin: EdgeInsets.only(
+                    left: exIndex == 0 ? 0 : AppTheme.spacing.xs,
+                  ),
+                  padding: EdgeInsets.symmetric(
+                    vertical: AppTheme.spacing.xs,
+                    horizontal: AppTheme.spacing.xs,
+                  ),
+                  decoration: BoxDecoration(
+                    color: series?.isCompleted == true
+                        ? Colors.green.withAlpha(26)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(AppTheme.radii.sm),
+                  ),
+                  child: hasSeries
+                      ? Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                '${String.fromCharCode(65 + exIndex)}',
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                '${series!.reps}',
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                '${series.weight} kg',
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                series.isCompleted
+                                    ? '${series.repsDone}×${series.weightDone}'
+                                    : '-',
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(
+                                      fontWeight: series.isCompleted
+                                          ? FontWeight.bold
+                                          : null,
+                                    ),
+                              ),
+                            ),
+                            _buildCompletionButton(
+                              series,
+                              exercise.name,
+                              context,
+                            ),
+                          ],
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              );
+            }),
+          ],
+        ),
+      );
+    }).toList();
   }
 
   Widget _buildSeriesRow(int index, Series series, BuildContext context) {
