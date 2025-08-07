@@ -244,6 +244,8 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                     ),
                     SizedBox(height: AppTheme.spacing.md),
                   ],
+                  SectionHeader(title: 'Serie'),
+                  SizedBox(height: AppTheme.spacing.sm),
                   Container(
                     padding: EdgeInsets.symmetric(
                       vertical: AppTheme.spacing.xs,
@@ -277,6 +279,8 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                         ),
                         SizedBox(height: AppTheme.spacing.md),
                       ],
+                      SectionHeader(title: 'Serie'),
+                      SizedBox(height: AppTheme.spacing.sm),
                       Container(
                         padding: EdgeInsets.symmetric(
                           vertical: AppTheme.spacing.xs,
@@ -310,50 +314,26 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
       workoutDetailsNotifierProvider(widget.workoutId).notifier,
     );
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                exercise.name,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onSurface,
-                ),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 2,
-              ),
-              if (exercise.variant != null && exercise.variant!.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                Text(
-                  exercise.variant!,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ],
-          ),
+    return SectionHeader(
+      title: exercise.name,
+      subtitle: (exercise.variant != null && exercise.variant!.isNotEmpty)
+          ? exercise.variant!
+          : null,
+      trailing: IconButton(
+        icon: Icon(
+          Icons.note_alt_outlined,
+          color: exercise.note != null && exercise.note!.isNotEmpty
+              ? colorScheme.primary
+              : colorScheme.onSurfaceVariant,
         ),
-        IconButton(
-          icon: Icon(
-            Icons.note_alt_outlined,
-            color: exercise.note != null && exercise.note!.isNotEmpty
-                ? colorScheme.primary
-                : colorScheme.onSurfaceVariant,
-          ),
-          onPressed: () => _showNoteDialog(
-            exercise.id ?? '',
-            exercise.name,
-            exercise.note,
-            notifier,
-          ),
-          tooltip: 'Nota',
+        onPressed: () => _showNoteDialog(
+          exercise.id ?? '',
+          exercise.name,
+          exercise.note,
+          notifier,
         ),
-      ],
+        tooltip: 'Nota',
+      ),
     );
   }
 

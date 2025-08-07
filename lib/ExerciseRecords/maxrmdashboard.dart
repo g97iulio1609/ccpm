@@ -122,9 +122,7 @@ class MaxRMDashboard extends HookConsumerWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(128),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(128)),
         boxShadow: AppTheme.elevations.small,
       ),
       padding: EdgeInsets.all(AppTheme.spacing.md),
@@ -137,9 +135,11 @@ class MaxRMDashboard extends HookConsumerWidget {
         onChanged: (String value) {
           final allUsers = ref.read(userListProvider);
           final filteredUsers = allUsers
-              .where((user) =>
-                  user.name.toLowerCase().contains(value.toLowerCase()) ||
-                  user.email.toLowerCase().contains(value.toLowerCase()))
+              .where(
+                (user) =>
+                    user.name.toLowerCase().contains(value.toLowerCase()) ||
+                    user.email.toLowerCase().contains(value.toLowerCase()),
+              )
               .toList();
           ref.read(filteredUserListProvider.notifier).state = filteredUsers;
         },
@@ -162,16 +162,19 @@ class MaxRMDashboard extends HookConsumerWidget {
         return exercisesAsyncValue.when(
           data: (exercises) {
             final userId = selectedUserId ?? usersService.getCurrentUserId();
-            List<Stream<ExerciseRecord?>> exerciseRecordStreams =
-                exercises.map((exercise) {
-              return exerciseRecordService
-                  .getExerciseRecords(userId: userId, exerciseId: exercise.id)
-                  .map((records) => records.isNotEmpty
-                      ? records.reduce(
-                          (a, b) => a.date.compareTo(b.date) > 0 ? a : b,
-                        )
-                      : null);
-            }).toList();
+            List<Stream<ExerciseRecord?>> exerciseRecordStreams = exercises.map(
+              (exercise) {
+                return exerciseRecordService
+                    .getExerciseRecords(userId: userId, exerciseId: exercise.id)
+                    .map(
+                      (records) => records.isNotEmpty
+                          ? records.reduce(
+                              (a, b) => a.date.compareTo(b.date) > 0 ? a : b,
+                            )
+                          : null,
+                    );
+              },
+            ).toList();
 
             return StreamBuilder<List<ExerciseRecord?>>(
               stream: CombineLatestStream.list(exerciseRecordStreams),
@@ -205,41 +208,45 @@ class MaxRMDashboard extends HookConsumerWidget {
                     .toList();
 
                 if (latestRecords.isEmpty) {
-                      return SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.only(top: AppTheme.spacing.xl),
-                          child: AppCard(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.fitness_center_outlined,
-                                  size: 64,
-                                  color: colorScheme.onSurfaceVariant.withAlpha(128),
-                                ),
-                                SizedBox(height: AppTheme.spacing.md),
-                                Text(
-                                  'No Records Found',
-                                  style: theme.textTheme.titleLarge?.copyWith(
-                                    color: colorScheme.onSurfaceVariant,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                                SizedBox(height: AppTheme.spacing.sm),
-                                Text(
-                                  'Start adding your max records',
-                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                    color: colorScheme.onSurfaceVariant.withAlpha(128),
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
+                  return SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.only(top: AppTheme.spacing.xl),
+                      child: AppCard(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.fitness_center_outlined,
+                              size: 64,
+                              color: colorScheme.onSurfaceVariant.withAlpha(
+                                128,
+                              ),
                             ),
-                          ),
+                            SizedBox(height: AppTheme.spacing.md),
+                            Text(
+                              'No Records Found',
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            SizedBox(height: AppTheme.spacing.sm),
+                            Text(
+                              'Start adding your max records',
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: colorScheme.onSurfaceVariant.withAlpha(
+                                  128,
+                                ),
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ),
-                      );
+                      ),
+                    ),
+                  );
                 }
 
                 // Calcola il numero di colonne
@@ -259,89 +266,94 @@ class MaxRMDashboard extends HookConsumerWidget {
                 }
 
                 return SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, rowIndex) {
-                      if (rowIndex >= rows.length) return null;
+                  delegate: SliverChildBuilderDelegate((context, rowIndex) {
+                    if (rowIndex >= rows.length) return null;
 
-                      final rowRecords = rows[rowIndex];
+                    final rowRecords = rows[rowIndex];
 
-                      return Padding(
-                        padding: EdgeInsets.only(bottom: AppTheme.spacing.xl),
-                        child: IntrinsicHeight(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              for (var i = 0; i < crossAxisCount; i++) ...[
-                                if (i < rowRecords.length)
-                                  Expanded(
-                                    child: Padding(
-                                      padding: EdgeInsets.only(
-                                        right: i < crossAxisCount - 1
-                                            ? AppTheme.spacing.xl
-                                            : 0,
-                                      ),
-                                      child: AppCard(
-                                        header: SectionHeader(
-                                          title: exercises
-                                                  .firstWhere(
-                                                    (ex) => ex.id == rowRecords[i].exerciseId,
-                                                    orElse: () => ExerciseModel(
-                                                      id: '',
-                                                      name: 'Exercise not found',
-                                                      type: '',
-                                                      muscleGroups: [],
-                                                    ),
-                                                  )
-                                                  .muscleGroups
-                                                  .firstOrNull ?? '',
-                                          trailing: IconButton(
-                                            icon: Icon(
-                                              Icons.more_vert,
-                                              color: colorScheme.onSurfaceVariant,
-                                            ),
-                                            onPressed: () => _showRecordOptions(
-                                              context,
-                                              rowRecords[i],
-                                              exercises.firstWhere(
-                                                (ex) => ex.id == rowRecords[i].exerciseId,
-                                                orElse: () => ExerciseModel(
-                                                  id: '',
-                                                  name: 'Exercise not found',
-                                                  type: '',
-                                                  muscleGroups: [],
-                                                ),
+                    return Padding(
+                      padding: EdgeInsets.only(bottom: AppTheme.spacing.xl),
+                      child: IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            for (var i = 0; i < crossAxisCount; i++) ...[
+                              if (i < rowRecords.length)
+                                Expanded(
+                                  child: Padding(
+                                    padding: EdgeInsets.only(
+                                      right: i < crossAxisCount - 1
+                                          ? AppTheme.spacing.xl
+                                          : 0,
+                                    ),
+                                    child: AppCard(
+                                      header: SectionHeader(
+                                        title:
+                                            exercises
+                                                .firstWhere(
+                                                  (ex) =>
+                                                      ex.id ==
+                                                      rowRecords[i].exerciseId,
+                                                  orElse: () => ExerciseModel(
+                                                    id: '',
+                                                    name: 'Exercise not found',
+                                                    type: '',
+                                                    muscleGroups: [],
+                                                  ),
+                                                )
+                                                .muscleGroups
+                                                .firstOrNull ??
+                                            '',
+                                        trailing: IconButton(
+                                          icon: Icon(
+                                            Icons.more_vert,
+                                            color: colorScheme.onSurfaceVariant,
+                                          ),
+                                          onPressed: () => _showRecordOptions(
+                                            context,
+                                            rowRecords[i],
+                                            exercises.firstWhere(
+                                              (ex) =>
+                                                  ex.id ==
+                                                  rowRecords[i].exerciseId,
+                                              orElse: () => ExerciseModel(
+                                                id: '',
+                                                name: 'Exercise not found',
+                                                type: '',
+                                                muscleGroups: [],
                                               ),
-                                              ProviderScope.containerOf(context),
                                             ),
+                                            ProviderScope.containerOf(context),
                                           ),
                                         ),
-                                        child: _buildRecordBody(
-                                          rowRecords[i],
-                                          exercises.firstWhere(
-                                            (ex) => ex.id == rowRecords[i].exerciseId,
-                                            orElse: () => ExerciseModel(
-                                              id: '',
-                                              name: 'Exercise not found',
-                                              type: '',
-                                              muscleGroups: [],
-                                            ),
+                                      ),
+                                      child: _buildRecordBody(
+                                        rowRecords[i],
+                                        exercises.firstWhere(
+                                          (ex) =>
+                                              ex.id == rowRecords[i].exerciseId,
+                                          orElse: () => ExerciseModel(
+                                            id: '',
+                                            name: 'Exercise not found',
+                                            type: '',
+                                            muscleGroups: [],
                                           ),
-                                          theme,
-                                          colorScheme,
-                                          context,
                                         ),
+                                        theme,
+                                        colorScheme,
+                                        context,
                                       ),
                                     ),
-                                  )
-                                else
-                                  Expanded(child: Container()),
-                              ],
+                                  ),
+                                )
+                              else
+                                Expanded(child: Container()),
                             ],
-                          ),
+                          ],
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                    );
+                  }),
                 );
               },
             );
@@ -506,13 +518,15 @@ class MaxRMDashboard extends HookConsumerWidget {
   ) async {
     List<UserModel> users = [];
     if (role == 'admin') {
-      final snapshot =
-          await FirebaseFirestore.instance.collection('users').get();
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .get();
       users = snapshot.docs.map((doc) => UserModel.fromFirestore(doc)).toList();
     } else if (role == 'coach') {
       final currentUserId = usersService.getCurrentUserId();
-      final associations =
-          await coachingService.getCoachAssociations(currentUserId).first;
+      final associations = await coachingService
+          .getCoachAssociations(currentUserId)
+          .first;
       for (var association in associations) {
         if (association.status == 'accepted') {
           final athlete = await usersService.getUserById(association.athleteId);
@@ -534,55 +548,59 @@ class MaxRMDashboard extends HookConsumerWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
       ),
       builder: (context) => _MaxRMForm(
-        onSubmit: (
-          exerciseId,
-          exerciseName,
-          maxWeight,
-          repetitions,
-          date,
-          keepWeight,
-          selectedUserId,
-        ) async {
-          final exerciseRecordService = ref.read(exerciseRecordServiceProvider);
-          final usersService = ref.read(usersServiceProvider);
-          final userId = selectedUserId ?? usersService.getCurrentUserId();
-
-          double adjustedMaxWeight = maxWeight.toDouble();
-          if (repetitions > 1) {
-            adjustedMaxWeight =
-                (maxWeight / (1.0278 - (0.0278 * repetitions))).roundToDouble();
-          }
-
-          await exerciseRecordService.addExerciseRecord(
-            userId: userId,
-            exerciseId: exerciseId,
-            exerciseName: exerciseName,
-            maxWeight: adjustedMaxWeight,
-            repetitions: 1,
-            date: DateFormat('yyyy-MM-dd').format(date),
-          );
-
-          if (keepWeight) {
-            await exerciseRecordService.updateIntensityForProgram(
-              userId,
+        onSubmit:
+            (
               exerciseId,
-              adjustedMaxWeight,
-            );
-          } else {
-            await exerciseRecordService.updateWeightsForProgram(
-              userId,
-              exerciseId,
-              adjustedMaxWeight,
-            );
-          }
+              exerciseName,
+              maxWeight,
+              repetitions,
+              date,
+              keepWeight,
+              selectedUserId,
+            ) async {
+              final exerciseRecordService = ref.read(
+                exerciseRecordServiceProvider,
+              );
+              final usersService = ref.read(usersServiceProvider);
+              final userId = selectedUserId ?? usersService.getCurrentUserId();
 
-          if (context.mounted) {
-            Navigator.of(context).pop();
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Max RM added successfully')),
-            );
-          }
-        },
+              double adjustedMaxWeight = maxWeight.toDouble();
+              if (repetitions > 1) {
+                adjustedMaxWeight =
+                    (maxWeight / (1.0278 - (0.0278 * repetitions)))
+                        .roundToDouble();
+              }
+
+              await exerciseRecordService.addExerciseRecord(
+                userId: userId,
+                exerciseId: exerciseId,
+                exerciseName: exerciseName,
+                maxWeight: adjustedMaxWeight,
+                repetitions: 1,
+                date: DateFormat('yyyy-MM-dd').format(date),
+              );
+
+              if (keepWeight) {
+                await exerciseRecordService.updateIntensityForProgram(
+                  userId,
+                  exerciseId,
+                  adjustedMaxWeight,
+                );
+              } else {
+                await exerciseRecordService.updateWeightsForProgram(
+                  userId,
+                  exerciseId,
+                  adjustedMaxWeight,
+                );
+              }
+
+              if (context.mounted) {
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Max RM added successfully')),
+                );
+              }
+            },
       ),
     );
   }
@@ -630,9 +648,7 @@ class MaxRMDashboard extends HookConsumerWidget {
               onPressed: () => Navigator.of(dialogContext).pop(),
               child: Text(
                 'Cancel',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+                style: TextStyle(color: Theme.of(context).colorScheme.primary),
               ),
             ),
             TextButton(
@@ -642,9 +658,7 @@ class MaxRMDashboard extends HookConsumerWidget {
               },
               child: Text(
                 'Delete',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.error,
-                ),
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ),
           ],
@@ -676,9 +690,9 @@ class MaxRMDashboard extends HookConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to delete record: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to delete record: $e')));
       }
     }
   }
@@ -711,10 +725,12 @@ class EditRecordDialog extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final maxWeightController =
-        useTextEditingController(text: record.maxWeight.toString());
-    final repetitionsController =
-        useTextEditingController(text: record.repetitions.toString());
+    final maxWeightController = useTextEditingController(
+      text: record.maxWeight.toString(),
+    );
+    final repetitionsController = useTextEditingController(
+      text: record.repetitions.toString(),
+    );
     final keepWeight = useState(false);
     final selectedDate = useState(record.date);
 
@@ -798,8 +814,9 @@ class EditRecordDialog extends HookConsumerWidget {
         controller: controller,
         decoration: InputDecoration(
           labelText: labelText,
-          labelStyle:
-              TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+          labelStyle: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         ),
         keyboardType: TextInputType.number,
@@ -867,8 +884,8 @@ class EditRecordDialog extends HookConsumerWidget {
     int newRepetitions = int.parse(repetitionsText);
 
     if (newRepetitions > 1) {
-      newMaxWeight =
-          (newMaxWeight / (1.0278 - (0.0278 * newRepetitions))).roundToDouble();
+      newMaxWeight = (newMaxWeight / (1.0278 - (0.0278 * newRepetitions)))
+          .roundToDouble();
       newRepetitions = 1;
     }
 
@@ -902,28 +919,18 @@ class EditRecordDialog extends HookConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update record: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to update record: $e')));
       }
     }
   }
 }
 
 class _MaxRMForm extends HookConsumerWidget {
-  final Function(
-    String,
-    String,
-    num,
-    int,
-    DateTime,
-    bool,
-    String?,
-  ) onSubmit;
+  final Function(String, String, num, int, DateTime, bool, String?) onSubmit;
 
-  const _MaxRMForm({
-    required this.onSubmit,
-  });
+  const _MaxRMForm({required this.onSubmit});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1017,8 +1024,9 @@ class _MaxRMForm extends HookConsumerWidget {
                               num.tryParse(maxWeightController.text) ?? 0;
                           final repetitions =
                               int.tryParse(repetitionsController.text) ?? 0;
-                          final selectedUserId =
-                              ref.read(selectedUserIdProvider);
+                          final selectedUserId = ref.read(
+                            selectedUserIdProvider,
+                          );
                           onSubmit(
                             exerciseId,
                             exerciseName,
@@ -1031,8 +1039,9 @@ class _MaxRMForm extends HookConsumerWidget {
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            const Color(0xFFFFD700), // Yellow color
+                        backgroundColor: const Color(
+                          0xFFFFD700,
+                        ), // Yellow color
                         foregroundColor: Colors.black,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 32,
