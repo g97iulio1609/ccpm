@@ -1,10 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/shared/shared.dart';
-import 'package:alphanessone/viewer/domain/repositories/workout_repository.dart'; // Per caricare il workout completo
-import 'package:alphanessone/viewer/domain/usecases/complete_series_use_case.dart';
-import 'package:alphanessone/viewer/domain/usecases/save_exercise_note_use_case.dart';
-import 'package:alphanessone/viewer/domain/usecases/delete_exercise_note_use_case.dart';
-import 'package:alphanessone/viewer/viewer_providers.dart'; // Import per i provider
+import 'package:alphanessone/Viewer/domain/repositories/workout_repository.dart'; // Per caricare il workout completo
+import 'package:alphanessone/Viewer/domain/usecases/complete_series_use_case.dart';
+import 'package:alphanessone/Viewer/domain/usecases/save_exercise_note_use_case.dart';
+import 'package:alphanessone/Viewer/domain/usecases/delete_exercise_note_use_case.dart';
+import 'package:alphanessone/Viewer/viewer_providers.dart'; // Import per i provider
 // Potremmo aggiungere GetWorkoutUseCase se volessimo più logica nel caricamento
 
 class WorkoutDetailsState {

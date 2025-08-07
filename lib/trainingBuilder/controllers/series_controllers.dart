@@ -1,50 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:alphanessone/shared/shared.dart';
-
-
-/// Controller per i range di valori (min-max)
-class RangeControllers {
-  final TextEditingController min;
-  final TextEditingController max;
-
-  RangeControllers()
-      : min = TextEditingController(),
-        max = TextEditingController();
-
-  void dispose() {
-    min.dispose();
-    max.dispose();
-  }
-
-  String get displayText {
-    final minText = _formatNumber(min.text);
-    final maxText = _formatNumber(max.text);
-    if (maxText.isEmpty) return minText;
-    if (minText.isEmpty) return maxText;
-    return "$minText-$maxText";
-  }
-
-  String _formatNumber(String value) {
-    if (value.isEmpty) return '';
-    final num? parsed = num.tryParse(value);
-    if (parsed == null) return value;
-    return parsed % 1 == 0 ? parsed.toInt().toString() : parsed.toStringAsFixed(1);
-  }
-
-  void updateFromDialog(String minValue, String maxValue) {
-    min.text = minValue;
-    max.text = maxValue;
-  }
-
-  void clear() {
-    min.clear();
-    max.clear();
-  }
-
-  bool get isEmpty => min.text.isEmpty && max.text.isEmpty;
-  bool get isNotEmpty => !isEmpty;
-}
+import 'package:alphanessone/trainingBuilder/shared/widgets/range_controllers.dart';
 
 /// Controller per tutti i campi di una serie
 class SeriesControllers {
@@ -55,11 +12,11 @@ class SeriesControllers {
   final RangeControllers weight;
 
   SeriesControllers()
-      : reps = RangeControllers(),
-        sets = TextEditingController(text: '1'),
-        intensity = RangeControllers(),
-        rpe = RangeControllers(),
-        weight = RangeControllers();
+    : reps = RangeControllers(),
+      sets = TextEditingController(text: '1'),
+      intensity = RangeControllers(),
+      rpe = RangeControllers(),
+      weight = RangeControllers();
 
   void dispose() {
     reps.dispose();
@@ -85,7 +42,9 @@ class SeriesControllers {
     if (value.isEmpty) return '';
     final num? parsed = num.tryParse(value);
     if (parsed == null) return value;
-    return parsed % 1 == 0 ? parsed.toInt().toString() : parsed.toStringAsFixed(1);
+    return parsed % 1 == 0
+        ? parsed.toInt().toString()
+        : parsed.toStringAsFixed(1);
   }
 
   void clear() {
@@ -161,7 +120,10 @@ class BulkSeriesControllersNotifier
 }
 
 /// Provider per i controller delle serie bulk
-final bulkSeriesControllersProvider = StateNotifierProvider<
-    BulkSeriesControllersNotifier, List<SeriesControllers>>((ref) {
-  return BulkSeriesControllersNotifier();
-});
+final bulkSeriesControllersProvider =
+    StateNotifierProvider<
+      BulkSeriesControllersNotifier,
+      List<SeriesControllers>
+    >((ref) {
+      return BulkSeriesControllersNotifier();
+    });

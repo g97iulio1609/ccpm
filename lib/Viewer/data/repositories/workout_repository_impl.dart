@@ -3,7 +3,7 @@ import 'package:alphanessone/shared/models/week.dart';
 import 'package:alphanessone/shared/models/workout.dart';
 import 'package:alphanessone/shared/models/exercise.dart';
 import 'package:alphanessone/shared/models/series.dart';
-import 'package:alphanessone/viewer/domain/repositories/workout_repository.dart';
+import 'package:alphanessone/Viewer/domain/repositories/workout_repository.dart';
 
 class WorkoutRepositoryImpl implements WorkoutRepository {
   final FirebaseFirestore _firestore;
@@ -19,15 +19,13 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
         .orderBy('number')
         .snapshots()
         .asyncMap((snapshot) async {
-          final weeks = <Week>[];
-          for (final doc in snapshot.docs) {
-            // Carichiamo i workout per OGNI settimana. Questo rimane N+1 query.
-            // Se diventa un problema di performance, considerare la denormalizzazione
-            // o caricare solo i dati della settimana e i workout su richiesta.
+          // Parallelizza il caricamento dei workout per tutte le settimane
+          final futures = snapshot.docs.map((doc) async {
             final workouts = await getWorkouts(doc.id).first;
-            weeks.add(Week.fromMap(doc.data(), doc.id, workouts));
-          }
-          return weeks;
+            final week = Week.fromMap(doc.data(), doc.id);
+            return week.copyWith(workouts: workouts);
+          }).toList();
+          return await Future.wait(futures);
         });
   }
 
@@ -52,7 +50,9 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
       throw Exception('Settimana non trovata con ID: $weekId');
     }
     final workouts = await getWorkouts(weekId).first;
-    return Week.fromMap(weekDoc.data()!, weekDoc.id, workouts);
+    final week = Week.fromMap(weekDoc.data()!, weekDoc.id);
+    // Populate workouts separately since they're not part of fromMap
+    return week.copyWith(workouts: workouts);
   }
 
   @override
@@ -126,17 +126,13 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
         .orderBy('order')
         .snapshots()
         .asyncMap((snapshot) async {
-          final workouts = <Workout>[];
-          for (final doc in snapshot.docs) {
+          // Parallelizza il caricamento degli esercizi per tutti i workout
+          final futures = snapshot.docs.map((doc) async {
             final exercises = await getExercisesForWorkout(doc.id).first;
-            // Le note per gli esercizi del workout vengono caricate separatamente o da un livello superiore
-            // Qui passiamo una lista di esercizi già popolata, e Exercise.fromMap si aspetta la nota singola.
-            // Questo richiede un aggiustamento: o Workout.fromMap gestisce il caricamento delle note
-            // o gli esercizi vengono popolati con le note prima di creare il Workout.
-            // Per ora, manteniamo la logica di caricamento note a livello di Exercise.
-            workouts.add(Workout.fromMap(doc.data(), doc.id, exercises));
-          }
-          return workouts;
+            final workout = Workout.fromMap(doc.data(), doc.id);
+            return workout.copyWith(exercises: exercises);
+          }).toList();
+          return await Future.wait(futures);
         });
   }
 
@@ -148,7 +144,9 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
     }
     final exercises = await getExercisesForWorkout(doc.id).first;
     // Simile a getWorkouts, la gestione delle note degli esercizi è separata.
-    return Workout.fromMap(doc.data()!, doc.id, exercises);
+    final workout = Workout.fromMap(doc.data()!, doc.id);
+    // Populate exercises separately since they're not part of fromMap
+    return workout.copyWith(exercises: exercises);
   }
 
   @override
@@ -237,14 +235,19 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
         .orderBy('order')
         .snapshots()
         .asyncMap((snapshot) async {
-          final exercises = <Exercise>[];
-          for (final doc in snapshot.docs) {
+          // Parallelizza il caricamento di serie e note per tutti gli esercizi
+          final futures = snapshot.docs.map((doc) async {
             final data = doc.data();
-            final series = await getSeriesForExercise(doc.id).first;
-            final note = await getNoteForExercise(workoutId, doc.id);
-            exercises.add(Exercise.fromMap(data, doc.id, series, note));
-          }
-          return exercises;
+            final results = await Future.wait([
+              getSeriesForExercise(doc.id).first,
+              getNoteForExercise(workoutId, doc.id),
+            ]);
+            final series = results[0] as List<Series>;
+            final note = results[1] as String?;
+            final exercise = Exercise.fromMap(data, doc.id);
+            return exercise.copyWith(series: series, note: note);
+          }).toList();
+          return await Future.wait(futures);
         });
   }
 
@@ -264,7 +267,9 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
     if (workoutIdForNote != null) {
       note = await getNoteForExercise(workoutIdForNote, doc.id);
     }
-    return Exercise.fromMap(data, doc.id, series, note);
+    final exercise = Exercise.fromMap(data, doc.id);
+    // Populate series and note separately since they're not part of fromMap
+    return exercise.copyWith(series: series, note: note);
   }
 
   @override
@@ -356,7 +361,7 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
 
     // 2. Processa ogni esercizio nella nuova lista
     for (final exercise in exercises) {
-      final String exerciseId = exercise.id;
+      final String exerciseId = exercise.id ?? '';
 
       // Se l'ID esercizio è vuoto, crea un nuovo esercizio
       if (exerciseId.isEmpty) {
@@ -416,7 +421,7 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
         // Processa ogni serie nella nuova lista
         for (final series in exercise.series) {
           // Se l'ID serie è vuota, crea una nuova serie
-          if (series.id.isEmpty) {
+          if (series.id?.isEmpty ?? true) {
             final newSeriesRef = _firestore.collection('series').doc();
             batch.set(
               newSeriesRef,
@@ -427,9 +432,9 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
           }
           // Se l'ID serie esiste già, aggiorna la serie
           else {
-            seriesIdsToKeep.add(series.id);
+            seriesIdsToKeep.add(series.id!);
             batch.update(
-              _firestore.collection('series').doc(series.id),
+              _firestore.collection('series').doc(series.id!),
               series.copyWith(exerciseId: exerciseId).toMap(),
             );
           }

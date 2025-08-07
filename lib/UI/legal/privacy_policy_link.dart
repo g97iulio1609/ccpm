@@ -19,7 +19,7 @@ class PrivacyPolicyLink extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     if (isCompact) {
       return InkWell(
         onTap: () => context.push(Routes.privacyPolicy),
@@ -39,7 +39,8 @@ class PrivacyPolicyLink extends StatelessWidget {
               ],
               Text(
                 text,
-                style: textStyle ??
+                style:
+                    textStyle ??
                     TextStyle(
                       color: theme.primaryColor,
                       decoration: TextDecoration.underline,
@@ -64,11 +65,15 @@ class PrivacyPolicyLink extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             decoration: BoxDecoration(
               border: Border.all(
-                color: theme.colorScheme.outline.withValues(alpha: theme.colorScheme.outline.opacity * 0.3),
+                color: theme.colorScheme.outline.withValues(
+                  alpha: theme.colorScheme.outline.a * 0.3,
+                ),
                 width: 1,
               ),
               borderRadius: BorderRadius.circular(12),
-              color: theme.colorScheme.surface.withValues(alpha: theme.colorScheme.surface.opacity * 0.5),
+              color: theme.colorScheme.surface.withValues(
+                alpha: theme.colorScheme.surface.a * 0.5,
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -76,7 +81,9 @@ class PrivacyPolicyLink extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withValues(alpha: theme.colorScheme.primary.opacity * 0.1),
+                    color: theme.colorScheme.primary.withValues(
+                      alpha: theme.colorScheme.primary.a * 0.1,
+                    ),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -123,15 +130,4 @@ class PrivacyPolicyLink extends StatelessWidget {
   }
 }
 
-class PrivacyPolicyButton extends StatelessWidget {
-  const PrivacyPolicyButton({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return TextButton.icon(
-      onPressed: () => context.push(Routes.privacyPolicy),
-      icon: const Icon(Icons.privacy_tip_outlined),
-      label: const Text('Privacy Policy'),
-    );
-  }
-}
+// Rimosso: bottone non utilizzato, mantenuto solo il link principale

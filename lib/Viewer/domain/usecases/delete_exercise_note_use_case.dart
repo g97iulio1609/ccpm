@@ -1,4 +1,4 @@
-import 'package:alphanessone/viewer/domain/repositories/workout_repository.dart';
+import 'package:alphanessone/Viewer/domain/repositories/workout_repository.dart';
 
 class DeleteExerciseNoteParams {
   final String workoutId;
@@ -19,6 +19,8 @@ class DeleteExerciseNoteUseCaseImpl implements DeleteExerciseNoteUseCase {
   @override
   Future<void> call(DeleteExerciseNoteParams params) async {
     await _workoutRepository.deleteNoteForExercise(
-        params.workoutId, params.exerciseId);
+      params.workoutId,
+      params.exerciseId,
+    );
   }
 }

@@ -1,4 +1,4 @@
-import 'package:alphanessone/viewer/domain/repositories/timer_preset_repository.dart';
+import 'package:alphanessone/Viewer/domain/repositories/timer_preset_repository.dart';
 
 class DeleteTimerPresetParams {
   final String userId;

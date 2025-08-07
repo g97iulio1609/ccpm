@@ -148,9 +148,11 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
           await dietPlanService.createDietPlanTemplate(currentUserId, templateDietPlan);
         }
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Diet Plan Updated and Applied')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Diet Plan Updated and Applied')),
+          );
+        }
       } else {
         // Modalità creazione
         final newDietPlan = DietPlan(
@@ -174,12 +176,16 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
           await dietPlanService.createDietPlanTemplate(currentUserId, templateDietPlan);
         }
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Diet Plan Saved and Applied')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Diet Plan Saved and Applied')),
+          );
+        }
       }
 
-      Navigator.of(context).pop(); // Torna indietro alla schermata precedente
+      if (mounted) {
+        Navigator.of(context).pop(); // Torna indietro alla schermata precedente
+      }
     }
   }
 

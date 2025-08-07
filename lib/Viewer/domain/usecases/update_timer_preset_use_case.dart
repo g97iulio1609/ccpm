@@ -1,5 +1,5 @@
-import 'package:alphanessone/viewer/domain/entities/timer_preset.dart';
-import 'package:alphanessone/viewer/domain/repositories/timer_preset_repository.dart';
+import 'package:alphanessone/Viewer/domain/entities/timer_preset.dart';
+import 'package:alphanessone/Viewer/domain/repositories/timer_preset_repository.dart';
 
 class UpdateTimerPresetParams {
   final String userId;
@@ -27,7 +27,8 @@ class UpdateTimerPresetUseCaseImpl implements UpdateTimerPresetUseCase {
     }
     if (params.preset.seconds <= 0) {
       throw ArgumentError(
-          'I secondi del preset devono essere maggiori di zero.');
+        'I secondi del preset devono essere maggiori di zero.',
+      );
     }
     await _repository.updateTimerPreset(params.userId, params.preset);
   }

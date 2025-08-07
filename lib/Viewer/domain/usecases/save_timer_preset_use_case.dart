@@ -1,10 +1,10 @@
-import 'package:alphanessone/viewer/domain/entities/timer_preset.dart';
-import 'package:alphanessone/viewer/domain/repositories/timer_preset_repository.dart';
+import 'package:alphanessone/Viewer/domain/entities/timer_preset.dart';
+import 'package:alphanessone/Viewer/domain/repositories/timer_preset_repository.dart';
 
 class SaveTimerPresetParams {
   final String userId;
   final TimerPreset
-      preset; // L'ID potrebbe essere vuoto se è una nuova creazione
+  preset; // L'ID potrebbe essere vuoto se è una nuova creazione
 
   SaveTimerPresetParams({required this.userId, required this.preset});
 }
@@ -26,7 +26,8 @@ class SaveTimerPresetUseCaseImpl implements SaveTimerPresetUseCase {
     }
     if (params.preset.seconds <= 0) {
       throw ArgumentError(
-          'I secondi del preset devono essere maggiori di zero.');
+        'I secondi del preset devono essere maggiori di zero.',
+      );
     }
     // Potrebbe esserci logica per prevenire duplicati di label o secondi,
     // ma il repository già gestisce la deduplicazione per 'seconds' nella cache.

@@ -50,9 +50,12 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen>
             leading: Container(
               margin: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-color: theme.colorScheme.surfaceContainerHighest.withAlpha(
-  (theme.colorScheme.surfaceContainerHighest.alpha * 0.8).toInt(),
-),
+                color: theme.colorScheme.surfaceContainerHighest.withAlpha(
+                  ((theme.colorScheme.surfaceContainerHighest.a * 255.0 * 0.8)
+                              .round() &
+                          0xff)
+                      .toInt(),
+                ),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: IconButton(
@@ -84,7 +87,7 @@ color: theme.colorScheme.surfaceContainerHighest.withAlpha(
                     end: Alignment.bottomCenter,
                     colors: [
                       theme.colorScheme.primary.withValues(
-                        alpha: theme.colorScheme.primary.opacity * 0.1,
+                        alpha: theme.colorScheme.primary.a * 0.1,
                       ),
                       theme.colorScheme.surface,
                     ],
@@ -133,18 +136,24 @@ class _PrivacyPolicyContentState extends State<PrivacyPolicyContent> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-theme.colorScheme.primaryContainer.withAlpha(
-  (theme.colorScheme.primaryContainer.alpha * 0.3).toInt(),
-),
-theme.colorScheme.secondaryContainer.withAlpha(
-  (theme.colorScheme.secondaryContainer.alpha * 0.2).toInt(),
-),
+                theme.colorScheme.primaryContainer.withAlpha(
+                  ((theme.colorScheme.primaryContainer.a * 255.0 * 0.3)
+                              .round() &
+                          0xff)
+                      .toInt(),
+                ),
+                theme.colorScheme.secondaryContainer.withAlpha(
+                  ((theme.colorScheme.secondaryContainer.a * 255.0 * 0.2)
+                              .round() &
+                          0xff)
+                      .toInt(),
+                ),
               ],
             ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: theme.colorScheme.outline.withValues(
-                alpha: theme.colorScheme.outline.opacity * 0.2,
+                alpha: theme.colorScheme.outline.a * 0.2,
               ),
             ),
           ),
@@ -180,9 +189,10 @@ theme.colorScheme.secondaryContainer.withAlpha(
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-color: theme.colorScheme.primary.withAlpha(
-  (theme.colorScheme.primary.alpha * 0.1).toInt(),
-),
+                  color: theme.colorScheme.primary.withAlpha(
+                    ((theme.colorScheme.primary.a * 255.0 * 0.1).round() & 0xff)
+                        .toInt(),
+                  ),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -487,28 +497,6 @@ Hai il diritto di presentare reclamo se ritieni che il trattamento dei tuoi dati
     );
   }
 
-  Widget _buildSection(BuildContext context, String title, String content) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).primaryColor,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          content,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.6),
-          textAlign: TextAlign.justify,
-        ),
-        const SizedBox(height: 24),
-      ],
-    );
-  }
-
   Widget _buildExpandableSection(
     BuildContext context,
     String title,
@@ -522,15 +510,18 @@ Hai il diritto di presentare reclamo se ritieni che il trattamento dei tuoi dati
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-color: theme.colorScheme.surfaceContainerHighest.withAlpha(
-  (theme.colorScheme.surfaceContainerHighest.alpha * 0.3).toInt(),
-),
-borderRadius: BorderRadius.circular(16),
-border: Border.all(
-  color: theme.colorScheme.outline.withAlpha(
-    (theme.colorScheme.outline.alpha * 0.2).toInt(),
-  ),
-),
+        color: theme.colorScheme.surfaceContainerHighest.withAlpha(
+          ((theme.colorScheme.surfaceContainerHighest.a * 255.0 * 0.3).round() &
+                  0xff)
+              .toInt(),
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.outline.withAlpha(
+            ((theme.colorScheme.outline.a * 255.0 * 0.2).round() & 0xff)
+                .toInt(),
+          ),
+        ),
       ),
       child: Column(
         children: [
@@ -550,7 +541,7 @@ border: Border.all(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: theme.colorScheme.primary.withValues(
-                        alpha: theme.colorScheme.primary.opacity * 0.1,
+                        alpha: theme.colorScheme.primary.a * 0.1,
                       ),
                       borderRadius: BorderRadius.circular(8),
                     ),

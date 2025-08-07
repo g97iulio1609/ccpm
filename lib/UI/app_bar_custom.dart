@@ -489,14 +489,43 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
                   .update((state) => state.add(const Duration(days: 1)));
             },
           ),
-          PopupMenuButton<String>(
-            icon: Icon(
-              Icons.more_vert,
-              color: colorScheme.onSurfaceVariant.withAlpha(128),
-              size: 20,
-            ),
-            onSelected: _onDayMenuSelected,
-            itemBuilder: _buildDayMenuItems,
+          MenuAnchor(
+            builder: (context, controller, child) {
+              return IconButton(
+                icon: Icon(
+                  Icons.more_vert,
+                  color: colorScheme.onSurfaceVariant.withAlpha(128),
+                  size: 20,
+                ),
+                onPressed: () {
+                  if (controller.isOpen) {
+                    controller.close();
+                  } else {
+                    controller.open();
+                  }
+                },
+              );
+            },
+            menuChildren: _buildDayMenuItems(context).map((e) {
+              Icon? leading;
+              Text? label;
+              if (e is PopupMenuItem<String> && e.child is Row) {
+                final row = e.child as Row;
+                for (final w in row.children) {
+                  if (w is Icon) leading = w;
+                  if (w is Text) label = w;
+                }
+              }
+              return MenuItemButton(
+                onPressed: () {
+                  if (e is PopupMenuItem<String>) {
+                    _onDayMenuSelected(e.value as String);
+                  }
+                },
+                leadingIcon: leading,
+                child: label ?? const Text(''),
+              );
+            }).toList(),
           ),
         ],
       ),
@@ -595,34 +624,44 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
 
     if (currentRoute == '/food_tracker/view_diet_plans') {
       actions.add(
-        PopupMenuButton<String>(
-          onSelected: (value) async {
-            if (value == 'apply_template') {
-              final templateDietPlan = await _selectTemplate(context);
-              if (templateDietPlan != null) {
-                final newDietPlan = templateDietPlan.copyWith(
-                  id: null,
-                  startDate: DateTime.now(),
-                );
-                final dietPlanId = await ref
-                    .read(dietPlanServiceProvider)
-                    .createDietPlan(newDietPlan);
-                final createdDietPlan = newDietPlan.copyWith(id: dietPlanId);
-                await ref
-                    .read(dietPlanServiceProvider)
-                    .applyDietPlan(createdDietPlan);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Template Applied as New Diet Plan'),
-                  ),
-                );
+        MenuAnchor(
+          builder: (context, controller, child) => IconButton(
+            icon: const Icon(Icons.more_vert),
+            onPressed: () {
+              if (controller.isOpen) {
+                controller.close();
+              } else {
+                controller.open();
               }
-            }
-          },
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'apply_template',
-              child: Text('Apply Template'),
+            },
+          ),
+          menuChildren: [
+            MenuItemButton(
+              onPressed: () async {
+                final templateDietPlan = await _selectTemplate(context);
+                if (templateDietPlan != null) {
+                  final newDietPlan = templateDietPlan.copyWith(
+                    id: null,
+                    startDate: DateTime.now(),
+                  );
+                  final dietPlanId = await ref
+                      .read(dietPlanServiceProvider)
+                      .createDietPlan(newDietPlan);
+                  final createdDietPlan = newDietPlan.copyWith(id: dietPlanId);
+                  await ref
+                      .read(dietPlanServiceProvider)
+                      .applyDietPlan(createdDietPlan);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Template Applied as New Diet Plan'),
+                      ),
+                    );
+                  }
+                }
+              },
+              leadingIcon: const Icon(Icons.assignment_add),
+              child: const Text('Apply Template'),
             ),
           ],
         ),
@@ -679,9 +718,11 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
         .first;
 
     if (templates.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('No templates available')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('No templates available')));
+      }
       return null;
     }
 

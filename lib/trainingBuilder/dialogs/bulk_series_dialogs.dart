@@ -1,3 +1,4 @@
+import 'package:alphanessone/trainingBuilder/shared/widgets/range_controllers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -55,9 +56,7 @@ class BulkSeriesSelectionDialog extends HookConsumerWidget {
           },
         ),
       ],
-      children: [
-        _buildExerciseSelectionContent(context, selectedExercises),
-      ],
+      children: [_buildExerciseSelectionContent(context, selectedExercises)],
     );
   }
 
@@ -71,16 +70,15 @@ class BulkSeriesSelectionDialog extends HookConsumerWidget {
         Text(
           'Seleziona gli Esercizi',
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
-              ),
+            color: colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         SizedBox(height: AppTheme.spacing.md),
-        ...workoutExercises.map((exercise) => _buildExerciseCheckbox(
-              context,
-              exercise,
-              selectedExercises,
-            )),
+        ...workoutExercises.map(
+          (exercise) =>
+              _buildExerciseCheckbox(context, exercise, selectedExercises),
+        ),
       ],
     );
   }
@@ -99,16 +97,16 @@ class BulkSeriesSelectionDialog extends HookConsumerWidget {
       ),
       title: Text(
         exercise.name,
-        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: colorScheme.onSurface,
-            ),
+        style: Theme.of(
+          context,
+        ).textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
       ),
       subtitle: exercise.variant?.isNotEmpty == true
           ? Text(
               exercise.variant!,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                color: colorScheme.onSurfaceVariant,
+              ),
             )
           : null,
       secondary: Container(
@@ -119,9 +117,9 @@ class BulkSeriesSelectionDialog extends HookConsumerWidget {
         ),
         child: Text(
           exercise.type,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: colorScheme.primary,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.labelSmall?.copyWith(color: colorScheme.primary),
         ),
       ),
     );
@@ -181,12 +179,8 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
           context: context,
           label: 'Applica',
           icon: Icons.check,
-          onPressed: () => _applyBulkSeries(
-            context,
-            ref,
-            localController,
-            maxWeights.value,
-          ),
+          onPressed: () =>
+              _applyBulkSeries(context, ref, localController, maxWeights.value),
         ),
       ],
       children: [
@@ -221,32 +215,43 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
     ValueNotifier<Map<String, num>> maxWeights,
     ValueNotifier<int> forceUpdate,
   ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Configurazione Serie',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
-              ),
-        ),
-        SizedBox(height: AppTheme.spacing.lg),
-        _buildSetsField(context, localController),
-        SizedBox(height: AppTheme.spacing.lg),
-        _buildRepsField(context, localController),
-        SizedBox(height: AppTheme.spacing.lg),
-        _buildIntensityField(context, localController, maxWeights, forceUpdate),
-        SizedBox(height: AppTheme.spacing.lg),
-        _buildRpeField(context, localController, forceUpdate),
-        SizedBox(height: AppTheme.spacing.lg),
-        _buildWeightFields(context, localController, maxWeights, forceUpdate),
-      ],
+    return Semantics(
+      container: true,
+      label: 'Configurazione serie',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Configurazione Serie',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          SizedBox(height: AppTheme.spacing.lg),
+          _buildSetsField(context, localController),
+          SizedBox(height: AppTheme.spacing.lg),
+          _buildRepsField(context, localController),
+          SizedBox(height: AppTheme.spacing.lg),
+          _buildIntensityField(
+            context,
+            localController,
+            maxWeights,
+            forceUpdate,
+          ),
+          SizedBox(height: AppTheme.spacing.lg),
+          _buildRpeField(context, localController, forceUpdate),
+          SizedBox(height: AppTheme.spacing.lg),
+          _buildWeightFields(context, localController, maxWeights, forceUpdate),
+        ],
+      ),
     );
   }
 
   Widget _buildSetsField(
-      BuildContext context, SeriesControllers localController) {
+    BuildContext context,
+    SeriesControllers localController,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withAlpha(77),
@@ -256,9 +261,9 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
       child: TextField(
         controller: localController.sets,
         keyboardType: TextInputType.number,
-        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: colorScheme.onSurface,
-            ),
+        style: Theme.of(
+          context,
+        ).textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
         decoration: InputDecoration(
           border: InputBorder.none,
           contentPadding: EdgeInsets.all(AppTheme.spacing.md),
@@ -274,7 +279,9 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
   }
 
   Widget _buildRepsField(
-      BuildContext context, SeriesControllers localController) {
+    BuildContext context,
+    SeriesControllers localController,
+  ) {
     return _buildRangeField(
       context: context,
       label: 'Ripetizioni',
@@ -298,12 +305,8 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
       icon: Icons.speed,
       hint: 'Intensità',
       maxHint: 'Max Intensità',
-      onChanged: (min, max) => _updateWeightsFromIntensity(
-        min,
-        max,
-        maxWeights.value,
-        forceUpdate,
-      ),
+      onChanged: (min, max) =>
+          _updateWeightsFromIntensity(min, max, maxWeights.value, forceUpdate),
     );
   }
 
@@ -335,27 +338,23 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
         Text(
           'Pesi per Esercizio',
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
-              ),
+            color: colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         SizedBox(height: AppTheme.spacing.md),
-        ...exercises.map((exercise) => WeightInputFields(
-              maxWeight: _getMaxWeight(exercise, maxWeights.value),
-              intensity: localController.intensity.min.text,
-              maxIntensity: localController.intensity.max.text,
-              exerciseName: exercise.name,
-              onWeightChanged: (weight) => _updateExerciseWeight(
-                exercise,
-                weight,
-                forceUpdate,
-              ),
-              onMaxWeightChanged: (maxWeight) => _updateExerciseMaxWeight(
-                exercise,
-                maxWeight,
-                forceUpdate,
-              ),
-            )),
+        ...exercises.map(
+          (exercise) => WeightInputFields(
+            maxWeight: _getMaxWeight(exercise, maxWeights.value),
+            intensity: localController.intensity.min.text,
+            maxIntensity: localController.intensity.max.text,
+            exerciseName: exercise.name,
+            onWeightChanged: (weight) =>
+                _updateExerciseWeight(exercise, weight, forceUpdate),
+            onMaxWeightChanged: (maxWeight) =>
+                _updateExerciseMaxWeight(exercise, maxWeight, forceUpdate),
+          ),
+        ),
       ],
     );
   }
@@ -375,9 +374,9 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
         Text(
           label,
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
-              ),
+            color: colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         SizedBox(height: AppTheme.spacing.xs),
         Row(
@@ -427,9 +426,9 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
       child: TextField(
         controller: controller,
         keyboardType: TextInputType.number,
-        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: colorScheme.onSurface,
-            ),
+        style: Theme.of(
+          context,
+        ).textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
         decoration: InputDecoration(
           border: InputBorder.none,
           contentPadding: EdgeInsets.all(AppTheme.spacing.md),
@@ -467,8 +466,6 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
     if (exercise.exerciseId == null) return 0;
     return maxWeights[exercise.exerciseId] ?? 0;
   }
-
-
 
   void _updateWeightsFromIntensity(
     String min,

@@ -1,12 +1,14 @@
-import 'package:alphanessone/viewer/domain/entities/timer_preset.dart';
-import 'package:alphanessone/viewer/domain/repositories/timer_preset_repository.dart';
+import 'package:alphanessone/Viewer/domain/entities/timer_preset.dart';
+import 'package:alphanessone/Viewer/domain/repositories/timer_preset_repository.dart';
 
 class SaveDefaultTimerPresetsParams {
   final String userId;
   final List<TimerPreset> defaultPresets;
 
-  SaveDefaultTimerPresetsParams(
-      {required this.userId, required this.defaultPresets});
+  SaveDefaultTimerPresetsParams({
+    required this.userId,
+    required this.defaultPresets,
+  });
 }
 
 abstract class SaveDefaultTimerPresetsUseCase {
@@ -27,6 +29,8 @@ class SaveDefaultTimerPresetsUseCaseImpl
     }
     // Ulteriori validazioni sui singoli preset potrebbero essere aggiunte qui se necessario
     await _repository.saveDefaultTimerPresets(
-        params.userId, params.defaultPresets);
+      params.userId,
+      params.defaultPresets,
+    );
   }
 }

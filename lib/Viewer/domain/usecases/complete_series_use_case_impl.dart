@@ -1,5 +1,5 @@
-import 'package:alphanessone/viewer/domain/repositories/workout_repository.dart';
-import 'package:alphanessone/viewer/domain/usecases/complete_series_use_case.dart';
+import 'package:alphanessone/Viewer/domain/repositories/workout_repository.dart';
+import 'package:alphanessone/Viewer/domain/usecases/complete_series_use_case.dart';
 
 class CompleteSeriesUseCaseImpl implements CompleteSeriesUseCase {
   final WorkoutRepository _workoutRepository;

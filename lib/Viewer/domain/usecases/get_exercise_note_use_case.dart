@@ -1,4 +1,4 @@
-import 'package:alphanessone/viewer/domain/repositories/workout_repository.dart';
+import 'package:alphanessone/Viewer/domain/repositories/workout_repository.dart';
 
 class GetExerciseNoteParams {
   final String workoutId;
@@ -19,6 +19,8 @@ class GetExerciseNoteUseCaseImpl implements GetExerciseNoteUseCase {
   @override
   Future<String?> call(GetExerciseNoteParams params) async {
     return await _workoutRepository.getNoteForExercise(
-        params.workoutId, params.exerciseId);
+      params.workoutId,
+      params.exerciseId,
+    );
   }
 }

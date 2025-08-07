@@ -39,10 +39,7 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.1),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 
     _initializeStore();
   }
@@ -72,10 +69,10 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
       // Recupera i prodotti
       const Set<String> kIds = {
         'alphanessoneplussubscription',
-        'coachingalphaness'
+        'coachingalphaness',
       };
-      final ProductDetailsResponse response =
-          await _inAppPurchase.queryProductDetails(kIds);
+      final ProductDetailsResponse response = await _inAppPurchase
+          .queryProductDetails(kIds);
 
       if (response.notFoundIDs.isNotEmpty) {
         debugPrint('Prodotti non trovati: ${response.notFoundIDs}');
@@ -127,19 +124,23 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
       // Verifica l'acquisto con il backend
       await _inAppPurchase.completePurchase(purchaseDetails);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Abbonamento attivato con successo!'),
-          backgroundColor: AppTheme.success,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Abbonamento attivato con successo!'),
+            backgroundColor: AppTheme.success,
+          ),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Errore nel completare l\'acquisto: $e'),
-          backgroundColor: AppTheme.error,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Errore nel completare l\'acquisto: $e'),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
     }
   }
 
@@ -154,16 +155,16 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
       );
       await _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Errore: ${e.toString()}'),
-          backgroundColor: AppTheme.error,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Errore: ${e.toString()}'),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
     }
   }
-
-
 
   @override
   void dispose() {
@@ -224,8 +225,10 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.error.withAlpha(26),
                 foregroundColor: AppTheme.error,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
               ),
             ),
           ],
@@ -393,10 +396,7 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
               decoration: BoxDecoration(
                 color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: colorScheme.outlineVariant,
-                  width: 1,
-                ),
+                border: Border.all(color: colorScheme.outlineVariant, width: 1),
               ),
               child: Column(
                 children: [
@@ -443,10 +443,7 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
       decoration: BoxDecoration(
         border: !isLast
             ? Border(
-                bottom: BorderSide(
-                  color: colorScheme.outlineVariant,
-                  width: 1,
-                ),
+                bottom: BorderSide(color: colorScheme.outlineVariant, width: 1),
               )
             : null,
         borderRadius: BorderRadius.vertical(
@@ -462,11 +459,7 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
               color: colorScheme.primary.withAlpha(26),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              icon,
-              color: colorScheme.primary,
-              size: 24,
-            ),
+            child: Icon(icon, color: colorScheme.primary, size: 24),
           ),
           const SizedBox(width: 16),
           Expanded(

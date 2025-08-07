@@ -1,5 +1,5 @@
-import 'package:alphanessone/viewer/domain/entities/timer_preset.dart';
-import 'package:alphanessone/viewer/domain/repositories/timer_preset_repository.dart';
+import 'package:alphanessone/Viewer/domain/entities/timer_preset.dart';
+import 'package:alphanessone/Viewer/domain/repositories/timer_preset_repository.dart';
 
 // Parametri semplici, userId è una stringa
 

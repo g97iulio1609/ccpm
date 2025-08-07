@@ -1,7 +1,10 @@
 # TODO:
 
-- [x] fix_weight_calculation_bug: Correggere il bug nel trainingBuilder: updateExerciseWeights deve sostituire l'esercizio aggiornato nella lista del programma (priority: High)
-- [x] consolidate_weight_calculation: Consolidare calculateWeightFromIntensity nel WeightCalculationService condiviso ed eliminare duplicazioni (priority: High)
-- [x] consolidate_round_weight: Consolidare roundWeight nel WeightCalculationService condiviso ed eliminare duplicazioni (priority: High)
-- [x] fix_deprecated_code: Verificare e correggere errori deprecati nel codice (priority: Medium)
-- [x] test_fixes: Testare le correzioni per assicurarsi che funzionino correttamente (priority: Medium)
+- [x] fix_exercise_frommap: Correggere le chiamate Exercise.fromMap rimuovendo gli argomenti extra (series e note) (priority: High)
+- [x] fix_week_frommap: Correggere le chiamate Week.fromMap rimuovendo l'argomento workouts extra (priority: High)
+- [x] fix_workout_frommap: Correggere le chiamate Workout.fromMap rimuovendo l'argomento exercises extra (priority: High)
+- [x] fix_null_safety: Risolvere i problemi di null safety con String? assegnati a String (priority: High)
+- [x] fix_nullable_checks: Gestire correttamente l'uso di valori nullable con controlli appropriati (priority: High)
+- [x] fix_extra_positional_args: Correggere gli errori extra_positional_arguments nelle chiamate fromMap (priority: High)
+- [x] fix_remaining_null_safety: Correggere i rimanenti errori di null safety nelle linee 359 e 430 (priority: High)
+- [x] check_workout_details_page: Verificare e correggere eventuali errori in workout_details_page.dart (priority: Medium)

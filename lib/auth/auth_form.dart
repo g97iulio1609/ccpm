@@ -104,17 +104,23 @@ class AuthForm extends HookConsumerWidget {
             const SizedBox(height: 16),
             GenderField(userGender: userGender),
             const SizedBox(height: 20),
-            
+
             // Privacy Consent Checkbox - OBBLIGATORIO per registrazione
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: theme.colorScheme.surfaceContainerHighest.opacity * 0.3),
+                color: theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: theme.colorScheme.surfaceContainerHighest.a * 0.3,
+                ),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: privacyConsentAccepted.value 
-                      ? theme.colorScheme.primary.withValues(alpha: theme.colorScheme.primary.opacity * 0.5)
-                      : theme.colorScheme.outline.withValues(alpha: theme.colorScheme.outline.opacity * 0.3),
+                  color: privacyConsentAccepted.value
+                      ? theme.colorScheme.primary.withValues(
+                          alpha: theme.colorScheme.primary.a * 0.5,
+                        )
+                      : theme.colorScheme.outline.withValues(
+                          alpha: theme.colorScheme.outline.a * 0.3,
+                        ),
                   width: privacyConsentAccepted.value ? 2 : 1,
                 ),
               ),
@@ -156,7 +162,8 @@ class AuthForm extends HookConsumerWidget {
                             ),
                             children: [
                               const TextSpan(
-                                text: 'Accetto il trattamento dei miei dati personali secondo la ',
+                                text:
+                                    'Accetto il trattamento dei miei dati personali secondo la ',
                               ),
                               TextSpan(
                                 text: 'Privacy Policy',
@@ -167,7 +174,8 @@ class AuthForm extends HookConsumerWidget {
                                 ),
                               ),
                               const TextSpan(
-                                text: ' e i Termini di Servizio. Questo consenso è obbligatorio per la registrazione.',
+                                text:
+                                    ' e i Termini di Servizio. Questo consenso è obbligatorio per la registrazione.',
                               ),
                             ],
                           ),
@@ -180,7 +188,12 @@ class AuthForm extends HookConsumerWidget {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.errorContainer.withValues(alpha: theme.colorScheme.errorContainer.opacity * 0.3),
+                              color: theme.colorScheme.errorContainer
+                                  .withValues(
+                                    alpha:
+                                        theme.colorScheme.errorContainer.a *
+                                        0.3,
+                                  ),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Row(
@@ -284,10 +297,14 @@ class AuthForm extends HookConsumerWidget {
             padding: const EdgeInsets.all(12),
             margin: const EdgeInsets.symmetric(horizontal: 8),
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: theme.colorScheme.surfaceContainerHighest.opacity * 0.2),
+              color: theme.colorScheme.surfaceContainerHighest.withValues(
+                alpha: theme.colorScheme.surfaceContainerHighest.a * 0.2,
+              ),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: theme.colorScheme.outline.withValues(alpha: theme.colorScheme.outline.opacity * 0.2),
+                color: theme.colorScheme.outline.withValues(
+                  alpha: theme.colorScheme.outline.a * 0.2,
+                ),
               ),
             ),
             child: Row(

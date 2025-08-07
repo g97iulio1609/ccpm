@@ -1,4 +1,4 @@
-import 'package:alphanessone/viewer/domain/repositories/workout_repository.dart';
+import 'package:alphanessone/Viewer/domain/repositories/workout_repository.dart';
 
 class SaveExerciseNoteParams {
   final String workoutId;
@@ -30,9 +30,14 @@ class SaveExerciseNoteUseCaseImpl implements SaveExerciseNoteUseCase {
       // o semplicemente non salvarla. Dipende dai requisiti.
       // Qui scegliamo di eliminare se la nota diventa vuota.
       return await _workoutRepository.deleteNoteForExercise(
-          params.workoutId, params.exerciseId);
+        params.workoutId,
+        params.exerciseId,
+      );
     }
     await _workoutRepository.saveNoteForExercise(
-        params.workoutId, params.exerciseId, params.note);
+      params.workoutId,
+      params.exerciseId,
+      params.note,
+    );
   }
 }

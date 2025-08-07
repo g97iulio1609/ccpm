@@ -217,20 +217,14 @@ class UserProfileState extends ConsumerState<UserProfile>
 
   Future<void> _reauthenticateAndDelete(bool isGoogleUser) async {
     try {
-      User? user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        throw Exception("Utente non autenticato.");
-      }
+      User user = FirebaseAuth.instance.currentUser!;
 
       if (isGoogleUser) {
         final GoogleSignIn googleSignIn = GoogleSignIn.instance;
         await googleSignIn.initialize();
-        final googleUserResult =
-            await googleSignIn.authenticate(scopeHint: ['email', 'profile']);
-        if (googleUserResult == null) {
-          throw Exception("Autenticazione Google fallita.");
-        }
-        final GoogleSignInAccount googleUser = googleUserResult;
+        final GoogleSignInAccount googleUser = await googleSignIn.authenticate(
+          scopeHint: ['email', 'profile'],
+        );
 
         final GoogleSignInAuthentication googleAuth = googleUser.authentication;
         final credential = GoogleAuthProvider.credential(

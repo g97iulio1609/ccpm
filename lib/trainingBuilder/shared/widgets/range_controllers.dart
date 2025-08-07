@@ -7,8 +7,8 @@ class RangeControllers {
   final TextEditingController max;
 
   RangeControllers()
-      : min = TextEditingController(),
-        max = TextEditingController();
+    : min = TextEditingController(),
+      max = TextEditingController();
 
   void dispose() {
     min.dispose();
@@ -35,4 +35,9 @@ class RangeControllers {
   bool get isValid =>
       FormatUtils.isValidNumber(min.text) &&
       (max.text.isEmpty || FormatUtils.isValidNumber(max.text));
+
+  void clear() {
+    min.clear();
+    max.clear();
+  }
 }

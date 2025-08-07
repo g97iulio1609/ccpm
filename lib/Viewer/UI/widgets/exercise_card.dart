@@ -14,7 +14,7 @@ class ExerciseCard extends ConsumerWidget {
   final String userId;
   final String workoutId;
   final Function(Map<String, dynamic>, List<Map<String, dynamic>>, [int])
-      onNavigateToDetails;
+  onNavigateToDetails;
 
   const ExerciseCard({
     super.key,
@@ -31,8 +31,10 @@ class ExerciseCard extends ConsumerWidget {
         .read(workout_provider.workoutServiceProvider)
         .findFirstNotDoneSeriesIndex(series);
     final isContinueMode = firstNotDoneSeriesIndex > 0;
-    final allSeriesCompleted = series.every((serie) =>
-        ref.read(workout_provider.workoutServiceProvider).isSeriesDone(serie));
+    final allSeriesCompleted = series.every(
+      (serie) =>
+          ref.read(workout_provider.workoutServiceProvider).isSeriesDone(serie),
+    );
     final colorScheme = Theme.of(context).colorScheme;
     final screenWidth = MediaQuery.of(context).size.width;
     final isListMode = screenWidth < 600;
@@ -41,10 +43,7 @@ class ExerciseCard extends ConsumerWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-          width: 1,
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26), width: 1),
         boxShadow: AppTheme.elevations.small,
       ),
       child: ClipRRect(
@@ -57,9 +56,7 @@ class ExerciseCard extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerHighest.withAlpha(77),
                 border: Border(
-                  bottom: BorderSide(
-                    color: colorScheme.outline.withAlpha(26),
-                  ),
+                  bottom: BorderSide(color: colorScheme.outline.withAlpha(26)),
                 ),
               ),
               child: _buildExerciseName(context, ref),
@@ -75,13 +72,20 @@ class ExerciseCard extends ConsumerWidget {
                   children: [
                     if (!allSeriesCompleted) ...[
                       _buildStartButton(
-                          context, firstNotDoneSeriesIndex, isContinueMode),
+                        context,
+                        firstNotDoneSeriesIndex,
+                        isContinueMode,
+                      ),
                       SizedBox(height: AppTheme.spacing.md),
                     ],
                     const SeriesHeaderRow(),
                     SizedBox(height: AppTheme.spacing.sm),
                     ...SeriesWidgets.buildSeriesContainers(
-                        series, context, ref, _showEditSeriesDialog),
+                      series,
+                      context,
+                      ref,
+                      _showEditSeriesDialog,
+                    ),
                   ],
                 ),
               )
@@ -96,7 +100,10 @@ class ExerciseCard extends ConsumerWidget {
                       children: [
                         if (!allSeriesCompleted) ...[
                           _buildStartButton(
-                              context, firstNotDoneSeriesIndex, isContinueMode),
+                            context,
+                            firstNotDoneSeriesIndex,
+                            isContinueMode,
+                          ),
                           SizedBox(height: AppTheme.spacing.md),
                         ],
                         Container(
@@ -107,14 +114,19 @@ class ExerciseCard extends ConsumerWidget {
                           decoration: BoxDecoration(
                             color: colorScheme.surfaceContainerHighest
                                 .withAlpha(77),
-                            borderRadius:
-                                BorderRadius.circular(AppTheme.radii.sm),
+                            borderRadius: BorderRadius.circular(
+                              AppTheme.radii.sm,
+                            ),
                           ),
                           child: const SeriesHeaderRow(),
                         ),
                         SizedBox(height: AppTheme.spacing.sm),
                         ...SeriesWidgets.buildSeriesContainers(
-                            series, context, ref, _showEditSeriesDialog),
+                          series,
+                          context,
+                          ref,
+                          _showEditSeriesDialog,
+                        ),
                       ],
                     ),
                   ),
@@ -162,9 +174,9 @@ class ExerciseCard extends ConsumerWidget {
             child: Text(
               "${exercise['name']} ${exercise['variant'] ?? ''}",
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.w800,
-                  ),
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w800,
+              ),
               textAlign: TextAlign.center,
             ),
           ),
@@ -177,43 +189,52 @@ class ExerciseCard extends ConsumerWidget {
   Widget _buildPopupMenu(BuildContext context, WidgetRef ref, bool isAdmin) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return PopupMenuButton<String>(
-      icon: Icon(
-        Icons.more_vert,
-        color: colorScheme.onSurfaceVariant,
-      ),
-      itemBuilder: (context) => [
-        const PopupMenuItem(
-          value: 'change',
-          child: Text('Cambia esercizio'),
+    return MenuAnchor(
+      builder: (context, controller, child) {
+        return IconButton(
+          icon: Icon(Icons.more_vert, color: colorScheme.onSurfaceVariant),
+          onPressed: () {
+            if (controller.isOpen) {
+              controller.close();
+            } else {
+              controller.open();
+            }
+          },
+        );
+      },
+      menuChildren: [
+        MenuItemButton(
+          onPressed: () => _handleMenuSelection(context, ref, 'change'),
+          leadingIcon: const Icon(Icons.swap_horiz),
+          child: const Text('Cambia esercizio'),
         ),
         if (isAdmin)
-          const PopupMenuItem(
-            value: 'edit_series',
-            child: Text('Modifica serie'),
+          MenuItemButton(
+            onPressed: () => _handleMenuSelection(context, ref, 'edit_series'),
+            leadingIcon: const Icon(Icons.list_alt),
+            child: const Text('Modifica serie'),
           ),
-        const PopupMenuItem(
-          value: 'update_max',
-          child: Text('Aggiorna Massimale'),
+        MenuItemButton(
+          onPressed: () => _handleMenuSelection(context, ref, 'update_max'),
+          leadingIcon: const Icon(Icons.fitness_center),
+          child: const Text('Aggiorna Massimale'),
         ),
       ],
-      onSelected: (value) => _handleMenuSelection(context, ref, value),
     );
   }
 
   void _handleMenuSelection(BuildContext context, WidgetRef ref, String value) {
     switch (value) {
       case 'change':
-        WorkoutDialogs.showChangeExerciseDialog(
+        WorkoutDialogs.showChangeExerciseDialog(context, ref, exercise, userId);
+        break;
+      case 'edit_series':
+        _showEditSeriesDialog(
           context,
           ref,
           exercise,
-          userId,
+          List<Map<String, dynamic>>.from(exercise['series'] ?? []),
         );
-        break;
-      case 'edit_series':
-        _showEditSeriesDialog(context, ref, exercise,
-            List<Map<String, dynamic>>.from(exercise['series'] ?? []));
         break;
       case 'update_max':
         WorkoutDialogs.showUpdateMaxWeightDialog(
@@ -227,7 +248,10 @@ class ExerciseCard extends ConsumerWidget {
   }
 
   Widget _buildStartButton(
-      BuildContext context, int firstNotDoneSeriesIndex, bool isContinueMode) {
+    BuildContext context,
+    int firstNotDoneSeriesIndex,
+    bool isContinueMode,
+  ) {
     return AppButton(
       label: isContinueMode ? 'CONTINUA' : 'INIZIA',
       onPressed: () =>
@@ -239,7 +263,10 @@ class ExerciseCard extends ConsumerWidget {
   }
 
   void _showNoteDialog(
-      BuildContext context, WidgetRef ref, String? existingNote) {
+    BuildContext context,
+    WidgetRef ref,
+    String? existingNote,
+  ) {
     WorkoutDialogs.showNoteDialog(
       context,
       ref,
@@ -256,12 +283,6 @@ class ExerciseCard extends ConsumerWidget {
     Map<String, dynamic> exercise,
     List<Map<String, dynamic>> series,
   ) {
-    WorkoutDialogs.showSeriesEditDialog(
-      context,
-      ref,
-      exercise,
-      series,
-      userId,
-    );
+    WorkoutDialogs.showSeriesEditDialog(context, ref, exercise, series, userId);
   }
 }

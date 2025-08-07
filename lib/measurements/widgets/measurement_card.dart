@@ -28,15 +28,11 @@ class MeasurementCard extends StatelessWidget {
     final isSmallScreen = size.width < 360;
 
     return Container(
-      constraints: BoxConstraints(
-        minHeight: isSmallScreen ? 120 : 150,
-      ),
+      constraints: BoxConstraints(minHeight: isSmallScreen ? 120 : 150),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
         boxShadow: AppTheme.elevations.small,
       ),
       child: ClipRRect(
@@ -47,7 +43,8 @@ class MeasurementCard extends StatelessWidget {
             onTap: () {}, // Gestire il tap se necessario
             child: Padding(
               padding: EdgeInsets.all(
-                  isSmallScreen ? AppTheme.spacing.md : AppTheme.spacing.lg),
+                isSmallScreen ? AppTheme.spacing.md : AppTheme.spacing.lg,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -55,17 +52,16 @@ class MeasurementCard extends StatelessWidget {
                   _buildHeader(theme, colorScheme, isSmallScreen),
                   if (value != null) ...[
                     SizedBox(
-                        height: isSmallScreen
-                            ? AppTheme.spacing.sm
-                            : AppTheme.spacing.md),
+                      height: isSmallScreen
+                          ? AppTheme.spacing.sm
+                          : AppTheme.spacing.md,
+                    ),
                     _buildValue(theme, colorScheme, isSmallScreen),
                     SizedBox(height: AppTheme.spacing.xs),
                     _buildStatus(theme, colorScheme),
                     if (comparisonValues.isNotEmpty) ...[
                       SizedBox(height: AppTheme.spacing.md),
-                      Divider(
-                        color: colorScheme.outline.withAlpha(26),
-                      ),
+                      Divider(color: colorScheme.outline.withAlpha(26)),
                       SizedBox(height: AppTheme.spacing.sm),
                       ..._buildComparisons(theme, colorScheme, isSmallScreen),
                     ],
@@ -81,13 +77,17 @@ class MeasurementCard extends StatelessWidget {
   }
 
   Widget _buildHeader(
-      ThemeData theme, ColorScheme colorScheme, bool isSmallScreen) {
+    ThemeData theme,
+    ColorScheme colorScheme,
+    bool isSmallScreen,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           padding: EdgeInsets.all(
-              isSmallScreen ? AppTheme.spacing.xs : AppTheme.spacing.sm),
+            isSmallScreen ? AppTheme.spacing.xs : AppTheme.spacing.sm,
+          ),
           decoration: BoxDecoration(
             color: colorScheme.primaryContainer.withAlpha(76),
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
@@ -99,17 +99,19 @@ class MeasurementCard extends StatelessWidget {
           ),
         ),
         SizedBox(
-            width: isSmallScreen ? AppTheme.spacing.xs : AppTheme.spacing.sm),
+          width: isSmallScreen ? AppTheme.spacing.xs : AppTheme.spacing.sm,
+        ),
         Expanded(
           child: Text(
             title,
-            style: (isSmallScreen
-                    ? theme.textTheme.titleSmall
-                    : theme.textTheme.titleMedium)
-                ?.copyWith(
-              color: colorScheme.onSurface,
-              fontWeight: FontWeight.w600,
-            ),
+            style:
+                (isSmallScreen
+                        ? theme.textTheme.titleSmall
+                        : theme.textTheme.titleMedium)
+                    ?.copyWith(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
             overflow: TextOverflow.ellipsis,
             maxLines: 2,
           ),
@@ -119,7 +121,10 @@ class MeasurementCard extends StatelessWidget {
   }
 
   Widget _buildValue(
-      ThemeData theme, ColorScheme colorScheme, bool isSmallScreen) {
+    ThemeData theme,
+    ColorScheme colorScheme,
+    bool isSmallScreen,
+  ) {
     final textStyle = isSmallScreen
         ? theme.textTheme.headlineSmall
         : theme.textTheme.headlineMedium;
@@ -147,9 +152,7 @@ class MeasurementCard extends StatelessWidget {
   Widget _buildStatus(ThemeData theme, ColorScheme colorScheme) {
     final statusColor = _getStatusColor(status, colorScheme);
     return Container(
-      constraints: const BoxConstraints(
-        maxWidth: double.infinity,
-      ),
+      constraints: const BoxConstraints(maxWidth: double.infinity),
       padding: EdgeInsets.symmetric(
         horizontal: AppTheme.spacing.sm,
         vertical: AppTheme.spacing.xs,
@@ -171,14 +174,15 @@ class MeasurementCard extends StatelessWidget {
   }
 
   List<Widget> _buildComparisons(
-      ThemeData theme, ColorScheme colorScheme, bool isSmallScreen) {
+    ThemeData theme,
+    ColorScheme colorScheme,
+    bool isSmallScreen,
+  ) {
     return comparisonValues.map((entry) {
       final difference = value! - (entry.value ?? 0);
       final isPositive = difference >= 0;
       return Container(
-        constraints: const BoxConstraints(
-          maxWidth: double.infinity,
-        ),
+        constraints: const BoxConstraints(maxWidth: double.infinity),
         padding: EdgeInsets.only(bottom: AppTheme.spacing.xs),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -187,12 +191,11 @@ class MeasurementCard extends StatelessWidget {
               flex: 2,
               child: Text(
                 entry.key,
-                style: (isSmallScreen
-                        ? theme.textTheme.labelSmall
-                        : theme.textTheme.bodySmall)
-                    ?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
+                style:
+                    (isSmallScreen
+                            ? theme.textTheme.labelSmall
+                            : theme.textTheme.bodySmall)
+                        ?.copyWith(color: colorScheme.onSurfaceVariant),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
               ),
@@ -209,14 +212,16 @@ class MeasurementCard extends StatelessWidget {
                 const SizedBox(width: 2),
                 Text(
                   '${difference.abs().toStringAsFixed(1)} $unit',
-                  style: (isSmallScreen
-                          ? theme.textTheme.labelSmall
-                          : theme.textTheme.bodySmall)
-                      ?.copyWith(
-                    color:
-                        isPositive ? colorScheme.error : colorScheme.tertiary,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style:
+                      (isSmallScreen
+                              ? theme.textTheme.labelSmall
+                              : theme.textTheme.bodySmall)
+                          ?.copyWith(
+                            color: isPositive
+                                ? colorScheme.error
+                                : colorScheme.tertiary,
+                            fontWeight: FontWeight.w600,
+                          ),
                 ),
               ],
             ),
@@ -279,8 +284,6 @@ class MeasurementCard extends StatelessWidget {
         return 'Alto';
       case MeasurementStatus.optimal:
         return 'Ottimale';
-      default:
-        return 'N/D';
     }
   }
 }

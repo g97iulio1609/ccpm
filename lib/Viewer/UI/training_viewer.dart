@@ -9,13 +9,14 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../Main/app_theme.dart';
-import '../../Store/in_app_purchase_services.dart';
+
 import '../../utils/subscription_checker.dart';
 
 final expandedWeekProvider = StateProvider<String?>((ref) => null);
 final trainingLoadingProvider = StateProvider<bool>((ref) => false);
-final trainingWeeksProvider =
-    StateProvider<List<Map<String, dynamic>>>((ref) => []);
+final trainingWeeksProvider = StateProvider<List<Map<String, dynamic>>>(
+  (ref) => [],
+);
 
 class UnifiedTrainingViewer extends ConsumerStatefulWidget {
   final String programId;
@@ -50,8 +51,9 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
       }
 
       final subscriptionChecker = SubscriptionChecker();
-      final hasValidSubscription =
-          await subscriptionChecker.checkSubscription(context);
+      final hasValidSubscription = await subscriptionChecker.checkSubscription(
+        context,
+      );
 
       if (!hasValidSubscription) {
         if (!mounted) return;
@@ -63,9 +65,9 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
       await fetchTrainingWeeks();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Errore: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Errore: $e')));
       }
     }
   }
@@ -88,7 +90,8 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-                'Errore nel caricamento delle settimane di allenamento: $e'),
+              'Errore nel caricamento delle settimane di allenamento: $e',
+            ),
           ),
         );
       }
@@ -101,9 +104,6 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
 
   Future<void> showSubscriptionExpiredDialog() async {
     final theme = Theme.of(context);
-    final inAppPurchaseService = InAppPurchaseService();
-    final subscriptionDetails =
-        await inAppPurchaseService.getSubscriptionDetails();
 
     if (!mounted) return;
 
@@ -189,8 +189,9 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surface,
-              colorScheme.surfaceContainerHighest
-                  .withAlpha((0.5 * 255).round()),
+              colorScheme.surfaceContainerHighest.withAlpha(
+                (0.5 * 255).round(),
+              ),
             ],
             stops: const [0.0, 1.0],
           ),
@@ -198,9 +199,7 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
         child: SafeArea(
           child: loading
               ? Center(
-                  child: CircularProgressIndicator(
-                    color: colorScheme.primary,
-                  ),
+                  child: CircularProgressIndicator(color: colorScheme.primary),
                 )
               : CustomScrollView(
                   slivers: [
@@ -222,7 +221,11 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
                         vertical: AppTheme.spacing.md,
                       ),
                       sliver: _buildWeeksList(
-                          weeks, theme, colorScheme, isSmallScreen),
+                        weeks,
+                        theme,
+                        colorScheme,
+                        isSmallScreen,
+                      ),
                     ),
                   ],
                 ),
@@ -232,16 +235,18 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
   }
 
   Widget _buildHeader(
-      ThemeData theme, ColorScheme colorScheme, bool isSmallScreen) {
+    ThemeData theme,
+    ColorScheme colorScheme,
+    bool isSmallScreen,
+  ) {
     return Container(
       padding: EdgeInsets.all(
-          isSmallScreen ? AppTheme.spacing.md : AppTheme.spacing.lg),
+        isSmallScreen ? AppTheme.spacing.md : AppTheme.spacing.lg,
+      ),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.xl),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
         boxShadow: AppTheme.elevations.small,
       ),
       child: Column(
@@ -250,40 +255,44 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
             fit: BoxFit.scaleDown,
             child: Text(
               'Training Program',
-              style: (isSmallScreen
-                      ? theme.textTheme.titleLarge
-                      : theme.textTheme.headlineSmall)
-                  ?.copyWith(
-                color: colorScheme.onSurface,
-                fontWeight: FontWeight.bold,
-                letterSpacing: -0.5,
-              ),
+              style:
+                  (isSmallScreen
+                          ? theme.textTheme.titleLarge
+                          : theme.textTheme.headlineSmall)
+                      ?.copyWith(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -0.5,
+                      ),
               textAlign: TextAlign.center,
             ),
           ),
           SizedBox(
-              height:
-                  isSmallScreen ? AppTheme.spacing.xs : AppTheme.spacing.sm),
+            height: isSmallScreen ? AppTheme.spacing.xs : AppTheme.spacing.sm,
+          ),
           Container(
             padding: EdgeInsets.symmetric(
-              horizontal:
-                  isSmallScreen ? AppTheme.spacing.sm : AppTheme.spacing.md,
+              horizontal: isSmallScreen
+                  ? AppTheme.spacing.sm
+                  : AppTheme.spacing.md,
               vertical: AppTheme.spacing.xs,
             ),
             decoration: BoxDecoration(
-              color:
-                  colorScheme.primaryContainer.withAlpha((0.3 * 255).round()),
+              color: colorScheme.primaryContainer.withAlpha(
+                (0.3 * 255).round(),
+              ),
               borderRadius: BorderRadius.circular(AppTheme.radii.sm),
             ),
             child: Text(
               'Your Journey to Excellence',
-              style: (isSmallScreen
-                      ? theme.textTheme.titleSmall
-                      : theme.textTheme.titleMedium)
-                  ?.copyWith(
-                color: colorScheme.primary,
-                fontWeight: FontWeight.w500,
-              ),
+              style:
+                  (isSmallScreen
+                          ? theme.textTheme.titleSmall
+                          : theme.textTheme.titleMedium)
+                      ?.copyWith(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
             ),
           ),
         ],
@@ -317,7 +326,11 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
     return SliverList(
       delegate: SliverChildBuilderDelegate(
         (context, index) => _buildExpandableWeekCard(
-            weeks[index], theme, colorScheme, isSmallScreen),
+          weeks[index],
+          theme,
+          colorScheme,
+          isSmallScreen,
+        ),
         childCount: weeks.length,
       ),
     );
@@ -336,9 +349,7 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
         boxShadow: AppTheme.elevations.small,
       ),
       child: Material(
@@ -347,7 +358,9 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
           children: [
             InkWell(
               onTap: () => _toggleWeekExpansion(
-                  week['id'], week['workouts'] as List<dynamic>?),
+                week['id'],
+                week['workouts'] as List<dynamic>?,
+              ),
               borderRadius: BorderRadius.circular(AppTheme.radii.lg),
               child: Padding(
                 padding: EdgeInsets.all(AppTheme.spacing.lg),
@@ -357,7 +370,11 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         _buildWeekNumberContainer(
-                            week, theme, colorScheme, isSmallScreen),
+                          week,
+                          theme,
+                          colorScheme,
+                          isSmallScreen,
+                        ),
                         Icon(
                           isExpanded
                               ? Icons.keyboard_arrow_up
@@ -385,7 +402,11 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
             ),
             if (isExpanded)
               _buildWorkoutsSection(
-                  week['id'], theme, colorScheme, isSmallScreen),
+                week['id'],
+                theme,
+                colorScheme,
+                isSmallScreen,
+              ),
           ],
         ),
       ),
@@ -435,8 +456,9 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
     ColorScheme colorScheme,
     bool isSmallScreen,
   ) {
-    final weekService =
-        ref.read(program_providers.trainingProgramServicesProvider);
+    final weekService = ref.read(
+      program_providers.trainingProgramServicesProvider,
+    );
 
     return FutureBuilder<QuerySnapshot>(
       future: weekService.getWorkouts(weekId).first,
@@ -457,18 +479,13 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
           return Padding(
             padding: EdgeInsets.all(AppTheme.spacing.lg),
             child: Center(
-              child: CircularProgressIndicator(
-                color: colorScheme.primary,
-              ),
+              child: CircularProgressIndicator(color: colorScheme.primary),
             ),
           );
         }
 
         final workouts = snapshot.data!.docs
-            .map((doc) => {
-                  'id': doc.id,
-                  ...doc.data() as Map<String, dynamic>,
-                })
+            .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
             .toList();
 
         if (workouts.isEmpty) {
@@ -486,10 +503,7 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
 
         return Column(
           children: [
-            Divider(
-              color: colorScheme.outline.withAlpha(26),
-              height: 1,
-            ),
+            Divider(color: colorScheme.outline.withAlpha(26), height: 1),
             Padding(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               child: ListView.separated(
@@ -499,7 +513,11 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
                 separatorBuilder: (context, index) =>
                     SizedBox(height: AppTheme.spacing.md),
                 itemBuilder: (context, index) => _buildWorkoutCard(
-                    workouts[index], theme, colorScheme, isSmallScreen),
+                  workouts[index],
+                  theme,
+                  colorScheme,
+                  isSmallScreen,
+                ),
               ),
             ),
           ],
@@ -527,8 +545,9 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
             end: Alignment.bottomRight,
             colors: [
               colorScheme.surfaceContainerHighest,
-              colorScheme.surfaceContainerHighest
-                  .withAlpha((0.8 * 255).round()),
+              colorScheme.surfaceContainerHighest.withAlpha(
+                (0.8 * 255).round(),
+              ),
             ],
           ),
           borderRadius: BorderRadius.circular(AppTheme.radii.xl),
@@ -556,7 +575,8 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
             borderRadius: BorderRadius.circular(AppTheme.radii.xl),
             child: Padding(
               padding: EdgeInsets.all(
-                  isSmallScreen ? AppTheme.spacing.lg : AppTheme.spacing.xl),
+                isSmallScreen ? AppTheme.spacing.lg : AppTheme.spacing.xl,
+              ),
               child: Column(
                 children: [
                   Row(
@@ -564,19 +584,21 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
                     children: [
                       _buildWorkoutOrderCircle(workout, theme, colorScheme),
                       SizedBox(
-                          width: isSmallScreen
-                              ? AppTheme.spacing.md
-                              : AppTheme.spacing.lg),
+                        width: isSmallScreen
+                            ? AppTheme.spacing.md
+                            : AppTheme.spacing.lg,
+                      ),
                       Text(
                         'Workout ${workout['order']}',
-                        style: (isSmallScreen
-                                ? theme.textTheme.titleLarge
-                                : theme.textTheme.headlineSmall)
-                            ?.copyWith(
-                          color: colorScheme.onSurface,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -0.5,
-                        ),
+                        style:
+                            (isSmallScreen
+                                    ? theme.textTheme.titleLarge
+                                    : theme.textTheme.headlineSmall)
+                                ?.copyWith(
+                                  color: colorScheme.onSurface,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: -0.5,
+                                ),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -591,18 +613,20 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
                       ),
                       decoration: BoxDecoration(
                         color: colorScheme.primaryContainer.withAlpha(38),
-                        borderRadius:
-                            BorderRadius.circular(AppTheme.radii.full),
+                        borderRadius: BorderRadius.circular(
+                          AppTheme.radii.full,
+                        ),
                       ),
                       child: Text(
                         workout['description'],
-                        style: (isSmallScreen
-                                ? theme.textTheme.bodyMedium
-                                : theme.textTheme.bodyLarge)
-                            ?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                          height: 1.4,
-                        ),
+                        style:
+                            (isSmallScreen
+                                    ? theme.textTheme.bodyMedium
+                                    : theme.textTheme.bodyLarge)
+                                ?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                  height: 1.4,
+                                ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
@@ -696,14 +720,15 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
           SizedBox(width: AppTheme.spacing.xs),
           Text(
             'START',
-            style: (isSmallScreen
-                    ? theme.textTheme.labelLarge
-                    : theme.textTheme.titleMedium)
-                ?.copyWith(
-              color: colorScheme.onPrimary,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-            ),
+            style:
+                (isSmallScreen
+                        ? theme.textTheme.labelLarge
+                        : theme.textTheme.titleMedium)
+                    ?.copyWith(
+                      color: colorScheme.onPrimary,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
+                    ),
           ),
         ],
       ),

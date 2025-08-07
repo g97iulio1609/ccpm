@@ -8,8 +8,6 @@ import 'package:alphanessone/shared/services/weight_calculation_service.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 import 'package:alphanessone/Viewer/UI/workout_provider.dart';
 import 'package:logging/logging.dart';
-import 'package:alphanessone/trainingBuilder/utility_functions.dart'
-    as utility_functions;
 
 class WorkoutService {
   final Ref ref;
@@ -19,7 +17,7 @@ class WorkoutService {
   late final WeightCalculationService _weightCalculationService;
 
   final Map<String, ValueNotifier<double>> _weightNotifiers = {};
-  final List<StreamSubscription> _subscriptions = [];
+  final Map<String, StreamSubscription> _seriesSubscriptionsByExerciseId = {};
   final Map<String, Map<String?, List<Map<String, dynamic>>>>
   _groupedExercisesCache = {};
   final Map<String, List<Map<String, dynamic>>> _workoutCache = {};
@@ -35,9 +33,10 @@ class WorkoutService {
   }
 
   void dispose() {
-    for (final subscription in _subscriptions) {
-      subscription.cancel();
+    for (final sub in _seriesSubscriptionsByExerciseId.values) {
+      sub.cancel();
     }
+    _seriesSubscriptionsByExerciseId.clear();
   }
 
   Future<void> loadExerciseNotes(String workoutId) async {
@@ -247,13 +246,10 @@ class WorkoutService {
     Map<String, dynamic> exercise,
     String workoutId,
   ) {
-    _subscriptions.removeWhere((sub) {
-      if (sub.hashCode.toString().contains(exercise['id'])) {
-        sub.cancel();
-        return true;
-      }
-      return false;
-    });
+    final exerciseId = exercise['id'] as String?;
+    if (exerciseId == null || exerciseId.isEmpty) return;
+    // Annulla eventuale subscription precedente per questo esercizio
+    _seriesSubscriptionsByExerciseId[exerciseId]?.cancel();
 
     final seriesQuery = FirebaseFirestore.instance
         .collection('series')
@@ -262,9 +258,7 @@ class WorkoutService {
 
     final subscription = seriesQuery.snapshots().listen((querySnapshot) {
       final updatedExercises = ref.read(exercisesProvider);
-      final index = updatedExercises.indexWhere(
-        (e) => e['id'] == exercise['id'],
-      );
+      final index = updatedExercises.indexWhere((e) => e['id'] == exerciseId);
       if (index != -1) {
         final newExercises = List<Map<String, dynamic>>.from(updatedExercises);
         newExercises[index] = Map<String, dynamic>.from(newExercises[index]);
@@ -282,7 +276,7 @@ class WorkoutService {
       }
     });
 
-    _subscriptions.add(subscription);
+    _seriesSubscriptionsByExerciseId[exerciseId] = subscription;
   }
 
   Future<void> updateExercise(
@@ -315,9 +309,13 @@ class WorkoutService {
 
       // Aggiorna lo stato locale dopo il ricalcolo dei pesi
       final currentExercises = ref.read(exercisesProvider);
-      final index = currentExercises.indexWhere((e) => e['id'] == updatedExercises[exerciseIndex]['id']);
+      final index = currentExercises.indexWhere(
+        (e) => e['id'] == updatedExercises[exerciseIndex]['id'],
+      );
       if (index != -1) {
-        final updatedExercisesList = List<Map<String, dynamic>>.from(currentExercises);
+        final updatedExercisesList = List<Map<String, dynamic>>.from(
+          currentExercises,
+        );
         updatedExercisesList[index] = updatedExercises[exerciseIndex];
         ref.read(exercisesProvider.notifier).state = updatedExercisesList;
       }
@@ -328,8 +326,6 @@ class WorkoutService {
       );
     }
   }
-
-
 
   Future<void> applySeriesChanges(
     Map<String, dynamic> exercise,

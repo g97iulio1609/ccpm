@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/shared/shared.dart';
-import 'package:alphanessone/viewer/presentation/notifiers/workout_details_notifier.dart';
-import 'package:alphanessone/viewer/presentation/widgets/exercise_timer_bottom_sheet.dart';
+import 'package:alphanessone/Viewer/presentation/notifiers/workout_details_notifier.dart';
+import 'package:alphanessone/UI/components/skeleton.dart';
+import 'package:alphanessone/Viewer/presentation/widgets/exercise_timer_bottom_sheet.dart';
 
 class WorkoutDetailsPage extends ConsumerStatefulWidget {
   final String programId;
@@ -28,8 +29,9 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
   Widget build(BuildContext context) {
     // Osserviamo lo stato dal WorkoutDetailsNotifier
     final state = ref.watch(workoutDetailsNotifierProvider(widget.workoutId));
-    final notifier =
-        ref.read(workoutDetailsNotifierProvider(widget.workoutId).notifier);
+    final notifier = ref.read(
+      workoutDetailsNotifierProvider(widget.workoutId).notifier,
+    );
 
     final colorScheme = Theme.of(context).colorScheme;
     final screenWidth = MediaQuery.of(context).size.width;
@@ -44,22 +46,10 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
     if (state.isLoading) {
       return Scaffold(
         backgroundColor: colorScheme.surface,
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(
-                color: colorScheme.primary,
-              ),
-              SizedBox(height: AppTheme.spacing.md),
-              Text(
-                'Caricamento esercizi...',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onSurface,
-                    ),
-              ),
-            ],
-          ),
+        body: ListView.builder(
+          padding: EdgeInsets.all(AppTheme.spacing.md),
+          itemCount: 6,
+          itemBuilder: (context, index) => const SkeletonCard(),
         ),
       );
     }
@@ -72,24 +62,20 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.error_outline,
-                color: colorScheme.error,
-                size: 48,
-              ),
+              Icon(Icons.error_outline, color: colorScheme.error, size: 48),
               SizedBox(height: AppTheme.spacing.md),
               Text(
                 'Errore durante il caricamento',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: colorScheme.onSurface,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(color: colorScheme.onSurface),
               ),
               SizedBox(height: AppTheme.spacing.sm),
               Text(
                 state.error!,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                  color: colorScheme.onSurfaceVariant,
+                ),
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: AppTheme.spacing.lg),
@@ -120,9 +106,9 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
               SizedBox(height: AppTheme.spacing.md),
               Text(
                 'Nessun esercizio trovato',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: colorScheme.onSurface,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(color: colorScheme.onSurface),
               ),
             ],
           ),
@@ -141,9 +127,9 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
         title: Text(
           state.workout!.name,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
-              ),
+            fontWeight: FontWeight.bold,
+            color: colorScheme.onSurface,
+          ),
         ),
         backgroundColor: colorScheme.surface,
         elevation: 0,
@@ -156,48 +142,59 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
         ],
       ),
       body: isListMode
-          ? ListView.builder(
-              padding: EdgeInsets.all(padding),
-              itemCount: groupedExercises.length,
-              itemBuilder: (context, index) {
-                final entry = groupedExercises.entries.elementAt(index);
-                final superSetId = entry.key;
-                final exercises = entry.value;
+          ? RefreshIndicator(
+              onRefresh: () => notifier.refreshWorkout(),
+              child: Semantics(
+                container: true,
+                label: 'Dettagli allenamento, lista esercizi',
+                child: ListView.builder(
+                  padding: EdgeInsets.all(padding),
+                  itemCount: groupedExercises.length,
+                  itemBuilder: (context, index) {
+                    final entry = groupedExercises.entries.elementAt(index);
+                    final superSetId = entry.key;
+                    final exercises = entry.value;
 
-                return Padding(
-                  padding: EdgeInsets.only(bottom: spacing),
-                  child: superSetId == null || superSetId.isEmpty
-                      ? _buildSingleExerciseCard(exercises.first, context)
-                      : _buildSuperSetCard(exercises, context),
-                );
-              },
-            )
-          : GridView.builder(
-              padding: EdgeInsets.all(padding),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: crossAxisCount,
-                crossAxisSpacing: spacing,
-                mainAxisSpacing: spacing,
-                childAspectRatio: 1.2,
+                    return Padding(
+                      padding: EdgeInsets.only(bottom: spacing),
+                      child: superSetId == null || superSetId.isEmpty
+                          ? _buildSingleExerciseCard(exercises.first, context)
+                          : _buildSuperSetCard(exercises, context),
+                    );
+                  },
+                ),
               ),
-              itemCount: groupedExercises.length,
-              key: PageStorageKey('workout_exercises_${widget.workoutId}'),
-              itemBuilder: (context, index) {
-                final entry = groupedExercises.entries.elementAt(index);
-                final superSetId = entry.key;
-                final exercises = entry.value;
+            )
+          : RefreshIndicator(
+              onRefresh: () => notifier.refreshWorkout(),
+              child: GridView.builder(
+                padding: EdgeInsets.all(padding),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  crossAxisSpacing: spacing,
+                  mainAxisSpacing: spacing,
+                  childAspectRatio: 1.2,
+                ),
+                itemCount: groupedExercises.length,
+                key: PageStorageKey('workout_exercises_${widget.workoutId}'),
+                itemBuilder: (context, index) {
+                  final entry = groupedExercises.entries.elementAt(index);
+                  final superSetId = entry.key;
+                  final exercises = entry.value;
 
-                return superSetId == null || superSetId.isEmpty
-                    ? _buildSingleExerciseCard(exercises.first, context)
-                    : _buildSuperSetCard(exercises, context);
-              },
+                  return superSetId == null || superSetId.isEmpty
+                      ? _buildSingleExerciseCard(exercises.first, context)
+                      : _buildSuperSetCard(exercises, context);
+                },
+              ),
             ),
     );
   }
 
   // Raggruppa gli esercizi per superSet
   Map<String?, List<Exercise>> _groupExercisesBySuperSet(
-      List<Exercise> exercises) {
+    List<Exercise> exercises,
+  ) {
     final groupedExercises = <String?, List<Exercise>>{};
 
     for (final exercise in exercises) {
@@ -240,10 +237,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-          width: 1,
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26), width: 1),
         boxShadow: AppTheme.elevations.small,
       ),
       child: ClipRRect(
@@ -255,9 +249,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerHighest.withAlpha(77),
                 border: Border(
-                  bottom: BorderSide(
-                    color: colorScheme.outline.withAlpha(26),
-                  ),
+                  bottom: BorderSide(color: colorScheme.outline.withAlpha(26)),
                 ),
               ),
               child: _buildExerciseName(exercise, context),
@@ -269,8 +261,12 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (!allSeriesCompleted) ...[
-                      _buildStartButton(exercise, firstNotDoneSeriesIndex,
-                          isContinueMode, context),
+                      _buildStartButton(
+                        exercise,
+                        firstNotDoneSeriesIndex,
+                        isContinueMode,
+                        context,
+                      ),
                       SizedBox(height: AppTheme.spacing.md),
                     ],
                     Container(
@@ -279,8 +275,9 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                         horizontal: AppTheme.spacing.sm,
                       ),
                       decoration: BoxDecoration(
-                        color:
-                            colorScheme.surfaceContainerHighest.withAlpha(77),
+                        color: colorScheme.surfaceContainerHighest.withAlpha(
+                          77,
+                        ),
                         borderRadius: BorderRadius.circular(AppTheme.radii.sm),
                       ),
                       child: _buildSeriesHeaderRow(context),
@@ -299,8 +296,12 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         if (!allSeriesCompleted) ...[
-                          _buildStartButton(exercise, firstNotDoneSeriesIndex,
-                              isContinueMode, context),
+                          _buildStartButton(
+                            exercise,
+                            firstNotDoneSeriesIndex,
+                            isContinueMode,
+                            context,
+                          ),
                           SizedBox(height: AppTheme.spacing.md),
                         ],
                         Container(
@@ -311,8 +312,9 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                           decoration: BoxDecoration(
                             color: colorScheme.surfaceContainerHighest
                                 .withAlpha(77),
-                            borderRadius:
-                                BorderRadius.circular(AppTheme.radii.sm),
+                            borderRadius: BorderRadius.circular(
+                              AppTheme.radii.sm,
+                            ),
                           ),
                           child: _buildSeriesHeaderRow(context),
                         ),
@@ -331,8 +333,9 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
 
   Widget _buildExerciseName(Exercise exercise, BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final notifier =
-        ref.read(workoutDetailsNotifierProvider(widget.workoutId).notifier);
+    final notifier = ref.read(
+      workoutDetailsNotifierProvider(widget.workoutId).notifier,
+    );
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -344,9 +347,9 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
               Text(
                 exercise.name,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurface,
-                    ),
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 2,
               ),
@@ -355,8 +358,8 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                 Text(
                   exercise.variant!,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ],
@@ -370,7 +373,11 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                 : colorScheme.onSurfaceVariant,
           ),
           onPressed: () => _showNoteDialog(
-                exercise.id ?? '', exercise.name, exercise.note, notifier),
+            exercise.id ?? '',
+            exercise.name,
+            exercise.note,
+            notifier,
+          ),
           tooltip: 'Nota',
         ),
       ],
@@ -378,7 +385,9 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
   }
 
   Widget _buildSuperSetCard(
-      List<Exercise> superSetExercises, BuildContext context) {
+    List<Exercise> superSetExercises,
+    BuildContext context,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
     final allSeriesCompleted = superSetExercises.every((exercise) {
       return exercise.series.every((series) => series.isCompleted);
@@ -388,10 +397,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-          width: 1,
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26), width: 1),
         boxShadow: AppTheme.elevations.small,
       ),
       child: Column(
@@ -401,9 +407,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHighest.withAlpha(77),
               border: Border(
-                bottom: BorderSide(
-                  color: colorScheme.outline.withAlpha(26),
-                ),
+                bottom: BorderSide(color: colorScheme.outline.withAlpha(26)),
               ),
             ),
             child: Column(
@@ -411,15 +415,19 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                 Text(
                   'Super Set',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
-                      ),
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
-                ...superSetExercises.asMap().entries.map((entry) =>
-                    _buildSuperSetExerciseName(
-                        entry.key, entry.value, context)),
+                ...superSetExercises.asMap().entries.map(
+                  (entry) => _buildSuperSetExerciseName(
+                    entry.key,
+                    entry.value,
+                    context,
+                  ),
+                ),
               ],
             ),
           ),
@@ -447,10 +455,14 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
   }
 
   Widget _buildSuperSetExerciseName(
-      int index, Exercise exercise, BuildContext context) {
+    int index,
+    Exercise exercise,
+    BuildContext context,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
-    final notifier =
-        ref.read(workoutDetailsNotifierProvider(widget.workoutId).notifier);
+    final notifier = ref.read(
+      workoutDetailsNotifierProvider(widget.workoutId).notifier,
+    );
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
@@ -467,9 +479,9 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
               child: Text(
                 '${index + 1}',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onPrimary,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  color: colorScheme.onPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -478,9 +490,9 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
             child: Text(
               exercise.name,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.w500,
-                  ),
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w500,
+              ),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -493,7 +505,11 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                   : colorScheme.onSurfaceVariant,
             ),
             onPressed: () => _showNoteDialog(
-                exercise.id ?? '', exercise.name, exercise.note, notifier),
+              exercise.id ?? '',
+              exercise.name,
+              exercise.note,
+              notifier,
+            ),
             tooltip: 'Nota',
           ),
         ],
@@ -501,10 +517,15 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
     );
   }
 
-  Future<void> _showNoteDialog(String exerciseId, String exerciseName,
-      String? existingNote, WorkoutDetailsNotifier notifier) async {
-    final TextEditingController noteController =
-        TextEditingController(text: existingNote);
+  Future<void> _showNoteDialog(
+    String exerciseId,
+    String exerciseName,
+    String? existingNote,
+    WorkoutDetailsNotifier notifier,
+  ) async {
+    final TextEditingController noteController = TextEditingController(
+      text: existingNote,
+    );
     final colorScheme = Theme.of(context).colorScheme;
 
     return showDialog(
@@ -513,9 +534,9 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
         backgroundColor: colorScheme.surface,
         title: Text(
           'Note per $exerciseName',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: colorScheme.onSurface,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(color: colorScheme.onSurface),
         ),
         content: TextField(
           controller: noteController,
@@ -565,9 +586,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
               }
               if (context.mounted) Navigator.of(context).pop();
             },
-            style: FilledButton.styleFrom(
-              backgroundColor: colorScheme.primary,
-            ),
+            style: FilledButton.styleFrom(backgroundColor: colorScheme.primary),
             child: Text(
               'Salva',
               style: TextStyle(color: colorScheme.onPrimary),
@@ -588,9 +607,9 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
           child: Text(
             '#',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.bold,
-                ),
+              color: colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.bold,
+            ),
             textAlign: TextAlign.center,
           ),
         ),
@@ -599,9 +618,9 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
           child: Text(
             'Reps',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.bold,
-                ),
+              color: colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.bold,
+            ),
             textAlign: TextAlign.center,
           ),
         ),
@@ -610,9 +629,9 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
           child: Text(
             'Peso',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.bold,
-                ),
+              color: colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.bold,
+            ),
             textAlign: TextAlign.center,
           ),
         ),
@@ -621,9 +640,9 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
           child: Text(
             'Fatti',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.bold,
-                ),
+              color: colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.bold,
+            ),
             textAlign: TextAlign.center,
           ),
         ),
@@ -633,7 +652,9 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
   }
 
   List<Widget> _buildSeriesContainers(
-      List<Series> seriesList, BuildContext context) {
+    List<Series> seriesList,
+    BuildContext context,
+  ) {
     return seriesList.asMap().entries.map((entry) {
       final index = entry.key;
       final series = entry.value;
@@ -656,7 +677,9 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
   }
 
   List<Widget> _buildSeriesRows(
-      List<Exercise> exercises, BuildContext context) {
+    List<Exercise> exercises,
+    BuildContext context,
+  ) {
     final rows = <Widget>[];
 
     // Assumiamo che ogni esercizio nel superset abbia lo stesso numero di serie
@@ -687,17 +710,14 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                   child: Text(
                     '${i + 1}${String.fromCharCode(65 + j)}', // 1A, 1B, 2A, 2B, etc.
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontWeight: FontWeight.bold,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ),
                 Expanded(
                   flex: 2,
-                  child: Text(
-                    '${series.reps}',
-                    textAlign: TextAlign.center,
-                  ),
+                  child: Text('${series.reps}', textAlign: TextAlign.center),
                 ),
                 Expanded(
                   flex: 2,
@@ -714,9 +734,8 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                         : '-',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight:
-                              series.isCompleted ? FontWeight.bold : null,
-                        ),
+                      fontWeight: series.isCompleted ? FontWeight.bold : null,
+                    ),
                   ),
                 ),
                 _buildCompletionButton(series, exercise.name, context),
@@ -737,25 +756,19 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
           width: 30,
           child: Text(
             '${index + 1}',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
         ),
         Expanded(
           flex: 2,
-          child: Text(
-            '${series.reps}',
-            textAlign: TextAlign.center,
-          ),
+          child: Text('${series.reps}', textAlign: TextAlign.center),
         ),
         Expanded(
           flex: 2,
-          child: Text(
-            '${series.weight} kg',
-            textAlign: TextAlign.center,
-          ),
+          child: Text('${series.weight} kg', textAlign: TextAlign.center),
         ),
         Expanded(
           flex: 2,
@@ -765,8 +778,8 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                 : '-',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: series.isCompleted ? FontWeight.bold : null,
-                ),
+              fontWeight: series.isCompleted ? FontWeight.bold : null,
+            ),
           ),
         ),
         _buildCompletionButton(series, "", context),
@@ -775,10 +788,14 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
   }
 
   Widget _buildCompletionButton(
-      Series series, String exerciseName, BuildContext context) {
+    Series series,
+    String exerciseName,
+    BuildContext context,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
-    final notifier =
-        ref.read(workoutDetailsNotifierProvider(widget.workoutId).notifier);
+    final notifier = ref.read(
+      workoutDetailsNotifierProvider(widget.workoutId).notifier,
+    );
 
     return SizedBox(
       width: 40,
@@ -787,8 +804,9 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
           series.isCompleted
               ? Icons.check_circle
               : Icons.radio_button_unchecked,
-          color:
-              series.isCompleted ? Colors.green : colorScheme.onSurfaceVariant,
+          color: series.isCompleted
+              ? Colors.green
+              : colorScheme.onSurfaceVariant,
           size: 24,
         ),
         onPressed: () {
@@ -799,7 +817,8 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
               builder: (context) => AlertDialog(
                 title: const Text('Conferma'),
                 content: const Text(
-                    'Vuoi segnare questa serie come non completata?'),
+                  'Vuoi segnare questa serie come non completata?',
+                ),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
@@ -807,7 +826,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                   ),
                   FilledButton(
                     onPressed: () {
-                      notifier.completeSeries(series.id, false, 0, 0);
+                      notifier.completeSeries(series.id ?? '', false, 0, 0);
                       Navigator.of(context).pop();
                     },
                     child: const Text('Conferma'),
@@ -826,7 +845,12 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                   ? exerciseName
                   : "Serie ${series.order}",
               onSeriesComplete: (repsDone, weightDone) {
-                notifier.completeSeries(series.id, true, repsDone, weightDone);
+                notifier.completeSeries(
+                  series.id ?? '',
+                  true,
+                  repsDone,
+                  weightDone,
+                );
                 Navigator.of(context).pop();
               },
               initialTimerSeconds: series.restTimeSeconds ?? 60,
@@ -839,8 +863,12 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
     );
   }
 
-  Widget _buildStartButton(Exercise exercise, int startIndex,
-      bool isContinueMode, BuildContext context) {
+  Widget _buildStartButton(
+    Exercise exercise,
+    int startIndex,
+    bool isContinueMode,
+    BuildContext context,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return FilledButton.icon(
@@ -855,8 +883,14 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
           exerciseName: exercise.name,
           onSeriesComplete: (repsDone, weightDone) {
             final notifier = ref.read(
-                workoutDetailsNotifierProvider(widget.workoutId).notifier);
-            notifier.completeSeries(series.id, true, repsDone, weightDone);
+              workoutDetailsNotifierProvider(widget.workoutId).notifier,
+            );
+            notifier.completeSeries(
+              series.id ?? '',
+              true,
+              repsDone,
+              weightDone,
+            );
             Navigator.of(context).pop();
           },
           initialTimerSeconds: series.restTimeSeconds ?? 60,
@@ -877,15 +911,17 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
             ? 'Continua (Serie ${startIndex + 1})'
             : 'Inizia Allenamento',
         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: colorScheme.onPrimary,
-              fontWeight: FontWeight.bold,
-            ),
+          color: colorScheme.onPrimary,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
 
   Widget _buildSuperSetStartButton(
-      List<Exercise> exercises, BuildContext context) {
+    List<Exercise> exercises,
+    BuildContext context,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
 
     // Trova il primo esercizio e serie non completati
@@ -905,8 +941,9 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
 
     if (firstExercise == null) return const SizedBox.shrink();
 
-    final isContinueMode =
-        exercises.any((e) => e.series.any((s) => s.isCompleted));
+    final isContinueMode = exercises.any(
+      (e) => e.series.any((s) => s.isCompleted),
+    );
 
     return FilledButton.icon(
       onPressed: () {
@@ -920,8 +957,14 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
           exerciseName: firstExercise.name,
           onSeriesComplete: (repsDone, weightDone) {
             final notifier = ref.read(
-                workoutDetailsNotifierProvider(widget.workoutId).notifier);
-            notifier.completeSeries(series.id, true, repsDone, weightDone);
+              workoutDetailsNotifierProvider(widget.workoutId).notifier,
+            );
+            notifier.completeSeries(
+              series.id ?? '',
+              true,
+              repsDone,
+              weightDone,
+            );
             Navigator.of(context).pop();
           },
           initialTimerSeconds: series.restTimeSeconds ?? 60,
@@ -942,9 +985,9 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
             ? 'Continua Super Set (Serie ${startSeriesIndex + 1})'
             : 'Inizia Super Set',
         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: colorScheme.onPrimary,
-              fontWeight: FontWeight.bold,
-            ),
+          color: colorScheme.onPrimary,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }

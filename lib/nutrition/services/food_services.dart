@@ -31,7 +31,7 @@ class FoodService {
       'milk',
       'dairy',
       'spices',
-      'beverages'
+      'beverages',
     ],
     List<String> subCategories = const [
       'grains',
@@ -79,7 +79,7 @@ class FoodService {
       'baby-purees',
       'supplements',
       'protein-bars',
-      'health-drinks'
+      'health-drinks',
     ],
     OpenFoodFactsLanguage language = OpenFoodFactsLanguage.ITALIAN,
     OpenFoodFactsCountry country = OpenFoodFactsCountry.ITALY,
@@ -94,8 +94,12 @@ class FoodService {
     _importProgressController.add({});
   }
 
-  Future<void> _importCategoryFoods(List<String> categories, int pages,
-      OpenFoodFactsLanguage language, OpenFoodFactsCountry country) async {
+  Future<void> _importCategoryFoods(
+    List<String> categories,
+    int pages,
+    OpenFoodFactsLanguage language,
+    OpenFoodFactsCountry country,
+  ) async {
     for (final category in categories) {
       if (!_isImporting) {
         break; // Fermare l'importazione se _isImporting è false
@@ -111,10 +115,13 @@ class FoodService {
         final configuration = ProductSearchQueryConfiguration(
           parametersList: <Parameter>[
             TagFilter.fromType(
-                tagFilterType: TagFilterType.CATEGORIES, tagName: category),
+              tagFilterType: TagFilterType.CATEGORIES,
+              tagName: category,
+            ),
             TagFilter.fromType(
-                tagFilterType: TagFilterType.COUNTRIES,
-                tagName: country.offTag),
+              tagFilterType: TagFilterType.COUNTRIES,
+              tagName: country.offTag,
+            ),
             const SortBy(option: SortOption.POPULARITY),
             const PageSize(size: 100),
             PageNumber(page: page),
@@ -125,17 +132,23 @@ class FoodService {
         );
 
         try {
-          importedProducts +=
-              await _importWithRetry(configuration, category, page);
-          _importProgressController
-              .add({category: importedProducts}); // Aggiorna il progresso
+          importedProducts += await _importWithRetry(
+            configuration,
+            category,
+            page,
+          );
+          _importProgressController.add({
+            category: importedProducts,
+          }); // Aggiorna il progresso
         } catch (e) {
           debugPrint(
-              'Error fetching data from OpenFoodFacts on page $page in category $category: $e');
+            'Error fetching data from OpenFoodFacts on page $page in category $category: $e',
+          );
         }
 
         await Future.delayed(
-            const Duration(seconds: 60)); // Aspetta 60 secondi tra le pagine
+          const Duration(seconds: 60),
+        ); // Aspetta 60 secondi tra le pagine
       }
     }
   }
@@ -146,8 +159,11 @@ class FoodService {
   }
 
   Future<int> _importWithRetry(
-      ProductSearchQueryConfiguration configuration, String category, int page,
-      {int retryCount = 3}) async {
+    ProductSearchQueryConfiguration configuration,
+    String category,
+    int page, {
+    int retryCount = 3,
+  }) async {
     int attempts = 0;
     while (attempts < retryCount) {
       if (!_isImporting) {
@@ -161,14 +177,18 @@ class FoodService {
 
         if (result.products != null && result.products!.isNotEmpty) {
           debugPrint(
-              'Found ${result.products!.length} products on page $page in category $category');
+            'Found ${result.products!.length} products on page $page in category $category',
+          );
           for (var product in result.products!) {
             await _importOrUpdateProduct(product, category);
           }
           await _updateLastImportedPage(
-              category, page); // Update the last imported page
+            category,
+            page,
+          ); // Update the last imported page
           return result
-              .products!.length; // Ritorna il numero di prodotti importati
+              .products!
+              .length; // Ritorna il numero di prodotti importati
         } else {
           debugPrint('No products found on page $page in category $category');
           break; // Exit the loop if no products are found
@@ -179,11 +199,13 @@ class FoodService {
           final waitTimeMinutes = (5 * attempts).clamp(5, 30);
           final waitTime = Duration(minutes: waitTimeMinutes);
           debugPrint(
-              'Error fetching data (attempt $attempts) from OpenFoodFacts on page $page in category $category: $e. Retrying in ${waitTime.inMinutes} minutes.');
+            'Error fetching data (attempt $attempts) from OpenFoodFacts on page $page in category $category: $e. Retrying in ${waitTime.inMinutes} minutes.',
+          );
           await Future.delayed(waitTime); // Delay with exponential backoff
         } else {
           debugPrint(
-              'Max retry attempts reached for page $page in category $category: $e');
+            'Max retry attempts reached for page $page in category $category: $e',
+          );
           rethrow; // Rethrow the exception if max retries reached
         }
       }
@@ -192,8 +214,10 @@ class FoodService {
   }
 
   Future<int> _getLastImportedPage(String category) async {
-    final doc =
-        await _firestore.collection('import_status').doc(category).get();
+    final doc = await _firestore
+        .collection('import_status')
+        .doc(category)
+        .get();
     if (doc.exists && doc.data() != null && doc.data()!['lastPage'] != null) {
       return doc.data()!['lastPage'];
     }
@@ -229,33 +253,42 @@ class FoodService {
       'name': product.productName ?? 'Unknown',
       'name_it':
           product.productNameInLanguages?[OpenFoodFactsLanguage.ITALIAN] ??
-              product.productName ??
-              'Unknown',
+          product.productName ??
+          'Unknown',
       'name_en':
           product.productNameInLanguages?[OpenFoodFactsLanguage.ENGLISH] ??
-              product.productName ??
-              'Unknown',
+          product.productName ??
+          'Unknown',
       'name_fr':
           product.productNameInLanguages?[OpenFoodFactsLanguage.FRENCH] ??
-              product.productName ??
-              'Unknown',
+          product.productName ??
+          'Unknown',
       'name_es':
           product.productNameInLanguages?[OpenFoodFactsLanguage.SPANISH] ??
-              product.productName ??
-              'Unknown',
+          product.productName ??
+          'Unknown',
       'brands': product.brands ?? 'Unknown',
       'categories': product.categoriesTags ?? [category],
-      'kcal': product.nutriments
-              ?.getValue(Nutrient.energyKCal, PerSize.oneHundredGrams) ??
+      'kcal':
+          product.nutriments?.getValue(
+            Nutrient.energyKCal,
+            PerSize.oneHundredGrams,
+          ) ??
           0.0,
-      'carbs': product.nutriments
-              ?.getValue(Nutrient.carbohydrates, PerSize.oneHundredGrams) ??
+      'carbs':
+          product.nutriments?.getValue(
+            Nutrient.carbohydrates,
+            PerSize.oneHundredGrams,
+          ) ??
           0.0,
       'fat':
           product.nutriments?.getValue(Nutrient.fat, PerSize.oneHundredGrams) ??
-              0.0,
-      'protein': product.nutriments
-              ?.getValue(Nutrient.proteins, PerSize.oneHundredGrams) ??
+          0.0,
+      'protein':
+          product.nutriments?.getValue(
+            Nutrient.proteins,
+            PerSize.oneHundredGrams,
+          ) ??
           0.0,
     };
   }
@@ -266,15 +299,17 @@ class FoodService {
     final snapshot = await _firestore.collection('foods').get();
     for (var doc in snapshot.docs) {
       final foodData = doc.data();
-      if (foodData['id']?.toString() != null) {
-        final barcode = foodData['id'];
+      if (foodData['id']?.toString().isNotEmpty == true) {
+        final barcode = foodData['id'].toString();
         await _retryUpdateProductTranslations(barcode);
       }
     }
   }
 
-  Future<void> _retryUpdateProductTranslations(String barcode,
-      {int retryCount = 3}) async {
+  Future<void> _retryUpdateProductTranslations(
+    String barcode, {
+    int retryCount = 3,
+  }) async {
     int attempts = 0;
     while (attempts < retryCount) {
       try {
@@ -286,7 +321,8 @@ class FoodService {
           final waitTimeMinutes = (5 * attempts).clamp(5, 30);
           final waitTime = Duration(minutes: waitTimeMinutes);
           debugPrint(
-              'Error updating translations for product $barcode (attempt $attempts): $e. Retrying in ${waitTime.inMinutes} minutes.');
+            'Error updating translations for product $barcode (attempt $attempts): $e. Retrying in ${waitTime.inMinutes} minutes.',
+          );
           await Future.delayed(waitTime); // Delay with exponential backoff
         } else {
           debugPrint('Max retry attempts reached for product $barcode: $e');
@@ -306,24 +342,25 @@ class FoodService {
     final productResult = await OpenFoodAPIClient.getProductV3(conf);
     final product = productResult.product;
 
+    // ignore: unrelated_type_equality_checks
     if (productResult.status == 1 && product != null) {
       debugPrint('Updating product translations for: $barcode');
       await _firestore.collection('foods').doc(barcode).update({
         'name': product.productName ?? 'Unknown',
-        'name_it': product
-                .productNameInLanguages?[OpenFoodFactsLanguage.ITALIAN] ??
+        'name_it':
+            product.productNameInLanguages?[OpenFoodFactsLanguage.ITALIAN] ??
             product.productName ??
             'Unknown',
-        'name_en': product
-                .productNameInLanguages?[OpenFoodFactsLanguage.ENGLISH] ??
+        'name_en':
+            product.productNameInLanguages?[OpenFoodFactsLanguage.ENGLISH] ??
             product.productName ??
             'Unknown',
-        'name_fr': product
-                .productNameInLanguages?[OpenFoodFactsLanguage.FRENCH] ??
+        'name_fr':
+            product.productNameInLanguages?[OpenFoodFactsLanguage.FRENCH] ??
             product.productName ??
             'Unknown',
-        'name_es': product
-                .productNameInLanguages?[OpenFoodFactsLanguage.SPANISH] ??
+        'name_es':
+            product.productNameInLanguages?[OpenFoodFactsLanguage.SPANISH] ??
             product.productName ??
             'Unknown',
       });

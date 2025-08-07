@@ -1,6 +1,7 @@
 import 'dart:convert';
-import 'package:alphanessone/viewer/domain/entities/timer_preset.dart';
-import 'package:alphanessone/viewer/domain/repositories/timer_preset_repository.dart';
+import 'package:flutter/foundation.dart';
+import 'package:alphanessone/Viewer/domain/entities/timer_preset.dart';
+import 'package:alphanessone/Viewer/domain/repositories/timer_preset_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -11,7 +12,7 @@ class TimerPresetRepositoryImpl implements TimerPresetRepository {
 
   TimerPresetRepositoryImpl(this._firestore, this._sharedPreferences);
 
-  String _getCacheKey(String userId) => '${_cacheKeyPrefix}$userId';
+  String _getCacheKey(String userId) => '$_cacheKeyPrefix$userId';
 
   @override
   Future<List<TimerPreset>> getTimerPresets(String userId) async {
@@ -21,11 +22,15 @@ class TimerPresetRepositoryImpl implements TimerPresetRepository {
       try {
         final decoded = jsonDecode(cachedData) as List;
         cachedPresets = decoded
-            .map((item) => TimerPreset.fromJsonFromCache(
-                item as Map<String, dynamic>, userId))
+            .map(
+              (item) => TimerPreset.fromJsonFromCache(
+                item as Map<String, dynamic>,
+                userId,
+              ),
+            )
             .toList();
       } catch (e) {
-        print('Errore decodifica cache TimerPresets: $e');
+        debugPrint('Errore decodifica cache TimerPresets: $e');
         // Non bloccare, procedi a caricare da Firestore
       }
     }
@@ -45,11 +50,13 @@ class TimerPresetRepositoryImpl implements TimerPresetRepository {
         return _removeDuplicatePresetsAndSort(firestorePresets);
       }
       return _removeDuplicatePresetsAndSort(
-          cachedPresets); // Se Firestore è vuoto, usa la cache
+        cachedPresets,
+      ); // Se Firestore è vuoto, usa la cache
     } catch (e) {
-      print('Errore caricamento TimerPresets da Firestore: $e');
+      debugPrint('Errore caricamento TimerPresets da Firestore: $e');
       return _removeDuplicatePresetsAndSort(
-          cachedPresets); // Fallback sulla cache
+        cachedPresets,
+      ); // Fallback sulla cache
     }
   }
 
@@ -74,11 +81,13 @@ class TimerPresetRepositoryImpl implements TimerPresetRepository {
         : preset.copyWith(userId: userId);
     // createdAt sarà gestito da Firestore (serverTimestamp nel toMap), quindi non è necessario recuperarlo qui per la cache.
 
-    final currentPresets =
-        await getTimerPresets(userId); // Ricarica per consistenza
+    final currentPresets = await getTimerPresets(
+      userId,
+    ); // Ricarica per consistenza
     // Aggiungi o aggiorna il preset nella lista
-    final existingIndex =
-        currentPresets.indexWhere((p) => p.id == createdPreset.id);
+    final existingIndex = currentPresets.indexWhere(
+      (p) => p.id == createdPreset.id,
+    );
     if (existingIndex != -1) {
       currentPresets[existingIndex] = createdPreset;
     } else {
@@ -91,7 +100,7 @@ class TimerPresetRepositoryImpl implements TimerPresetRepository {
   Future<void> updateTimerPreset(String userId, TimerPreset preset) async {
     // Assicurati che l'ID esista per l'update
     if (preset.id.isEmpty) {
-      print("Errore: ID del TimerPreset mancante per l'aggiornamento.");
+      debugPrint("Errore: ID del TimerPreset mancante per l'aggiornamento.");
       return;
     }
     await _firestore
@@ -100,12 +109,14 @@ class TimerPresetRepositoryImpl implements TimerPresetRepository {
         .update(preset.toMap());
 
     // Aggiorna la cache
-    final currentPresets =
-        await getTimerPresets(userId); // Ricarica per consistenza
+    final currentPresets = await getTimerPresets(
+      userId,
+    ); // Ricarica per consistenza
     final index = currentPresets.indexWhere((p) => p.id == preset.id);
     if (index != -1) {
-      currentPresets[index] =
-          preset.copyWith(userId: userId); // Assicura che userId sia corretto
+      currentPresets[index] = preset.copyWith(
+        userId: userId,
+      ); // Assicura che userId sia corretto
     }
     await _saveToCache(userId, _removeDuplicatePresetsAndSort(currentPresets));
   }
@@ -123,7 +134,9 @@ class TimerPresetRepositoryImpl implements TimerPresetRepository {
 
   @override
   Future<void> saveDefaultTimerPresets(
-      String userId, List<TimerPreset> defaultPresets) async {
+    String userId,
+    List<TimerPreset> defaultPresets,
+  ) async {
     final batch = _firestore.batch();
     for (var preset in defaultPresets) {
       // Genera un ID se non presente, o usa quello fornito se i default preset hanno ID significativi
@@ -142,7 +155,9 @@ class TimerPresetRepositoryImpl implements TimerPresetRepository {
   Future<void> _saveToCache(String userId, List<TimerPreset> presets) async {
     final dataToCache = presets.map((p) => p.toJsonForCache()).toList();
     await _sharedPreferences.setString(
-        _getCacheKey(userId), jsonEncode(dataToCache));
+      _getCacheKey(userId),
+      jsonEncode(dataToCache),
+    );
   }
 
   // Rinominato per chiarezza, e assicura l'ordinamento dopo la rimozione duplicati

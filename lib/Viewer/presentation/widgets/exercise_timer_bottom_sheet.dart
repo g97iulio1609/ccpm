@@ -4,8 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:numberpicker/numberpicker.dart';
-import 'package:alphanessone/viewer/domain/entities/timer_preset.dart';
-import 'package:alphanessone/viewer/presentation/notifiers/exercise_timer_notifier.dart';
+import 'package:alphanessone/Viewer/domain/entities/timer_preset.dart';
+import 'package:alphanessone/Viewer/presentation/notifiers/exercise_timer_notifier.dart';
 
 // Costanti per il layout (manteniamo quelle esistenti)
 class TimerConstants {
@@ -36,7 +36,7 @@ class CustomInputField extends StatelessWidget {
         controller: controller,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         inputFormatters: [
-          FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*'))
+          FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*')),
         ],
         textAlign: TextAlign.center,
         style: theme.textTheme.headlineSmall?.copyWith(
@@ -139,8 +139,10 @@ class _ExerciseTimerBottomSheetState
       vsync: this,
       duration: Duration(seconds: widget.initialTimerSeconds),
     );
-    _animation =
-        Tween<double>(begin: 1.0, end: 0.0).animate(_animationController);
+    _animation = Tween<double>(
+      begin: 1.0,
+      end: 0.0,
+    ).animate(_animationController);
   }
 
   @override
@@ -185,9 +187,7 @@ class _ExerciseTimerBottomSheetState
                     child: TextField(
                       controller: minutesController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Minuti',
-                      ),
+                      decoration: const InputDecoration(labelText: 'Minuti'),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -195,9 +195,7 @@ class _ExerciseTimerBottomSheetState
                     child: TextField(
                       controller: secondsController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Secondi',
-                      ),
+                      decoration: const InputDecoration(labelText: 'Secondi'),
                     ),
                   ),
                 ],
@@ -220,10 +218,12 @@ class _ExerciseTimerBottomSheetState
 
                 if (totalSeconds > 0) {
                   // Usa il notifier per salvare il preset
-                  final notifier = ref.read(exerciseTimerStateProvider((
-                    userId: widget.userId,
-                    initialDuration: widget.initialTimerSeconds
-                  )).notifier);
+                  final notifier = ref.read(
+                    exerciseTimerStateProvider((
+                      userId: widget.userId,
+                      initialDuration: widget.initialTimerSeconds,
+                    )).notifier,
+                  );
                   notifier.saveCurrentTimeAsPreset(label);
                   Navigator.pop(context);
                 }
@@ -237,10 +237,12 @@ class _ExerciseTimerBottomSheetState
   }
 
   Future<void> _showEditPresetDialog(TimerPreset preset) async {
-    final minutesController =
-        TextEditingController(text: ((preset.seconds) ~/ 60).toString());
-    final secondsController =
-        TextEditingController(text: ((preset.seconds) % 60).toString());
+    final minutesController = TextEditingController(
+      text: ((preset.seconds) ~/ 60).toString(),
+    );
+    final secondsController = TextEditingController(
+      text: ((preset.seconds) % 60).toString(),
+    );
     final labelController = TextEditingController(text: preset.label);
 
     return showDialog(
@@ -265,9 +267,7 @@ class _ExerciseTimerBottomSheetState
                     child: TextField(
                       controller: minutesController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Minuti',
-                      ),
+                      decoration: const InputDecoration(labelText: 'Minuti'),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -275,9 +275,7 @@ class _ExerciseTimerBottomSheetState
                     child: TextField(
                       controller: secondsController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Secondi',
-                      ),
+                      decoration: const InputDecoration(labelText: 'Secondi'),
                     ),
                   ),
                 ],
@@ -300,10 +298,12 @@ class _ExerciseTimerBottomSheetState
 
                 if (totalSeconds > 0) {
                   // Usa il notifier per aggiornare il preset
-                  final notifier = ref.read(exerciseTimerStateProvider((
-                    userId: widget.userId,
-                    initialDuration: widget.initialTimerSeconds
-                  )).notifier);
+                  final notifier = ref.read(
+                    exerciseTimerStateProvider((
+                      userId: widget.userId,
+                      initialDuration: widget.initialTimerSeconds,
+                    )).notifier,
+                  );
                   notifier.updateSelectedPreset(label, totalSeconds);
                   Navigator.pop(context);
                 }
@@ -319,12 +319,18 @@ class _ExerciseTimerBottomSheetState
   @override
   Widget build(BuildContext context) {
     // Accedi allo stato del timer attraverso il provider
-    final timerState = ref.watch(exerciseTimerStateProvider(
-        (userId: widget.userId, initialDuration: widget.initialTimerSeconds)));
-    final timerNotifier = ref.read(exerciseTimerStateProvider((
-      userId: widget.userId,
-      initialDuration: widget.initialTimerSeconds
-    )).notifier);
+    final timerState = ref.watch(
+      exerciseTimerStateProvider((
+        userId: widget.userId,
+        initialDuration: widget.initialTimerSeconds,
+      )),
+    );
+    final timerNotifier = ref.read(
+      exerciseTimerStateProvider((
+        userId: widget.userId,
+        initialDuration: widget.initialTimerSeconds,
+      )).notifier,
+    );
 
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -355,8 +361,9 @@ class _ExerciseTimerBottomSheetState
               return Container(
                 decoration: BoxDecoration(
                   color: theme.scaffoldBackgroundColor,
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(16)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
                 ),
                 child: Column(
                   children: [
@@ -367,7 +374,8 @@ class _ExerciseTimerBottomSheetState
                         if (details.primaryDelta! > 0) {
                           // Trascinamento verso il basso
                           scrollController.jumpTo(
-                              scrollController.offset + details.primaryDelta!);
+                            scrollController.offset + details.primaryDelta!,
+                          );
                           if (scrollController.offset >=
                               scrollController.position.maxScrollExtent) {
                             Navigator.of(context).pop();
@@ -375,7 +383,8 @@ class _ExerciseTimerBottomSheetState
                         } else {
                           // Trascinamento verso l'alto
                           scrollController.jumpTo(
-                              scrollController.offset + details.primaryDelta!);
+                            scrollController.offset + details.primaryDelta!,
+                          );
                         }
                       },
                       onVerticalDragEnd: (details) {
@@ -386,8 +395,9 @@ class _ExerciseTimerBottomSheetState
                       },
                       child: Container(
                         width: double.infinity,
-                        padding:
-                            EdgeInsets.symmetric(vertical: AppTheme.spacing.sm),
+                        padding: EdgeInsets.symmetric(
+                          vertical: AppTheme.spacing.sm,
+                        ),
                         child: Center(
                           child: Container(
                             width: 40,
@@ -432,7 +442,10 @@ class _ExerciseTimerBottomSheetState
                                   timerState.status == TimerStatus.paused ||
                                   timerState.status == TimerStatus.finished)
                                 _buildTimerDisplay(
-                                    timerState, theme, colorScheme)
+                                  timerState,
+                                  theme,
+                                  colorScheme,
+                                )
                               else
                                 Column(
                                   children: [
@@ -480,14 +493,17 @@ class _ExerciseTimerBottomSheetState
                                           timerNotifier.resetTimer();
                                         },
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor:
-                                              const Color(0xFFEF4444),
+                                          backgroundColor: const Color(
+                                            0xFFEF4444,
+                                          ),
                                           foregroundColor: Colors.white,
                                           padding: EdgeInsets.symmetric(
-                                              vertical: AppTheme.spacing.lg),
+                                            vertical: AppTheme.spacing.lg,
+                                          ),
                                           shape: RoundedRectangleBorder(
                                             borderRadius: BorderRadius.circular(
-                                                AppTheme.radii.lg),
+                                              AppTheme.radii.lg,
+                                            ),
                                           ),
                                         ),
                                         child: const Text('ANNULLA'),
@@ -498,14 +514,17 @@ class _ExerciseTimerBottomSheetState
                                       child: ElevatedButton(
                                         onPressed: _handleTimerComplete,
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor:
-                                              const Color(0xFFFACC15),
+                                          backgroundColor: const Color(
+                                            0xFFFACC15,
+                                          ),
                                           foregroundColor: Colors.black,
                                           padding: EdgeInsets.symmetric(
-                                              vertical: AppTheme.spacing.lg),
+                                            vertical: AppTheme.spacing.lg,
+                                          ),
                                           shape: RoundedRectangleBorder(
                                             borderRadius: BorderRadius.circular(
-                                                AppTheme.radii.lg),
+                                              AppTheme.radii.lg,
+                                            ),
                                           ),
                                         ),
                                         child: const Text('SERIE COMPLETATA'),
@@ -516,11 +535,19 @@ class _ExerciseTimerBottomSheetState
                               else
                                 Column(
                                   children: [
-                                    _buildTimerSelector(timerState,
-                                        timerNotifier, theme, colorScheme),
+                                    _buildTimerSelector(
+                                      timerState,
+                                      timerNotifier,
+                                      theme,
+                                      colorScheme,
+                                    ),
                                     SizedBox(height: AppTheme.spacing.lg),
-                                    _buildStartButton(timerNotifier,
-                                        _isEmomMode, theme, colorScheme),
+                                    _buildStartButton(
+                                      timerNotifier,
+                                      _isEmomMode,
+                                      theme,
+                                      colorScheme,
+                                    ),
                                   ],
                                 ),
                             ],
@@ -539,7 +566,10 @@ class _ExerciseTimerBottomSheetState
   }
 
   Widget _buildTimerDisplay(
-      ExerciseTimerState timerState, ThemeData theme, ColorScheme colorScheme) {
+    ExerciseTimerState timerState,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
     return Container(
       width: double.infinity,
       height: TimerConstants.timerDisplaySize,
@@ -570,7 +600,9 @@ class _ExerciseTimerBottomSheetState
   }
 
   Widget _buildTimerCircle(
-      ExerciseTimerState timerState, ColorScheme colorScheme) {
+    ExerciseTimerState timerState,
+    ColorScheme colorScheme,
+  ) {
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
@@ -662,10 +694,11 @@ class _ExerciseTimerBottomSheetState
   }
 
   Widget _buildTimerSelector(
-      ExerciseTimerState timerState,
-      ExerciseTimerNotifier timerNotifier,
-      ThemeData theme,
-      ColorScheme colorScheme) {
+    ExerciseTimerState timerState,
+    ExerciseTimerNotifier timerNotifier,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -677,10 +710,11 @@ class _ExerciseTimerBottomSheetState
   }
 
   Widget _buildPresetButtons(
-      ExerciseTimerState timerState,
-      ExerciseTimerNotifier timerNotifier,
-      ThemeData theme,
-      ColorScheme colorScheme) {
+    ExerciseTimerState timerState,
+    ExerciseTimerNotifier timerNotifier,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -701,8 +735,9 @@ class _ExerciseTimerBottomSheetState
                       },
                       onLongPress: () => _showEditPresetDialog(preset),
                       style: OutlinedButton.styleFrom(
-                        backgroundColor:
-                            isSelected ? colorScheme.primaryContainer : null,
+                        backgroundColor: isSelected
+                            ? colorScheme.primaryContainer
+                            : null,
                         side: BorderSide(color: colorScheme.primary),
                         padding: EdgeInsets.only(
                           left: AppTheme.spacing.sm,
@@ -711,8 +746,9 @@ class _ExerciseTimerBottomSheetState
                           bottom: AppTheme.spacing.sm,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(AppTheme.radii.md),
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radii.md,
+                          ),
                         ),
                       ),
                       child: Row(
@@ -762,10 +798,11 @@ class _ExerciseTimerBottomSheetState
   }
 
   Widget _buildCustomTimePicker(
-      ExerciseTimerState timerState,
-      ExerciseTimerNotifier timerNotifier,
-      ThemeData theme,
-      ColorScheme colorScheme) {
+    ExerciseTimerState timerState,
+    ExerciseTimerNotifier timerNotifier,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
     // Calcola minuti e secondi dal timer state
     final minutes = timerState.initialDuration ~/ 60;
     final seconds = timerState.initialDuration % 60;
@@ -780,32 +817,22 @@ class _ExerciseTimerBottomSheetState
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildNumberPicker(
-            theme,
-            colorScheme,
-            'Minuti',
-            minutes,
-            59,
-            (value) {
-              final newSeconds = value * 60 + seconds;
-              timerNotifier.setCustomTime(newSeconds);
-            },
-          ),
+          _buildNumberPicker(theme, colorScheme, 'Minuti', minutes, 59, (
+            value,
+          ) {
+            final newSeconds = value * 60 + seconds;
+            timerNotifier.setCustomTime(newSeconds);
+          }),
           VerticalDivider(
             color: colorScheme.outline.withAlpha(26),
             width: AppTheme.spacing.lg,
           ),
-          _buildNumberPicker(
-            theme,
-            colorScheme,
-            'Secondi',
-            seconds,
-            59,
-            (value) {
-              final newSeconds = minutes * 60 + value;
-              timerNotifier.setCustomTime(newSeconds);
-            },
-          ),
+          _buildNumberPicker(theme, colorScheme, 'Secondi', seconds, 59, (
+            value,
+          ) {
+            final newSeconds = minutes * 60 + value;
+            timerNotifier.setCustomTime(newSeconds);
+          }),
         ],
       ),
     );
@@ -854,8 +881,12 @@ class _ExerciseTimerBottomSheetState
     );
   }
 
-  Widget _buildStartButton(ExerciseTimerNotifier timerNotifier, bool isEmom,
-      ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildStartButton(
+    ExerciseTimerNotifier timerNotifier,
+    bool isEmom,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
