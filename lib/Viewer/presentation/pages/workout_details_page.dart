@@ -169,7 +169,11 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                   crossAxisSpacing: spacing,
                   mainAxisSpacing: spacing,
                   // Più spazio verticale per contenuti leggibili nelle card
-                  childAspectRatio: screenWidth >= 1200 ? 1.0 : 0.9,
+                  childAspectRatio: screenWidth >= 1600
+                      ? 1.0
+                      : screenWidth >= 1200
+                          ? 0.85
+                          : 0.9,
                 ),
                 itemCount: groupedExercises.length,
                 key: PageStorageKey('workout_exercises_${widget.workoutId}'),
@@ -178,13 +182,17 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                   final superSetId = entry.key;
                   final exercises = entry.value;
 
-                  return superSetId == null || superSetId.isEmpty
-                      ? _buildSingleExerciseCard(exercises.first, context)
-                      : _buildSuperSetCard(
-                          superSetExercises: exercises,
-                          context: context,
-                          isListMode: false,
-                        );
+                   return Semantics(
+                     container: true,
+                     label: 'Scheda esercizio',
+                     child: superSetId == null || superSetId.isEmpty
+                         ? _buildSingleExerciseCard(exercises.first, context)
+                         : _buildSuperSetCard(
+                             superSetExercises: exercises,
+                             context: context,
+                             isListMode: false,
+                           ),
+                   );
                 },
               ),
             ),
