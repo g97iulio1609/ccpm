@@ -3,6 +3,26 @@ import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/UI/components/series_header.dart';
 
+// Calcolo rigoroso di completamento: serve a evitare che serie sotto i minimi
+// (reps/weight) risultino completate anche se un flag legacy è true.
+bool _isStrictlyDone(Series s) {
+  final int minReps = s.reps;
+  final int? maxReps = s.maxReps;
+  final double minWeight = s.weight;
+  final double? maxWeight = s.maxWeight;
+
+  final int repsDone = s.repsDone;
+  final double weightDone = s.weightDone;
+
+  final bool repsOk = maxReps != null
+      ? (repsDone >= minReps && repsDone <= maxReps)
+      : (repsDone >= minReps);
+  final bool weightOk = maxWeight != null
+      ? (weightDone >= minWeight && weightDone <= maxWeight)
+      : (weightDone >= minWeight);
+  return repsOk && weightOk;
+}
+
 class SeriesList extends StatelessWidget {
   final List<Series> series;
   final void Function(Series series) onSeriesTap;
@@ -35,6 +55,8 @@ class SeriesList extends StatelessWidget {
         ...series.asMap().entries.map((entry) {
           final index = entry.key;
           final s = entry.value;
+          final done = _isStrictlyDone(s);
+          final attempted = s.hasExecutionData && !done;
           return Container(
             margin: EdgeInsets.only(bottom: AppTheme.spacing.xs),
             padding: EdgeInsets.symmetric(
@@ -42,16 +64,20 @@ class SeriesList extends StatelessWidget {
               horizontal: AppTheme.spacing.sm,
             ),
             decoration: BoxDecoration(
-              color: s.isCompleted
+              color: done
                   ? Theme.of(
                       context,
                     ).colorScheme.primaryContainer.withValues(alpha: 0.16)
-                  : Colors.transparent,
+                  : attempted
+                      ? colorScheme.tertiaryContainer.withValues(alpha: 0.12)
+                      : Colors.transparent,
               borderRadius: BorderRadius.circular(AppTheme.radii.sm),
               border: Border.all(
-                color: Theme.of(context).colorScheme.outlineVariant.withValues(
-                  alpha: s.isCompleted ? 0 : 0.3,
-                ),
+                color: attempted
+                    ? colorScheme.tertiary.withValues(alpha: 0.5)
+                    : Theme.of(context).colorScheme.outlineVariant.withValues(
+                        alpha: done ? 0 : 0.3,
+                      ),
               ),
             ),
             child: _SeriesRow(
@@ -82,17 +108,21 @@ class _SeriesRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final done = series.isCompleted;
+  final done = _isStrictlyDone(series);
+  final attempted = series.hasExecutionData && !done;
     return Row(
       children: [
         SizedBox(
           width: 32,
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 4),
-            decoration: BoxDecoration(
-              color: done
-                  ? colorScheme.primaryContainer
-                  : colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+      decoration: BoxDecoration(
+        color: done
+          ? colorScheme.primaryContainer
+          : (attempted
+            ? colorScheme.tertiaryContainer
+            : colorScheme.surfaceContainerHighest
+              .withValues(alpha: 0.4)),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
@@ -100,7 +130,9 @@ class _SeriesRow extends StatelessWidget {
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
                 color: done
                     ? colorScheme.onPrimaryContainer
-                    : colorScheme.onSurfaceVariant,
+                    : (attempted
+                        ? colorScheme.onTertiaryContainer
+                        : colorScheme.onSurfaceVariant),
                 fontWeight: FontWeight.w600,
               ),
               textAlign: TextAlign.center,
@@ -142,13 +174,19 @@ class _SeriesRow extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Text(
-                done ? '${series.repsDone}×${series.weightDone}' : '-',
+        done
+          ? '${series.repsDone}×${_fmtNum(series.weightDone)}'
+          : (attempted
+            ? _attemptedText(series)
+            : '-'),
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: done ? FontWeight.w600 : FontWeight.normal,
-                  color: done
-                      ? colorScheme.onSurface
-                      : colorScheme.onSurfaceVariant,
+          fontWeight: done ? FontWeight.w600 : FontWeight.normal,
+          color: done
+            ? colorScheme.onSurface
+            : (attempted
+              ? colorScheme.tertiary
+              : colorScheme.onSurfaceVariant),
                 ),
               ),
             ),
@@ -158,12 +196,14 @@ class _SeriesRow extends StatelessWidget {
           width: 40,
           child: IconButton(
             icon: Icon(
-              series.isCompleted
+              done
                   ? Icons.check_circle_rounded
                   : Icons.radio_button_unchecked_outlined,
-              color: series.isCompleted
+              color: done
                   ? colorScheme.primary
-                  : colorScheme.onSurfaceVariant,
+                  : (attempted
+                      ? colorScheme.tertiary
+                      : colorScheme.onSurfaceVariant),
               size: 24,
             ),
             onPressed: onToggleComplete,
@@ -219,4 +259,14 @@ class _SeriesRow extends StatelessWidget {
       ),
     );
   }
+
+  String _attemptedText(Series s) {
+    final hasReps = s.repsDone > 0;
+    final hasWeight = s.weightDone > 0;
+    if (hasReps && hasWeight) return '${s.repsDone}×${_fmtNum(s.weightDone)}';
+    if (hasReps) return '${s.repsDone}×-';
+    return '-×${_fmtNum(s.weightDone)}';
+  }
+
+  String _fmtNum(num v) => (v % 1 == 0) ? v.toInt().toString() : v.toStringAsFixed(1);
 }

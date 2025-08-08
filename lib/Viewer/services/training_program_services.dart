@@ -10,10 +10,31 @@ class TrainingProgramServices {
     int? repsDone,
     double? weightDone,
   ) async {
-    await _firestore.collection('series').doc(seriesId).update({
-      'done': repsDone != null && weightDone != null,
-      'reps_done': repsDone,
-      'weight_done': weightDone,
+    final seriesRef = _firestore.collection('series').doc(seriesId);
+    final doc = await seriesRef.get();
+    final data = doc.data();
+
+    int reps = 0;
+    int? maxReps;
+    double weight = 0.0;
+    double? maxWeight;
+
+    if (data != null) {
+      reps = (data['reps'] ?? 0) as int;
+      maxReps = data['maxReps'] as int?;
+      weight = (data['weight'] ?? 0.0).toDouble();
+      final mw = data['maxWeight'];
+      maxWeight = mw is num ? mw.toDouble() : null;
+    }
+
+    final rd = repsDone ?? 0;
+    final wd = weightDone ?? 0.0;
+    final isDone = _isSeriesDone(reps, maxReps, weight, maxWeight, rd, wd);
+
+    await seriesRef.update({
+      'reps_done': rd,
+      'weight_done': wd,
+      'done': isDone,
     });
   }
 

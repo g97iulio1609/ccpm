@@ -400,16 +400,26 @@ class WorkoutService {
     final weight = seriesData['weight'] ?? 0.0;
     final maxWeight = seriesData['maxWeight'];
 
-    bool repsCompleted = maxReps != null
-        ? repsDone >= reps && (repsDone <= maxReps || repsDone > maxReps)
-        : repsDone >= reps;
+  final int minReps = (reps is int) ? reps : int.tryParse(reps.toString()) ?? 0;
+  final double minWeight = (weight is num)
+    ? weight.toDouble()
+    : double.tryParse(weight.toString()) ?? 0.0;
+  final int? maxRepsNum = (maxReps is int)
+    ? maxReps
+    : (maxReps != null ? int.tryParse(maxReps.toString()) : null);
+  final double? maxWeightNum = (maxWeight is num)
+    ? maxWeight.toDouble()
+    : (maxWeight != null ? double.tryParse(maxWeight.toString()) : null);
 
-    bool weightCompleted = maxWeight != null
-        ? weightDone >= weight &&
-              (weightDone <= maxWeight || weightDone > maxWeight)
-        : weightDone >= weight;
+  final bool repsCompleted = maxRepsNum != null
+    ? (repsDone >= minReps && repsDone <= maxRepsNum)
+    : (repsDone >= minReps);
 
-    return repsCompleted && weightCompleted;
+  final bool weightCompleted = maxWeightNum != null
+    ? (weightDone >= minWeight && weightDone <= maxWeightNum)
+    : (weightDone >= minWeight);
+
+  return repsCompleted && weightCompleted;
   }
 
   Future<void> toggleSeriesDone(Map<String, dynamic> series) async {
