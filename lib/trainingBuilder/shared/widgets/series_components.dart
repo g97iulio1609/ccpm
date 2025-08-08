@@ -150,7 +150,7 @@ class SeriesInfoCard extends StatelessWidget {
 }
 
 /// Component for expandable series group card
-class SeriesGroupCard extends StatelessWidget {
+class SeriesGroupCard extends StatefulWidget {
   final List<Series> seriesGroup;
   final bool isExpanded;
   final VoidCallback onExpansionChanged;
@@ -167,37 +167,62 @@ class SeriesGroupCard extends StatelessWidget {
   });
 
   @override
+  State<SeriesGroupCard> createState() => _SeriesGroupCardState();
+}
+
+class _SeriesGroupCardState extends State<SeriesGroupCard>
+    with TickerProviderStateMixin {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      margin: EdgeInsets.only(bottom: AppTheme.spacing.sm),
-      decoration: _buildCardDecoration(colorScheme),
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          initiallyExpanded: isExpanded,
-          onExpansionChanged: (_) => onExpansionChanged(),
-          title: SeriesGroupHeader(
-            seriesGroup: seriesGroup,
-            isExpanded: isExpanded,
-            onOptionsPressed: onOptionsPressed,
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        margin: EdgeInsets.only(bottom: AppTheme.spacing.sm),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHighest.withAlpha(38),
+          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          border: Border.all(color: colorScheme.outline.withAlpha(26)),
+          boxShadow: _isHovered
+              ? [
+                  BoxShadow(
+                    color: colorScheme.shadow.withAlpha(40),
+                    blurRadius: 12,
+                    spreadRadius: 1,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : AppTheme.elevations.small,
+        ),
+        child: Theme(
+          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+          child: AnimatedSize(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeInOutCubic,
+            child: ExpansionTile(
+              initiallyExpanded: widget.isExpanded,
+              onExpansionChanged: (_) => widget.onExpansionChanged(),
+              title: SeriesGroupHeader(
+                seriesGroup: widget.seriesGroup,
+                isExpanded: widget.isExpanded,
+                onOptionsPressed: widget.onOptionsPressed,
+              ),
+              trailing: _buildTrailingButton(colorScheme),
+              children: _buildSeriesChildren(),
+            ),
           ),
-          trailing: _buildTrailingButton(colorScheme),
-          children: _buildSeriesChildren(),
         ),
       ),
     );
   }
 
-  BoxDecoration _buildCardDecoration(ColorScheme colorScheme) {
-    return BoxDecoration(
-      color: colorScheme.surfaceContainerHighest.withAlpha(38),
-      borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-      border: Border.all(color: colorScheme.outline.withAlpha(26)),
-      boxShadow: AppTheme.elevations.small,
-    );
-  }
+  // Removed unused _buildCardDecoration (integrated directly in AnimatedContainer)
 
   Widget _buildTrailingButton(ColorScheme colorScheme) {
     return IconButton(
@@ -205,13 +230,13 @@ class SeriesGroupCard extends StatelessWidget {
         Icons.more_vert,
         color: colorScheme.onSurfaceVariant.withAlpha(128),
       ),
-      onPressed: onOptionsPressed,
+      onPressed: widget.onOptionsPressed,
     );
   }
 
   List<Widget> _buildSeriesChildren() {
-    return seriesGroup.asMap().entries.map((entry) {
-      return seriesBuilder(entry.value, entry.key);
+    return widget.seriesGroup.asMap().entries.map((entry) {
+      return widget.seriesBuilder(entry.value, entry.key);
     }).toList();
   }
 }
