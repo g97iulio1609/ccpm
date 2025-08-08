@@ -691,7 +691,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                           children: [
                             Expanded(
                               child: Text(
-                                '${String.fromCharCode(65 + exIndex)}',
+                                String.fromCharCode(65 + exIndex),
                                 textAlign: TextAlign.center,
                                 style: Theme.of(context).textTheme.bodyMedium,
                               ),
