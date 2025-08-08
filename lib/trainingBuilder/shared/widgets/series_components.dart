@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/shared/utils/format_utils.dart' as tb_format;
+import 'package:alphanessone/UI/components/kpi_badge.dart';
 
 /// Component for displaying series group information
 class SeriesGroupHeader extends StatelessWidget {
@@ -107,6 +108,13 @@ class SeriesInfoCard extends StatelessWidget {
   }
 
   Widget _buildSeriesDetails(ThemeData theme, ColorScheme colorScheme) {
+    final repsLabel = series.maxReps != null
+        ? '${series.reps}-${series.maxReps} reps'
+        : '${series.reps} reps';
+    final weightLabel = series.maxWeight != null
+        ? '${series.weight.toStringAsFixed(1)}-${series.maxWeight!.toStringAsFixed(1)} kg'
+        : '${series.weight.toStringAsFixed(1)} kg';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -118,16 +126,12 @@ class SeriesInfoCard extends StatelessWidget {
           ),
         ),
         SizedBox(height: AppTheme.spacing.xs),
-        Text(
-          tb_format.FormatUtils.formatSeriesInfo(
-            reps: series.reps,
-            maxReps: series.maxReps,
-            weight: series.weight,
-            maxWeight: series.maxWeight,
-          ),
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: colorScheme.onSurfaceVariant.withAlpha(128),
-          ),
+        Row(
+          children: [
+            KpiBadge(text: repsLabel, icon: Icons.repeat, color: colorScheme.primary),
+            SizedBox(width: AppTheme.spacing.xs),
+            KpiBadge(text: weightLabel, icon: Icons.monitor_weight, color: colorScheme.secondary),
+          ],
         ),
       ],
     );
