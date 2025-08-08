@@ -293,6 +293,9 @@ class MaxRMDashboard extends HookConsumerWidget {
                                           : 0,
                                     ),
                                     child: AppCard(
+                                      background: colorScheme
+                                          .surfaceContainerHighest
+                                          .withAlpha(38),
                                       header: SectionHeader(
                                         title:
                                             exercises

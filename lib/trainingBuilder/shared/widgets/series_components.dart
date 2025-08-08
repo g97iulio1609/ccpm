@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/shared/shared.dart';
-import 'package:alphanessone/trainingBuilder/shared/utils/format_utils.dart' as tb_format;
+import 'package:alphanessone/trainingBuilder/shared/utils/format_utils.dart'
+    as tb_format;
 import 'package:alphanessone/UI/components/kpi_badge.dart';
 
 /// Component for displaying series group information
@@ -27,9 +28,7 @@ class SeriesGroupHeader extends StatelessWidget {
       children: [
         _buildSeriesCountBadge(theme, colorScheme),
         SizedBox(width: AppTheme.spacing.sm),
-        Expanded(
-          child: _buildSeriesInfo(series, theme, colorScheme),
-        ),
+        Expanded(child: _buildSeriesInfo(series, theme, colorScheme)),
       ],
     );
   }
@@ -55,7 +54,10 @@ class SeriesGroupHeader extends StatelessWidget {
   }
 
   Widget _buildSeriesInfo(
-      Series series, ThemeData theme, ColorScheme colorScheme) {
+    Series series,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
     return Text(
       tb_format.FormatUtils.formatSeriesInfo(
         reps: series.reps,
@@ -63,9 +65,7 @@ class SeriesGroupHeader extends StatelessWidget {
         weight: series.weight,
         maxWeight: series.maxWeight,
       ),
-      style: theme.textTheme.bodyLarge?.copyWith(
-        color: colorScheme.onSurface,
-      ),
+      style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
       softWrap: true,
       maxLines: 2,
     );
@@ -77,11 +77,7 @@ class SeriesInfoCard extends StatelessWidget {
   final Series series;
   final VoidCallback? onRemove;
 
-  const SeriesInfoCard({
-    super.key,
-    required this.series,
-    this.onRemove,
-  });
+  const SeriesInfoCard({super.key, required this.series, this.onRemove});
 
   @override
   Widget build(BuildContext context) {
@@ -128,9 +124,17 @@ class SeriesInfoCard extends StatelessWidget {
         SizedBox(height: AppTheme.spacing.xs),
         Row(
           children: [
-            KpiBadge(text: repsLabel, icon: Icons.repeat, color: colorScheme.primary),
+            KpiBadge(
+              text: repsLabel,
+              icon: Icons.repeat,
+              color: colorScheme.primary,
+            ),
             SizedBox(width: AppTheme.spacing.xs),
-            KpiBadge(text: weightLabel, icon: Icons.monitor_weight, color: colorScheme.secondary),
+            KpiBadge(
+              text: weightLabel,
+              icon: Icons.monitor_weight,
+              color: colorScheme.secondary,
+            ),
           ],
         ),
       ],
@@ -139,10 +143,7 @@ class SeriesInfoCard extends StatelessWidget {
 
   Widget _buildRemoveButton(ColorScheme colorScheme) {
     return IconButton(
-      icon: Icon(
-        Icons.remove_circle_outline,
-        color: colorScheme.error,
-      ),
+      icon: Icon(Icons.remove_circle_outline, color: colorScheme.error),
       onPressed: onRemove,
     );
   }
@@ -191,11 +192,9 @@ class SeriesGroupCard extends StatelessWidget {
 
   BoxDecoration _buildCardDecoration(ColorScheme colorScheme) {
     return BoxDecoration(
-      color: colorScheme.surface,
+      color: colorScheme.surfaceContainerHighest.withAlpha(38),
       borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-      border: Border.all(
-        color: colorScheme.outline.withAlpha(26),
-      ),
+      border: Border.all(color: colorScheme.outline.withAlpha(26)),
       boxShadow: AppTheme.elevations.small,
     );
   }
@@ -236,13 +235,9 @@ class SeriesActionButtons extends StatelessWidget {
 
     return Row(
       children: [
-        Expanded(
-          child: _buildReorderButton(colorScheme),
-        ),
+        Expanded(child: _buildReorderButton(colorScheme)),
         SizedBox(width: AppTheme.spacing.md),
-        Expanded(
-          child: _buildAddButton(colorScheme),
-        ),
+        Expanded(child: _buildAddButton(colorScheme)),
       ],
     );
   }
@@ -253,9 +248,7 @@ class SeriesActionButtons extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: colorScheme.surfaceContainerHighest,
         foregroundColor: colorScheme.onSurface,
-        padding: EdgeInsets.symmetric(
-          vertical: AppTheme.spacing.md,
-        ),
+        padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.md),
       ),
       icon: Icon(Icons.reorder, size: 20),
       label: Text(isSmallScreen ? 'Reorder' : 'Reorder Series'),
@@ -268,9 +261,7 @@ class SeriesActionButtons extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
-        padding: EdgeInsets.symmetric(
-          vertical: AppTheme.spacing.md,
-        ),
+        padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.md),
       ),
       icon: Icon(Icons.add, size: 20),
       label: Text(isSmallScreen ? 'Add' : 'Add Series'),
