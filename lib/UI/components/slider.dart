@@ -117,7 +117,7 @@ class AppSlider extends StatelessWidget {
                 : colorScheme.surfaceContainerHighest.withAlpha(76),
             inactiveTrackColor: enabled
                 ? (inactiveColor ?? colorScheme.surfaceContainerHighest)
-                    .withAlpha(76)
+                      .withAlpha(76)
                 : colorScheme.surfaceContainerHighest.withAlpha(26),
             thumbColor: enabled
                 ? activeColor ?? colorScheme.primary
@@ -133,7 +133,7 @@ class AppSlider extends StatelessWidget {
                 : colorScheme.surfaceContainerHighest.withAlpha(76),
             inactiveTickMarkColor: enabled
                 ? (inactiveColor ?? colorScheme.surfaceContainerHighest)
-                    .withAlpha(76)
+                      .withAlpha(76)
                 : colorScheme.surfaceContainerHighest.withAlpha(26),
           ),
           child: Slider(
@@ -352,7 +352,7 @@ class AppRangeSlider extends StatelessWidget {
                 : colorScheme.surfaceContainerHighest.withAlpha(76),
             inactiveTrackColor: enabled
                 ? (inactiveColor ?? colorScheme.surfaceContainerHighest)
-                    .withAlpha(76)
+                      .withAlpha(76)
                 : colorScheme.surfaceContainerHighest.withAlpha(26),
             thumbColor: enabled
                 ? activeColor ?? colorScheme.primary
@@ -368,7 +368,7 @@ class AppRangeSlider extends StatelessWidget {
                 : colorScheme.surfaceContainerHighest.withAlpha(76),
             inactiveTickMarkColor: enabled
                 ? (inactiveColor ?? colorScheme.surfaceContainerHighest)
-                    .withAlpha(76)
+                      .withAlpha(76)
                 : colorScheme.surfaceContainerHighest.withAlpha(26),
           ),
           child: RangeSlider(

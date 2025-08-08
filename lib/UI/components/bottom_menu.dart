@@ -46,17 +46,17 @@ class BottomMenu extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: height ?? MediaQuery.of(context).size.height * 0.85,
+    return ClipRRect(
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(AppTheme.radii.xl),
       ),
-      decoration: BoxDecoration(
+      child: Material(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppTheme.radii.xl),
-        ),
-      ),
-      child: Column(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: height ?? MediaQuery.of(context).size.height * 0.85,
+          ),
+          child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // Handle
@@ -107,31 +107,28 @@ class BottomMenu extends StatelessWidget {
           ),
 
           // Divider
-          Container(
-            height: 1,
-            color: colorScheme.outline.withAlpha(26),
-          ),
+          Container(height: 1, color: colorScheme.outline.withAlpha(26)),
 
           // Content
           if (items != null && items!.isNotEmpty)
             Flexible(
               child: ListView.builder(
                 shrinkWrap: true,
-                padding: EdgeInsets.symmetric(
-                  vertical: AppTheme.spacing.md,
-                ),
+                padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.md),
                 itemCount: items!.length,
                 itemBuilder: (context, index) {
                   final item = items![index];
                   return ListTile(
-                    leading: item.leading ??
+                    leading:
+                        item.leading ??
                         (item.icon != null
                             ? Icon(
                                 item.icon,
                                 color: item.isDestructive
                                     ? colorScheme.error
-                                    : colorScheme.onSurfaceVariant
-                                        .withAlpha(128),
+                                    : colorScheme.onSurfaceVariant.withAlpha(
+                                        128,
+                                      ),
                               )
                             : null),
                     title: Text(
@@ -146,8 +143,9 @@ class BottomMenu extends StatelessWidget {
                         ? Text(
                             item.subtitle!,
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color:
-                                  colorScheme.onSurfaceVariant.withAlpha(179),
+                              color: colorScheme.onSurfaceVariant.withAlpha(
+                                179,
+                              ),
                             ),
                           )
                         : null,
@@ -160,10 +158,7 @@ class BottomMenu extends StatelessWidget {
 
           // Actions
           if (actions != null && actions!.isNotEmpty) ...[
-            Container(
-              height: 1,
-              color: colorScheme.outline.withAlpha(26),
-            ),
+            Container(height: 1, color: colorScheme.outline.withAlpha(26)),
             Padding(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               child: Column(
@@ -177,6 +172,8 @@ class BottomMenu extends StatelessWidget {
             ),
           ],
         ],
+          ),
+        ),
       ),
     );
   }

@@ -2,21 +2,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:logger/logger.dart';
 import 'package:alphanessone/models/user_model.dart';
-import 'package:alphanessone/trainingBuilder/models/training_model.dart';
-import 'package:alphanessone/trainingBuilder/models/week_model.dart';
-import 'package:alphanessone/trainingBuilder/models/workout_model.dart';
-import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import 'ai_extension.dart';
 import 'package:alphanessone/trainingBuilder/services/training_services.dart';
-import 'package:alphanessone/trainingBuilder/models/series_model.dart';
 
 class TrainingExtension implements AIExtension {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final Logger _logger = Logger(
-    printer: PrettyPrinter(),
+  final Logger _logger = Logger(printer: PrettyPrinter());
+  final TrainingProgramService _trainingService = TrainingProgramService(
+    FirestoreService(),
   );
-  final TrainingProgramService _trainingService =
-      TrainingProgramService(FirestoreService());
 
   @override
   Future<bool> canHandle(Map<String, dynamic> interpretation) async {
@@ -24,8 +19,11 @@ class TrainingExtension implements AIExtension {
   }
 
   @override
-  Future<String?> handle(Map<String, dynamic> interpretation, String userId,
-      UserModel user) async {
+  Future<String?> handle(
+    Map<String, dynamic> interpretation,
+    String userId,
+    UserModel user,
+  ) async {
     try {
       final rawActions = interpretation['actions'];
 
@@ -40,9 +38,11 @@ class TrainingExtension implements AIExtension {
 
       // Converti la lista di azioni nel tipo corretto
       final actions = (rawActions as List)
-          .map((action) => action is Map<String, dynamic>
-              ? action
-              : Map<String, dynamic>.from(action))
+          .map(
+            (action) => action is Map<String, dynamic>
+                ? action
+                : Map<String, dynamic>.from(action),
+          )
           .toList();
 
       // Gestione delle azioni multiple
@@ -62,11 +62,11 @@ class TrainingExtension implements AIExtension {
         try {
           switch (actionType) {
             case 'add_week':
-              final weekNumber = actionData['params']?['weekNumber'] as int?;
               result = await _handleAddWeek(userId);
               if (result?.contains('Ho aggiunto la settimana') ?? false) {
-                final weekMatch =
-                    RegExp(r'settimana (\d+)').firstMatch(result!);
+                final weekMatch = RegExp(
+                  r'settimana (\d+)',
+                ).firstMatch(result!);
                 if (weekMatch != null) {
                   context['weekNumber'] = int.parse(weekMatch.group(1)!);
                 }
@@ -78,8 +78,9 @@ class TrainingExtension implements AIExtension {
                   actionData['params']?['weekNumber'] ?? context['weekNumber'];
               result = await _handleAddWorkout(userId, weekNumber as int?);
               if (result?.contains('Ho aggiunto l\'allenamento') ?? false) {
-                final workoutMatch =
-                    RegExp(r'allenamento (\d+)').firstMatch(result!);
+                final workoutMatch = RegExp(
+                  r'allenamento (\d+)',
+                ).firstMatch(result!);
                 if (workoutMatch != null) {
                   context['workoutOrder'] = int.parse(workoutMatch.group(1)!);
                 }
@@ -89,7 +90,8 @@ class TrainingExtension implements AIExtension {
             case 'add_exercise':
               final weekNumber =
                   actionData['params']?['weekNumber'] ?? context['weekNumber'];
-              final workoutOrder = actionData['params']?['workoutOrder'] ??
+              final workoutOrder =
+                  actionData['params']?['workoutOrder'] ??
                   context['workoutOrder'];
               final exerciseName = actionData['params']?['exercise'] as String?;
               final exerciseType =
@@ -104,8 +106,9 @@ class TrainingExtension implements AIExtension {
               // Salva il nome dell'esercizio nel contesto per le serie successive
               if (result?.contains('Ho aggiunto l\'esercizio') ?? false) {
                 // Estrai il nome esatto dell'esercizio dal risultato usando RegExp
-                final exerciseMatch =
-                    RegExp(r'\"([^\"]+)\"').firstMatch(result ?? '');
+                final exerciseMatch = RegExp(
+                  r'\"([^\"]+)\"',
+                ).firstMatch(result ?? '');
                 if (exerciseMatch != null && exerciseMatch.groupCount >= 1) {
                   context['exerciseName'] = exerciseMatch.group(1);
                 } else {
@@ -119,7 +122,8 @@ class TrainingExtension implements AIExtension {
               final weekNumber =
                   actionData['params']?['weekNumber'] ?? context['weekNumber'];
               final workoutOrder = context['workoutOrder'];
-              final exerciseName = actionData['params']?['exerciseName'] ??
+              final exerciseName =
+                  actionData['params']?['exerciseName'] ??
                   context['exerciseName'];
               final sets = actionData['params']?['sets'] as int?;
               final reps = actionData['params']?['reps'] as int?;
@@ -179,8 +183,11 @@ class TrainingExtension implements AIExtension {
 
             default:
               // Gestisci altre azioni singole
-              result =
-                  await _handleSingleAction(actionType, actionData, userId);
+              result = await _handleSingleAction(
+                actionType,
+                actionData,
+                userId,
+              );
           }
 
           if (result != null) {
@@ -188,24 +195,33 @@ class TrainingExtension implements AIExtension {
             _logger.i('Azione $actionType completata con successo: $result');
           }
         } catch (e) {
-          _logger.e('Errore durante l\'esecuzione dell\'azione $actionType',
-              error: e);
-          results
-              .add('Errore durante l\'esecuzione dell\'azione $actionType: $e');
+          _logger.e(
+            'Errore durante l\'esecuzione dell\'azione $actionType',
+            error: e,
+          );
+          results.add(
+            'Errore durante l\'esecuzione dell\'azione $actionType: $e',
+          );
         }
       }
 
       // Combina i risultati in un'unica risposta
       return results.join('\n');
     } catch (e, stackTrace) {
-      _logger.e('Error handling multiple actions',
-          error: e, stackTrace: stackTrace);
+      _logger.e(
+        'Error handling multiple actions',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return 'Si è verificato un errore durante l\'esecuzione delle azioni.';
     }
   }
 
   Future<String?> _handleSingleAction(
-      String action, Map<String, dynamic> interpretation, String userId) async {
+    String action,
+    Map<String, dynamic> interpretation,
+    String userId,
+  ) async {
     switch (action) {
       case 'query_program':
         final bool current = interpretation['current'] ?? false;
@@ -230,13 +246,22 @@ class TrainingExtension implements AIExtension {
         final exerciseName = interpretation['exerciseName'] as String?;
         final exerciseType = interpretation['exerciseType'] as String?;
         return await _handleAddExercise(
-            userId, weekNumber, workoutOrder, exerciseName, exerciseType);
+          userId,
+          weekNumber,
+          workoutOrder,
+          exerciseName,
+          exerciseType,
+        );
       case 'remove_exercise':
         final weekNumber = interpretation['weekNumber'] as int?;
         final workoutOrder = interpretation['workoutOrder'] as int?;
         final exerciseName = interpretation['exerciseName'] as String?;
         return await _handleRemoveExercise(
-            userId, weekNumber, workoutOrder, exerciseName);
+          userId,
+          weekNumber,
+          workoutOrder,
+          exerciseName,
+        );
       case 'add_series':
         final weekNumber = interpretation['weekNumber'] as int?;
         final workoutOrder = interpretation['workoutOrder'] as int?;
@@ -248,23 +273,29 @@ class TrainingExtension implements AIExtension {
         final intensity = interpretation['intensity'] as String?;
         final maxIntensity = interpretation['maxIntensity'] as String?;
         return await _handleAddSeries(
-            userId,
-            weekNumber,
-            workoutOrder,
-            exerciseName,
-            sets,
-            reps,
-            weight,
-            intensity,
-            maxWeight,
-            maxIntensity);
+          userId,
+          weekNumber,
+          workoutOrder,
+          exerciseName,
+          sets,
+          reps,
+          weight,
+          intensity,
+          maxWeight,
+          maxIntensity,
+        );
       case 'remove_series':
         final weekNumber = interpretation['weekNumber'] as int?;
         final workoutOrder = interpretation['workoutOrder'] as int?;
         final exerciseName = interpretation['exerciseName'] as String?;
         final seriesOrder = interpretation['seriesOrder'] as int?;
         return await _handleRemoveSeries(
-            userId, weekNumber, workoutOrder, exerciseName, seriesOrder);
+          userId,
+          weekNumber,
+          workoutOrder,
+          exerciseName,
+          seriesOrder,
+        );
       default:
         _logger.w('Unrecognized action for training: $action');
         return 'Azione non riconosciuta per training.';
@@ -272,7 +303,9 @@ class TrainingExtension implements AIExtension {
   }
 
   Future<String?> _handleCreateProgram(
-      Map<String, dynamic> interpretation, String userId) async {
+    Map<String, dynamic> interpretation,
+    String userId,
+  ) async {
     _logger.i('Creating training program with interpretation: $interpretation');
     try {
       final program = TrainingProgram(
@@ -283,31 +316,33 @@ class TrainingExtension implements AIExtension {
         status: 'private',
       );
 
-      final programRef =
-          await _firestore.collection('programs').add(program.toMap());
+      final programRef = await _firestore
+          .collection('programs')
+          .add(program.toMap());
       program.id = programRef.id;
 
       if (interpretation['weeks'] != null) {
         for (var weekData in interpretation['weeks']) {
-          final week = Week(
-            number: weekData['number'],
-          );
+          final week = Week(number: weekData['number']);
 
-          final weekRef =
-              await programRef.collection('weeks').add(week.toMap());
-          week.id = weekRef.id;
+          final weekRef = await programRef
+              .collection('weeks')
+              .add(week.toMap());
+          // Note: Cannot set id on final field, handled by Firestore
 
           if (weekData['workouts'] != null) {
             for (var workoutData in weekData['workouts']) {
               final workout = Workout(
                 order: workoutData['order'] ?? 0,
-                name: workoutData['name'] ??
+                name:
+                    workoutData['name'] ??
                     'Allenamento ${workoutData['order']}',
               );
 
-              final workoutRef =
-                  await weekRef.collection('workouts').add(workout.toMap());
-              workout.id = workoutRef.id;
+              final workoutRef = await weekRef
+                  .collection('workouts')
+                  .add(workout.toMap());
+              // Note: Cannot set id on final field, handled by Firestore
 
               if (workoutData['exercises'] != null) {
                 for (var exerciseData in workoutData['exercises']) {
@@ -321,7 +356,7 @@ class TrainingExtension implements AIExtension {
                   final exerciseRef = await workoutRef
                       .collection('exercises')
                       .add(exercise.toMap());
-                  exercise.id = exerciseRef.id;
+                  // Note: Cannot set id on final field, handled by Firestore
 
                   if (exerciseData['series'] != null) {
                     for (var seriesData in exerciseData['series']) {
@@ -333,14 +368,15 @@ class TrainingExtension implements AIExtension {
                         intensity: seriesData['intensity'] ?? '',
                         order: seriesData['order'] ?? 0,
                         done: false,
-                        reps_done: 0,
-                        weight_done: 0,
+                        repsDone: 0,
+                        weightDone: 0.0,
                         maxReps: seriesData['reps'] ?? 0,
                         maxSets: seriesData['sets'] ?? 0,
                         maxWeight: (seriesData['weight'] ?? 0).toDouble(),
                         maxIntensity: seriesData['intensity'] ?? '',
                         maxRpe: '',
                         rpe: '',
+                        exerciseId: exerciseData['exerciseId'] ?? '',
                       );
 
                       await exerciseRef
@@ -358,16 +394,22 @@ class TrainingExtension implements AIExtension {
       _logger.i('Training program "${program.name}" created successfully.');
       return 'Ho creato il programma di allenamento "${program.name}" con ${program.mesocycleNumber} settimane.';
     } catch (e, stackTrace) {
-      _logger.e('Error creating training program',
-          error: e, stackTrace: stackTrace);
+      _logger.e(
+        'Error creating training program',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return 'Si è verificato un errore durante la creazione del programma.';
     }
   }
 
-  Future<String?> _handleQueryProgram(String userId,
-      {bool current = false}) async {
-    _logger
-        .i('Querying training programs for user: $userId, current: $current');
+  Future<String?> _handleQueryProgram(
+    String userId, {
+    bool current = false,
+  }) async {
+    _logger.i(
+      'Querying training programs for user: $userId, current: $current',
+    );
     try {
       if (current) {
         // 1. Prima ottieni il documento dell'utente per il currentProgram
@@ -380,8 +422,9 @@ class TrainingExtension implements AIExtension {
         }
 
         // 2. Recupera il programma usando il TrainingProgramService
-        final program =
-            await _trainingService.fetchTrainingProgram(currentProgramId);
+        final program = await _trainingService.fetchTrainingProgram(
+          currentProgramId,
+        );
 
         if (program == null) {
           _logger.d('Current program not found');
@@ -407,7 +450,8 @@ class TrainingExtension implements AIExtension {
                 if (series.weight > 0) {
                   buffer.write(' @${series.weight}kg');
                 }
-                if (series.intensity.isNotEmpty && series.intensity != '0') {
+                if (series.intensity?.isNotEmpty == true &&
+                    series.intensity != '0') {
                   buffer.write(' ${series.intensity}');
                 }
                 buffer.writeln();
@@ -434,7 +478,8 @@ class TrainingExtension implements AIExtension {
         for (var doc in programsQuery.docs) {
           final program = TrainingProgram.fromFirestore(doc);
           buffer.writeln(
-              '\n• ${program.name} (${program.mesocycleNumber} settimane)');
+            '\n• ${program.name} (${program.mesocycleNumber} settimane)',
+          );
           if (program.description.isNotEmpty) {
             buffer.writeln('  ${program.description}');
           }
@@ -443,46 +488,12 @@ class TrainingExtension implements AIExtension {
         return buffer.toString();
       }
     } catch (e, stackTrace) {
-      _logger.e('Error querying training programs',
-          error: e, stackTrace: stackTrace);
+      _logger.e(
+        'Error querying training programs',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return 'Si è verificato un errore durante la ricerca dei programmi.';
-    }
-  }
-
-  Future<String?> _handleCurrentProgramInfo(String userId) async {
-    _logger.i('Retrieving current training program info for user: $userId');
-    try {
-      final programsQuery = await _firestore
-          .collection('programs')
-          .where('athleteId', isEqualTo: userId)
-          .where('status', isEqualTo: 'active')
-          .get();
-
-      if (programsQuery.docs.isEmpty) {
-        final response =
-            'Non hai un programma di allenamento attivo al momento.';
-        _logger.d(response);
-        return response;
-      }
-
-      final program = TrainingProgram.fromFirestore(programsQuery.docs.first);
-
-      final buffer = StringBuffer();
-      buffer.writeln('Il tuo programma attuale: ${program.name}');
-      if (program.description.isNotEmpty) {
-        buffer.writeln('Descrizione: ${program.description}');
-      }
-      buffer.writeln('Durata: ${program.mesocycleNumber} settimane');
-
-      // Aggiungi ulteriori dettagli se necessario
-
-      final result = buffer.toString();
-      _logger.d('Current training program info: $result');
-      return result;
-    } catch (e, stackTrace) {
-      _logger.e('Error retrieving current program',
-          error: e, stackTrace: stackTrace);
-      return 'Si è verificato un errore durante la ricerca del programma attuale.';
     }
   }
 
@@ -495,8 +506,9 @@ class TrainingExtension implements AIExtension {
         return 'Non hai un programma di allenamento attivo.';
       }
 
-      final program =
-          await _trainingService.fetchTrainingProgram(currentProgramId);
+      final program = await _trainingService.fetchTrainingProgram(
+        currentProgramId,
+      );
       if (program == null) {
         return 'Programma non trovato.';
       }
@@ -534,8 +546,9 @@ class TrainingExtension implements AIExtension {
         return 'Non hai un programma di allenamento attivo.';
       }
 
-      final program =
-          await _trainingService.fetchTrainingProgram(currentProgramId);
+      final program = await _trainingService.fetchTrainingProgram(
+        currentProgramId,
+      );
       if (program == null) {
         return 'Programma non trovato.';
       }
@@ -565,8 +578,8 @@ class TrainingExtension implements AIExtension {
           }
           // Per ogni serie nell'esercizio
           for (var series in exercise.series) {
-            if (series.serieId.isNotEmpty) {
-              program.trackToDeleteSeries.add(series.serieId);
+            if (series.serieId != null && series.serieId!.isNotEmpty) {
+              program.trackToDeleteSeries.add(series.serieId!);
             }
           }
         }
@@ -601,8 +614,9 @@ class TrainingExtension implements AIExtension {
         return 'Non hai un programma di allenamento attivo.';
       }
 
-      final program =
-          await _trainingService.fetchTrainingProgram(currentProgramId);
+      final program = await _trainingService.fetchTrainingProgram(
+        currentProgramId,
+      );
       if (program == null) {
         return 'Programma non trovato.';
       }
@@ -638,7 +652,10 @@ class TrainingExtension implements AIExtension {
   }
 
   Future<String?> _handleRemoveWorkout(
-      String userId, int? weekNumber, int? workoutOrder) async {
+    String userId,
+    int? weekNumber,
+    int? workoutOrder,
+  ) async {
     if (weekNumber == null || workoutOrder == null) {
       return 'Specifica il numero della settimana e l\'ordine dell\'allenamento da rimuovere.';
     }
@@ -651,8 +668,9 @@ class TrainingExtension implements AIExtension {
         return 'Non hai un programma di allenamento attivo.';
       }
 
-      final program =
-          await _trainingService.fetchTrainingProgram(currentProgramId);
+      final program = await _trainingService.fetchTrainingProgram(
+        currentProgramId,
+      );
       if (program == null) {
         return 'Programma non trovato.';
       }
@@ -663,8 +681,9 @@ class TrainingExtension implements AIExtension {
       }
 
       final week = program.weeks[weekIndex];
-      final workoutIndex =
-          week.workouts.indexWhere((w) => w.order == workoutOrder);
+      final workoutIndex = week.workouts.indexWhere(
+        (w) => w.order == workoutOrder,
+      );
       if (workoutIndex == -1) {
         return 'Allenamento $workoutOrder non trovato nella settimana $weekNumber.';
       }
@@ -683,8 +702,8 @@ class TrainingExtension implements AIExtension {
         }
         // Per ogni serie nell'esercizio
         for (var series in exercise.series) {
-          if (series.serieId.isNotEmpty) {
-            program.trackToDeleteSeries.add(series.serieId);
+          if (series.serieId != null && series.serieId!.isNotEmpty) {
+            program.trackToDeleteSeries.add(series.serieId!);
           }
         }
       }
@@ -695,7 +714,9 @@ class TrainingExtension implements AIExtension {
       // Riordina gli allenamenti rimanenti
       for (var i = 0; i < week.workouts.length; i++) {
         if (week.workouts[i].order > workoutOrder) {
-          week.workouts[i].order = week.workouts[i].order - 1;
+          week.workouts[i] = week.workouts[i].copyWith(
+            order: week.workouts[i].order - 1,
+          );
         }
       }
 
@@ -712,16 +733,23 @@ class TrainingExtension implements AIExtension {
     }
   }
 
-  Future<String?> _handleAddExercise(String userId, int? weekNumber,
-      int? workoutOrder, String? exerciseName, String? exerciseType) async {
+  Future<String?> _handleAddExercise(
+    String userId,
+    int? weekNumber,
+    int? workoutOrder,
+    String? exerciseName,
+    String? exerciseType,
+  ) async {
     if (weekNumber == null || workoutOrder == null || exerciseName == null) {
       return 'Specifica il numero della settimana, l\'ordine dell\'allenamento e il nome dell\'esercizio.';
     }
 
     try {
       // Normalizza il nome dell'esercizio (rimuovi spazi extra e converti in lowercase)
-      final normalizedExerciseName =
-          exerciseName.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+      final normalizedExerciseName = exerciseName
+          .trim()
+          .toLowerCase()
+          .replaceAll(RegExp(r'\s+'), ' ');
 
       // 1. Prima cerchiamo l'exerciseId nella collection Exercises
       final exercisesQuery = await _firestore.collection('exercises').get();
@@ -733,8 +761,10 @@ class TrainingExtension implements AIExtension {
       // Cerca il miglior match tra gli esercizi
       for (var doc in exercisesQuery.docs) {
         final dbExerciseName = doc.data()['name'] as String? ?? '';
-        final normalizedDbName =
-            dbExerciseName.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+        final normalizedDbName = dbExerciseName.trim().toLowerCase().replaceAll(
+          RegExp(r'\s+'),
+          ' ',
+        );
 
         if (normalizedDbName == normalizedExerciseName) {
           matchedExerciseId = doc.id;
@@ -758,8 +788,9 @@ class TrainingExtension implements AIExtension {
         return 'Non hai un programma di allenamento attivo.';
       }
 
-      final program =
-          await _trainingService.fetchTrainingProgram(currentProgramId);
+      final program = await _trainingService.fetchTrainingProgram(
+        currentProgramId,
+      );
       if (program == null) {
         return 'Programma non trovato.';
       }
@@ -770,8 +801,9 @@ class TrainingExtension implements AIExtension {
       }
 
       final week = program.weeks[weekIndex];
-      final workoutIndex =
-          week.workouts.indexWhere((w) => w.order == workoutOrder);
+      final workoutIndex = week.workouts.indexWhere(
+        (w) => w.order == workoutOrder,
+      );
       if (workoutIndex == -1) {
         return 'Allenamento $workoutOrder non trovato nella settimana $weekNumber.';
       }
@@ -779,9 +811,11 @@ class TrainingExtension implements AIExtension {
       final workout = week.workouts[workoutIndex];
 
       // Verifica se l'esercizio esiste già nell'allenamento (case insensitive)
-      final existingExerciseIndex = workout.exercises.indexWhere((e) =>
-          e.name.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ') ==
-          normalizedExerciseName);
+      final existingExerciseIndex = workout.exercises.indexWhere(
+        (e) =>
+            e.name.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ') ==
+            normalizedExerciseName,
+      );
 
       if (existingExerciseIndex != -1) {
         return 'L\'esercizio "$matchedName" è già presente nell\'allenamento $workoutOrder della settimana $weekNumber.';
@@ -812,16 +846,22 @@ class TrainingExtension implements AIExtension {
     }
   }
 
-  Future<String?> _handleRemoveExercise(String userId, int? weekNumber,
-      int? workoutOrder, String? exerciseName) async {
+  Future<String?> _handleRemoveExercise(
+    String userId,
+    int? weekNumber,
+    int? workoutOrder,
+    String? exerciseName,
+  ) async {
     if (weekNumber == null || workoutOrder == null || exerciseName == null) {
       return 'Specifica il numero della settimana, l\'ordine dell\'allenamento e il nome dell\'esercizio da rimuovere.';
     }
 
     try {
       // Normalizza il nome dell'esercizio
-      final normalizedExerciseName =
-          exerciseName.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+      final normalizedExerciseName = exerciseName
+          .trim()
+          .toLowerCase()
+          .replaceAll(RegExp(r'\s+'), ' ');
 
       final userDoc = await _firestore.collection('users').doc(userId).get();
       final currentProgramId = userDoc.data()?['currentProgram'] as String?;
@@ -830,8 +870,9 @@ class TrainingExtension implements AIExtension {
         return 'Non hai un programma di allenamento attivo.';
       }
 
-      final program =
-          await _trainingService.fetchTrainingProgram(currentProgramId);
+      final program = await _trainingService.fetchTrainingProgram(
+        currentProgramId,
+      );
       if (program == null) {
         return 'Programma non trovato.';
       }
@@ -842,16 +883,19 @@ class TrainingExtension implements AIExtension {
       }
 
       final week = program.weeks[weekIndex];
-      final workoutIndex =
-          week.workouts.indexWhere((w) => w.order == workoutOrder);
+      final workoutIndex = week.workouts.indexWhere(
+        (w) => w.order == workoutOrder,
+      );
       if (workoutIndex == -1) {
         return 'Allenamento $workoutOrder non trovato nella settimana $weekNumber.';
       }
 
       final workout = week.workouts[workoutIndex];
-      final exerciseIndex = workout.exercises.indexWhere((e) =>
-          e.name.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ') ==
-          normalizedExerciseName);
+      final exerciseIndex = workout.exercises.indexWhere(
+        (e) =>
+            e.name.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ') ==
+            normalizedExerciseName,
+      );
       if (exerciseIndex == -1) {
         return 'Esercizio "$exerciseName" non trovato nell\'allenamento $workoutOrder della settimana $weekNumber.';
       }
@@ -867,8 +911,8 @@ class TrainingExtension implements AIExtension {
 
       // Per ogni serie nell'esercizio
       for (var series in exercise.series) {
-        if (series.serieId.isNotEmpty) {
-          program.trackToDeleteSeries.add(series.serieId);
+        if (series.serieId != null && series.serieId!.isNotEmpty) {
+          program.trackToDeleteSeries.add(series.serieId!);
         }
       }
 
@@ -876,9 +920,10 @@ class TrainingExtension implements AIExtension {
       workout.exercises.removeAt(exerciseIndex);
 
       // Riordina gli esercizi rimanenti
-      for (var exercise in workout.exercises) {
+      for (int i = 0; i < workout.exercises.length; i++) {
+        var exercise = workout.exercises[i];
         if (exercise.order > exerciseOrder) {
-          exercise.order = exercise.order - 1;
+          workout.exercises[i] = exercise.copyWith(order: exercise.order - 1);
         }
       }
 
@@ -896,16 +941,17 @@ class TrainingExtension implements AIExtension {
   }
 
   Future<String?> _handleAddSeries(
-      String userId,
-      int? weekNumber,
-      int? workoutOrder,
-      String? exerciseName,
-      int? sets,
-      int? reps,
-      num? weight,
-      String? intensity,
-      num? maxWeight,
-      String? maxIntensity) async {
+    String userId,
+    int? weekNumber,
+    int? workoutOrder,
+    String? exerciseName,
+    int? sets,
+    int? reps,
+    num? weight,
+    String? intensity,
+    num? maxWeight,
+    String? maxIntensity,
+  ) async {
     if (weekNumber == null ||
         workoutOrder == null ||
         exerciseName == null ||
@@ -916,8 +962,10 @@ class TrainingExtension implements AIExtension {
 
     try {
       // Normalizza il nome dell'esercizio
-      final normalizedExerciseName =
-          exerciseName.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+      final normalizedExerciseName = exerciseName
+          .trim()
+          .toLowerCase()
+          .replaceAll(RegExp(r'\s+'), ' ');
 
       final userDoc = await _firestore.collection('users').doc(userId).get();
       final currentProgramId = userDoc.data()?['currentProgram'] as String?;
@@ -926,8 +974,9 @@ class TrainingExtension implements AIExtension {
         return 'Non hai un programma di allenamento attivo.';
       }
 
-      final program =
-          await _trainingService.fetchTrainingProgram(currentProgramId);
+      final program = await _trainingService.fetchTrainingProgram(
+        currentProgramId,
+      );
       if (program == null) {
         return 'Programma non trovato.';
       }
@@ -938,16 +987,19 @@ class TrainingExtension implements AIExtension {
       }
 
       final week = program.weeks[weekIndex];
-      final workoutIndex =
-          week.workouts.indexWhere((w) => w.order == workoutOrder);
+      final workoutIndex = week.workouts.indexWhere(
+        (w) => w.order == workoutOrder,
+      );
       if (workoutIndex == -1) {
         return 'Allenamento $workoutOrder non trovato nella settimana $weekNumber.';
       }
 
       final workout = week.workouts[workoutIndex];
-      final exerciseIndex = workout.exercises.indexWhere((e) =>
-          e.name.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ') ==
-          normalizedExerciseName);
+      final exerciseIndex = workout.exercises.indexWhere(
+        (e) =>
+            e.name.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ') ==
+            normalizedExerciseName,
+      );
       if (exerciseIndex == -1) {
         return 'Esercizio "$exerciseName" non trovato nell\'allenamento $workoutOrder della settimana $weekNumber.';
       }
@@ -1001,14 +1053,15 @@ class TrainingExtension implements AIExtension {
           intensity: minIntensity,
           order: maxOrder + i + 1,
           done: false,
-          reps_done: 0,
-          weight_done: 0,
+          repsDone: 0,
+          weightDone: 0.0,
           maxReps: maxReps,
           maxSets: 1,
           maxWeight: maxWeightValue,
           maxIntensity: maxIntensityValue,
           maxRpe: '',
           rpe: '',
+          exerciseId: exercise.exerciseId ?? '',
         );
         exercise.series.add(series);
       }
@@ -1051,8 +1104,13 @@ class TrainingExtension implements AIExtension {
     }
   }
 
-  Future<String?> _handleRemoveSeries(String userId, int? weekNumber,
-      int? workoutOrder, String? exerciseName, int? seriesOrder) async {
+  Future<String?> _handleRemoveSeries(
+    String userId,
+    int? weekNumber,
+    int? workoutOrder,
+    String? exerciseName,
+    int? seriesOrder,
+  ) async {
     if (weekNumber == null ||
         workoutOrder == null ||
         exerciseName == null ||
@@ -1062,8 +1120,10 @@ class TrainingExtension implements AIExtension {
 
     try {
       // Normalizza il nome dell'esercizio
-      final normalizedExerciseName =
-          exerciseName.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+      final normalizedExerciseName = exerciseName
+          .trim()
+          .toLowerCase()
+          .replaceAll(RegExp(r'\s+'), ' ');
 
       final userDoc = await _firestore.collection('users').doc(userId).get();
       final currentProgramId = userDoc.data()?['currentProgram'] as String?;
@@ -1072,8 +1132,9 @@ class TrainingExtension implements AIExtension {
         return 'Non hai un programma di allenamento attivo.';
       }
 
-      final program =
-          await _trainingService.fetchTrainingProgram(currentProgramId);
+      final program = await _trainingService.fetchTrainingProgram(
+        currentProgramId,
+      );
       if (program == null) {
         return 'Programma non trovato.';
       }
@@ -1084,23 +1145,27 @@ class TrainingExtension implements AIExtension {
       }
 
       final week = program.weeks[weekIndex];
-      final workoutIndex =
-          week.workouts.indexWhere((w) => w.order == workoutOrder);
+      final workoutIndex = week.workouts.indexWhere(
+        (w) => w.order == workoutOrder,
+      );
       if (workoutIndex == -1) {
         return 'Allenamento $workoutOrder non trovato nella settimana $weekNumber.';
       }
 
       final workout = week.workouts[workoutIndex];
-      final exerciseIndex = workout.exercises.indexWhere((e) =>
-          e.name.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ') ==
-          normalizedExerciseName);
+      final exerciseIndex = workout.exercises.indexWhere(
+        (e) =>
+            e.name.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ') ==
+            normalizedExerciseName,
+      );
       if (exerciseIndex == -1) {
         return 'Esercizio "$exerciseName" non trovato nell\'allenamento $workoutOrder della settimana $weekNumber.';
       }
 
       final exercise = workout.exercises[exerciseIndex];
-      final seriesIndex =
-          exercise.series.indexWhere((s) => s.order == seriesOrder);
+      final seriesIndex = exercise.series.indexWhere(
+        (s) => s.order == seriesOrder,
+      );
       if (seriesIndex == -1) {
         return 'Serie $seriesOrder non trovata per l\'esercizio "$exerciseName".';
       }
@@ -1108,17 +1173,18 @@ class TrainingExtension implements AIExtension {
       final series = exercise.series[seriesIndex];
 
       // Aggiungi l'ID della serie alla lista di tracking
-      if (series.serieId.isNotEmpty) {
-        program.trackToDeleteSeries.add(series.serieId);
+      if (series.serieId != null && series.serieId!.isNotEmpty) {
+        program.trackToDeleteSeries.add(series.serieId!);
       }
 
       // Rimuovi la serie dall'array
       exercise.series.removeAt(seriesIndex);
 
       // Riordina le serie rimanenti
-      for (var series in exercise.series) {
+      for (int i = 0; i < exercise.series.length; i++) {
+        var series = exercise.series[i];
         if (series.order > seriesOrder) {
-          series.order = series.order - 1;
+          exercise.series[i] = series.copyWith(order: series.order - 1);
         }
       }
 

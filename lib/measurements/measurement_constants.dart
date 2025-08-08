@@ -44,7 +44,7 @@ enum MeasurementStatus {
   fitness,
   veryLow,
   high,
-  optimal
+  optimal,
 }
 
 // Configurazioni per il grafico

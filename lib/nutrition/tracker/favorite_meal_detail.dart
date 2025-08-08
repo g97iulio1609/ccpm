@@ -23,12 +23,14 @@ class FavoriteMealDetailState extends ConsumerState<FavoriteMealDetail> {
 
   @override
   Widget build(BuildContext context) {
-    final mealsService = ref.watch(mealsServiceProvider);
+    final mealsService = ref.watch(mealsServiceProvider.notifier);
 
     return Scaffold(
       body: StreamBuilder<List<macros.Food>>(
         stream: mealsService.getFoodsForMealStream(
-            userId: widget.meal.userId, mealId: widget.meal.id!),
+          userId: widget.meal.userId,
+          mealId: widget.meal.id!,
+        ),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             final foods = snapshot.data!;
@@ -41,9 +43,11 @@ class FavoriteMealDetailState extends ConsumerState<FavoriteMealDetail> {
             );
           } else if (snapshot.hasError) {
             return Center(
-                child: Text('Error: ${snapshot.error}',
-                    style: TextStyle(
-                        color: Theme.of(context).colorScheme.onError)));
+              child: Text(
+                'Error: ${snapshot.error}',
+                style: TextStyle(color: Theme.of(context).colorScheme.onError),
+              ),
+            );
           } else {
             return const Center(child: CircularProgressIndicator());
           }
@@ -113,13 +117,17 @@ class FavoriteMealDetailState extends ConsumerState<FavoriteMealDetail> {
             ],
           ),
           child: ListTile(
-            title: Text(food.name,
-                style: GoogleFonts.roboto(
-                    color: Theme.of(context).colorScheme.onSurface)),
+            title: Text(
+              food.name,
+              style: GoogleFonts.roboto(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
             subtitle: Text(
               'C:${food.carbs.toStringAsFixed(2)}g P:${food.protein.toStringAsFixed(2)}g F:${food.fat.toStringAsFixed(2)}g, ${food.kcal.toStringAsFixed(2)}Kcal',
               style: GoogleFonts.roboto(
-                  color: Theme.of(context).colorScheme.onSurface),
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
           ),
         ),
@@ -132,8 +140,9 @@ class FavoriteMealDetailState extends ConsumerState<FavoriteMealDetail> {
       _isSelectionMode = true;
       _selectedFoods.add(foodId);
     });
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('Selection mode enabled')));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Selection mode enabled')));
   }
 
   void _onFoodTap(BuildContext context, String foodId) {
@@ -162,19 +171,14 @@ class FavoriteMealDetailState extends ConsumerState<FavoriteMealDetail> {
   }
 
   void _removeFood(String foodId) async {
-    final mealsService = ref.read(mealsServiceProvider);
+    final mealsService = ref.read(mealsServiceProvider.notifier);
     await mealsService.removeFoodFromFavoriteMeal(
-        userId: widget.meal.userId, mealId: widget.meal.id!, myFoodId: foodId);
+      userId: widget.meal.userId,
+      mealId: widget.meal.id!,
+      myFoodId: foodId,
+    );
     setState(() {
       _selectedFoods.remove(foodId);
-    });
-  }
-
-  void _navigateToFoodSelector(BuildContext context, String? myFoodId) {
-    context.push('/food_tracker/food_selector', extra: {
-      'meal': widget.meal.toMap(),
-      'myFoodId': myFoodId,
-      'isFavoriteMeal': true
     });
   }
 }

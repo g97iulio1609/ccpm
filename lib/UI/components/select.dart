@@ -82,9 +82,7 @@ class AppSelect<T> extends StatelessWidget {
                 ? colorScheme.surfaceContainerHighest.withAlpha(76)
                 : colorScheme.surfaceContainerHighest.withAlpha(26),
             borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-            border: Border.all(
-              color: colorScheme.outline.withAlpha(26),
-            ),
+            border: Border.all(color: colorScheme.outline.withAlpha(26)),
           ),
           child: DropdownButtonFormField<T>(
             value: value,
@@ -216,17 +214,10 @@ class AppSelect<T> extends StatelessWidget {
       validator: validator,
       customItemBuilder: (item) => Row(
         children: [
-          Icon(
-            getIcon(item),
-            size: 20,
-            color: enabled ? null : Colors.grey,
-          ),
+          Icon(getIcon(item), size: 20, color: enabled ? null : Colors.grey),
           SizedBox(width: AppTheme.spacing.sm),
           Expanded(
-            child: Text(
-              getLabel(item),
-              overflow: TextOverflow.ellipsis,
-            ),
+            child: Text(getLabel(item), overflow: TextOverflow.ellipsis),
           ),
         ],
       ),
@@ -265,10 +256,7 @@ class AppSelect<T> extends StatelessWidget {
           ),
           SizedBox(width: AppTheme.spacing.sm),
           Expanded(
-            child: Text(
-              getLabel(item),
-              overflow: TextOverflow.ellipsis,
-            ),
+            child: Text(getLabel(item), overflow: TextOverflow.ellipsis),
           ),
         ],
       ),

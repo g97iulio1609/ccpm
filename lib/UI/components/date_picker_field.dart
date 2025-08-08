@@ -59,18 +59,12 @@ class DatePickerField extends StatelessWidget {
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHighest.withAlpha(76),
               borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-              border: Border.all(
-                color: colorScheme.outline.withAlpha(26),
-              ),
+              border: Border.all(color: colorScheme.outline.withAlpha(26)),
             ),
             child: Row(
               children: [
                 if (icon != null) ...[
-                  Icon(
-                    icon,
-                    color: colorScheme.primary,
-                    size: 20,
-                  ),
+                  Icon(icon, color: colorScheme.primary, size: 20),
                   SizedBox(width: AppTheme.spacing.md),
                 ],
                 Expanded(
@@ -132,9 +126,7 @@ class DatePickerField extends StatelessWidget {
             decoration: BoxDecoration(
               color: colorScheme.surface,
               borderRadius: BorderRadius.circular(AppTheme.radii.xl),
-              border: Border.all(
-                color: colorScheme.outline.withAlpha(26),
-              ),
+              border: Border.all(color: colorScheme.outline.withAlpha(26)),
               boxShadow: AppTheme.elevations.large,
             ),
             child: Column(
@@ -158,8 +150,9 @@ class DatePickerField extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: colorScheme.primaryContainer.withAlpha(76),
-                          borderRadius:
-                              BorderRadius.circular(AppTheme.radii.full),
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radii.full,
+                          ),
                         ),
                         child: Icon(
                           Icons.calendar_today,

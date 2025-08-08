@@ -9,13 +9,13 @@ import 'package:logger/logger.dart';
 import 'dart:convert';
 
 import '../services/ai/ai_settings_service.dart';
-import '../services/ai/AIServices.dart';
+import '../services/ai/ai_services.dart';
 
 /// Stato dei messaggi di chat
 final chatMessagesProvider =
     StateNotifierProvider<ChatMessagesNotifier, List<ChatMessage>>(
-  (ref) => ChatMessagesNotifier(),
-);
+      (ref) => ChatMessagesNotifier(),
+    );
 
 /// Notifier per gestire i messaggi di chat
 class ChatMessagesNotifier extends StateNotifier<List<ChatMessage>> {
@@ -36,21 +36,14 @@ class ChatMessage {
   final String content;
   final Map<String, dynamic>? interpretation; // Per messaggi dell'assistente
 
-  ChatMessage({
-    required this.role,
-    required this.content,
-    this.interpretation,
-  });
+  ChatMessage({required this.role, required this.content, this.interpretation});
 
   bool get isUser => role == 'user';
   bool get isAssistant => role == 'assistant';
 }
 
 class AIChatWidget extends HookConsumerWidget {
-  const AIChatWidget({
-    super.key,
-    required this.userService,
-  });
+  const AIChatWidget({super.key, required this.userService});
 
   final UsersService userService;
 
@@ -61,30 +54,21 @@ class AIChatWidget extends HookConsumerWidget {
     final chatNotifier = ref.watch(chatMessagesProvider.notifier);
     final aiServiceAsync = ref.watch(aiServiceManagerProvider);
     final isProcessing = useState(false);
-    final logger = useMemoized(() => Logger(
-          printer: PrettyPrinter(
-            methodCount: 0,
-            errorMethodCount: 5,
-            lineLength: 50,
-            colors: true,
-            printEmojis: true,
-            dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
-          ),
-        ));
+    final logger = useMemoized(
+      () => Logger(
+        printer: PrettyPrinter(
+          methodCount: 0,
+          errorMethodCount: 5,
+          lineLength: 50,
+          colors: true,
+          printEmojis: true,
+          dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
+        ),
+      ),
+    );
 
     if (settings.availableProviders.isEmpty) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('AI Assistant'),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.settings),
-              onPressed: () => context.go('/settings/ai'),
-            ),
-          ],
-        ),
-        body: const _APIKeyWarning(),
-      );
+      return const Scaffold(body: _APIKeyWarning());
     }
 
     /// Processa la risposta dell'AI e gestisce l'interpretazione
@@ -108,13 +92,15 @@ class AIChatWidget extends HookConsumerWidget {
           // 2. Se è un'interpretazione valida, esegui l'azione appropriata
           final featureType = interpretation['featureType'];
           if (featureType != null && featureType != 'other') {
-            final result =
-                await aiServiceAsync.handleUserQuery(messageText, context: {
-              'userProfile': user.toMap(),
-              'chatHistory': chatMessages
-                  .map((msg) => {'role': msg.role, 'content': msg.content})
-                  .toList(),
-            });
+            final result = await aiServiceAsync.handleUserQuery(
+              messageText,
+              context: {
+                'userProfile': user.toMap(),
+                'chatHistory': chatMessages
+                    .map((msg) => {'role': msg.role, 'content': msg.content})
+                    .toList(),
+              },
+            );
             finalResponse = result;
           } else {
             // Usa responseText se disponibile
@@ -126,18 +112,25 @@ class AIChatWidget extends HookConsumerWidget {
         }
 
         // 4. Aggiungi il messaggio alla chat
-        chatNotifier.addMessage(ChatMessage(
-          role: 'assistant',
-          content: finalResponse,
-          interpretation: interpretation,
-        ));
+        chatNotifier.addMessage(
+          ChatMessage(
+            role: 'assistant',
+            content: finalResponse,
+            interpretation: interpretation,
+          ),
+        );
       } catch (e, stackTrace) {
-        logger.e('Errore durante il processing della risposta AI',
-            error: e, stackTrace: stackTrace);
-        chatNotifier.addMessage(ChatMessage(
-          role: 'assistant',
-          content: 'Si è verificato un errore: ${e.toString()}',
-        ));
+        logger.e(
+          'Errore durante il processing della risposta AI',
+          error: e,
+          stackTrace: stackTrace,
+        );
+        chatNotifier.addMessage(
+          ChatMessage(
+            role: 'assistant',
+            content: 'Si è verificato un errore: ${e.toString()}',
+          ),
+        );
       }
     }
 
@@ -151,7 +144,8 @@ class AIChatWidget extends HookConsumerWidget {
           builder: (context) => AlertDialog(
             title: const Text('Configurazione Richiesta'),
             content: const Text(
-                'Per utilizzare l\'assistente AI, è necessario configurare almeno una chiave API nelle impostazioni.'),
+              'Per utilizzare l\'assistente AI, è necessario configurare almeno una chiave API nelle impostazioni.',
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
@@ -173,10 +167,9 @@ class AIChatWidget extends HookConsumerWidget {
       isProcessing.value = true;
       try {
         // 1. Aggiungi il messaggio dell'utente
-        chatNotifier.addMessage(ChatMessage(
-          role: 'user',
-          content: messageText,
-        ));
+        chatNotifier.addMessage(
+          ChatMessage(role: 'user', content: messageText),
+        );
 
         // 2. Ottieni il contesto
         final userId = userService.getCurrentUserId();
@@ -195,46 +188,23 @@ class AIChatWidget extends HookConsumerWidget {
         // 4. Processa la risposta
         await processAIResponse(response);
       } catch (e, stackTrace) {
-        logger.e('Errore durante l\'invio del messaggio',
-            error: e, stackTrace: stackTrace);
-        chatNotifier.addMessage(ChatMessage(
-          role: 'assistant',
-          content: 'Si è verificato un errore: ${e.toString()}',
-        ));
+        logger.e(
+          'Errore durante l\'invio del messaggio',
+          error: e,
+          stackTrace: stackTrace,
+        );
+        chatNotifier.addMessage(
+          ChatMessage(
+            role: 'assistant',
+            content: 'Si è verificato un errore: ${e.toString()}',
+          ),
+        );
       } finally {
         isProcessing.value = false;
       }
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('AI Assistant'),
-            Text(
-              'Powered by ${settings.selectedProvider.displayName}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              Icons.settings_rounded,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            style: IconButton.styleFrom(
-              backgroundColor:
-                  Theme.of(context).colorScheme.primaryContainer.withAlpha(26),
-            ),
-            onPressed: () => context.go('/settings/ai'),
-          ),
-          SizedBox(width: AppTheme.spacing.sm),
-        ],
-      ),
       body: Column(
         children: [
           if (settings.availableProviders.isNotEmpty) ...[
@@ -268,17 +238,17 @@ class AIChatWidget extends HookConsumerWidget {
                           vertical: AppTheme.spacing.md,
                         ),
                         decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest,
-                          borderRadius:
-                              BorderRadius.circular(AppTheme.radii.full),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radii.full,
+                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .shadow
-                                  .withAlpha(20),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.shadow.withAlpha(20),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
@@ -300,12 +270,11 @@ class AIChatWidget extends HookConsumerWidget {
                             SizedBox(width: AppTheme.spacing.md),
                             Text(
                               'Elaborazione...',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
+                              style: Theme.of(context).textTheme.bodyMedium
                                   ?.copyWith(
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
                                   ),
                             ),
                           ],
@@ -361,9 +330,11 @@ class _ChatMessageBubble extends StatelessWidget {
               : colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(
-                message.isUser ? AppTheme.radii.lg : AppTheme.radii.sm),
+              message.isUser ? AppTheme.radii.lg : AppTheme.radii.sm,
+            ),
             topRight: Radius.circular(
-                message.isUser ? AppTheme.radii.sm : AppTheme.radii.lg),
+              message.isUser ? AppTheme.radii.sm : AppTheme.radii.lg,
+            ),
             bottomLeft: Radius.circular(AppTheme.radii.lg),
             bottomRight: Radius.circular(AppTheme.radii.lg),
           ),
@@ -378,8 +349,9 @@ class _ChatMessageBubble extends StatelessWidget {
         child: SelectableText(
           displayText,
           style: theme.textTheme.bodyLarge?.copyWith(
-            color:
-                message.isUser ? colorScheme.onPrimary : colorScheme.onSurface,
+            color: message.isUser
+                ? colorScheme.onPrimary
+                : colorScheme.onSurface,
             height: 1.4,
           ),
         ),
@@ -439,8 +411,8 @@ class _AISettingsSelector extends ConsumerWidget {
                   value: availableProviders.contains(settings.selectedProvider)
                       ? settings.selectedProvider
                       : availableProviders.isNotEmpty
-                          ? availableProviders.first
-                          : null,
+                      ? availableProviders.first
+                      : null,
                   items: availableProviders.map((provider) {
                     return DropdownMenuItem(
                       value: provider,
@@ -464,8 +436,8 @@ class _AISettingsSelector extends ConsumerWidget {
                   value: availableModels.contains(settings.selectedModel)
                       ? settings.selectedModel
                       : availableModels.isNotEmpty
-                          ? availableModels.first
-                          : null,
+                      ? availableModels.first
+                      : null,
                   items: availableModels.map((model) {
                     return DropdownMenuItem(
                       value: model,
@@ -502,9 +474,7 @@ class _AISettingsSelector extends ConsumerWidget {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(AppTheme.radii.md),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(51),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(51)),
       ),
       child: DropdownButtonFormField<T>(
         value: value,
@@ -550,9 +520,7 @@ class _APIKeyWarning extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.errorContainer.withAlpha(38),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.error.withAlpha(51),
-        ),
+        border: Border.all(color: colorScheme.error.withAlpha(51)),
       ),
       child: Row(
         children: [
@@ -601,9 +569,7 @@ class _APIKeyWarning extends StatelessWidget {
 class _ChatInputField extends HookConsumerWidget {
   final Function(String) onSend;
 
-  const _ChatInputField({
-    required this.onSend,
-  });
+  const _ChatInputField({required this.onSend});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -636,9 +602,7 @@ class _ChatInputField extends HookConsumerWidget {
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerLowest,
                 borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                border: Border.all(
-                  color: colorScheme.outline.withAlpha(51),
-                ),
+                border: Border.all(color: colorScheme.outline.withAlpha(51)),
               ),
               child: TextField(
                 controller: textController,

@@ -93,28 +93,19 @@ class AppCard extends StatelessWidget {
           padding: padding,
           child: centerContent ? Center(child: child) : child,
         ),
-        if (actions != null) ...[
-          _buildActions(context),
-        ],
+        if (actions != null) ...[_buildActions(context)],
       ],
     );
 
     Widget card = Container(
       decoration: BoxDecoration(
         gradient: variant == AppCardVariant.gradient
-            ? LinearGradient(
-                colors: [
-                  cardColor,
-                  cardColor.withAlpha(204),
-                ],
-              )
+            ? LinearGradient(colors: [cardColor, cardColor.withAlpha(204)])
             : null,
         color: variant != AppCardVariant.gradient ? cardColor : null,
         borderRadius: BorderRadius.circular(borderRadius),
         border: variant == AppCardVariant.outlined
-            ? Border.all(
-                color: colorScheme.outline.withAlpha(26),
-              )
+            ? Border.all(color: colorScheme.outline.withAlpha(26))
             : border,
         boxShadow: variant == AppCardVariant.elevated
             ? boxShadow ?? AppTheme.elevations.small
@@ -145,9 +136,7 @@ class AppCard extends StatelessWidget {
       padding: EdgeInsets.all(AppTheme.spacing.lg),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withAlpha(76),
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(borderRadius),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(borderRadius)),
       ),
       child: Row(
         children: [
@@ -161,11 +150,7 @@ class AppCard extends StatelessWidget {
                 color: colorScheme.primaryContainer.withAlpha(76),
                 borderRadius: BorderRadius.circular(AppTheme.radii.full),
               ),
-              child: Icon(
-                leadingIcon,
-                color: colorScheme.primary,
-                size: 20,
-              ),
+              child: Icon(leadingIcon, color: colorScheme.primary, size: 20),
             ),
             SizedBox(width: AppTheme.spacing.md),
           ],

@@ -1,14 +1,15 @@
-import 'package:alphanessone/trainingBuilder/providers/training_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:alphanessone/trainingBuilder/providers/training_providers.dart';
 import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
 import 'package:alphanessone/trainingBuilder/dialog/athlete_selection_dialog.dart';
-import 'package:alphanessone/trainingBuilder/List/week_list.dart';
-import 'package:alphanessone/trainingBuilder/List/workout_list.dart';
-import 'package:alphanessone/trainingBuilder/List/exercises_list.dart';
+import 'package:alphanessone/trainingBuilder/presentation/pages/weeks_page.dart';
+import 'package:alphanessone/trainingBuilder/presentation/pages/workouts_page.dart';
+import 'package:alphanessone/trainingBuilder/presentation/pages/exercises_page.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/shared/widgets/page_scaffold.dart';
 
 class TrainingProgramPage extends HookConsumerWidget {
   final String programId;
@@ -27,72 +28,63 @@ class TrainingProgramPage extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final formKey = useMemoized(() => GlobalKey<FormState>());
-    final controller = ref.watch(trainingProgramControllerProvider);
-    final program = ref.watch(trainingProgramStateProvider);
+    final controller = ref.watch(trainingProgramControllerProvider.notifier);
+    final programState = ref.watch(trainingProgramControllerProvider);
     final userRole = ref.watch(userRoleProvider);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     useEffect(() {
-      if (programId.isNotEmpty && program.id != programId) {
+      if (programId.isNotEmpty && programState.id != programId) {
         controller.loadProgram(programId);
       }
       return null;
-    }, [programId]);
+    }, [programId, programState.id]);
 
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withAlpha(128),
-            ],
-            stops: const [0.0, 1.0],
+    if (weekIndex != null) {
+      return workoutIndex != null
+          ? ExercisesPage(
+              controller: controller,
+              weekIndex: weekIndex!,
+              workoutIndex: workoutIndex!,
+            )
+          : TrainingProgramWorkoutListPage(
+              controller: controller,
+              weekIndex: weekIndex!,
+            );
+    }
+
+    return PageScaffold(
+      colorScheme: colorScheme,
+      slivers: [
+        SliverPadding(
+          padding: EdgeInsets.all(AppTheme.spacing.xl),
+          sliver: SliverToBoxAdapter(
+            child: Form(
+              key: formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _ProgramDetailsForm(
+                    controller: controller,
+                    userRole: userRole,
+                    theme: theme,
+                    colorScheme: colorScheme,
+                  ),
+                  SizedBox(height: AppTheme.spacing.xl),
+                  _ProgramWeeksSection(
+                    controller: controller,
+                    programId: programId,
+                    userId: userId,
+                    theme: theme,
+                    colorScheme: colorScheme,
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
-        child: SafeArea(
-          child: weekIndex != null
-              ? workoutIndex != null
-                  ? TrainingProgramExerciseList(
-                      controller: controller,
-                      weekIndex: weekIndex!,
-                      workoutIndex: workoutIndex!,
-                    )
-                  : TrainingProgramWorkoutListPage(
-                      controller: controller,
-                      weekIndex: weekIndex!,
-                    )
-              : SingleChildScrollView(
-                  padding: EdgeInsets.all(AppTheme.spacing.xl),
-                  child: Form(
-                    key: formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _ProgramDetailsForm(
-                          controller: controller,
-                          userRole: userRole,
-                          theme: theme,
-                          colorScheme: colorScheme,
-                        ),
-                        SizedBox(height: AppTheme.spacing.xl),
-                        _ProgramWeeksSection(
-                          controller: controller,
-                          programId: programId,
-                          userId: userId,
-                          theme: theme,
-                          colorScheme: colorScheme,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-        ),
-      ),
+      ],
     );
   }
 }
@@ -111,7 +103,10 @@ class _ProgramDetailsForm extends ConsumerWidget {
   });
 
   void _showAthleteSelectionDialog(
-      BuildContext context, WidgetRef ref, TrainingProgramController controller) {
+    BuildContext context,
+    WidgetRef ref,
+    TrainingProgramController controller,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AthleteSelectionDialog(controller: controller),
@@ -125,9 +120,7 @@ class _ProgramDetailsForm extends ConsumerWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
         boxShadow: AppTheme.elevations.small,
       ),
       child: Column(
@@ -154,7 +147,8 @@ class _ProgramDetailsForm extends ConsumerWidget {
           SizedBox(height: AppTheme.spacing.md),
           if (userRole == 'admin')
             _GradientElevatedButton(
-              onTap: () => _showAthleteSelectionDialog(context, ref, controller),
+              onTap: () =>
+                  _showAthleteSelectionDialog(context, ref, controller),
               label: 'Select Athlete',
               icon: Icons.person_add,
               theme: theme,
@@ -241,24 +235,42 @@ class _ActionButtons extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: _GradientElevatedButton(
-            icon: Icons.add,
-            label: 'Add Week',
-            onTap: controller.addWeek,
-            isPrimary: false,
-            theme: theme,
-            colorScheme: colorScheme,
+          child: FilledButton.tonal(
+            onPressed: controller.addWeek,
+            style: FilledButton.styleFrom(
+              padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.md),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.add),
+                SizedBox(width: AppTheme.spacing.sm),
+                const Text('Add Week'),
+              ],
+            ),
           ),
         ),
         SizedBox(width: AppTheme.spacing.md),
         Expanded(
-          child: _GradientElevatedButton(
-            icon: Icons.save,
-            label: 'Save Program',
-            onTap: () => controller.submitProgram(context),
-            isPrimary: true,
-            theme: theme,
-            colorScheme: colorScheme,
+          child: FilledButton(
+            onPressed: () => controller.submitProgram(context),
+            style: FilledButton.styleFrom(
+              padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.md),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.save),
+                SizedBox(width: AppTheme.spacing.sm),
+                const Text('Save Program'),
+              ],
+            ),
           ),
         ),
       ],
@@ -288,9 +300,7 @@ class _ProgramWeeksSection extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
         boxShadow: AppTheme.elevations.small,
       ),
       child: Column(
@@ -352,23 +362,16 @@ class _CustomTextFormField extends StatelessWidget {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppTheme.radii.md),
-          borderSide: BorderSide(
-            color: colorScheme.outline.withAlpha(76),
-          ),
+          borderSide: BorderSide(color: colorScheme.outline.withAlpha(76)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppTheme.radii.md),
-          borderSide: BorderSide(
-            color: colorScheme.primary,
-            width: 2,
-          ),
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
         filled: true,
         fillColor: colorScheme.surfaceContainerHighest.withAlpha(76),
       ),
-      style: theme.textTheme.bodyLarge?.copyWith(
-        color: colorScheme.onSurface,
-      ),
+      style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
     );
   }
 }
@@ -399,7 +402,7 @@ class _GradientElevatedButton extends StatelessWidget {
               ? [colorScheme.primary, colorScheme.primary.withAlpha(204)]
               : [
                   colorScheme.surfaceContainerHighest,
-                  colorScheme.surfaceContainerHighest.withAlpha(204)
+                  colorScheme.surfaceContainerHighest.withAlpha(204),
                 ],
         ),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),

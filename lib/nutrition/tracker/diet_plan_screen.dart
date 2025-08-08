@@ -8,9 +8,10 @@ import 'package:alphanessone/providers/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:alphanessone/UI/components/app_card.dart';
+import 'package:alphanessone/UI/components/skeleton.dart';
 
 import 'meal_selection_dialog.dart'; // Assicurati che questo dialog esista
-
 
 class DietPlanScreen extends ConsumerStatefulWidget {
   final DietPlan? existingDietPlan; // Parametro opzionale per la modifica
@@ -145,12 +146,17 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
           final templateDietPlan = updatedDietPlan.copyWith(
             id: null, // Firestore genererà un nuovo ID
           );
-          await dietPlanService.createDietPlanTemplate(currentUserId, templateDietPlan);
+          await dietPlanService.createDietPlanTemplate(
+            currentUserId,
+            templateDietPlan,
+          );
         }
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Diet Plan Updated and Applied')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Diet Plan Updated and Applied')),
+          );
+        }
       } else {
         // Modalità creazione
         final newDietPlan = DietPlan(
@@ -171,15 +177,22 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
           final templateDietPlan = createdDietPlan.copyWith(
             id: null, // Firestore genererà un nuovo ID
           );
-          await dietPlanService.createDietPlanTemplate(currentUserId, templateDietPlan);
+          await dietPlanService.createDietPlanTemplate(
+            currentUserId,
+            templateDietPlan,
+          );
         }
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Diet Plan Saved and Applied')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Diet Plan Saved and Applied')),
+          );
+        }
       }
 
-      Navigator.of(context).pop(); // Torna indietro alla schermata precedente
+      if (mounted) {
+        Navigator.of(context).pop(); // Torna indietro alla schermata precedente
+      }
     }
   }
 
@@ -201,7 +214,7 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final mealsService = ref.watch(mealsServiceProvider);
+    final mealsService = ref.watch(mealsServiceProvider.notifier);
     final isEditing = widget.existingDietPlan != null;
 
     final userService = ref.watch(usersServiceProvider);
@@ -209,7 +222,6 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
     final userId = selectedUserId ?? userService.getCurrentUserId();
 
     return Scaffold(
-     
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -241,7 +253,7 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
                       style: GoogleFonts.roboto(fontSize: 16),
                     ),
                   ),
-                  ElevatedButton(
+                  FilledButton(
                     onPressed: _pickStartDate,
                     child: Text('Select Date', style: GoogleFonts.roboto()),
                   ),
@@ -281,68 +293,102 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
                 itemCount: _days.length,
                 itemBuilder: (context, dayIndex) {
                   final day = _days[dayIndex];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: ExpansionTile(
-                      title: Text(
-                        '${day.dayOfWeek} (${day.mealIds.length} Meals Selected)',
-                        style: GoogleFonts.roboto(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      children: [
-                        // Lista dei pasti per il giorno
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: day.mealIds.length,
-                          itemBuilder: (context, mealIndex) {
-                            final mealId = day.mealIds[mealIndex];
-                            return FutureBuilder<Meal?>(
-                              future: mealsService.getMealById(userId, mealId), // Usa l'userId corretto
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState == ConnectionState.waiting) {
-                                  return const ListTile(
-                                    title: Text('Loading...'),
-                                  );
-                                } else if (snapshot.hasError) {
-                                  return const ListTile(
-                                    title: Text('Error loading meal'),
-                                  );
-                                } else if (!snapshot.hasData || snapshot.data == null) {
-                                  return const ListTile(
-                                    title: Text('Meal not found'),
-                                  );
-                                } else {
-                                  final meal = snapshot.data!;
-                                  return ListTile(
-                                    title: Text(meal.mealType, style: GoogleFonts.roboto(fontSize: 16)),
-                                    subtitle: Text('Calories: ${meal.totalCalories} kcal', style: GoogleFonts.roboto()),
-                                    trailing: IconButton(
-                                      icon: const Icon(Icons.remove_circle, color: Colors.red),
-                                      onPressed: () {
-                                        setState(() {
-                                          _days[dayIndex] = _days[dayIndex].copyWith(
-                                            mealIds: List.from(_days[dayIndex].mealIds)..removeAt(mealIndex),
-                                          );
-                                        });
-                                      },
-                                    ),
-                                  );
-                                }
-                              },
-                            );
-                          },
-                        ),
-
-                        // Bottone per selezionare nuovi pasti
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton.icon(
-                            onPressed: () => _selectMeals(dayIndex),
-                            icon: const Icon(Icons.add),
-                            label: Text('Select Meals', style: GoogleFonts.roboto()),
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: AppCard(
+                      background: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest.withAlpha(38),
+                      child: ExpansionTile(
+                        tilePadding: EdgeInsets.zero,
+                        childrenPadding: EdgeInsets.zero,
+                        title: Text(
+                          '${day.dayOfWeek} (${day.mealIds.length} Meals Selected)',
+                          style: GoogleFonts.roboto(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ],
+                        children: [
+                          // Lista dei pasti per il giorno
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: day.mealIds.length,
+                            itemBuilder: (context, mealIndex) {
+                              final mealId = day.mealIds[mealIndex];
+                              return FutureBuilder<Meal?>(
+                                future: mealsService.getMealById(
+                                  userId,
+                                  mealId,
+                                ), // Usa l'userId corretto
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return const Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 8.0,
+                                        vertical: 4.0,
+                                      ),
+                                      child: SkeletonCard(height: 72),
+                                    );
+                                  } else if (snapshot.hasError) {
+                                    return const ListTile(
+                                      title: Text('Error loading meal'),
+                                    );
+                                  } else if (!snapshot.hasData ||
+                                      snapshot.data == null) {
+                                    return const ListTile(
+                                      title: Text('Meal not found'),
+                                    );
+                                  } else {
+                                    final meal = snapshot.data!;
+                                    return ListTile(
+                                      title: Text(
+                                        meal.mealType,
+                                        style: GoogleFonts.roboto(fontSize: 16),
+                                      ),
+                                      subtitle: Text(
+                                        'Calories: ${meal.totalCalories} kcal',
+                                        style: GoogleFonts.roboto(),
+                                      ),
+                                      trailing: IconButton(
+                                        icon: const Icon(
+                                          Icons.remove_circle,
+                                          color: Colors.red,
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            _days[dayIndex] = _days[dayIndex]
+                                                .copyWith(
+                                                  mealIds: List.from(
+                                                    _days[dayIndex].mealIds,
+                                                  )..removeAt(mealIndex),
+                                                );
+                                          });
+                                        },
+                                      ),
+                                    );
+                                  }
+                                },
+                              );
+                            },
+                          ),
+
+                          // Bottone per selezionare nuovi pasti
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: FilledButton.icon(
+                              onPressed: () => _selectMeals(dayIndex),
+                              icon: const Icon(Icons.add),
+                              label: Text(
+                                'Select Meals',
+                                style: GoogleFonts.roboto(),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
@@ -350,14 +396,12 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
               const SizedBox(height: 24),
 
               // Bottone di salvataggio
-              ElevatedButton(
+              FilledButton(
                 onPressed: _saveDietPlan,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
-                ),
                 child: Text(
-                  isEditing ? 'Update & Apply Diet Plan' : 'Save & Apply Diet Plan',
+                  isEditing
+                      ? 'Update & Apply Diet Plan'
+                      : 'Save & Apply Diet Plan',
                   style: GoogleFonts.roboto(fontSize: 18),
                 ),
               ),

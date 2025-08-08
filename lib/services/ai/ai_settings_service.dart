@@ -4,6 +4,7 @@ import 'package:alphanessone/services/ai/ai_keys_service.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:alphanessone/models/ai_keys_model.dart';
+import 'package:logger/logger.dart';
 
 enum AIProvider {
   openAI('OpenAI'),
@@ -103,9 +104,13 @@ class AISettingsService {
   Future<void> saveSettings(AISettings settings) async {
     if (_prefs == null) return;
     await _prefs.setString(
-        '${_keyPrefix}selected_model', settings.selectedModel.name);
+      '${_keyPrefix}selected_model',
+      settings.selectedModel.name,
+    );
     await _prefs.setString(
-        '${_keyPrefix}selected_provider', settings.selectedProvider.name);
+      '${_keyPrefix}selected_provider',
+      settings.selectedProvider.name,
+    );
   }
 
   AISettings loadSettings({AIKeysModel? keys}) {
@@ -140,21 +145,20 @@ class AISettingsService {
           : AIProvider.openAI;
     }
 
-    final availableModels =
-        AIModel.values.where((model) => model.provider == provider).toList();
+    final availableModels = AIModel.values
+        .where((model) => model.provider == provider)
+        .toList();
     AIModel model;
     final savedModelName = _prefs.getString('${_keyPrefix}selected_model');
     if (availableModels.any((m) => m.name == savedModelName)) {
       model = availableModels.firstWhere((m) => m.name == savedModelName);
     } else {
-      model =
-          availableModels.isNotEmpty ? availableModels.first : AIModel.gpt4o;
+      model = availableModels.isNotEmpty
+          ? availableModels.first
+          : AIModel.gpt4o;
     }
 
-    return settings.copyWith(
-      selectedProvider: provider,
-      selectedModel: model,
-    );
+    return settings.copyWith(selectedProvider: provider, selectedModel: model);
   }
 }
 
@@ -165,7 +169,7 @@ final aiSettingsServiceProvider = Provider<AISettingsService>((ref) {
     loading: () =>
         AISettingsService(null), // Provide a default or handle loading state
     error: (error, stackTrace) {
-      print('Error loading shared preferences: $error');
+      Logger().e('Error loading shared preferences: $error');
       return AISettingsService(null); // Handle error state
     },
   );
@@ -173,16 +177,16 @@ final aiSettingsServiceProvider = Provider<AISettingsService>((ref) {
 
 final aiSettingsProvider =
     StateNotifierProvider<AISettingsNotifier, AISettings>((ref) {
-  final service = ref.watch(aiSettingsServiceProvider);
-  final keys = ref.watch(aiKeysStreamProvider).value;
-  return AISettingsNotifier(service, keys);
-});
+      final service = ref.watch(aiSettingsServiceProvider);
+      final keys = ref.watch(aiKeysStreamProvider).value;
+      return AISettingsNotifier(service, keys);
+    });
 
 class AISettingsNotifier extends StateNotifier<AISettings> {
   final AISettingsService _service;
 
   AISettingsNotifier(this._service, AIKeysModel? keys)
-      : super(_service.loadSettings(keys: keys));
+    : super(_service.loadSettings(keys: keys));
 
   Future<void> updateSelectedModel(AIModel model) async {
     state = state.copyWith(
@@ -194,8 +198,9 @@ class AISettingsNotifier extends StateNotifier<AISettings> {
 
   Future<void> updateSelectedProvider(AIProvider provider) async {
     // Trova il primo modello disponibile per il nuovo provider
-    final availableModels =
-        AIModel.values.where((model) => model.provider == provider).toList();
+    final availableModels = AIModel.values
+        .where((model) => model.provider == provider)
+        .toList();
 
     if (availableModels.isNotEmpty) {
       state = state.copyWith(
@@ -209,7 +214,8 @@ class AISettingsNotifier extends StateNotifier<AISettings> {
   void updateKeys(AIKeysModel? keys) {
     final availableProviders = AIProvider.values
         .where(
-            (provider) => keys?.getEffectiveKey(_getKeyType(provider)) != null)
+          (provider) => keys?.getEffectiveKey(_getKeyType(provider)) != null,
+        )
         .toList();
 
     if (availableProviders.isNotEmpty) {
@@ -249,8 +255,6 @@ class AISettingsNotifier extends StateNotifier<AISettings> {
         return 'claude';
       case AIProvider.azureOpenAI:
         return 'azure';
-      default:
-        return '';
     }
   }
 }

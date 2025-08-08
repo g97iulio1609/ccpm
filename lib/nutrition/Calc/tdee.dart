@@ -7,11 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:alphanessone/UI/components/date_picker_field.dart';
 
 // Constants
-const Map<int, String> genderMap = {
-  0: 'Altro',
-  1: 'Maschio',
-  2: 'Femmina',
-};
+const Map<int, String> genderMap = {0: 'Altro', 1: 'Maschio', 2: 'Femmina'};
 
 const Map<String, double> activityLevels = {
   'Sedentary': 1.2,
@@ -87,8 +83,9 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
       }
 
       // Get most recent nutrition data
-      final nutritionData =
-          await tdeeService.getMostRecentNutritionData(widget.userId);
+      final nutritionData = await tdeeService.getMostRecentNutritionData(
+        widget.userId,
+      );
       if (nutritionData != null) {
         _activityLevel = nutritionData['activityLevel'] as double? ?? 1.2;
         _tdee = (nutritionData['tdee'] as num?)?.toInt() ?? 0;
@@ -96,8 +93,9 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
       }
 
       setState(() {
-        _ageController.text =
-            _birthdate != null ? _calculateAge(_birthdate!).toString() : '';
+        _ageController.text = _birthdate != null
+            ? _calculateAge(_birthdate!).toString()
+            : '';
         _heightController.text = _height.toString();
         _weightController.text = _weight.toString();
       });
@@ -106,8 +104,10 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content:
-                  Text('Errore nel caricamento dei dati. Riprova più tardi.')),
+            content: Text(
+              'Errore nel caricamento dei dati. Riprova più tardi.',
+            ),
+          ),
         );
       }
     }
@@ -120,7 +120,8 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
       if (_birthdate == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Seleziona una data di nascita valida.')),
+            content: Text('Seleziona una data di nascita valida.'),
+          ),
         );
         return;
       }
@@ -136,7 +137,8 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
         bmr = 447.593 + (9.247 * _weight) + (3.098 * _height) - (4.330 * age);
       } else {
         // Altro o non specificato
-        bmr = (88.362 + 447.593) / 2 +
+        bmr =
+            (88.362 + 447.593) / 2 +
             (11.322 * _weight) +
             (3.9485 * _height) -
             (5.0035 * age);
@@ -172,8 +174,10 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-                content: Text(
-                    'TDEE e macronutrienti calcolati e salvati con successo!')),
+              content: Text(
+                'TDEE e macronutrienti calcolati e salvati con successo!',
+              ),
+            ),
           );
         }
       } catch (e) {
@@ -181,8 +185,10 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-                content: Text(
-                    'Errore nel salvataggio dei dati. Riprova più tardi.')),
+              content: Text(
+                'Errore nel salvataggio dei dati. Riprova più tardi.',
+              ),
+            ),
           );
         }
       }
@@ -283,9 +289,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildTDEEForm(context),
-                      ],
+                      children: [_buildTDEEForm(context)],
                     ),
                   ),
 
@@ -409,9 +413,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHighest.withAlpha(76),
               borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-              border: Border.all(
-                color: colorScheme.outline.withAlpha(26),
-              ),
+              border: Border.all(color: colorScheme.outline.withAlpha(26)),
             ),
             child: DropdownButtonFormField<int>(
               value: _gender,
@@ -453,9 +455,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHighest.withAlpha(76),
               borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-              border: Border.all(
-                color: colorScheme.outline.withAlpha(26),
-              ),
+              border: Border.all(color: colorScheme.outline.withAlpha(26)),
             ),
             child: DropdownButtonFormField<double>(
               value: _activityLevel,
@@ -499,9 +499,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
         boxShadow: AppTheme.elevations.small,
       ),
       child: Column(

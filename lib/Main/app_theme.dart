@@ -27,28 +27,28 @@ class Elevations {
   const Elevations();
 
   List<BoxShadow> get small => [
-        BoxShadow(
-          color: Colors.black.withAlpha(13),
-          offset: const Offset(0, 1),
-          blurRadius: 2,
-        ),
-      ];
+    BoxShadow(
+      color: Colors.black.withAlpha(13),
+      offset: const Offset(0, 1),
+      blurRadius: 2,
+    ),
+  ];
 
   List<BoxShadow> get medium => [
-        BoxShadow(
-          color: Colors.black.withAlpha(20),
-          offset: const Offset(0, 4),
-          blurRadius: 8,
-        ),
-      ];
+    BoxShadow(
+      color: Colors.black.withAlpha(20),
+      offset: const Offset(0, 4),
+      blurRadius: 8,
+    ),
+  ];
 
   List<BoxShadow> get large => [
-        BoxShadow(
-          color: Colors.black.withAlpha(31),
-          offset: const Offset(0, 8),
-          blurRadius: 16,
-        ),
-      ];
+    BoxShadow(
+      color: Colors.black.withAlpha(31),
+      offset: const Offset(0, 8),
+      blurRadius: 16,
+    ),
+  ];
 }
 
 class AppTheme {
@@ -278,10 +278,10 @@ class AppTheme {
           ),
         )
         .apply(
-            // Rimuoviamo questi apply che sovrascrivevano i colori specifici
-            // bodyColor: colorScheme.onSurface,
-            // displayColor: colorScheme.onSurface,
-            );
+          // Rimuoviamo questi apply che sovrascrivevano i colori specifici
+          // bodyColor: colorScheme.onSurface,
+          // displayColor: colorScheme.onSurface,
+        );
 
     return ThemeData(
       useMaterial3: true,
@@ -290,10 +290,22 @@ class AppTheme {
 
       brightness: isDark ? Brightness.dark : Brightness.light,
 
+      // Page transitions: Material 3 aligned transitions with safe builders
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: <TargetPlatform, PageTransitionsBuilder>{
+          TargetPlatform.android: ZoomPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.windows: ZoomPageTransitionsBuilder(),
+          TargetPlatform.linux: ZoomPageTransitionsBuilder(),
+        },
+      ),
+
       // AppBar Theme
       appBarTheme: AppBarTheme(
-        backgroundColor:
-            isDark ? colorScheme.surface : colorScheme.surface.withAlpha(242),
+        backgroundColor: isDark
+            ? colorScheme.surface
+            : colorScheme.surface.withAlpha(242),
         foregroundColor: colorScheme.onSurface,
         elevation: 0,
         centerTitle: true,
@@ -302,7 +314,7 @@ class AppTheme {
       ),
 
       // Card Theme
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: isDark
             ? colorScheme.surfaceContainerHighest.withAlpha(76)
             : colorScheme.surface,
@@ -335,10 +347,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radii.md),
-          borderSide: BorderSide(
-            color: colorScheme.primary,
-            width: 2,
-          ),
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radii.md),
@@ -370,10 +379,7 @@ class AppTheme {
           }),
           elevation: WidgetStateProperty.all(0),
           padding: WidgetStateProperty.all(
-            EdgeInsets.symmetric(
-              horizontal: spacing.lg,
-              vertical: spacing.md,
-            ),
+            EdgeInsets.symmetric(horizontal: spacing.lg, vertical: spacing.md),
           ),
           shape: WidgetStateProperty.all(
             RoundedRectangleBorder(
@@ -393,9 +399,10 @@ class AppTheme {
       ),
 
       // Dialog Theme
-      dialogTheme: DialogTheme(
-        backgroundColor:
-            isDark ? colorScheme.surface : colorScheme.surface.withAlpha(242),
+      dialogTheme: DialogThemeData(
+        backgroundColor: isDark
+            ? colorScheme.surface
+            : colorScheme.surface.withAlpha(242),
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radii.xl),
@@ -404,10 +411,12 @@ class AppTheme {
 
       // Bottom Sheet Theme
       bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor:
-            isDark ? colorScheme.surface : colorScheme.surface.withAlpha(242),
-        modalBackgroundColor:
-            isDark ? colorScheme.surface : colorScheme.surface.withAlpha(242),
+        backgroundColor: isDark
+            ? colorScheme.surface
+            : colorScheme.surface.withAlpha(242),
+        modalBackgroundColor: isDark
+            ? colorScheme.surface
+            : colorScheme.surface.withAlpha(242),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(radii.xl)),
         ),
@@ -437,10 +446,17 @@ class AppTheme {
         space: spacing.md,
       ),
 
+      // Progress Indicators: adopt latest Material spec (Flutter 3.29+)
+      progressIndicatorTheme: const ProgressIndicatorThemeData(),
+
+      // Slider: adopt latest Material spec (Flutter 3.29+)
+      sliderTheme: const SliderThemeData(),
+
       // Chip Theme
       chipTheme: ChipThemeData(
-        backgroundColor:
-            isDark ? colorScheme.surfaceContainerHighest : colorScheme.surface,
+        backgroundColor: isDark
+            ? colorScheme.surfaceContainerHighest
+            : colorScheme.surface,
         labelStyle: textTheme.labelLarge?.copyWith(
           color: colorScheme.onSurfaceVariant,
         ),

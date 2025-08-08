@@ -37,9 +37,7 @@ class AppForm extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.xl),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
         boxShadow: AppTheme.elevations.large,
       ),
       child: Form(
@@ -101,9 +99,7 @@ class AppForm extends StatelessWidget {
                     if (showDividers && i < children.length - 1) ...[
                       SizedBox(height: AppTheme.spacing.lg),
                       if (i < children.length - 1)
-                        Divider(
-                          color: colorScheme.outline.withAlpha(26),
-                        ),
+                        Divider(color: colorScheme.outline.withAlpha(26)),
                       SizedBox(height: AppTheme.spacing.lg),
                     ] else if (i < children.length - 1)
                       SizedBox(height: AppTheme.spacing.lg),
@@ -126,11 +122,12 @@ class AppForm extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     if (actions != null) ...[
-                      ...actions!.map((action) => Padding(
-                            padding:
-                                EdgeInsets.only(right: AppTheme.spacing.md),
-                            child: action,
-                          )),
+                      ...actions!.map(
+                        (action) => Padding(
+                          padding: EdgeInsets.only(right: AppTheme.spacing.md),
+                          child: action,
+                        ),
+                      ),
                     ],
                     if (onSubmit != null)
                       AppButton(

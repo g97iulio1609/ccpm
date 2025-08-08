@@ -43,7 +43,8 @@ class AppRow extends StatelessWidget {
       children: [
         Container(
           decoration: BoxDecoration(
-            color: backgroundColor ??
+            color:
+                backgroundColor ??
                 (isSelected
                     ? colorScheme.primaryContainer.withAlpha(76)
                     : colorScheme.surfaceContainerHighest.withAlpha(76)),
@@ -81,10 +82,11 @@ class AppRow extends StatelessWidget {
                               style: theme.textTheme.titleMedium?.copyWith(
                                 color: enabled
                                     ? (isSelected
-                                        ? colorScheme.primary
-                                        : colorScheme.onSurface)
-                                    : colorScheme.onSurfaceVariant
-                                        .withAlpha(128),
+                                          ? colorScheme.primary
+                                          : colorScheme.onSurface)
+                                    : colorScheme.onSurfaceVariant.withAlpha(
+                                        128,
+                                      ),
                                 fontWeight: isSelected ? FontWeight.w600 : null,
                               ),
                             ),
@@ -96,8 +98,9 @@ class AppRow extends StatelessWidget {
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: enabled
                                     ? colorScheme.onSurfaceVariant
-                                    : colorScheme.onSurfaceVariant
-                                        .withAlpha(128),
+                                    : colorScheme.onSurfaceVariant.withAlpha(
+                                        128,
+                                      ),
                               ),
                             ),
                         ],
@@ -109,10 +112,12 @@ class AppRow extends StatelessWidget {
                     ],
                     if (actions != null) ...[
                       SizedBox(width: AppTheme.spacing.md),
-                      ...actions!.map((action) => Padding(
-                            padding: EdgeInsets.only(left: AppTheme.spacing.sm),
-                            child: action,
-                          )),
+                      ...actions!.map(
+                        (action) => Padding(
+                          padding: EdgeInsets.only(left: AppTheme.spacing.sm),
+                          child: action,
+                        ),
+                      ),
                     ],
                   ],
                 ),
@@ -121,10 +126,7 @@ class AppRow extends StatelessWidget {
           ),
         ),
         if (showDivider)
-          Divider(
-            color: colorScheme.outline.withAlpha(26),
-            height: 1,
-          ),
+          Divider(color: colorScheme.outline.withAlpha(26), height: 1),
       ],
     );
   }
@@ -157,10 +159,7 @@ class AppRow extends StatelessWidget {
     return AppRow(
       title: title,
       leading: icon != null ? Icon(icon) : null,
-      trailing: _Badge(
-        text: badgeText,
-        color: badgeColor,
-      ),
+      trailing: _Badge(text: badgeText, color: badgeColor),
       onTap: onTap,
       showDivider: showDivider,
     );
@@ -178,10 +177,7 @@ class AppRow extends StatelessWidget {
       title: title,
       subtitle: subtitle,
       leading: icon != null ? Icon(icon) : null,
-      trailing: Switch(
-        value: value,
-        onChanged: onChanged,
-      ),
+      trailing: Switch(value: value, onChanged: onChanged),
       showDivider: showDivider,
     );
   }
@@ -191,10 +187,7 @@ class _Badge extends StatelessWidget {
   final String text;
   final Color? color;
 
-  const _Badge({
-    required this.text,
-    this.color,
-  });
+  const _Badge({required this.text, this.color});
 
   @override
   Widget build(BuildContext context) {

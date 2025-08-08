@@ -5,9 +5,10 @@ import 'package:alphanessone/ExerciseRecords/exercise_stats.dart';
 import 'package:alphanessone/ExerciseRecords/maxrmdashboard.dart';
 import 'package:alphanessone/Main/routes.dart';
 import 'package:alphanessone/UI/home_screen.dart';
+import 'package:alphanessone/UI/legal/privacy_policy_screen.dart';
 import 'package:alphanessone/UI/settings/ai_settings_screen.dart';
 import 'package:alphanessone/Viewer/UI/training_viewer.dart';
-import 'package:alphanessone/Viewer/UI/workout_details.dart';
+import 'package:alphanessone/Viewer/presentation/pages/workout_details_page.dart';
 import 'package:alphanessone/auth/auth_screen.dart';
 import 'package:alphanessone/measurements/measurements.dart';
 import 'package:alphanessone/nutrition/Calc/macros_selector.dart';
@@ -41,314 +42,316 @@ import '../widgets/ai_chat_widget.dart';
 
 class AppRouter {
   static GoRouter router(WidgetRef ref) => GoRouter(
+    routes: [
+      // Route pubblica per la Privacy Policy (senza autenticazione)
+      GoRoute(
+        path: Routes.privacyPolicy,
+        builder: (context, state) => const PrivacyPolicyScreen(),
+      ),
+      ShellRoute(
+        builder: (context, state, child) => HomeScreen(child: child),
         routes: [
-          ShellRoute(
-            builder: (context, state, child) => HomeScreen(child: child),
+          GoRoute(
+            path: Routes.home,
+            builder: (context, state) => const AuthWrapper(),
+          ),
+          GoRoute(
+            path: Routes.programsScreen,
+            builder: (context, state) {
+              return Consumer(
+                builder: (context, ref, child) {
+                  final userRole = ref.watch(userRoleProvider);
+                  if (userRole == 'admin' || userRole == 'coach') {
+                    return const CoachingScreen();
+                  } else if (userRole.isEmpty) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else {
+                    return const Center(child: Text('Access denied'));
+                  }
+                },
+              );
+            },
+          ),
+          GoRoute(
+            path: Routes.userPrograms,
+            builder: (context, state) {
+              final extra = state.extra as Map<String, dynamic>;
+              final userId = extra['userId'] as String;
+              return UserProgramsScreen(userId: userId);
+            },
             routes: [
               GoRoute(
-                path: Routes.home,
-                builder: (context, state) => const AuthWrapper(),
-              ),
-              GoRoute(
-                path: Routes.programsScreen,
-                builder: (context, state) {
-                  return Consumer(
-                    builder: (context, ref, child) {
-                      final userRole = ref.watch(userRoleProvider);
-                      if (userRole == 'admin' || userRole == 'coach') {
-                        return const CoachingScreen();
-                      } else if (userRole.isEmpty) {
-                        return const Center(child: CircularProgressIndicator());
-                      } else {
-                        return const Center(child: Text('Access denied'));
-                      }
-                    },
-                  );
-                },
-              ),
-              GoRoute(
-                path: Routes.userPrograms,
+                path: Routes.trainingProgram,
                 builder: (context, state) {
                   final extra = state.extra as Map<String, dynamic>;
+                  final programId = extra['programId'] as String;
                   final userId = extra['userId'] as String;
-                  return UserProgramsScreen(userId: userId);
+                  return TrainingProgramPage(
+                    programId: programId,
+                    userId: userId,
+                  );
                 },
                 routes: [
                   GoRoute(
-                    path: Routes.trainingProgram,
+                    path: Routes.week,
                     builder: (context, state) {
                       final extra = state.extra as Map<String, dynamic>;
                       final programId = extra['programId'] as String;
                       final userId = extra['userId'] as String;
+                      final weekIndex = extra['weekIndex'] as int;
                       return TrainingProgramPage(
                         programId: programId,
                         userId: userId,
+                        weekIndex: weekIndex,
                       );
                     },
                     routes: [
                       GoRoute(
-                        path: Routes.week,
+                        path: Routes.workout,
                         builder: (context, state) {
                           final extra = state.extra as Map<String, dynamic>;
                           final programId = extra['programId'] as String;
                           final userId = extra['userId'] as String;
                           final weekIndex = extra['weekIndex'] as int;
+                          final workoutIndex = extra['workoutIndex'] as int;
                           return TrainingProgramPage(
                             programId: programId,
                             userId: userId,
                             weekIndex: weekIndex,
+                            workoutIndex: workoutIndex,
                           );
                         },
-                        routes: [
-                          GoRoute(
-                            path: Routes.workout,
-                            builder: (context, state) {
-                              final extra = state.extra as Map<String, dynamic>;
-                              final programId = extra['programId'] as String;
-                              final userId = extra['userId'] as String;
-                              final weekIndex = extra['weekIndex'] as int;
-                              final workoutIndex = extra['workoutIndex'] as int;
-                              return TrainingProgramPage(
-                                programId: programId,
-                                userId: userId,
-                                weekIndex: weekIndex,
-                                workoutIndex: workoutIndex,
-                              );
-                            },
-                          ),
-                        ],
                       ),
                     ],
                   ),
+                ],
+              ),
+              GoRoute(
+                path: Routes.trainingViewer,
+                builder: (context, state) {
+                  final extra = state.extra as Map<String, dynamic>;
+                  final programId = extra['programId'] as String;
+                  final userId = extra['userId'] as String;
+                  return UnifiedTrainingViewer(
+                    programId: programId,
+                    userId: userId,
+                  );
+                },
+                routes: [
                   GoRoute(
-                    path: Routes.trainingViewer,
+                    path: Routes.workoutDetails,
                     builder: (context, state) {
                       final extra = state.extra as Map<String, dynamic>;
                       final programId = extra['programId'] as String;
+                      final weekId = extra['weekId'] as String;
+                      final workoutId = extra['workoutId'] as String;
                       final userId = extra['userId'] as String;
-                      return UnifiedTrainingViewer(
+                      return WorkoutDetailsPage(
                         programId: programId,
-                        userId: userId,
-                      );
-                    },
-                    routes: [
-                      GoRoute(
-                        path: Routes.workoutDetails,
-                        builder: (context, state) {
-                          final extra = state.extra as Map<String, dynamic>;
-                          final programId = extra['programId'] as String;
-                          final weekId = extra['weekId'] as String;
-                          final workoutId = extra['workoutId'] as String;
-                          final userId = extra['userId'] as String;
-                          return WorkoutDetails(
-                            programId: programId,
-                            weekId: weekId,
-                            workoutId: workoutId,
-                            userId: userId,
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              GoRoute(
-                path: Routes.trainingGallery,
-                builder: (context, state) => const TrainingGalleryScreen(),
-              ),
-              GoRoute(
-                path: Routes.subscriptions,
-                name: 'subscriptions',
-                builder: (context, state) => const InAppPurchaseScreen(),
-              ),
-              GoRoute(
-                path: Routes.status,
-                builder: (context, state) => SubscriptionsScreen(
-                  userId: FirebaseAuth.instance.currentUser!.uid,
-                ),
-              ),
-              GoRoute(
-                path: Routes.measurements,
-                builder: (context, state) => const MeasurementsPage(),
-              ),
-              GoRoute(
-                path: Routes.tdee,
-                builder: (context, state) {
-                  return Consumer(
-                    builder: (context, ref, child) {
-                      final userAsyncValue = ref.watch(userProvider(
-                          FirebaseAuth.instance.currentUser?.uid ?? ''));
-                      return userAsyncValue.when(
-                        data: (user) {
-                          if (user == null) {
-                            return const Center(child: Text('User not found'));
-                          }
-                          return TDEEScreen(userId: user.id);
-                        },
-                        loading: () =>
-                            const Center(child: CircularProgressIndicator()),
-                        error: (err, stack) =>
-                            Center(child: Text('Error: $err')),
-                      );
-                    },
-                  );
-                },
-              ),
-              GoRoute(
-                path: Routes.macrosSelector,
-                builder: (context, state) {
-                  return Consumer(
-                    builder: (context, ref, child) {
-                      final userAsyncValue = ref.watch(userProvider(
-                          FirebaseAuth.instance.currentUser?.uid ?? ''));
-                      return userAsyncValue.when(
-                        data: (user) {
-                          if (user == null) {
-                            return const Center(child: Text('User not found'));
-                          }
-                          return MacrosSelector(userId: user.id);
-                        },
-                        loading: () =>
-                            const Center(child: CircularProgressIndicator()),
-                        error: (err, stack) =>
-                            Center(child: Text('Error: $err')),
-                      );
-                    },
-                  );
-                },
-              ),
-              GoRoute(
-                path: Routes.myMeals,
-                builder: (context, state) => const FavouritesMeals(),
-                routes: [
-                  GoRoute(
-                    path: Routes.favoriteMealDetail,
-                    builder: (context, state) {
-                      final meal = state.extra as Meal;
-                      return FavoriteMealDetail(meal: meal);
-                    },
-                  ),
-                ],
-              ),
-              GoRoute(
-                path: Routes.associations,
-                builder: (context, state) =>
-                    const CoachAthleteAssociationScreen(),
-              ),
-              GoRoute(
-                path: Routes.foodTracker,
-                builder: (context, state) {
-                  return Consumer(
-                    builder: (context, ref, child) {
-                      final selectedUserId = ref.watch(selectedUserIdProvider);
-                      final userAsyncValue = ref.watch(userProvider(
-                          selectedUserId ??
-                              FirebaseAuth.instance.currentUser?.uid ??
-                              ''));
-                      return userAsyncValue.when(
-                        data: (user) {
-                          if (user == null) {
-                            return const Center(child: Text('User not found'));
-                          }
-                          return const DailyFoodTracker();
-                        },
-                        loading: () =>
-                            const Center(child: CircularProgressIndicator()),
-                        error: (err, stack) =>
-                            Center(child: Text('Error: $err')),
-                      );
-                    },
-                  );
-                },
-                routes: [
-                  GoRoute(
-                    path: Routes.foodSelector,
-                    builder: (context, state) {
-                      final extra = state.extra as Map<String, dynamic>;
-                      final mealMap = extra['meal'] as Map<String, dynamic>;
-                      final meal = Meal.fromMap(mealMap);
-                      final myFoodId = extra['myFoodId'] as String?;
-                      final isFavoriteMeal = extra['isFavoriteMeal'] as bool;
-                      return FoodSelector(
-                        meal: meal,
-                        myFoodId: myFoodId,
-                        isFavoriteMeal: isFavoriteMeal,
-                      );
-                    },
-                  ),
-                  GoRoute(
-                    path: Routes.dietPlan,
-                    builder: (context, state) => const DietPlanScreen(),
-                  ),
-                  GoRoute(
-                    path: Routes.dietPlanEdit,
-                    builder: (context, state) {
-                      final dietPlan = state.extra as DietPlan;
-                      return DietPlanScreen(existingDietPlan: dietPlan);
-                    },
-                  ),
-                  GoRoute(
-                    path: Routes.viewDietPlans,
-                    builder: (context, state) => const ViewDietPlansScreen(),
-                  ),
-                ],
-              ),
-              GoRoute(
-                path: Routes.foodManagement,
-                builder: (context, state) => const FoodManagement(),
-              ),
-              GoRoute(
-                path: Routes.exercisesList,
-                builder: (context, state) => const ExercisesList(),
-              ),
-              GoRoute(
-                path: Routes.maxRmDashboard,
-                builder: (context, state) => const MaxRMDashboard(),
-                routes: [
-                  GoRoute(
-                    path: 'exercise_stats',
-                    builder: (context, state) {
-                      final extra = state.extra as Map<String, dynamic>;
-                      final exercise = extra['exercise'] as ExerciseModel;
-                      final userId = extra['userId'] as String;
-                      return ExerciseStats(
-                        exercise: exercise,
+                        weekId: weekId,
+                        workoutId: workoutId,
                         userId: userId,
                       );
                     },
                   ),
                 ],
-              ),
-              GoRoute(
-                path: Routes.usersDashboard,
-                builder: (context, state) => const UsersDashboard(),
-              ),
-              GoRoute(
-                path: Routes.userProfile,
-                builder: (context, state) {
-                  final extra = state.extra as Map<String, dynamic>;
-                  final userId = extra['userId'] as String;
-                  return UserProfile(userId: userId);
-                },
-              ),
-              GoRoute(
-                path: Routes.dashboard,
-                builder: (context, state) => const DashboardScreen(),
-              ),
-              GoRoute(
-                path: '/settings/ai',
-                builder: (context, state) => const AISettingsScreen(),
-              ),
-              GoRoute(
-                path: '/ai/chat',
-                builder: (context, state) => AIChatWidget(
-                  userService: ref.read(usersServiceProvider),
-                ),
               ),
             ],
           ),
+          GoRoute(
+            path: Routes.trainingGallery,
+            builder: (context, state) => const TrainingGalleryScreen(),
+          ),
+          GoRoute(
+            path: Routes.subscriptions,
+            name: 'subscriptions',
+            builder: (context, state) => const InAppPurchaseScreen(),
+          ),
+          GoRoute(
+            path: Routes.status,
+            builder: (context, state) => SubscriptionsScreen(
+              userId: FirebaseAuth.instance.currentUser!.uid,
+            ),
+          ),
+          GoRoute(
+            path: Routes.measurements,
+            builder: (context, state) => const MeasurementsPage(),
+          ),
+          GoRoute(
+            path: Routes.tdee,
+            builder: (context, state) {
+              return Consumer(
+                builder: (context, ref, child) {
+                  final userAsyncValue = ref.watch(
+                    userProvider(FirebaseAuth.instance.currentUser?.uid ?? ''),
+                  );
+                  return userAsyncValue.when(
+                    data: (user) {
+                      if (user == null) {
+                        return const Center(child: Text('User not found'));
+                      }
+                      return TDEEScreen(userId: user.id);
+                    },
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (err, stack) => Center(child: Text('Error: $err')),
+                  );
+                },
+              );
+            },
+          ),
+          GoRoute(
+            path: Routes.macrosSelector,
+            builder: (context, state) {
+              return Consumer(
+                builder: (context, ref, child) {
+                  final userAsyncValue = ref.watch(
+                    userProvider(FirebaseAuth.instance.currentUser?.uid ?? ''),
+                  );
+                  return userAsyncValue.when(
+                    data: (user) {
+                      if (user == null) {
+                        return const Center(child: Text('User not found'));
+                      }
+                      return MacrosSelector(userId: user.id);
+                    },
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (err, stack) => Center(child: Text('Error: $err')),
+                  );
+                },
+              );
+            },
+          ),
+          GoRoute(
+            path: Routes.myMeals,
+            builder: (context, state) => const FavouritesMeals(),
+            routes: [
+              GoRoute(
+                path: Routes.favoriteMealDetail,
+                builder: (context, state) {
+                  final meal = state.extra as Meal;
+                  return FavoriteMealDetail(meal: meal);
+                },
+              ),
+            ],
+          ),
+          GoRoute(
+            path: Routes.associations,
+            builder: (context, state) => const CoachAthleteAssociationScreen(),
+          ),
+          GoRoute(
+            path: Routes.foodTracker,
+            builder: (context, state) {
+              return Consumer(
+                builder: (context, ref, child) {
+                  final selectedUserId = ref.watch(selectedUserIdProvider);
+                  final userAsyncValue = ref.watch(
+                    userProvider(
+                      selectedUserId ??
+                          FirebaseAuth.instance.currentUser?.uid ??
+                          '',
+                    ),
+                  );
+                  return userAsyncValue.when(
+                    data: (user) {
+                      if (user == null) {
+                        return const Center(child: Text('User not found'));
+                      }
+                      return const DailyFoodTracker();
+                    },
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (err, stack) => Center(child: Text('Error: $err')),
+                  );
+                },
+              );
+            },
+            routes: [
+              GoRoute(
+                path: Routes.foodSelector,
+                builder: (context, state) {
+                  final extra = state.extra as Map<String, dynamic>;
+                  final mealMap = extra['meal'] as Map<String, dynamic>;
+                  final meal = Meal.fromMap(mealMap);
+                  final myFoodId = extra['myFoodId'] as String?;
+                  final isFavoriteMeal = extra['isFavoriteMeal'] as bool;
+                  return FoodSelector(
+                    meal: meal,
+                    myFoodId: myFoodId,
+                    isFavoriteMeal: isFavoriteMeal,
+                  );
+                },
+              ),
+              GoRoute(
+                path: Routes.dietPlan,
+                builder: (context, state) => const DietPlanScreen(),
+              ),
+              GoRoute(
+                path: Routes.dietPlanEdit,
+                builder: (context, state) {
+                  final dietPlan = state.extra as DietPlan;
+                  return DietPlanScreen(existingDietPlan: dietPlan);
+                },
+              ),
+              GoRoute(
+                path: Routes.viewDietPlans,
+                builder: (context, state) => const ViewDietPlansScreen(),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: Routes.foodManagement,
+            builder: (context, state) => const FoodManagement(),
+          ),
+          GoRoute(
+            path: Routes.exercisesList,
+            builder: (context, state) => const ExercisesList(),
+          ),
+          GoRoute(
+            path: Routes.maxRmDashboard,
+            builder: (context, state) => const MaxRMDashboard(),
+            routes: [
+              GoRoute(
+                path: 'exercise_stats',
+                builder: (context, state) {
+                  final extra = state.extra as Map<String, dynamic>;
+                  final exercise = extra['exercise'] as ExerciseModel;
+                  final userId = extra['userId'] as String;
+                  return ExerciseStats(exercise: exercise, userId: userId);
+                },
+              ),
+            ],
+          ),
+          GoRoute(
+            path: Routes.usersDashboard,
+            builder: (context, state) => const UsersDashboard(),
+          ),
+          GoRoute(
+            path: Routes.userProfile,
+            builder: (context, state) {
+              final extra = state.extra as Map<String, dynamic>;
+              final userId = extra['userId'] as String;
+              return UserProfile(userId: userId);
+            },
+          ),
+          GoRoute(
+            path: Routes.dashboard,
+            builder: (context, state) => const DashboardScreen(),
+          ),
+          GoRoute(
+            path: '/settings/ai',
+            builder: (context, state) => const AISettingsScreen(),
+          ),
+          GoRoute(
+            path: '/ai/chat',
+            builder: (context, state) =>
+                AIChatWidget(userService: ref.read(usersServiceProvider)),
+          ),
         ],
-      );
+      ),
+    ],
+  );
 }
 
 class AuthWrapper extends ConsumerWidget {
@@ -376,8 +379,10 @@ class AuthWrapper extends ConsumerWidget {
                     if (userRole == 'admin' || userRole == 'coach') {
                       context.go(Routes.programsScreen);
                     } else {
-                      context
-                          .go(Routes.userPrograms, extra: {'userId': user.uid});
+                      context.go(
+                        Routes.userPrograms,
+                        extra: {'userId': user.uid},
+                      );
                     }
                   }
                 });

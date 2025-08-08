@@ -25,8 +25,10 @@ class OpenAIService implements AIService {
   });
 
   @override
-  Future<String> processNaturalLanguageQuery(String query,
-      {Map<String, dynamic>? context}) async {
+  Future<String> processNaturalLanguageQuery(
+    String query, {
+    Map<String, dynamic>? context,
+  }) async {
     _logger.i('Elaborazione query con OpenAI: "$query"');
     final messages = [
       {
@@ -116,7 +118,7 @@ Se non riesci a interpretare la richiesta, restituisci:
   "featureType": "other",
   "actions": [],
   "responseText": "Mi dispiace, non ho capito cosa vuoi fare. Puoi essere più specifico?"
-}'''
+}''',
       },
       if (context != null) ...[
         {
@@ -183,9 +185,11 @@ Se non riesci a interpretare la richiesta, restituisci:
       }
     } else {
       _logger.e(
-          'Failed to process query with OpenAI: ${response.statusCode} - ${response.body}');
+        'Failed to process query with OpenAI: ${response.statusCode} - ${response.body}',
+      );
       throw Exception(
-          'Failed to process query: ${response.statusCode} - ${response.body}');
+        'Failed to process query: ${response.statusCode} - ${response.body}',
+      );
     }
   }
 

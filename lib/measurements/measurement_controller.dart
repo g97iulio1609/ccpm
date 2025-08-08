@@ -9,7 +9,7 @@ class MeasurementController
   final String userId;
 
   MeasurementController(this._measurementsService, this.userId)
-      : super(const AsyncValue.loading()) {
+    : super(const AsyncValue.loading()) {
     _loadMeasurements();
   }
 
@@ -44,7 +44,9 @@ class MeasurementController
   }
 
   Future<void> updateMeasurement(
-      String measurementId, MeasurementModel measurement) async {
+    String measurementId,
+    MeasurementModel measurement,
+  ) async {
     try {
       await _measurementsService.updateMeasurement(
         userId: userId,
@@ -119,13 +121,16 @@ class MeasurementController
 }
 
 // Providers
-final measurementControllerProvider = StateNotifierProvider.family<
-    MeasurementController, AsyncValue<List<MeasurementModel>>, String>(
-  (ref, userId) => MeasurementController(
-    ref.watch(measurementsServiceProvider),
-    userId,
-  ),
-);
+final measurementControllerProvider =
+    StateNotifierProvider.family<
+      MeasurementController,
+      AsyncValue<List<MeasurementModel>>,
+      String
+    >(
+      (ref, userId) =>
+          MeasurementController(ref.watch(measurementsServiceProvider), userId),
+    );
 
-final selectedMeasurementsProvider =
-    StateProvider<List<MeasurementModel>>((ref) => []);
+final selectedMeasurementsProvider = StateProvider<List<MeasurementModel>>(
+  (ref) => [],
+);

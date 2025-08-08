@@ -49,4 +49,7 @@ class Routes {
   static const String usersDashboard = '/users_dashboard';
   static const String userProfile = '/user_profile';
   static const String associations = '/associations';
+
+  // Legal
+  static const String privacyPolicy = '/privacy-policy';
 }

@@ -5,6 +5,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'auth_service.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../services/privacy_consent_service.dart';
 
 class SubmitButton extends ConsumerStatefulWidget {
   const SubmitButton({
@@ -16,6 +17,7 @@ class SubmitButton extends ConsumerStatefulWidget {
     required this.userPassword,
     required this.userName,
     required this.userGender,
+    this.privacyConsentAccepted,
   });
 
   final GlobalKey<FormState> formKey;
@@ -25,6 +27,7 @@ class SubmitButton extends ConsumerStatefulWidget {
   final ValueNotifier<String> userPassword;
   final ValueNotifier<String> userName;
   final ValueNotifier<String> userGender;
+  final ValueNotifier<bool>? privacyConsentAccepted;
 
   @override
   SubmitButtonState createState() => SubmitButtonState();
@@ -59,9 +62,7 @@ class SubmitButtonState extends ConsumerState<SubmitButton> {
       ),
       child: MaterialButton(
         onPressed: _isLoading ? null : () => _submit(userRole),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: _isLoading
             ? SizedBox(
                 height: 24,
@@ -87,42 +88,78 @@ class SubmitButtonState extends ConsumerState<SubmitButton> {
 
   Future<void> _submit(String userRole) async {
     if (!mounted) return;
-    if (widget.formKey.currentState?.validate() ?? false) {
-      setState(() => _isLoading = true);
-      widget.formKey.currentState?.save();
 
-      try {
-        final email = widget.userEmail.value.trim();
-        final password = widget.userPassword.value.trim();
-        final UserCredential userCredential =
-            await _performAuthentication(email, password);
+    // Validazione del form
+    if (!(widget.formKey.currentState?.validate() ?? false)) {
+      return;
+    }
 
-        final userId = userCredential.user?.uid;
-        if (userId != null) {
-          await widget.authService.updateUserName(userCredential.user!);
-          if (!mounted) return;
-          _showSnackBar('Authentication successful', Colors.green);
-          _navigateToAppropriateScreen(userRole, userId);
-        } else {
-          if (!mounted) return;
-          _showSnackBar('Failed to retrieve user ID', Colors.red);
+    // Validazione del consenso privacy per registrazione
+    if (!widget.isLogin.value) {
+      if (widget.privacyConsentAccepted?.value != true) {
+        _showSnackBar(
+          'È necessario accettare la Privacy Policy per procedere con la registrazione',
+          Colors.red,
+        );
+        return;
+      }
+    }
+
+    setState(() => _isLoading = true);
+    widget.formKey.currentState?.save();
+
+    try {
+      final email = widget.userEmail.value.trim();
+      final password = widget.userPassword.value.trim();
+      final UserCredential userCredential = await _performAuthentication(
+        email,
+        password,
+      );
+
+      final userId = userCredential.user?.uid;
+      if (userId != null) {
+        await widget.authService.updateUserName(userCredential.user!);
+
+        // Salva il consenso privacy se è una registrazione
+        if (!widget.isLogin.value &&
+            widget.privacyConsentAccepted?.value == true) {
+          try {
+            await PrivacyConsentService.saveConsentOnRegistration(
+              userId: userId,
+              consentGiven: true,
+            );
+          } catch (consentError) {
+            // Log dell'errore ma non bloccare il processo di registrazione
+            debugPrint('Errore nel salvare il consenso privacy: $consentError');
+          }
         }
-      } catch (error) {
+
         if (!mounted) return;
-        _showSnackBar(error.toString(), Colors.red);
-      } finally {
-        if (mounted) {
-          setState(() => _isLoading = false);
-        }
+        _showSnackBar('Authentication successful', Colors.green);
+        _navigateToAppropriateScreen(userRole, userId);
+      } else {
+        if (!mounted) return;
+        _showSnackBar('Failed to retrieve user ID', Colors.red);
+      }
+    } catch (error) {
+      if (!mounted) return;
+      _showSnackBar(error.toString(), Colors.red);
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
   }
 
   Future<UserCredential> _performAuthentication(
-      String email, String password) async {
+    String email,
+    String password,
+  ) async {
     if (widget.isLogin.value) {
-      return await widget.authService
-          .signInWithEmailAndPassword(email, password);
+      return await widget.authService.signInWithEmailAndPassword(
+        email,
+        password,
+      );
     } else {
       return await widget.authService.signUpWithEmailAndPassword(
         email,
@@ -150,9 +187,7 @@ class SubmitButtonState extends ConsumerState<SubmitButton> {
         content: Text(message),
         backgroundColor: color,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         margin: const EdgeInsets.all(16),
       ),
     );
@@ -182,9 +217,7 @@ class GoogleSignInButtonWrapper extends ConsumerWidget {
         onPressed: () => _handleGoogleSignIn(context, authService, userRole),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: theme.colorScheme.outline.withAlpha(26),
-          ),
+          side: BorderSide(color: theme.colorScheme.outline.withAlpha(26)),
         ),
         color: theme.colorScheme.surface,
         elevation: 0,
@@ -248,16 +281,17 @@ class GoogleSignInButtonWrapper extends ConsumerWidget {
         content: Text(message),
         backgroundColor: color,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         margin: const EdgeInsets.all(16),
       ),
     );
   }
 
   void _navigateToAppropriateScreen(
-      BuildContext context, String userRole, String userId) {
+    BuildContext context,
+    String userRole,
+    String userId,
+  ) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (userRole == 'admin' || userRole == 'coach') {
         context.go('/programs_screen');
@@ -271,10 +305,7 @@ class GoogleSignInButtonWrapper extends ConsumerWidget {
 class SignInWithGoogleButton extends StatelessWidget {
   final VoidCallback onPressed;
 
-  const SignInWithGoogleButton({
-    super.key,
-    required this.onPressed,
-  });
+  const SignInWithGoogleButton({super.key, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -287,9 +318,7 @@ class SignInWithGoogleButton extends StatelessWidget {
         onPressed: onPressed,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: theme.colorScheme.outline.withAlpha(51),
-          ),
+          side: BorderSide(color: theme.colorScheme.outline.withAlpha(51)),
         ),
         color: theme.colorScheme.surface,
         elevation: 0,
@@ -336,10 +365,7 @@ class ToggleAuthModeButton extends StatelessWidget {
         isLogin.value
             ? 'Not a Member? Create an Account'
             : 'I already have an account',
-        style: const TextStyle(
-          color: Colors.blue,
-          fontSize: 16,
-        ),
+        style: const TextStyle(color: Colors.blue, fontSize: 16),
       ),
     );
   }

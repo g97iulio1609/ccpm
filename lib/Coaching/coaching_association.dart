@@ -9,22 +9,22 @@ import 'package:alphanessone/UI/components/bottom_menu.dart';
 /// Provider per ottenere lo stream delle associazioni in base al ruolo dell'utente
 final associationsStreamProvider =
     StreamProvider.autoDispose<List<Association>>((ref) {
-  final coachingService = ref.watch(coachingServiceProvider);
-  final usersService = ref.watch(usersServiceProvider);
-  final userId = usersService.getCurrentUserId();
-  final userRole = ref.watch(userRoleProvider);
+      final coachingService = ref.watch(coachingServiceProvider);
+      final usersService = ref.watch(usersServiceProvider);
+      final userId = usersService.getCurrentUserId();
+      final userRole = ref.watch(userRoleProvider);
 
-  if (userRole == 'coach' || userRole == 'admin') {
-    // Per coach e admin, mostra tutte le associazioni dove sono coach
-    return coachingService.getCoachAssociations(userId);
-  } else if (userRole == 'client') {
-    // Per client, mostra le proprie associazioni
-    return coachingService.getUserAssociations(userId);
-  } else {
-    // Altri ruoli non gestiti
-    return Stream.value([]);
-  }
-});
+      if (userRole == 'coach' || userRole == 'admin') {
+        // Per coach e admin, mostra tutte le associazioni dove sono coach
+        return coachingService.getCoachAssociations(userId);
+      } else if (userRole == 'client') {
+        // Per client, mostra le proprie associazioni
+        return coachingService.getUserAssociations(userId);
+      } else {
+        // Altri ruoli non gestiti
+        return Stream.value([]);
+      }
+    });
 
 /// Schermata principale per la gestione delle associazioni coach-athlete
 class CoachAthleteAssociationScreen extends ConsumerStatefulWidget {
@@ -108,9 +108,15 @@ class CoachAthleteAssociationScreenState
                   controller: _tabController,
                   children: [
                     _buildAssociationList(
-                        associationsAsyncValue, 'accepted', userRole),
+                      associationsAsyncValue,
+                      'accepted',
+                      userRole,
+                    ),
                     _buildAssociationList(
-                        associationsAsyncValue, 'pending', userRole),
+                      associationsAsyncValue,
+                      'pending',
+                      userRole,
+                    ),
                   ],
                 ),
               ),
@@ -157,27 +163,21 @@ class CoachAthleteAssociationScreenState
   }
 
   Widget _buildAssociationList(
-      AsyncValue<List<Association>> associationsAsyncValue,
-      String status,
-      String userRole) {
+    AsyncValue<List<Association>> associationsAsyncValue,
+    String status,
+    String userRole,
+  ) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return associationsAsyncValue.when(
-      loading: () => Center(
-        child: CircularProgressIndicator(
-          color: colorScheme.primary,
-        ),
-      ),
+      loading: () =>
+          Center(child: CircularProgressIndicator(color: colorScheme.primary)),
       error: (err, stack) => Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 48,
-              color: colorScheme.error,
-            ),
+            Icon(Icons.error_outline, size: 48, color: colorScheme.error),
             SizedBox(height: AppTheme.spacing.md),
             Text(
               'Errore: $err',
@@ -190,8 +190,9 @@ class CoachAthleteAssociationScreenState
         ),
       ),
       data: (associations) {
-        final filteredAssociations =
-            associations.where((a) => a.status == status).toList();
+        final filteredAssociations = associations
+            .where((a) => a.status == status)
+            .toList();
         if (filteredAssociations.isEmpty) {
           return Center(
             child: Column(
@@ -226,11 +227,13 @@ class CoachAthleteAssociationScreenState
               child: AssociationTile(
                 association: association,
                 userRole: userRole,
-                onAccept: status == 'pending' &&
+                onAccept:
+                    status == 'pending' &&
                         (userRole == 'admin' || userRole == 'coach')
                     ? () => _respondToAssociation(association.id, true)
                     : null,
-                onReject: status == 'pending' &&
+                onReject:
+                    status == 'pending' &&
                         (userRole == 'admin' || userRole == 'coach')
                     ? () => _respondToAssociation(association.id, false)
                     : null,
@@ -250,28 +253,34 @@ class CoachAthleteAssociationScreenState
     showDialog(
       context: context,
       builder: (context) => CoachSearchDialog(
-          userId: ref.read(usersServiceProvider).getCurrentUserId()),
+        userId: ref.read(usersServiceProvider).getCurrentUserId(),
+      ),
     );
   }
 
   /// Risponde a una richiesta di associazione (accetta o rifiuta)
   Future<void> _respondToAssociation(String associationId, bool accept) async {
     final coachingService = ref.read(coachingServiceProvider);
-    final result =
-        await coachingService.respondToAssociation(associationId, accept);
+    final result = await coachingService.respondToAssociation(
+      associationId,
+      accept,
+    );
     if (mounted) {
       if (result) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(accept
-                  ? 'Associazione accettata'
-                  : 'Associazione rifiutata')),
+            content: Text(
+              accept ? 'Associazione accettata' : 'Associazione rifiutata',
+            ),
+          ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text(
-                  'Errore nella risposta alla richiesta di associazione.')),
+            content: Text(
+              'Errore nella risposta alla richiesta di associazione.',
+            ),
+          ),
         );
       }
     }
@@ -289,7 +298,8 @@ class CoachAthleteAssociationScreenState
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Errore nella rimozione dell\'associazione.')),
+            content: Text('Errore nella rimozione dell\'associazione.'),
+          ),
         );
       }
     }
@@ -378,11 +388,13 @@ class CoachSearchDialogState extends ConsumerState<CoachSearchDialog> {
     final results = await coachingService.searchCoaches(query);
 
     // Filtra i coach disponibili per nuove associazioni
-    final availableCoaches = await Future.wait(results.map((coach) async {
-      final isAvailable =
-          await coachingService.isCoachAvailableForAssociation(coach.id);
-      return isAvailable ? coach : null;
-    }));
+    final availableCoaches = await Future.wait(
+      results.map((coach) async {
+        final isAvailable = await coachingService
+            .isCoachAvailableForAssociation(coach.id);
+        return isAvailable ? coach : null;
+      }),
+    );
 
     setState(() {
       _searchResults = availableCoaches.whereType<UserModel>().toList();
@@ -394,14 +406,17 @@ class CoachSearchDialogState extends ConsumerState<CoachSearchDialog> {
   Future<void> _requestAssociation(String coachId) async {
     final coachingService = ref.read(coachingServiceProvider);
 
-    final isAvailable =
-        await coachingService.isCoachAvailableForAssociation(coachId);
+    final isAvailable = await coachingService.isCoachAvailableForAssociation(
+      coachId,
+    );
     if (!isAvailable) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text(
-                  'Questo coach non è al momento disponibile per nuove associazioni.')),
+            content: Text(
+              'Questo coach non è al momento disponibile per nuove associazioni.',
+            ),
+          ),
         );
       }
       return;
@@ -409,22 +424,27 @@ class CoachSearchDialogState extends ConsumerState<CoachSearchDialog> {
 
     setState(() => _isLoading = true);
 
-    final result =
-        await coachingService.requestAssociation(coachId, widget.userId);
+    final result = await coachingService.requestAssociation(
+      coachId,
+      widget.userId,
+    );
     setState(() => _isLoading = false);
 
     if (mounted) {
       if (result) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Richiesta di associazione inviata con successo.')),
+            content: Text('Richiesta di associazione inviata con successo.'),
+          ),
         );
         Navigator.pop(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content:
-                  Text('Errore nell\'invio della richiesta di associazione.')),
+            content: Text(
+              'Errore nell\'invio della richiesta di associazione.',
+            ),
+          ),
         );
       }
     }
@@ -457,9 +477,7 @@ class AssociationTile extends ConsumerWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
         boxShadow: AppTheme.elevations.small,
       ),
       child: Material(
@@ -484,8 +502,9 @@ class AssociationTile extends ConsumerWidget {
                         color: association.status == 'accepted'
                             ? colorScheme.primaryContainer.withAlpha(76)
                             : colorScheme.secondaryContainer.withAlpha(76),
-                        borderRadius:
-                            BorderRadius.circular(AppTheme.radii.full),
+                        borderRadius: BorderRadius.circular(
+                          AppTheme.radii.full,
+                        ),
                       ),
                       child: Text(
                         association.status == 'accepted'

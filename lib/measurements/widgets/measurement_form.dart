@@ -33,19 +33,26 @@ class _MeasurementFormState extends ConsumerState<MeasurementForm> {
     _formKey = GlobalKey<FormState>();
     _controllers = {
       'weight': TextEditingController(
-          text: widget.measurement?.weight.toString() ?? ''),
+        text: widget.measurement?.weight.toString() ?? '',
+      ),
       'height': TextEditingController(
-          text: widget.measurement?.height.toString() ?? ''),
+        text: widget.measurement?.height.toString() ?? '',
+      ),
       'bodyFat': TextEditingController(
-          text: widget.measurement?.bodyFatPercentage.toString() ?? ''),
+        text: widget.measurement?.bodyFatPercentage.toString() ?? '',
+      ),
       'waist': TextEditingController(
-          text: widget.measurement?.waistCircumference.toString() ?? ''),
+        text: widget.measurement?.waistCircumference.toString() ?? '',
+      ),
       'hip': TextEditingController(
-          text: widget.measurement?.hipCircumference.toString() ?? ''),
+        text: widget.measurement?.hipCircumference.toString() ?? '',
+      ),
       'chest': TextEditingController(
-          text: widget.measurement?.chestCircumference.toString() ?? ''),
+        text: widget.measurement?.chestCircumference.toString() ?? '',
+      ),
       'biceps': TextEditingController(
-          text: widget.measurement?.bicepsCircumference.toString() ?? ''),
+        text: widget.measurement?.bicepsCircumference.toString() ?? '',
+      ),
     };
     _selectedDate = widget.measurement?.date ?? DateTime.now();
   }
@@ -176,9 +183,7 @@ class _MeasurementFormState extends ConsumerState<MeasurementForm> {
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHighest.withAlpha(76),
               borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-              border: Border.all(
-                color: colorScheme.outline.withAlpha(26),
-              ),
+              border: Border.all(color: colorScheme.outline.withAlpha(26)),
             ),
             child: Row(
               children: [
@@ -226,9 +231,7 @@ class _MeasurementFormState extends ConsumerState<MeasurementForm> {
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerHighest.withAlpha(76),
             borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-            border: Border.all(
-              color: colorScheme.outline.withAlpha(26),
-            ),
+            border: Border.all(color: colorScheme.outline.withAlpha(26)),
           ),
           child: TextFormField(
             controller: controller,
@@ -241,11 +244,7 @@ class _MeasurementFormState extends ConsumerState<MeasurementForm> {
               hintStyle: theme.textTheme.bodyLarge?.copyWith(
                 color: colorScheme.onSurfaceVariant.withAlpha(128),
               ),
-              prefixIcon: Icon(
-                icon,
-                color: colorScheme.primary,
-                size: 20,
-              ),
+              prefixIcon: Icon(icon, color: colorScheme.primary, size: 20),
               suffixText: unit,
               suffixStyle: theme.textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
@@ -356,8 +355,9 @@ class _MeasurementFormState extends ConsumerState<MeasurementForm> {
 
   void _submitMeasurement() {
     if (_formKey.currentState!.validate()) {
-      final controller =
-          ref.read(measurementControllerProvider(widget.userId).notifier);
+      final controller = ref.read(
+        measurementControllerProvider(widget.userId).notifier,
+      );
 
       final weight = double.tryParse(_controllers['weight']!.text) ?? 0.0;
       final height = double.tryParse(_controllers['height']!.text) ?? 0.0;

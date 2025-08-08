@@ -18,7 +18,8 @@ class MeasurementsService {
 
       return snapshot.docs
           .map(
-              (doc) => MeasurementModel.fromJson({...doc.data(), 'id': doc.id}))
+            (doc) => MeasurementModel.fromJson({...doc.data(), 'id': doc.id}),
+          )
           .toList();
     } catch (e) {
       throw Exception('Errore nel recupero delle misurazioni: $e');
@@ -43,16 +44,16 @@ class MeasurementsService {
           .doc(userId)
           .collection('measurements')
           .add({
-        'date': Timestamp.fromDate(date),
-        'weight': weight,
-        'height': height,
-        'bmi': bmi,
-        'bodyFatPercentage': bodyFatPercentage,
-        'waistCircumference': waistCircumference,
-        'hipCircumference': hipCircumference,
-        'chestCircumference': chestCircumference,
-        'bicepsCircumference': bicepsCircumference,
-      });
+            'date': Timestamp.fromDate(date),
+            'weight': weight,
+            'height': height,
+            'bmi': bmi,
+            'bodyFatPercentage': bodyFatPercentage,
+            'waistCircumference': waistCircumference,
+            'hipCircumference': hipCircumference,
+            'chestCircumference': chestCircumference,
+            'bicepsCircumference': bicepsCircumference,
+          });
     } catch (e) {
       throw Exception('Errore nell\'aggiunta della misurazione: $e');
     }
@@ -78,16 +79,16 @@ class MeasurementsService {
           .collection('measurements')
           .doc(measurementId)
           .update({
-        'date': Timestamp.fromDate(date),
-        'weight': weight,
-        'height': height,
-        'bmi': bmi,
-        'bodyFatPercentage': bodyFatPercentage,
-        'waistCircumference': waistCircumference,
-        'hipCircumference': hipCircumference,
-        'chestCircumference': chestCircumference,
-        'bicepsCircumference': bicepsCircumference,
-      });
+            'date': Timestamp.fromDate(date),
+            'weight': weight,
+            'height': height,
+            'bmi': bmi,
+            'bodyFatPercentage': bodyFatPercentage,
+            'waistCircumference': waistCircumference,
+            'hipCircumference': hipCircumference,
+            'chestCircumference': chestCircumference,
+            'bicepsCircumference': bicepsCircumference,
+          });
     } catch (e) {
       throw Exception('Errore nell\'aggiornamento della misurazione: $e');
     }

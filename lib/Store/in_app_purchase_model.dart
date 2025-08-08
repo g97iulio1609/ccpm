@@ -4,7 +4,9 @@ abstract class BaseInAppPurchaseService {
   Future<List<Product>> getProducts();
   Future<void> handleSuccessfulPayment(String purchaseId, String productId);
   Future<Map<String, dynamic>> createCheckoutSession(
-      String userId, String productId);
+    String userId,
+    String productId,
+  );
   Future<void> initialize();
 }
 

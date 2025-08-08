@@ -37,19 +37,23 @@ class MealsService extends ChangeNotifier {
 
   void _initializeService() {
     // Inizializza i listener principali
-    _subscriptions.add(_firestore
-        .collectionGroup('meals')
-        .snapshots()
-        .listen(_handleMealsUpdate));
+    _subscriptions.add(
+      _firestore
+          .collectionGroup('meals')
+          .snapshots()
+          .listen(_handleMealsUpdate),
+    );
   }
 
   void _handleMealsUpdate(QuerySnapshot snapshot) {
-    final mealsList = snapshot.docs.map((doc) {
-      final meal = meals.Meal.fromFirestore(doc);
-      _mealsCache[meal.id!] = meal;
-      return meal;
-    }).toList();
-    _mealsStreamController.add(mealsList);
+    // Genera la lista e aggiorna cache + stream
+    _mealsStreamController.add(
+      snapshot.docs.map((doc) {
+        final meal = meals.Meal.fromFirestore(doc);
+        _mealsCache[meal.id!] = meal;
+        return meal;
+      }).toList(),
+    );
     notifyListeners();
   }
 
@@ -81,8 +85,9 @@ class MealsService extends ChangeNotifier {
     try {
       while (_batchQueue.isNotEmpty) {
         final batch = _firestore.batch();
-        final operations =
-            _batchQueue.take(500).toList(); // Limite di Firestore
+        final operations = _batchQueue
+            .take(500)
+            .toList(); // Limite di Firestore
         _batchQueue.removeRange(0, operations.length);
 
         for (final operation in operations) {
@@ -108,8 +113,11 @@ class MealsService extends ChangeNotifier {
 
     if (meal == null) throw Exception('Meal not found');
 
-    final myFoodRef =
-        _firestore.collection('users').doc(userId).collection('myfoods').doc();
+    final myFoodRef = _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('myfoods')
+        .doc();
 
     final myFood = macros.Food(
       id: myFoodRef.id,
@@ -130,7 +138,8 @@ class MealsService extends ChangeNotifier {
 
     // Aggiorna i totali in background
     _batchQueue.add(
-        () => updateMealAndDailyStats(userId, mealId, myFood, isAdding: true));
+      () => updateMealAndDailyStats(userId, mealId, myFood, isAdding: true),
+    );
     _processBatchQueue();
   }
 
@@ -150,31 +159,31 @@ class MealsService extends ChangeNotifier {
         .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        final meal = meals.Meal.fromFirestore(doc);
-        _mealsCache[meal.id!] = meal;
-        return meal;
-      }).toList();
-    });
+          return snapshot.docs.map((doc) {
+            final meal = meals.Meal.fromFirestore(doc);
+            _mealsCache[meal.id!] = meal;
+            return meal;
+          }).toList();
+        });
   }
 
   // Ottimizzazione del calcolo dei nutrienti
   Future<Map<String, double>> getTotalNutrientsForMeal(
-      String userId, String mealId) async {
+    String userId,
+    String mealId,
+  ) async {
     final foods = await getFoodsForMeals(userId: userId, mealId: mealId);
 
-    return foods.fold<Map<String, double>>({
-      'carbs': 0,
-      'proteins': 0,
-      'fats': 0,
-      'calories': 0,
-    }, (totals, food) {
-      totals['carbs'] = (totals['carbs'] ?? 0) + food.carbs;
-      totals['proteins'] = (totals['proteins'] ?? 0) + food.protein;
-      totals['fats'] = (totals['fats'] ?? 0) + food.fat;
-      totals['calories'] = (totals['calories'] ?? 0) + food.kcal;
-      return totals;
-    });
+    return foods.fold<Map<String, double>>(
+      {'carbs': 0, 'proteins': 0, 'fats': 0, 'calories': 0},
+      (totals, food) {
+        totals['carbs'] = (totals['carbs'] ?? 0) + food.carbs;
+        totals['proteins'] = (totals['proteins'] ?? 0) + food.protein;
+        totals['fats'] = (totals['fats'] ?? 0) + food.fat;
+        totals['calories'] = (totals['calories'] ?? 0) + food.kcal;
+        return totals;
+      },
+    );
   }
 
   // Gestione efficiente della memoria
@@ -257,9 +266,11 @@ class MealsService extends ChangeNotifier {
         .collection('myfoods')
         .where('mealId', isEqualTo: mealId)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => macros.Food.fromFirestore(doc))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => macros.Food.fromFirestore(doc))
+              .toList(),
+        );
   }
 
   Future<List<macros.Food>> getFoodsForMeals({
@@ -296,7 +307,8 @@ class MealsService extends ChangeNotifier {
 
     // Aggiorna i totali in background
     _batchQueue.add(
-        () => updateMealAndDailyStats(userId, mealId, food, isAdding: false));
+      () => updateMealAndDailyStats(userId, mealId, food, isAdding: false),
+    );
     _processBatchQueue();
   }
 
@@ -347,7 +359,9 @@ class MealsService extends ChangeNotifier {
   }
 
   Stream<meals.DailyStats> getDailyStatsByDateStream(
-      String userId, DateTime date) {
+    String userId,
+    DateTime date,
+  ) {
     final dailyStatsId = date.toIso8601String().split('T')[0];
     return _firestore
         .collection('users')
@@ -355,17 +369,19 @@ class MealsService extends ChangeNotifier {
         .collection('dailyStats')
         .doc(dailyStatsId)
         .snapshots()
-        .map((doc) => doc.exists
-            ? meals.DailyStats.fromFirestore(doc)
-            : meals.DailyStats(
-                id: dailyStatsId,
-                userId: userId,
-                date: date,
-                totalCalories: 0,
-                totalCarbs: 0,
-                totalFat: 0,
-                totalProtein: 0,
-              ));
+        .map(
+          (doc) => doc.exists
+              ? meals.DailyStats.fromFirestore(doc)
+              : meals.DailyStats(
+                  id: dailyStatsId,
+                  userId: userId,
+                  date: date,
+                  totalCalories: 0,
+                  totalCarbs: 0,
+                  totalFat: 0,
+                  totalProtein: 0,
+                ),
+        );
   }
 
   Future<macros.Food?> getMyFoodById(String userId, String foodId) async {
@@ -408,13 +424,13 @@ class MealsService extends ChangeNotifier {
     required String mealId,
     required macros.Food food,
   }) async {
-    final foodRef =
-        _firestore.collection('users').doc(userId).collection('myfoods').doc();
+    final foodRef = _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('myfoods')
+        .doc();
 
-    final myFood = food.copyWith(
-      id: foodRef.id,
-      mealId: mealId,
-    );
+    final myFood = food.copyWith(id: foodRef.id, mealId: mealId);
 
     await foodRef.set(myFood.toMap());
     _foodsCache[myFood.id!] = myFood;
@@ -460,10 +476,7 @@ class MealsService extends ChangeNotifier {
         .collection('meals')
         .doc(mealId);
 
-    await mealRef.update({
-      'isFavorite': true,
-      'favoriteName': favoriteName,
-    });
+    await mealRef.update({'isFavorite': true, 'favoriteName': favoriteName});
 
     final meal = _mealsCache[mealId];
     if (meal != null) {
@@ -503,7 +516,6 @@ class MealsService extends ChangeNotifier {
     required String favoriteName,
   }) async {
     final dailyStatsId = date.toIso8601String().split('T')[0];
-    final mealsList = await _getMealsByDate(userId, date);
 
     final favoriteDay = meals.FavoriteDay(
       id: dailyStatsId,
@@ -603,10 +615,7 @@ class MealsService extends ChangeNotifier {
             .collection('myfoods')
             .doc();
 
-        final newFood = food.copyWith(
-          id: newFoodRef.id,
-          mealId: newMealRef.id,
-        );
+        final newFood = food.copyWith(id: newFoodRef.id, mealId: newMealRef.id);
 
         batch.set(newFoodRef, newFood.toMap());
         if (newFood.id != null) {
@@ -621,10 +630,14 @@ class MealsService extends ChangeNotifier {
         .collection('users')
         .doc(userId)
         .collection('meals')
-        .where('date',
-            isGreaterThanOrEqualTo: DateTime(date.year, date.month, date.day))
-        .where('date',
-            isLessThan: DateTime(date.year, date.month, date.day + 1))
+        .where(
+          'date',
+          isGreaterThanOrEqualTo: DateTime(date.year, date.month, date.day),
+        )
+        .where(
+          'date',
+          isLessThan: DateTime(date.year, date.month, date.day + 1),
+        )
         .get();
 
     return snapshot.docs.map((doc) => meals.Meal.fromFirestore(doc)).toList();
@@ -683,8 +696,10 @@ class MealsService extends ChangeNotifier {
     final favoriteMeal = await getMealById(userId, favoriteMealId);
     if (favoriteMeal == null) return;
 
-    final foods =
-        await getFoodsForMeals(userId: userId, mealId: favoriteMealId);
+    final foods = await getFoodsForMeals(
+      userId: userId,
+      mealId: favoriteMealId,
+    );
     for (final food in foods) {
       await addFoodToMeal(
         userId: userId,
@@ -707,8 +722,11 @@ class MealsService extends ChangeNotifier {
       mealType: 'Snack',
     );
 
-    final mealRef =
-        _firestore.collection('users').doc(userId).collection('meals').doc();
+    final mealRef = _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('meals')
+        .doc();
 
     snackMeal.id = mealRef.id;
     await mealRef.set(snackMeal.toMap());

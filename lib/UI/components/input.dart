@@ -139,35 +139,23 @@ class AppInput extends StatelessWidget {
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-              borderSide: BorderSide(
-                color: colorScheme.outline.withAlpha(26),
-              ),
+              borderSide: BorderSide(color: colorScheme.outline.withAlpha(26)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-              borderSide: BorderSide(
-                color: colorScheme.outline.withAlpha(26),
-              ),
+              borderSide: BorderSide(color: colorScheme.outline.withAlpha(26)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-              borderSide: BorderSide(
-                color: colorScheme.primary,
-                width: 2,
-              ),
+              borderSide: BorderSide(color: colorScheme.primary, width: 2),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-              borderSide: BorderSide(
-                color: colorScheme.error,
-              ),
+              borderSide: BorderSide(color: colorScheme.error),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-              borderSide: BorderSide(
-                color: colorScheme.error,
-                width: 2,
-              ),
+              borderSide: BorderSide(color: colorScheme.error, width: 2),
             ),
           ),
           obscureText: obscureText,
@@ -300,9 +288,7 @@ class AppInput extends StatelessWidget {
       onChanged: onChanged,
       validator: validator,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      inputFormatters: [
-        FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-      ],
+      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
     );
   }
 

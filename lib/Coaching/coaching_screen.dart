@@ -35,19 +35,22 @@ class CoachingScreen extends HookConsumerWidget {
     // Recupero degli utenti in base al ruolo
     final usersFuture = useMemoized(() async {
       if (currentUserRole == 'admin') {
-        final snapshot =
-            await FirebaseFirestore.instance.collection('users').get();
+        final snapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .get();
         return snapshot.docs
             .map((doc) => UserModel.fromFirestore(doc))
             .toList();
       } else if (currentUserRole == 'coach') {
-        final associations =
-            await coachingService.getCoachAssociations(currentUserId).first;
+        final associations = await coachingService
+            .getCoachAssociations(currentUserId)
+            .first;
         List<UserModel> users = [];
         for (var association in associations) {
           if (association.status == 'accepted') {
-            final athlete =
-                await usersService.getUserById(association.athleteId);
+            final athlete = await usersService.getUserById(
+              association.athleteId,
+            );
             if (athlete != null) {
               users.add(athlete);
             }
@@ -133,9 +136,7 @@ class CoachingScreen extends HookConsumerWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
         boxShadow: AppTheme.elevations.small,
       ),
       padding: EdgeInsets.all(AppTheme.spacing.md),
@@ -148,9 +149,11 @@ class CoachingScreen extends HookConsumerWidget {
         onChanged: (pattern) {
           final allUsers = ref.read(userListProvider);
           final filteredUsers = allUsers
-              .where((user) =>
-                  user.name.toLowerCase().contains(pattern.toLowerCase()) ||
-                  user.email.toLowerCase().contains(pattern.toLowerCase()))
+              .where(
+                (user) =>
+                    user.name.toLowerCase().contains(pattern.toLowerCase()) ||
+                    user.email.toLowerCase().contains(pattern.toLowerCase()),
+              )
               .toList();
           ref.read(filteredUserListProvider.notifier).state = filteredUsers;
         },
@@ -165,82 +168,82 @@ class CoachingScreen extends HookConsumerWidget {
     String currentUserRole,
     BuildContext context,
   ) {
-    return Builder(builder: (context) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const SliverFillRemaining(
-          child: Center(child: CircularProgressIndicator()),
-        );
-      }
+    return Builder(
+      builder: (context) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SliverFillRemaining(
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-      if (snapshot.hasError) {
-        return SliverFillRemaining(
-          child: Center(
-            child: Text(
-              'Error loading athletes: ${snapshot.error}',
-              style: theme.textTheme.titleLarge?.copyWith(
-                color: colorScheme.error,
+        if (snapshot.hasError) {
+          return SliverFillRemaining(
+            child: Center(
+              child: Text(
+                'Error loading athletes: ${snapshot.error}',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: colorScheme.error,
+                ),
               ),
             ),
-          ),
-        );
-      }
+          );
+        }
 
-      final users = snapshot.data ?? [];
-      if (users.isEmpty) {
-        return SliverFillRemaining(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.group_outlined,
-                  size: 64,
-                  color: colorScheme.onSurfaceVariant.withAlpha(128),
-                ),
-                SizedBox(height: AppTheme.spacing.md),
-                Text(
-                  currentUserRole == 'coach'
-                      ? 'No Athletes Associated'
-                      : 'No Users Found',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
+        final users = snapshot.data ?? [];
+        if (users.isEmpty) {
+          return SliverFillRemaining(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.group_outlined,
+                    size: 64,
+                    color: colorScheme.onSurfaceVariant.withAlpha(128),
                   ),
-                ),
-                SizedBox(height: AppTheme.spacing.sm),
-                Text(
-                  currentUserRole == 'coach'
-                      ? 'Start adding athletes to your roster'
-                      : 'Try adjusting your search',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: colorScheme.onSurfaceVariant.withAlpha(179),
+                  SizedBox(height: AppTheme.spacing.md),
+                  Text(
+                    currentUserRole == 'coach'
+                        ? 'No Athletes Associated'
+                        : 'No Users Found',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-              ],
+                  SizedBox(height: AppTheme.spacing.sm),
+                  Text(
+                    currentUserRole == 'coach'
+                        ? 'Start adding athletes to your roster'
+                        : 'Try adjusting your search',
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: colorScheme.onSurfaceVariant.withAlpha(179),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        );
-      }
+          );
+        }
 
-      // Calcola il numero di colonne
-      final crossAxisCount = getGridCrossAxisCount(context);
+        // Calcola il numero di colonne
+        final crossAxisCount = getGridCrossAxisCount(context);
 
-      // Organizza gli utenti in righe
-      final rows = <List<UserModel>>[];
-      for (var i = 0; i < users.length; i += crossAxisCount) {
-        rows.add(
-          users.sublist(
-            i,
-            i + crossAxisCount > users.length
-                ? users.length
-                : i + crossAxisCount,
-          ),
-        );
-      }
+        // Organizza gli utenti in righe
+        final rows = <List<UserModel>>[];
+        for (var i = 0; i < users.length; i += crossAxisCount) {
+          rows.add(
+            users.sublist(
+              i,
+              i + crossAxisCount > users.length
+                  ? users.length
+                  : i + crossAxisCount,
+            ),
+          );
+        }
 
-      return SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, rowIndex) {
+        return SliverList(
+          delegate: SliverChildBuilderDelegate((context, rowIndex) {
             if (rowIndex >= rows.length) return null;
 
             final rowUsers = rows[rowIndex];
@@ -275,10 +278,10 @@ class CoachingScreen extends HookConsumerWidget {
                 ),
               ),
             );
-          },
-        ),
-      );
-    });
+          }),
+        );
+      },
+    );
   }
 
   Widget _buildAthleteCard(
@@ -287,16 +290,15 @@ class CoachingScreen extends HookConsumerWidget {
     ColorScheme colorScheme,
     BuildContext context,
   ) {
-    final String initials =
-        user.name.isNotEmpty ? user.name.substring(0, 1).toUpperCase() : '?';
+    final String initials = user.name.isNotEmpty
+        ? user.name.substring(0, 1).toUpperCase()
+        : '?';
 
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
         boxShadow: AppTheme.elevations.small,
       ),
       child: Material(

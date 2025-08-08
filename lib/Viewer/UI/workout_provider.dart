@@ -13,11 +13,14 @@ final exerciseCacheProvider =
     StateProvider<Map<String, List<Map<String, dynamic>>>>((ref) => {});
 
 // Provider per la cache dei nomi dei workout
-final workoutNameCacheProvider = StateProvider<Map<String, String>>((ref) => {});
+final workoutNameCacheProvider = StateProvider<Map<String, String>>(
+  (ref) => {},
+);
 
 // Provider per la lista degli esercizi del workout corrente
-final exercisesProvider =
-    StateProvider<List<Map<String, dynamic>>>((ref) => []);
+final exercisesProvider = StateProvider<List<Map<String, dynamic>>>(
+  (ref) => [],
+);
 
 // Provider per il caricamento
 final loadingProvider = StateProvider<bool>((ref) => false);
@@ -41,8 +44,9 @@ final userIdProvider = StateProvider<String?>((ref) {
 final targetUserIdProvider = StateProvider<String>((ref) => '');
 
 // Provider per il service che si occupa della logica di business
-final trainingProgramServicesProvider =
-    Provider<TrainingProgramServices>((ref) {
+final trainingProgramServicesProvider = Provider<TrainingProgramServices>((
+  ref,
+) {
   return TrainingProgramServices();
 });
 
@@ -52,9 +56,12 @@ final exerciseRecordServiceProvider = Provider<ExerciseRecordService>((ref) {
 
 // Provider per istanziare il WorkoutService, a cui passiamo i servizi necessari
 final workoutServiceProvider = Provider<WorkoutService>((ref) {
+  final trainingServices = ref.read(trainingProgramServicesProvider);
+  final recordServices = ref.read(exerciseRecordServiceProvider);
+
   return WorkoutService(
     ref: ref,
-    trainingProgramServices: ref.read(trainingProgramServicesProvider),
-    exerciseRecordService: ref.read(exerciseRecordServiceProvider),
+    trainingProgramServices: trainingServices,
+    exerciseRecordService: recordServices,
   );
 });

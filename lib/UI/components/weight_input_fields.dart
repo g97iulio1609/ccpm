@@ -35,8 +35,9 @@ class WeightInputFields extends HookConsumerWidget {
     final minIntensity = double.tryParse(intensity ?? '') ?? 0;
     final maxIntensityValue = double.tryParse(maxIntensity ?? '');
 
-    final calculatedWeight =
-        maxWeight > 0 ? (maxWeight.toDouble() * minIntensity / 100) : 0;
+    final calculatedWeight = maxWeight > 0
+        ? (maxWeight.toDouble() * minIntensity / 100)
+        : 0;
     final calculatedMaxWeight = maxIntensityValue != null && maxWeight > 0
         ? (maxWeight.toDouble() * maxIntensityValue / 100)
         : null;
@@ -62,9 +63,7 @@ class WeightInputFields extends HookConsumerWidget {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withAlpha(26),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
       ),
       child: Padding(
         padding: EdgeInsets.all(AppTheme.spacing.md),
@@ -77,17 +76,17 @@ class WeightInputFields extends HookConsumerWidget {
                   child: Text(
                     exerciseName,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: colorScheme.onSurface,
-                          fontWeight: FontWeight.w500,
-                        ),
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
                 if (maxWeight > 0)
                   Text(
                     'Max: ${maxWeight.toStringAsFixed(1)} kg',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
               ],
             ),

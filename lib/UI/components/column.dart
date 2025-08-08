@@ -41,10 +41,12 @@ class AppColumn extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Container(
-      constraints:
-          maxWidth != null ? BoxConstraints(maxWidth: maxWidth!) : null,
+      constraints: maxWidth != null
+          ? BoxConstraints(maxWidth: maxWidth!)
+          : null,
       decoration: BoxDecoration(
-        color: backgroundColor ??
+        color:
+            backgroundColor ??
             (isSelected
                 ? colorScheme.primaryContainer.withAlpha(76)
                 : colorScheme.surfaceContainerHighest.withAlpha(76)),
@@ -80,8 +82,8 @@ class AppColumn extends StatelessWidget {
                             style: theme.textTheme.titleMedium?.copyWith(
                               color: enabled
                                   ? (isSelected
-                                      ? colorScheme.primary
-                                      : colorScheme.onSurface)
+                                        ? colorScheme.primary
+                                        : colorScheme.onSurface)
                                   : colorScheme.onSurfaceVariant.withAlpha(128),
                               fontWeight: isSelected ? FontWeight.w600 : null,
                             ),
@@ -101,19 +103,18 @@ class AppColumn extends StatelessWidget {
                     ),
                   ),
                   if (actions != null) ...[
-                    ...actions!.map((action) => Padding(
-                          padding: EdgeInsets.only(left: AppTheme.spacing.sm),
-                          child: action,
-                        )),
+                    ...actions!.map(
+                      (action) => Padding(
+                        padding: EdgeInsets.only(left: AppTheme.spacing.sm),
+                        child: action,
+                      ),
+                    ),
                   ],
                 ],
               ),
             ),
             if (showDividers && children.isNotEmpty)
-              Divider(
-                color: colorScheme.outline.withAlpha(26),
-                height: 1,
-              ),
+              Divider(color: colorScheme.outline.withAlpha(26), height: 1),
           ],
           Padding(
             padding: contentPadding ?? EdgeInsets.all(AppTheme.spacing.lg),

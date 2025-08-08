@@ -3,11 +3,7 @@ class SuperSet {
   String? name;
   List<String> exerciseIds;
 
-  SuperSet({
-    required this.id,
-    this.name,
-    required this.exerciseIds,
-  });
+  SuperSet({required this.id, this.name, required this.exerciseIds});
 
   factory SuperSet.fromMap(Map<String, dynamic> map) {
     return SuperSet(
@@ -18,10 +14,6 @@ class SuperSet {
   }
 
   Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'name': name,
-      'exerciseIds': exerciseIds,
-    };
+    return {'id': id, 'name': name, 'exerciseIds': exerciseIds};
   }
 }

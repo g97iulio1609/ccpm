@@ -44,9 +44,7 @@ class AppDialog extends StatelessWidget {
         decoration: BoxDecoration(
           color: backgroundColor ?? colorScheme.surface,
           borderRadius: BorderRadius.circular(AppTheme.radii.xl),
-          border: Border.all(
-            color: colorScheme.outline.withAlpha(26),
-          ),
+          border: Border.all(color: colorScheme.outline.withAlpha(26)),
           boxShadow: AppTheme.elevations.large,
         ),
         child: Column(
@@ -116,9 +114,7 @@ class AppDialog extends StatelessWidget {
                       if (showDividers && i < children.length - 1) ...[
                         SizedBox(height: AppTheme.spacing.lg),
                         if (i < children.length - 1)
-                          Divider(
-                            color: colorScheme.outline.withAlpha(26),
-                          ),
+                          Divider(color: colorScheme.outline.withAlpha(26)),
                         SizedBox(height: AppTheme.spacing.lg),
                       ] else if (i < children.length - 1)
                         SizedBox(height: AppTheme.spacing.lg),
@@ -239,8 +235,8 @@ class AppDialog extends StatelessWidget {
                     color: isPrimary
                         ? colorScheme.onPrimary
                         : isDestructive
-                            ? colorScheme.error
-                            : colorScheme.onSurfaceVariant,
+                        ? colorScheme.error
+                        : colorScheme.onSurfaceVariant,
                     size: 20,
                   ),
                   SizedBox(width: AppTheme.spacing.sm),
@@ -251,8 +247,8 @@ class AppDialog extends StatelessWidget {
                     color: isPrimary
                         ? colorScheme.onPrimary
                         : isDestructive
-                            ? colorScheme.error
-                            : colorScheme.onSurfaceVariant,
+                        ? colorScheme.error
+                        : colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -298,10 +294,7 @@ class AppDialog extends StatelessWidget {
           ),
         ),
         actions: [
-          buildCancelButton(
-            context: context,
-            label: cancelLabel ?? 'Annulla',
-          ),
+          buildCancelButton(context: context, label: cancelLabel ?? 'Annulla'),
           buildActionButton(
             context: context,
             label: confirmLabel ?? 'Conferma',

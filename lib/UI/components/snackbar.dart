@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 
-enum SnackbarType {
-  success,
-  error,
-  warning,
-  info,
-}
+enum SnackbarType { success, error, warning, info }
 
 class AppSnackbar extends StatelessWidget {
   final String message;
@@ -48,9 +43,7 @@ class AppSnackbar extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
         boxShadow: [
           BoxShadow(
             color: snackbarColor.withAlpha(26),
@@ -87,8 +80,9 @@ class AppSnackbar extends StatelessWidget {
                         padding: EdgeInsets.all(AppTheme.spacing.sm),
                         decoration: BoxDecoration(
                           color: snackbarColor.withAlpha(26),
-                          borderRadius:
-                              BorderRadius.circular(AppTheme.radii.md),
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radii.md,
+                          ),
                         ),
                         child: Icon(
                           snackbarIcon,

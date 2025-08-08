@@ -67,9 +67,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
         boxShadow: AppTheme.elevations.small,
       ),
       padding: EdgeInsets.all(AppTheme.spacing.md),
@@ -80,10 +78,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
           hintStyle: theme.textTheme.bodyLarge?.copyWith(
             color: colorScheme.onSurfaceVariant,
           ),
-          prefixIcon: Icon(
-            Icons.search,
-            color: colorScheme.onSurfaceVariant,
-          ),
+          prefixIcon: Icon(Icons.search, color: colorScheme.onSurfaceVariant),
           border: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(
             vertical: AppTheme.spacing.sm,
@@ -184,40 +179,41 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
         }
 
         return SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, rowIndex) {
-              if (rowIndex >= rows.length) return null;
+          delegate: SliverChildBuilderDelegate((context, rowIndex) {
+            if (rowIndex >= rows.length) return null;
 
-              final rowUsers = rows[rowIndex];
+            final rowUsers = rows[rowIndex];
 
-              return Padding(
-                padding: EdgeInsets.only(bottom: AppTheme.spacing.xl),
-                child: IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (var i = 0; i < crossAxisCount; i++) ...[
-                        if (i < rowUsers.length)
-                          Expanded(
-                            child: Padding(
-                              padding: EdgeInsets.only(
-                                right: i < crossAxisCount - 1
-                                    ? AppTheme.spacing.xl
-                                    : 0,
-                              ),
-                              child: _buildUserCard(
-                                  rowUsers[i], theme, colorScheme),
+            return Padding(
+              padding: EdgeInsets.only(bottom: AppTheme.spacing.xl),
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (var i = 0; i < crossAxisCount; i++) ...[
+                      if (i < rowUsers.length)
+                        Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                              right: i < crossAxisCount - 1
+                                  ? AppTheme.spacing.xl
+                                  : 0,
                             ),
-                          )
-                        else
-                          Expanded(child: Container()),
-                      ],
+                            child: _buildUserCard(
+                              rowUsers[i],
+                              theme,
+                              colorScheme,
+                            ),
+                          ),
+                        )
+                      else
+                        Expanded(child: Container()),
                     ],
-                  ),
+                  ],
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          }),
         );
       },
     );
@@ -232,17 +228,19 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
   }
 
   Widget _buildUserCard(
-      UserModel user, ThemeData theme, ColorScheme colorScheme) {
-    final String initials =
-        user.name.isNotEmpty ? user.name.substring(0, 1).toUpperCase() : '?';
+    UserModel user,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    final String initials = user.name.isNotEmpty
+        ? user.name.substring(0, 1).toUpperCase()
+        : '?';
 
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
         boxShadow: AppTheme.elevations.small,
       ),
       child: Material(

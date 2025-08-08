@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../exercise_model.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
-import 'package:alphanessone/UI/components/IconButtonWithBackground.dart';
+import 'package:alphanessone/UI/components/icon_button_with_background.dart';
 
 class PendingApprovalBadge extends StatelessWidget {
   const PendingApprovalBadge({super.key});
@@ -22,18 +22,12 @@ class PendingApprovalBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.tertiaryContainer.withAlpha(76),
         borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
-        border: Border.all(
-          color: colorScheme.tertiary.withAlpha(76),
-        ),
+        border: Border.all(color: colorScheme.tertiary.withAlpha(76)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.pending_outlined,
-            size: 16,
-            color: colorScheme.tertiary,
-          ),
+          Icon(Icons.pending_outlined, size: 16, color: colorScheme.tertiary),
           SizedBox(width: AppTheme.spacing.xs),
           Text(
             'Pending Approval',
@@ -70,9 +64,7 @@ class ExerciseCardContent extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
         boxShadow: AppTheme.elevations.small,
       ),
       child: Material(
@@ -98,8 +90,9 @@ class ExerciseCardContent extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: colorScheme.primaryContainer.withAlpha(76),
-                          borderRadius:
-                              BorderRadius.circular(AppTheme.radii.xxl),
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radii.xxl,
+                          ),
                         ),
                         child: Text(
                           exercise.type,

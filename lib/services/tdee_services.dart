@@ -6,7 +6,9 @@ class TDEEService {
 
   TDEEService(this._firestore);
 
-  Future<Map<String, dynamic>?> getMostRecentNutritionData(String userId) async {
+  Future<Map<String, dynamic>?> getMostRecentNutritionData(
+    String userId,
+  ) async {
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
 
@@ -25,7 +27,10 @@ class TDEEService {
     return null;
   }
 
-Future<void> saveNutritionData(String userId, Map<String, dynamic> data) async {
+  Future<void> saveNutritionData(
+    String userId,
+    Map<String, dynamic> data,
+  ) async {
     final DateTime now = DateTime.now();
     final DateTime todayStart = DateTime(now.year, now.month, now.day);
 
@@ -65,8 +70,14 @@ Future<void> saveNutritionData(String userId, Map<String, dynamic> data) async {
             .collection('mynutrition')
             .doc(docId)
             .update(nutritionData)
-            .then((_) => debugPrint('Nutrition data updated successfully for docId: $docId'))
-            .catchError((error) => debugPrint('Failed to update document: $error'));
+            .then(
+              (_) => debugPrint(
+                'Nutrition data updated successfully for docId: $docId',
+              ),
+            )
+            .catchError(
+              (error) => debugPrint('Failed to update document: $error'),
+            );
       } else {
         // Create a new document for today
         await _firestore
@@ -74,8 +85,13 @@ Future<void> saveNutritionData(String userId, Map<String, dynamic> data) async {
             .doc(userId)
             .collection('mynutrition')
             .add(nutritionData)
-            .then((docRef) => debugPrint('New nutrition data added with ID: ${docRef.id}'))
-            .catchError((error) => debugPrint('Failed to add new document: $error'));
+            .then(
+              (docRef) =>
+                  debugPrint('New nutrition data added with ID: ${docRef.id}'),
+            )
+            .catchError(
+              (error) => debugPrint('Failed to add new document: $error'),
+            );
       }
     } catch (e) {
       debugPrint('Error saving nutrition data: $e');
@@ -93,5 +109,3 @@ Future<void> saveNutritionData(String userId, Map<String, dynamic> data) async {
     throw ArgumentError('Value must be int or double');
   }
 }
-
-

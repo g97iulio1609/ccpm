@@ -48,9 +48,7 @@ class SubscriptionCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
         boxShadow: [
           BoxShadow(
             color: colorScheme.shadow.withAlpha(51),
@@ -84,27 +82,17 @@ class SubscriptionCard extends StatelessWidget {
                   child: Text(
                     title,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: -0.5,
-                        ),
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.5,
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            _buildInfoRow(
-              context,
-              'Stato',
-              status,
-              Icons.info_outline,
-            ),
+            _buildInfoRow(context, 'Stato', status, Icons.info_outline),
             const SizedBox(height: 8),
-            _buildInfoRow(
-              context,
-              'Scadenza',
-              expiry,
-              Icons.event_outlined,
-            ),
+            _buildInfoRow(context, 'Scadenza', expiry, Icons.event_outlined),
             if (giftInfo != null) ...[
               const SizedBox(height: 16),
               Container(
@@ -119,9 +107,9 @@ class SubscriptionCard extends StatelessWidget {
                 child: Text(
                   giftInfo!,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],
@@ -160,24 +148,20 @@ class SubscriptionCard extends StatelessWidget {
 
     return Row(
       children: [
-        Icon(
-          icon,
-          size: 18,
-          color: colorScheme.onSurfaceVariant,
-        ),
+        Icon(icon, size: 18, color: colorScheme.onSurfaceVariant),
         const SizedBox(width: 8),
         Text(
           '$label: ',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
         ),
         Text(
           value,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: colorScheme.onSurface,
-                fontWeight: FontWeight.w500,
-              ),
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
     );
@@ -235,10 +219,7 @@ class SubscriptionItemTile extends StatelessWidget {
 class SubscriptionsScreen extends ConsumerStatefulWidget {
   final String userId;
 
-  const SubscriptionsScreen({
-    super.key,
-    required this.userId,
-  });
+  const SubscriptionsScreen({super.key, required this.userId});
 
   @override
   ConsumerState<SubscriptionsScreen> createState() =>
@@ -299,13 +280,14 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
             {
               'productId': subscriptionType ?? 'standard',
               'priceId': subscriptionId ?? '',
-              'quantity': 1
-            }
-          ]
+              'quantity': 1,
+            },
+          ],
         };
 
-        final subscriptionDetails =
-            SubscriptionDetails.fromJson(subscriptionData);
+        final subscriptionDetails = SubscriptionDetails.fromJson(
+          subscriptionData,
+        );
         ref.read(selectedUserSubscriptionProvider.notifier).state =
             subscriptionDetails;
         return;
@@ -348,9 +330,9 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _cancelSubscription() async {
@@ -359,9 +341,7 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
       final functions = FirebaseFunctions.instanceFor(region: 'europe-west1');
       final callable = functions.httpsCallable('cancelSubscription');
 
-      final result = await callable.call({
-        'userId': widget.userId,
-      });
+      final result = await callable.call({'userId': widget.userId});
 
       if (result.data['success'] == true) {
         _showSnackBar(result.data['message']);
@@ -378,8 +358,7 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
     final isAdmin = ref.watch(isAdminProvider);
     final isOwnProfile =
         widget.userId == FirebaseAuth.instance.currentUser?.uid;
@@ -392,9 +371,7 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
 
     if (_isLoading) {
       return Center(
-        child: CircularProgressIndicator(
-          color: colorScheme.primary,
-        ),
+        child: CircularProgressIndicator(color: colorScheme.primary),
       );
     }
 
@@ -420,7 +397,9 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
                         label: const Text('Regala Abbonamento'),
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 12),
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
                         ),
                       ),
                     ),
@@ -437,14 +416,16 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
                               height: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: theme.colorScheme.onPrimary,
+                                color: Theme.of(context).colorScheme.onPrimary,
                               ),
                             )
                           : const Icon(Icons.sync),
                       label: const Text('Sincronizza Abbonamento'),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 12),
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
                       ),
                     ),
                   ),
@@ -468,27 +449,29 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
             Center(
               child: Text(
                 'Nessun abbonamento attivo.',
-                style: theme.textTheme.titleLarge,
+                style: Theme.of(context).textTheme.titleLarge,
               ),
             ),
           ] else ...[
             SubscriptionCard(
               title: 'Abbonamento',
               status: subscription.status.capitalize(),
-              expiry: DateFormat.yMMMd()
-                  .add_jm()
-                  .format(subscription.currentPeriodEnd),
+              expiry: DateFormat.yMMMd().add_jm().format(
+                subscription.currentPeriodEnd,
+              ),
               isGift: subscription.platform == 'gift',
-              giftInfo:
-                  subscription.platform == 'gift' ? 'Abbonamento regalo' : null,
-              showCancelButton: (isAdmin || isOwnProfile) &&
+              giftInfo: subscription.platform == 'gift'
+                  ? 'Abbonamento regalo'
+                  : null,
+              showCancelButton:
+                  (isAdmin || isOwnProfile) &&
                   subscription.platform == 'stripe',
               onCancelSubscription: _cancelSubscription,
             ),
             const SizedBox(height: 16),
             Text(
               'Dettagli Abbonamento',
-              style: theme.textTheme.titleLarge,
+              style: Theme.of(context).textTheme.titleLarge,
             ),
             const Divider(),
             ...subscription.items.map((item) {
@@ -501,8 +484,6 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
   }
 
   void _showGiftSubscriptionDialog(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     int selectedDays = 30;
 
     showDialog(

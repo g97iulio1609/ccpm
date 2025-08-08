@@ -113,7 +113,7 @@ class Meal {
     );
   }
 
-  get carbs => null;
+  Null get carbs => null;
 
   Map<String, dynamic> toMap() {
     return {
@@ -132,7 +132,11 @@ class Meal {
   }
 
   static Meal emptyMeal(
-      String userId, String dailyStatsId, DateTime date, String mealType) {
+    String userId,
+    String dailyStatsId,
+    DateTime date,
+    String mealType,
+  ) {
     return Meal(
       userId: userId,
       dailyStatsId: dailyStatsId,

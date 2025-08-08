@@ -39,9 +39,7 @@ class AppTabs extends StatelessWidget {
         boxShadow: showDivider ? AppTheme.elevations.small : null,
         border: showDivider
             ? Border(
-                bottom: BorderSide(
-                  color: colorScheme.outline.withAlpha(26),
-                ),
+                bottom: BorderSide(color: colorScheme.outline.withAlpha(26)),
               )
             : null,
       ),
@@ -69,13 +67,13 @@ class AppTabs extends StatelessWidget {
                 letterSpacing: -0.5,
               ),
               splashFactory: NoSplash.splashFactory,
-              overlayColor: WidgetStateProperty.resolveWith<Color?>(
-                (Set<WidgetState> states) {
-                  return states.contains(WidgetState.focused)
-                      ? null
-                      : Colors.transparent;
-                },
-              ),
+              overlayColor: WidgetStateProperty.resolveWith<Color?>((
+                Set<WidgetState> states,
+              ) {
+                return states.contains(WidgetState.focused)
+                    ? null
+                    : Colors.transparent;
+              }),
               tabs: tabs.map((tab) => _buildTab(tab, colorScheme)).toList(),
               onTap: onTabSelected,
             ),
@@ -224,8 +222,9 @@ class IconTab extends StatelessWidget {
           Icon(
             icon,
             size: 20,
-            color:
-                isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
+            color: isSelected
+                ? colorScheme.primary
+                : colorScheme.onSurfaceVariant,
           ),
           SizedBox(width: AppTheme.spacing.xs),
           Text(label),

@@ -7,7 +7,10 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 class FoodAdd extends HookConsumerWidget {
   final String id; // Added the mealId parameter
 
-  const FoodAdd({super.key, required this.id}); // Modified constructor to accept mealId
+  const FoodAdd({
+    super.key,
+    required this.id,
+  }); // Modified constructor to accept mealId
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -26,7 +29,8 @@ class FoodAdd extends HookConsumerWidget {
     final fatController = useTextEditingController(text: '0');
 
     void saveFood() {
-      final portion = '${servingSizeValueController.text}${servingSizeUnitController.value}';
+      final portion =
+          '${servingSizeValueController.text}${servingSizeUnitController.value}';
 
       final food = Food(
         id: '', // Pass the mealId
@@ -76,7 +80,11 @@ class FoodAdd extends HookConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   _buildNutrientRow('Protein', proteinController, 'g'),
-                  _buildNutrientRow('Carbohydrates', carbohydratesController, 'g'),
+                  _buildNutrientRow(
+                    'Carbohydrates',
+                    carbohydratesController,
+                    'g',
+                  ),
                   _buildNutrientRow('Fat', fatController, 'g'),
                   const SizedBox(height: 8),
                   _buildNutrientRow('Calories', caloriesController, 'kcal'),
@@ -126,11 +134,12 @@ class FoodAdd extends HookConsumerWidget {
                         },
                         items: <String>['g', 'ml', 'oz']
                             .map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            })
+                            .toList(),
                       ),
                     ],
                   ),
@@ -168,7 +177,10 @@ class FoodAdd extends HookConsumerWidget {
                     onPressed: cancel,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -180,7 +192,10 @@ class FoodAdd extends HookConsumerWidget {
                     onPressed: saveFood,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -197,7 +212,11 @@ class FoodAdd extends HookConsumerWidget {
     );
   }
 
-  Widget _buildNutrientRow(String label, TextEditingController controller, String unit) {
+  Widget _buildNutrientRow(
+    String label,
+    TextEditingController controller,
+    String unit,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(
@@ -210,7 +229,10 @@ class FoodAdd extends HookConsumerWidget {
             decoration: InputDecoration(
               suffixText: unit,
               border: const OutlineInputBorder(),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 8,
+              ),
             ),
             keyboardType: TextInputType.number,
           ),

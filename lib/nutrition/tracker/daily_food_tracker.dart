@@ -5,7 +5,8 @@ import '../services/meals_services.dart';
 import 'food_list.dart';
 import '../models/meals_model.dart' as meals;
 import '../../Main/app_theme.dart';
-import '../../UI/appBar_custom.dart';
+import 'package:alphanessone/UI/components/app_card.dart';
+import '../../UI/app_bar_custom.dart';
 import '../../models/user_model.dart';
 import '../../providers/providers.dart';
 
@@ -27,18 +28,18 @@ final activeUserIdProvider = Provider.autoDispose((ref) {
 // Provider per l'inizializzazione dei dati
 final initializationProvider = FutureProvider.autoDispose
     .family<Map<String, dynamic>?, String>((ref, userId) async {
-  final mealsService = ref.read(mealsServiceProvider);
-  final currentDate = ref.read(selectedDateProvider);
-  final tdeeService = ref.read(tdeeServiceProvider);
+      final mealsService = ref.read(mealsServiceProvider.notifier);
+      final currentDate = ref.read(selectedDateProvider);
+      final tdeeService = ref.read(tdeeServiceProvider);
 
-  // Esegui le operazioni di inizializzazione in parallelo
-  await Future.wait([
-    mealsService.createDailyStatsIfNotExist(userId, currentDate),
-    mealsService.createMealsIfNotExist(userId, currentDate),
-  ]);
+      // Esegui le operazioni di inizializzazione in parallelo
+      await Future.wait([
+        mealsService.createDailyStatsIfNotExist(userId, currentDate),
+        mealsService.createMealsIfNotExist(userId, currentDate),
+      ]);
 
-  return tdeeService.getMostRecentNutritionData(userId);
-});
+      return tdeeService.getMostRecentNutritionData(userId);
+    });
 
 class DailyFoodTracker extends ConsumerStatefulWidget {
   const DailyFoodTracker({super.key});
@@ -91,8 +92,6 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final userId = ref.watch(activeUserIdProvider);
 
     // Osserva il provider di inizializzazione
@@ -109,15 +108,10 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
 
         return _buildMainContent(context);
       },
-      loading: () => const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      ),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (error, stack) => Scaffold(
-        body: Center(
-          child: Text('Errore durante l\'inizializzazione: $error'),
-        ),
+        body: Center(child: Text('Errore durante l\'inizializzazione: $error')),
       ),
     );
   }
@@ -136,12 +130,8 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
             if (_shouldShowUserSelector())
               Padding(
                 padding: EdgeInsets.all(AppTheme.spacing.md),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                    boxShadow: AppTheme.elevations.small,
-                  ),
+                child: AppCard(
+                  background: colorScheme.surfaceContainerHighest.withAlpha(38),
                   child: UserTypeAheadField(
                     controller: _userSearchController,
                     focusNode: _userSearchFocusNode,
@@ -153,13 +143,15 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
                     onChanged: (pattern) {
                       final allUsers = ref.read(userListProvider);
                       final filteredUsers = allUsers
-                          .where((user) =>
-                              user.name
-                                  .toLowerCase()
-                                  .contains(pattern.toLowerCase()) ||
-                              user.email
-                                  .toLowerCase()
-                                  .contains(pattern.toLowerCase()))
+                          .where(
+                            (user) =>
+                                user.name.toLowerCase().contains(
+                                  pattern.toLowerCase(),
+                                ) ||
+                                user.email.toLowerCase().contains(
+                                  pattern.toLowerCase(),
+                                ),
+                          )
                           .toList();
                       ref.read(filteredUserListProvider.notifier).state =
                           filteredUsers;
@@ -169,7 +161,12 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
               ),
             Expanded(
               child: _buildUserContent(
-                  userAsyncValue, selectedDate, userId, theme, colorScheme),
+                userAsyncValue,
+                selectedDate,
+                userId,
+                theme,
+                colorScheme,
+              ),
             ),
           ],
         ),
@@ -178,21 +175,27 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
   }
 
   Widget _buildUserContent(
-      AsyncValue<UserModel?> userAsyncValue,
-      DateTime selectedDate,
-      String userId,
-      ThemeData theme,
-      ColorScheme colorScheme) {
+    AsyncValue<UserModel?> userAsyncValue,
+    DateTime selectedDate,
+    String userId,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
     return userAsyncValue.when(
       data: (user) {
         if (user == null) {
-          return _buildErrorWidget('Utente non trovato',
-              Icons.person_off_outlined, theme, colorScheme);
+          return _buildErrorWidget(
+            'Utente non trovato',
+            Icons.person_off_outlined,
+            theme,
+            colorScheme,
+          );
         }
         return Consumer(
           builder: (context, ref, child) {
-            final dailyStatsAsyncValue =
-                ref.watch(dailyStatsProvider(selectedDate));
+            final dailyStatsAsyncValue = ref.watch(
+              dailyStatsProvider(selectedDate),
+            );
             return dailyStatsAsyncValue.when(
               data: (stats) => CustomScrollView(
                 slivers: [
@@ -232,16 +235,16 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
   }
 
   Widget _buildErrorWidget(
-      String message, IconData icon, ThemeData theme, ColorScheme colorScheme) {
+    String message,
+    IconData icon,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            icon,
-            size: 48,
-            color: colorScheme.error,
-          ),
+          Icon(icon, size: 48, color: colorScheme.error),
           SizedBox(height: AppTheme.spacing.md),
           Text(
             message,
@@ -259,15 +262,10 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Container(
-      margin: EdgeInsets.all(AppTheme.spacing.md),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        boxShadow: AppTheme.elevations.small,
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(AppTheme.spacing.lg),
+    return Padding(
+      padding: EdgeInsets.all(AppTheme.spacing.md),
+      child: AppCard(
+        background: colorScheme.surfaceContainerHighest.withAlpha(38),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -281,7 +279,10 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
   }
 
   Widget _buildCaloriesSummary(
-      meals.DailyStats stats, ThemeData theme, ColorScheme colorScheme) {
+    meals.DailyStats stats,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -337,7 +338,10 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
   }
 
   Widget _buildMacrosList(
-      meals.DailyStats stats, ThemeData theme, ColorScheme colorScheme) {
+    meals.DailyStats stats,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
     return Column(
       children: [
         _buildMacroItem(
@@ -368,7 +372,12 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
   }
 
   Widget _buildMacroItem(
-      String title, double value, double target, Color color, ThemeData theme) {
+    String title,
+    double value,
+    double target,
+    Color color,
+    ThemeData theme,
+  ) {
     final percentage = (value / target).clamp(0.0, 1.0);
     final colorScheme = theme.colorScheme;
 
@@ -422,18 +431,18 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
 
 final dailyStatsProvider = StreamProvider.autoDispose
     .family<meals.DailyStats, DateTime>((ref, date) async* {
-  final mealsService = ref.read(mealsServiceProvider);
-  final selectedUserId = ref.watch(selectedUserIdProvider);
+      final mealsService = ref.read(mealsServiceProvider.notifier);
+      final selectedUserId = ref.watch(selectedUserIdProvider);
 
-  if (selectedUserId == null) {
-    yield* const Stream.empty();
-    return;
-  }
+      if (selectedUserId == null) {
+        yield* const Stream.empty();
+        return;
+      }
 
-  await Future.wait([
-    mealsService.createDailyStatsIfNotExist(selectedUserId, date),
-    mealsService.createMealsIfNotExist(selectedUserId, date),
-  ]);
+      await Future.wait([
+        mealsService.createDailyStatsIfNotExist(selectedUserId, date),
+        mealsService.createMealsIfNotExist(selectedUserId, date),
+      ]);
 
-  yield* mealsService.getDailyStatsByDateStream(selectedUserId, date);
-});
+      yield* mealsService.getDailyStatsByDateStream(selectedUserId, date);
+    });

@@ -6,9 +6,7 @@ import 'ai_extension.dart';
 
 class ProfileExtension implements AIExtension {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final Logger _logger = Logger(
-    printer: PrettyPrinter(),
-  );
+  final Logger _logger = Logger(printer: PrettyPrinter());
 
   @override
   Future<bool> canHandle(Map<String, dynamic> interpretation) async {
@@ -16,8 +14,11 @@ class ProfileExtension implements AIExtension {
   }
 
   @override
-  Future<String?> handle(Map<String, dynamic> interpretation, String userId,
-      UserModel user) async {
+  Future<String?> handle(
+    Map<String, dynamic> interpretation,
+    String userId,
+    UserModel user,
+  ) async {
     final action = interpretation['action'] as String?;
     _logger.d('Handling profile action: $action');
 
@@ -36,8 +37,11 @@ class ProfileExtension implements AIExtension {
     }
   }
 
-  Future<String?> _handleUpdateProfile(Map<String, dynamic> interpretation,
-      String userId, UserModel user) async {
+  Future<String?> _handleUpdateProfile(
+    Map<String, dynamic> interpretation,
+    String userId,
+    UserModel user,
+  ) async {
     _logger.i('Updating profile with interpretation: $interpretation');
     final updates = <String, dynamic>{};
 
@@ -59,15 +63,19 @@ class ProfileExtension implements AIExtension {
         final date = DateTime.parse(interpretation['birthdate']);
         updates['birthdate'] = Timestamp.fromDate(date);
       } catch (e, stackTrace) {
-        _logger.e('Invalid birthdate format: ${interpretation['birthdate']}',
-            error: e, stackTrace: stackTrace);
+        _logger.e(
+          'Invalid birthdate format: ${interpretation['birthdate']}',
+          error: e,
+          stackTrace: stackTrace,
+        );
         return 'Formato data di nascita non valido.';
       }
     }
 
     if (interpretation.containsKey('activityLevel')) {
-      final level =
-          _stringToActivityLevel(interpretation['activityLevel'].toString());
+      final level = _stringToActivityLevel(
+        interpretation['activityLevel'].toString(),
+      );
       updates['activityLevel'] = level;
     }
 
@@ -87,7 +95,9 @@ class ProfileExtension implements AIExtension {
   }
 
   Future<String?> _handleQueryProfile(
-      Map<String, dynamic> interpretation, UserModel user) async {
+    Map<String, dynamic> interpretation,
+    UserModel user,
+  ) async {
     _logger.i('Querying profile with interpretation: $interpretation');
     if (!interpretation.containsKey('field')) {
       _logger.w('Field not specified for profile query.');

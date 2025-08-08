@@ -1,25 +1,13 @@
-import 'package:alphanessone/trainingBuilder/models/series_model.dart';
-import 'package:alphanessone/trainingBuilder/models/superseries_model.dart';
-import 'package:alphanessone/trainingBuilder/models/week_model.dart';
-import 'package:alphanessone/trainingBuilder/models/workout_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
-import 'package:alphanessone/trainingBuilder/models/training_model.dart';
-
-import '../models/exercise_model.dart';
 
 class WeekController {
   void addWeek(TrainingProgram program) {
     final newWeek = Week(
       id: null,
       number: program.weeks.length + 1,
-      workouts: [
-        Workout(
-          id: '',
-          order: 1,
-          exercises: [],
-        ),
-      ],
+      workouts: [Workout(id: '', name: 'Workout 1', order: 1, exercises: [])],
     );
 
     program.weeks.add(newWeek);
@@ -51,7 +39,9 @@ class WeekController {
   }
 
   void _removeExerciseAndRelatedData(
-      TrainingProgram program, Exercise exercise) {
+    TrainingProgram program,
+    Exercise exercise,
+  ) {
     if (exercise.id != null) {
       program.trackToDeleteExercises.add(exercise.id!);
     }
@@ -61,17 +51,22 @@ class WeekController {
   }
 
   void _removeSeriesData(TrainingProgram program, Series series) {
-    program.trackToDeleteSeries.add(series.serieId);
+    if (series.serieId != null) {
+      program.trackToDeleteSeries.add(series.serieId!);
+    }
   }
 
   void _updateWeekNumbers(TrainingProgram program, int startIndex) {
     for (int i = startIndex; i < program.weeks.length; i++) {
-      program.weeks[i].number = i + 1;
+      program.weeks[i] = program.weeks[i].copyWith(number: i + 1);
     }
   }
 
-  Future<void> copyWeek(TrainingProgram program, int sourceWeekIndex,
-      BuildContext context) async {
+  Future<void> copyWeek(
+    TrainingProgram program,
+    int sourceWeekIndex,
+    BuildContext context,
+  ) async {
     final destinationWeekIndex = await _showCopyWeekDialog(program, context);
     if (destinationWeekIndex != null) {
       final sourceWeek = program.weeks[sourceWeekIndex];
@@ -82,14 +77,18 @@ class WeekController {
         program.trackToDeleteWeeks.add(destinationWeek.id!);
         program.weeks[destinationWeekIndex] = copiedWeek;
       } else {
-        copiedWeek.number = program.weeks.length + 1;
-        program.weeks.add(copiedWeek);
+        final updatedWeek = copiedWeek.copyWith(
+          number: program.weeks.length + 1,
+        );
+        program.weeks.add(updatedWeek);
       }
     }
   }
 
   Future<int?> _showCopyWeekDialog(
-      TrainingProgram program, BuildContext context) async {
+    TrainingProgram program,
+    BuildContext context,
+  ) async {
     return showDialog<int>(
       context: context,
       builder: (context) {
@@ -101,17 +100,17 @@ class WeekController {
               program.weeks.length + 1,
               (index) => DropdownMenuItem(
                 value: index,
-                child: Text(index < program.weeks.length
-                    ? 'Week ${program.weeks[index].number}'
-                    : 'New Week'),
+                child: Text(
+                  index < program.weeks.length
+                      ? 'Week ${program.weeks[index].number}'
+                      : 'New Week',
+                ),
               ),
             ),
             onChanged: (value) {
               Navigator.pop(context, value);
             },
-            decoration: const InputDecoration(
-              labelText: 'Destination Week',
-            ),
+            decoration: const InputDecoration(labelText: 'Destination Week'),
           ),
           actions: [
             TextButton(
@@ -125,14 +124,11 @@ class WeekController {
   }
 
   Week _copyWeek(Week sourceWeek) {
-    final copiedWorkouts =
-        sourceWeek.workouts.map((workout) => _copyWorkout(workout)).toList();
+    final copiedWorkouts = sourceWeek.workouts
+        .map((workout) => _copyWorkout(workout))
+        .toList();
 
-    return Week(
-      id: null,
-      number: sourceWeek.number,
-      workouts: copiedWorkouts,
-    );
+    return Week(id: null, number: sourceWeek.number, workouts: copiedWorkouts);
   }
 
   Workout _copyWorkout(Workout sourceWorkout) {
@@ -145,28 +141,35 @@ class WeekController {
       return copiedExercise;
     }).toList();
 
-    final copiedSuperSets = sourceWorkout.superSets.map((superSet) {
+    final copiedSuperSets = sourceWorkout.superSets?.map((superSetMap) {
       final newSuperSetId = generateRandomId(16);
-      final copiedExerciseIds = superSet.exerciseIds.map((exerciseId) {
+      final exerciseIds = List<String>.from(superSetMap['exerciseIds'] ?? []);
+      final copiedExerciseIds = exerciseIds.map((exerciseId) {
         final newExerciseId = exerciseIdMap[exerciseId];
         if (newExerciseId != null) {
-          final copiedExercise =
-              copiedExercises.firstWhere((e) => e.id == newExerciseId);
-          copiedExercise.superSetId = newSuperSetId;
+          final copiedExercise = copiedExercises.firstWhere(
+            (e) => e.id == newExerciseId,
+          );
+          final updatedExercise = copiedExercise.copyWith(
+            superSetId: newSuperSetId,
+          );
+          copiedExercises[copiedExercises.indexOf(copiedExercise)] =
+              updatedExercise;
           return newExerciseId;
         }
         return exerciseId; // Fallback to original ID if not found (shouldn't happen)
       }).toList();
 
-      return SuperSet(
-        id: newSuperSetId,
-        name: superSet.name,
-        exerciseIds: copiedExerciseIds,
-      );
+      return {
+        'id': newSuperSetId,
+        'name': superSetMap['name'],
+        'exerciseIds': copiedExerciseIds,
+      };
     }).toList();
 
     return Workout(
       id: null,
+      name: sourceWorkout.name,
       order: sourceWorkout.order,
       exercises: copiedExercises,
       superSets: copiedSuperSets,
@@ -174,8 +177,9 @@ class WeekController {
   }
 
   Exercise _copyExercise(Exercise sourceExercise) {
-    final copiedSeries =
-        sourceExercise.series.map((series) => _copySeries(series)).toList();
+    final copiedSeries = sourceExercise.series
+        .map((series) => _copySeries(series))
+        .toList();
 
     return sourceExercise.copyWith(
       id: generateRandomId(16).toString(),
@@ -190,8 +194,8 @@ class WeekController {
     return sourceSeries.copyWith(
       serieId: generateRandomId(16).toString(),
       done: false,
-      reps_done: 0,
-      weight_done: 0.0,
+      repsDone: 0,
+      weightDone: 0.0,
     );
   }
 

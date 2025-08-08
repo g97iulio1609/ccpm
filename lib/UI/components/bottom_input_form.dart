@@ -64,7 +64,8 @@ class BottomInputForm extends StatelessWidget {
               borderRadius: showDragHandle
                   ? null
                   : BorderRadius.vertical(
-                      top: Radius.circular(AppTheme.radii.xl)),
+                      top: Radius.circular(AppTheme.radii.xl),
+                    ),
             ),
             child: Row(
               children: [
@@ -112,9 +113,7 @@ class BottomInputForm extends StatelessWidget {
                     if (showDividers && i < children.length - 1) ...[
                       SizedBox(height: AppTheme.spacing.lg),
                       if (i < children.length - 1)
-                        Divider(
-                          color: colorScheme.outline.withAlpha(26),
-                        ),
+                        Divider(color: colorScheme.outline.withAlpha(26)),
                       SizedBox(height: AppTheme.spacing.lg),
                     ] else if (i < children.length - 1)
                       SizedBox(height: AppTheme.spacing.lg),
@@ -131,9 +130,7 @@ class BottomInputForm extends StatelessWidget {
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerHighest.withAlpha(76),
                 border: Border(
-                  top: BorderSide(
-                    color: colorScheme.outline.withAlpha(26),
-                  ),
+                  top: BorderSide(color: colorScheme.outline.withAlpha(26)),
                 ),
               ),
               child: Row(
@@ -202,9 +199,7 @@ class BottomInputForm extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withAlpha(76),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
       ),
       child: TextFormField(
         controller: controller,
@@ -217,11 +212,7 @@ class BottomInputForm extends StatelessWidget {
           hintStyle: theme.textTheme.bodyLarge?.copyWith(
             color: colorScheme.onSurfaceVariant.withAlpha(179),
           ),
-          prefixIcon: Icon(
-            icon,
-            color: colorScheme.primary,
-            size: 20,
-          ),
+          prefixIcon: Icon(icon, color: colorScheme.primary, size: 20),
           suffixText: suffixText,
           suffixStyle: theme.textTheme.bodyMedium?.copyWith(
             color: colorScheme.onSurfaceVariant,

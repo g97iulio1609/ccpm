@@ -1,66 +1,92 @@
-import 'package:alphanessone/trainingBuilder/dialog/series_dialog.dart';
-import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
-import 'package:alphanessone/trainingBuilder/models/series_model.dart';
+import 'package:alphanessone/trainingBuilder/presentation/widgets/dialogs/series_dialog.dart';
+import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/series_utils.dart';
+import 'package:alphanessone/trainingBuilder/services/exercise_service.dart';
+import 'package:alphanessone/trainingBuilder/domain/services/series_business_service.dart';
 import 'package:flutter/material.dart';
-import 'package:alphanessone/trainingBuilder/models/training_model.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 
-class SeriesController extends ChangeNotifier {
+class SeriesController {
   final ExerciseRecordService exerciseRecordService;
   final ValueNotifier<double> weightNotifier;
 
   SeriesController(this.exerciseRecordService, this.weightNotifier);
 
-  Future<void> addSeries(TrainingProgram program, int weekIndex,
-      int workoutIndex, int exerciseIndex, BuildContext context) async {
+  Future<void> addSeries(
+    TrainingProgram program,
+    int weekIndex,
+    int workoutIndex,
+    int exerciseIndex,
+    BuildContext context,
+  ) async {
     if (!_isValidIndex(program, weekIndex, workoutIndex, exerciseIndex)) {
       debugPrint('Invalid indices provided');
       return;
     }
 
     final exercise = program
-        .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+        .weeks[weekIndex]
+        .workouts[workoutIndex]
+        .exercises[exerciseIndex];
 
     // Use the exerciseId as originalExerciseId
     final originalExerciseId = exercise.exerciseId;
     debugPrint('Original Exercise ID: $originalExerciseId');
 
-    final latestMaxWeight = await SeriesUtils.getLatestMaxWeight(
-        exerciseRecordService, program.athleteId, originalExerciseId ?? '');
+    final latestMaxWeight = await ExerciseService.getLatestMaxWeight(
+      exerciseRecordService,
+      program.athleteId,
+      originalExerciseId ?? '',
+    );
 
     if (!context.mounted) return;
 
     final seriesList = await _showSeriesDialog(
-        context, exercise, weekIndex, null, exercise.type, latestMaxWeight);
+      context,
+      exercise,
+      program.athleteId,
+      weekIndex,
+      null,
+      exercise.type,
+      latestMaxWeight,
+    );
 
     if (seriesList != null && seriesList.isNotEmpty) {
       // Set originalExerciseId for each series
-      for (var series in seriesList) {
-        series.originalExerciseId = originalExerciseId;
-      }
+      final updatedSeriesList = seriesList
+          .map(
+            (series) => series.copyWith(originalExerciseId: originalExerciseId),
+          )
+          .toList();
 
-      exercise.series.addAll(seriesList);
-      await SeriesUtils.updateSeriesWeights(program, weekIndex, workoutIndex,
-          exerciseIndex, exerciseRecordService);
-      notifyListeners();
+      exercise.series.addAll(updatedSeriesList);
+      await SeriesUtils.updateSeriesWeights(
+        program,
+        weekIndex,
+        workoutIndex,
+        exerciseIndex,
+        exerciseRecordService,
+      );
+      // State update delegated to outer controller
     }
   }
 
   Future<List<Series>?> _showSeriesDialog(
-      BuildContext context,
-      Exercise exercise,
-      int weekIndex,
-      List<Series>? currentSeriesGroup,
-      String? exerciseType,
-      num? latestMaxWeight) async {
+    BuildContext context,
+    Exercise exercise,
+    String athleteId,
+    int weekIndex,
+    List<Series>? currentSeriesGroup,
+    String? exerciseType,
+    num? latestMaxWeight,
+  ) async {
     if (!context.mounted) return null;
 
     return await showDialog<List<Series>>(
       context: context,
       builder: (context) => SeriesDialog(
         exerciseRecordService: exerciseRecordService,
-        athleteId: exercise.exerciseId ?? '',
+        athleteId: athleteId,
         exerciseId: exercise.exerciseId ?? '',
         weekIndex: weekIndex,
         exercise: exercise,
@@ -73,26 +99,30 @@ class SeriesController extends ChangeNotifier {
   }
 
   Future<void> editSeries(
-      TrainingProgram program,
-      int weekIndex,
-      int workoutIndex,
-      int exerciseIndex,
-      List<Series> currentSeriesGroup,
-      BuildContext context,
-      num latestMaxWeight) async {
+    TrainingProgram program,
+    int weekIndex,
+    int workoutIndex,
+    int exerciseIndex,
+    List<Series> currentSeriesGroup,
+    BuildContext context,
+    num latestMaxWeight,
+  ) async {
     if (!_isValidIndex(program, weekIndex, workoutIndex, exerciseIndex)) {
       debugPrint('Invalid indices provided');
       return;
     }
 
     final exercise = program
-        .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+        .weeks[weekIndex]
+        .workouts[workoutIndex]
+        .exercises[exerciseIndex];
 
     if (!context.mounted) return;
 
     final updatedSeries = await _showSeriesDialog(
       context,
       exercise,
+      program.athleteId,
       weekIndex,
       currentSeriesGroup,
       exercise.type,
@@ -104,50 +134,74 @@ class SeriesController extends ChangeNotifier {
       if (startIndex != -1) {
         // Remove old series from database
         for (var series in currentSeriesGroup) {
-          program.trackToDeleteSeries.add(series.serieId);
+          if (series.serieId != null) {
+            program.trackToDeleteSeries.add(series.serieId!);
+          }
         }
 
-        // Replace old series with updated ones
-        exercise.series.replaceRange(
-            startIndex, startIndex + currentSeriesGroup.length, updatedSeries);
+        // Sostituzione immutabile e ricalcolo order via business service
+        final List<Series> newSeriesList = List<Series>.from(exercise.series)
+          ..removeRange(startIndex, startIndex + currentSeriesGroup.length)
+          ..insertAll(startIndex, updatedSeries);
+        final List<Series> recalculated =
+            SeriesBusinessService.recalculateOrders(newSeriesList);
+        final updatedExercise = exercise.copyWith(series: recalculated);
+        program
+                .weeks[weekIndex]
+                .workouts[workoutIndex]
+                .exercises[exerciseIndex] =
+            updatedExercise;
 
-        // Update series order
-        for (int i = 0; i < exercise.series.length; i++) {
-          exercise.series[i].order = i + 1;
-        }
-
-        await SeriesUtils.updateSeriesWeights(program, weekIndex, workoutIndex,
-            exerciseIndex, exerciseRecordService);
-        notifyListeners();
+        await SeriesUtils.updateSeriesWeights(
+          program,
+          weekIndex,
+          workoutIndex,
+          exerciseIndex,
+          exerciseRecordService,
+        );
       }
     }
   }
 
-  void removeAllSeriesForExercise(TrainingProgram program, int weekIndex,
-      int workoutIndex, int exerciseIndex) {
+  void removeAllSeriesForExercise(
+    TrainingProgram program,
+    int weekIndex,
+    int workoutIndex,
+    int exerciseIndex,
+  ) {
     if (!_isValidIndex(program, weekIndex, workoutIndex, exerciseIndex)) {
       debugPrint('Invalid indices provided');
       return;
     }
 
     final exercise = program
-        .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+        .weeks[weekIndex]
+        .workouts[workoutIndex]
+        .exercises[exerciseIndex];
     for (final series in exercise.series) {
       removeSeriesData(program, series);
     }
     exercise.series.clear();
-    notifyListeners();
+    // State update delegated to outer controller
   }
 
-  void removeSeries(TrainingProgram program, int weekIndex, int workoutIndex,
-      int exerciseIndex, int groupIndex, int seriesIndex) {
+  void removeSeries(
+    TrainingProgram program,
+    int weekIndex,
+    int workoutIndex,
+    int exerciseIndex,
+    int groupIndex,
+    int seriesIndex,
+  ) {
     if (!_isValidIndex(program, weekIndex, workoutIndex, exerciseIndex)) {
       debugPrint('Invalid indices provided');
       return;
     }
 
     final exercise = program
-        .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+        .weeks[weekIndex]
+        .workouts[workoutIndex]
+        .exercises[exerciseIndex];
     final totalIndex = groupIndex * 1 + seriesIndex;
 
     if (totalIndex < 0 || totalIndex >= exercise.series.length) {
@@ -159,50 +213,85 @@ class SeriesController extends ChangeNotifier {
     removeSeriesData(program, series);
     exercise.series.removeAt(totalIndex);
     _updateSeriesOrders(
-        program, weekIndex, workoutIndex, exerciseIndex, totalIndex);
-    notifyListeners();
+      program,
+      weekIndex,
+      workoutIndex,
+      exerciseIndex,
+      totalIndex,
+    );
+    // State update delegated to outer controller
   }
 
   void removeSeriesData(TrainingProgram program, Series series) {
-    program.trackToDeleteSeries.add(series.serieId);
-    notifyListeners();
+    if (series.serieId != null) {
+      program.trackToDeleteSeries.add(series.serieId!);
+    }
+    // State update delegated to outer controller
   }
 
-  void updateSeries(TrainingProgram program, int weekIndex, int workoutIndex,
-      int exerciseIndex, List<Series> updatedSeries) {
-    if (!_isValidIndex(program, weekIndex, workoutIndex, exerciseIndex)) {
-      debugPrint('Invalid indices provided');
-      return;
-    }
-
-    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex]
-        .series = updatedSeries;
-    notifyListeners();
-  }
-
-  void _updateSeriesOrders(TrainingProgram program, int weekIndex,
-      int workoutIndex, int exerciseIndex, int startIndex) {
-    if (!_isValidIndex(program, weekIndex, workoutIndex, exerciseIndex)) {
-      debugPrint('Invalid indices provided');
-      return;
-    }
-
-    final exercise = program
-        .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
-    for (int i = startIndex; i < exercise.series.length; i++) {
-      exercise.series[i].order = i + 1;
-    }
-  }
-
-  void reorderSeries(TrainingProgram program, int weekIndex, int workoutIndex,
-      int exerciseIndex, int oldIndex, int newIndex) {
+  void updateSeries(
+    TrainingProgram program,
+    int weekIndex,
+    int workoutIndex,
+    int exerciseIndex,
+    List<Series> updatedSeries,
+  ) {
     if (!_isValidIndex(program, weekIndex, workoutIndex, exerciseIndex)) {
       debugPrint('Invalid indices provided');
       return;
     }
 
     final exercise = program
-        .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+        .weeks[weekIndex]
+        .workouts[workoutIndex]
+        .exercises[exerciseIndex];
+    final updatedExercise = exercise.copyWith(series: updatedSeries);
+    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] =
+        updatedExercise;
+  }
+
+  void _updateSeriesOrders(
+    TrainingProgram program,
+    int weekIndex,
+    int workoutIndex,
+    int exerciseIndex,
+    int startIndex,
+  ) {
+    if (!_isValidIndex(program, weekIndex, workoutIndex, exerciseIndex)) {
+      debugPrint('Invalid indices provided');
+      return;
+    }
+
+    final exercise = program
+        .weeks[weekIndex]
+        .workouts[workoutIndex]
+        .exercises[exerciseIndex];
+    final recalculated = SeriesBusinessService.recalculateOrders(
+      exercise.series,
+      startIndex: startIndex,
+    );
+    final updatedExercise = exercise.copyWith(series: recalculated);
+    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] =
+        updatedExercise;
+  }
+
+  void reorderSeries(
+    TrainingProgram program,
+    int weekIndex,
+    int workoutIndex,
+    int exerciseIndex,
+    int oldIndex,
+    int newIndex,
+  ) {
+    if (!_isValidIndex(program, weekIndex, workoutIndex, exerciseIndex)) {
+      debugPrint('Invalid indices provided');
+      return;
+    }
+
+    final exercise = program
+        .weeks[weekIndex]
+        .workouts[workoutIndex]
+        .exercises[exerciseIndex];
 
     if (oldIndex < 0 ||
         oldIndex >= exercise.series.length ||
@@ -216,15 +305,22 @@ class SeriesController extends ChangeNotifier {
       newIndex -= 1;
     }
 
-    final series = exercise.series.removeAt(oldIndex);
-    exercise.series.insert(newIndex, series);
-    _updateSeriesOrders(
-        program, weekIndex, workoutIndex, exerciseIndex, newIndex);
-    notifyListeners();
+    final List<Series> reordered = SeriesBusinessService.reorderSeries(
+      exercise.series,
+      oldIndex,
+      newIndex,
+    );
+    final updatedExercise = exercise.copyWith(series: reordered);
+    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] =
+        updatedExercise;
   }
 
-  bool _isValidIndex(TrainingProgram program, int weekIndex, int workoutIndex,
-      int exerciseIndex) {
+  bool _isValidIndex(
+    TrainingProgram program,
+    int weekIndex,
+    int workoutIndex,
+    int exerciseIndex,
+  ) {
     return weekIndex >= 0 &&
         weekIndex < program.weeks.length &&
         workoutIndex >= 0 &&
@@ -234,104 +330,67 @@ class SeriesController extends ChangeNotifier {
             program.weeks[weekIndex].workouts[workoutIndex].exercises.length;
   }
 
-  Future<void> updateSeriesWeights(TrainingProgram program, int weekIndex,
-      int workoutIndex, int exerciseIndex) async {
+  Future<void> updateSeriesWeights(
+    TrainingProgram program,
+    int weekIndex,
+    int workoutIndex,
+    int exerciseIndex,
+  ) async {
     if (!_isValidIndex(program, weekIndex, workoutIndex, exerciseIndex)) {
       debugPrint('Invalid indices provided');
       return;
     }
 
     await SeriesUtils.updateSeriesWeights(
-        program, weekIndex, workoutIndex, exerciseIndex, exerciseRecordService);
-    notifyListeners();
-  }
-
-  List<Series> _groupSeries(List<Series> series) {
-    final groupedSeries = <Series>[];
-    Series? currentGroup;
-
-    for (final series in series) {
-      if (currentGroup == null ||
-          series.reps != currentGroup.reps ||
-          series.maxReps != currentGroup.maxReps ||
-          series.weight != currentGroup.weight ||
-          series.maxWeight != currentGroup.maxWeight) {
-        currentGroup = series.copyWith(sets: 1);
-        groupedSeries.add(currentGroup);
-      } else {
-        currentGroup.sets += 1;
-        if (series.maxSets != null) {
-          currentGroup.maxSets = (currentGroup.maxSets ?? 0) + 1;
-        }
-      }
-    }
-
-    return groupedSeries;
-  }
-
-  List<Series> _ungroupSeries(List<Series> groupedSeries) {
-    final ungroupedSeries = <Series>[];
-
-    for (final group in groupedSeries) {
-      for (int i = 0; i < group.sets; i++) {
-        ungroupedSeries.add(group.copyWith(
-          sets: 1,
-          maxSets: null,
-          order: ungroupedSeries.length + 1,
-        ));
-      }
-    }
-
-    return ungroupedSeries;
+      program,
+      weekIndex,
+      workoutIndex,
+      exerciseIndex,
+      exerciseRecordService,
+    );
   }
 
   Future<void> updateSeriesRange(
-      TrainingProgram program,
-      int weekIndex,
-      int workoutIndex,
-      int exerciseIndex,
-      int seriesIndex,
-      String field,
-      dynamic value,
-      dynamic maxValue) async {
+    TrainingProgram program,
+    int weekIndex,
+    int workoutIndex,
+    int exerciseIndex,
+    int seriesIndex,
+    String field,
+    dynamic value,
+    dynamic maxValue,
+  ) async {
     if (!_isValidIndex(program, weekIndex, workoutIndex, exerciseIndex)) {
       debugPrint('Invalid indices provided');
       return;
     }
 
     final exercise = program
-        .weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
+        .weeks[weekIndex]
+        .workouts[workoutIndex]
+        .exercises[exerciseIndex];
     if (seriesIndex < 0 || seriesIndex >= exercise.series.length) {
       debugPrint('Invalid series index');
       return;
     }
 
     final series = exercise.series[seriesIndex];
-    switch (field) {
-      case 'reps':
-        series.reps = value;
-        series.maxReps = maxValue;
-        break;
-      case 'sets':
-        series.sets = value;
-        series.maxSets = maxValue;
-        break;
-      case 'intensity':
-        series.intensity = value;
-        series.maxIntensity = maxValue;
-        break;
-      case 'rpe':
-        series.rpe = value;
-        series.maxRpe = maxValue;
-        break;
-      case 'weight':
-        series.weight = value;
-        series.maxWeight = maxValue;
-        break;
-      default:
-        debugPrint('Invalid field: $field');
-        return;
-    }
+    final updatedSeries = SeriesBusinessService.updateRangeField(
+      series,
+      field: field,
+      value: value,
+      maxValue: maxValue,
+    );
+
+    final updatedExercise = exercise.copyWith(
+      series: SeriesBusinessService.replaceAt(
+        exercise.series,
+        seriesIndex,
+        updatedSeries,
+      ),
+    );
+    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] =
+        updatedExercise;
 
     await updateSeriesWeights(program, weekIndex, workoutIndex, exerciseIndex);
   }

@@ -26,9 +26,7 @@ class AthleteSelectionDialog extends ConsumerWidget {
         decoration: BoxDecoration(
           color: colorScheme.surface,
           borderRadius: BorderRadius.circular(AppTheme.radii.xl),
-          border: Border.all(
-            color: colorScheme.outline.withAlpha(26),
-          ),
+          border: Border.all(color: colorScheme.outline.withAlpha(26)),
           boxShadow: AppTheme.elevations.large,
         ),
         child: Column(
@@ -97,131 +95,149 @@ class AthleteSelectionDialog extends ConsumerWidget {
                         stream: usersService.getUsers(),
                         builder:
                             (context, AsyncSnapshot<List<UserModel>> snapshot) {
-                          if (snapshot.hasData) {
-                            final users = snapshot.data!;
-                            return Container(
-                              decoration: BoxDecoration(
-                                color: colorScheme.surfaceContainerHighest
-                                    .withAlpha(76),
-                                borderRadius:
-                                    BorderRadius.circular(AppTheme.radii.lg),
-                                border: Border.all(
-                                  color: colorScheme.outline.withAlpha(26),
-                                ),
-                              ),
-                              child: TypeAheadField<UserModel>(
-                                suggestionsController: suggestionsController,
-                                suggestionsCallback: (pattern) {
-                                  return users.where((user) {
-                                    final nameLower = user.name.toLowerCase();
-                                    final patternLower = pattern.toLowerCase();
-                                    return nameLower.contains(patternLower);
-                                  }).toList();
-                                },
-                                itemBuilder: (context, suggestion) {
-                                  return Container(
-                                    decoration: BoxDecoration(
-                                      border: Border(
-                                        bottom: BorderSide(
-                                          color:
-                                              colorScheme.outline.withAlpha(26),
-                                        ),
-                                      ),
+                              if (snapshot.hasData) {
+                                final users = snapshot.data!;
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.surfaceContainerHighest
+                                        .withAlpha(76),
+                                    borderRadius: BorderRadius.circular(
+                                      AppTheme.radii.lg,
                                     ),
-                                    child: ListTile(
-                                      leading: Container(
-                                        padding:
-                                            EdgeInsets.all(AppTheme.spacing.xs),
-                                        decoration: BoxDecoration(
-                                          color: colorScheme.primaryContainer
-                                              .withAlpha(76),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Icon(
-                                          Icons.person,
-                                          color: colorScheme.primary,
-                                          size: 20,
-                                        ),
-                                      ),
-                                      title: Text(
-                                        suggestion.name,
-                                        style:
-                                            theme.textTheme.bodyLarge?.copyWith(
-                                          color: colorScheme.onSurface,
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                                onSelected: (suggestion) {
-                                  controller.athleteId = suggestion.id;
-                                  athleteNameController.text = suggestion.name;
-                                },
-                                emptyBuilder: (context) => Padding(
-                                  padding: EdgeInsets.all(AppTheme.spacing.lg),
-                                  child: Text(
-                                    'Nessun atleta trovato',
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color:
-                                          colorScheme.surfaceContainerHighest,
+                                    border: Border.all(
+                                      color: colorScheme.outline.withAlpha(26),
                                     ),
                                   ),
-                                ),
-                                hideWithKeyboard: true,
-                                hideOnSelect: true,
-                                retainOnLoading: false,
-                                decorationBuilder: (context, child) {
-                                  return Material(
-                                    color: Colors.transparent,
-                                    child: child,
-                                  );
-                                },
-                                controller: athleteNameController,
-                                focusNode: focusNode,
-                                builder: (context, suggestionsController,
-                                    focusNode) {
-                                  return TextFormField(
+                                  child: TypeAheadField<UserModel>(
+                                    suggestionsController:
+                                        suggestionsController,
+                                    suggestionsCallback: (pattern) {
+                                      return users.where((user) {
+                                        final nameLower = user.name
+                                            .toLowerCase();
+                                        final patternLower = pattern
+                                            .toLowerCase();
+                                        return nameLower.contains(patternLower);
+                                      }).toList();
+                                    },
+                                    itemBuilder: (context, suggestion) {
+                                      return Container(
+                                        decoration: BoxDecoration(
+                                          border: Border(
+                                            bottom: BorderSide(
+                                              color: colorScheme.outline
+                                                  .withAlpha(26),
+                                            ),
+                                          ),
+                                        ),
+                                        child: ListTile(
+                                          leading: Container(
+                                            padding: EdgeInsets.all(
+                                              AppTheme.spacing.xs,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: colorScheme
+                                                  .primaryContainer
+                                                  .withAlpha(76),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Icon(
+                                              Icons.person,
+                                              color: colorScheme.primary,
+                                              size: 20,
+                                            ),
+                                          ),
+                                          title: Text(
+                                            suggestion.name,
+                                            style: theme.textTheme.bodyLarge
+                                                ?.copyWith(
+                                                  color: colorScheme.onSurface,
+                                                ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    onSelected: (suggestion) {
+                                      controller.athleteId = suggestion.id;
+                                      athleteNameController.text =
+                                          suggestion.name;
+                                    },
+                                    emptyBuilder: (context) => Padding(
+                                      padding: EdgeInsets.all(
+                                        AppTheme.spacing.lg,
+                                      ),
+                                      child: Text(
+                                        'Nessun atleta trovato',
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(
+                                              color: colorScheme
+                                                  .surfaceContainerHighest,
+                                            ),
+                                      ),
+                                    ),
+                                    hideWithKeyboard: true,
+                                    hideOnSelect: true,
+                                    retainOnLoading: false,
+                                    decorationBuilder: (context, child) {
+                                      return Material(
+                                        color: Colors.transparent,
+                                        child: child,
+                                      );
+                                    },
                                     controller: athleteNameController,
                                     focusNode: focusNode,
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      color: colorScheme.onSurface,
-                                    ),
-                                    decoration: InputDecoration(
-                                      hintText: 'Cerca atleta...',
-                                      hintStyle:
-                                          theme.textTheme.bodyLarge?.copyWith(
-                                        color: colorScheme
-                                            .surfaceContainerHighest
-                                            .withAlpha(128),
-                                      ),
-                                      prefixIcon: Icon(
-                                        Icons.search,
-                                        color: colorScheme.primary,
-                                        size: 20,
-                                      ),
-                                      border: InputBorder.none,
-                                      contentPadding:
-                                          EdgeInsets.all(AppTheme.spacing.md),
-                                    ),
-                                  );
-                                },
-                              ),
-                            );
-                          } else if (snapshot.hasError) {
-                            return Text(
-                              'Errore: ${snapshot.error}',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: colorScheme.error,
-                              ),
-                            );
-                          } else {
-                            return Center(
-                              child: CircularProgressIndicator(
-                                color: colorScheme.primary,
-                              ),
-                            );
-                          }
-                        },
+                                    builder:
+                                        (
+                                          context,
+                                          suggestionsController,
+                                          focusNode,
+                                        ) {
+                                          return TextFormField(
+                                            controller: athleteNameController,
+                                            focusNode: focusNode,
+                                            style: theme.textTheme.bodyLarge
+                                                ?.copyWith(
+                                                  color: colorScheme.onSurface,
+                                                ),
+                                            decoration: InputDecoration(
+                                              hintText: 'Cerca atleta...',
+                                              hintStyle: theme
+                                                  .textTheme
+                                                  .bodyLarge
+                                                  ?.copyWith(
+                                                    color: colorScheme
+                                                        .surfaceContainerHighest
+                                                        .withAlpha(128),
+                                                  ),
+                                              prefixIcon: Icon(
+                                                Icons.search,
+                                                color: colorScheme.primary,
+                                                size: 20,
+                                              ),
+                                              border: InputBorder.none,
+                                              contentPadding: EdgeInsets.all(
+                                                AppTheme.spacing.md,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                  ),
+                                );
+                              } else if (snapshot.hasError) {
+                                return Text(
+                                  'Errore: ${snapshot.error}',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: colorScheme.error,
+                                  ),
+                                );
+                              } else {
+                                return Center(
+                                  child: CircularProgressIndicator(
+                                    color: colorScheme.primary,
+                                  ),
+                                );
+                              }
+                            },
                       );
                     },
                   ),

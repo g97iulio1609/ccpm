@@ -2,9 +2,7 @@ import 'package:alphanessone/providers/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:alphanessone/trainingBuilder/models/training_model.dart';
-import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
-import 'package:alphanessone/trainingBuilder/models/series_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/providers/training_providers.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 
@@ -12,13 +10,18 @@ class TrainingVolumeDashboard extends ConsumerStatefulWidget {
   final String programId;
   final String userId;
 
-  const TrainingVolumeDashboard({super.key, required this.programId, required this.userId});
+  const TrainingVolumeDashboard({
+    super.key,
+    required this.programId,
+    required this.userId,
+  });
 
   @override
   TrainingVolumeDashboardState createState() => TrainingVolumeDashboardState();
 }
 
-class TrainingVolumeDashboardState extends ConsumerState<TrainingVolumeDashboard> {
+class TrainingVolumeDashboardState
+    extends ConsumerState<TrainingVolumeDashboard> {
   String? selectedExercise;
   Map<String, List<double>> exerciseVolumes = {};
   Map<String, List<List<ExerciseStats>>> detailedStats = {};
@@ -72,36 +75,58 @@ class TrainingVolumeDashboardState extends ConsumerState<TrainingVolumeDashboard
             if (selectedExercise != null) ...[
               Expanded(
                 flex: 2,
-                child: _buildExerciseVolumeCard(context, selectedExercise!, exerciseVolumes[selectedExercise!]!),
+                child: _buildExerciseVolumeCard(
+                  context,
+                  selectedExercise!,
+                  exerciseVolumes[selectedExercise!]!,
+                ),
               ),
               Expanded(
                 flex: 3,
-                child: _buildDetailedStatsTable(context, selectedExercise!, detailedStats[selectedExercise!]!),
+                child: _buildDetailedStatsTable(
+                  context,
+                  selectedExercise!,
+                  detailedStats[selectedExercise!]!,
+                ),
               ),
             ] else
-              const Expanded(child: Center(child: Text('Nessun esercizio selezionato'))),
+              const Expanded(
+                child: Center(child: Text('Nessun esercizio selezionato')),
+              ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildExerciseVolumeCard(BuildContext context, String exerciseName, List<double> volumeData) {
+  Widget _buildExerciseVolumeCard(
+    BuildContext context,
+    String exerciseName,
+    List<double> volumeData,
+  ) {
     final maxY = volumeData.reduce((a, b) => a > b ? a : b);
     final minY = volumeData.reduce((a, b) => a < b ? a : b);
     final yInterval = ((maxY - minY) / 5).ceilToDouble();
 
-    return Card(
+    final colorScheme = Theme.of(context).colorScheme;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOutCubic,
       margin: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withAlpha(38),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 2)),
+        ],
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              exerciseName,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text(exerciseName, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
             Expanded(
               child: LineChart(
@@ -127,8 +152,12 @@ class TrainingVolumeDashboardState extends ConsumerState<TrainingVolumeDashboard
                         reservedSize: 30,
                       ),
                     ),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
                   ),
                   borderData: FlBorderData(show: true),
                   minX: 0,
@@ -156,9 +185,24 @@ class TrainingVolumeDashboardState extends ConsumerState<TrainingVolumeDashboard
     );
   }
 
-  Widget _buildDetailedStatsTable(BuildContext context, String exerciseName, List<List<ExerciseStats>> detailedStats) {
-    return Card(
+  Widget _buildDetailedStatsTable(
+    BuildContext context,
+    String exerciseName,
+    List<List<ExerciseStats>> detailedStats,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOutCubic,
       margin: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withAlpha(38),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 2)),
+        ],
+      ),
       child: SingleChildScrollView(
         scrollDirection: Axis.vertical,
         child: SingleChildScrollView(
@@ -171,43 +215,49 @@ class TrainingVolumeDashboardState extends ConsumerState<TrainingVolumeDashboard
               DataColumn(label: Text('NBLS')),
               DataColumn(label: Text('%RM Media')),
             ],
-            rows: List<DataRow>.generate(
-              detailedStats.length,
-              (weekIndex) {
-                return DataRow(
-                  cells: [
-                    DataCell(Text('${weekIndex + 1}')),
-                    DataCell(
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: List<Widget>.generate(
-                          detailedStats[weekIndex].length,
-                          (workoutIndex) => Text('${workoutIndex + 1}'),
-                        ),
+            rows: List<DataRow>.generate(detailedStats.length, (weekIndex) {
+              return DataRow(
+                cells: [
+                  DataCell(Text('${weekIndex + 1}')),
+                  DataCell(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: List<Widget>.generate(
+                        detailedStats[weekIndex].length,
+                        (workoutIndex) => Text('${workoutIndex + 1}'),
                       ),
                     ),
-                    DataCell(
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: detailedStats[weekIndex].map((stats) => Text(stats.volume.toStringAsFixed(2))).toList(),
-                      ),
+                  ),
+                  DataCell(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: detailedStats[weekIndex]
+                          .map((stats) => Text(stats.volume.toStringAsFixed(2)))
+                          .toList(),
                     ),
-                    DataCell(
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: detailedStats[weekIndex].map((stats) => Text(stats.nbls.toString())).toList(),
-                      ),
+                  ),
+                  DataCell(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: detailedStats[weekIndex]
+                          .map((stats) => Text(stats.nbls.toString()))
+                          .toList(),
                     ),
-                    DataCell(
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: detailedStats[weekIndex].map((stats) => Text('${stats.rmAverage.toStringAsFixed(2)}%')).toList(),
-                      ),
+                  ),
+                  DataCell(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: detailedStats[weekIndex]
+                          .map(
+                            (stats) =>
+                                Text('${stats.rmAverage.toStringAsFixed(2)}%'),
+                          )
+                          .toList(),
                     ),
-                  ],
-                );
-              },
-            ),
+                  ),
+                ],
+              );
+            }),
           ),
         ),
       ),
@@ -224,7 +274,8 @@ class TrainingVolumeDashboardState extends ConsumerState<TrainingVolumeDashboard
       for (var workout in week.workouts) {
         for (var exercise in workout.exercises) {
           double volume = _calculateExerciseVolume(exercise);
-          weeklyVolumes[exercise.name] = (weeklyVolumes[exercise.name] ?? 0) + volume;
+          weeklyVolumes[exercise.name] =
+              (weeklyVolumes[exercise.name] ?? 0) + volume;
         }
       }
 
@@ -239,22 +290,34 @@ class TrainingVolumeDashboardState extends ConsumerState<TrainingVolumeDashboard
     return exerciseVolumes;
   }
 
-  Future<Map<String, List<List<ExerciseStats>>>> _calculateDetailedExerciseStats(TrainingProgram program) async {
+  Future<Map<String, List<List<ExerciseStats>>>>
+  _calculateDetailedExerciseStats(TrainingProgram program) async {
     Map<String, List<List<ExerciseStats>>> detailedStats = {};
     final exerciseRecordService = ref.read(exerciseRecordServiceProvider);
 
     for (int weekIndex = 0; weekIndex < program.weeks.length; weekIndex++) {
       var week = program.weeks[weekIndex];
 
-      for (int workoutIndex = 0; workoutIndex < week.workouts.length; workoutIndex++) {
+      for (
+        int workoutIndex = 0;
+        workoutIndex < week.workouts.length;
+        workoutIndex++
+      ) {
         var workout = week.workouts[workoutIndex];
 
         for (var exercise in workout.exercises) {
           if (!detailedStats.containsKey(exercise.name)) {
-            detailedStats[exercise.name] = List.generate(program.weeks.length, (_) => []);
+            detailedStats[exercise.name] = List.generate(
+              program.weeks.length,
+              (_) => [],
+            );
           }
 
-          final stats = await _calculateExerciseStats(exercise, exerciseRecordService, widget.userId);
+          final stats = await _calculateExerciseStats(
+            exercise,
+            exerciseRecordService,
+            widget.userId,
+          );
           detailedStats[exercise.name]![weekIndex].add(stats);
         }
       }
@@ -263,7 +326,11 @@ class TrainingVolumeDashboardState extends ConsumerState<TrainingVolumeDashboard
     return detailedStats;
   }
 
-  Future<ExerciseStats> _calculateExerciseStats(Exercise exercise, ExerciseRecordService exerciseRecordService, String userId) async {
+  Future<ExerciseStats> _calculateExerciseStats(
+    Exercise exercise,
+    ExerciseRecordService exerciseRecordService,
+    String userId,
+  ) async {
     double totalVolume = 0;
     int totalLifts = 0;
     double totalIntensity = 0;
@@ -278,7 +345,8 @@ class TrainingVolumeDashboardState extends ConsumerState<TrainingVolumeDashboard
       double seriesVolume = _calculateSeriesVolume(series);
       totalVolume += seriesVolume;
       totalLifts += series.reps * series.sets;
-      totalIntensity += (series.weight / latestMaxWeight) * series.reps * series.sets;
+      totalIntensity +=
+          (series.weight / latestMaxWeight) * series.reps * series.sets;
     }
 
     double averageRM = totalLifts > 0 ? (totalIntensity / totalLifts) * 100 : 0;
@@ -308,5 +376,9 @@ class ExerciseStats {
   final int nbls;
   final double rmAverage;
 
-  ExerciseStats({required this.volume, required this.nbls, required this.rmAverage});
+  ExerciseStats({
+    required this.volume,
+    required this.nbls,
+    required this.rmAverage,
+  });
 }

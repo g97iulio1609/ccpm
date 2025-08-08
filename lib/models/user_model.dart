@@ -18,6 +18,12 @@ class UserModel {
   final String? currentProgram; // Aggiunto campo currentProgram
   final double? activityLevel; // Activity level stored as double
 
+  // GDPR Privacy Consent Fields
+  final bool? privacyConsentGiven; // Se l'utente ha dato il consenso
+  final DateTime? privacyConsentTimestamp; // Quando ha dato il consenso
+  final String? privacyPolicyVersion; // Versione della privacy policy accettata
+  final String? lastConsentMethod; // Ultimo metodo di consenso utilizzato
+
   UserModel({
     required this.id,
     required this.name,
@@ -35,8 +41,13 @@ class UserModel {
     this.activityLevel, // Add to constructor
     DateTime? birthdate, // Add birthdate to the constructor
     double? height, // Add height to the constructor
-  })  : _birthdate = birthdate,
-        _height = height;
+    // GDPR Privacy Consent parameters
+    this.privacyConsentGiven,
+    this.privacyConsentTimestamp,
+    this.privacyPolicyVersion,
+    this.lastConsentMethod,
+  }) : _birthdate = birthdate,
+       _height = height;
 
   // Factory method for creating a UserModel from Firestore data
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
@@ -50,8 +61,8 @@ class UserModel {
       photoURL: data['photoURL'] ?? '',
       gender: data['gender'] ?? 0, // Assicurati che sia numerico
       uniqueNumber: data['uniqueNumber'],
-      subscriptionExpiryDate:
-          (data['subscriptionExpiryDate'] as Timestamp?)?.toDate(),
+      subscriptionExpiryDate: (data['subscriptionExpiryDate'] as Timestamp?)
+          ?.toDate(),
       productId: data['productId'],
       purchaseToken: data['purchaseToken'],
       currentProgram: data['currentProgram'], // Aggiunto al fromFirestore
@@ -60,6 +71,12 @@ class UserModel {
           ?.toDouble(), // Convert to double when reading from Firestore
       birthdate: (data['birthdate'] as Timestamp?)?.toDate(),
       height: (data['height'] as num?)?.toDouble(),
+      // GDPR Privacy Consent fields
+      privacyConsentGiven: data['privacyConsentGiven'] as bool?,
+      privacyConsentTimestamp: (data['privacyConsentTimestamp'] as Timestamp?)
+          ?.toDate(),
+      privacyPolicyVersion: data['privacyPolicyVersion'] as String?,
+      lastConsentMethod: data['lastConsentMethod'] as String?,
     );
   }
 
@@ -85,6 +102,13 @@ class UserModel {
           ? Timestamp.fromDate(_birthdate)
           : null, // Add birthdate to Firestore map
       'height': _height, // Add height to Firestore map
+      // GDPR Privacy Consent fields
+      'privacyConsentGiven': privacyConsentGiven,
+      'privacyConsentTimestamp': privacyConsentTimestamp != null
+          ? Timestamp.fromDate(privacyConsentTimestamp!)
+          : null,
+      'privacyPolicyVersion': privacyPolicyVersion,
+      'lastConsentMethod': lastConsentMethod,
     };
   }
 

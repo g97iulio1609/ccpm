@@ -16,6 +16,10 @@ import '../UI/components/user_autocomplete.dart';
 import '../UI/components/bottom_menu.dart';
 import '../../providers/providers.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/UI/components/app_card.dart';
+import 'package:alphanessone/UI/components/section_header.dart';
+import 'package:alphanessone/UI/components/kpi_badge.dart';
+import 'package:alphanessone/UI/components/skeleton.dart';
 
 class MaxRMDashboard extends HookConsumerWidget {
   const MaxRMDashboard({super.key});
@@ -120,9 +124,7 @@ class MaxRMDashboard extends HookConsumerWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(128),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(128)),
         boxShadow: AppTheme.elevations.small,
       ),
       padding: EdgeInsets.all(AppTheme.spacing.md),
@@ -135,9 +137,11 @@ class MaxRMDashboard extends HookConsumerWidget {
         onChanged: (String value) {
           final allUsers = ref.read(userListProvider);
           final filteredUsers = allUsers
-              .where((user) =>
-                  user.name.toLowerCase().contains(value.toLowerCase()) ||
-                  user.email.toLowerCase().contains(value.toLowerCase()))
+              .where(
+                (user) =>
+                    user.name.toLowerCase().contains(value.toLowerCase()) ||
+                    user.email.toLowerCase().contains(value.toLowerCase()),
+              )
               .toList();
           ref.read(filteredUserListProvider.notifier).state = filteredUsers;
         },
@@ -160,26 +164,33 @@ class MaxRMDashboard extends HookConsumerWidget {
         return exercisesAsyncValue.when(
           data: (exercises) {
             final userId = selectedUserId ?? usersService.getCurrentUserId();
-            List<Stream<ExerciseRecord?>> exerciseRecordStreams =
-                exercises.map((exercise) {
-              return exerciseRecordService
-                  .getExerciseRecords(userId: userId, exerciseId: exercise.id)
-                  .map((records) => records.isNotEmpty
-                      ? records.reduce(
-                          (a, b) => a.date.compareTo(b.date) > 0 ? a : b,
-                        )
-                      : null);
-            }).toList();
+            List<Stream<ExerciseRecord?>> exerciseRecordStreams = exercises.map(
+              (exercise) {
+                return exerciseRecordService
+                    .getExerciseRecords(userId: userId, exerciseId: exercise.id)
+                    .map(
+                      (records) => records.isNotEmpty
+                          ? records.reduce(
+                              (a, b) => a.date.compareTo(b.date) > 0 ? a : b,
+                            )
+                          : null,
+                    );
+              },
+            ).toList();
 
             return StreamBuilder<List<ExerciseRecord?>>(
               stream: CombineLatestStream.list(exerciseRecordStreams),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return SliverToBoxAdapter(
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        color: colorScheme.primary,
-                      ),
+                  final width = MediaQuery.of(context).size.width;
+                  final crossAxisCount = _getGridCrossAxisCount(context);
+                  final childAspectRatio = width >= 1400 ? 1.2 : 1.0;
+                  return SliverPadding(
+                    padding: EdgeInsets.all(AppTheme.spacing.xl),
+                    sliver: SliverSkeletonGrid(
+                      crossAxisCount: crossAxisCount,
+                      itemCount: 8,
+                      childAspectRatio: childAspectRatio,
                     ),
                   );
                 }
@@ -204,32 +215,41 @@ class MaxRMDashboard extends HookConsumerWidget {
 
                 if (latestRecords.isEmpty) {
                   return SliverToBoxAdapter(
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.fitness_center_outlined,
-                            size: 64,
-                            color: colorScheme.onSurfaceVariant.withAlpha(128),
-                          ),
-                          SizedBox(height: AppTheme.spacing.md),
-                          Text(
-                            'No Records Found',
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                              fontWeight: FontWeight.w600,
+                    child: Padding(
+                      padding: EdgeInsets.only(top: AppTheme.spacing.xl),
+                      child: AppCard(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.fitness_center_outlined,
+                              size: 64,
+                              color: colorScheme.onSurfaceVariant.withAlpha(
+                                128,
+                              ),
                             ),
-                          ),
-                          SizedBox(height: AppTheme.spacing.sm),
-                          Text(
-                            'Start adding your max records',
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color:
-                                  colorScheme.onSurfaceVariant.withAlpha(128),
+                            SizedBox(height: AppTheme.spacing.md),
+                            Text(
+                              'No Records Found',
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                          ),
-                        ],
+                            SizedBox(height: AppTheme.spacing.sm),
+                            Text(
+                              'Start adding your max records',
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: colorScheme.onSurfaceVariant.withAlpha(
+                                  128,
+                                ),
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   );
@@ -252,28 +272,71 @@ class MaxRMDashboard extends HookConsumerWidget {
                 }
 
                 return SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, rowIndex) {
-                      if (rowIndex >= rows.length) return null;
+                  delegate: SliverChildBuilderDelegate((context, rowIndex) {
+                    if (rowIndex >= rows.length) return null;
 
-                      final rowRecords = rows[rowIndex];
+                    final rowRecords = rows[rowIndex];
 
-                      return Padding(
-                        padding: EdgeInsets.only(bottom: AppTheme.spacing.xl),
-                        child: IntrinsicHeight(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              for (var i = 0; i < crossAxisCount; i++) ...[
-                                if (i < rowRecords.length)
-                                  Expanded(
-                                    child: Padding(
-                                      padding: EdgeInsets.only(
-                                        right: i < crossAxisCount - 1
-                                            ? AppTheme.spacing.xl
-                                            : 0,
+                    return Padding(
+                      padding: EdgeInsets.only(bottom: AppTheme.spacing.xl),
+                      child: IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            for (var i = 0; i < crossAxisCount; i++) ...[
+                              if (i < rowRecords.length)
+                                Expanded(
+                                  child: Padding(
+                                    padding: EdgeInsets.only(
+                                      right: i < crossAxisCount - 1
+                                          ? AppTheme.spacing.xl
+                                          : 0,
+                                    ),
+                                    child: AppCard(
+                                      background: colorScheme
+                                          .surfaceContainerHighest
+                                          .withAlpha(38),
+                                      header: SectionHeader(
+                                        title:
+                                            exercises
+                                                .firstWhere(
+                                                  (ex) =>
+                                                      ex.id ==
+                                                      rowRecords[i].exerciseId,
+                                                  orElse: () => ExerciseModel(
+                                                    id: '',
+                                                    name: 'Exercise not found',
+                                                    type: '',
+                                                    muscleGroups: [],
+                                                  ),
+                                                )
+                                                .muscleGroups
+                                                .firstOrNull ??
+                                            '',
+                                        trailing: IconButton(
+                                          icon: Icon(
+                                            Icons.more_vert,
+                                            color: colorScheme.onSurfaceVariant,
+                                          ),
+                                          onPressed: () => _showRecordOptions(
+                                            context,
+                                            rowRecords[i],
+                                            exercises.firstWhere(
+                                              (ex) =>
+                                                  ex.id ==
+                                                  rowRecords[i].exerciseId,
+                                              orElse: () => ExerciseModel(
+                                                id: '',
+                                                name: 'Exercise not found',
+                                                type: '',
+                                                muscleGroups: [],
+                                              ),
+                                            ),
+                                            ProviderScope.containerOf(context),
+                                          ),
+                                        ),
                                       ),
-                                      child: _buildRecordCard(
+                                      child: _buildRecordBody(
                                         rowRecords[i],
                                         exercises.firstWhere(
                                           (ex) =>
@@ -290,16 +353,16 @@ class MaxRMDashboard extends HookConsumerWidget {
                                         context,
                                       ),
                                     ),
-                                  )
-                                else
-                                  Expanded(child: Container()),
-                              ],
+                                  ),
+                                )
+                              else
+                                Expanded(child: Container()),
                             ],
-                          ),
+                          ],
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                    );
+                  }),
                 );
               },
             );
@@ -330,6 +393,8 @@ class MaxRMDashboard extends HookConsumerWidget {
     return 1;
   }
 
+  // Legacy: mantenuto come riferimento; il rendering principale usa AppCard direttamente nel builder
+  // ignore: unused_element
   Widget _buildRecordCard(
     ExerciseRecord record,
     ExerciseModel exercise,
@@ -337,137 +402,58 @@ class MaxRMDashboard extends HookConsumerWidget {
     ColorScheme colorScheme,
     BuildContext context,
   ) {
-    return Builder(builder: (context) {
-      final ref = ProviderScope.containerOf(context);
-
-      return Container(
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-          border: Border.all(
-            color: colorScheme.outline.withAlpha(26),
-          ),
-          boxShadow: AppTheme.elevations.small,
+    return AppCard(
+      child: InkWell(
+        onTap: () => _navigateToExerciseStats(
+          context,
+          exercise,
+          record.id.split('_')[0],
         ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () => _navigateToExerciseStats(
-              context,
-              exercise,
-              record.id.split('_')[0],
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        child: _buildRecordBody(record, exercise, theme, colorScheme, context),
+      ),
+    );
+  }
+
+  Widget _buildRecordBody(
+    ExerciseRecord record,
+    ExerciseModel exercise,
+    ThemeData theme,
+    ColorScheme colorScheme,
+    BuildContext context,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          exercise.name,
+          style: theme.textTheme.titleLarge?.copyWith(
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.5,
+          ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        SizedBox(height: AppTheme.spacing.lg),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            KpiBadge(
+              text: '${record.maxWeight} kg',
+              icon: Icons.fitness_center,
+              color: colorScheme.primary,
             ),
-            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-            child: Padding(
-              padding: EdgeInsets.all(AppTheme.spacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Muscolo + menu (altezza fissa 40)
-                  SizedBox(
-                    height: 40,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: AppTheme.spacing.md,
-                              vertical: AppTheme.spacing.xs,
-                            ),
-                            decoration: BoxDecoration(
-                              color: colorScheme.primaryContainer.withAlpha(76),
-                              borderRadius:
-                                  BorderRadius.circular(AppTheme.radii.xxl),
-                            ),
-                            child: Text(
-                              exercise.muscleGroups.firstOrNull ?? '',
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                color: colorScheme.primary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: AppTheme.spacing.sm),
-                        IconButton(
-                          icon: Icon(
-                            Icons.more_vert,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                          onPressed: () => _showRecordOptions(
-                              context, record, exercise, ref),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: AppTheme.spacing.lg),
-
-                  // Nome esercizio
-                  Text(
-                    exercise.name,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: colorScheme.onSurface,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -0.5,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-
-                  // Spazio esplicito per tenere "aria"
-                  SizedBox(height: AppTheme.spacing.lg),
-
-                  // Questo Spacer mantiene la parte sottostante (badge+data)
-                  // ancorata in basso, rendendo l'altezza uguale in tutte le card
-                  const Spacer(),
-
-                  // Riga con il badge di peso e la data
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Badge del massimale
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppTheme.spacing.md,
-                          vertical: AppTheme.spacing.xs,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colorScheme.primaryContainer.withAlpha(76),
-                          borderRadius:
-                              BorderRadius.circular(AppTheme.radii.xxl),
-                        ),
-                        child: Text(
-                          '${record.maxWeight} kg',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: colorScheme.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-
-                      // Data
-                      Text(
-                        DateFormat('d MMM yyyy').format(record.date),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+            Text(
+              DateFormat('d MMM yyyy').format(record.date),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
-          ),
+          ],
         ),
-      );
-    });
+      ],
+    );
   }
 
   void _showRecordOptions(
@@ -528,13 +514,15 @@ class MaxRMDashboard extends HookConsumerWidget {
   ) async {
     List<UserModel> users = [];
     if (role == 'admin') {
-      final snapshot =
-          await FirebaseFirestore.instance.collection('users').get();
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .get();
       users = snapshot.docs.map((doc) => UserModel.fromFirestore(doc)).toList();
     } else if (role == 'coach') {
       final currentUserId = usersService.getCurrentUserId();
-      final associations =
-          await coachingService.getCoachAssociations(currentUserId).first;
+      final associations = await coachingService
+          .getCoachAssociations(currentUserId)
+          .first;
       for (var association in associations) {
         if (association.status == 'accepted') {
           final athlete = await usersService.getUserById(association.athleteId);
@@ -556,55 +544,59 @@ class MaxRMDashboard extends HookConsumerWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
       ),
       builder: (context) => _MaxRMForm(
-        onSubmit: (
-          exerciseId,
-          exerciseName,
-          maxWeight,
-          repetitions,
-          date,
-          keepWeight,
-          selectedUserId,
-        ) async {
-          final exerciseRecordService = ref.read(exerciseRecordServiceProvider);
-          final usersService = ref.read(usersServiceProvider);
-          final userId = selectedUserId ?? usersService.getCurrentUserId();
-
-          double adjustedMaxWeight = maxWeight.toDouble();
-          if (repetitions > 1) {
-            adjustedMaxWeight =
-                (maxWeight / (1.0278 - (0.0278 * repetitions))).roundToDouble();
-          }
-
-          await exerciseRecordService.addExerciseRecord(
-            userId: userId,
-            exerciseId: exerciseId,
-            exerciseName: exerciseName,
-            maxWeight: adjustedMaxWeight,
-            repetitions: 1,
-            date: DateFormat('yyyy-MM-dd').format(date),
-          );
-
-          if (keepWeight) {
-            await exerciseRecordService.updateIntensityForProgram(
-              userId,
+        onSubmit:
+            (
               exerciseId,
-              adjustedMaxWeight,
-            );
-          } else {
-            await exerciseRecordService.updateWeightsForProgram(
-              userId,
-              exerciseId,
-              adjustedMaxWeight,
-            );
-          }
+              exerciseName,
+              maxWeight,
+              repetitions,
+              date,
+              keepWeight,
+              selectedUserId,
+            ) async {
+              final exerciseRecordService = ref.read(
+                exerciseRecordServiceProvider,
+              );
+              final usersService = ref.read(usersServiceProvider);
+              final userId = selectedUserId ?? usersService.getCurrentUserId();
 
-          if (context.mounted) {
-            Navigator.of(context).pop();
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Max RM added successfully')),
-            );
-          }
-        },
+              double adjustedMaxWeight = maxWeight.toDouble();
+              if (repetitions > 1) {
+                adjustedMaxWeight =
+                    (maxWeight / (1.0278 - (0.0278 * repetitions)))
+                        .roundToDouble();
+              }
+
+              await exerciseRecordService.addExerciseRecord(
+                userId: userId,
+                exerciseId: exerciseId,
+                exerciseName: exerciseName,
+                maxWeight: adjustedMaxWeight,
+                repetitions: 1,
+                date: DateFormat('yyyy-MM-dd').format(date),
+              );
+
+              if (keepWeight) {
+                await exerciseRecordService.updateIntensityForProgram(
+                  userId,
+                  exerciseId,
+                  adjustedMaxWeight,
+                );
+              } else {
+                await exerciseRecordService.updateWeightsForProgram(
+                  userId,
+                  exerciseId,
+                  adjustedMaxWeight,
+                );
+              }
+
+              if (context.mounted) {
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Max RM added successfully')),
+                );
+              }
+            },
       ),
     );
   }
@@ -652,9 +644,7 @@ class MaxRMDashboard extends HookConsumerWidget {
               onPressed: () => Navigator.of(dialogContext).pop(),
               child: Text(
                 'Cancel',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+                style: TextStyle(color: Theme.of(context).colorScheme.primary),
               ),
             ),
             TextButton(
@@ -664,9 +654,7 @@ class MaxRMDashboard extends HookConsumerWidget {
               },
               child: Text(
                 'Delete',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.error,
-                ),
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ),
           ],
@@ -698,9 +686,9 @@ class MaxRMDashboard extends HookConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to delete record: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to delete record: $e')));
       }
     }
   }
@@ -733,10 +721,12 @@ class EditRecordDialog extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final maxWeightController =
-        useTextEditingController(text: record.maxWeight.toString());
-    final repetitionsController =
-        useTextEditingController(text: record.repetitions.toString());
+    final maxWeightController = useTextEditingController(
+      text: record.maxWeight.toString(),
+    );
+    final repetitionsController = useTextEditingController(
+      text: record.repetitions.toString(),
+    );
     final keepWeight = useState(false);
     final selectedDate = useState(record.date);
 
@@ -820,8 +810,9 @@ class EditRecordDialog extends HookConsumerWidget {
         controller: controller,
         decoration: InputDecoration(
           labelText: labelText,
-          labelStyle:
-              TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+          labelStyle: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         ),
         keyboardType: TextInputType.number,
@@ -889,8 +880,8 @@ class EditRecordDialog extends HookConsumerWidget {
     int newRepetitions = int.parse(repetitionsText);
 
     if (newRepetitions > 1) {
-      newMaxWeight =
-          (newMaxWeight / (1.0278 - (0.0278 * newRepetitions))).roundToDouble();
+      newMaxWeight = (newMaxWeight / (1.0278 - (0.0278 * newRepetitions)))
+          .roundToDouble();
       newRepetitions = 1;
     }
 
@@ -924,28 +915,18 @@ class EditRecordDialog extends HookConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update record: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to update record: $e')));
       }
     }
   }
 }
 
 class _MaxRMForm extends HookConsumerWidget {
-  final Function(
-    String,
-    String,
-    num,
-    int,
-    DateTime,
-    bool,
-    String?,
-  ) onSubmit;
+  final Function(String, String, num, int, DateTime, bool, String?) onSubmit;
 
-  const _MaxRMForm({
-    required this.onSubmit,
-  });
+  const _MaxRMForm({required this.onSubmit});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1039,8 +1020,9 @@ class _MaxRMForm extends HookConsumerWidget {
                               num.tryParse(maxWeightController.text) ?? 0;
                           final repetitions =
                               int.tryParse(repetitionsController.text) ?? 0;
-                          final selectedUserId =
-                              ref.read(selectedUserIdProvider);
+                          final selectedUserId = ref.read(
+                            selectedUserIdProvider,
+                          );
                           onSubmit(
                             exerciseId,
                             exerciseName,
@@ -1053,8 +1035,9 @@ class _MaxRMForm extends HookConsumerWidget {
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            const Color(0xFFFFD700), // Yellow color
+                        backgroundColor: const Color(
+                          0xFFFFD700,
+                        ), // Yellow color
                         foregroundColor: Colors.black,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 32,

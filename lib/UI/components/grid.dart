@@ -43,14 +43,13 @@ class AppGrid extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Container(
-      constraints:
-          maxWidth != null ? BoxConstraints(maxWidth: maxWidth!) : null,
+      constraints: maxWidth != null
+          ? BoxConstraints(maxWidth: maxWidth!)
+          : null,
       decoration: BoxDecoration(
         color: backgroundColor ?? colorScheme.surface,
         borderRadius: borderRadius ?? BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
         boxShadow: AppTheme.elevations.small,
       ),
       child: Column(
@@ -65,7 +64,8 @@ class AppGrid extends StatelessWidget {
                 color: colorScheme.surfaceContainerHighest.withAlpha(76),
                 borderRadius: borderRadius != null
                     ? BorderRadius.vertical(
-                        top: Radius.circular(AppTheme.radii.lg))
+                        top: Radius.circular(AppTheme.radii.lg),
+                      )
                     : null,
               ),
               child: Row(
@@ -98,19 +98,18 @@ class AppGrid extends StatelessWidget {
                     ),
                   ),
                   if (actions != null) ...[
-                    ...actions!.map((action) => Padding(
-                          padding: EdgeInsets.only(left: AppTheme.spacing.sm),
-                          child: action,
-                        )),
+                    ...actions!.map(
+                      (action) => Padding(
+                        padding: EdgeInsets.only(left: AppTheme.spacing.sm),
+                        child: action,
+                      ),
+                    ),
                   ],
                 ],
               ),
             ),
             if (showDividers)
-              Divider(
-                height: 1,
-                color: colorScheme.outline.withAlpha(26),
-              ),
+              Divider(height: 1, color: colorScheme.outline.withAlpha(26)),
           ],
 
           // Grid Content
@@ -270,8 +269,8 @@ class GridCell extends StatelessWidget {
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: enabled
                         ? (isSelected
-                            ? colorScheme.primary
-                            : colorScheme.onSurface)
+                              ? colorScheme.primary
+                              : colorScheme.onSurface)
                         : colorScheme.onSurfaceVariant.withAlpha(128),
                     fontWeight: isSelected ? FontWeight.w600 : null,
                   ),

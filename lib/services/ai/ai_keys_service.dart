@@ -17,19 +17,24 @@ class AIKeysService {
       final userId = _usersService.getCurrentUserId();
 
       // Prima cerca le chiavi personali dell'utente
-      final userKeysDoc =
-          await _firestore.collection('ai_keys').doc(userId).get();
+      final userKeysDoc = await _firestore
+          .collection('ai_keys')
+          .doc(userId)
+          .get();
 
       // Poi cerca le chiavi di default
-      final defaultKeysDoc =
-          await _firestore.collection('ai_keys').doc('default').get();
+      final defaultKeysDoc = await _firestore
+          .collection('ai_keys')
+          .doc('default')
+          .get();
 
       if (!userKeysDoc.exists && !defaultKeysDoc.exists) {
         return null;
       }
 
-      final defaultData =
-          defaultKeysDoc.exists ? defaultKeysDoc.data() ?? {} : {};
+      final defaultData = defaultKeysDoc.exists
+          ? defaultKeysDoc.data() ?? {}
+          : {};
       final userData = userKeysDoc.exists ? userKeysDoc.data() ?? {} : {};
 
       return AIKeysModel(
@@ -79,8 +84,11 @@ class AIKeysService {
 
       return true;
     } catch (e, stackTrace) {
-      _logger.e('Error updating personal AI keys',
-          error: e, stackTrace: stackTrace);
+      _logger.e(
+        'Error updating personal AI keys',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return false;
     }
   }
@@ -119,8 +127,11 @@ class AIKeysService {
 
       return true;
     } catch (e, stackTrace) {
-      _logger.e('Error updating default AI keys',
-          error: e, stackTrace: stackTrace);
+      _logger.e(
+        'Error updating default AI keys',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return false;
     }
   }

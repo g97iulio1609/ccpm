@@ -1,15 +1,12 @@
 import 'package:alphanessone/trainingBuilder/controller/week_controller.dart';
-import 'package:alphanessone/trainingBuilder/models/exercise_model.dart';
-import 'package:alphanessone/trainingBuilder/models/series_model.dart';
-import 'package:alphanessone/trainingBuilder/models/workout_model.dart';
+import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
-
-import 'package:alphanessone/trainingBuilder/models/training_model.dart';
 
 class WorkoutController {
   void addWorkout(TrainingProgram program, int weekIndex) {
     final newWorkout = Workout(
+      name: 'Workout ${program.weeks[weekIndex].workouts.length + 1}',
       order: program.weeks[weekIndex].workouts.length + 1,
       exercises: [],
     );
@@ -34,7 +31,9 @@ class WorkoutController {
   }
 
   void _removeExerciseAndRelatedData(
-      TrainingProgram program, Exercise exercise) {
+    TrainingProgram program,
+    Exercise exercise,
+  ) {
     if (exercise.id != null) {
       program.trackToDeleteExercises.add(exercise.id!);
     }
@@ -44,20 +43,34 @@ class WorkoutController {
   }
 
   void _removeSeriesData(TrainingProgram program, Series series) {
-    program.trackToDeleteSeries.add(series.serieId);
-  }
-
-  void _updateWorkoutOrders(
-      TrainingProgram program, int weekIndex, int startIndex) {
-    for (int i = startIndex;
-        i < program.weeks[weekIndex].workouts.length;
-        i++) {
-      program.weeks[weekIndex].workouts[i].order = i + 1;
+    if (series.serieId != null) {
+      program.trackToDeleteSeries.add(series.serieId!);
     }
   }
 
-  Future<void> copyWorkout(TrainingProgram program, int sourceWeekIndex,
-      int workoutIndex, BuildContext context) async {
+  void _updateWorkoutOrders(
+    TrainingProgram program,
+    int weekIndex,
+    int startIndex,
+  ) {
+    for (
+      int i = startIndex;
+      i < program.weeks[weekIndex].workouts.length;
+      i++
+    ) {
+      program.weeks[weekIndex].workouts[i] = program
+          .weeks[weekIndex]
+          .workouts[i]
+          .copyWith(order: i + 1);
+    }
+  }
+
+  Future<void> copyWorkout(
+    TrainingProgram program,
+    int sourceWeekIndex,
+    int workoutIndex,
+    BuildContext context,
+  ) async {
     final destinationWeekIndex = await _showCopyWorkoutDialog(program, context);
     if (destinationWeekIndex != null) {
       final sourceWorkout =
@@ -95,6 +108,7 @@ class WorkoutController {
         .toList();
 
     return Workout(
+      name: sourceWorkout.name,
       id: null,
       order: sourceWorkout.order,
       exercises: copiedExercises,
@@ -102,8 +116,9 @@ class WorkoutController {
   }
 
   Exercise _copyExercise(Exercise sourceExercise) {
-    final copiedSeries =
-        sourceExercise.series.map((series) => _copySeries(series)).toList();
+    final copiedSeries = sourceExercise.series
+        .map((series) => _copySeries(series))
+        .toList();
 
     return sourceExercise.copyWith(
       id: generateRandomId(16).toString(),
@@ -116,13 +131,15 @@ class WorkoutController {
     return sourceSeries.copyWith(
       serieId: generateRandomId(16).toString(),
       done: false,
-      reps_done: 0,
-      weight_done: 0.0,
+      repsDone: 0,
+      weightDone: 0.0,
     );
   }
 
   Future<int?> _showCopyWorkoutDialog(
-      TrainingProgram program, BuildContext context) async {
+    TrainingProgram program,
+    BuildContext context,
+  ) async {
     return showDialog<int>(
       context: context,
       builder: (context) {
@@ -131,18 +148,20 @@ class WorkoutController {
           content: DropdownButtonFormField<int>(
             value: null,
             items: List.generate(
-              program.weeks.length,
+              program.weeks.length + 1,
               (index) => DropdownMenuItem(
                 value: index,
-                child: Text('Week ${index + 1}'),
+                child: Text(
+                  index < program.weeks.length
+                      ? 'Week ${index + 1}'
+                      : 'Nuova Settimana',
+                ),
               ),
             ),
             onChanged: (value) {
               Navigator.pop(context, value);
             },
-            decoration: const InputDecoration(
-              labelText: 'Destination Week',
-            ),
+            decoration: const InputDecoration(labelText: 'Destination Week'),
           ),
           actions: [
             TextButton(
@@ -156,7 +175,11 @@ class WorkoutController {
   }
 
   void reorderWorkouts(
-      TrainingProgram program, int weekIndex, int oldIndex, int newIndex) {
+    TrainingProgram program,
+    int weekIndex,
+    int oldIndex,
+    int newIndex,
+  ) {
     if (oldIndex < newIndex) {
       newIndex -= 1;
     }

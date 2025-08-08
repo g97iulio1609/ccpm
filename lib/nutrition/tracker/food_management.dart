@@ -21,14 +21,60 @@ class FoodManagement extends HookConsumerWidget {
     final importDelayController = useTextEditingController(text: '60');
 
     final List<String> categories = [
-      'pasta', 'meat', 'fish', 'legumes', 'milk', 'dairy', 'spices', 'beverages',
-      'grains', 'cereals', 'bread', 'cereal', 'biscuits', 'eggs', 'fresh-fruits', 'fresh-vegetables',
-      'frozen-fruits', 'frozen-vegetables', 'dried-fruits', 'soft-drinks', 'juices',
-      'alcoholic-beverages', 'tea', 'coffee', 'cooking-oils', 'margarine', 'animal-fats',
-      'cookies', 'cakes', 'chocolate', 'chips', 'herbs', 'sauces', 'dressings',
-      'ready-to-eat-meals', 'canned-foods', 'frozen-meals', 'bakery-products', 'pastries',
-      'muffins', 'nuts', 'seeds', 'shellfish', 'salmon', 'tuna', 'honey', 'maple-syrup',
-      'sugar', 'baby-formula', 'baby-snacks', 'baby-purees', 'supplements', 'protein-bars', 'health-drinks'
+      'pasta',
+      'meat',
+      'fish',
+      'legumes',
+      'milk',
+      'dairy',
+      'spices',
+      'beverages',
+      'grains',
+      'cereals',
+      'bread',
+      'cereal',
+      'biscuits',
+      'eggs',
+      'fresh-fruits',
+      'fresh-vegetables',
+      'frozen-fruits',
+      'frozen-vegetables',
+      'dried-fruits',
+      'soft-drinks',
+      'juices',
+      'alcoholic-beverages',
+      'tea',
+      'coffee',
+      'cooking-oils',
+      'margarine',
+      'animal-fats',
+      'cookies',
+      'cakes',
+      'chocolate',
+      'chips',
+      'herbs',
+      'sauces',
+      'dressings',
+      'ready-to-eat-meals',
+      'canned-foods',
+      'frozen-meals',
+      'bakery-products',
+      'pastries',
+      'muffins',
+      'nuts',
+      'seeds',
+      'shellfish',
+      'salmon',
+      'tuna',
+      'honey',
+      'maple-syrup',
+      'sugar',
+      'baby-formula',
+      'baby-snacks',
+      'baby-purees',
+      'supplements',
+      'protein-bars',
+      'health-drinks',
     ];
     final selectedCategories = useState<List<String>>([]);
 
@@ -78,30 +124,34 @@ class FoodManagement extends HookConsumerWidget {
         country: mapStringToCountry(selectedCountry.value),
       );
 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Import completed for $pages pages of categories: ${selectedCategories.value}'),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Import completed for $pages pages of categories: ${selectedCategories.value}',
+          ),
+        ),
+      );
     }
 
     void stopImport() {
       foodService.stopImport();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Import stopped'),
-      ));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Import stopped')));
     }
 
     void updateTranslations() {
       foodService.updateFoodTranslations();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Translations update started'),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Translations update started')),
+      );
     }
 
     void normalizeNames() async {
       await foodService.normalizeNames();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Normalization completed'),
-      ));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Normalization completed')));
     }
 
     return Scaffold(
@@ -124,7 +174,10 @@ class FoodManagement extends HookConsumerWidget {
                 } else {
                   return Text(
                     'Total foods: ${snapshot.data}',
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   );
                 }
               },
@@ -134,16 +187,18 @@ class FoodManagement extends HookConsumerWidget {
               child: ListView(
                 children: [
                   MultiSelectDialogField(
-                    items: categories.map((e) => MultiSelectItem<String>(e, e)).toList(),
-                    title: const Text("Categories", style: TextStyle(color: Colors.white)),
+                    items: categories
+                        .map((e) => MultiSelectItem<String>(e, e))
+                        .toList(),
+                    title: const Text(
+                      "Categories",
+                      style: TextStyle(color: Colors.white),
+                    ),
                     selectedColor: Theme.of(context).primaryColor,
                     decoration: BoxDecoration(
                       color: Colors.black,
                       borderRadius: const BorderRadius.all(Radius.circular(4)),
-                      border: Border.all(
-                        color: Colors.grey,
-                        width: 1,
-                      ),
+                      border: Border.all(color: Colors.grey, width: 1),
                     ),
                     buttonIcon: const Icon(
                       Icons.arrow_drop_down,
@@ -151,15 +206,14 @@ class FoodManagement extends HookConsumerWidget {
                     ),
                     buttonText: const Text(
                       "Select Categories",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
+                      style: TextStyle(color: Colors.white, fontSize: 16),
                     ),
                     onConfirm: (results) {
                       selectedCategories.value = results.cast<String>();
                     },
-                    itemsTextStyle: const TextStyle(color: Colors.white), // Added text style
+                    itemsTextStyle: const TextStyle(
+                      color: Colors.white,
+                    ), // Added text style
                     chipDisplay: MultiSelectChipDisplay(
                       textStyle: const TextStyle(color: Colors.white),
                       chipColor: Theme.of(context).primaryColor,
@@ -184,8 +238,9 @@ class FoodManagement extends HookConsumerWidget {
                     onChanged: (String? newValue) {
                       selectedLanguage.value = newValue!;
                     },
-                    items: languages
-                        .map<DropdownMenuItem<String>>((String value) {
+                    items: languages.map<DropdownMenuItem<String>>((
+                      String value,
+                    ) {
                       return DropdownMenuItem<String>(
                         value: value,
                         child: Text(value),
@@ -208,8 +263,9 @@ class FoodManagement extends HookConsumerWidget {
                     onChanged: (String? newValue) {
                       selectedCountry.value = newValue!;
                     },
-                    items: countries
-                        .map<DropdownMenuItem<String>>((String value) {
+                    items: countries.map<DropdownMenuItem<String>>((
+                      String value,
+                    ) {
                       return DropdownMenuItem<String>(
                         value: value,
                         child: Text(value),
@@ -262,7 +318,9 @@ class FoodManagement extends HookConsumerWidget {
                       ),
                       ElevatedButton(
                         onPressed: stopImport,
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                        ),
                         child: const Text('Stop Import'),
                       ),
                     ],
@@ -282,13 +340,19 @@ class FoodManagement extends HookConsumerWidget {
                     stream: foodService.importProgressStream,
                     builder: (context, snapshot) {
                       if (!snapshot.hasData) {
-                        return const Text('No import progress', style: TextStyle(color: Colors.white));
+                        return const Text(
+                          'No import progress',
+                          style: TextStyle(color: Colors.white),
+                        );
                       }
                       final progress = snapshot.data!;
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: progress.entries.map((entry) {
-                          return Text('${entry.key}: ${entry.value} products imported', style: const TextStyle(color: Colors.white));
+                          return Text(
+                            '${entry.key}: ${entry.value} products imported',
+                            style: const TextStyle(color: Colors.white),
+                          );
                         }).toList(),
                       );
                     },

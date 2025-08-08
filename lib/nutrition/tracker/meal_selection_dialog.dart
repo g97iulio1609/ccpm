@@ -11,10 +11,11 @@ class MealSelectionDialog extends ConsumerStatefulWidget {
   final String userId;
   final List<String> initialSelectedMealIds;
 
-  const MealSelectionDialog(
-      {required this.userId,
-      this.initialSelectedMealIds = const [],
-      super.key});
+  const MealSelectionDialog({
+    required this.userId,
+    this.initialSelectedMealIds = const [],
+    super.key,
+  });
 
   @override
   ConsumerState<MealSelectionDialog> createState() =>
@@ -82,8 +83,9 @@ class _MealSelectionDialogState extends ConsumerState<MealSelectionDialog> {
                   color: !_showFavorites
                       ? colorScheme.primary
                       : colorScheme.onSurfaceVariant,
-                  fontWeight:
-                      !_showFavorites ? FontWeight.w600 : FontWeight.normal,
+                  fontWeight: !_showFavorites
+                      ? FontWeight.w600
+                      : FontWeight.normal,
                 ),
               ),
               SizedBox(width: AppTheme.spacing.md),
@@ -100,8 +102,9 @@ class _MealSelectionDialogState extends ConsumerState<MealSelectionDialog> {
                   color: _showFavorites
                       ? colorScheme.primary
                       : colorScheme.onSurfaceVariant,
-                  fontWeight:
-                      _showFavorites ? FontWeight.w600 : FontWeight.normal,
+                  fontWeight: _showFavorites
+                      ? FontWeight.w600
+                      : FontWeight.normal,
                 ),
               ),
             ],
@@ -188,10 +191,12 @@ class _MealSelectionDialogState extends ConsumerState<MealSelectionDialog> {
                         decoration: BoxDecoration(
                           color: isSelected
                               ? colorScheme.primary.withAlpha(26)
-                              : colorScheme.surfaceContainerHighest
-                                  .withAlpha(76),
-                          borderRadius:
-                              BorderRadius.circular(AppTheme.radii.lg),
+                              : colorScheme.surfaceContainerHighest.withAlpha(
+                                  76,
+                                ),
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radii.lg,
+                          ),
                           border: Border.all(
                             color: isSelected
                                 ? colorScheme.primary
@@ -204,12 +209,15 @@ class _MealSelectionDialogState extends ConsumerState<MealSelectionDialog> {
                             Container(
                               padding: EdgeInsets.all(AppTheme.spacing.sm),
                               decoration: BoxDecoration(
-                                color: (isSelected
-                                        ? colorScheme.primary
-                                        : colorScheme.surfaceContainerHighest)
-                                    .withAlpha(51),
-                                borderRadius:
-                                    BorderRadius.circular(AppTheme.radii.md),
+                                color:
+                                    (isSelected
+                                            ? colorScheme.primary
+                                            : colorScheme
+                                                  .surfaceContainerHighest)
+                                        .withAlpha(51),
+                                borderRadius: BorderRadius.circular(
+                                  AppTheme.radii.md,
+                                ),
                               ),
                               child: Icon(
                                 isSelected
@@ -228,11 +236,11 @@ class _MealSelectionDialogState extends ConsumerState<MealSelectionDialog> {
                                 children: [
                                   Text(
                                     meal.mealType,
-                                    style:
-                                        theme.textTheme.titleMedium?.copyWith(
-                                      color: colorScheme.onSurface,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(
+                                          color: colorScheme.onSurface,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                   ),
                                   SizedBox(height: AppTheme.spacing.xs),
                                   Row(
@@ -274,7 +282,7 @@ class _MealSelectionDialogState extends ConsumerState<MealSelectionDialog> {
 
   Stream<List<Meal>> _getAllMeals() {
     return ref
-        .read(mealsServiceProvider)
+        .read(mealsServiceProvider.notifier)
         .getUserMealsByDate(userId: widget.userId, date: DateTime.now())
         .map((meals) => meals.where((meal) => !meal.isFavorite).toList());
   }
@@ -286,7 +294,9 @@ class _MealSelectionDialogState extends ConsumerState<MealSelectionDialog> {
         .collection('meals')
         .where('isFavorite', isEqualTo: true)
         .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => Meal.fromFirestore(doc)).toList());
+        .map(
+          (snapshot) =>
+              snapshot.docs.map((doc) => Meal.fromFirestore(doc)).toList(),
+        );
   }
 }

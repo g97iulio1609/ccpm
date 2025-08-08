@@ -15,7 +15,7 @@ class FavouritesMeals extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final mealsService = ref.watch(mealsServiceProvider);
+    final mealsService = ref.watch(mealsServiceProvider.notifier);
     final userService = ref.watch(usersServiceProvider);
     final userId = userService.getCurrentUserId();
     final theme = Theme.of(context);
@@ -71,11 +71,7 @@ class FavouritesMeals extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: colorScheme.error,
-                  ),
+                  Icon(Icons.error_outline, size: 64, color: colorScheme.error),
                   SizedBox(height: AppTheme.spacing.lg),
                   Text(
                     'Errore nel caricamento',
@@ -97,9 +93,7 @@ class FavouritesMeals extends ConsumerWidget {
             );
           } else {
             return Center(
-              child: CircularProgressIndicator(
-                color: colorScheme.primary,
-              ),
+              child: CircularProgressIndicator(color: colorScheme.primary),
             );
           }
         },
@@ -108,7 +102,10 @@ class FavouritesMeals extends ConsumerWidget {
   }
 
   Widget _buildFavoriteMealTile(
-      BuildContext context, WidgetRef ref, meals.Meal meal) {
+    BuildContext context,
+    WidgetRef ref,
+    meals.Meal meal,
+  ) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -120,7 +117,7 @@ class FavouritesMeals extends ConsumerWidget {
         children: [
           CustomSlidableAction(
             onPressed: (_) async {
-              final mealsService = ref.read(mealsServiceProvider);
+              final mealsService = ref.read(mealsServiceProvider.notifier);
               await mealsService.deleteFavoriteMeal(meal.userId, meal.id!);
               if (context.mounted) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -223,8 +220,10 @@ class FavouritesMeals extends ConsumerWidget {
   }
 
   void _navigateToMealDetail(BuildContext context, meals.Meal meal) {
-    context
-        .push('/mymeals/favorite_meal_detail', extra: {'meal': meal.toMap()});
+    context.push(
+      '/mymeals/favorite_meal_detail',
+      extra: {'meal': meal.toMap()},
+    );
   }
 }
 
@@ -233,7 +232,7 @@ class FavouriteDays extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final mealsService = ref.watch(mealsServiceProvider);
+    final mealsService = ref.watch(mealsServiceProvider.notifier);
     final userService = ref.watch(usersServiceProvider);
     final userId = userService.getCurrentUserId();
     final theme = Theme.of(context);
@@ -301,11 +300,7 @@ class FavouriteDays extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: colorScheme.error,
-                  ),
+                  Icon(Icons.error_outline, size: 64, color: colorScheme.error),
                   SizedBox(height: AppTheme.spacing.lg),
                   Text(
                     'Errore nel caricamento',
@@ -327,9 +322,7 @@ class FavouriteDays extends ConsumerWidget {
             );
           } else {
             return Center(
-              child: CircularProgressIndicator(
-                color: colorScheme.primary,
-              ),
+              child: CircularProgressIndicator(color: colorScheme.primary),
             );
           }
         },
@@ -338,7 +331,10 @@ class FavouriteDays extends ConsumerWidget {
   }
 
   Widget _buildFavoriteDayTile(
-      BuildContext context, WidgetRef ref, meals.FavoriteDay day) {
+    BuildContext context,
+    WidgetRef ref,
+    meals.FavoriteDay day,
+  ) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -350,7 +346,7 @@ class FavouriteDays extends ConsumerWidget {
         children: [
           CustomSlidableAction(
             onPressed: (_) async {
-              final mealsService = ref.read(mealsServiceProvider);
+              final mealsService = ref.read(mealsServiceProvider.notifier);
               await mealsService.deleteFavoriteDay(day.userId, day.id!);
               if (context.mounted) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {

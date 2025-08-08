@@ -12,20 +12,28 @@ import 'controllers/exercise_list_controller.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
 import 'package:alphanessone/Main/app_theme.dart';
-import 'package:alphanessone/UI/components/IconButtonWithBackground.dart';
+import 'package:alphanessone/UI/components/icon_button_with_background.dart';
 import 'package:alphanessone/UI/components/bottom_input_form.dart';
 
 // Providers per i muscleGroups e exerciseTypes
 final muscleGroupsProvider = StreamProvider<List<String>>((ref) {
-  return FirebaseFirestore.instance.collection('muscleGroups').snapshots().map(
-      (snapshot) =>
-          snapshot.docs.map((doc) => doc['name'].toString()).toList());
+  return FirebaseFirestore.instance
+      .collection('muscleGroups')
+      .snapshots()
+      .map(
+        (snapshot) =>
+            snapshot.docs.map((doc) => doc['name'].toString()).toList(),
+      );
 });
 
 final exerciseTypesProvider = StreamProvider<List<String>>((ref) {
-  return FirebaseFirestore.instance.collection('ExerciseTypes').snapshots().map(
-      (snapshot) =>
-          snapshot.docs.map((doc) => doc['name'].toString()).toList());
+  return FirebaseFirestore.instance
+      .collection('ExerciseTypes')
+      .snapshots()
+      .map(
+        (snapshot) =>
+            snapshot.docs.map((doc) => doc['name'].toString()).toList(),
+      );
 });
 
 class ExercisesManager extends ConsumerWidget {
@@ -53,7 +61,10 @@ class ExercisesManager extends ConsumerWidget {
 
   // Funzione per mostrare il Bottom Sheet per modificare un esercizio
   static void showEditExerciseBottomSheet(
-      BuildContext context, WidgetRef ref, ExerciseModel exercise) {
+    BuildContext context,
+    WidgetRef ref,
+    ExerciseModel exercise,
+  ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -75,7 +86,7 @@ class ExercisesList extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final searchController = useTextEditingController();
     final selectedMuscleGroups = useState<List<String>>([]);
-    final selectedExerciseType = useState<String?>(null);
+    // Rimosso: selectedExerciseType locale non utilizzato per evitare warning.
     final exercisesState = ref.watch(exerciseListControllerProvider);
     final controller = ref.watch(exerciseListControllerProvider.notifier);
     final currentUserRole = ref.watch(userRoleProvider);
@@ -122,7 +133,8 @@ class ExercisesList extends HookConsumerWidget {
                               Future.microtask(() {
                                 ref
                                     .read(
-                                        exerciseListControllerProvider.notifier)
+                                      exerciseListControllerProvider.notifier,
+                                    )
                                     .resetFilters();
                               });
                             },
@@ -144,9 +156,11 @@ class ExercisesList extends HookConsumerWidget {
                     .getExercises()
                     .first;
                 return exercises
-                    .where((exercise) => exercise.name
-                        .toLowerCase()
-                        .contains(pattern.toLowerCase()))
+                    .where(
+                      (exercise) => exercise.name.toLowerCase().contains(
+                        pattern.toLowerCase(),
+                      ),
+                    )
                     .toList();
               },
               itemBuilder: (context, exercise) {
@@ -155,9 +169,9 @@ class ExercisesList extends HookConsumerWidget {
                   subtitle: Text(
                     '${exercise.muscleGroups.join(", ")} - ${exercise.type}',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          letterSpacing: -0.3,
-                        ),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      letterSpacing: -0.3,
+                    ),
                   ),
                 );
               },
@@ -219,8 +233,8 @@ class ExercisesList extends HookConsumerWidget {
                         children: [
                           const SizedBox(width: 4),
                           ...muscleGroups.map((group) {
-                            final isSelected =
-                                selectedMuscleGroups.value.contains(group);
+                            final isSelected = selectedMuscleGroups.value
+                                .contains(group);
                             return Padding(
                               padding: const EdgeInsets.only(right: 8.0),
                               child: SizedBox(
@@ -232,7 +246,8 @@ class ExercisesList extends HookConsumerWidget {
                                       fontSize: 12,
                                       color: isSelected
                                           ? theme
-                                              .colorScheme.onSecondaryContainer
+                                                .colorScheme
+                                                .onSecondaryContainer
                                           : theme.colorScheme.onSurface,
                                     ),
                                   ),
@@ -241,7 +256,7 @@ class ExercisesList extends HookConsumerWidget {
                                     if (selected) {
                                       selectedMuscleGroups.value = [
                                         ...selectedMuscleGroups.value,
-                                        group
+                                        group,
                                       ];
                                     } else {
                                       selectedMuscleGroups.value =
@@ -257,29 +272,34 @@ class ExercisesList extends HookConsumerWidget {
                                   materialTapTargetSize:
                                       MaterialTapTargetSize.shrinkWrap,
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 8.0),
+                                    horizontal: 8.0,
+                                  ),
                                   labelPadding: const EdgeInsets.symmetric(
-                                      horizontal: 4.0),
+                                    horizontal: 4.0,
+                                  ),
                                   avatar: isSelected
                                       ? Icon(
                                           Icons.check,
                                           size: 16,
                                           color: theme
-                                              .colorScheme.onSecondaryContainer,
+                                              .colorScheme
+                                              .onSecondaryContainer,
                                         )
                                       : null,
                                   selectedColor:
                                       theme.colorScheme.secondaryContainer,
                                   backgroundColor: theme
-                                      .colorScheme.surfaceContainerHighest
+                                      .colorScheme
+                                      .surfaceContainerHighest
                                       .withAlpha(128),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
                                     side: BorderSide(
                                       color: isSelected
                                           ? theme.colorScheme.secondary
-                                          : theme.colorScheme.outline
-                                              .withAlpha(26),
+                                          : theme.colorScheme.outline.withAlpha(
+                                              26,
+                                            ),
                                       width: 1,
                                     ),
                                   ),
@@ -289,8 +309,9 @@ class ExercisesList extends HookConsumerWidget {
                           }),
                           if (selectedMuscleGroups.value.isNotEmpty)
                             Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 8.0),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8.0,
+                              ),
                               child: SizedBox(
                                 height: 32,
                                 child: TextButton.icon(
@@ -312,7 +333,8 @@ class ExercisesList extends HookConsumerWidget {
                                   ),
                                   style: TextButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 8.0),
+                                      horizontal: 8.0,
+                                    ),
                                     minimumSize: Size.zero,
                                     tapTargetSize:
                                         MaterialTapTargetSize.shrinkWrap,
@@ -357,7 +379,10 @@ class ExercisesList extends HookConsumerWidget {
                     currentUserId: currentUserId,
                     onEdit: (exercise) =>
                         ExercisesManager.showEditExerciseBottomSheet(
-                            context, ref, exercise),
+                          context,
+                          ref,
+                          exercise,
+                        ),
                     onDelete: (exercise) => _showDeleteConfirmationDialog(
                       context,
                       exercise,
@@ -367,9 +392,7 @@ class ExercisesList extends HookConsumerWidget {
                   );
                 },
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, _) => Center(
-                  child: Text('Error: $error'),
-                ),
+                error: (error, _) => Center(child: Text('Error: $error')),
               ),
             ),
           ],
@@ -399,11 +422,7 @@ class ExercisesList extends HookConsumerWidget {
             color: colorScheme.errorContainer.withAlpha(76),
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
-          child: Icon(
-            Icons.delete_outline,
-            color: colorScheme.error,
-            size: 24,
-          ),
+          child: Icon(Icons.delete_outline, color: colorScheme.error, size: 24),
         ),
         actions: [
           TextButton(
@@ -573,8 +592,10 @@ class _ExercisesGridState extends ConsumerState<ExercisesGrid> {
                         exercise: rowExercises[i],
                         onTap: () =>
                             _showExerciseDetails(context, rowExercises[i]),
-                        actions:
-                            _buildExerciseActions(context, rowExercises[i]),
+                        actions: _buildExerciseActions(
+                          context,
+                          rowExercises[i],
+                        ),
                       ),
                     ),
                   )
@@ -597,7 +618,9 @@ class _ExercisesGridState extends ConsumerState<ExercisesGrid> {
   }
 
   List<Widget> _buildExerciseActions(
-      BuildContext context, ExerciseModel exercise) {
+    BuildContext context,
+    ExerciseModel exercise,
+  ) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final actions = <Widget>[];
@@ -685,10 +708,7 @@ class _ExerciseForm extends HookConsumerWidget {
   final ExerciseModel? exercise;
   final String userId;
 
-  const _ExerciseForm({
-    required this.exercise,
-    required this.userId,
-  });
+  const _ExerciseForm({required this.exercise, required this.userId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -696,8 +716,9 @@ class _ExerciseForm extends HookConsumerWidget {
     final colorScheme = theme.colorScheme;
     final formKey = useMemoized(() => GlobalKey<FormState>());
     final nameController = useTextEditingController(text: exercise?.name);
-    final selectedMuscleGroups =
-        useState<List<String>>(exercise?.muscleGroups ?? []);
+    final selectedMuscleGroups = useState<List<String>>(
+      exercise?.muscleGroups ?? [],
+    );
     final selectedExerciseType = useState<String?>(exercise?.type);
 
     return MediaQuery.removePadding(
@@ -758,33 +779,34 @@ class _ExerciseForm extends HookConsumerWidget {
                   child: InkWell(
                     onTap: () {
                       if (formKey.currentState!.validate()) {
-                        final exercisesService =
-                            ref.read(exercisesServiceProvider);
+                        final exercisesService = ref.read(
+                          exercisesServiceProvider,
+                        );
 
                         if (exercise == null) {
                           // Aggiunta nuovo esercizio
                           exercisesService
                               .addExercise(
-                            nameController.text,
-                            selectedMuscleGroups.value,
-                            selectedExerciseType.value!,
-                            userId,
-                          )
+                                nameController.text,
+                                selectedMuscleGroups.value,
+                                selectedExerciseType.value!,
+                                userId,
+                              )
                               .then((_) {
-                            Navigator.pop(context);
-                          });
+                                Navigator.pop(context);
+                              });
                         } else {
                           // Modifica esercizio esistente
                           exercisesService
                               .updateExercise(
-                            exercise!.id,
-                            nameController.text,
-                            selectedMuscleGroups.value,
-                            selectedExerciseType.value!,
-                          )
+                                exercise!.id,
+                                nameController.text,
+                                selectedMuscleGroups.value,
+                                selectedExerciseType.value!,
+                              )
                               .then((_) {
-                            Navigator.pop(context);
-                          });
+                                Navigator.pop(context);
+                              });
                         }
                       }
                     },
@@ -841,47 +863,51 @@ class _ExerciseForm extends HookConsumerWidget {
                     // Muscle Groups
                     Consumer(
                       builder: (context, ref, child) {
-                        final muscleGroupsAsyncValue =
-                            ref.watch(muscleGroupsProvider);
+                        final muscleGroupsAsyncValue = ref.watch(
+                          muscleGroupsProvider,
+                        );
                         return muscleGroupsAsyncValue.when(
                           data: (muscleGroups) =>
                               BottomInputForm.buildFormField(
-                            label: 'Gruppi Muscolari',
-                            theme: theme,
-                            colorScheme: colorScheme,
-                            helperText:
-                                'Seleziona i gruppi muscolari coinvolti',
-                            child: Wrap(
-                              spacing: AppTheme.spacing.sm,
-                              runSpacing: AppTheme.spacing.sm,
-                              children: muscleGroups.map((group) {
-                                final isSelected =
-                                    selectedMuscleGroups.value.contains(group);
-                                return FilterChip(
-                                  label: Text(group),
-                                  selected: isSelected,
-                                  onSelected: (selected) {
-                                    if (selected) {
-                                      selectedMuscleGroups.value = [
-                                        ...selectedMuscleGroups.value,
-                                        group
-                                      ];
-                                    } else {
-                                      selectedMuscleGroups.value =
-                                          selectedMuscleGroups.value
-                                              .where((g) => g != group)
-                                              .toList();
-                                    }
-                                  },
-                                  selectedColor: colorScheme.primaryContainer,
-                                  checkmarkColor: colorScheme.primary,
-                                );
-                              }).toList(),
-                            ),
-                          ),
+                                label: 'Gruppi Muscolari',
+                                theme: theme,
+                                colorScheme: colorScheme,
+                                helperText:
+                                    'Seleziona i gruppi muscolari coinvolti',
+                                child: Wrap(
+                                  spacing: AppTheme.spacing.sm,
+                                  runSpacing: AppTheme.spacing.sm,
+                                  children: muscleGroups.map((group) {
+                                    final isSelected = selectedMuscleGroups
+                                        .value
+                                        .contains(group);
+                                    return FilterChip(
+                                      label: Text(group),
+                                      selected: isSelected,
+                                      onSelected: (selected) {
+                                        if (selected) {
+                                          selectedMuscleGroups.value = [
+                                            ...selectedMuscleGroups.value,
+                                            group,
+                                          ];
+                                        } else {
+                                          selectedMuscleGroups.value =
+                                              selectedMuscleGroups.value
+                                                  .where((g) => g != group)
+                                                  .toList();
+                                        }
+                                      },
+                                      selectedColor:
+                                          colorScheme.primaryContainer,
+                                      checkmarkColor: colorScheme.primary,
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
                           loading: () => const CircularProgressIndicator(),
                           error: (_, __) => const Text(
-                              'Errore nel caricamento dei gruppi muscolari'),
+                            'Errore nel caricamento dei gruppi muscolari',
+                          ),
                         );
                       },
                     ),
@@ -890,57 +916,61 @@ class _ExerciseForm extends HookConsumerWidget {
                     // Exercise Type
                     Consumer(
                       builder: (context, ref, child) {
-                        final exerciseTypesAsyncValue =
-                            ref.watch(exerciseTypesProvider);
+                        final exerciseTypesAsyncValue = ref.watch(
+                          exerciseTypesProvider,
+                        );
                         return exerciseTypesAsyncValue.when(
                           data: (exerciseTypes) =>
                               BottomInputForm.buildFormField(
-                            label: 'Tipo di Esercizio',
-                            theme: theme,
-                            colorScheme: colorScheme,
-                            helperText: 'Seleziona il tipo di esercizio',
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: colorScheme.surfaceContainerHighest
-                                    .withAlpha(128),
-                                borderRadius:
-                                    BorderRadius.circular(AppTheme.radii.lg),
-                                border: Border.all(
-                                  color: colorScheme.outline.withAlpha(26),
-                                ),
-                              ),
-                              child: DropdownButtonFormField<String>(
-                                value: selectedExerciseType.value,
-                                items: exerciseTypes.map((type) {
-                                  return DropdownMenuItem(
-                                    value: type,
-                                    child: Text(type),
-                                  );
-                                }).toList(),
-                                onChanged: (value) =>
-                                    selectedExerciseType.value = value,
-                                decoration: InputDecoration(
-                                  border: InputBorder.none,
-                                  contentPadding:
-                                      EdgeInsets.all(AppTheme.spacing.md),
-                                  prefixIcon: Icon(
-                                    Icons.category_outlined,
-                                    color: colorScheme.primary,
-                                    size: 20,
+                                label: 'Tipo di Esercizio',
+                                theme: theme,
+                                colorScheme: colorScheme,
+                                helperText: 'Seleziona il tipo di esercizio',
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.surfaceContainerHighest
+                                        .withAlpha(128),
+                                    borderRadius: BorderRadius.circular(
+                                      AppTheme.radii.lg,
+                                    ),
+                                    border: Border.all(
+                                      color: colorScheme.outline.withAlpha(26),
+                                    ),
+                                  ),
+                                  child: DropdownButtonFormField<String>(
+                                    value: selectedExerciseType.value,
+                                    items: exerciseTypes.map((type) {
+                                      return DropdownMenuItem(
+                                        value: type,
+                                        child: Text(type),
+                                      );
+                                    }).toList(),
+                                    onChanged: (value) =>
+                                        selectedExerciseType.value = value,
+                                    decoration: InputDecoration(
+                                      border: InputBorder.none,
+                                      contentPadding: EdgeInsets.all(
+                                        AppTheme.spacing.md,
+                                      ),
+                                      prefixIcon: Icon(
+                                        Icons.category_outlined,
+                                        color: colorScheme.primary,
+                                        size: 20,
+                                      ),
+                                    ),
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Seleziona un tipo di esercizio';
+                                      }
+                                      return null;
+                                    },
                                   ),
                                 ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Seleziona un tipo di esercizio';
-                                  }
-                                  return null;
-                                },
                               ),
-                            ),
-                          ),
                           loading: () => const CircularProgressIndicator(),
                           error: (_, __) => const Text(
-                              'Errore nel caricamento dei tipi di esercizio'),
+                            'Errore nel caricamento dei tipi di esercizio',
+                          ),
                         );
                       },
                     ),

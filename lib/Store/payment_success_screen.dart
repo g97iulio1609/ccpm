@@ -31,10 +31,7 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.2),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 
     _controller.forward();
   }
@@ -82,9 +79,7 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
                       const SizedBox(height: 32),
                       Text(
                         'Pagamento Completato!',
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineMedium
+                        style: Theme.of(context).textTheme.headlineMedium
                             ?.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
@@ -96,10 +91,8 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
                         child: Text(
                           'Grazie per il tuo acquisto. Il tuo abbonamento è stato attivato con successo.',
                           textAlign: TextAlign.center,
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: Colors.white.withAlpha(230),
-                                  ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(color: Colors.white.withAlpha(230)),
                         ),
                       ),
                       const SizedBox(height: 48),

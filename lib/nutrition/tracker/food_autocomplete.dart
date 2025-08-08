@@ -37,7 +37,7 @@ class AutoTypeField extends ConsumerWidget {
           title: Text(suggestion.name),
           subtitle: Text(
             'Brand: ${suggestion.brands}\n'
-            'C: ${suggestion.carbs}g, P: ${suggestion.protein}g, F: ${suggestion.fat}g, Kcal:${suggestion.kcal}'
+            'C: ${suggestion.carbs}g, P: ${suggestion.protein}g, F: ${suggestion.fat}g, Kcal:${suggestion.kcal}',
           ),
         );
       },
@@ -71,13 +71,17 @@ class AutoTypeField extends ConsumerWidget {
           onChanged: onChanged,
           decoration: InputDecoration(
             labelText: 'Search Food',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             filled: true,
             fillColor: Theme.of(context).colorScheme.surface,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            prefixIcon: Icon(Icons.fastfood, color: Theme.of(context).colorScheme.onSurfaceVariant),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+            prefixIcon: Icon(
+              Icons.fastfood,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
         );
       },

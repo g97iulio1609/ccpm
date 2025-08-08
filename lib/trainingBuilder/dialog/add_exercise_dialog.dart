@@ -11,8 +11,11 @@ class AddExerciseDialog extends HookConsumerWidget {
   final ExercisesService exercisesService;
   final String userId;
 
-  const AddExerciseDialog(
-      {required this.exercisesService, required this.userId, super.key});
+  const AddExerciseDialog({
+    required this.exercisesService,
+    required this.userId,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -39,9 +42,7 @@ class AddExerciseDialog extends HookConsumerWidget {
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerHighest.withAlpha(26),
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-          border: Border.all(
-            color: colorScheme.outline.withAlpha(26),
-          ),
+          border: Border.all(color: colorScheme.outline.withAlpha(26)),
         ),
         child: TextFormField(
           controller: controller,
@@ -79,11 +80,13 @@ class AddExerciseDialog extends HookConsumerWidget {
               prefixIcon: Icons.sports_gymnastics,
               suggestionsCallback: (pattern) async {
                 return muscleGroups
-                    .where((muscleGroup) =>
-                        muscleGroup
-                            .toLowerCase()
-                            .contains(pattern.toLowerCase()) &&
-                        !selectedMuscleGroups.value.contains(muscleGroup))
+                    .where(
+                      (muscleGroup) =>
+                          muscleGroup.toLowerCase().contains(
+                            pattern.toLowerCase(),
+                          ) &&
+                          !selectedMuscleGroups.value.contains(muscleGroup),
+                    )
                     .toList();
               },
               itemBuilder: (context, muscleGroup) => ListTile(
@@ -95,7 +98,7 @@ class AddExerciseDialog extends HookConsumerWidget {
                 if (!selectedMuscleGroups.value.contains(muscleGroup)) {
                   selectedMuscleGroups.value = [
                     ...selectedMuscleGroups.value,
-                    muscleGroup
+                    muscleGroup,
                   ];
                 }
               },
@@ -114,8 +117,9 @@ class AddExerciseDialog extends HookConsumerWidget {
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        borderRadius:
-                            BorderRadius.circular(AppTheme.radii.full),
+                        borderRadius: BorderRadius.circular(
+                          AppTheme.radii.full,
+                        ),
                         onTap: () {
                           selectedMuscleGroups.value = selectedMuscleGroups
                               .value
@@ -173,11 +177,7 @@ class AddExerciseDialog extends HookConsumerWidget {
           ),
           child: Row(
             children: [
-              Icon(
-                Icons.error_outline,
-                color: colorScheme.error,
-                size: 20,
-              ),
+              Icon(Icons.error_outline, color: colorScheme.error, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -201,8 +201,9 @@ class AddExerciseDialog extends HookConsumerWidget {
           prefixIcon: Icons.category_outlined,
           suggestionsCallback: (pattern) async {
             return types
-                .where((type) =>
-                    type.toLowerCase().contains(pattern.toLowerCase()))
+                .where(
+                  (type) => type.toLowerCase().contains(pattern.toLowerCase()),
+                )
                 .toList();
           },
           itemBuilder: (context, type) => ListTile(
@@ -227,11 +228,7 @@ class AddExerciseDialog extends HookConsumerWidget {
           ),
           child: Row(
             children: [
-              Icon(
-                Icons.error_outline,
-                color: colorScheme.error,
-                size: 20,
-              ),
+              Icon(Icons.error_outline, color: colorScheme.error, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -255,11 +252,7 @@ class AddExerciseDialog extends HookConsumerWidget {
           color: colorScheme.primaryContainer.withAlpha(76),
           borderRadius: BorderRadius.circular(AppTheme.radii.md),
         ),
-        child: Icon(
-          Icons.fitness_center,
-          color: colorScheme.primary,
-          size: 24,
-        ),
+        child: Icon(Icons.fitness_center, color: colorScheme.primary, size: 24),
       ),
       actions: [
         AppDialog.buildCancelButton(context: context),
@@ -286,8 +279,10 @@ class AddExerciseDialog extends HookConsumerWidget {
                 SnackBar(
                   content: Row(
                     children: [
-                      Icon(Icons.warning_amber_rounded,
-                          color: colorScheme.onError),
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        color: colorScheme.onError,
+                      ),
                       const SizedBox(width: 8),
                       const Text('Seleziona almeno un muscolo target'),
                     ],

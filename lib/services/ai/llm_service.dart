@@ -4,10 +4,7 @@ class ActionPlan {
   final List<Map<String, dynamic>> actions;
   final Map<String, dynamic> context;
 
-  ActionPlan({
-    required this.actions,
-    required this.context,
-  });
+  ActionPlan({required this.actions, required this.context});
 }
 
 class ActionResult {
@@ -47,7 +44,8 @@ class LLMService {
   }
 
   Future<ActionPlan> createActionPlan(
-      Map<String, dynamic> interpretation) async {
+    Map<String, dynamic> interpretation,
+  ) async {
     try {
       final actions = <Map<String, dynamic>>[];
       final context = <String, dynamic>{};
@@ -63,7 +61,9 @@ class LLMService {
   }
 
   Future<ActionPlan> adjustPlan(
-      ActionPlan originalPlan, ActionResult result) async {
+    ActionPlan originalPlan,
+    ActionResult result,
+  ) async {
     try {
       final adjustedActions = <Map<String, dynamic>>[];
       final newContext = Map<String, dynamic>.from(originalPlan.context);

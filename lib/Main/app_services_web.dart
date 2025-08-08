@@ -22,10 +22,12 @@ class AppServicesWeb implements AppServices {
   @override
   Future<void> initialize() async {
     try {
-      await _remoteConfig.setConfigSettings(RemoteConfigSettings(
-        fetchTimeout: const Duration(seconds: 10),
-        minimumFetchInterval: const Duration(minutes: 1),
-      ));
+      await _remoteConfig.setConfigSettings(
+        RemoteConfigSettings(
+          fetchTimeout: const Duration(seconds: 10),
+          minimumFetchInterval: const Duration(minutes: 1),
+        ),
+      );
       await _fetchRemoteConfig();
     } catch (e) {
       debugLog('Error initializing AppServicesWeb: $e');
@@ -54,7 +56,7 @@ class AppServicesWeb implements AppServices {
       return _compareVersions(currentVersion, _minimumVersion!);
     } catch (e) {
       debugLog('Error checking app version: $e');
-      return true; 
+      return true;
     }
   }
 
@@ -87,7 +89,10 @@ class AppServicesWeb implements AppServices {
       User? user = _auth.currentUser;
       if (user == null) return false;
 
-      DocumentSnapshot userDoc = await _firestore.collection('users').doc(user.uid).get();
+      DocumentSnapshot userDoc = await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .get();
       Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
 
       String role = userData['role'] ?? 'client';
@@ -105,10 +110,15 @@ class AppServicesWeb implements AppServices {
 
         if (expiryDate.toDate().isBefore(DateTime.now())) {
           if (subscriptionPlatform == 'stripe') {
-            await _checkStripeSubscription(user.uid, userData['subscriptionId']);
+            await _checkStripeSubscription(
+              user.uid,
+              userData['subscriptionId'],
+            );
           } else {
             // Google Play subscriptions non sono supportate sul web.
-            debugLog('checkGooglePlaySubscription non è supportato su piattaforma Web.');
+            debugLog(
+              'checkGooglePlaySubscription non è supportato su piattaforma Web.',
+            );
             await _updateUserToClient(user.uid);
           }
           userDoc = await _firestore.collection('users').doc(user.uid).get();
@@ -127,11 +137,14 @@ class AppServicesWeb implements AppServices {
     }
   }
 
-  Future<void> _checkStripeSubscription(String userId, String subscriptionId) async {
+  Future<void> _checkStripeSubscription(
+    String userId,
+    String subscriptionId,
+  ) async {
     try {
-      final result = await _functions.httpsCallable('checkStripeSubscription').call({
-        'subscriptionId': subscriptionId,
-      });
+      final result = await _functions
+          .httpsCallable('checkStripeSubscription')
+          .call({'subscriptionId': subscriptionId});
 
       if (result.data['active']) {
         await _firestore.collection('users').doc(userId).update({

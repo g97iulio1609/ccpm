@@ -67,9 +67,7 @@ class GenericAutocompleteField<T> extends HookConsumerWidget {
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: Colors.white,
-              ),
+              borderSide: const BorderSide(color: Colors.white),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -80,11 +78,15 @@ class GenericAutocompleteField<T> extends HookConsumerWidget {
             ),
             filled: true,
             fillColor: Theme.of(context).colorScheme.surface,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
             prefixIcon: prefixIcon != null
-                ? Icon(prefixIcon,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant)
+                ? Icon(
+                    prefixIcon,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  )
                 : null,
           ),
         );

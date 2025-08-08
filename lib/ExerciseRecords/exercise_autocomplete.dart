@@ -29,17 +29,23 @@ class ExerciseAutocompleteBox extends HookConsumerWidget {
       suggestionsCallback: (search) async {
         final exercisesList = await exercisesService.getExercises().first;
         final suggestions = exercisesList
-            .where((exercise) =>
-                exercise.name.toLowerCase().contains(search.toLowerCase()))
+            .where(
+              (exercise) =>
+                  exercise.name.toLowerCase().contains(search.toLowerCase()),
+            )
             .toList();
-        suggestions.add(ExerciseModel(
-            id: '', name: 'Crea Esercizio', type: '', muscleGroups: []));
+        suggestions.add(
+          ExerciseModel(
+            id: '',
+            name: 'Crea Esercizio',
+            type: '',
+            muscleGroups: [],
+          ),
+        );
         return suggestions;
       },
       itemBuilder: (context, suggestion) {
-        return ListTile(
-          title: Text(suggestion.name),
-        );
+        return ListTile(title: Text(suggestion.name));
       },
       onSelected: (suggestion) async {
         if (suggestion.name == 'Crea Esercizio') {
@@ -47,7 +53,9 @@ class ExerciseAutocompleteBox extends HookConsumerWidget {
             context: context,
             builder: (context) => userId != null
                 ? AddExerciseDialog(
-                    exercisesService: exercisesService, userId: userId)
+                    exercisesService: exercisesService,
+                    userId: userId,
+                  )
                 : const SizedBox.shrink(),
           );
           if (newExercise != null) {
