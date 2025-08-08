@@ -7,6 +7,7 @@ import '../services/meals_services.dart';
 import 'food_selector.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:alphanessone/UI/components/skeleton.dart';
+import 'package:alphanessone/UI/components/app_card.dart';
 
 class FoodList extends ConsumerStatefulWidget {
   final DateTime selectedDate;
@@ -21,6 +22,7 @@ class FoodList extends ConsumerStatefulWidget {
 class FoodListState extends ConsumerState<FoodList> {
   final List<String> selectedFoods = [];
   bool isSelectionMode = false;
+  String? hoveredFoodId;
 
   @override
   void initState() {
@@ -212,20 +214,15 @@ class FoodListState extends ConsumerState<FoodList> {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
-            color: theme.colorScheme.outline.withAlpha(26),
-            width: 1,
-          ),
-        ),
+      child: AppCard(
+        background: theme.colorScheme.surfaceContainerHighest.withAlpha(38),
         child: Theme(
           data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
           child: ExpansionTile(
-            backgroundColor: theme.colorScheme.surface,
-            collapsedBackgroundColor: theme.colorScheme.surface,
+            tilePadding: EdgeInsets.zero,
+            childrenPadding: EdgeInsets.zero,
+            backgroundColor: Colors.transparent,
+            collapsedBackgroundColor: Colors.transparent,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -357,60 +354,86 @@ class FoodListState extends ConsumerState<FoodList> {
     final theme = Theme.of(context);
     final isSelected = selectedFoods.contains(food.id);
 
+    final colorScheme = theme.colorScheme;
+    final isHovered = hoveredFoodId == food.id;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-      child: GestureDetector(
-        onLongPress: () => onFoodLongPress(food.id!),
-        onTap: () => onFoodTap(context, ref, meal, food.id!),
-        child: Container(
-          decoration: BoxDecoration(
-            color: isSelected
-                ? theme.colorScheme.primaryContainer.withAlpha(51)
-                : theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Slidable(
-            key: Key(food.id!),
-            startActionPane: ActionPane(
-              motion: const ScrollMotion(),
-              children: buildSlidableStartActions(context, ref, meal, food),
+      child: MouseRegion(
+        onEnter: (_) => setState(() => hoveredFoodId = food.id),
+        onExit: (_) => setState(() => hoveredFoodId = null),
+        child: GestureDetector(
+          onLongPress: () => onFoodLongPress(food.id!),
+          onTap: () => onFoodTap(context, ref, meal, food.id!),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            curve: Curves.easeOutCubic,
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? colorScheme.primary.withAlpha(26)
+                  : (isHovered
+                      ? colorScheme.surfaceContainerHighest.withAlpha(64)
+                      : colorScheme.surface),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected
+                    ? colorScheme.primary
+                    : colorScheme.outline.withAlpha(isHovered ? 64 : 26),
+                width: 1.2,
+              ),
+              boxShadow: isHovered
+                  ? [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                  : null,
             ),
-            endActionPane: ActionPane(
-              motion: const ScrollMotion(),
-              children: buildSlidableEndActions(ref, meal, food),
-            ),
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 8.0,
+            child: Slidable(
+              key: Key(food.id!),
+              startActionPane: ActionPane(
+                motion: const ScrollMotion(),
+                children: buildSlidableStartActions(context, ref, meal, food),
               ),
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer.withAlpha(51),
-                  borderRadius: BorderRadius.circular(8),
+              endActionPane: ActionPane(
+                motion: const ScrollMotion(),
+                children: buildSlidableEndActions(ref, meal, food),
+              ),
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 8.0,
                 ),
-                child: Icon(Icons.restaurant, color: theme.colorScheme.primary),
-              ),
-              title: Text(
-                food.name,
-                style: GoogleFonts.roboto(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: theme.colorScheme.onSurface,
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withAlpha(38),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.restaurant, color: colorScheme.primary),
                 ),
-              ),
-              subtitle: Text(
-                'C:${food.carbs.toStringAsFixed(0)}g P:${food.protein.toStringAsFixed(0)}g F:${food.fat.toStringAsFixed(0)}g\n${food.kcal.toStringAsFixed(0)} Kcal',
-                style: GoogleFonts.roboto(
-                  fontSize: 14,
-                  color: theme.colorScheme.onSurfaceVariant,
+                title: Text(
+                  food.name,
+                  style: GoogleFonts.roboto(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: colorScheme.onSurface,
+                  ),
                 ),
-              ),
-              trailing: IconButton(
-                icon: const Icon(Icons.more_vert),
-                onPressed: () =>
-                    showFoodOptionsBottomSheet(context, ref, meal, food),
+                subtitle: Text(
+                  'C:${food.carbs.toStringAsFixed(0)}g P:${food.protein.toStringAsFixed(0)}g F:${food.fat.toStringAsFixed(0)}g\n${food.kcal.toStringAsFixed(0)} Kcal',
+                  style: GoogleFonts.roboto(
+                    fontSize: 14,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                trailing: IconButton(
+                  icon: const Icon(Icons.more_vert),
+                  onPressed: () =>
+                      showFoodOptionsBottomSheet(context, ref, meal, food),
+                ),
               ),
             ),
           ),
@@ -1014,11 +1037,9 @@ class FoodListState extends ConsumerState<FoodList> {
     DateTime date,
     int currentSnacksCount,
   ) {
-    final theme = Theme.of(context);
-
     return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: ElevatedButton.icon(
+      child: FilledButton.icon(
         onPressed: () async {
           if (dailyStatsId.isNotEmpty) {
             final mealsService = ref.read(mealsServiceProvider);
@@ -1031,9 +1052,7 @@ class FoodListState extends ConsumerState<FoodList> {
         },
         icon: const Icon(Icons.add),
         label: const Text('Aggiungi Snack'),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: theme.colorScheme.primaryContainer,
-          foregroundColor: theme.colorScheme.onPrimaryContainer,
+        style: FilledButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
