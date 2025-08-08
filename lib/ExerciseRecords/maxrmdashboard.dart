@@ -18,6 +18,7 @@ import '../../providers/providers.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/app_card.dart';
 import 'package:alphanessone/UI/components/section_header.dart';
+import 'package:alphanessone/UI/components/kpi_badge.dart';
 
 class MaxRMDashboard extends HookConsumerWidget {
   const MaxRMDashboard({super.key});
@@ -430,23 +431,10 @@ class MaxRMDashboard extends HookConsumerWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppTheme.spacing.md,
-                vertical: AppTheme.spacing.xs,
-              ),
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer.withAlpha(76),
-                borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
-              ),
-              child: Text(
-                '${record.maxWeight} kg',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: colorScheme.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-                textAlign: TextAlign.center,
-              ),
+            KpiBadge(
+              text: '${record.maxWeight} kg',
+              icon: Icons.fitness_center,
+              color: colorScheme.primary,
             ),
             Text(
               DateFormat('d MMM yyyy').format(record.date),
