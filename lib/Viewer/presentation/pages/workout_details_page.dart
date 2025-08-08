@@ -28,6 +28,7 @@ class WorkoutDetailsPage extends ConsumerStatefulWidget {
 }
 
 class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
+  bool _compactLayout = false;
   @override
   Widget build(BuildContext context) {
     // Osserviamo lo stato dal WorkoutDetailsNotifier
@@ -47,15 +48,15 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
     final maxCrossAxisExtent = screenWidth >= 1600
         ? 420.0
         : screenWidth >= 1200
-            ? 380.0
-            : screenWidth >= 900
-                ? 340.0
-                : 320.0;
+        ? 380.0
+        : screenWidth >= 900
+        ? 340.0
+        : 320.0;
     final mainAxisExtent = screenWidth >= 1600
         ? 460.0
         : screenWidth >= 1200
-            ? 500.0
-            : 540.0;
+        ? 500.0
+        : 540.0;
 
     // Se è in caricamento, mostra un indicatore di progresso
     if (state.isLoading) {
@@ -138,6 +139,16 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
     // Mostra gli esercizi in una lista o griglia
     return Scaffold(
       backgroundColor: colorScheme.surface,
+      floatingActionButton: isListMode
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () => setState(() => _compactLayout = !_compactLayout),
+              icon: Icon(
+                _compactLayout ? Icons.unfold_more : Icons.unfold_less,
+              ),
+              label: Text(_compactLayout ? 'Estesa' : 'Compatta'),
+              tooltip: 'Cambia densità card',
+            ),
       body: isListMode
           ? RefreshIndicator(
               onRefresh: () => notifier.refreshWorkout(),
