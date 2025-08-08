@@ -7,6 +7,7 @@ import 'package:alphanessone/UI/components/skeleton.dart';
 import 'package:alphanessone/UI/components/app_card.dart';
 import 'package:alphanessone/UI/components/section_header.dart';
 import 'package:alphanessone/Viewer/presentation/widgets/exercise_timer_bottom_sheet.dart';
+import 'package:alphanessone/UI/components/series_header.dart';
 
 class WorkoutDetailsPage extends ConsumerStatefulWidget {
   final String programId;
@@ -326,20 +327,24 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
       subtitle: (exercise.variant != null && exercise.variant!.isNotEmpty)
           ? exercise.variant!
           : null,
-      trailing: IconButton(
-        icon: Icon(
-          Icons.note_alt_outlined,
-          color: exercise.note != null && exercise.note!.isNotEmpty
-              ? colorScheme.primary
-              : colorScheme.onSurfaceVariant,
+      trailing: Semantics(
+        label: 'Aggiungi o modifica nota esercizio',
+        button: true,
+        child: IconButton(
+          icon: Icon(
+            Icons.note_alt_outlined,
+            color: exercise.note != null && exercise.note!.isNotEmpty
+                ? colorScheme.primary
+                : colorScheme.onSurfaceVariant,
+          ),
+          onPressed: () => _showNoteDialog(
+            exercise.id ?? '',
+            exercise.name,
+            exercise.note,
+            notifier,
+          ),
+          tooltip: 'Nota',
         ),
-        onPressed: () => _showNoteDialog(
-          exercise.id ?? '',
-          exercise.name,
-          exercise.note,
-          notifier,
-        ),
-        tooltip: 'Nota',
       ),
     );
   }
@@ -452,21 +457,25 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          IconButton(
-            icon: Icon(
-              Icons.note_alt_outlined,
-              size: 20,
-              color: exercise.note != null && exercise.note!.isNotEmpty
-                  ? colorScheme.primary
-                  : colorScheme.onSurfaceVariant,
+          Semantics(
+            label: 'Aggiungi o modifica nota esercizio del superset',
+            button: true,
+            child: IconButton(
+              icon: Icon(
+                Icons.note_alt_outlined,
+                size: 20,
+                color: exercise.note != null && exercise.note!.isNotEmpty
+                    ? colorScheme.primary
+                    : colorScheme.onSurfaceVariant,
+              ),
+              onPressed: () => _showNoteDialog(
+                exercise.id ?? '',
+                exercise.name,
+                exercise.note,
+                notifier,
+              ),
+              tooltip: 'Nota',
             ),
-            onPressed: () => _showNoteDialog(
-              exercise.id ?? '',
-              exercise.name,
-              exercise.note,
-              notifier,
-            ),
-            tooltip: 'Nota',
           ),
         ],
       ),
@@ -554,57 +563,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
   }
 
   Widget _buildSeriesHeaderRow(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Row(
-      children: [
-        SizedBox(
-          width: 30,
-          child: Text(
-            '#',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ),
-        Expanded(
-          flex: 2,
-          child: Text(
-            'Reps',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ),
-        Expanded(
-          flex: 2,
-          child: Text(
-            'Peso',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ),
-        Expanded(
-          flex: 2,
-          child: Text(
-            'Fatti',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ),
-        SizedBox(width: 40), // Space for checkmark
-      ],
-    );
+    return const SeriesHeader();
   }
 
   List<Widget> _buildSeriesContainers(
