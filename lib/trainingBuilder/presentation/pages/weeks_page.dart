@@ -96,17 +96,15 @@ class _WeekListViewState extends State<_WeekListView> with TrainingListMixin {
             ),
           ),
         ),
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 220),
-          switchInCurve: Curves.easeOut,
-          switchOutCurve: Curves.easeIn,
-          child: _layout == 'list' ? _buildList(weeks) : _buildGrid(weeks),
-        ),
+        // Evita di inserire un widget non-sliver dentro gerarchie di slivers a valle
+        (_layout == 'list' ? _buildList(weeks) : _buildGrid(weeks)),
       ],
     );
   }
 
   Widget _buildList(List weeks) {
+    // Queste viste sono inserite in una colonna non scrollabile nel form principale,
+    // quindi usiamo shrinkWrap e disabilitiamo lo scroll.
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),

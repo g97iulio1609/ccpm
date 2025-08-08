@@ -11,7 +11,7 @@ import 'package:alphanessone/Viewer/UI/widgets/series_widgets.dart';
 class SupersetCard extends ConsumerWidget {
   final List<Map<String, dynamic>> superSetExercises;
   final Function(Map<String, dynamic>, List<Map<String, dynamic>>)
-      onNavigateToDetails;
+  onNavigateToDetails;
 
   const SupersetCard({
     super.key,
@@ -27,19 +27,18 @@ class SupersetCard extends ConsumerWidget {
 
     final allSeriesCompleted = superSetExercises.every((exercise) {
       final series = List<Map<String, dynamic>>.from(exercise['series']);
-      return series.every((serie) => ref
-          .read(workout_provider.workoutServiceProvider)
-          .isSeriesDone(serie));
+      return series.every(
+        (serie) => ref
+            .read(workout_provider.workoutServiceProvider)
+            .isSeriesDone(serie),
+      );
     });
 
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-          width: 1,
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26), width: 1),
         boxShadow: AppTheme.elevations.small,
       ),
       child: ClipRRect(
@@ -67,8 +66,9 @@ class SupersetCard extends ConsumerWidget {
                         horizontal: AppTheme.spacing.sm,
                       ),
                       decoration: BoxDecoration(
-                        color:
-                            colorScheme.surfaceContainerHighest.withAlpha(77),
+                        color: colorScheme.surfaceContainerHighest.withAlpha(
+                          77,
+                        ),
                         borderRadius: BorderRadius.circular(AppTheme.radii.sm),
                       ),
                       child: const SeriesHeaderRow(),
@@ -76,7 +76,10 @@ class SupersetCard extends ConsumerWidget {
                     SizedBox(height: AppTheme.spacing.sm),
                     // Serie ottimizzate per mobile
                     ..._buildMobileSuperSetSeriesRows(
-                        context, ref, colorScheme),
+                      context,
+                      ref,
+                      colorScheme,
+                    ),
                   ],
                 ),
               )
@@ -113,9 +116,7 @@ class SupersetCard extends ConsumerWidget {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withAlpha(77),
         border: Border(
-          bottom: BorderSide(
-            color: colorScheme.outline.withAlpha(26),
-          ),
+          bottom: BorderSide(color: colorScheme.outline.withAlpha(26)),
         ),
       ),
       child: Column(
@@ -124,18 +125,14 @@ class SupersetCard extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.group_work,
-                color: colorScheme.primary,
-                size: 20,
-              ),
+              Icon(Icons.group_work, color: colorScheme.primary, size: 20),
               SizedBox(width: AppTheme.spacing.xs),
               Text(
                 'Super Set',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurface,
-                    ),
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
               ),
             ],
           ),
@@ -145,8 +142,14 @@ class SupersetCard extends ConsumerWidget {
             children: superSetExercises
                 .asMap()
                 .entries
-                .map((entry) => _buildSuperSetExerciseName(
-                    entry.key, entry.value, context, colorScheme))
+                .map(
+                  (entry) => _buildSuperSetExerciseName(
+                    entry.key,
+                    entry.value,
+                    context,
+                    colorScheme,
+                  ),
+                )
                 .toList(),
           ),
         ],
@@ -154,8 +157,12 @@ class SupersetCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildSuperSetExerciseName(int index, Map<String, dynamic> exercise,
-      BuildContext context, ColorScheme colorScheme) {
+  Widget _buildSuperSetExerciseName(
+    int index,
+    Map<String, dynamic> exercise,
+    BuildContext context,
+    ColorScheme colorScheme,
+  ) {
     return Container(
       margin: EdgeInsets.only(bottom: AppTheme.spacing.xs),
       child: Row(
@@ -171,9 +178,9 @@ class SupersetCard extends ConsumerWidget {
               child: Text(
                 String.fromCharCode(65 + index), // A, B, C...
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: colorScheme.onPrimary,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  color: colorScheme.onPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -182,9 +189,9 @@ class SupersetCard extends ConsumerWidget {
             child: Text(
               '${exercise['name']} ${exercise['variant'] ?? ''}',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.w500,
-                  ),
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w500,
+              ),
               overflow: TextOverflow.ellipsis,
               maxLines: 2,
             ),
@@ -198,12 +205,22 @@ class SupersetCard extends ConsumerWidget {
     return AppButton(
       label: 'START',
       onPressed: () {
+        // Trova il primo esercizio con almeno una serie non completata/compilata
         final firstNotDoneExerciseIndex = superSetExercises.indexWhere(
-            (exercise) => exercise['series'].any(
-                (series) => !WorkoutFormatters.hasAttemptedSeries(series)));
+          (exercise) => (exercise['series'] as List).any(
+            (series) => !WorkoutFormatters.hasAttemptedSeries(series),
+          ),
+        );
+
+        if (firstNotDoneExerciseIndex == -1) {
+          // Tutte le serie risultano già segnate: non facciamo nulla
+          return;
+        }
 
         onNavigateToDetails(
-            superSetExercises[firstNotDoneExerciseIndex], superSetExercises);
+          superSetExercises[firstNotDoneExerciseIndex],
+          superSetExercises,
+        );
       },
       variant: AppButtonVariant.primary,
       size: AppButtonSize.md,
@@ -233,22 +250,28 @@ class SupersetCard extends ConsumerWidget {
   }
 
   Widget _buildSeriesIndexText(
-      int seriesIndex, BuildContext context, int flex) {
+    int seriesIndex,
+    BuildContext context,
+    int flex,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
     return Expanded(
       flex: flex,
       child: Text(
         '${seriesIndex + 1}',
-        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: colorScheme.onSurface,
-            ),
+        style: Theme.of(
+          context,
+        ).textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
         textAlign: TextAlign.center,
       ),
     );
   }
 
   List<Widget> _buildSuperSetSeriesColumns(
-      int seriesIndex, BuildContext context, WidgetRef ref) {
+    int seriesIndex,
+    BuildContext context,
+    WidgetRef ref,
+  ) {
     return [
       _buildSuperSetSeriesColumn(seriesIndex, 'reps', context, ref, 2),
       _buildSuperSetSeriesColumn(seriesIndex, 'weight', context, ref, 2),
@@ -256,8 +279,13 @@ class SupersetCard extends ConsumerWidget {
     ];
   }
 
-  Widget _buildSuperSetSeriesColumn(int seriesIndex, String field,
-      BuildContext context, WidgetRef ref, int flex) {
+  Widget _buildSuperSetSeriesColumn(
+    int seriesIndex,
+    String field,
+    BuildContext context,
+    WidgetRef ref,
+    int flex,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
     return Expanded(
       flex: flex,
@@ -280,11 +308,14 @@ class SupersetCard extends ConsumerWidget {
                       );
                     },
                     child: Text(
-                      WorkoutFormatters.formatSeriesValue(series, field, ref)
-                          .toString(),
+                      WorkoutFormatters.formatSeriesValue(
+                        series,
+                        field,
+                        ref,
+                      ).toString(),
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: colorScheme.onSurface,
-                          ),
+                        color: colorScheme.onSurface,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   )
@@ -296,7 +327,11 @@ class SupersetCard extends ConsumerWidget {
   }
 
   Widget _buildSuperSetSeriesDoneColumn(
-      int seriesIndex, BuildContext context, WidgetRef ref, int flex) {
+    int seriesIndex,
+    BuildContext context,
+    WidgetRef ref,
+    int flex,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
     return Expanded(
       flex: flex,
@@ -319,8 +354,8 @@ class SupersetCard extends ConsumerWidget {
                           : Icons.error_outline,
                       color:
                           WorkoutFormatters.determineSeriesStatus(series, ref)
-                              ? colorScheme.primary
-                              : colorScheme.onSurfaceVariant,
+                          ? colorScheme.primary
+                          : colorScheme.onSurfaceVariant,
                     ),
                   )
                 : const SizedBox(),
@@ -332,7 +367,10 @@ class SupersetCard extends ConsumerWidget {
 
   // Nuovo metodo per gestire le serie delle superserie su mobile
   List<Widget> _buildMobileSuperSetSeriesRows(
-      BuildContext context, WidgetRef ref, ColorScheme colorScheme) {
+    BuildContext context,
+    WidgetRef ref,
+    ColorScheme colorScheme,
+  ) {
     final maxSeriesCount = superSetExercises
         .map((exercise) => exercise['series'].length)
         .reduce((a, b) => a > b ? a : b);
@@ -344,9 +382,7 @@ class SupersetCard extends ConsumerWidget {
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerHighest.withAlpha(38),
           borderRadius: BorderRadius.circular(AppTheme.radii.md),
-          border: Border.all(
-            color: colorScheme.outline.withAlpha(26),
-          ),
+          border: Border.all(color: colorScheme.outline.withAlpha(26)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -357,9 +393,9 @@ class SupersetCard extends ConsumerWidget {
               child: Text(
                 'Serie ${seriesIndex + 1}',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurface,
-                    ),
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
               ),
             ),
             // Esercizi della serie
@@ -394,11 +430,11 @@ class SupersetCard extends ConsumerWidget {
                       child: Center(
                         child: Text(
                           String.fromCharCode(65 + exerciseIndex), // A, B, C...
-                          style:
-                              Theme.of(context).textTheme.labelMedium?.copyWith(
-                                    color: colorScheme.onPrimary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(
+                                color: colorScheme.onPrimary,
+                                fontWeight: FontWeight.bold,
+                              ),
                         ),
                       ),
                     ),
@@ -409,9 +445,9 @@ class SupersetCard extends ConsumerWidget {
                       child: Text(
                         exercise['name'],
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w500,
-                              color: colorScheme.onSurface,
-                            ),
+                          fontWeight: FontWeight.w500,
+                          color: colorScheme.onSurface,
+                        ),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
                       ),
@@ -421,7 +457,11 @@ class SupersetCard extends ConsumerWidget {
                     Expanded(
                       child: GestureDetector(
                         onTap: () => WorkoutDialogs.showUserSeriesInputDialog(
-                            context, ref, series, 'reps'),
+                          context,
+                          ref,
+                          series,
+                          'reps',
+                        ),
                         child: Container(
                           padding: EdgeInsets.symmetric(
                             vertical: AppTheme.spacing.xs,
@@ -429,15 +469,19 @@ class SupersetCard extends ConsumerWidget {
                           ),
                           decoration: BoxDecoration(
                             color: colorScheme.surface,
-                            borderRadius:
-                                BorderRadius.circular(AppTheme.radii.sm),
+                            borderRadius: BorderRadius.circular(
+                              AppTheme.radii.sm,
+                            ),
                             border: Border.all(
                               color: colorScheme.outline.withAlpha(26),
                             ),
                           ),
                           child: Text(
                             WorkoutFormatters.formatSeriesValueForMobile(
-                                series, 'reps', ref),
+                              series,
+                              'reps',
+                              ref,
+                            ),
                             style: Theme.of(context).textTheme.bodySmall,
                             textAlign: TextAlign.center,
                           ),
@@ -449,7 +493,11 @@ class SupersetCard extends ConsumerWidget {
                     Expanded(
                       child: GestureDetector(
                         onTap: () => WorkoutDialogs.showUserSeriesInputDialog(
-                            context, ref, series, 'weight'),
+                          context,
+                          ref,
+                          series,
+                          'weight',
+                        ),
                         child: Container(
                           padding: EdgeInsets.symmetric(
                             vertical: AppTheme.spacing.xs,
@@ -457,15 +505,19 @@ class SupersetCard extends ConsumerWidget {
                           ),
                           decoration: BoxDecoration(
                             color: colorScheme.surface,
-                            borderRadius:
-                                BorderRadius.circular(AppTheme.radii.sm),
+                            borderRadius: BorderRadius.circular(
+                              AppTheme.radii.sm,
+                            ),
                             border: Border.all(
                               color: colorScheme.outline.withAlpha(26),
                             ),
                           ),
                           child: Text(
                             WorkoutFormatters.formatSeriesValueForMobile(
-                                series, 'weight', ref),
+                              series,
+                              'weight',
+                              ref,
+                            ),
                             style: Theme.of(context).textTheme.bodySmall,
                             textAlign: TextAlign.center,
                           ),
@@ -482,15 +534,22 @@ class SupersetCard extends ConsumerWidget {
                         width: 32,
                         height: 32,
                         decoration: BoxDecoration(
-                          color: WorkoutFormatters.determineSeriesStatus(
-                                  series, ref)
+                          color:
+                              WorkoutFormatters.determineSeriesStatus(
+                                series,
+                                ref,
+                              )
                               ? colorScheme.primary
                               : Colors.transparent,
-                          borderRadius:
-                              BorderRadius.circular(AppTheme.radii.sm),
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radii.sm,
+                          ),
                           border: Border.all(
-                            color: WorkoutFormatters.determineSeriesStatus(
-                                    series, ref)
+                            color:
+                                WorkoutFormatters.determineSeriesStatus(
+                                  series,
+                                  ref,
+                                )
                                 ? colorScheme.primary
                                 : colorScheme.outline,
                             width: 2,
@@ -498,8 +557,11 @@ class SupersetCard extends ConsumerWidget {
                         ),
                         child: Icon(
                           Icons.check,
-                          color: WorkoutFormatters.determineSeriesStatus(
-                                  series, ref)
+                          color:
+                              WorkoutFormatters.determineSeriesStatus(
+                                series,
+                                ref,
+                              )
                               ? colorScheme.onPrimary
                               : colorScheme.onSurfaceVariant,
                           size: 16,

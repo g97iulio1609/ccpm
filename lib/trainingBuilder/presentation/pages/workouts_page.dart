@@ -33,6 +33,23 @@ class _TrainingProgramWorkoutListPageState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    // Protezione: in fase di caricamento il programma potrebbe non avere ancora la settimana richiesta
+    final hasWeek =
+        widget.weekIndex <
+        (widget.controller.program.weeks.isNotEmpty
+            ? widget.controller.program.weeks.length
+            : 0);
+    if (!hasWeek) {
+      return PageScaffold(
+        colorScheme: colorScheme,
+        slivers: const [
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(child: CircularProgressIndicator()),
+          ),
+        ],
+      );
+    }
     final workouts = widget.controller.program.weeks[widget.weekIndex].workouts;
     final screenSize = MediaQuery.of(context).size;
     final isNarrow = screenSize.width < 900;
@@ -95,26 +112,21 @@ class _TrainingProgramWorkoutListPageState
           padding: EdgeInsets.all(
             isCompactDensity ? AppTheme.spacing.md : AppTheme.spacing.lg,
           ),
-          sliver: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 220),
-            switchInCurve: Curves.easeOut,
-            switchOutCurve: Curves.easeIn,
-            child: workouts.isEmpty
-                ? _buildEmptyState(theme, colorScheme, isCompactDensity)
-                : (_layout == 'list'
-                      ? _buildWorkoutsList(
-                          workouts,
-                          theme,
-                          colorScheme,
-                          isCompactDensity,
-                        )
-                      : _buildWorkoutsGrid(
-                          workouts,
-                          theme,
-                          colorScheme,
-                          isCompactDensity,
-                        )),
-          ),
+          sliver: workouts.isEmpty
+              ? _buildEmptyState(theme, colorScheme, isCompactDensity)
+              : (_layout == 'list'
+                    ? _buildWorkoutsList(
+                        workouts,
+                        theme,
+                        colorScheme,
+                        isCompactDensity,
+                      )
+                    : _buildWorkoutsGrid(
+                        workouts,
+                        theme,
+                        colorScheme,
+                        isCompactDensity,
+                      )),
         ),
       ],
     );

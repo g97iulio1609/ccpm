@@ -38,7 +38,8 @@ class ExerciseCard extends ConsumerWidget {
     );
     final colorScheme = Theme.of(context).colorScheme;
     final screenWidth = MediaQuery.of(context).size.width;
-    final isListMode = screenWidth < 600;
+    // Allinea il comportamento: lista sempre attiva per stabilità
+    final isListMode = screenWidth < 10000;
 
     return AppCard(
       header: _buildExerciseName(context, ref),

@@ -13,10 +13,27 @@ class WeekProgression {
   });
 
   factory WeekProgression.fromMap(Map<String, dynamic> map) {
+    List<Series> parseSeries(dynamic data) {
+      if (data == null) return [];
+      if (data is List) {
+        return data
+            .where((e) => e != null)
+            .map((x) => Series.fromMap(x as Map<String, dynamic>))
+            .toList();
+      }
+      if (data is Map) {
+        return data.values
+            .where((e) => e != null)
+            .map((x) => Series.fromMap(Map<String, dynamic>.from(x as Map)))
+            .toList();
+      }
+      return [];
+    }
+
     return WeekProgression(
       weekNumber: map['weekNumber'],
       sessionNumber: map['sessionNumber'],
-      series: List<Series>.from(map['series']?.map((x) => Series.fromMap(x)) ?? []),
+      series: parseSeries(map['series']),
     );
   }
 

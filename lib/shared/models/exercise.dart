@@ -164,9 +164,29 @@ class Exercise {
 
   static List<Series> _parseSeries(dynamic data) {
     if (data == null) return [];
-    return List<Series>.from(
-      data.map((seriesData) => Series.fromMap(seriesData))
-    );
+
+    // If it's already a List, map each entry to Series
+    if (data is List) {
+      return data
+          .where((e) => e != null)
+          .map((seriesData) => Series.fromMap(
+                seriesData as Map<String, dynamic>,
+              ))
+          .toList();
+    }
+
+    // If it's a Map (e.g., IdentityMap from Firestore), convert its values
+    if (data is Map) {
+      return data.values
+          .where((e) => e != null)
+          .map((seriesData) => Series.fromMap(
+                Map<String, dynamic>.from(seriesData as Map),
+              ))
+          .toList();
+    }
+
+    // Fallback: unsupported shape
+    return [];
   }
 
   static DateTime? _parseTimestamp(dynamic data) {

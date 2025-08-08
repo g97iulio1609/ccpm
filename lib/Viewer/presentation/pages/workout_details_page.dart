@@ -10,6 +10,7 @@ import 'package:alphanessone/Viewer/presentation/widgets/exercise_timer_bottom_s
 import 'package:alphanessone/UI/components/series_header.dart';
 import 'package:alphanessone/shared/widgets/page_scaffold.dart';
 import 'package:alphanessone/shared/widgets/empty_state.dart';
+import 'package:alphanessone/Viewer/UI/widgets/workout_dialogs.dart';
 
 class WorkoutDetailsPage extends ConsumerStatefulWidget {
   final String programId;
@@ -41,7 +42,8 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
 
     final colorScheme = Theme.of(context).colorScheme;
     final screenWidth = MediaQuery.of(context).size.width;
-    final isListMode = screenWidth < 600;
+    // Forza la modalità lista praticamente sempre per stabilizzare il rendering
+    final isListMode = screenWidth < 10000;
 
     // Deprecated: calcolo colonne non più usato (si usa maxCrossAxisExtent)
     final padding = AppTheme.spacing.md;
@@ -139,12 +141,11 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                   itemCount: groupedExercises.length,
                   itemBuilder: (context, index) {
                     final entry = groupedExercises.entries.elementAt(index);
-                    final superSetId = entry.key;
                     final exercises = entry.value;
 
                     return Padding(
                       padding: EdgeInsets.only(bottom: spacing),
-                      child: superSetId == null || superSetId.isEmpty
+                      child: exercises.length == 1
                           ? _buildSingleExerciseCard(exercises.first, context)
                           : _buildSuperSetCard(
                               superSetExercises: exercises,
@@ -174,13 +175,12 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                   itemCount: groupedExercises.length,
                   itemBuilder: (context, index) {
                     final entry = groupedExercises.entries.elementAt(index);
-                    final superSetId = entry.key;
                     final exercises = entry.value;
 
                     return Semantics(
                       container: true,
                       label: 'Scheda esercizio',
-                      child: superSetId == null || superSetId.isEmpty
+                      child: exercises.length == 1
                           ? _buildSingleExerciseCard(exercises.first, context)
                           : _buildSuperSetCard(
                               superSetExercises: exercises,
@@ -199,29 +199,25 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
   Map<String?, List<Exercise>> _groupExercisesBySuperSet(
     List<Exercise> exercises,
   ) {
-    final groupedExercises = <String?, List<Exercise>>{};
-
+    // 1) Raggruppa per superSetId
+    final Map<String?, List<Exercise>> temp = {};
     for (final exercise in exercises) {
       final superSetId = exercise.superSetId;
-
-      if (superSetId != null && superSetId.isNotEmpty) {
-        (groupedExercises[superSetId] ??= []).add(exercise);
-      } else {
-        groupedExercises[null] ??= [];
-        groupedExercises[null]!.add(exercise);
-      }
+      (temp[superSetId] ??= <Exercise>[]).add(exercise);
     }
 
-    // Per gli esercizi normali, vogliamo una entry per esercizio
-    final result = <String?, List<Exercise>>{};
-
-    groupedExercises.forEach((superSetId, exercises) {
-      if (superSetId == null || superSetId.isEmpty) {
-        for (final exercise in exercises) {
-          result[exercise.id] = [exercise];
+    // 2) Solo i gruppi con almeno 2 elementi restano "superset".
+    //    Gli altri tornano ad essere esercizi singoli.
+    final Map<String?, List<Exercise>> result = {};
+    temp.forEach((superSetId, group) {
+      if (superSetId == null || superSetId.isEmpty || group.length < 2) {
+        for (final ex in group) {
+          result[ex.id] = [ex];
         }
       } else {
-        result[superSetId] = exercises;
+        // Ordina per ordine definito nell'esercizio per coerenza
+        group.sort((a, b) => a.order.compareTo(b.order));
+        result[superSetId] = group;
       }
     });
 
@@ -238,7 +234,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
     final isListMode = screenWidth < 600;
 
     return AppCard(
-      header: _buildExerciseName(exercise, context),
+    header: _buildExerciseName(exercise, context),
       background: Theme.of(
         context,
       ).colorScheme.surfaceContainerHighest.withAlpha(38),
@@ -250,6 +246,11 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+          // Meta info: set, target, rest
+          _buildExerciseMetaChips(exercise, context),
+          SizedBox(height: AppTheme.spacing.sm),
+          _buildExerciseProgress(series, context),
+          SizedBox(height: AppTheme.spacing.md),
                   if (!allSeriesCompleted) ...[
                     _buildStartButton(
                       exercise,
@@ -285,6 +286,10 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+            _buildExerciseMetaChips(exercise, context),
+            SizedBox(height: AppTheme.spacing.sm),
+            _buildExerciseProgress(series, context),
+            SizedBox(height: AppTheme.spacing.md),
                       if (!allSeriesCompleted) ...[
                         _buildStartButton(
                           exercise,
@@ -334,24 +339,67 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
       subtitle: (exercise.variant != null && exercise.variant!.isNotEmpty)
           ? exercise.variant!
           : null,
-      trailing: Semantics(
-        label: 'Aggiungi o modifica nota esercizio',
-        button: true,
-        child: IconButton(
-          icon: Icon(
-            Icons.note_alt_outlined,
-            color: exercise.note != null && exercise.note!.isNotEmpty
-                ? colorScheme.primary
-                : colorScheme.onSurfaceVariant,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Semantics(
+            label: 'Aggiungi o modifica nota esercizio',
+            button: true,
+            child: IconButton(
+              icon: Icon(
+                Icons.note_alt_outlined,
+                color: exercise.note != null && exercise.note!.isNotEmpty
+                    ? colorScheme.primary
+                    : colorScheme.onSurfaceVariant,
+              ),
+              onPressed: () => _showNoteDialog(
+                exercise.id ?? '',
+                exercise.name,
+                exercise.note,
+                notifier,
+              ),
+              tooltip: 'Nota',
+            ),
           ),
-          onPressed: () => _showNoteDialog(
-            exercise.id ?? '',
-            exercise.name,
-            exercise.note,
-            notifier,
+          PopupMenuButton<String>(
+            tooltip: 'Azioni esercizio',
+            icon: Icon(Icons.more_vert, color: colorScheme.onSurfaceVariant),
+            onSelected: (value) async {
+              if (value == 'change') {
+                WorkoutDialogs.showChangeExerciseDialog(
+                  context,
+                  ref,
+                  exercise.toMap(),
+                  widget.userId,
+                );
+              } else if (value == 'edit_series') {
+                WorkoutDialogs.showSeriesEditDialog(
+                  context,
+                  ref,
+                  exercise.toMap(),
+                  exercise.series.map((s) => s.toMap()).toList(),
+                  widget.userId,
+                );
+              }
+            },
+            itemBuilder: (ctx) => [
+              const PopupMenuItem(
+                value: 'change',
+                child: ListTile(
+                  leading: Icon(Icons.swap_horiz),
+                  title: Text('Cambia esercizio'),
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'edit_series',
+                child: ListTile(
+                  leading: Icon(Icons.tune),
+                  title: Text('Modifica serie…'),
+                ),
+              ),
+            ],
           ),
-          tooltip: 'Nota',
-        ),
+        ],
       ),
     );
   }
@@ -364,9 +412,18 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
     final allSeriesCompleted = superSetExercises.every((exercise) {
       return exercise.series.every((series) => series.isCompleted);
     });
+    final totalSeries = superSetExercises
+        .map((e) => e.series.length)
+        .fold<int>(0, (p, c) => p + c);
+    final doneSeries = superSetExercises
+        .map((e) => e.series.where((s) => s.isCompleted).length)
+        .fold<int>(0, (p, c) => p + c);
 
     return AppCard(
-      header: SectionHeader(title: 'Super Set'),
+      header: SectionHeader(
+        title: 'Super Set',
+        subtitle: '${superSetExercises.length} esercizi',
+      ),
       child: Column(
         children: [
           Padding(
@@ -378,6 +435,16 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                     entry.key,
                     entry.value,
                     context,
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.only(top: AppTheme.spacing.sm),
+                  child: _buildProgressBar(
+                    doneSeries,
+                    totalSeries,
+                    context,
+                    labelBuilder: (pct) =>
+                        '${(pct * 100).round()}% • $doneSeries/$totalSeries serie',
                   ),
                 ),
               ],
@@ -393,7 +460,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                     _buildSuperSetStartButton(superSetExercises, context),
                     const SizedBox(height: 24),
                   ],
-                  _buildSeriesHeaderRow(context),
+          _buildSuperSetHeaderRow(superSetExercises, context),
                   ..._buildSeriesRows(superSetExercises, context),
                 ],
               ),
@@ -410,7 +477,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                         _buildSuperSetStartButton(superSetExercises, context),
                         const SizedBox(height: 24),
                       ],
-                      _buildSeriesHeaderRow(context),
+            _buildSuperSetHeaderRow(superSetExercises, context),
                       ..._buildSeriesRows(superSetExercises, context),
                     ],
                   ),
@@ -483,6 +550,44 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
               ),
               tooltip: 'Nota',
             ),
+          ),
+          PopupMenuButton<String>(
+            tooltip: 'Azioni',
+            icon: Icon(Icons.more_vert, size: 20, color: colorScheme.onSurfaceVariant),
+            onSelected: (value) async {
+              if (value == 'change') {
+                WorkoutDialogs.showChangeExerciseDialog(
+                  context,
+                  ref,
+                  exercise.toMap(),
+                  widget.userId,
+                );
+              } else if (value == 'edit_series') {
+                WorkoutDialogs.showSeriesEditDialog(
+                  context,
+                  ref,
+                  exercise.toMap(),
+                  exercise.series.map((s) => s.toMap()).toList(),
+                  widget.userId,
+                );
+              }
+            },
+            itemBuilder: (ctx) => const [
+              PopupMenuItem(
+                value: 'change',
+                child: ListTile(
+                  leading: Icon(Icons.swap_horiz),
+                  title: Text('Cambia esercizio'),
+                ),
+              ),
+              PopupMenuItem(
+                value: 'edit_series',
+                child: ListTile(
+                  leading: Icon(Icons.tune),
+                  title: Text('Modifica serie…'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -588,10 +693,19 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
           horizontal: AppTheme.spacing.sm,
         ),
         decoration: BoxDecoration(
-          color: series.isCompleted
-              ? Colors.green.withAlpha(26)
+      color: series.isCompleted
+        ? Theme.of(context)
+          .colorScheme
+          .primaryContainer
+          .withValues(alpha: 0.16)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(AppTheme.radii.sm),
+          border: Border.all(
+      color: Theme.of(context)
+        .colorScheme
+        .outlineVariant
+        .withValues(alpha: series.isCompleted ? 0 : 0.3),
+          ),
         ),
         child: _buildSeriesRow(index, series, context),
       );
@@ -653,47 +767,92 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                     borderRadius: BorderRadius.circular(AppTheme.radii.sm),
                   ),
                   child: hasSeries
-                      ? Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                String.fromCharCode(65 + exIndex),
-                                textAlign: TextAlign.center,
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                            ),
-                            Expanded(
-                              child: Text(
-                                '${series!.reps}',
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                            Expanded(
-                              child: Text(
-                                '${series.weight} kg',
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                            Expanded(
-                              child: Text(
-                                series.isCompleted
-                                    ? '${series.repsDone}×${series.weightDone}'
-                                    : '-',
-                                textAlign: TextAlign.center,
-                                style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(
-                                      fontWeight: series.isCompleted
-                                          ? FontWeight.bold
-                                          : null,
+                      ? Builder(
+                          builder: (context) {
+                            final s = series!;
+                            return Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    String.fromCharCode(65 + exIndex),
+                                    textAlign: TextAlign.center,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(6),
+                                    onTap: () => _showSeriesExecutionDialog(
+                                      context,
+                                      s,
                                     ),
-                              ),
-                            ),
-                            _buildCompletionButton(
-                              series,
-                              exercise.name,
-                              context,
-                            ),
-                          ],
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 6,
+                                      ),
+                                      child: Text(
+                                        '${s.reps}',
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(6),
+                                    onTap: () => _showSeriesExecutionDialog(
+                                      context,
+                                      s,
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 6,
+                                      ),
+                                      child: Text(
+                                        '${s.weight} kg',
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(6),
+                                    onTap: () => _showSeriesExecutionDialog(
+                                      context,
+                                      s,
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 6,
+                                      ),
+                                      child: Text(
+                                        s.isCompleted
+                                            ? '${s.repsDone}×${s.weightDone}'
+                                            : '-',
+                                        textAlign: TextAlign.center,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              fontWeight: s.isCompleted
+                                                  ? FontWeight.bold
+                                                  : null,
+                                            ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                _buildCompletionButton(
+                                  s,
+                                  exercise.name,
+                                  context,
+                                ),
+                              ],
+                            );
+                          },
                         )
                       : const SizedBox.shrink(),
                 ),
@@ -706,39 +865,91 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
   }
 
   Widget _buildSeriesRow(int index, Series series, BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final done = series.isCompleted;
     return Row(
       children: [
+        // Index badge
         SizedBox(
-          width: 30,
-          child: Text(
-            '${index + 1}',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
-            textAlign: TextAlign.center,
-          ),
-        ),
-        Expanded(
-          flex: 2,
-          child: Text('${series.reps}', textAlign: TextAlign.center),
-        ),
-        Expanded(
-          flex: 2,
-          child: Text('${series.weight} kg', textAlign: TextAlign.center),
-        ),
-        Expanded(
-          flex: 2,
-          child: Text(
-            series.isCompleted
-                ? '${series.repsDone}×${series.weightDone}'
-                : '-',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: series.isCompleted ? FontWeight.bold : null,
+          width: 32,
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            decoration: BoxDecoration(
+        color: done
+          ? colorScheme.primaryContainer
+          : colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              '${index + 1}',
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: done
+                        ? colorScheme.onPrimaryContainer
+                        : colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+              textAlign: TextAlign.center,
             ),
           ),
         ),
-        _buildCompletionButton(series, "", context),
+        const SizedBox(width: 8),
+        // Target reps
+        Expanded(
+          flex: 2,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () => _showSeriesExecutionDialog(context, series),
+            child: _pill(
+              context,
+              label: '${series.reps}',
+              icon: Icons.repeat,
+              filled: false,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        // Target weight
+        Expanded(
+          flex: 3,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () => _showSeriesExecutionDialog(context, series),
+            child: _pill(
+              context,
+              label: _formatWeight(series.weight),
+              icon: Icons.fitness_center,
+              filled: false,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        // Done summary
+        Expanded(
+          flex: 3,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () => _showSeriesExecutionDialog(context, series),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Text(
+                done ? '${series.repsDone}×${series.weightDone}' : '-',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: done ? FontWeight.w600 : FontWeight.normal,
+                      color: done
+                          ? colorScheme.onSurface
+                          : colorScheme.onSurfaceVariant,
+                    ),
+              ),
+            ),
+          ),
+        ),
+        // Actions
+        Row(
+          children: [
+            _buildCompletionButton(series, "", context),
+          ],
+        ),
       ],
     );
   }
@@ -756,14 +967,22 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
     return SizedBox(
       width: 40,
       child: IconButton(
-        icon: Icon(
-          series.isCompleted
-              ? Icons.check_circle
-              : Icons.radio_button_unchecked,
-          color: series.isCompleted
-              ? Colors.green
-              : colorScheme.onSurfaceVariant,
-          size: 24,
+        icon: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          transitionBuilder: (child, anim) => ScaleTransition(
+            scale: CurvedAnimation(parent: anim, curve: Curves.easeOutBack),
+            child: child,
+          ),
+          child: Icon(
+            series.isCompleted
+                ? Icons.check_circle_rounded
+                : Icons.radio_button_unchecked_outlined,
+            key: ValueKey<bool>(series.isCompleted),
+            color: series.isCompleted
+                ? colorScheme.primary
+                : colorScheme.onSurfaceVariant,
+            size: 24,
+          ),
         ),
         onPressed: () {
           if (series.isCompleted) {
@@ -791,27 +1010,12 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
               ),
             );
           } else {
-            // Se non completata, mostra il timer per completarla
-            ExerciseTimerBottomSheet.show(
-              context: context,
-              userId: widget.userId,
-              exerciseId: series.exerciseId,
-              workoutId: widget.workoutId,
-              exerciseName: exerciseName.isNotEmpty
-                  ? exerciseName
-                  : "Serie ${series.order}",
-              onSeriesComplete: (repsDone, weightDone) {
-                notifier.completeSeries(
-                  series.id ?? '',
-                  true,
-                  repsDone,
-                  weightDone,
-                );
-                Navigator.of(context).pop();
-              },
-              initialTimerSeconds: series.restTimeSeconds ?? 60,
-              reps: series.reps,
-              weight: series.weight,
+            // Segna direttamente come completata usando i target come valori fatti
+            notifier.completeSeries(
+              series.id ?? '',
+              true,
+              series.reps,
+              series.weight,
             );
           }
         },
@@ -956,5 +1160,297 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
       }
     }
     return 0; // Se tutte le serie sono completate, restituisci 0
+  }
+
+  // ================= UI helpers migliorati =================
+  Widget _buildExerciseMetaChips(Exercise exercise, BuildContext context) {
+    final reps = exercise.series.isNotEmpty ? exercise.series.first.reps : null;
+    final weight = exercise.series.isNotEmpty ? exercise.series.first.weight : null;
+    final rest = exercise.series
+        .firstWhere((s) => s.restTimeSeconds != null, orElse: () => exercise.series.first)
+        .restTimeSeconds;
+
+    return Wrap(
+      spacing: AppTheme.spacing.xs,
+      runSpacing: AppTheme.spacing.xs,
+      children: [
+        _chip(context, Icons.layers_outlined, '${exercise.series.length} serie'),
+        if (reps != null) _chip(context, Icons.repeat, 'x$reps'),
+        if (weight != null) _chip(context, Icons.fitness_center, _formatWeight(weight)),
+  if (rest != null) _chip(context, Icons.timer_outlined, _formatRest(rest)),
+      ],
+    );
+  }
+
+  Widget _buildExerciseProgress(List<Series> series, BuildContext context) {
+    final total = series.length;
+    final done = series.where((s) => s.isCompleted).length;
+    return _buildProgressBar(
+      done,
+      total,
+      context,
+      labelBuilder: (pct) => '${(pct * 100).round()}% • $done/$total serie',
+    );
+  }
+
+  Widget _buildProgressBar(
+    int done,
+    int total,
+    BuildContext context, {
+    String Function(double pct)? labelBuilder,
+  }) {
+    final pct = total == 0 ? 0.0 : done / total;
+    final cs = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: LinearProgressIndicator(
+            value: pct.clamp(0, 1),
+            minHeight: 8,
+            backgroundColor: cs.surfaceContainerHighest.withValues(alpha: 0.4),
+            valueColor: AlwaysStoppedAnimation(cs.primary),
+          ),
+        ),
+        SizedBox(height: AppTheme.spacing.xs),
+        Text(
+          labelBuilder?.call(pct) ?? '${(pct * 100).round()}%',
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: cs.onSurfaceVariant,
+              ),
+          textAlign: TextAlign.right,
+        ),
+      ],
+    );
+  }
+
+  Widget _chip(BuildContext context, IconData icon, String label) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+  color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(999),
+  border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: cs.onSurfaceVariant),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: cs.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _pill(
+    BuildContext context, {
+    required String label,
+    required IconData icon,
+    bool filled = false,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: filled ? cs.primaryContainer : cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+  border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 14, color: filled ? cs.onPrimaryContainer : cs.onSurfaceVariant),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              label,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: cs.onSurface,
+                  ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatWeight(dynamic weight) {
+    if (weight == null) return '-';
+    if (weight is int || weight is double) {
+      final num w = weight as num;
+      final str = (w % 1 == 0) ? w.toInt().toString() : w.toStringAsFixed(1);
+      return '$str kg';
+    }
+    return '$weight kg';
+  }
+
+  String _formatRest(int seconds) {
+    final m = seconds ~/ 60;
+    final s = seconds % 60;
+    if (m > 0) {
+      return '${m}m${s.toString().padLeft(2, '0')}s';
+    }
+    return '${s}s';
+  }
+
+  // Header per tabelle di superset: # + per ogni esercizio (lettera, reps, peso, fatti) + azione
+  Widget _buildSuperSetHeaderRow(
+    List<Exercise> exercises,
+    BuildContext context,
+  ) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: EdgeInsets.symmetric(
+        vertical: AppTheme.spacing.xs,
+        horizontal: AppTheme.spacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest.withAlpha(77),
+        borderRadius: BorderRadius.circular(AppTheme.radii.sm),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 30,
+            child: Text(
+              '#',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: cs.onSurface,
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+          ),
+          ...exercises.asMap().entries.map((entry) {
+            final exIndex = entry.key;
+            return Expanded(
+              child: Row(
+                children: [
+                  if (exIndex != 0) SizedBox(width: AppTheme.spacing.xs),
+                  // manteniamo lo stesso numero di colonne delle righe
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'ID',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.labelMedium,
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            'Reps',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.labelMedium,
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            'Peso',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.labelMedium,
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            'Fatti',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.labelMedium,
+                          ),
+                        ),
+                        SizedBox(width: 40), // spazio azione (match IconButton)
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showSeriesExecutionDialog(
+    BuildContext context,
+    Series series,
+  ) async {
+    final colorScheme = Theme.of(context).colorScheme;
+    final repsController = TextEditingController(
+      text: (series.repsDone > 0 ? series.repsDone : series.reps).toString(),
+    );
+    final weightController = TextEditingController(
+      text: (series.weightDone > 0 ? series.weightDone : series.weight)
+          .toString(),
+    );
+
+    return showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: colorScheme.surface,
+        title: Text(
+          'Segna serie',
+          style: Theme.of(ctx)
+              .textTheme
+              .titleLarge
+              ?.copyWith(color: colorScheme.onSurface),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: repsController,
+              keyboardType: const TextInputType.numberWithOptions(),
+              decoration: const InputDecoration(labelText: 'Reps fatte'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: weightController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(labelText: 'Peso fatto (kg)'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text('Annulla', style: TextStyle(color: colorScheme.primary)),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final repsDone = int.tryParse(repsController.text.trim()) ?? 0;
+              final weightDone =
+                  double.tryParse(weightController.text.trim()) ?? 0.0;
+
+              final notifier = ref.read(
+                workoutDetailsNotifierProvider(widget.workoutId).notifier,
+              );
+              await notifier.completeSeries(
+                series.id ?? '',
+                true,
+                repsDone,
+                weightDone,
+              );
+              if (context.mounted) Navigator.of(ctx).pop();
+            },
+            style:
+                FilledButton.styleFrom(backgroundColor: colorScheme.primary),
+            child: Text('Salva', style: TextStyle(color: colorScheme.onPrimary)),
+          ),
+        ],
+      ),
+    );
   }
 }
