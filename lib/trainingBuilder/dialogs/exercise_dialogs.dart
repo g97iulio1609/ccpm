@@ -87,9 +87,9 @@ class _UpdateMaxRMDialogState extends State<UpdateMaxRMDialog> {
             style: TextStyle(color: widget.colorScheme.onSurface),
           ),
         ),
-        ElevatedButton(
+        FilledButton(
           onPressed: _handleSave,
-          style: ElevatedButton.styleFrom(
+          style: FilledButton.styleFrom(
             backgroundColor: widget.colorScheme.primary,
             foregroundColor: widget.colorScheme.onPrimary,
             shape: RoundedRectangleBorder(
@@ -281,9 +281,9 @@ class _SuperSetSelectionDialogState extends State<SuperSetSelectionDialog> {
           ),
         ),
         if (widget.superSets.isNotEmpty)
-          ElevatedButton(
+          FilledButton(
             onPressed: selectedSuperSetId != null ? _handleAddToSuperSet : null,
-            style: ElevatedButton.styleFrom(
+            style: FilledButton.styleFrom(
               backgroundColor: widget.colorScheme.primary,
               foregroundColor: widget.colorScheme.onPrimary,
               shape: RoundedRectangleBorder(
@@ -421,9 +421,9 @@ class _MoveExerciseDialogState extends State<MoveExerciseDialog> {
             style: TextStyle(color: widget.colorScheme.onSurface),
           ),
         ),
-        ElevatedButton(
+        FilledButton(
           onPressed: selectedWorkoutIndex != null ? _handleMoveExercise : null,
-          style: ElevatedButton.styleFrom(
+          style: FilledButton.styleFrom(
             backgroundColor: widget.colorScheme.primary,
             foregroundColor: widget.colorScheme.onPrimary,
             shape: RoundedRectangleBorder(

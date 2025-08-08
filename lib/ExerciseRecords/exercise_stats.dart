@@ -10,6 +10,7 @@ import '../../exerciseManager/exercise_model.dart';
 import '../providers/providers.dart';
 import 'package:alphanessone/UI/app_bar_custom.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/UI/components/kpi_badge.dart';
 
 class ExerciseStats extends HookConsumerWidget {
   final ExerciseModel exercise;
@@ -585,42 +586,17 @@ class ExerciseStats extends HookConsumerWidget {
               ),
               title: Row(
                 children: [
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppTheme.spacing.md,
-                      vertical: AppTheme.spacing.xs,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer.withAlpha(76),
-                      borderRadius: BorderRadius.circular(AppTheme.radii.full),
-                    ),
-                    child: Text(
-                      '${record.maxWeight} kg',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                  KpiBadge(
+                    text: '${record.maxWeight} kg',
+                    icon: Icons.fitness_center,
+                    color: colorScheme.primary,
                   ),
                   if (record.repetitions > 1) ...[
                     SizedBox(width: AppTheme.spacing.sm),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppTheme.spacing.md,
-                        vertical: AppTheme.spacing.xs,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colorScheme.secondaryContainer.withAlpha(76),
-                        borderRadius:
-                            BorderRadius.circular(AppTheme.radii.full),
-                      ),
-                      child: Text(
-                        '${record.repetitions} reps',
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: colorScheme.secondary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                    KpiBadge(
+                      text: '${record.repetitions} reps',
+                      icon: Icons.repeat,
+                      color: colorScheme.secondary,
                     ),
                   ],
                 ],

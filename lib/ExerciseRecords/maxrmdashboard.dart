@@ -19,6 +19,7 @@ import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/app_card.dart';
 import 'package:alphanessone/UI/components/section_header.dart';
 import 'package:alphanessone/UI/components/kpi_badge.dart';
+import 'package:alphanessone/UI/components/skeleton.dart';
 
 class MaxRMDashboard extends HookConsumerWidget {
   const MaxRMDashboard({super.key});
@@ -181,11 +182,15 @@ class MaxRMDashboard extends HookConsumerWidget {
               stream: CombineLatestStream.list(exerciseRecordStreams),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return SliverToBoxAdapter(
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        color: colorScheme.primary,
-                      ),
+                  final width = MediaQuery.of(context).size.width;
+                  final crossAxisCount = _getGridCrossAxisCount(context);
+                  final childAspectRatio = width >= 1400 ? 1.2 : 1.0;
+                  return SliverPadding(
+                    padding: EdgeInsets.all(AppTheme.spacing.xl),
+                    sliver: SliverSkeletonGrid(
+                      crossAxisCount: crossAxisCount,
+                      itemCount: 8,
+                      childAspectRatio: childAspectRatio,
                     ),
                   );
                 }

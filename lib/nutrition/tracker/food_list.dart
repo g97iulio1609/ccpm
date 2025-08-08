@@ -520,19 +520,7 @@ class FoodListState extends ConsumerState<FoodList> {
   Widget buildLoadingCard(BuildContext context, String mealName) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Card(
-        color: Colors.transparent,
-        elevation: 0,
-        child: ExpansionTile(
-          title: Text(
-            mealName,
-            style: GoogleFonts.roboto(
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-          children: const [ListTile(title: CircularProgressIndicator())],
-        ),
-      ),
+      child: const SkeletonCard(),
     );
   }
 
