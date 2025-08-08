@@ -50,6 +50,8 @@ Rewamp UI/UX massivo e modulare dell’intera app (TrainingBuilder, Viewer, MaxR
 8) Nutrition
 - Migrazione menu → `MenuAnchor` (view_diet_plans_screen, food_list) [done]
 - Migliorare bottom sheet e controlli (iOS/Android) [done]
+ - AppCard tonali e hover/animazioni leggere: daily_food_tracker, food_list [done]
+ - DietPlanScreen: sezioni giorno in AppCard tonali, pulsanti → FilledButton, skeleton loading [done]
 
 9) Accessibilità (A11y)
 - Label Semantics, ruoli e focus order per liste e controlli critici [done]
@@ -80,12 +82,13 @@ Rewamp UI/UX massivo e modulare dell’intera app (TrainingBuilder, Viewer, MaxR
  - AppBar → CustomAppBar: AI Chat, AI Settings, Workout Details migrati
 - Semantics principali: inserite in Viewer/TrainingBuilder dialog [ongoing]
 - Performance Viewer: ottimizzazioni repository e subscription: done
-- Skeletons: introdotti per Diet Plans, Food List, Workout Details loading [ongoing]
+ - Skeletons: introdotti per Diet Plans, Food List, Workout Details loading [done]
  - Superset layout (serie in colonne per esercizio) in Workout Details: done
 
 ## Prossime azioni (immediate)
 - `flutter analyze` globale e smoke test flussi principali [ricorrente]
 - Test: widget/golden/integration (vedi Fase 11) [next]
+ - Pass A11y finale: Semantics e focus order completivi nelle ultime liste Nutrition [next]
 
 ## Definition of Done (per modulo)
 - TrainingBuilder: dialog/bulk serie uniformati, nessuna sovrapposizione UI, validazioni live, skeleton su carichi pesanti
