@@ -7,7 +7,7 @@ import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/button.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
-import './trainingBuilder/controller/training_program_controller.dart';
+import './trainingBuilder/providers/training_providers.dart';
 
 class TrainingGalleryScreen extends HookConsumerWidget {
   const TrainingGalleryScreen({super.key});
@@ -20,21 +20,30 @@ class TrainingGalleryScreen extends HookConsumerWidget {
     return 1;
   }
 
-  Future<void> setCurrentProgram(BuildContext context, WidgetRef ref,
-      String programId, String programName) async {
+  Future<void> setCurrentProgram(
+    BuildContext context,
+    WidgetRef ref,
+    String programId,
+    String programName,
+  ) async {
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-    final controller = ref.read(trainingProgramControllerProvider);
+    final controller = ref.read(trainingProgramControllerProvider.notifier);
     final usersService = ref.read(usersServiceProvider);
 
     await controller
-        .duplicateProgram(programId, programName, context,
-            currentUserId: currentUserId)
+        .duplicateProgram(
+          programId,
+          programName,
+          context,
+          currentUserId: currentUserId,
+        )
         .then((newProgramId) async {
-      if (newProgramId != null && currentUserId != null) {
-        await usersService
-            .updateUser(currentUserId, {'currentProgram': newProgramId});
-      }
-    });
+          if (newProgramId != null && currentUserId != null) {
+            await usersService.updateUser(currentUserId, {
+              'currentProgram': newProgramId,
+            });
+          }
+        });
   }
 
   @override
@@ -122,8 +131,9 @@ class TrainingGalleryScreen extends HookConsumerWidget {
                               Icon(
                                 Icons.fitness_center_outlined,
                                 size: 64,
-                                color:
-                                    colorScheme.onSurfaceVariant.withAlpha(128),
+                                color: colorScheme.onSurfaceVariant.withAlpha(
+                                  128,
+                                ),
                               ),
                               SizedBox(height: AppTheme.spacing.md),
                               Text(
@@ -163,60 +173,56 @@ class TrainingGalleryScreen extends HookConsumerWidget {
                     }
 
                     return SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, rowIndex) {
-                          if (rowIndex >= rows.length) return null;
+                      delegate: SliverChildBuilderDelegate((context, rowIndex) {
+                        if (rowIndex >= rows.length) return null;
 
-                          final rowPrograms = rows[rowIndex];
+                        final rowPrograms = rows[rowIndex];
 
-                          return Padding(
-                            padding:
-                                EdgeInsets.only(bottom: AppTheme.spacing.xl),
-                            child: IntrinsicHeight(
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  for (var i = 0; i < crossAxisCount; i++) ...[
-                                    if (i < rowPrograms.length)
-                                      Expanded(
-                                        child: Padding(
-                                          padding: EdgeInsets.only(
-                                            right: i < crossAxisCount - 1
-                                                ? AppTheme.spacing.xl
-                                                : 0,
-                                          ),
-                                          child: FutureBuilder<String>(
-                                            future: getAuthorName(rowPrograms[i]
-                                                    ['athleteId'] ??
-                                                ''),
-                                            builder: (context, snapshot) {
-                                              final athleteName =
-                                                  snapshot.hasData
-                                                      ? snapshot.data!
-                                                      : 'Autore sconosciuto';
-                                              return _buildProgramCard(
-                                                context,
-                                                rowPrograms[i],
-                                                athleteName,
-                                                userRole,
-                                                currentUserId,
-                                                colorScheme,
-                                                theme,
-                                                ref,
-                                              );
-                                            },
-                                          ),
+                        return Padding(
+                          padding: EdgeInsets.only(bottom: AppTheme.spacing.xl),
+                          child: IntrinsicHeight(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                for (var i = 0; i < crossAxisCount; i++) ...[
+                                  if (i < rowPrograms.length)
+                                    Expanded(
+                                      child: Padding(
+                                        padding: EdgeInsets.only(
+                                          right: i < crossAxisCount - 1
+                                              ? AppTheme.spacing.xl
+                                              : 0,
                                         ),
-                                      )
-                                    else
-                                      Expanded(child: Container()),
-                                  ],
+                                        child: FutureBuilder<String>(
+                                          future: getAuthorName(
+                                            rowPrograms[i]['athleteId'] ?? '',
+                                          ),
+                                          builder: (context, snapshot) {
+                                            final athleteName = snapshot.hasData
+                                                ? snapshot.data!
+                                                : 'Autore sconosciuto';
+                                            return _buildProgramCard(
+                                              context,
+                                              rowPrograms[i],
+                                              athleteName,
+                                              userRole,
+                                              currentUserId,
+                                              colorScheme,
+                                              theme,
+                                              ref,
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    )
+                                  else
+                                    Expanded(child: Container()),
                                 ],
-                              ),
+                              ],
                             ),
-                          );
-                        },
-                      ),
+                          ),
+                        );
+                      }),
                     );
                   },
                 ),
@@ -245,16 +251,16 @@ class TrainingGalleryScreen extends HookConsumerWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
         boxShadow: AppTheme.elevations.small,
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => context.go('/user_programs/training_viewer',
-              extra: {'userId': currentUserId, 'programId': doc.id}),
+          onTap: () => context.go(
+            '/user_programs/training_viewer',
+            extra: {'userId': currentUserId, 'programId': doc.id},
+          ),
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           child: Padding(
             padding: EdgeInsets.all(AppTheme.spacing.lg),
@@ -346,11 +352,7 @@ class TrainingGalleryScreen extends HookConsumerWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        Icons.public,
-                        size: 16,
-                        color: colorScheme.primary,
-                      ),
+                      Icon(Icons.public, size: 16, color: colorScheme.primary),
                       SizedBox(width: AppTheme.spacing.xs),
                       Text(
                         'Pubblico',

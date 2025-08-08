@@ -4,7 +4,7 @@ import 'package:alphanessone/shared/shared.dart';
 
 import 'package:alphanessone/trainingBuilder/models/progression_view_model.dart';
 import 'package:alphanessone/trainingBuilder/controllers/progression_controllers.dart';
-import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
+import 'package:alphanessone/trainingBuilder/providers/training_providers.dart';
 import 'package:alphanessone/trainingBuilder/services/progression_business_service_optimized.dart';
 import 'package:alphanessone/shared/widgets/page_scaffold.dart';
 import 'package:alphanessone/shared/widgets/empty_state.dart';
@@ -46,7 +46,9 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
   void _initializeControllers() {
     if (widget.exercise == null) return;
 
-    final programController = ref.read(trainingProgramControllerProvider);
+    final programController = ref.read(
+      trainingProgramControllerProvider.notifier,
+    );
     final weekProgressions =
         ProgressionBusinessServiceOptimized.buildWeekProgressions(
           programController.program.weeks,
@@ -66,14 +68,14 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
       return const _ErrorView(message: 'Exercise data not available');
     }
 
-    final programController = ref.watch(trainingProgramControllerProvider);
+    final programState = ref.watch(trainingProgramControllerProvider);
     final controllers = ref.watch(progressionControllersProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
 
     final weekProgressions =
         ProgressionBusinessServiceOptimized.buildWeekProgressions(
-          programController.program.weeks,
+          programState.weeks,
           widget.exercise!,
         );
 
@@ -106,7 +108,9 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
   }
 
   void _addSeriesGroup(int weekIndex, int sessionIndex, int groupIndex) {
-    final programController = ref.read(trainingProgramControllerProvider);
+    final programController = ref.read(
+      trainingProgramControllerProvider.notifier,
+    );
     final weekProgressions =
         ProgressionBusinessServiceOptimized.buildWeekProgressions(
           programController.program.weeks,
@@ -137,7 +141,9 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
   }
 
   void _removeSeriesGroup(int weekIndex, int sessionIndex, int groupIndex) {
-    final programController = ref.read(trainingProgramControllerProvider);
+    final programController = ref.read(
+      trainingProgramControllerProvider.notifier,
+    );
     final weekProgressions =
         ProgressionBusinessServiceOptimized.buildWeekProgressions(
           programController.program.weeks,
@@ -163,7 +169,9 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
   }
 
   void _updateSeries(SeriesUpdateParams params) {
-    final programController = ref.read(trainingProgramControllerProvider);
+    final programController = ref.read(
+      trainingProgramControllerProvider.notifier,
+    );
 
     try {
       final weekProgressions =
@@ -221,7 +229,9 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
   void _updateControllersForSeries(SeriesUpdateParams params) {
     try {
       final controllers = ref.read(progressionControllersProvider.notifier);
-      final programController = ref.read(trainingProgramControllerProvider);
+      final programController = ref.read(
+        trainingProgramControllerProvider.notifier,
+      );
 
       final updatedWeekProgressions =
           ProgressionBusinessServiceOptimized.buildWeekProgressions(
@@ -263,7 +273,9 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
   }
 
   Future<void> _handleSave() async {
-    final programController = ref.read(trainingProgramControllerProvider);
+    final programController = ref.read(
+      trainingProgramControllerProvider.notifier,
+    );
     final controllers = ref.read(progressionControllersProvider);
 
     try {
@@ -303,7 +315,7 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
     List<List<WeekProgression>> weekProgressions,
   ) {
     ref
-        .read(trainingProgramControllerProvider)
+        .read(trainingProgramControllerProvider.notifier)
         .updateWeekProgressions(weekProgressions, widget.exercise!.exerciseId!);
   }
 
@@ -384,17 +396,15 @@ class _SaveButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
+    return FilledButton(
       onPressed: onSave,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
+      style: FilledButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       child: const Text(
         'Salva',
-        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
       ),
     );
   }

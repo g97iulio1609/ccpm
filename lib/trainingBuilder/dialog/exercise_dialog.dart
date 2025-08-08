@@ -1,14 +1,15 @@
 // exercise_dialog.dart
 
-import 'package:alphanessone/ExerciseRecords/exercise_autocomplete.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import '../controller/training_program_controller.dart';
+import '../providers/training_providers.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:alphanessone/providers/providers.dart';
+import 'package:alphanessone/exerciseManager/exercise_model.dart';
 
 class ExerciseDialog extends HookConsumerWidget {
   final ExerciseRecordService exerciseRecordService;
@@ -28,12 +29,19 @@ class ExerciseDialog extends HookConsumerWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final exerciseNameController =
-        useTextEditingController(text: exercise?.name ?? '');
-    final variantController =
-        useTextEditingController(text: exercise?.variant ?? '');
+    final exerciseNameController = useTextEditingController(
+      text: exercise?.name ?? '',
+    );
+    final variantController = useTextEditingController(
+      text: exercise?.variant ?? '',
+    );
     final selectedExerciseId = useState<String>(exercise?.exerciseId ?? '');
     final selectedExerciseType = useState<String>(exercise?.type ?? '');
+
+    final exercisesService = ref.watch(exercisesServiceProvider);
+    final exercisesStream = useMemoized(() => exercisesService.getExercises());
+    final exercisesSnapshot = useStream(exercisesStream);
+    final List<ExerciseModel> exercisesList = exercisesSnapshot.data ?? [];
 
     return AppDialog(
       title: exercise == null ? 'Aggiungi Esercizio' : 'Modifica Esercizio',
@@ -83,24 +91,40 @@ class ExerciseDialog extends HookConsumerWidget {
               ),
             ),
             SizedBox(height: AppTheme.spacing.xs),
-            Container(
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withAlpha(26),
-                borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                border: Border.all(
-                  color: colorScheme.outline.withAlpha(26),
-                ),
-              ),
-              child: ExerciseAutocompleteBox(
-                controller: exerciseNameController,
-                onSelected: (selectedExercise) {
-                  if (selectedExercise.id.isNotEmpty) {
-                    selectedExerciseId.value = selectedExercise.id;
-                    selectedExerciseType.value = selectedExercise.type;
-                  }
-                },
-                athleteId: athleteId,
-              ),
+            SearchAnchor(
+              isFullScreen: false,
+              builder: (context, controller) {
+                return SearchBar(
+                  controller: controller,
+                  hintText: 'Cerca esercizio',
+                  leading: const Icon(Icons.search),
+                  onTap: controller.openView,
+                  onChanged: (_) => controller.openView(),
+                  onSubmitted: (value) {
+                    exerciseNameController.text = value;
+                  },
+                );
+              },
+              suggestionsBuilder: (context, controller) {
+                final query = controller.text.toLowerCase();
+                final filtered = query.isEmpty
+                    ? exercisesList
+                    : exercisesList
+                          .where((e) => e.name.toLowerCase().contains(query))
+                          .toList();
+                return filtered.map((e) {
+                  return ListTile(
+                    leading: const Icon(Icons.fitness_center),
+                    title: Text(e.name),
+                    onTap: () {
+                      controller.closeView(e.name);
+                      exerciseNameController.text = e.name;
+                      selectedExerciseId.value = e.id;
+                      selectedExerciseType.value = e.type;
+                    },
+                  );
+                });
+              },
             ),
           ],
         ),
@@ -121,9 +145,7 @@ class ExerciseDialog extends HookConsumerWidget {
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerHighest.withAlpha(26),
                 borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                border: Border.all(
-                  color: colorScheme.outline.withAlpha(26),
-                ),
+                border: Border.all(color: colorScheme.outline.withAlpha(26)),
               ),
               child: TextFormField(
                 controller: variantController,

@@ -9,6 +9,7 @@ class ExerciseCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onOptions;
   final Widget? seriesWidget;
+  final bool dense;
 
   const ExerciseCard({
     super.key,
@@ -18,6 +19,7 @@ class ExerciseCard extends StatelessWidget {
     required this.onTap,
     required this.onOptions,
     this.seriesWidget,
+    this.dense = false,
   });
 
   @override
@@ -41,21 +43,29 @@ class ExerciseCard extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           child: Padding(
-            padding: EdgeInsets.all(AppTheme.spacing.lg),
+            padding: EdgeInsets.all(
+              dense ? AppTheme.spacing.md : AppTheme.spacing.lg,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildHeader(context, theme, colorScheme),
-                SizedBox(height: AppTheme.spacing.md),
+                SizedBox(
+                  height: dense ? AppTheme.spacing.sm : AppTheme.spacing.md,
+                ),
                 _buildExerciseInfo(context, theme, colorScheme),
                 if (seriesWidget != null) ...[
-                  SizedBox(height: AppTheme.spacing.md),
+                  SizedBox(
+                    height: dense ? AppTheme.spacing.sm : AppTheme.spacing.md,
+                  ),
                   // Usa altezza fissa e scroll interno gestito dal widget delle serie,
                   // evitando che la card venga tagliata dal layout a griglia
-                  SizedBox(height: 280, child: seriesWidget!),
+                  SizedBox(height: dense ? 220 : 280, child: seriesWidget!),
                 ],
                 if (isInSuperSet) ...[
-                  SizedBox(height: AppTheme.spacing.md),
+                  SizedBox(
+                    height: dense ? AppTheme.spacing.sm : AppTheme.spacing.md,
+                  ),
                   _buildSuperSetBadge(context, theme, colorScheme),
                 ],
               ],

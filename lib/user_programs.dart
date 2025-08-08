@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:alphanessone/providers/providers.dart';
-import './trainingBuilder/controller/training_program_controller.dart';
+import './trainingBuilder/providers/training_providers.dart';
 import './trainingBuilder/services/training_services.dart';
+import 'trainingBuilder/controller/training_program_controller.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/button.dart';
 import 'UI/components/bottom_menu.dart';
@@ -25,7 +26,7 @@ class UserProgramsScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userRole = ref.watch(userRoleProvider);
-    final firestoreService = ref.watch(firestoreServiceProvider);
+    final firestoreService = FirestoreService();
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -54,7 +55,11 @@ class UserProgramsScreen extends HookConsumerWidget {
                   child: Padding(
                     padding: EdgeInsets.all(AppTheme.spacing.xl),
                     child: _buildAddProgramButton(
-                        context, userId, theme, colorScheme),
+                      context,
+                      userId,
+                      theme,
+                      colorScheme,
+                    ),
                   ),
                 ),
 
@@ -62,7 +67,12 @@ class UserProgramsScreen extends HookConsumerWidget {
               SliverPadding(
                 padding: EdgeInsets.all(AppTheme.spacing.xl),
                 sliver: _buildProgramList(
-                    context, ref, userId, userRole, firestoreService),
+                  context,
+                  ref,
+                  userId,
+                  userRole,
+                  firestoreService,
+                ),
               ),
             ],
           ),
@@ -71,8 +81,12 @@ class UserProgramsScreen extends HookConsumerWidget {
     );
   }
 
-  Widget _buildAddProgramButton(BuildContext context, String userId,
-      ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildAddProgramButton(
+    BuildContext context,
+    String userId,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
     return AppButton(
       label: 'Create New Program',
       icon: Icons.add_circle_outline,
@@ -94,16 +108,14 @@ class UserProgramsScreen extends HookConsumerWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isHidden = doc['hide'] ?? false;
-    final controller = ref.read(trainingProgramControllerProvider);
+    final controller = ref.read(trainingProgramControllerProvider.notifier);
     final mesocycleNumber = doc['mesocycleNumber'] ?? 1;
 
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
         boxShadow: AppTheme.elevations.small,
       ),
       child: Material(
@@ -227,8 +239,13 @@ class UserProgramsScreen extends HookConsumerWidget {
     );
   }
 
-  Widget _buildProgramList(BuildContext context, WidgetRef ref, String userId,
-      String userRole, FirestoreService firestoreService) {
+  Widget _buildProgramList(
+    BuildContext context,
+    WidgetRef ref,
+    String userId,
+    String userRole,
+    FirestoreService firestoreService,
+  ) {
     return StreamBuilder<QuerySnapshot>(
       stream: _getProgramsStream(userId, userRole),
       builder: (context, snapshot) {
@@ -238,8 +255,8 @@ class UserProgramsScreen extends HookConsumerWidget {
               child: Text(
                 'Si è verificato un errore: ${snapshot.error}',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
+                  color: Theme.of(context).colorScheme.error,
+                ),
               ),
             ),
           );
@@ -261,28 +278,26 @@ class UserProgramsScreen extends HookConsumerWidget {
                   Icon(
                     Icons.fitness_center_outlined,
                     size: 64,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurfaceVariant
-                        .withAlpha(128),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurfaceVariant.withAlpha(128),
                   ),
                   SizedBox(height: AppTheme.spacing.md),
                   Text(
                     'Nessun programma trovato',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   SizedBox(height: AppTheme.spacing.sm),
                   Text(
                     'Inizia creando un nuovo programma',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurfaceVariant
-                              .withAlpha(179),
-                        ),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurfaceVariant.withAlpha(179),
+                    ),
                   ),
                 ],
               ),
@@ -307,46 +322,44 @@ class UserProgramsScreen extends HookConsumerWidget {
         }
 
         return SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, rowIndex) {
-              if (rowIndex >= rows.length) return null;
+          delegate: SliverChildBuilderDelegate((context, rowIndex) {
+            if (rowIndex >= rows.length) return null;
 
-              final rowPrograms = rows[rowIndex];
+            final rowPrograms = rows[rowIndex];
 
-              return Padding(
-                padding: EdgeInsets.only(bottom: AppTheme.spacing.xl),
-                child: IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (var i = 0; i < crossAxisCount; i++) ...[
-                        if (i < rowPrograms.length)
-                          Expanded(
-                            child: Padding(
-                              padding: EdgeInsets.only(
-                                right: i < crossAxisCount - 1
-                                    ? AppTheme.spacing.xl
-                                    : 0,
-                              ),
-                              child: _buildProgramCard(
-                                context,
-                                ref,
-                                rowPrograms[i],
-                                userId,
-                                userRole,
-                                firestoreService,
-                              ),
+            return Padding(
+              padding: EdgeInsets.only(bottom: AppTheme.spacing.xl),
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (var i = 0; i < crossAxisCount; i++) ...[
+                      if (i < rowPrograms.length)
+                        Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                              right: i < crossAxisCount - 1
+                                  ? AppTheme.spacing.xl
+                                  : 0,
                             ),
-                          )
-                        else
-                          Expanded(child: Container()),
-                      ],
+                            child: _buildProgramCard(
+                              context,
+                              ref,
+                              rowPrograms[i],
+                              userId,
+                              userRole,
+                              firestoreService,
+                            ),
+                          ),
+                        )
+                      else
+                        Expanded(child: Container()),
                     ],
-                  ),
+                  ],
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          }),
         );
       },
     );
@@ -386,8 +399,10 @@ class UserProgramsScreen extends HookConsumerWidget {
             title: 'Modifica Programma',
             icon: Icons.edit_outlined,
             onTap: () {
-              context.go('/user_programs/training_program',
-                  extra: {'userId': userId, 'programId': doc.id});
+              context.go(
+                '/user_programs/training_program',
+                extra: {'userId': userId, 'programId': doc.id},
+              );
             },
           ),
           BottomMenuItem(
@@ -446,15 +461,19 @@ class UserProgramsScreen extends HookConsumerWidget {
     }
   }
 
-  Future<void> _deleteProgram(BuildContext context, String id,
-      FirestoreService firestoreService) async {
+  Future<void> _deleteProgram(
+    BuildContext context,
+    String id,
+    FirestoreService firestoreService,
+  ) async {
     final bool? shouldDelete = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Conferma eliminazione'),
-          content:
-              const Text('Sei sicuro di voler eliminare questo programma?'),
+          content: const Text(
+            'Sei sicuro di voler eliminare questo programma?',
+          ),
           actions: [
             TextButton(
               child: const Text('Annulla'),
@@ -475,14 +494,19 @@ class UserProgramsScreen extends HookConsumerWidget {
   }
 
   Future<void> _toggleProgramVisibility(
-      String id, bool currentVisibility) async {
+    String id,
+    bool currentVisibility,
+  ) async {
     await FirebaseFirestore.instance.collection('programs').doc(id).update({
       'hide': !currentVisibility,
     });
   }
 
-  Future<void> _duplicateProgram(BuildContext context, String docId,
-      TrainingProgramController controller) async {
+  Future<void> _duplicateProgram(
+    BuildContext context,
+    String docId,
+    TrainingProgramController controller,
+  ) async {
     String? newProgramName = await showDialog<String>(
       context: context,
       builder: (BuildContext context) {
@@ -513,20 +537,25 @@ class UserProgramsScreen extends HookConsumerWidget {
     if (newProgramName != null && newProgramName.isNotEmpty) {
       try {
         if (!context.mounted) return;
-        final result =
-            await controller.duplicateProgram(docId, newProgramName, context);
+        final result = await controller.duplicateProgram(
+          docId,
+          newProgramName,
+          context,
+        );
         if (context.mounted) {
           if (result != null) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                  content: Text(
-                      'Programma duplicato con successo: $newProgramName')),
+                content: Text(
+                  'Programma duplicato con successo: $newProgramName',
+                ),
+              ),
             );
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                  content:
-                      Text('Errore durante la duplicazione del programma')),
+                content: Text('Errore durante la duplicazione del programma'),
+              ),
             );
           }
         }
@@ -534,8 +563,8 @@ class UserProgramsScreen extends HookConsumerWidget {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-                content:
-                    Text('Errore durante la duplicazione del programma: $e')),
+              content: Text('Errore durante la duplicazione del programma: $e'),
+            ),
           );
         }
       }
@@ -543,11 +572,16 @@ class UserProgramsScreen extends HookConsumerWidget {
   }
 
   void _navigateToTrainingViewer(
-      BuildContext context, String? userId, String? programId) {
+    BuildContext context,
+    String? userId,
+    String? programId,
+  ) {
     if (userId == null || programId == null) return;
 
-    context.go('/user_programs/training_viewer',
-        extra: {'userId': userId, 'programId': programId});
+    context.go(
+      '/user_programs/training_viewer',
+      extra: {'userId': userId, 'programId': programId},
+    );
   }
 }
 
@@ -620,18 +654,12 @@ class AddProgramDialogState extends State<AddProgramDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: Text(
-            'Cancel',
-            style: TextStyle(color: colorScheme.primary),
-          ),
+          child: Text('Cancel', style: TextStyle(color: colorScheme.primary)),
         ),
         Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                colorScheme.primary,
-                colorScheme.primary.withAlpha(204),
-              ],
+              colors: [colorScheme.primary, colorScheme.primary.withAlpha(204)],
             ),
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
@@ -678,22 +706,15 @@ class AddProgramDialogState extends State<AddProgramDialog> {
         prefixIcon: Icon(icon, color: colorScheme.primary),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppTheme.radii.md),
-          borderSide: BorderSide(
-            color: colorScheme.outline,
-          ),
+          borderSide: BorderSide(color: colorScheme.outline),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppTheme.radii.md),
-          borderSide: BorderSide(
-            color: colorScheme.outline.withAlpha(76),
-          ),
+          borderSide: BorderSide(color: colorScheme.outline.withAlpha(76)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppTheme.radii.md),
-          borderSide: BorderSide(
-            color: colorScheme.primary,
-            width: 2,
-          ),
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
         filled: true,
         fillColor: colorScheme.surface,
@@ -712,30 +733,27 @@ class AddProgramDialogState extends State<AddProgramDialog> {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppTheme.radii.md),
-          borderSide: BorderSide(
-            color: colorScheme.outline.withAlpha(76),
-          ),
+          borderSide: BorderSide(color: colorScheme.outline.withAlpha(76)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppTheme.radii.md),
-          borderSide: BorderSide(
-            color: colorScheme.primary,
-            width: 2,
-          ),
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
         filled: true,
         fillColor: colorScheme.surface,
       ),
       items: List.generate(12, (index) => index + 1)
-          .map((number) => DropdownMenuItem(
-                value: number,
-                child: Text(
-                  number.toString(),
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: colorScheme.onSurface,
-                  ),
+          .map(
+            (number) => DropdownMenuItem(
+              value: number,
+              child: Text(
+                number.toString(),
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.onSurface,
                 ),
-              ))
+              ),
+            ),
+          )
           .toList(),
       onChanged: (value) {
         setState(() {

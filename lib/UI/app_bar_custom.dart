@@ -218,7 +218,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
   Future<void> _onDayMenuSelected(String value) async {
     if (!mounted) return;
 
-    final mealsService = ref.read(mealsServiceProvider);
+    final mealsService = ref.read(mealsServiceProvider.notifier);
     final userService = ref.read(usersServiceProvider);
     final userId = userService.getCurrentUserId();
     final selectedDate = ref.read(selectedDateProvider);

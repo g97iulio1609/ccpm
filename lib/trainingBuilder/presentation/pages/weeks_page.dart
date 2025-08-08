@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:alphanessone/Main/app_theme.dart';
-import 'package:alphanessone/UI/components/bottom_menu.dart';
 import 'package:alphanessone/trainingBuilder/shared/mixins/training_list_mixin.dart';
 import 'package:alphanessone/trainingBuilder/shared/widgets/reorder_dialog.dart';
 import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
@@ -50,6 +49,8 @@ class _WeekListView extends StatefulWidget {
 }
 
 class _WeekListViewState extends State<_WeekListView> with TrainingListMixin {
+  String _layout = 'list';
+
   @override
   Widget build(BuildContext context) {
     final weeks = widget.controller.program.weeks;
@@ -66,6 +67,46 @@ class _WeekListViewState extends State<_WeekListView> with TrainingListMixin {
       );
     }
 
+    return Column(
+      children: [
+        Padding(
+          padding: EdgeInsets.only(
+            top: AppTheme.spacing.md,
+            right: AppTheme.spacing.lg,
+            left: AppTheme.spacing.lg,
+            bottom: AppTheme.spacing.sm,
+          ),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: SegmentedButton<String>(
+              segments: const [
+                ButtonSegment(
+                  value: 'list',
+                  icon: Icon(Icons.view_list),
+                  label: Text('Lista'),
+                ),
+                ButtonSegment(
+                  value: 'grid',
+                  icon: Icon(Icons.grid_view),
+                  label: Text('Griglia'),
+                ),
+              ],
+              selected: {_layout},
+              onSelectionChanged: (s) => setState(() => _layout = s.first),
+            ),
+          ),
+        ),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 220),
+          switchInCurve: Curves.easeOut,
+          switchOutCurve: Curves.easeIn,
+          child: _layout == 'list' ? _buildList(weeks) : _buildGrid(weeks),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildList(List weeks) {
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -74,6 +115,21 @@ class _WeekListViewState extends State<_WeekListView> with TrainingListMixin {
         margin: EdgeInsets.only(bottom: AppTheme.spacing.md),
         child: _buildWeekCard(context, index),
       ),
+    );
+  }
+
+  Widget _buildGrid(List weeks) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: weeks.length,
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 520,
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 16,
+        mainAxisExtent: 120,
+      ),
+      itemBuilder: (context, index) => _buildWeekCard(context, index),
     );
   }
 
@@ -91,7 +147,10 @@ class _WeekListViewState extends State<_WeekListView> with TrainingListMixin {
           weekNumber: week.number,
           theme: theme,
           colorScheme: colorScheme,
-          onOptionsPressed: () => _showWeekOptions(context, index),
+          onCopy: () => widget.controller.copyWeek(index, context),
+          onReorder: _showReorderDialog,
+          onAdd: () => widget.controller.addWeek(),
+          onDelete: () => _handleDeleteWeek(index),
         ),
       ),
     );
@@ -108,41 +167,7 @@ class _WeekListViewState extends State<_WeekListView> with TrainingListMixin {
     );
   }
 
-  void _showWeekOptions(BuildContext context, int index) {
-    showOptionsBottomSheet(
-      context,
-      title: 'Settimana ${index + 1}',
-      subtitle: 'Gestisci settimana',
-      leadingIcon: Icons.calendar_today,
-      items: _buildWeekMenuItems(index),
-    );
-  }
-
-  List<BottomMenuItem> _buildWeekMenuItems(int index) {
-    return [
-      BottomMenuItem(
-        title: 'Copia Settimana',
-        icon: Icons.content_copy_outlined,
-        onTap: () => widget.controller.copyWeek(index, context),
-      ),
-      BottomMenuItem(
-        title: 'Riordina Settimane',
-        icon: Icons.reorder,
-        onTap: () => _showReorderDialog(),
-      ),
-      BottomMenuItem(
-        title: 'Aggiungi Settimana',
-        icon: Icons.add,
-        onTap: () => widget.controller.addWeek(),
-      ),
-      BottomMenuItem(
-        title: 'Elimina Settimana',
-        icon: Icons.delete_outline,
-        onTap: () => _handleDeleteWeek(index),
-        isDestructive: true,
-      ),
-    ];
-  }
+  // Opzioni portate a MenuAnchor in _WeekCardContent
 
   void _showReorderDialog() {
     final weekNames = widget.controller.program.weeks
@@ -175,13 +200,19 @@ class _WeekCardContent extends StatelessWidget {
   final int weekNumber;
   final ThemeData theme;
   final ColorScheme colorScheme;
-  final VoidCallback onOptionsPressed;
+  final VoidCallback onCopy;
+  final VoidCallback onReorder;
+  final VoidCallback onAdd;
+  final VoidCallback onDelete;
 
   const _WeekCardContent({
     required this.weekNumber,
     required this.theme,
     required this.colorScheme,
-    required this.onOptionsPressed,
+    required this.onCopy,
+    required this.onReorder,
+    required this.onAdd,
+    required this.onDelete,
   });
 
   @override
@@ -191,7 +222,7 @@ class _WeekCardContent extends StatelessWidget {
         _buildWeekIcon(),
         SizedBox(width: AppTheme.spacing.lg),
         Expanded(child: _buildWeekTitle()),
-        _buildOptionsButton(),
+        _buildOptionsMenu(),
       ],
     );
   }
@@ -227,10 +258,42 @@ class _WeekCardContent extends StatelessWidget {
     );
   }
 
-  Widget _buildOptionsButton() {
-    return IconButton(
-      icon: Icon(Icons.more_vert, color: colorScheme.onSurfaceVariant),
-      onPressed: onOptionsPressed,
+  Widget _buildOptionsMenu() {
+    return MenuAnchor(
+      builder: (context, controller, child) {
+        return IconButton(
+          icon: Icon(Icons.more_vert, color: colorScheme.onSurfaceVariant),
+          onPressed: () {
+            if (controller.isOpen) {
+              controller.close();
+            } else {
+              controller.open();
+            }
+          },
+        );
+      },
+      menuChildren: [
+        MenuItemButton(
+          leadingIcon: const Icon(Icons.content_copy_outlined),
+          onPressed: onCopy,
+          child: const Text('Copia Settimana'),
+        ),
+        MenuItemButton(
+          leadingIcon: const Icon(Icons.reorder),
+          onPressed: onReorder,
+          child: const Text('Riordina Settimane'),
+        ),
+        MenuItemButton(
+          leadingIcon: const Icon(Icons.add),
+          onPressed: onAdd,
+          child: const Text('Aggiungi Settimana'),
+        ),
+        MenuItemButton(
+          leadingIcon: const Icon(Icons.delete_outline),
+          onPressed: onDelete,
+          child: const Text('Elimina Settimana'),
+        ),
+      ],
     );
   }
 }

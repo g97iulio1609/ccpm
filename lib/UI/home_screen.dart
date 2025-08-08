@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
+import 'package:alphanessone/trainingBuilder/providers/training_providers.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/spinner.dart';
 import 'package:alphanessone/UI/components/snackbar.dart';
@@ -55,17 +55,11 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       ref.read(usersServiceProvider).clearUserData();
       if (mounted) {
         context.go('/');
-        AppSnackbar.success(
-          context,
-          message: 'Logout effettuato con successo',
-        );
+        AppSnackbar.success(context, message: 'Logout effettuato con successo');
       }
     } catch (e) {
       if (mounted) {
-        AppSnackbar.error(
-          context,
-          message: 'Errore durante il logout: $e',
-        );
+        AppSnackbar.error(context, message: 'Errore durante il logout: $e');
       }
     } finally {
       if (mounted) {

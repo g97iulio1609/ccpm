@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:alphanessone/trainingBuilder/providers/training_providers.dart';
 import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
 import 'package:alphanessone/trainingBuilder/dialog/athlete_selection_dialog.dart';
 import 'package:alphanessone/trainingBuilder/presentation/pages/weeks_page.dart';
@@ -27,17 +28,18 @@ class TrainingProgramPage extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final formKey = useMemoized(() => GlobalKey<FormState>());
-    final controller = ref.watch(trainingProgramControllerProvider);
+    final controller = ref.watch(trainingProgramControllerProvider.notifier);
+    final programState = ref.watch(trainingProgramControllerProvider);
     final userRole = ref.watch(userRoleProvider);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     useEffect(() {
-      if (programId.isNotEmpty && controller.program.id != programId) {
+      if (programId.isNotEmpty && programState.id != programId) {
         controller.loadProgram(programId);
       }
       return null;
-    }, [programId, controller.program.id]);
+    }, [programId, programState.id]);
 
     if (weekIndex != null) {
       return workoutIndex != null
@@ -233,24 +235,42 @@ class _ActionButtons extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: _GradientElevatedButton(
-            icon: Icons.add,
-            label: 'Add Week',
-            onTap: controller.addWeek,
-            isPrimary: false,
-            theme: theme,
-            colorScheme: colorScheme,
+          child: FilledButton.tonal(
+            onPressed: controller.addWeek,
+            style: FilledButton.styleFrom(
+              padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.md),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.add),
+                SizedBox(width: AppTheme.spacing.sm),
+                const Text('Add Week'),
+              ],
+            ),
           ),
         ),
         SizedBox(width: AppTheme.spacing.md),
         Expanded(
-          child: _GradientElevatedButton(
-            icon: Icons.save,
-            label: 'Save Program',
-            onTap: () => controller.submitProgram(context),
-            isPrimary: true,
-            theme: theme,
-            colorScheme: colorScheme,
+          child: FilledButton(
+            onPressed: () => controller.submitProgram(context),
+            style: FilledButton.styleFrom(
+              padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.md),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.save),
+                SizedBox(width: AppTheme.spacing.sm),
+                const Text('Save Program'),
+              ],
+            ),
           ),
         ),
       ],

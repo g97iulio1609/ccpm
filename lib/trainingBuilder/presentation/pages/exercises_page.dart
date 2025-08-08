@@ -36,12 +36,15 @@ class ExercisesPage extends ConsumerWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final screenWidth = MediaQuery.of(context).size.width;
-    final isListMode = screenWidth < 600;
+    final isCompact = screenWidth < 900;
+    final isListDefault = screenWidth < 600;
+    final layout = ValueNotifier<String>(isListDefault ? 'list' : 'grid');
+    final density = ValueNotifier<String>(isCompact ? 'compact' : 'detail');
 
     return PageScaffold(
       colorScheme: colorScheme,
       slivers: [
-        // Pulsante globale per aggiungere esercizi (sostituisce la header interna inutile)
+        // Header con SegmentedButton (layout + densità) e CTA aggiungi
         SliverToBoxAdapter(
           child: Padding(
             padding: EdgeInsets.only(
@@ -52,7 +55,57 @@ class ExercisesPage extends ConsumerWidget {
             ),
             child: Row(
               children: [
-                const Spacer(),
+                Expanded(
+                  child: Wrap(
+                    spacing: AppTheme.spacing.md,
+                    runSpacing: AppTheme.spacing.sm,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      ValueListenableBuilder<String>(
+                        valueListenable: layout,
+                        builder: (context, value, _) {
+                          return SegmentedButton<String>(
+                            segments: const [
+                              ButtonSegment(
+                                value: 'list',
+                                icon: Icon(Icons.view_list),
+                                label: Text('Lista'),
+                              ),
+                              ButtonSegment(
+                                value: 'grid',
+                                icon: Icon(Icons.grid_view),
+                                label: Text('Griglia'),
+                              ),
+                            ],
+                            selected: {value},
+                            onSelectionChanged: (s) => layout.value = s.first,
+                          );
+                        },
+                      ),
+                      ValueListenableBuilder<String>(
+                        valueListenable: density,
+                        builder: (context, value, _) {
+                          return SegmentedButton<String>(
+                            segments: const [
+                              ButtonSegment(
+                                value: 'compact',
+                                icon: Icon(Icons.compress),
+                                label: Text('Compatta'),
+                              ),
+                              ButtonSegment(
+                                value: 'detail',
+                                icon: Icon(Icons.unfold_more),
+                                label: Text('Dettaglio'),
+                              ),
+                            ],
+                            selected: {value},
+                            onSelectionChanged: (s) => density.value = s.first,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
                 SizedBox(
                   width: 260,
                   child: AppButton(
@@ -89,13 +142,24 @@ class ExercisesPage extends ConsumerWidget {
                     primaryActionLabel: 'Aggiungi esercizio',
                   ),
                 )
-              : (isListMode
-                    ? _buildListView(context, exercises, exerciseRecordService)
-                    : _buildGridView(
-                        context,
-                        exercises,
-                        exerciseRecordService,
-                      )),
+              : ValueListenableBuilder<String>(
+                  valueListenable: layout,
+                  builder: (context, value, _) {
+                    return value == 'list'
+                        ? _buildListView(
+                            context,
+                            exercises,
+                            exerciseRecordService,
+                            density.value,
+                          )
+                        : _buildGridView(
+                            context,
+                            exercises,
+                            exerciseRecordService,
+                            density.value,
+                          );
+                  },
+                ),
         ),
       ],
     );
@@ -105,6 +169,7 @@ class ExercisesPage extends ConsumerWidget {
     BuildContext context,
     List<Exercise> exercises,
     dynamic exerciseRecordService,
+    String density,
   ) {
     return SliverList(
       delegate: SliverChildBuilderDelegate((context, index) {
@@ -120,6 +185,7 @@ class ExercisesPage extends ConsumerWidget {
             context,
             exercises[index],
             exerciseRecordService,
+            density,
           ),
         );
       }, childCount: exercises.length + 1),
@@ -130,6 +196,7 @@ class ExercisesPage extends ConsumerWidget {
     BuildContext context,
     List<Exercise> exercises,
     dynamic exerciseRecordService,
+    String density,
   ) {
     return SliverGrid(
       delegate: SliverChildBuilderDelegate((context, index) {
@@ -140,14 +207,14 @@ class ExercisesPage extends ConsumerWidget {
           context,
           exercises[index],
           exerciseRecordService,
+          density,
         );
       }, childCount: exercises.length + 1),
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 600,
+        maxCrossAxisExtent: density == 'compact' ? 480 : 600,
         mainAxisSpacing: AppTheme.spacing.md,
         crossAxisSpacing: AppTheme.spacing.md,
-        // Aumentata per evitare il taglio del contenuto delle card (header + info + serie scroll + badge)
-        mainAxisExtent: 520,
+        mainAxisExtent: density == 'compact' ? 440 : 520,
       ),
     );
   }
@@ -156,6 +223,7 @@ class ExercisesPage extends ConsumerWidget {
     BuildContext context,
     Exercise exercise,
     dynamic exerciseRecordService,
+    String density,
   ) {
     final workout = controller.program.weeks[weekIndex].workouts[workoutIndex];
     final superSets = (workout.superSets as List<dynamic>? ?? [])
@@ -190,6 +258,7 @@ class ExercisesPage extends ConsumerWidget {
             exerciseIndex: exercise.order - 1,
             latestMaxWeight: latestMaxWeight,
           ),
+          dense: density == 'compact',
         );
       },
     );

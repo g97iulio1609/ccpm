@@ -28,7 +28,7 @@ final activeUserIdProvider = Provider.autoDispose((ref) {
 // Provider per l'inizializzazione dei dati
 final initializationProvider = FutureProvider.autoDispose
     .family<Map<String, dynamic>?, String>((ref, userId) async {
-      final mealsService = ref.read(mealsServiceProvider);
+      final mealsService = ref.read(mealsServiceProvider.notifier);
       final currentDate = ref.read(selectedDateProvider);
       final tdeeService = ref.read(tdeeServiceProvider);
 
@@ -431,7 +431,7 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
 
 final dailyStatsProvider = StreamProvider.autoDispose
     .family<meals.DailyStats, DateTime>((ref, date) async* {
-      final mealsService = ref.read(mealsServiceProvider);
+      final mealsService = ref.read(mealsServiceProvider.notifier);
       final selectedUserId = ref.watch(selectedUserIdProvider);
 
       if (selectedUserId == null) {

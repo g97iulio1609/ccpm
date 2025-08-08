@@ -47,7 +47,7 @@ class FoodListState extends ConsumerState<FoodList> {
 
   @override
   Widget build(BuildContext context) {
-    final mealsService = ref.watch(mealsServiceProvider);
+    final mealsService = ref.watch(mealsServiceProvider.notifier);
     final userId = widget.userId;
     final theme = Theme.of(context);
 
@@ -186,7 +186,7 @@ class FoodListState extends ConsumerState<FoodList> {
 
     return FutureBuilder<Map<String, double>>(
       future: ref
-          .watch(mealsServiceProvider)
+          .watch(mealsServiceProvider.notifier)
           .getTotalNutrientsForMeal(meal.userId, meal.id!),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
@@ -317,7 +317,7 @@ class FoodListState extends ConsumerState<FoodList> {
   Widget buildFoodList(BuildContext context, WidgetRef ref, meals.Meal meal) {
     return StreamBuilder<List<macros.Food>>(
       stream: ref
-          .watch(mealsServiceProvider)
+          .watch(mealsServiceProvider.notifier)
           .getFoodsForMealStream(userId: meal.userId, mealId: meal.id!),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
@@ -472,7 +472,7 @@ class FoodListState extends ConsumerState<FoodList> {
     meals.Meal meal,
     macros.Food food,
   ) {
-    final mealsService = ref.read(mealsServiceProvider);
+    final mealsService = ref.read(mealsServiceProvider.notifier);
 
     return [
       SlidableAction(
@@ -611,7 +611,7 @@ class FoodListState extends ConsumerState<FoodList> {
       final overwriteExisting = await showOverwriteDialog();
       if (overwriteExisting != null) {
         await ref
-            .read(mealsServiceProvider)
+            .read(mealsServiceProvider.notifier)
             .copyMeal(
               userId: sourceMeal.userId,
               sourceMealId: sourceMeal.id!,
@@ -708,7 +708,7 @@ class FoodListState extends ConsumerState<FoodList> {
       'Are you sure you want to delete all foods in this meal?',
     );
     if (confirm == true) {
-      final mealsService = ref.read(mealsServiceProvider);
+      final mealsService = ref.read(mealsServiceProvider.notifier);
       final foods = await mealsService.getFoodsForMeals(
         userId: meal.userId,
         mealId: meal.id!,
@@ -730,7 +730,7 @@ class FoodListState extends ConsumerState<FoodList> {
     );
     if (selectedMeal != null) {
       await ref
-          .read(mealsServiceProvider)
+          .read(mealsServiceProvider.notifier)
           .moveFoods(
             userId: selectedMeal.userId,
             foodIds: selectedFoods,

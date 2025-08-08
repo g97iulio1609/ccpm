@@ -214,7 +214,7 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final mealsService = ref.watch(mealsServiceProvider);
+    final mealsService = ref.watch(mealsServiceProvider.notifier);
     final isEditing = widget.existingDietPlan != null;
 
     final userService = ref.watch(usersServiceProvider);

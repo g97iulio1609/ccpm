@@ -38,8 +38,9 @@ class FoodSelectorState extends ConsumerState<FoodSelector>
   late Animation<Offset> _slideAnimation;
 
   final TextEditingController _searchController = TextEditingController();
-  final TextEditingController _quantityController =
-      TextEditingController(text: '100');
+  final TextEditingController _quantityController = TextEditingController(
+    text: '100',
+  );
   String _selectedFoodId = '';
   double _quantity = 100.0;
   String _unit = 'g';
@@ -69,10 +70,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector>
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.1),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 
     if (widget.myFoodId != null) {
       _selectedFoodId = widget.myFoodId!;
@@ -91,7 +89,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector>
   }
 
   Future<macros.Food?> _loadFoodData(String foodId) async {
-    final mealsService = ref.read(mealsServiceProvider);
+    final mealsService = ref.read(mealsServiceProvider.notifier);
     final food = await mealsService.getMyFoodById(widget.meal.userId, foodId);
     if (food != null) {
       if (mounted) {
@@ -140,7 +138,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector>
 
   Future<void> _saveFood() async {
     try {
-      final mealsService = ref.read(mealsServiceProvider);
+      final mealsService = ref.read(mealsServiceProvider.notifier);
       final food = _loadedFood;
       if (food != null) {
         final adjustedFood = _createAdjustedFood(food);
@@ -191,7 +189,9 @@ class FoodSelectorState extends ConsumerState<FoodSelector>
   }
 
   Future<void> _addFood(
-      MealsService mealsService, macros.Food adjustedFood) async {
+    MealsService mealsService,
+    macros.Food adjustedFood,
+  ) async {
     if (widget.isFavoriteMeal) {
       await mealsService.addFoodToFavoriteMeal(
         userId: widget.meal.userId,
@@ -209,7 +209,9 @@ class FoodSelectorState extends ConsumerState<FoodSelector>
   }
 
   Future<void> _updateFood(
-      MealsService mealsService, macros.Food adjustedFood) async {
+    MealsService mealsService,
+    macros.Food adjustedFood,
+  ) async {
     await mealsService.updateMyFood(
       userId: widget.meal.userId,
       myFoodId: widget.myFoodId!,
@@ -302,9 +304,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector>
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(
-            child: CircularProgressIndicator(
-              color: colorScheme.primary,
-            ),
+            child: CircularProgressIndicator(color: colorScheme.primary),
           );
         } else if (snapshot.hasData) {
           final food = snapshot.data!;
@@ -374,11 +374,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 48,
-                    color: colorScheme.error,
-                  ),
+                  Icon(Icons.error_outline, size: 48, color: colorScheme.error),
                   SizedBox(height: AppTheme.spacing.md),
                   Text(
                     'Errore nel caricamento',
@@ -433,9 +429,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector>
           decoration: BoxDecoration(
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
-            border: Border.all(
-              color: colorScheme.outline.withAlpha(51),
-            ),
+            border: Border.all(color: colorScheme.outline.withAlpha(51)),
           ),
           child: DropdownButton<String>(
             value: _unit,
@@ -468,7 +462,11 @@ class FoodSelectorState extends ConsumerState<FoodSelector>
   }
 
   Widget _buildMacroItem(
-      String label, double value, Color color, ThemeData theme) {
+    String label,
+    double value,
+    Color color,
+    ThemeData theme,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -480,10 +478,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector>
               decoration: BoxDecoration(
                 color: color.withAlpha(51),
                 borderRadius: BorderRadius.circular(AppTheme.radii.full),
-                border: Border.all(
-                  color: color,
-                  width: 2,
-                ),
+                border: Border.all(color: color, width: 2),
               ),
             ),
             SizedBox(width: AppTheme.spacing.sm),

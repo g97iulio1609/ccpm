@@ -6,7 +6,7 @@ import '../shared/utils/validation_utils.dart' as local_validation_utils;
 
 /// Controller refactorizzato per le operazioni sugli esercizi
 /// Segue il principio Single Responsibility - solo presentazione
-class ExerciseControllerRefactored extends ChangeNotifier {
+class ExerciseControllerRefactored {
   final ExerciseBusinessService _businessService;
 
   // Stato UI
@@ -44,7 +44,7 @@ class ExerciseControllerRefactored extends ChangeNotifier {
           workoutIndex,
           exercise,
         );
-        notifyListeners();
+        // state delegated to outer controller
       }
     } catch (e) {
       _setError('Errore nell\'aggiunta dell\'esercizio: $e');
@@ -69,7 +69,7 @@ class ExerciseControllerRefactored extends ChangeNotifier {
         workoutIndex,
         exerciseIndex,
       );
-      notifyListeners();
+      // state delegated to outer controller
     } catch (e) {
       _setError('Errore nella rimozione dell\'esercizio: $e');
     }
@@ -91,7 +91,7 @@ class ExerciseControllerRefactored extends ChangeNotifier {
         workoutIndex,
         exerciseIndex,
       );
-      notifyListeners();
+      // state delegated to outer controller
     } catch (e) {
       _setError('Errore nella duplicazione dell\'esercizio: $e');
     }
@@ -128,7 +128,7 @@ class ExerciseControllerRefactored extends ChangeNotifier {
           exerciseIndex,
           updatedExercise,
         );
-        notifyListeners();
+        // state delegated to outer controller
       }
     } catch (e) {
       _setError('Errore nella modifica dell\'esercizio: $e');
@@ -152,7 +152,7 @@ class ExerciseControllerRefactored extends ChangeNotifier {
         exerciseId,
         exerciseType,
       );
-      notifyListeners();
+      // state delegated to outer controller
     } catch (e) {
       _setError('Errore nell\'aggiornamento dei pesi: $e');
     } finally {
@@ -175,7 +175,7 @@ class ExerciseControllerRefactored extends ChangeNotifier {
         exerciseId,
         exerciseType,
       );
-      notifyListeners();
+      // state delegated to outer controller
     } catch (e) {
       _setError('Errore nell\'aggiornamento dell\'esercizio: $e');
     } finally {
@@ -201,7 +201,7 @@ class ExerciseControllerRefactored extends ChangeNotifier {
         oldIndex,
         newIndex,
       );
-      notifyListeners();
+      // state delegated to outer controller
     } catch (e) {
       _setError('Errore nel riordinamento degli esercizi: $e');
     }
@@ -225,7 +225,7 @@ class ExerciseControllerRefactored extends ChangeNotifier {
         destinationWorkoutIndex,
         exerciseIndex,
       );
-      notifyListeners();
+      // state delegated to outer controller
     } catch (e) {
       _setError('Errore nello spostamento dell\'esercizio: $e');
     }
@@ -247,7 +247,7 @@ class ExerciseControllerRefactored extends ChangeNotifier {
         workoutIndex,
         exerciseIndex,
       );
-      notifyListeners();
+      // state delegated to outer controller
     } catch (e) {
       _setError('Errore nell\'aggiunta della serie: $e');
     }
@@ -418,18 +418,15 @@ class ExerciseControllerRefactored extends ChangeNotifier {
 
   void _setLoading(bool loading) {
     _isLoading = loading;
-    notifyListeners();
   }
 
   void _setError(String? error) {
     _errorMessage = error;
-    notifyListeners();
   }
 
   void _clearError() {
     if (_errorMessage != null) {
       _errorMessage = null;
-      notifyListeners();
     }
   }
 }

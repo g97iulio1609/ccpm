@@ -37,9 +37,7 @@ class SeriesCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
         boxShadow: AppTheme.elevations.small,
       ),
       child: Column(
@@ -52,7 +50,10 @@ class SeriesCard extends StatelessWidget {
   }
 
   Widget _buildHeader(
-      BuildContext context, ThemeData theme, ColorScheme colorScheme) {
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -80,6 +81,8 @@ class SeriesCard extends StatelessWidget {
                 ),
               ),
               SizedBox(width: AppTheme.spacing.sm),
+              _buildStatusBadge(theme, colorScheme),
+              SizedBox(width: AppTheme.spacing.sm),
               Expanded(
                 child: Text(
                   _formatSeriesInfo(),
@@ -90,44 +93,46 @@ class SeriesCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
+              MenuAnchor(
+                builder: (context, controller, child) {
+                  return IconButton(
+                    icon: Icon(
+                      Icons.more_vert,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    onPressed: () {
+                      if (controller.isOpen) {
+                        controller.close();
+                      } else {
+                        controller.open();
+                      }
+                    },
+                  );
+                },
+                menuChildren: [
                   if (onEdit != null)
-                    IconButton(
-                      icon: Icon(
-                        Icons.edit_outlined,
-                        color: colorScheme.onSurfaceVariant,
-                        size: 20,
-                      ),
+                    MenuItemButton(
+                      leadingIcon: const Icon(Icons.edit_outlined),
                       onPressed: onEdit,
-                      tooltip: 'Modifica serie',
+                      child: const Text('Modifica'),
                     ),
                   if (onDuplicate != null)
-                    IconButton(
-                      icon: Icon(
-                        Icons.content_copy_outlined,
-                        color: colorScheme.onSurfaceVariant,
-                        size: 20,
-                      ),
+                    MenuItemButton(
+                      leadingIcon: const Icon(Icons.content_copy_outlined),
                       onPressed: onDuplicate,
-                      tooltip: 'Duplica serie',
+                      child: const Text('Duplica'),
                     ),
                   if (onDelete != null)
-                    IconButton(
-                      icon: Icon(
-                        Icons.delete_outline,
-                        color: colorScheme.error,
-                        size: 20,
-                      ),
+                    MenuItemButton(
+                      leadingIcon: const Icon(Icons.delete_outline),
                       onPressed: onDelete,
-                      tooltip: 'Elimina serie',
+                      child: const Text('Elimina'),
                     ),
-                  Icon(
-                    isExpanded ? Icons.expand_less : Icons.expand_more,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
                 ],
+              ),
+              Icon(
+                isExpanded ? Icons.expand_less : Icons.expand_more,
+                color: colorScheme.onSurfaceVariant,
               ),
             ],
           ),
@@ -136,8 +141,31 @@ class SeriesCard extends StatelessWidget {
     );
   }
 
+  Widget _buildStatusBadge(ThemeData theme, ColorScheme colorScheme) {
+    String label;
+    Color? bg;
+    if (series.done == true) {
+      label = 'Completata';
+      bg = colorScheme.secondaryContainer;
+    } else if ((series.repsDone) > 0 || (series.weightDone) > 0) {
+      label = 'In corso';
+      bg = colorScheme.tertiaryContainer;
+    } else {
+      label = 'Non svolta';
+      bg = colorScheme.surfaceContainerHighest;
+    }
+
+    return Badge(
+      label: Text(label, style: theme.textTheme.labelSmall),
+      backgroundColor: bg,
+    );
+  }
+
   Widget _buildExpandedContent(
-      BuildContext context, ThemeData theme, ColorScheme colorScheme) {
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
     return Container(
       padding: EdgeInsets.all(AppTheme.spacing.md),
       decoration: BoxDecoration(
@@ -156,12 +184,17 @@ class SeriesCard extends StatelessWidget {
   }
 
   String _formatSeriesInfo() {
-    final reps =
-        _formatRange(series.reps.toString(), series.maxReps?.toString());
-    final weight =
-        _formatRange(series.weight.toString(), series.maxWeight?.toString());
-    final intensity =
-        (series.intensity?.isNotEmpty ?? false) ? ' (${series.intensity}%)' : '';
+    final reps = _formatRange(
+      series.reps.toString(),
+      series.maxReps?.toString(),
+    );
+    final weight = _formatRange(
+      series.weight.toString(),
+      series.maxWeight?.toString(),
+    );
+    final intensity = (series.intensity?.isNotEmpty ?? false)
+        ? ' (${series.intensity}%)'
+        : '';
     final rpe = (series.rpe?.isNotEmpty ?? false) ? ' RPE ${series.rpe}' : '';
 
     return '$reps reps × $weight kg$intensity$rpe';

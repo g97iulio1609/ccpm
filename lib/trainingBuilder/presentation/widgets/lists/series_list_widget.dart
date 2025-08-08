@@ -3,6 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
+import 'package:alphanessone/trainingBuilder/providers/training_providers.dart';
 import 'package:alphanessone/trainingBuilder/shared/widgets/reorder_dialog.dart';
 import '../cards/series_card.dart';
 import 'package:alphanessone/UI/components/button.dart';

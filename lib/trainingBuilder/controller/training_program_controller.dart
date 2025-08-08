@@ -10,6 +10,8 @@ import 'week_controller.dart';
 import 'workout_controller.dart';
 import 'exercise_controller.dart';
 import '../domain/services/exercise_business_service.dart';
+import '../domain/services/training_business_service.dart';
+import '../infrastructure/repositories/firestore_training_repository.dart';
 import 'series_controller.dart';
 import 'super_set_controller.dart';
 import 'package:alphanessone/providers/providers.dart';
@@ -18,32 +20,14 @@ final firestoreServiceProvider = Provider<FirestoreService>(
   (ref) => FirestoreService(),
 );
 
-final trainingProgramControllerProvider =
-    ChangeNotifierProvider<TrainingProgramController>((ref) {
-      final service = ref.watch(firestoreServiceProvider);
-      final usersService = ref.watch(usersServiceProvider);
-      final exerciseRecordService = ref.watch(exerciseRecordServiceProvider);
-      final programStateNotifier = ref.watch(
-        trainingProgramStateProvider.notifier,
-      );
-      final programState = ref.watch(trainingProgramStateProvider);
-      return TrainingProgramController(
-        service,
-        usersService,
-        exerciseRecordService,
-        programStateNotifier,
-        programState,
-        ref,
-      );
-    });
+// Provider spostato in training_providers.dart come StateNotifierProvider
 
-class TrainingProgramController extends ChangeNotifier {
+class TrainingProgramController extends StateNotifier<TrainingProgram> {
   final UsersService _usersService;
   final ExerciseRecordService _exerciseRecordService;
   final TrainingProgramStateNotifier _programStateNotifier;
   final TrainingProgram? _programState;
 
-  late TrainingProgram _program;
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
   late TextEditingController _athleteIdController;
@@ -55,6 +39,7 @@ class TrainingProgramController extends ChangeNotifier {
   late final SeriesController _seriesController;
   late final ExerciseControllerRefactored _exerciseController;
   final SuperSetController _superSetController;
+  late final TrainingBusinessService _trainingBusinessService;
   final Ref ref;
 
   TrainingProgramController(
@@ -67,8 +52,35 @@ class TrainingProgramController extends ChangeNotifier {
   ) : _trainingService = TrainingProgramService(service),
       _weekController = WeekController(),
       _workoutController = WorkoutController(),
-      _superSetController = SuperSetController() {
-    _initProgram();
+      _superSetController = SuperSetController(),
+      super(
+        _programState ??
+            TrainingProgram(
+              id: '',
+              name: '',
+              description: '',
+              athleteId: '',
+              mesocycleNumber: 0,
+              hide: false,
+              status: '',
+              weeks: [],
+            ),
+      ) {
+    _initControllers();
+    _trainingBusinessService = TrainingBusinessService(
+      trainingRepository: FirestoreTrainingRepository(),
+      exerciseRecordService: _exerciseRecordService,
+    );
+  }
+
+  void _initControllers() {
+    _nameController = TextEditingController(text: state.name);
+    _descriptionController = TextEditingController(text: state.description);
+    _athleteIdController = TextEditingController(text: state.athleteId);
+    _mesocycleNumberController = TextEditingController(
+      text: state.mesocycleNumber.toString(),
+    );
+
     final weightNotifier = ValueNotifier<double>(0.0);
     _seriesController = SeriesController(
       _exerciseRecordService,
@@ -81,7 +93,7 @@ class TrainingProgramController extends ChangeNotifier {
     );
   }
 
-  TrainingProgram get program => _program;
+  TrainingProgram get program => state;
 
   TextEditingController get nameController => _nameController;
   TextEditingController get descriptionController => _descriptionController;
@@ -91,14 +103,14 @@ class TrainingProgramController extends ChangeNotifier {
   SeriesController get seriesController => _seriesController;
 
   set athleteId(String value) {
-    _program.athleteId = value;
+    state = program.copyWith(athleteId: value);
     _athleteIdController.text = value;
-    notifyListeners();
+    _emit();
   }
 
   Future<String> get athleteName async {
-    if (_program.athleteId.isNotEmpty) {
-      final user = await _usersService.getUserById(_program.athleteId);
+    if (program.athleteId.isNotEmpty) {
+      final user = await _usersService.getUserById(program.athleteId);
       return user?.name ?? '';
     } else {
       return '';
@@ -107,7 +119,7 @@ class TrainingProgramController extends ChangeNotifier {
 
   void _initProgram() {
     if (_programState == null) {
-      _program = TrainingProgram(
+      state = TrainingProgram(
         id: '',
         name: '',
         description: '',
@@ -118,15 +130,13 @@ class TrainingProgramController extends ChangeNotifier {
         weeks: [],
       );
     } else {
-      _program = _programState;
+      state = _programState;
     }
 
-    _nameController = TextEditingController(text: _program.name);
-    _descriptionController = TextEditingController(text: _program.description);
-    _athleteIdController = TextEditingController(text: _program.athleteId);
-    _mesocycleNumberController = TextEditingController(
-      text: _program.mesocycleNumber.toString(),
-    );
+    _nameController.text = state.name;
+    _descriptionController.text = state.description;
+    _athleteIdController.text = state.athleteId;
+    _mesocycleNumberController.text = state.mesocycleNumber.toString();
   }
 
   void updateWeekProgressions(
@@ -135,11 +145,11 @@ class TrainingProgramController extends ChangeNotifier {
   ) {
     for (
       int weekIndex = 0;
-      weekIndex < _program.weeks.length &&
+      weekIndex < program.weeks.length &&
           weekIndex < updatedProgressions.length;
       weekIndex++
     ) {
-      final week = _program.weeks[weekIndex];
+      final week = program.weeks[weekIndex];
       for (
         int workoutIndex = 0;
         workoutIndex < week.workouts.length &&
@@ -222,7 +232,7 @@ class TrainingProgramController extends ChangeNotifier {
       }
     }
 
-    notifyListeners();
+    _emit();
   }
 
   Future<void> loadProgram(String? programId) async {
@@ -232,14 +242,15 @@ class TrainingProgramController extends ChangeNotifier {
     }
 
     try {
-      _program = (await _trainingService.fetchTrainingProgram(programId))!;
+      final fetched = (await _trainingService.fetchTrainingProgram(programId))!;
+      state = fetched;
       _updateProgram();
-      _superSetController.loadSuperSets(_program);
+      _superSetController.loadSuperSets(program);
 
       final exercisesService = ref.read(exercisesServiceProvider);
 
-      for (int weekIndex = 0; weekIndex < _program.weeks.length; weekIndex++) {
-        final week = _program.weeks[weekIndex];
+      for (int weekIndex = 0; weekIndex < program.weeks.length; weekIndex++) {
+        final week = program.weeks[weekIndex];
         for (
           int workoutIndex = 0;
           workoutIndex < week.workouts.length;
@@ -265,53 +276,56 @@ class TrainingProgramController extends ChangeNotifier {
         }
       }
 
-      notifyListeners();
+      _emit();
     } catch (error) {
       // Handle error
     }
   }
 
   void _updateProgram() {
-    _nameController.text = _program.name;
-    _descriptionController.text = _program.description;
-    _athleteIdController.text = _program.athleteId;
-    _mesocycleNumberController.text = _program.mesocycleNumber.toString();
-    _program.hide = _program.hide;
-    _program.status = _program.status;
-
-    _programStateNotifier.updateProgram(_program);
+    _nameController.text = program.name;
+    _descriptionController.text = program.description;
+    _athleteIdController.text = program.athleteId;
+    _mesocycleNumberController.text = program.mesocycleNumber.toString();
+    _programStateNotifier.updateProgram(program);
   }
 
   void updateHideProgram(bool value) {
-    _program.hide = value;
-    _programStateNotifier.updateProgram(_program);
-    notifyListeners();
+    state = program.copyWith(hide: value);
+    _programStateNotifier.updateProgram(program);
+    _emit();
   }
 
   void updateProgramStatus(String status) {
-    _program.status = status;
-    _programStateNotifier.updateProgram(_program);
-    notifyListeners();
+    state = program.copyWith(status: status);
+    _programStateNotifier.updateProgram(program);
+    _emit();
   }
 
   Future<void> addWeek() async {
-    _weekController.addWeek(_program);
-    notifyListeners();
+    _trainingBusinessService.addWeek(program);
+    _emit();
   }
 
   void removeWeek(int index) {
-    _weekController.removeWeek(_program, index);
-    notifyListeners();
+    _trainingBusinessService.removeWeek(program, index);
+    _emit();
   }
 
   void addWorkout(int weekIndex) {
-    _workoutController.addWorkout(_program, weekIndex);
-    notifyListeners();
+    _trainingBusinessService.addWorkout(program, weekIndex);
+    _emit();
   }
 
   void removeWorkout(int weekIndex, int workoutOrder) {
-    _workoutController.removeWorkout(_program, weekIndex, workoutOrder);
-    notifyListeners();
+    // Converte order in index per business‑service
+    final index = program.weeks[weekIndex].workouts.indexWhere(
+      (w) => w.order == workoutOrder,
+    );
+    if (index != -1) {
+      _trainingBusinessService.removeWorkout(program, weekIndex, index);
+    }
+    _emit();
   }
 
   Future<void> addExercise(
@@ -320,12 +334,12 @@ class TrainingProgramController extends ChangeNotifier {
     BuildContext context,
   ) async {
     await _exerciseController.addExercise(
-      _program,
+      program,
       weekIndex,
       workoutIndex,
       context,
     );
-    notifyListeners();
+    _emit();
   }
 
   Future<void> editExercise(
@@ -335,23 +349,23 @@ class TrainingProgramController extends ChangeNotifier {
     BuildContext context,
   ) async {
     await _exerciseController.editExercise(
-      _program,
+      program,
       weekIndex,
       workoutIndex,
       exerciseIndex,
       context,
     );
-    notifyListeners();
+    _emit();
   }
 
   void removeExercise(int weekIndex, int workoutIndex, int exerciseIndex) {
-    _exerciseController.removeExercise(
-      _program,
+    _trainingBusinessService.removeExercise(
+      program,
       weekIndex,
       workoutIndex,
       exerciseIndex,
     );
-    notifyListeners();
+    _emit();
   }
 
   Future<void> updateExercise(Exercise exercise) async {
@@ -360,12 +374,12 @@ class TrainingProgramController extends ChangeNotifier {
       exercise.exerciseId!,
       exercise.type,
     );
-    notifyListeners();
+    _emit();
   }
 
   void createSuperSet(int weekIndex, int workoutIndex) {
-    _superSetController.createSuperSet(_program, weekIndex, workoutIndex);
-    notifyListeners();
+    _superSetController.createSuperSet(program, weekIndex, workoutIndex);
+    _emit();
   }
 
   void addExerciseToSuperSet(
@@ -375,13 +389,13 @@ class TrainingProgramController extends ChangeNotifier {
     String exerciseId,
   ) {
     _superSetController.addExerciseToSuperSet(
-      _program,
+      program,
       weekIndex,
       workoutIndex,
       superSetId,
       exerciseId,
     );
-    notifyListeners();
+    _emit();
   }
 
   void removeExerciseFromSuperSet(
@@ -391,23 +405,23 @@ class TrainingProgramController extends ChangeNotifier {
     String exerciseId,
   ) {
     _superSetController.removeExerciseFromSuperSet(
-      _program,
+      program,
       weekIndex,
       workoutIndex,
       superSetId,
       exerciseId,
     );
-    notifyListeners();
+    _emit();
   }
 
   void removeSuperSet(int weekIndex, int workoutIndex, String superSetId) {
     _superSetController.removeSuperSet(
-      _program,
+      program,
       weekIndex,
       workoutIndex,
       superSetId,
     );
-    notifyListeners();
+    _emit();
   }
 
   Future<void> addSeries(
@@ -418,13 +432,13 @@ class TrainingProgramController extends ChangeNotifier {
     BuildContext context,
   ) async {
     await _seriesController.addSeries(
-      _program,
+      program,
       weekIndex,
       workoutIndex,
       exerciseIndex,
       context,
     );
-    notifyListeners();
+    _emit();
   }
 
   Future<void> editSeries(
@@ -437,7 +451,7 @@ class TrainingProgramController extends ChangeNotifier {
     num latestMaxWeight,
   ) async {
     await _seriesController.editSeries(
-      _program,
+      program,
       weekIndex,
       workoutIndex,
       exerciseIndex,
@@ -445,7 +459,7 @@ class TrainingProgramController extends ChangeNotifier {
       context,
       latestMaxWeight,
     );
-    notifyListeners();
+    _emit();
   }
 
   void removeSeries(
@@ -456,19 +470,19 @@ class TrainingProgramController extends ChangeNotifier {
     int seriesIndex,
   ) {
     _seriesController.removeSeries(
-      _program,
+      program,
       weekIndex,
       workoutIndex,
       exerciseIndex,
       groupIndex,
       seriesIndex,
     );
-    notifyListeners();
+    _emit();
   }
 
   Future<void> copyWeek(int sourceWeekIndex, BuildContext context) async {
-    await _weekController.copyWeek(_program, sourceWeekIndex, context);
-    notifyListeners();
+    await _trainingBusinessService.copyWeek(program, sourceWeekIndex, null);
+    _emit();
   }
 
   Future<void> copyWorkout(
@@ -476,13 +490,13 @@ class TrainingProgramController extends ChangeNotifier {
     int workoutIndex,
     BuildContext context,
   ) async {
-    await _workoutController.copyWorkout(
-      _program,
+    await _trainingBusinessService.copyWorkout(
+      program,
       sourceWeekIndex,
       workoutIndex,
-      context,
+      null,
     );
-    notifyListeners();
+    _emit();
   }
 
   void updateSeries(
@@ -498,22 +512,22 @@ class TrainingProgramController extends ChangeNotifier {
     final updatedExercise = exercise.copyWith(series: updatedSeries);
     program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] =
         updatedExercise;
-    notifyListeners();
+    _emit();
   }
 
   void reorderWeeks(int oldIndex, int newIndex) {
-    _weekController.reorderWeeks(_program, oldIndex, newIndex);
-    notifyListeners();
+    _weekController.reorderWeeks(program, oldIndex, newIndex);
+    _emit();
   }
 
   void updateWeek(int weekIndex, Week updatedWeek) {
-    _weekController.updateWeek(_program, weekIndex, updatedWeek);
-    notifyListeners();
+    _weekController.updateWeek(program, weekIndex, updatedWeek);
+    _emit();
   }
 
   void reorderWorkouts(int weekIndex, int oldIndex, int newIndex) {
-    _workoutController.reorderWorkouts(_program, weekIndex, oldIndex, newIndex);
-    notifyListeners();
+    _workoutController.reorderWorkouts(program, weekIndex, oldIndex, newIndex);
+    _emit();
   }
 
   void reorderExercises(
@@ -523,13 +537,13 @@ class TrainingProgramController extends ChangeNotifier {
     int newIndex,
   ) {
     _exerciseController.reorderExercises(
-      _program,
+      program,
       weekIndex,
       workoutIndex,
       oldIndex,
       newIndex,
     );
-    notifyListeners();
+    _emit();
   }
 
   Future<void> duplicateExercise(
@@ -538,12 +552,12 @@ class TrainingProgramController extends ChangeNotifier {
     int exerciseIndex,
   ) async {
     _exerciseController.duplicateExercise(
-      _program,
+      program,
       weekIndex,
       workoutIndex,
       exerciseIndex,
     );
-    notifyListeners();
+    _emit();
   }
 
   void moveExercise(
@@ -553,13 +567,13 @@ class TrainingProgramController extends ChangeNotifier {
     int exerciseIndex,
   ) {
     _exerciseController.moveExercise(
-      _program,
+      program,
       weekIndex,
       sourceWorkoutIndex,
       destinationWorkoutIndex,
       exerciseIndex,
     );
-    notifyListeners();
+    _emit();
   }
 
   void reorderSeries(
@@ -570,27 +584,27 @@ class TrainingProgramController extends ChangeNotifier {
     int newIndex,
   ) {
     _seriesController.reorderSeries(
-      _program,
+      program,
       weekIndex,
       workoutIndex,
       exerciseIndex,
       oldIndex,
       newIndex,
     );
-    notifyListeners();
+    _emit();
   }
 
   Future<void> submitProgram(BuildContext context) async {
     _updateProgramFields();
 
     try {
-      await _trainingService.removeToDeleteItems(_program);
-      await _trainingService.addOrUpdateTrainingProgram(_program);
+      await _trainingService.removeToDeleteItems(program);
+      await _trainingService.addOrUpdateTrainingProgram(program);
 
-      _program.trackToDeleteSeries = [];
+      program.trackToDeleteSeries = [];
 
       await _usersService.updateUser(_athleteIdController.text, {
-        'currentProgram': _program.id,
+        'currentProgram': program.id,
       });
 
       if (context.mounted) {
@@ -608,12 +622,12 @@ class TrainingProgramController extends ChangeNotifier {
   }
 
   void _updateProgramFields() {
-    _program.name = _nameController.text;
-    _program.description = _descriptionController.text;
-    _program.athleteId = _athleteIdController.text;
-    _program.mesocycleNumber =
-        int.tryParse(_mesocycleNumberController.text) ?? 0;
-    _program.hide = _program.hide;
+    state = program.copyWith(
+      name: _nameController.text,
+      description: _descriptionController.text,
+      athleteId: _athleteIdController.text,
+      mesocycleNumber: int.tryParse(_mesocycleNumberController.text) ?? 0,
+    );
   }
 
   void _showSuccessSnackBar(
@@ -632,7 +646,7 @@ class TrainingProgramController extends ChangeNotifier {
 
   void resetFields() {
     _initProgram();
-    notifyListeners();
+    _emit();
   }
 
   Future<void> updateProgramWeights(TrainingProgram program) async {
@@ -647,6 +661,12 @@ class TrainingProgramController extends ChangeNotifier {
         }
       }
     }
+  }
+
+  void _emit() {
+    // Forza un nuovo stato immutabile per notificare i listener
+    state = state.copyWith();
+    _programStateNotifier.updateProgram(state);
   }
 
   Future<String?> duplicateProgram(

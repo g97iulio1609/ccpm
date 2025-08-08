@@ -6,7 +6,7 @@ import 'package:alphanessone/trainingBuilder/domain/services/series_business_ser
 import 'package:flutter/material.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 
-class SeriesController extends ChangeNotifier {
+class SeriesController {
   final ExerciseRecordService exerciseRecordService;
   final ValueNotifier<double> weightNotifier;
 
@@ -66,7 +66,7 @@ class SeriesController extends ChangeNotifier {
         exerciseIndex,
         exerciseRecordService,
       );
-      notifyListeners();
+      // State update delegated to outer controller
     }
   }
 
@@ -156,7 +156,6 @@ class SeriesController extends ChangeNotifier {
           exerciseIndex,
           exerciseRecordService,
         );
-        notifyListeners();
       }
     }
   }
@@ -180,7 +179,7 @@ class SeriesController extends ChangeNotifier {
       removeSeriesData(program, series);
     }
     exercise.series.clear();
-    notifyListeners();
+    // State update delegated to outer controller
   }
 
   void removeSeries(
@@ -217,14 +216,14 @@ class SeriesController extends ChangeNotifier {
       exerciseIndex,
       totalIndex,
     );
-    notifyListeners();
+    // State update delegated to outer controller
   }
 
   void removeSeriesData(TrainingProgram program, Series series) {
     if (series.serieId != null) {
       program.trackToDeleteSeries.add(series.serieId!);
     }
-    notifyListeners();
+    // State update delegated to outer controller
   }
 
   void updateSeries(
@@ -246,7 +245,6 @@ class SeriesController extends ChangeNotifier {
     final updatedExercise = exercise.copyWith(series: updatedSeries);
     program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] =
         updatedExercise;
-    notifyListeners();
   }
 
   void _updateSeriesOrders(
@@ -312,7 +310,6 @@ class SeriesController extends ChangeNotifier {
     final updatedExercise = exercise.copyWith(series: reordered);
     program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] =
         updatedExercise;
-    notifyListeners();
   }
 
   bool _isValidIndex(
@@ -348,7 +345,6 @@ class SeriesController extends ChangeNotifier {
       exerciseIndex,
       exerciseRecordService,
     );
-    notifyListeners();
   }
 
   Future<void> updateSeriesRange(
